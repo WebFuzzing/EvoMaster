@@ -70,7 +70,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         val rpcCallAction = (action as? RPCCallAction)?: throw IllegalStateException("action must be RPCCallAction, but it is ${action::class.java.simpleName}")
         val rpcCallResult = (result as? RPCCallResult)?: throw IllegalStateException("result must be RPCCallResult, but it is ${action::class.java.simpleName}")
@@ -382,4 +382,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
+    }
 }

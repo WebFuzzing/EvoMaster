@@ -1,10 +1,6 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.action.ActionTree
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
@@ -12,15 +8,19 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.search.tracer.TrackingHistory
+import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.LoggerFactory
 
 /**
@@ -35,11 +35,13 @@ import org.slf4j.LoggerFactory
  * @param children specify the children of the individual with the constructor
  *
  */
-abstract class Individual(override var trackOperator: TrackOperator? = null,
-                          override var index: Int = Traceable.DEFAULT_INDEX,
-                          children: MutableList<out ActionComponent>,
-                          childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
-                          groups : GroupsOfChildren<StructuralElement>? = null
+abstract class Individual(
+    @ProcessMonitorExcludeField
+    override var trackOperator: TrackOperator? = null,
+    override var index: Int = Traceable.DEFAULT_INDEX,
+    children: MutableList<out ActionComponent>,
+    childTypeVerifier: (Class<*>) -> Boolean = {k -> ActionComponent::class.java.isAssignableFrom(k)},
+    groups : GroupsOfChildren<StructuralElement>? = null
 ) : Traceable,
     StructuralElement(
         children,
@@ -72,6 +74,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * Note that if the evalutedIndividual is tracked (i.e., [EMConfig.enableTrackEvaluatedIndividual]),
      * we do not recommend to track the individual
      */
+    @ProcessMonitorExcludeField
     override var tracking: TrackingHistory<out Traceable>? = null
 
     /**
@@ -89,6 +92,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      *
      * However, when running actual search with MIO, its presence is checked
      */
+    @ProcessMonitorExcludeField
     var searchGlobalState : SearchGlobalState? = null
         private set
 
@@ -130,8 +134,15 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
         //make sure that seeded individuals get skipped here, as global initialize might change them
         if(this is EnterpriseIndividual && this.sampleType != SampleType.SEEDED && this.sampleType != SampleType.PREDEFINED) {
-            seeGenes().forEach { it.doGlobalInitialize() }
+            seeTopGenes().forEach { it.doGlobalInitialize() }
         }
+
+        //make sure to disable those genes when initializing a new individual
+        val time = searchGlobalState.time.percentageUsedBudget()
+        seeFullTreeGenes().filterIsInstance<OptionalGene>()
+            .filter { time > it.searchPercentageActive }
+            .forEach { it.forbidSelection() }
+
 
         computeTransitiveBindingGenes()
     }
@@ -140,7 +151,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         return areAllGeneInitialized()
     }
 
-    private fun areAllGeneInitialized() = seeGenes().all { it.initialized }
+    private fun areAllGeneInitialized() = seeFullTreeGenes().all { it.initialized }
 
 
     /**
@@ -163,18 +174,29 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
                 }
             }
         }
+
+        if(!areAllValidLocalIds()){
+            throw IllegalStateException("There are invalid local ids")
+        }
     }
 
     override fun copyContent(): Individual {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE, NO_DB, ONLY_DB }
 
     /**
-     * Return a view of all the Genes in this chromosome/individual
+     * Return a view of all the top Genes in this chromosome/individual.
+     * This can be filtered out based on the actions in which these genes appear
      */
-    abstract fun seeGenes(filter: GeneFilter = GeneFilter.ALL): List<out Gene>
+    abstract fun seeTopGenes(filter: ActionFilter = ActionFilter.ALL): List<Gene>
+
+    /**
+     * Given the filter, return all genes, not just the top ones, but the full trees
+     */
+    fun seeFullTreeGenes(filter: ActionFilter = ActionFilter.ALL) : List<Gene>{
+        return seeTopGenes(filter).flatMap { it.flatView() }
+    }
 
     /**
      * An estimation of the "size" of this individual.
@@ -217,10 +239,10 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * of the test cases (regardless of the other initializing actions).
      * All these actions are under the child group [ActionFilter.MAIN_EXECUTABLE]
      *
-     * This method can be overridden to return the concrete action type and not the abstract [Action]
+     * This method can be overridden to return the concrete action type and not the abstract [MainAction]
      */
-    open fun seeMainExecutableActions() : List<Action>{
-        val list = seeActions(ActionFilter.MAIN_EXECUTABLE)
+    open fun seeMainExecutableActions() : List<MainAction>{
+        val list = seeActions(ActionFilter.MAIN_EXECUTABLE) as List<MainAction>
         org.evomaster.core.Lazy.assert { list.all { it.shouldCountForFitnessEvaluations() } }
         return list
     }
@@ -350,7 +372,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
 
 
     open fun cleanBrokenBindingReference(){
-        val all = seeGenes(GeneFilter.ALL).flatMap { it.flatView() }
+        val all = seeFullTreeGenes()
         all.filter { it.isBoundGene() }.forEach { b->
             b.cleanBrokenReference(all)
         }
@@ -360,9 +382,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * remove all binding all genes in this individual
      */
     fun removeAllBindingAmongGenes(){
-        seeGenes(GeneFilter.ALL).forEach { s->
-            s.flatView().forEach { it.cleanBinding() }
-        }
+        seeFullTreeGenes().forEach { it.cleanBinding() }
     }
 
 
@@ -373,8 +393,8 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
         // individuals should be same type
         if (individual::class.java.name != this::class.java.name) return null
 
-        val allgenes = individual.seeGenes().flatMap { it.flatView() }
-        val all = seeGenes().flatMap { it.flatView() }
+        val allgenes = individual.seeFullTreeGenes()
+        val all = seeFullTreeGenes()
 
         if (allgenes.size != all.size) return null
 
@@ -394,7 +414,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * verify whether all binding genes are in this individual
      */
     fun verifyBindingGenes() : Boolean{
-        val all = seeGenes(GeneFilter.ALL).flatMap{it.flatView()}
+        val all = seeTopGenes(ActionFilter.ALL).flatMap{it.flatView()}
         all.forEach { g->
             val inside = g.bindingGeneIsSubsetOf(all)
             if (!inside)
@@ -451,18 +471,38 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     /**
      * @return whether all action components are assigned with valid local ids
      */
-    fun areValidLocalIds() : Boolean{
+    fun areValidActionLocalIds() : Boolean{
         return areAllLocalIdsAssigned()
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
+    }
+
+    fun areAllValidLocalIds() : Boolean{
+        val all = flatViewAllStructuralElements()
+        val ids = all.map { it.getLocalId() }
+        if(ids.contains(NONE_LOCAL_ID)){
+            return false
+        }
+        val duplicates = CollectionUtils.duplicates(ids)
+        //check for duplicates
+        return duplicates.isEmpty()
+    }
+
+
+    private fun flatViewAllStructuralElements() : List<StructuralElement>{
+        return flatView().flatMap {
+            if(it !is Action) {
+                listOf(it)
+            } else {
+                it.seeTopGenes().flatMap {g ->  g.flatView() }
+            }
+        }
     }
 
     /**
      * @return if local ids are not initialized
      */
     private fun areAllLocalIdsNotInitialized() : Boolean{
-        return flatView().all { !it.hasLocalId ()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> !i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { !it.hasLocalId ()}
     }
 
     private fun flatView() : List<ActionComponent>{
@@ -471,9 +511,7 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
     }
 
     private fun areAllLocalIdsAssigned() : Boolean{
-        return  flatView().all { it.hasLocalId()
-                && (it !is Action || it.seeTopGenes().all { g-> g.flatView().all { i-> i.hasLocalId() }})
-        }
+        return flatViewAllStructuralElements().all { it.hasLocalId ()}
     }
 
     /**
@@ -572,14 +610,14 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return whether all top genes of [this] individual are locally valid
      */
     fun areAllTopGenesLocallyValid() : Boolean{
-        return seeGenes().all { it.isLocallyValid() }
+        return seeTopGenes().all { it.isLocallyValid() }
     }
 
     /**
      * compute transitive binding relationship for all genes in this individual
      */
     fun computeTransitiveBindingGenes(){
-        seeGenes().forEach(Gene::computeAllTransitiveBindingGenes)
+        seeTopGenes().forEach(Gene::computeAllTransitiveBindingGenes)
     }
 
     /**
@@ -589,8 +627,11 @@ abstract class Individual(override var trackOperator: TrackOperator? = null,
      * @return counter of new discovered info
      */
     fun numberOfDiscoveredInfoFromTestExecution() : Int {
-        return seeGenes().filterIsInstance<StringGene>()
-            .count { it.selectionUpdatedSinceLastMutation }
+        return seeFullTreeGenes()
+            .asSequence()
+            .filterIsInstance<TaintableGene>()
+            .filter { it is Gene && it.staticCheckIfImpactPhenotype() } //in case disabled since then
+            .count { it.hasDormantGenes() }
         //TODO other info like discovered query-parameters/headers
     }
 }

@@ -1,11 +1,12 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.operations.*
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -50,7 +51,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -77,7 +78,7 @@ class SqlInsertBuilderTest {
                     );
                 """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -116,7 +117,7 @@ class SqlInsertBuilderTest {
                     );
                 """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -165,7 +166,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE Foo add constraint barIdKey foreign key (barId) references Bar;
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -188,7 +189,7 @@ class SqlInsertBuilderTest {
             )
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -200,7 +201,7 @@ class SqlInsertBuilderTest {
         assertTrue(genes[0] is DateTimeGene)
 
         val dateTimeGene = genes[0] as DateTimeGene
-        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertEquals(FormatForDatesAndTimes.DATETIME, dateTimeGene.format)
         assertTrue(dateTimeGene.date.onlyValidDates)
         assertTrue(dateTimeGene.time.onlyValidHours)
     }
@@ -210,7 +211,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -230,7 +231,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -249,7 +250,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -268,7 +269,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -289,7 +290,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -303,7 +304,7 @@ class SqlInsertBuilderTest {
         assertTrue(genes[0] is DateTimeGene)
 
         val dateTimeGene = genes[0] as DateTimeGene
-        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertEquals(FormatForDatesAndTimes.DATETIME, dateTimeGene.format)
         assertTrue(dateTimeGene.date.onlyValidDates)
         assertTrue(dateTimeGene.time.onlyValidHours)
     }
@@ -313,7 +314,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -332,7 +333,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -352,7 +353,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -371,7 +372,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE not null);")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -390,7 +391,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -431,7 +432,7 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.extractExistingPKs()
@@ -447,7 +448,7 @@ class SqlInsertBuilderTest {
         SqlScriptRunner.execCommand(connection, "INSERT INTO Users (id) VALUES (1)")
         SqlScriptRunner.execCommand(connection, "INSERT INTO Users (id) VALUES (2)")
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.extractExistingPKs()
@@ -475,7 +476,7 @@ class SqlInsertBuilderTest {
             INSERT INTO Y (foo,bar) VALUES ('b',6);
         """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.extractExistingPKs()
@@ -498,7 +499,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -522,7 +523,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -547,7 +548,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -571,7 +572,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -595,7 +596,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -619,7 +620,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -643,7 +644,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -667,7 +668,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -691,7 +692,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -715,7 +716,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -739,7 +740,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -763,7 +764,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (x'0000', x'FFFF'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -791,7 +792,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE Foo add constraint lowerBound3 check (x >= -1000);
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -817,7 +818,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -850,7 +851,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -878,7 +879,7 @@ class SqlInsertBuilderTest {
             
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -909,7 +910,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS4 CHECK (status in ('X', 'B'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
@@ -937,7 +938,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS2 CHECK (status in ('D', 'E', 'F'));
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         try {
@@ -957,7 +958,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT check_f_id CHECK (f_id LIKE 'hi');
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
@@ -984,7 +985,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE FOO ADD CONSTRAINT check_f_id_2 CHECK (f_id LIKE 'low');
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         try {
@@ -1005,7 +1006,7 @@ class SqlInsertBuilderTest {
 
             """)
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
 
         val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
@@ -1054,7 +1055,7 @@ class SqlInsertBuilderTest {
             ALTER TABLE LEAFD add constraint dToC foreign key (nodeCId) references NODEC;
         """)
 
-        val dto = SchemaExtractor.extract(connection)
+        val dto = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(dto)
 
@@ -1278,7 +1279,7 @@ class SqlInsertBuilderTest {
     private fun getSqlActionsFromSchema(schemaQuery: String): List<SqlAction> {
         SqlScriptRunner.execCommand(connection, schemaQuery)
 
-        val schemaDto = SchemaExtractor.extract(connection)
+        val schemaDto = DbInfoExtractor.extract(connection)
         val sqlInsertBuilder = SqlInsertBuilder(schemaDto, null)
 
         return sqlInsertBuilder.createSqlInsertionAction(

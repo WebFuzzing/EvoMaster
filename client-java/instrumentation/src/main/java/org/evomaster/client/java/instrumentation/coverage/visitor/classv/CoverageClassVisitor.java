@@ -83,6 +83,7 @@ public class CoverageClassVisitor extends ClassVisitor {
         mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new MethodReplacementMethodVisitor(true, true, mv, bytecodeClassName, name, descriptor);
         mv = new NonIntegerComparisonsMethodVisitor(mv, bytecodeClassName, name, descriptor);
+        mv = new CheckCastMethodVisitor(mv, bytecodeClassName, name);
 
         return mv;
     }

@@ -6,6 +6,7 @@ import org.evomaster.core.problem.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
+import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils;
@@ -113,7 +114,7 @@ public class ArchiveGeneSelectionImpactXYZInfoTest extends SpringTestBase {
 
     private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
-        Gene gene = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
+        Gene gene = ind.getIndividual().seeTopGenes(ActionFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
                 .orElse(null);
 

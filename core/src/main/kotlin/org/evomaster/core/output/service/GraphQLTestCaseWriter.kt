@@ -2,6 +2,7 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
@@ -33,7 +34,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         }
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         addGraphQlCallLines(action as GraphQLAction, lines, result as GraphQlCallResult, baseUrlOfSut)
     }
 
@@ -133,4 +134,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         lines.append(")")
     }
 
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
+    }
 }

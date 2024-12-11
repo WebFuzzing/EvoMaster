@@ -22,7 +22,7 @@ class BooleanGene(
         private val log : Logger = LoggerFactory.getLogger(BooleanGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
     override fun copyContent(): Gene {
@@ -31,6 +31,15 @@ class BooleanGene(
 
     override fun setValueWithRawString(value: String) {
         this.value = value.toBoolean()
+    }
+
+    override fun setFromStringValue(value: String) : Boolean{
+        try{
+            this.value = value.toBoolean()
+            return true
+        }catch (e: Exception){
+            return false
+        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {

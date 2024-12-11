@@ -53,11 +53,12 @@ public class ClassToSchema {
         localDate           string  local-date      A date without a time-zone in the ISO-8601 calendar system
         localDateTime       string  local-date-time A date-time without a time-zone in the ISO-8601 calendar system
         localTime           string  local-time      A time without a time-zone in the ISO-8601 calendar system
+        char                string  char            A 16-bit character
          */
 
     /**
      * Key -> DTO class
-     * Value -> its schema representation, as OpenAPI JSON object
+     * Value -> its UNNAMED schema representation, as OpenAPI JSON object
      * WARNING: this is a mutable static state, but, being just a cache, should not hopefully
      * have any nasty negative side-effects.
      */
@@ -101,14 +102,13 @@ public class ClassToSchema {
             String name = valueType.getName();
             if (!UnitsInfoRecorder.isDtoSchemaRegister(name)) {
                 List<Class<?>> embedded = new ArrayList<>();
-                String schema = ClassToSchema.getOrDeriveSchema(valueType, embedded, objectFieldsRequired, converters);
+                String schema = ClassToSchema.getOrDeriveNamedSchema(valueType, embedded, objectFieldsRequired, converters);
                 UnitsInfoRecorder.registerNewParsedDto(name, schema);
-                ExecutionTracer.addParsedDtoName(name);
                 if (!embedded.isEmpty()){
                     embedded.forEach(e -> registerSchemaIfNeeded(e, objectFieldsRequired, converters));
                 }
-
             }
+            ExecutionTracer.addParsedDtoName(name);
         } catch (Exception e) {
             SimpleLogger.warn("Fail to get schema for Class:" + valueType.getName(), e);
             /*
@@ -164,7 +164,7 @@ public class ClassToSchema {
     }
 
     public static String getOrDeriveNonNestedSchema(Class<?> klass, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
-        return getOrDeriveSchema(klass, Collections.emptyList(), objectFieldsRequired, converters);
+        return getOrDeriveNamedSchema(klass, Collections.emptyList(), objectFieldsRequired, converters);
     }
 
     /**
@@ -180,19 +180,19 @@ public class ClassToSchema {
      * @return a schema representation of the class in the form "name: {...}", ie
      * like a field entry in an OpenAPI object definition
      */
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested) {
-        return getOrDeriveSchema(klass, nested, false, Collections.emptyList());
+    public static String getOrDeriveNamedSchema(Class<?> klass, List<Class<?>> nested) {
+        return getOrDeriveNamedSchema(klass, nested, false, Collections.emptyList());
     }
 
-    public static String getOrDeriveSchema(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
+    public static String getOrDeriveNamedSchema(Class<?> klass, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
         if (!cacheSchema.containsKey(klass)) {
-            cacheSchema.put(klass, getOrDeriveSchema(klass.getName(), klass, false, nested, objectFieldsRequired, converters));
+            cacheSchema.put(klass, getOrDeriveSchema(klass, false, nested, objectFieldsRequired, converters));
         }
-
-        return cacheSchema.get(klass);
+        String name = klass.getName();
+        return named(name, cacheSchema.get(klass));
     }
 
-    private static String getOrDeriveSchema(String name, Type type, Boolean useRefObject, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
+    private static String getOrDeriveSchema(Type type, Boolean useRefObject, List<Class<?>> nested, boolean objectFieldsRequired, List<CustomTypeToOasConverter> converters) {
 
         // TODO might handle collection and map in the cache later
         if (cacheSchema.containsKey(type) && !useRefObject && !isCollectionOrMap(type)) {
@@ -202,15 +202,13 @@ public class ClassToSchema {
 
         String schema = getSchema(type, useRefObject, nested, false, objectFieldsRequired, converters);
 
-        String namedSchema = named(name, schema);
-
         /*
             we put the complete schema into cacheSchema
          */
         if (!schema.startsWith(fieldRefPrefix) && !isCollectionOrMap(type))
-            cacheSchema.put(type, namedSchema);
+            cacheSchema.put(type, schema);
 
-        return namedSchema;
+        return schema;
     }
 
     private static boolean isCollectionOrMap(Type type) {
@@ -281,6 +279,9 @@ public class ClassToSchema {
             if (Byte.class.isAssignableFrom(klass) || Byte.TYPE == klass) {
                 return fieldSchema("integer", "int8");
             }
+            if (Character.class.isAssignableFrom(klass) || Character.TYPE == klass) {
+                return fieldSchema("string", "char");
+            }
             if (Short.class.isAssignableFrom(klass) || Short.TYPE == klass) {
                 return fieldSchema("integer", "int16");
             }
@@ -328,7 +329,6 @@ public class ClassToSchema {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
-        //TOOD Map
         if ((klass != null && Map.class.isAssignableFrom(klass)) || pType != null && Map.class.isAssignableFrom((Class) pType.getRawType())) {
             if (pType != null && pType.getActualTypeArguments().length > 0) {
                 Type keyType = pType.getActualTypeArguments()[0];
@@ -340,7 +340,7 @@ public class ClassToSchema {
             return fieldStringKeyMapSchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
-        if (useRefObject) {
+        if (klass!= null && useRefObject) {
             // register this class
             if ((allNested || !UnitsInfoRecorder.isDtoSchemaRegister(klass.getName())) && !nested.contains(klass)) {
                 nested.add(klass);
@@ -360,11 +360,12 @@ public class ClassToSchema {
                     continue;
                 }
                 String fieldName = getName(f);
-                String fieldSchema = null;
+                String fieldSchema;
                 if (allNested) {
                     fieldSchema = named(fieldName, getSchema(f.getGenericType(), true, nested, true, objectFieldsRequired, converters));
-                } else
-                    fieldSchema = getOrDeriveSchema(fieldName, f.getGenericType(), true, nested, objectFieldsRequired, converters);
+                } else {
+                    fieldSchema = named(fieldName, getOrDeriveSchema(f.getGenericType(), true, nested, objectFieldsRequired, converters));
+                }
                 properties.add(fieldSchema);
                 propertiesNames.add("\"" + fieldName + "\"");
             }
@@ -459,7 +460,9 @@ public class ClassToSchema {
         String value;
 
         if (klass != null) {
-            value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //value = getSchema(String.class, true, embedded, allEmbedded, objectFieldsRequired, converters);
+            //if no info on generic type, allow adding any kind of data
+            value = "true";
         } else {
             Type generic = pType.getActualTypeArguments()[1];
             value = getSchema(generic, true, embedded, allEmbedded, objectFieldsRequired, converters);

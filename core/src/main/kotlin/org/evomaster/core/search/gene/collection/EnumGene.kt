@@ -88,7 +88,7 @@ class EnumGene<T : Comparable<T>>(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return (index >= 0 && index < values.size) || values.isEmpty()
     }
 
@@ -216,6 +216,17 @@ class EnumGene<T : Comparable<T>>(
                 return false
             }
         }
+        return true
+    }
+
+    override fun setFromStringValue(value: String): Boolean {
+
+        val target = values.indexOfFirst { it == value }
+        if(target < 0){
+            return false
+        }
+
+        index = target
         return true
     }
 }

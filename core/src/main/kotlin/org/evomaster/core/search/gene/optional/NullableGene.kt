@@ -26,8 +26,8 @@ class NullableGene(name: String,
         private const val ABSENT = 0.01
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {
@@ -129,5 +129,10 @@ class NullableGene(name: String,
     override fun bindValueBasedOn(gene: Gene): Boolean {
         if (gene is NullableGene) isActive = gene.isActive
         return ParamUtil.getValueGene(gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    }
+
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
     }
 }

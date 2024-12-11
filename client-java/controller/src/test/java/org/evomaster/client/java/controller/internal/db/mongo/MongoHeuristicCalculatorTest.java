@@ -6,6 +6,7 @@ import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -104,7 +105,25 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(4.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(1.0) + TruthnessUtils.normalizeValue(3.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
+    }
+
+    @Test
+    public void testNorReturnsTrue() {
+        Document doc = new Document().append("age", 25);
+        Bson bsonTrue = Filters.nor(Filters.gt("age", 30), Filters.lt("age", 18));
+        Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
+        assertEquals(0.0, distanceMatch);
+    }
+
+    @Test
+    public void testNorReturnsFalse() {
+        Document doc = new Document().append("age", 35);
+        Bson bsonFalse = Filters.nor(Filters.gt("age", 30), Filters.lt("age", 18));
+        Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(5.0) + TruthnessUtils.normalizeValue(0.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test
@@ -115,7 +134,8 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(1.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(1.0) + TruthnessUtils.normalizeValue(0.0);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test
@@ -148,7 +168,8 @@ class MongoHeuristicCalculatorTest {
         Double distanceMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonTrue), doc);
         Double distanceNotMatch = new MongoHeuristicsCalculator().computeExpression(convertToDocument(bsonFalse), doc);
         assertEquals(0.0, distanceMatch);
-        assertEquals(3.0, distanceNotMatch);
+        Double expectedDistanceNotMatch = TruthnessUtils.normalizeValue(0) + TruthnessUtils.normalizeValue(1) + TruthnessUtils.normalizeValue(2);
+        assertEquals(expectedDistanceNotMatch, distanceNotMatch);
     }
 
     @Test

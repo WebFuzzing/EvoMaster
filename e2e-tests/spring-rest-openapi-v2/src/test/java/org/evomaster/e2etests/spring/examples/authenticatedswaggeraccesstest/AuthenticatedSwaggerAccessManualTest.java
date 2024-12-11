@@ -59,7 +59,9 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
             HttpWsAuthenticationInfo currentInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
 
-            OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", currentInfo);
+            OpenAPI swagger = OpenApiAccess.INSTANCE
+                    .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", currentInfo)
+                    .getSchemaParsed();
 
             if (swagger != null) {
                 successfulAuthenticationObject = currentDto;

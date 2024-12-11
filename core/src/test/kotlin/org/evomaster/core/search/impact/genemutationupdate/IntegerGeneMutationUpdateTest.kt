@@ -47,8 +47,8 @@ class IntegerGeneMutationUpdateTest {
                 object : TypeLiteral<MioAlgorithm<PrimitiveTypeMatchIndividual>>() {}))
 
         config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = budget
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = budget
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.probOfRandomSampling = 0.0
 
         sampler = injector.getInstance(PrimitiveTypeMatchSampler::class.java)
@@ -84,8 +84,8 @@ class IntegerGeneMutationUpdateTest {
         val copy = mutated.copy(tracker.getCopyFilterForEvalInd(mutated))
         val ind = copy.individual.copy() as PrimitiveTypeMatchIndividual
 
-        assertEquals(1, ind.seeGenes().size)
-        val geneToMutate = ind.seeGenes().first()
+        assertEquals(1, ind.seeTopGenes().size)
+        val geneToMutate = ind.seeTopGenes().first()
 
         val mutationInfo = MutatedGeneSpecification()
 

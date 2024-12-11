@@ -30,12 +30,10 @@ import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
 class TestCaseWriterTest {
-    //TODO: BMR- changed the tests to not use expectationsActive. This may require updating.
 
     private fun getConfig(format: OutputFormat): EMConfig {
         val config = EMConfig()
         config.outputFormat = format
-        config.expectationsActive = false
         config.testTimeout = -1
         return config
     }
@@ -941,24 +939,22 @@ class TestCaseWriterTest {
     }
 
     @Test
-    fun testVarGeneration(){
-        //TODO: this needs a rename
+    fun testRootTryCatchTimedout(){
         val format = OutputFormat.JAVA_JUNIT_4
 
         val baseUrlOfSut = "baseUrlOfSut"
-        val sampleType = SampleType.RANDOM
         val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf())
         val restActions = listOf(action).toMutableList()
-        val individual = RestIndividual(restActions, sampleType)
+        val individual = RestIndividual(restActions, SampleType.RANDOM)
         TestUtils.doInitializeIndividualForTesting(individual)
 
         val fitnessVal = FitnessValue(0.0)
         val result = RestCallResult(action.getLocalId())
         result.setTimedout(timedout = true)
         val results = listOf(result)
-        val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+        val ei = EvaluatedIndividual(fitnessVal, individual, results)
         val config = getConfig(format)
-        config.expectationsActive = true
+        //config.expectationsActive = true
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1046,7 +1042,7 @@ class TestCaseWriterTest {
         )
 
         val config = getConfig(format)
-        config.expectationsActive = false
+        //config.expectationsActive = false
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.ConArchive
         config.probOfApplySQLActionToCreateResources=0.1
 

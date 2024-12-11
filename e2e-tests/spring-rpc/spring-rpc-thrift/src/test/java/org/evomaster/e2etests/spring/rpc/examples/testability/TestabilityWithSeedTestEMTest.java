@@ -48,6 +48,9 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
                     args.add("--coveredTargetFile");
                     args.add(targetFile);
 
+//                    args.add("--minimize");
+//                    args.add("false");
+
                     Solution<RPCIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
@@ -75,6 +78,11 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
             assertTrue(seedingTime > 0);
             assertTrue(searchTime > 0);
             assertTrue(total > 0);
+            /*
+                 comment out this assertion, as targets relating to authentication are counted in booting and search time
+                 see more info in FitnessValue.kt.
+                 however, here there is auth, so should not be a problem for this E2E
+             */
             assertEquals(total, bootTime + seedingTime + searchTime);
         }
 
@@ -86,9 +94,9 @@ public class TestabilityWithSeedTestEMTest extends SpringRPCTestBase {
 
         List<String> targets = null;
         List<String> expectedTargets = Arrays.asList(
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_0_trueBranch",
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_1_trueBranch",
-                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_2_trueBranch",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_0_trueBranch_160",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_1_trueBranch_160",
+                "Branch_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_at_line_00019_position_2_trueBranch_153",
                 "Line_at_com.foo.rpc.examples.spring.testability.TestabilityServiceImp_00020"
         );
         try {

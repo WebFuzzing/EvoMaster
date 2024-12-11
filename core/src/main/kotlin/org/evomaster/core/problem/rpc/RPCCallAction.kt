@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.utils.StringUtils
 
 /**
  * a RPC call
@@ -48,13 +49,27 @@ open class RPCCallAction(
         return parameters.flatMap { it.seeGenes() }
     }
 
-    override fun shouldCountForFitnessEvaluations(): Boolean {
-        return true
-    }
 
     override fun copyContent(): RPCCallAction {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RPCCallAction(interfaceId, id, p, responseTemplate?.copy() as RPCParam?, response?.copy() as RPCParam?, auth)
+    }
+
+    /**
+     * RPC is only available for Java or Kotlin.
+     * Therefore, it will assume JVM like package naming structure to find the class name.
+     *
+     * @return the simple class name of a Java or Kotlin class representing the service
+     */
+    fun getSimpleClassName(): String {
+        return StringUtils.extractSimpleClass(id.split(":")[0])
+    }
+
+    /**
+     * @return the function name being executed
+     */
+    fun getExecutedFunctionName(): String {
+        return id.split(":")[1]
     }
 
     /**

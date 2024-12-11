@@ -14,8 +14,8 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
   
-* M. Zhang, A. Arcuri, Y. Li, K Xue, Z Wang, J. Huo, W Huang.
-  *Fuzzing Microservices In Industry: Experience of Applying EvoMaster at Meituan*.
+* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
 
@@ -23,7 +23,42 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+### 2025
+* A. Arcuri, A. Poth, O. Rrjolli.
+  *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
+  *(To appear)*
+
+* S. Seran, O. Duman, A. Arcuri.
+  *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  *(To appear)*
+
 ### 2024
+
+* A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
+ *Tool Report: EvoMaster -- Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2024_ause_em.pdf)]
+
+
+* A. Poth, O. Rrjolli, A. Arcuri.
+  *Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2024_ause_vw.pdf)]
+
+
+* M. Zhang, A. Arcuri, P. Teng, K. Xue, W. Wang.
+  *Seeding and Mocking in White-Box Fuzzing Enterprise RPC APIs: An Industrial Case Study*.
+  IEEE/ACM International Conference on Automated Software Engineering (ASE), Industry Track.
+  [[PDF](publications/2024_ase.pdf)]
+
+
+* I. Kertusha.
+  *Search-Based White-Box Fuzzing of Web Frontend Applications*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
+  [[PDF](publications/2024_issre_ds.pdf)]
+
 
 * S. Seran.
   *Search-based Security Testing of Enterprise Microservices*.
@@ -50,7 +85,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Golmohammadi.
   *Enhancing White-Box Search-Based Testing of RESTful APIs*.
-  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
   [[PDF](publications/2023-issre-ds.pdf)]
 
 * A. Golmohammadi, M. Zhang, A. Arcuri.

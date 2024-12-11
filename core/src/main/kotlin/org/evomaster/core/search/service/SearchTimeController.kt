@@ -108,6 +108,12 @@ class SearchTimeController {
     }
 
     /**
+     * @return if recoding is stopped,
+     * ie, search has been terminated, and start to handle post actions after search
+     */
+    fun isRecordingStopped() = (!recording)
+
+    /**
      * Make sure we do not make too many requests in a short amount of time, to avoid
      * possible DoS attacks.
      */
@@ -275,9 +281,16 @@ class SearchTimeController {
      */
     fun percentageUsedBudget() : Double{
 
+        if(!searchStarted){
+            return 0.0
+        }
+
         return when(configuration.stoppingCriterion){
-            EMConfig.StoppingCriterion.FITNESS_EVALUATIONS ->
-                evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
+            EMConfig.StoppingCriterion.ACTION_EVALUATIONS ->
+                evaluatedActions.toDouble() / configuration.maxEvaluations.toDouble()
+
+            EMConfig.StoppingCriterion.INDIVIDUAL_EVALUATIONS ->
+                evaluatedIndividuals.toDouble() / configuration.maxEvaluations.toDouble()
 
             EMConfig.StoppingCriterion.TIME ->
                 (System.currentTimeMillis() - startTime).toDouble() /

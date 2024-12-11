@@ -2,7 +2,8 @@ package org.evomaster.core.problem.rest
 
 
 import org.evomaster.core.problem.enterprise.auth.NoAuth
-import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 
 
@@ -16,11 +17,13 @@ object RestIndividualSelectorUtils {
      * check a given action for the given conditions
      */
     private fun checkIfActionSatisfiesConditions(act: EvaluatedAction,
-                                         verb: HttpVerb? = null,
-                                         path: RestPath? = null,
-                                         status: Int? = null,
-                                         statusGroup: StatusGroup? = null,
-                                         mustBeAuthenticated : Boolean = false
+                                                 verb: HttpVerb? = null,
+                                                 path: RestPath? = null,
+                                                 status: Int? = null,
+                                                 statusGroup: StatusGroup? = null,
+                                                 statusCodes: Collection<Int>? = null,
+                                                 mustBeAuthenticated : Boolean? = null,
+                                                 authenticatedWith: String? = null
                                          ) : Boolean {
 
         // get actions and results first
@@ -48,8 +51,16 @@ object RestIndividualSelectorUtils {
             return false
         }
 
+        if(!statusCodes.isNullOrEmpty() && !statusCodes.contains(resultOfAction.getStatusCode())) {
+            return false
+        }
+
         // authenticated or not
-        if(mustBeAuthenticated && action.auth is NoAuth){
+        if(mustBeAuthenticated == true && action.auth is NoAuth){
+            return false
+        }
+
+        if(authenticatedWith != null && action.auth.name != authenticatedWith){
             return false
         }
 
@@ -66,7 +77,7 @@ object RestIndividualSelectorUtils {
     ): RestCallAction? {
 
         return findEvaluatedAction(individualsInSolution,verb,path,status,statusGroup,authenticated)
-            ?.action as RestCallAction
+            ?.action as RestCallAction?
     }
 
 
@@ -85,7 +96,7 @@ object RestIndividualSelectorUtils {
 
         individualsInSolution.forEach {ind ->
             ind.evaluatedMainActions().forEach { a ->
-                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)){
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, null, authenticated)){
                     return a
                 }
             }
@@ -104,19 +115,48 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
     ): List<EvaluatedIndividual<RestIndividual>> {
 
         if(status != null && statusGroup!= null){
             throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
+        if(authenticated == false && authenticatedWith != null){
+            throw IllegalArgumentException("Cannot specify no authentication but then ask for a specific authenticated user")
+        }
 
         return individualsInSolution.filter {ind ->
             ind.evaluatedMainActions().any { a ->
-                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, authenticated)
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
             }
         }
     }
+
+    /**
+     * Find all individuals with an action having given properties.
+     * Return a slice, where all actions after the target are removed.
+     */
+    fun findAndSlice(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
+    ) : List<RestIndividual>{
+
+        val individuals = findIndividuals(individualsInSolution, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+
+        return individuals.map { ind ->
+            val index = findIndexOfAction(ind, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, index)
+        }
+    }
+
 
     /**
      * get all action definitions from the swagger based on the given verb
@@ -145,20 +185,13 @@ object RestIndividualSelectorUtils {
                                                        mustBeAuthenticated: Boolean
     ) : Pair<EvaluatedIndividual<RestIndividual>,Endpoint>?{
 
-        //TODO needs finishing implementation
-
-        // there is not. need to create it based on successful create resources with authenticated user
-        lateinit var verbUsedForCreation : HttpVerb
-        // search for create resource for endpoint of DELETE using PUT
-        lateinit var existingEndpointForCreation : EvaluatedIndividual<RestIndividual>
-
         val existingPuts  = findIndividuals(
             individuals,
             HttpVerb.PUT,
             resourcePath,
-            201,
+            201, //if PUT, must be 201
             statusGroup = null,
-            mustBeAuthenticated
+            authenticated = mustBeAuthenticated
         )
 
         if(existingPuts.isNotEmpty()){
@@ -167,89 +200,69 @@ object RestIndividualSelectorUtils {
                 Endpoint(HttpVerb.PUT, resourcePath)
             )
         }
-        // if not, search for a
-        else {
-            // TODO since we cannot search for a POST with the same path, we can just return null
+
+        if(resourcePath.isRoot()){
             return null
         }
 
-        /*
+        val parent = resourcePath.parentPath()
 
-        lateinit var existingPostReqForEndpointOfDelete : List<EvaluatedIndividual<RestIndividual>>
+        val existingPosts = findIndividuals(
+            individuals,
+            HttpVerb.POST, // it is not uncommon to give a 200 even if creating new resource
+            parent,
+            statusGroup = StatusGroup.G_2xx,
+            authenticated = mustBeAuthenticated
+        )
 
-        if (existingPutForEndpointOfDelete.isNotEmpty()) {
-            existingEndpointForCreation = existingPutForEndpointOfDelete[0]
-            verbUsedForCreation = HttpVerb.PUT
-        }
-        else {
-            // if there is no such, search for an existing POST
-            existingPostReqForEndpointOfDelete = RestIndividualSelectorUtils.getIndividualsWithActionAndStatusGroup(
-                individualsInSolution,
-                HttpVerb.POST,
-                delete.path,  // FIXME might be a parent, eg POST:/users for DELETE:/users/{id} . BUT CHECK FOR PATH STRUCTURE
-                "2xx"
+        if(existingPosts.isNotEmpty()){
+            return Pair(
+                existingPosts.sortedBy { it.individual.size() }[0],
+                Endpoint(HttpVerb.POST, resourcePath)
             )
-
-            if (existingPostReqForEndpointOfDelete.isNotEmpty()) {
-                existingEndpointForCreation = existingPostReqForEndpointOfDelete[0]
-                verbUsedForCreation = HttpVerb.DELETE
-            }
-
         }
 
-
+        //found nothing
         return null
-
-         */
     }
 
 
+    /**
+     * @return a negative value if no action with the given properties is found in the individual.
+     */
+    @Deprecated(message = "Use findIndexOfAction")
     fun getIndexOfAction(individual: EvaluatedIndividual<RestIndividual>,
                          verb: HttpVerb,
                          path: RestPath,
                          statusCode: Int
     ) : Int {
-
-        val actions = individual.evaluatedMainActions()
-
-        for(index in actions.indices){
-            val a = actions[index].action as RestCallAction
-            val r = actions[index].result as RestCallResult
-
-            if(a.verb == verb && a.path.isEquivalent(path) && r.getStatusCode() == statusCode){
-                return index
-            }
-        }
-
-        return -1
+        return findIndexOfAction(individual, verb, path, statusCode)
     }
 
     /**
-     * Create a copy of individual, where all main actions after index are removed
+     * @return a negative value if no action with the given properties is found in the individual.
      */
-    @Deprecated("Rather use implementation in RestIndividualBuilder")
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+    fun findIndexOfAction(
+        individual: EvaluatedIndividual<RestIndividual>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        statusCodes: Collection<Int>? = null,
+        authenticated: Boolean? = null,
+        authenticatedWith: String? = null
+    ): Int {
 
-        // we need to check that the index is within the range
-        if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
-            throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
 
-        val ind = restIndividual.copy() as RestIndividual
-
-        val n = ind.seeMainExecutableActions().size
-
-        /*
-            We start from last, going backward.
-            So, actionIndex stays the same
-         */
-        for(i in n-1 downTo actionIndex+1){
-            ind.removeMainExecutableAction(i)
+        individual.evaluatedMainActions().forEachIndexed { index, a ->
+                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)){
+                    return index
+                }
         }
-
-        ind.fixGeneBindingsIfNeeded()
-        ind.removeLocationId()
-
-        return ind
+        return -1
     }
+
 }

@@ -21,16 +21,16 @@ public class ColumnTableAnalyzer {
 
     public static Set<String> getDeletedTables(String delete){
 
-        if(! ParserUtils.isDelete(delete)){
+        if(! SqlParserUtils.isDelete(delete)){
             throw new IllegalArgumentException("Input string is not a valid SQL DELETE: " + delete);
         }
 
         Set<String> set = new HashSet<>();
-        Delete stmt = (Delete) ParserUtils.asStatement(delete);
+        Delete stmt = (Delete) SqlParserUtils.parseSqlCommand(delete);
 
         Table table = stmt.getTable();
         if(table != null){
-            set.add(table.getName());
+            set.add(table.getFullyQualifiedName());
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
             throw new IllegalArgumentException("Cannot handle delete: " + delete);
@@ -42,13 +42,13 @@ public class ColumnTableAnalyzer {
 
     public static Map<String, Set<String>> getInsertedDataFields(String insert){
 
-        if(! ParserUtils.isInsert(insert)){
+        if(! SqlParserUtils.isInsert(insert)){
             throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + insert);
         }
 
         Map<String, Set<String>> map = new HashMap<>();
 
-        Insert stmt = (Insert) ParserUtils.asStatement(insert);
+        Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(insert);
 
         Table table = stmt.getTable();
         if(table != null){
@@ -64,13 +64,13 @@ public class ColumnTableAnalyzer {
 
     public static Map<String, Set<String>> getUpdatedDataFields(String update){
 
-        if(! ParserUtils.isUpdate(update)){
+        if(! SqlParserUtils.isUpdate(update)){
             throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + update);
         }
 
         Map<String, Set<String>> map = new HashMap<>();
 
-        Update stmt = (Update) ParserUtils.asStatement(update);
+        Update stmt = (Update) SqlParserUtils.parseSqlCommand(update);
 
         Table table = stmt.getTable();
         if(table!=null){
@@ -96,7 +96,7 @@ public class ColumnTableAnalyzer {
      */
     public static Map<String, Set<String>> getSelectReadDataFields(String select){
 
-        if(! ParserUtils.isSelect(select)){
+        if(! SqlParserUtils.isSelect(select)){
             throw new IllegalArgumentException("Input string is not a valid SQL SELECT: " + select);
         }
 
@@ -107,7 +107,7 @@ public class ColumnTableAnalyzer {
             But, we should look at actual read columns.
          */
 
-        Select stmt = (Select) ParserUtils.asStatement(select);
+        Select stmt = (Select) SqlParserUtils.parseSqlCommand(select);
         PlainSelect plainSelect = stmt.getPlainSelect();
 
         FromItem fromItem = plainSelect.getFromItem();
@@ -130,7 +130,7 @@ public class ColumnTableAnalyzer {
     }
 
     private static void handleTable(Map<String, Set<String>> map, Table table){
-        Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
+        Set<String> columns = map.computeIfAbsent(table.getFullyQualifiedName(), k -> new HashSet<>());
         //TODO: should check actual fields... would likely need to pass SelectBody as input as well
         if(! columns.contains("*")) {
             columns.add("*");

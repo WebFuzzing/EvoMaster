@@ -2,11 +2,8 @@ package org.evomaster.client.java.sql.internal;
 
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.sql.internal.ParserUtils;
-import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,13 +42,43 @@ public class SqlHandlerTest {
     @Test
     public void testCreateCachedLocalTemporaryTable() {
         String createSql = "create cached local temporary table if not exists HT_feature_constraint (id bigint not null) on commit drop transactional";
-        boolean canParseSqlStatement = ParserUtils.canParseSqlStatement(createSql);
+        boolean canParseSqlStatement = SqlParserUtils.canParseSqlStatement(createSql);
         assertFalse(canParseSqlStatement);
     }
 
+    @Test
+    public void testNoWhere() throws Exception {
+
+        String select = "SELECT * FROM Table v";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
 
 
+    @Test
+    public void testNoFromNoWhere() throws Exception {
+
+        String select = "SELECT 1";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
 
 
+    @Test
+    public void testWhereButNoColumns() throws Exception {
+
+        String select = "SELECT * FROM table WHERE 1 = 1";
+
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        Map<String, Set<String>> columns = new SqlHandler(null).extractColumnsInvolvedInWhere(stmt);
+        assertTrue(columns.isEmpty());
+    }
 
 }

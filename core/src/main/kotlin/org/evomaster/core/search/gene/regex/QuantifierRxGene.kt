@@ -69,14 +69,15 @@ class QuantifierRxGene(
              */
             for(i in 0 until min){
                 val a = template.copy() as Gene
+                a.resetLocalIdRecursively()
                 addChild(a)
             }
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         val n = getViewOfChildren().size
-        return n in min..limitedMax &&  getViewOfChildren().all { it.isLocallyValid() }
+        return n in min..limitedMax
     }
 
     override fun copyContent(): Gene {
@@ -177,6 +178,7 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean){
         val base = template.copy()
+        base.resetLocalIdRecursively()
         base.doInitialize(randomness)
         addChild(base)
     }
@@ -206,6 +208,7 @@ class QuantifierRxGene(
                     this.killAllChildren()
                     other.atoms.forEach{
                         val a = it.copy()
+                        a.resetLocalIdRecursively()
                         this.addChild(a)
                     }
                     true
@@ -256,6 +259,7 @@ class QuantifierRxGene(
                 this.killAllChildren()
                 gene.atoms.forEach{
                     val a = it.copy()
+                    a.resetLocalIdRecursively()
                     this.addChild(a)
                 }
             }

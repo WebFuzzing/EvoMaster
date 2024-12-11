@@ -5,7 +5,7 @@ import net.sf.jsqlparser.statement.insert.Insert;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.sql.internal.ParserUtils;
+import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.*;
@@ -419,8 +419,8 @@ public class SqlScriptRunner {
     public static  Map<String, List<String>> extractSqlTableMap(List<String> commands){
         Map<String, List<String>> tableSqlMap = new HashMap<>();
         for (String command: commands){
-            if (ParserUtils.isInsert(command)){
-                Insert stmt = (Insert) ParserUtils.asStatement(command);
+            if (SqlParserUtils.isInsert(command)){
+                Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
                 Table table = stmt.getTable();
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
                 String end = "";
@@ -456,9 +456,9 @@ public class SqlScriptRunner {
     }
 
     private static boolean shouldExecuteInsert(String command, List<String> tablesToInsert){
-        if (!ParserUtils.isInsert(command)) return true;
+        if (!SqlParserUtils.isInsert(command)) return true;
         if (tablesToInsert == null || tablesToInsert.isEmpty()) return false;
-        Insert stmt = (Insert) ParserUtils.asStatement(command);
+        Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
         Table table = stmt.getTable();
         return table!= null && tablesToInsert.stream().anyMatch(t-> t.equalsIgnoreCase(table.getName()));
     }

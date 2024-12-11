@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.webfrontend.*
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -63,7 +64,7 @@ class WebTestCaseWriter : TestCaseWriter() {
         return comment
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
 
         //TODO add possible wait on CSS selector. if not, stop test???
 
@@ -85,5 +86,9 @@ class WebTestCaseWriter : TestCaseWriter() {
 
     override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         return false
+    }
+
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
     }
 }

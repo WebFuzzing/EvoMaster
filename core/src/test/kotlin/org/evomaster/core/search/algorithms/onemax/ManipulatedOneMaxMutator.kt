@@ -2,6 +2,7 @@ package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.Mutator
@@ -19,7 +20,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
     }
 
     override fun genesToMutation(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>): List<Gene> {
-        return individual.seeGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }
+        return individual.seeTopGenes(ActionFilter.ALL).filter { it.isMutable() }
     }
 
     override fun selectGenesToMutate(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): List<Gene> {
@@ -38,7 +39,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
         val previousValue = ind.getValue(index)
         ind.setValue(index, if(improve) min(1.0, ind.getValue(index) + degree) else min(0.0, ind.getValue(index) - degree))
 
-        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], localId = null, position = 0)
+        mutatedGeneSpecification?.addMutatedGene(isDb = false, isInit = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeTopGenes()[index], localId = null, position = 0)
 
         return ind
     }

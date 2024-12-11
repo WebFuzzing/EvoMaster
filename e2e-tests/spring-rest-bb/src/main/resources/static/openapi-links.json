@@ -1,0 +1,119 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/links/create": {
+      "post": {
+        "tags": [
+          "bb-links-application"
+        ],
+        "operationId": "postCreate",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "$ref": "#/components/schemas/BBLinksDto"
+                }
+              }
+            },
+            "links": {
+              "LinkToGetUser": {
+                "operationId": "getUser",
+                "parameters": {
+                  "path.name": "$response.body#/data/id",
+                  "query.name": "BAR",
+                  "code": "$response.body#/data/code"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/links/users/{name}/{code}": {
+      "get": {
+        "tags": [
+          "bb-links-application"
+        ],
+        "operationId": "getUser",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BBLinksDataDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "BBLinksDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/BBLinksDataDto"
+          },
+          "errrors": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

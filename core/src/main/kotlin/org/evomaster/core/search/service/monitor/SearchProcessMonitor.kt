@@ -90,9 +90,11 @@ class SearchProcessMonitor: SearchListener {
         )
 
         private val strategy: ExclusionStrategy = object : ExclusionStrategy {
-            //TODO systematic way to configure the skipped field
+            /*
+                now can employ ProcessMonitorExcludeField to skip field
+             */
             override fun shouldSkipField(field: FieldAttributes): Boolean {
-                return field.name == "parent" || field.name == "bindingGenes"
+                return field.getAnnotation(ProcessMonitorExcludeField::class.java) != null
             }
 
             //skip abstract StructuralElement element
@@ -128,11 +130,14 @@ class SearchProcessMonitor: SearchListener {
     }
 
     fun <T: Individual> record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<T>){
-        if(config.enableProcessMonitor){
+        if(config.enableProcessMonitor
+            // currently we only record info during fuzzing
+            && !time.isRecordingStopped()){
             if(config.processInterval == 0.0 || time.percentageUsedBudget() >= tb * config.processInterval/100.0){
                 when(config.processFormat){
                     EMConfig.ProcessDataFormat.JSON_ALL->{
-                        if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
+                        if(evalInd != eval && evalInd.index != (eval as EvaluatedIndividual<T>).index)
+                            throw IllegalStateException("Mismatched evaluated individual under monitor")
                         /*
                             step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
                             but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
@@ -142,10 +147,12 @@ class SearchProcessMonitor: SearchListener {
                         step!!.improvedArchive = improveArchive
                         saveStep(step!!.indexOfEvaluation, step!!)
                         if(config.showProgress) log.info("number of targets: ${step!!.populations.size}")
-
                     }
                     EMConfig.ProcessDataFormat.TEST_IND , EMConfig.ProcessDataFormat.TARGET_TEST_IND->{
                         saveStepAsTest(index = time.evaluatedIndividuals,evalInd = evalInd, doesIncludeTarget = config.processFormat == EMConfig.ProcessDataFormat.TARGET_TEST_IND)
+                    }
+                    EMConfig.ProcessDataFormat.TARGET_HEURISTIC->{
+                        saveStepAsTargetHeuristic(index = time.evaluatedIndividuals, evalInd = evalInd)
                     }
                 }
                 if(config.processInterval > 0.0) tb++
@@ -156,7 +163,7 @@ class SearchProcessMonitor: SearchListener {
 
     private fun setOverall(){
         val stp = config.stoppingCriterion.toString()+"_"+
-                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxActionEvaluations)
+                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
@@ -193,6 +200,8 @@ class SearchProcessMonitor: SearchListener {
 
     fun getStepAsPath(index: Int, isTargetFile: Boolean=false) = "${getStepDirAsPath()}${File.separator}${getProcessFileName(getStepName(index, isTargetFile), isTargetFile)}"
 
+    fun getTargetStepAsPath() = Paths.get(config.targetHeuristicsFile).toAbsolutePath()
+
     fun getStepDirAsPath() = "${config.processFiles}${File.separator}$DATA_FOLDER"
 
     private fun saveStep(index:Int, v : StepOfSearchProcess<*>){
@@ -225,12 +234,35 @@ class SearchProcessMonitor: SearchListener {
         }
     }
 
+    private fun <T:Individual> saveStepAsTargetHeuristic(index: Int, evalInd: EvaluatedIndividual<T>) {
+
+        if(!config.appendToTargetHeuristicsFile && index == 1){
+            Files.deleteIfExists(getTargetStepAsPath())
+        }
+
+        if(!Files.exists(getTargetStepAsPath()) && index == 1){
+            writeByChannel(getTargetStepAsPath(),
+                "problem,algorithm,seed,step,branch_identifier,fitness\n")
+        }
+        val saveToPrefix = config.saveTargetHeuristicsPrefixes.split(",").map { it.trim() }
+
+        evalInd.fitness.getViewOfData().forEach({
+            if(saveToPrefix.any { prefix -> idMapper.getDescriptiveId(it.key).startsWith(prefix) }){
+                val row = "${config.statisticsColumnId},${config.algorithm},${config.seed},$index,${idMapper.getDescriptiveId(it.key)},${it.value.score}\n"
+                writeByChannel(
+                    getTargetStepAsPath(),
+                    row, doAppend = true)
+            }
+        })
+    }
+
    private fun getStepName(value: Int, isTargetFile: Boolean): String {
-       val num = String.format("%0${config.maxActionEvaluations.toString().length}d", value)
+       val num = String.format("%0${config.maxEvaluations.toString().length}d", value)
        return when(config.processFormat){
            EMConfig.ProcessDataFormat.JSON_ALL -> "EM_${num}Json"
            EMConfig.ProcessDataFormat.TEST_IND-> "EM_${num}Test"
            EMConfig.ProcessDataFormat.TARGET_TEST_IND-> "EM_${num}${if (isTargetFile) "Target" else "Test"}"
+           else -> throw IllegalStateException("Unsupported process format")
        }
    }
 
@@ -245,6 +277,7 @@ class SearchProcessMonitor: SearchListener {
             if (isTargetFile) "${name}.txt"
             else TestSuiteFileName(name).getAsPath(config.outputFormat)
         }
+        else -> throw IllegalStateException("Unsupported process format")
     }
     private fun getGsonBuilder() : Gson? {
         if (config.enableProcessMonitor && config.processFormat == EMConfig.ProcessDataFormat.JSON_ALL)

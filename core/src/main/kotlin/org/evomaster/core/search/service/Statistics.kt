@@ -5,16 +5,15 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.utils.IncrementalAverage
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
-import kotlin.Double.Companion.NaN
 
 
 class Statistics : SearchListener {
@@ -64,19 +63,16 @@ class Statistics : SearchListener {
      */
     private var coverageFailures = 0
 
-    private var sqlHeuristicsEvaluationCount = 0
+    // sql heuristic evaluation statistics
+    private var sqlParsingFailureCount = 0;
+    private var sqlHeuristicEvaluationSuccessCount = 0;
+    private var sqlHeuristicEvaluationFailureCount = 0;
+    private val sqlRowsAverageCalculator = IncrementalAverage()
 
-    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicsEvaluationCount
-
-    private var sqlHeuristicsTotalNumberOfEvaluatedRows = 0
-
-    private var mongoHeuristicsEvaluationCount = 0
-
-    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicsEvaluationCount
-
-    private var mongoHeuristicsTotalNumberOfEvaluatedDocuments = 0
-
-
+    // mongo heuristic evaluation statistic
+    private var mongoHeuristicEvaluationSuccessCount = 0
+    private var mongoHeuristicEvaluationFailureCount = 0
+    private val mongoDocumentsAverageCalculator = IncrementalAverage()
 
    class Pair(val header: String, val element: String)
 
@@ -157,26 +153,44 @@ class Statistics : SearchListener {
     }
 
     fun reportNumberOfEvaluatedRowsForSqlHeuristic(numberOfEvaluatedRows: Int) {
-        sqlHeuristicsTotalNumberOfEvaluatedRows += numberOfEvaluatedRows
-        sqlHeuristicsEvaluationCount ++
+        sqlRowsAverageCalculator.addValue(numberOfEvaluatedRows)
     }
 
     fun reportNumberOfEvaluatedDocumentsForMongoHeuristic(numberOfEvaluatedDocuments: Int) {
-        mongoHeuristicsTotalNumberOfEvaluatedDocuments += numberOfEvaluatedDocuments
-        mongoHeuristicsEvaluationCount++
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+        mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
-    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = if (sqlHeuristicsEvaluationCount==0) {
-        NaN
-    } else {
-        sqlHeuristicsTotalNumberOfEvaluatedRows.toDouble() / sqlHeuristicsEvaluationCount.toDouble()
+    fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
+        if (numberOfParsingFailures<0) {
+            throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
+        }
+        sqlParsingFailureCount++;
     }
 
-    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = if (mongoHeuristicsEvaluationCount==0) {
-        NaN
-    } else {
-        mongoHeuristicsTotalNumberOfEvaluatedDocuments.toDouble() / mongoHeuristicsEvaluationCount.toDouble()
+    fun reportSqlHeuristicEvaluationSuccess() {
+        sqlHeuristicEvaluationSuccessCount++
     }
+
+    fun reportSqlHeuristicEvaluationFailure() {
+        sqlHeuristicEvaluationFailureCount++
+    }
+
+    fun reportMongoHeuristicEvaluationSuccess() {
+        mongoHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportMongoHeuristicEvaluationFailure() {
+        mongoHeuristicEvaluationFailureCount++
+    }
+
+    fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
+
+    fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.mean
+
+    fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.mean
 
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
@@ -237,24 +251,19 @@ class Statistics : SearchListener {
             add(Pair("endpoints", "" + distinctActions()))
             add(Pair(COVERED_2XX, "" + covered2xxEndpoints(solution)))
             add(Pair(GQL_NO_ERRORS, "" + solution.overall.gqlNoErrors(idMapper).size))
-            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper, withLine = false).size))
-            add(Pair("gqlErrorsPerLines", "" + solution.overall.gqlErrors(idMapper, withLine = true).size))
+            add(Pair("gqlErrors", "" + solution.overall.gqlErrors(idMapper).size))
             // Statistics on faults found
             // errors5xx - counting only the number of endpoints with 5xx, and NOT last executed line
             add(Pair("errors5xx", "" + errors5xx(solution)))
             //distinct500Faults - counts the number of 500 (and NOT the other in 5xx), per endpoint, and distinct based on the last
             //executed line
             add(Pair("distinct500Faults", "" + solution.overall.potential500Faults(idMapper).size ))
-            // failedOracleExpectations - the number of calls in the individual that fail one active partial oracle.
-            // However, 5xx are not counted here.
-            add(Pair("failedOracleExpectations", "" + failedOracle(solution)))
             /**
              * this is the total of all potential faults, e.g. distinct500Faults + failedOracleExpectations + any other
              * for RPC, this comprises internal errors, exceptions (declared and unexpected) and customized service errors
              */
-            //potential oracle we are going to introduce.
-            //Note: that 500 (and 5xx in general) MUST not be counted in failedOracles
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+            add(Pair("potentialFaultCategories", "" + solution.distinctDetectedFaultTypes().toList().sorted().joinToString("|")))
 
             // RPC statistics of sut and seeded tests
             add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
@@ -314,11 +323,13 @@ class Statistics : SearchListener {
 
             // statistics info for Mongo Heuristics
             add(Pair("averageNumberOfEvaluatedDocumentsForMongoHeuristics","${averageNumberOfEvaluatedDocumentsForMongoHeuristics()}"))
-            add(Pair("mongoHeuristicsEvaluationCount","$mongoHeuristicsEvaluationCount"))
+            add(Pair("mongoHeuristicsEvaluationCount","${getMongoHeuristicsEvaluationCount()}"))
 
             // statistics info for SQL Heuristics
+            add(Pair("sqlParsingFailureCount","$sqlParsingFailureCount"))
             add(Pair("averageNumberOfEvaluatedRowsForSqlHeuristics","${averageNumberOfEvaluatedRowsForSqlHeuristics()}"))
-            add(Pair("sqlHeuristicsEvaluationCount","$sqlHeuristicsEvaluationCount"))
+            add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
+            add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
         }
         addConfig(list)
@@ -355,22 +366,22 @@ class Statistics : SearchListener {
                 .count()
     }
 
-    private fun failedOracle(solution: Solution<*>): Int {
-
-        //count the distinct number of API paths for which we have a failed oracle
-        // NOTE: calls with an error code (5xx) are excluded from this count.
-        return solution.individuals
-                .flatMap { it.evaluatedMainActions() }
-                .filter {
-                    it.result is HttpWsCallResult
-                            && it.action is RestCallAction
-                            && !(it.result as HttpWsCallResult).hasErrorCode()
-                            && oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-                }
-                .map { it.action.getName() }
-                .distinct()
-                .count()
-    }
+//    private fun failedOracle(solution: Solution<*>): Int {
+//
+//        //count the distinct number of API paths for which we have a failed oracle
+//        // NOTE: calls with an error code (5xx) are excluded from this count.
+//        return solution.individuals
+//                .flatMap { it.evaluatedMainActions() }
+//                .filter {
+//                    it.result is HttpWsCallResult
+//                            && it.action is RestCallAction
+//                            && !(it.result as HttpWsCallResult).hasErrorCode()
+//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
+//                }
+//                .map { it.action.getName() }
+//                .distinct()
+//                .count()
+//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 

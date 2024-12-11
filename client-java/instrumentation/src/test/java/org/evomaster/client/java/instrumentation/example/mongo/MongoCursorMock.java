@@ -26,7 +26,7 @@ public class MongoCursorMock<Result> implements MongoCursor<Result> {
 
     @Override
     public Result next() {
-        return null;
+        return iterator.next();
     }
 
     @Override

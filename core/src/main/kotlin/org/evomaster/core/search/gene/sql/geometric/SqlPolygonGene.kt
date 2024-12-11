@@ -64,7 +64,7 @@ class SqlPolygonGene(
      * againts each other O(n^2)
      * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
      */
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         if (!onlyNonIntersectingPolygons)
             return true
         val pointList = points.getViewOfChildren() as List<SqlPointGene>

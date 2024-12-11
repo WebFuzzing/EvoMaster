@@ -56,7 +56,8 @@ class CustomMutationRateGene<out T>(
         return gene.setFromStringValue(value)
     }
 
-    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T: K{
         if(this.javaClass == klass){
             return this as T
         }
@@ -67,8 +68,8 @@ class CustomMutationRateGene<out T>(
         probability = 0.0
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {
@@ -76,7 +77,13 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        gene.randomize(randomness, tryToForceNewValue)
+        /*
+            randomize can be used for mutation... but, if gene is not initialized yet, we should
+            randomize anyway, to make sure wrapped gene is going to be locally valid
+         */
+        if(!initialized || randomness.nextBoolean(probability)) {
+            gene.randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun customShouldApplyShallowMutation(
@@ -125,6 +132,14 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun isMutable() = probability > 0 && gene.isMutable()
+
+    override fun requiresRandomInitialization(): Boolean {
+        /*
+            even if this gene is not mutable, its initialization
+            at random might still be required
+         */
+        return gene.requiresRandomInitialization()
+    }
 
     override fun isPrintable() = gene.isPrintable()
 

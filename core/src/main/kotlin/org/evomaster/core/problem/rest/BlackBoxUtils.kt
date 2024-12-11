@@ -29,23 +29,31 @@ object BlackBoxUtils {
         } else {
 
             when (config.problemType) {
-                //should had been already been validated in EMConfig
+                //should had been already validated in EMConfig
                 EMConfig.ProblemType.GRAPHQL -> throw IllegalStateException("BUG: no target for GQL is defined")
                 EMConfig.ProblemType.REST -> {
-                    val schema = (sampler as AbstractRestSampler).swagger
-                    return if (schema.servers == null || schema.servers.isEmpty() || schema.servers[0].url == "/") {
-                        // "/" is default if value missing in schema
-                        LoggingUtil.uniqueUserWarn("Schema has no info on where the API is, eg 'host' in v2 and 'servers' in v3." +
-                                " Going to use same location as where the schema was downloaded from")
-                        //try to infer it from Swagger URL
+                    //https://swagger.io/docs/specification/api-host-and-base-path/
+                    val schema = (sampler as AbstractRestSampler).swagger.schemaParsed
+                    return if (schema.servers == null || schema.servers.isEmpty()) {
+                        /*
+                            Schema has no info on where the API is, eg 'host' in v2 and 'servers' in v3.
+                            "/" is default if value missing in schema.
+                            So, going to use same location as where the schema was downloaded from,
+                            as specified in the specs to do in these cases
+                         */
                         extractTarget(config.bbSwaggerUrl)
                     } else {
-                        val url = schema.servers[0].url
-                        if(url.startsWith("//")){
-                            // this can happen if 'scheme' is missing in V2, resulting in an invalid URL in current parser
-                            extractTarget("http:$url")
+                        //OpenAPI specs call it a "url", but it is actually a URI
+                        val uri = schema.servers[0].url
+                        if(uri.startsWith("//")){
+                            // this can happen if 'scheme' is missing in V2, resulting in an invalid URL in current parser.
+                            // this is also a valid value in V3
+                            extractTarget("http:$uri")
+                        } else if(uri.startsWith("/")){
+                            //this is a relative URI, so get info from schema location
+                            extractTarget(config.bbSwaggerUrl)
                         } else {
-                            extractTarget(url)
+                            extractTarget(uri)
                         }
                     }
                 }

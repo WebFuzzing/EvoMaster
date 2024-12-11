@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual.GeneFilter
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
@@ -23,18 +23,22 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     private lateinit var dm : ResourceDepManageService
 
     override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
-        val restGenes = individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(
-            GeneFilter.NO_SQL
-        ) }.filter(Gene::isMutable)
+        val restGenes = individual.getResourceCalls()
+            .filter(RestResourceCalls::isMutable)
+            .flatMap { it.seeGenes(ActionFilter.NO_SQL) }
+            .filter(Gene::isMutable)
 
-        if (!config.generateSqlDataWithSearch)
+        if (!config.shouldGenerateSqlData())
             return restGenes
 
-        return individual.seeInitializingActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable)
-            .plus(individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(GeneFilter.ONLY_SQL) })
+        return individual.seeInitializingActions()
+            .asSequence()
+            .flatMap { it.seeTopGenes() }
+            .filter(Gene::isMutable)
+            .plus(individual.getResourceCalls().filter(RestResourceCalls::isMutable).flatMap { it.seeGenes(ActionFilter.ONLY_SQL) })
             .plus(restGenes)
             .plus(individual.seeExternalServiceActions().flatMap { it.seeTopGenes() }.filter(Gene::isMutable))
-
+            .toList()
     }
 
     override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation) {

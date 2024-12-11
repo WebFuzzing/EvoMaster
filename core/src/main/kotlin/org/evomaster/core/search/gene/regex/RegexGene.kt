@@ -25,8 +25,8 @@ class RegexGene(
         const val DATABASE_REGEX_SEPARATOR = "||"
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {

@@ -1,9 +1,6 @@
 package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
@@ -11,6 +8,8 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.*
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -212,7 +211,12 @@ abstract class EnterpriseIndividual(
     }
 
 
-    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: Action){
+    fun addMainEnterpriseActionGroup(group: EnterpriseActionGroup<*>){
+        val main = GroupsOfChildren.MAIN
+        addChildToGroup(group, main)
+    }
+
+    fun addMainActionInEmptyEnterpriseGroup(relativePosition: Int = -1, action: MainAction){
         val main = GroupsOfChildren.MAIN
         val g = EnterpriseActionGroup(mutableListOf(action), action.javaClass)
 
@@ -221,7 +225,7 @@ abstract class EnterpriseIndividual(
         } else{
             val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
             val position = base + relativePosition
-            addChildToGroup(position, action, main)
+            addChildToGroup(position, g, main)
         }
     }
 
@@ -251,8 +255,6 @@ abstract class EnterpriseIndividual(
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
      *
-     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
-     * would be same with [seeInitializingActions]
      */
     fun seeSqlDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
 
@@ -280,7 +282,7 @@ abstract class EnterpriseIndividual(
         if (log.isTraceEnabled)
             log.trace("invoke GeneUtils.repairGenes")
 
-        GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeFullTreeGenes(ActionFilter.ONLY_SQL))
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).
@@ -321,6 +323,22 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
+
+
+    fun addInitializingActions(actions: List<EnvironmentAction>){
+
+        val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
+        if(invalid.isNotEmpty()){
+            throw IllegalArgumentException("Invalid ${invalid.size} environment actions of type:" +
+                    " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
+        }
+
+        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
+        addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
+    }
+
 
     /**
      * add [actions] at [relativePosition]
@@ -375,5 +393,9 @@ abstract class EnterpriseIndividual(
      */
     open fun getInsertTableNames(): List<String>{
         return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
+    }
+
+    override fun seeTopGenes(filter: ActionFilter): List<Gene> {
+        return seeActions(filter).flatMap { it.seeTopGenes() }
     }
 }

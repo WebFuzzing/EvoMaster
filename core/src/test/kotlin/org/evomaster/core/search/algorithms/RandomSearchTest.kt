@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -29,8 +30,10 @@ class RandomSearchTest {
                     object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
 
             val config = injector.getInstance(EMConfig::class.java)
-            config.maxActionEvaluations = 3000
-            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+            config.maxEvaluations = 3000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
 
             val solution = rs.search()
 

@@ -13,11 +13,13 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 
 
 /**
- * Special gene used to represent a valid array, with a single tainted value.
+ * Special gene used to represent a valid array, with a single tainted value, possibly repeated several times.
  * Once the tainted is resolved, an actual array with the proper type is used.
  *
  * This is needed in 2-phase marshalling, where a string is marshalled into an array of maps,
  * and then each map value is marshalled into a DTO.
+ *
+ * TODO needs refactoring
  */
 class TaintedArrayGene(
 
@@ -60,7 +62,7 @@ class TaintedArrayGene(
         return TaintedArrayGene(name, taintedValue, isActive, arrayGene?.copy() as ArrayGene<*>? )
     }
 
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return TaintInputName.isTaintInput(taintedValue) && (arrayGene == null || arrayGene!!.isLocallyValid())
     }
 
@@ -92,7 +94,7 @@ class TaintedArrayGene(
         extraCheck: Boolean
     ): String {
         if(arrayGene == null || !isActive) {
-            return "[\"$taintedValue\"]"
+            return "[\"$taintedValue\",\"$taintedValue\",\"$taintedValue\"]"
         }
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
@@ -154,5 +156,13 @@ class TaintedArrayGene(
             return ""
         }
         return taintedValue
+    }
+
+    override fun hasDormantGenes(): Boolean {
+        return isResolved() && !isActive //TODO double-check
+    }
+
+    override fun forceNewTaintId() {
+        //TODO
     }
 }

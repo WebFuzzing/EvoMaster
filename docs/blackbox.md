@@ -94,7 +94,7 @@ These for example include options to specify where to store the generated files 
 Since version `3.0.0` these options can be specified in the generated `em.yaml` configuration files (so they do not need to be typed each time). 
 
 
-### Issues with JDKs Above 8
+### Issues with JDKs Above 8 and EvoMaster before version 3.2.0
 
 The previous example run _EvoMaster_ directly from its JAR file, using the command:
 
@@ -104,14 +104,15 @@ To do this, you need to have a JDK installed on your machine, version 8 or later
 An easier approach is to download and install _EvoMaster_ through its installer files (e.g., `.msi` for Windows), as those embed a JDK as well, with right configuration.
 Then _EvoMaster_ can be run with for example `evomaster.exe` (for Windows).
 
-If you want to run the JAR file directly with the JDK, you will encounter issues with versions from 17 on, due _integrity constraints_ on the JDK. 
-You will have to manually add `--add-opens` commands like:
+If you want to run the JAR file directly with the JDK, you might encounter issues with versions from 17 on, due _integrity constraints_ on the JDK. 
+This is no longer the case since _EvoMaster_ version 3.2.0. 
+If for any reason you need to use an older version (not recommended!) on JDK 17 or later, 
+you will have to manually add `--add-opens` commands like:
 
 ```java --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED -jar core/target/evomaster.jar ```
 
 If you fail to do that, _EvoMaster_ will crash, but at least it will tell you what to do (with the most update requirements, in case more `--add-opens` are required since this documentation was written).
 
-Unfortunately, there is nothing we can do to address this major usability problem in the latest JDK versions :-( 
 
 ## GraphQL APIs
 
@@ -140,6 +141,6 @@ However, as it does know nothing about the internal details of the tested applic
 Albeit it can still detect many kinds faults (especially related to input validation).
 
 The first time you try _EvoMaster_, use black-box testing to get an idea of what _EvoMaster_ could do for you.
-However, after an initial trial, we recommend to switch to [white-box testing](whitebox.md),
+However, after an initial trial, if your APIs run on the JVM, we recommend to switch to [white-box testing](whitebox.md),
 as it can lead to much, much better results.
-However, for the time being only programs running on the JVM (e.g., written in Java or Kotlin) are supported for white-box testing. 
+However, as previously stated, for the time being only programs running on the JVM (e.g., written in Java or Kotlin) are supported for white-box testing. 

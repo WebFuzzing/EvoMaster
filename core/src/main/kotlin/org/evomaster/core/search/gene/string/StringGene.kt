@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
+import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -45,7 +46,7 @@ import kotlin.math.min
 
 class StringGene(
         name: String,
-        var value: String = "foo",
+        var value: String = DEFAULT_VALUE,
         /** Inclusive */
         val minLength: Int = 0,
         /**
@@ -75,6 +76,9 @@ class StringGene(
         if (minLength>maxLength) {
             throw IllegalArgumentException("Cannot create string gene ${this.name} with minimum length ${this.minLength} and maximum length ${this.maxLength}")
         }
+        if(value == DEFAULT_VALUE && value.length > maxLength){
+            value = value.substring(0, maxLength)
+        }
     }
 
     companion object {
@@ -82,6 +86,8 @@ class StringGene(
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
 
         private const val PROB_CHANGE_SPEC = 0.1
+
+        private const val DEFAULT_VALUE = "foo"
     }
 
     private var validChar: String? = null
@@ -133,11 +139,10 @@ class StringGene(
         return value.length <= actualMaxLength()
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //note, here we do not check actualMaxLength(), as it imply a global initialization
         return value.length in minLength..maxLength
                 && invalidChars.none { value.contains(it) }
-                && getViewOfChildren().all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {
@@ -169,10 +174,12 @@ class StringGene(
     }
 
     override fun isMutable(): Boolean {
-        if (getSpecializationGene() != null) {
-            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
-        }
-        return true
+        //a specialization can always be undone... so previous check was wrong
+//        if (getSpecializationGene() != null) {
+//            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
+//        }
+//        return true
+        return maxLength > 0 //otherwise there is only 1 value, the empty string ""
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -217,9 +224,18 @@ class StringGene(
         /*
             TODO this assertion had to be removed, as Resource Sampler uses action templates that have been
             already initialized... but unsure how that would negatively effect the Taint on Sampling done
-            here
+            here.
+            Also, now we have TaintedMapGene
          */
         //assert(!tainted)
+
+        if(name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER){
+            /*
+                TODO should have a better check to specify a StringGene is immutable.
+                If we end up in other cases for this, should add an "immutable" field to this gene
+             */
+            return
+        }
 
         /*
             the gene might be initialized without global constraint
@@ -650,28 +666,39 @@ class StringGene(
             toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
                     .forEach {
                         val schema = it.value
-                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
-                        val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createGeneForDTO(ref, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+                        val obj = createGeneFromSchemaRef(schema, enableConstraintHandling)
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
-            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
-            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_ARRAY }
+                .forEach {
+                    val schema = it.value
+                    val obj = if(schema != null) {
+                        val template = createGeneFromSchemaRef(schema, enableConstraintHandling)
+                        ArrayGene(name, template)
+                    } else {
+                        //no info on the type of the array. we will find out dynamically with taint analysis
+                        TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+                    }
+                    toAddGenes.add(obj)
+                    log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+                }
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
-            val mapGene = FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"))
-            /*
-                for Map, we currently only handle them as string key with string value
-                TODO handle generic type if they have
 
-                set tainted input for key of template if the key is string type
-             */
-            mapGene.template.first.forceTaintedValue()
+            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.8, 0.1) ?: 0.1
+
+            val mapGene = if(getSearchGlobalState()?.randomness?.nextBoolean(pempty) != false){
+                FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"), maxSize = 0)
+                    .apply { template.first.forceTaintedValue() }
+            } else {
+                //best scenario, but map will never be empty
+                TaintedMapGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            }
 
             toAddGenes.add(mapGene)
 
@@ -715,6 +742,17 @@ class StringGene(
             val state = getSearchGlobalState()!! //cannot be null when this method is called
             state.spa.updateStats(name, toAddSpecs)
         }
+    }
+
+    private fun createGeneFromSchemaRef(schema: String, enableConstraintHandling: Boolean): Gene {
+        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+        val ref = t.subSequence(1, t.length - 1).toString()
+        val obj = RestActionBuilderV3.createGeneForDTO(
+            ref,
+            schema,
+            RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling)
+        )
+        return obj
     }
 
     private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {
@@ -857,28 +895,38 @@ class StringGene(
     }
 
     override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is StringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+
+        if(other is ChoiceGene<*>){
+            val x = other.activeGene()
+            return this.copyValueFrom(x)
         }
+
         val current = this.value
-        this.value = other.value
+
+        when(other){
+            is StringGene -> this.value = other.value
+            is EnumGene<*> -> this.value = other.getValueAsRawString()
+            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
 
         if (!isLocallyValid()){
             this.value = current
             return false
         }
-        this.selectedSpecialization = other.selectedSpecialization
 
-        this.specializations.clear()
-        this.specializations.addAll(other.specializations)
+        if(other is StringGene) {
+            this.selectedSpecialization = other.selectedSpecialization
 
-        killAllChildren()
-        addChildren(other.specializationGenes.map { it.copy() })
+            this.specializations.clear()
+            this.specializations.addAll(other.specializations)
 
-        this.tainted = other.tainted
+            killAllChildren()
+            addChildren(other.specializationGenes.map { it.copy() })
 
-        this.bindingIds.clear()
-        this.bindingIds.addAll(other.bindingIds)
+            this.tainted = other.tainted
+            this.bindingIds.clear()
+            this.bindingIds.addAll(other.bindingIds)
+        }
 
         return true
     }
@@ -996,6 +1044,14 @@ class StringGene(
 
     override fun getPossiblyTaintedValue(): String {
         return getValueAsRawString()
+    }
+
+    override fun hasDormantGenes(): Boolean {
+        return selectionUpdatedSinceLastMutation
+    }
+
+    override fun forceNewTaintId() {
+        //TODO
     }
 
     /**

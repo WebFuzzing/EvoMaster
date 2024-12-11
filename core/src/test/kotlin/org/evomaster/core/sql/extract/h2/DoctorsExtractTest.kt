@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.h2
 
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -18,7 +18,7 @@ class DoctorsExtractTest : ExtractTestBaseH2() {
     @Test
     fun testIssueWithFK() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
 

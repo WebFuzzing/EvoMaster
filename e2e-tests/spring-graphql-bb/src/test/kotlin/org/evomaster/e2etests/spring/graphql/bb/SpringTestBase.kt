@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.bb
 
 import org.apache.commons.io.FileUtils
+import org.evomaster.ci.utils.CIUtils
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig.TestSuiteSplitType
 import org.evomaster.core.output.OutputFormat
@@ -29,6 +30,12 @@ abstract class SpringTestBase : GraphQLTestBase() {
     @BeforeEach
     fun clearTargets(){
         CoveredTargets.reset()
+
+        /*
+            some weird issue with Surefire plugin, not happening on builds for Win and OSX... weird.
+            trying to fix it with forkNode option
+         */
+        //CIUtils.skipIfOnLinuxOnGA()
     }
 
     protected fun addBlackBoxOptions(
@@ -84,7 +91,7 @@ abstract class SpringTestBase : GraphQLTestBase() {
     ){
         val baseLocation = when {
             outputFormat.isJavaScript() -> BlackBoxUtils.baseLocationForJavaScript
-            // TODO Python here
+            outputFormat.isPython() -> BlackBoxUtils.baseLocationForPython
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
         runTestForNonJVM(outputFormat, baseLocation, outputFolderName, iterations, timeoutMinutes, lambda)
@@ -94,7 +101,7 @@ abstract class SpringTestBase : GraphQLTestBase() {
 
         when{
             outputFormat.isJavaScript() -> BlackBoxUtils.runNpmTests(BlackBoxUtils.relativePath(outputFolderName))
-            //TODO Python here
+            outputFormat.isPython() -> BlackBoxUtils.runPythonTests(BlackBoxUtils.relativePath(outputFolderName))
             else -> throw IllegalArgumentException("Not supported output type $outputFormat")
         }
     }

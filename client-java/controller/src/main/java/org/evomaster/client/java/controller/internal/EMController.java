@@ -362,7 +362,9 @@ public class EMController {
                         If SUT is not up and running, let's start it
                      */
                     if (!noKillSwitch(() -> sutController.isSutRunning())) {
+                        noKillSwitch(() -> sutController.bootingSut(true));
                         baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
+                        noKillSwitch(() -> sutController.bootingSut(false));
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
                             String msg = "Internal failure: cannot start SUT based on given configuration";
@@ -375,6 +377,7 @@ public class EMController {
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
+                        noKillSwitch(() -> sutController.bootingSut(false));
                     }
 
                     /*
@@ -435,20 +438,32 @@ public class EMController {
     @Path(ControllerConstants.TEST_RESULTS)
     @GET
     public Response getTestResults(
+            /**
+             * List of ids of targets to return fitness score for.
+             * If none specified, return everything.
+             * If a target was seen for first time, it is returned even if
+             * not asked for.
+             */
             @QueryParam("ids")
             @DefaultValue("")
             String idList,
             @QueryParam("killSwitch") @DefaultValue("false")
             boolean killSwitch,
-            @QueryParam("allCovered") @DefaultValue("false")
-            boolean allCovered,
+            /**
+             * Only return fitness scores for targets that are fully covered (ie, fitness equal to 1.0)
+             */
+            @QueryParam("fullyCovered") @DefaultValue("false")
+            boolean fullyCovered,
+            /**
+             * By default, to reduced bandwidth, ids are sent numerically, and not by they full descriptive
+             * string representation (unless it is first time they are seen).
+             */
+            @QueryParam("descriptiveIds") @DefaultValue("false")
+            boolean descriptiveIds,
+            @QueryParam("queryFromDatabase") @DefaultValue("true")
+            boolean queryFromDatabase,
             @Context HttpServletRequest httpServletRequest) {
 
-        if(allCovered && !idList.isEmpty()){
-            String msg = "Cannot specify to collect all covered targets and also at same time specify some targets manually: " + idList;
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
 
         // notify that actions execution is done.
         noKillSwitch(() -> sutController.setExecutingAction(false));
@@ -456,13 +471,8 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
 
         try {
-            TestResultsDto dto = new TestResultsDto();
-
-            List<TargetInfo> targetInfos = null;
-
-            if(! allCovered) {
-                Set<Integer> ids;
-
+            Set<Integer> ids;
+            if(idList != null && !idList.isEmpty()) {
                 try {
                     ids = Arrays.stream(idList.split(","))
                             .filter(s -> !s.trim().isEmpty())
@@ -473,22 +483,23 @@ public class EMController {
                     SimpleLogger.warn(msg);
                     return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
                 }
-
-                targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids));
-                if (targetInfos == null) {
-                    String msg = "Failed to collect target information for " + ids.size() + " ids";
-                    SimpleLogger.error(msg);
-                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-                }
-            } else{
-
-                targetInfos = noKillSwitch(() -> sutController.getAllCoveredTargetInfos());
-                if (targetInfos == null) {
-                    String msg = "Failed to collect all covered target information";
-                    SimpleLogger.error(msg);
-                    return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
-                }
+            } else {
+                ids = null;
             }
+
+            List<TargetInfo> targetInfos = noKillSwitch(() -> sutController.getTargetInfos(ids, fullyCovered, descriptiveIds));
+            if (targetInfos == null) {
+                String label = "all";
+                if(ids != null){
+                    label = ""+ ids.size();
+                }
+                String msg = "Failed to collect target information for " + label + " ids";
+                SimpleLogger.error(msg);
+                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+
+            TestResultsDto dto = new TestResultsDto();
 
             targetInfos.forEach(t -> {
                 TargetInfoDto info = new TargetInfoDto();
@@ -508,15 +519,8 @@ public class EMController {
             /*
                 Note: it is important that extra is computed before AdditionalInfo,
                 as heuristics on SQL might add new entries to String specializations
-
-                FIXME actually the String specialization would work only on Embedded, and
-                not on External :(
-                But, as anyway we are going to refactor it in Core at a later point, no need
-                to waste time for a tmp workaround
-                TODO: actually ended up fixing it for External. but still need to decide if
-                refactoring everything into core
              */
-                dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics());
+                dto.extraHeuristics = noKillSwitch(() -> sutController.getExtraHeuristics(queryFromDatabase));
 
                 List<AdditionalInfo> additionalInfos = noKillSwitch(() -> sutController.getAdditionalInfoList());
                 if (additionalInfos != null) {
@@ -606,7 +610,12 @@ public class EMController {
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
-    public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+    public Response newAction(
+            ActionDto dto,
+            @QueryParam("queryFromDatabase")
+            @DefaultValue("true")
+            boolean queryFromDatabase,
+            @Context HttpServletRequest httpServletRequest) {
         // notify that the action is executing
         noKillSwitch(() -> sutController.setExecutingAction(true));
 
@@ -625,7 +634,7 @@ public class EMController {
             assert trackRequestSource(httpServletRequest);
 
             //this MUST not be inside a noKillSwitch, as it sets to false
-            sutController.newAction(dto);
+            sutController.newAction(dto, queryFromDatabase);
 
             if (dto.rpcCall != null) {
                 ActionResponseDto authResponseDto = null;
@@ -733,14 +742,21 @@ public class EMController {
             }
 
             QueryResult queryResult = null;
-            InsertionResultsDto insertionResultsDto = null;
+            final InsertionResultsDto insertionResultsDto;
 
 
             try {
                 if (dto.command != null) {
+                    insertionResultsDto = null;
                     queryResult = SqlScriptRunner.execCommand(connection, dto.command);
                 } else {
                     insertionResultsDto = SqlScriptRunner.execInsert(connection, dto.insertions);
+                    noKillSwitch(() -> {
+                        for (int i = 0; i < insertionResultsDto.executionResults.size(); i++) {
+                            if (insertionResultsDto.executionResults.get(i))
+                                sutController.addSuccessfulInitSqlInsertion(dto.insertions.get(i));
+                        }
+                    });
                 }
             } catch (Exception e) {
                 String msg = "Failed to execute database command: " + e.getMessage();

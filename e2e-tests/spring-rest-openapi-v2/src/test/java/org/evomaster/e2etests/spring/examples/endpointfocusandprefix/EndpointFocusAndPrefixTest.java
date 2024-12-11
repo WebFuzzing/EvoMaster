@@ -62,7 +62,9 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // get all paths from the swagger
-                    OpenAPI swagger = OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth());
+                    OpenAPI swagger = OpenApiAccess.INSTANCE
+                            .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+                            .getSchemaParsed();
 
                     // api paths
                     Paths apiPaths = swagger.getPaths();
@@ -161,6 +163,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointFocus");
                     args.add(endpointFocus);
+                    setOption(args, "advancedBlackBoxCoverage", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -172,7 +175,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, true);
 
                     // The solution should include 4 solutions, 3 endpoints and 1 failure case
-                    assertEquals(solution.getIndividuals().size(), 4);
+                    assertEquals(4, solution.getIndividuals().size());
 
                     // write test into the output folder
                     compile(outputFolder);
@@ -281,6 +284,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointPrefix");
                     args.add(endpointPrefix);
+                    setOption(args, "advancedBlackBoxCoverage", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -292,7 +296,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // The solution should include 5 solutions, 4 endpoints and 1 failure case
-                    assertEquals(solution.getIndividuals().size(), 5);
+                    assertEquals(5, solution.getIndividuals().size());
 
                     // write test into the output folder
                     compile(outputFolder);
@@ -321,6 +325,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     args.add(baseUrlOfSut + "/v2/api-docs");
                     args.add("--endpointPrefix");
                     args.add(endpointPrefix);
+                    setOption(args, "advancedBlackBoxCoverage", "false");
 
                     // no endpointFocus or endpointPrefix is provided
                     Solution<RestIndividual> solution = initAndRun(args);
@@ -332,7 +337,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // The solution should include 5 solutions, 4 endpoints and 1 failure case
-                    assertEquals(solution.getIndividuals().size(), 5);
+                    assertEquals(5, solution.getIndividuals().size());
 
                     // write test into the output folder
                     compile(outputFolder);

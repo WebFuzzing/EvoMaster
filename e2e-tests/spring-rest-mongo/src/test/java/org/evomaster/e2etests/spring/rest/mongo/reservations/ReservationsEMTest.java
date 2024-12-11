@@ -27,8 +27,8 @@ public class ReservationsEMTest extends RestTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "MongoReservationsEM",
-                "org.foo.spring.rest.mongo.MongoEMFitness",
                 10000,
+                5,
                 (args) -> {
                     args.add("--heuristicsForMongo");
                     args.add("true");

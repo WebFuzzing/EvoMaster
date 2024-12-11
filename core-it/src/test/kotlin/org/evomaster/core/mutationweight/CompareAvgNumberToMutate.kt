@@ -8,6 +8,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -38,9 +39,9 @@ class CompareAvgNumberToMutate {
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
         mwc = injector.getInstance(MutationWeightControl::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
     }
 
     fun run(){
@@ -70,9 +71,9 @@ class CompareAvgNumberToMutate {
 
         config.d = d
 
-        val all = individual.seeGenes().filter { it.isMutable() }
-        val rest = individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }
-        val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL).filter { it.isMutable() }
+        val all = individual.seeTopGenes().filter { it.isMutable() }
+        val rest = individual.seeTopGenes(ActionFilter.NO_SQL).filter { it.isMutable() }
+        val sql = individual.seeTopGenes(ActionFilter.ONLY_SQL).filter { it.isMutable() }
 
         val s11 = mutableListOf<Double>()
         val s12 = mutableListOf<Double>()

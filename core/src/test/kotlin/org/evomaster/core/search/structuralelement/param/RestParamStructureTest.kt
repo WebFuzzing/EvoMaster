@@ -24,7 +24,7 @@ class BodyParamStructureTest : StructuralElementBaseTest() {
         EnumGene("contentType", listOf("application/json"))
     )
 
-    override fun getExpectedChildrenSize(): Int  = 2
+    override fun getExpectedChildrenSize(): Int  = 3
 
     @Test
     fun testTraverseBackIndex(){
@@ -79,14 +79,12 @@ class UpdateForBodyParamStructureTest : StructuralElementBaseTest() {
         EnumGene("contentType", listOf("application/json"))
     ))
 
-    override fun getExpectedChildrenSize(): Int = 2
+    override fun getExpectedChildrenSize(): Int = 3
 
     @Test
     fun testChildType(){
         val update = getStructuralElement()
-        assertNotNull(update.body)
-        //due to refactoring. TODO need to check for side-effects
         assertFalse(update.getViewOfChildren().first() is BodyParam)
-        //assertTrue(update.getViewOfChildren().first() is BodyParam)
+        assertTrue(update.getViewOfChildren().first() is ObjectGene)
     }
 }

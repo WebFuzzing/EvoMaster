@@ -29,8 +29,9 @@ internal class AdaptiveParameterControlTest{
         time = injector.getInstance(SearchTimeController::class.java)
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
+        time.startSearch()
     }
 
     @Test
@@ -45,8 +46,8 @@ internal class AdaptiveParameterControlTest{
     @Test
     fun testEnd(){
 
-        config.maxActionEvaluations = 10
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = 10
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         fakeEvaluation(5) //kicks in focused search
         assertEquals(0.5, time.percentageUsedBudget(), 0.001)
@@ -65,8 +66,8 @@ internal class AdaptiveParameterControlTest{
 
     @Test
     fun testDuring(){
-        config.maxActionEvaluations = 10
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = 10
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         val start = 30
         val end = 12

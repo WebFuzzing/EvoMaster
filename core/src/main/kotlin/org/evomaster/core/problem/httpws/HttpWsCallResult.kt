@@ -3,15 +3,16 @@ package org.evomaster.core.problem.httpws
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
-abstract class HttpWsCallResult : ActionResult {
+abstract class HttpWsCallResult : EnterpriseActionResult {
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId,stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: HttpWsCallResult) : super(other)
 
     companion object {
         const val STATUS_CODE = "STATUS_CODE"
@@ -23,6 +24,7 @@ abstract class HttpWsCallResult : ActionResult {
         const val TIMEDOUT = "TIMEDOUT"
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
+        const val APPLIED_LINK = "APPLIED_LINK"
     }
 
     /**
@@ -105,4 +107,7 @@ abstract class HttpWsCallResult : ActionResult {
 
     fun setTcpProblem(tcpProblem: Boolean) = addResultValue(TCP_PROBLEM, tcpProblem.toString())
     fun getTcpProblem() : Boolean = getResultValue(TCP_PROBLEM)?.toBoolean() ?: false
+
+    fun setAppliedLink(applied: Boolean) = addResultValue(APPLIED_LINK, applied.toString())
+    fun getAppliedLink(): Boolean = getResultValue(APPLIED_LINK)?.toBoolean() ?: false
 }

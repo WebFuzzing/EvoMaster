@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import org.evomaster.core.output.Lines
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -15,11 +16,15 @@ class NoTestCaseWriter : TestCaseWriter() {
         //empty
     }
 
-    override fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
+    override fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String) {
         //empty
     }
 
     override fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean {
         return false
+    }
+
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+        //TODO
     }
 }

@@ -184,6 +184,10 @@ public class RPCEndpointsBuilder {
 
         try {
             if (dbDto != null){
+
+                if(dbDto.commandName == null)
+                    throw new IllegalArgumentException("For MockDatabaseDto, its commandName is not nullable");
+
                 int index = dbDto.commandName.lastIndexOf(".");
                 if (index > 0){
                     String methodName = dbDto.commandName.substring(index+1);
@@ -192,6 +196,10 @@ public class RPCEndpointsBuilder {
                     List<Method> methods =
                         Arrays.stream(dbClazz.getDeclaredMethods()).filter(m-> m.getName().equals(methodName)).collect(Collectors.toList());
                     Method method = findMethod(methods, null);
+                    if(method == null){
+                        throw new IllegalArgumentException("cannot find specified command method:"+dbDto.commandName);
+                    }
+
                     Map<TypeVariable, Type> genericTypeMap = new HashMap<>();
                     NamedTypedValue response = build(schema, method.getReturnType(), method.getGenericReturnType(), "return", rpcType, new ArrayList<>(), 0, null, null, null, null, null, genericTypeMap, true);
                     dbDto.responseFullTypeWithGeneric = response.getType().getFullTypeNameWithGenericType();
@@ -1333,8 +1341,26 @@ public class RPCEndpointsBuilder {
                                     }
                                 }
                                 RPCActionDto rpcActionDto = copy.getDto();
-                                rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos;
-                                rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos;
+
+                                if (actionDto.mockRPCExternalServiceDtos != null){
+                                    for (int i = 0; i < actionDto.mockRPCExternalServiceDtos.size(); i++){
+                                        if (actionDto.mockRPCExternalServiceDtos.get(i) == null)
+                                            SimpleLogger.recordErrorMessage(
+                                                    String.format("Seeded Test Error: specify null mockRPCExternalServiceDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                            );
+                                    }
+                                    rpcActionDto.mockRPCExternalServiceDtos = actionDto.mockRPCExternalServiceDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                                }
+
+                                if (actionDto.mockDatabaseDtos != null){
+                                    for (int i = 0; i < actionDto.mockDatabaseDtos.size(); i++){
+                                        if (actionDto.mockDatabaseDtos.get(i) == null)
+                                            SimpleLogger.recordErrorMessage(
+                                                    String.format("Seeded Test Error: specify null mockDatabaseDto at index %d for action %s:%s", i, actionDto.interfaceName, actionDto.functionName)
+                                            );
+                                    }
+                                    rpcActionDto.mockDatabaseDtos = actionDto.mockDatabaseDtos.stream().filter(Objects::nonNull).collect(Collectors.toList());
+                                }
                                 handleExternalResponses(schema, actionDto, rpcType);
                                 test.add(rpcActionDto);
                             }else {
@@ -1344,7 +1370,11 @@ public class RPCEndpointsBuilder {
                             SimpleLogger.recordErrorMessage("Seeded Test Error: cannot find the interface "+ actionDto.interfaceName);
                         }
                     }
-                    results.put( String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto)), test);
+                    String testKey = String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto));
+                    if (!test.isEmpty())
+                        results.put( testKey, test);
+                    else
+                        SimpleLogger.recordErrorMessage("Seeded Test Error: fail to load the seeded test "+ testKey);
                 }catch (RuntimeException e){
                     SimpleLogger.recordErrorMessage("Fail to handle specified seeded test: "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
                     StringBuilder msg = extractExceptionMsg(e);

@@ -191,8 +191,28 @@ public class JSqlVisitor implements ExpressionVisitor {
 
     @Override
     public void visit(Between between) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        between.getLeftExpression().accept(this);
+        SqlCondition leftExpression = stack.pop();
+
+        between.getBetweenExpressionStart().accept(this);
+        SqlCondition startExpression = stack.pop();
+
+        between.getBetweenExpressionEnd().accept(this);
+        SqlCondition endExpression = stack.pop();
+
+        SqlCondition leftCondition = new SqlComparisonCondition(
+                leftExpression,
+                SqlComparisonOperator.GREATER_THAN_OR_EQUAL,
+                startExpression
+        );
+
+        SqlCondition rightCondition = new SqlComparisonCondition(
+                leftExpression,
+                SqlComparisonOperator.LESS_THAN_OR_EQUAL,
+                endExpression
+        );
+
+        stack.push(new SqlAndCondition(leftCondition, rightCondition));
     }
 
     @Override

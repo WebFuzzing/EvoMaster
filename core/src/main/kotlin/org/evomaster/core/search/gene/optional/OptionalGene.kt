@@ -50,8 +50,8 @@ class OptionalGene(name: String,
     }
 
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
 
@@ -80,6 +80,14 @@ class OptionalGene(name: String,
                 ok
             }, false
         )
+    }
+
+    override fun setFromStringValue(value: String) : Boolean{
+        val modified = gene.setFromStringValue(value)
+        if(modified){
+            isActive = true
+        }
+        return modified
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -154,5 +162,8 @@ class OptionalGene(name: String,
         return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
-
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
+    }
 }

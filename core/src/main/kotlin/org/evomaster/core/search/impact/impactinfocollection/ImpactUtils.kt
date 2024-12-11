@@ -65,7 +65,7 @@ class ImpactUtils {
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is TupleGene -> TupleGeneImpact(id, gene)
                 is MapGene<*, *> -> MapGeneImpact(id)
-                is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
+                //is PairGene<*, *> -> throw IllegalStateException("do not count impacts for PairGene yet")
                 is ArrayGene<*> -> ArrayGeneImpact(id)
                 is DateGene -> DateGeneImpact(id, gene)
                 is DateTimeGene -> DateTimeGeneImpact(id, gene)
@@ -117,7 +117,7 @@ class ImpactUtils {
         }
 
         fun <T : Individual> generateGeneId(individual: T, gene: Gene) : String{
-            if (!individual.seeGenes().contains(gene)){
+            if (!individual.seeTopGenes().contains(gene)){
                 log.warn("cannot find this gene ${gene.name} ($gene) in this individual")
                 return generateGeneId(gene)
             }
@@ -147,7 +147,7 @@ class ImpactUtils {
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             if (individual.seeAllActions().isEmpty()){
-                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+                individual.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
                     val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
@@ -246,7 +246,7 @@ class ImpactUtils {
             }else{
                 Lazy.assert { !isInit }
 
-                individual.seeGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
+                individual.seeTopGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
                     list.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = num, actionTypeClass = null))
@@ -277,7 +277,7 @@ class ImpactUtils {
         }
 
         private fun findGeneById(individual: Individual, id : String):Gene?{
-            return individual.seeGenes().find { generateGeneId(individual, it) == id }
+            return individual.seeTopGenes().find { generateGeneId(individual, it) == id }
         }
 
         fun extractGeneById(actions: List<Action>, id: String) : MutableList<Gene>{

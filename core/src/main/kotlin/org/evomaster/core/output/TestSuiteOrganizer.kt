@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.naming.TestCaseNamingStrategy
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -23,21 +24,20 @@ import kotlin.reflect.KFunction1
 class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
-    private val namingHelper = NamingHelper()
     private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
 
-    fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
+    fun sortTests(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
         //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
-        return sortingHelper.sort(solution, namingHelper, customNaming)
+        return sortingHelper.sort(solution, namingStrategy)
     }
 
-    fun setPartialOracles(partialOracles: PartialOracles){
-        this.partialOracles = partialOracles
-        namingHelper.setPartialOracles(partialOracles)
-    }
+//    fun setPartialOracles(partialOracles: PartialOracles){
+//        this.partialOracles = partialOracles
+//        namingHelper.setPartialOracles(partialOracles)
+//    }
 
 }
 
@@ -80,24 +80,24 @@ class NamingHelper {
         else return ""
     }
 
-    private fun criterion5_partialOracle(individual: EvaluatedIndividual<*>): String{
-        var name = ""
-        partialOracles.adjustName().forEach {
-            if(!it.adjustName().isNullOrBlank()
-                    && it.generatesExpectation(individual)){
-                name = name + it.adjustName()
-            }
-        }
-        return name
-    }
+//    private fun criterion5_partialOracle(individual: EvaluatedIndividual<*>): String{
+//        var name = ""
+//        partialOracles.adjustName().forEach {
+//            if(!it.adjustName().isNullOrBlank()
+//                    && it.generatesExpectation(individual)){
+//                name = name + it.adjustName()
+//            }
+//        }
+//        return name
+//    }
 
-    fun setPartialOracles(partialOracles: PartialOracles){
-        this.partialOracles = partialOracles
-    }
+//    fun setPartialOracles(partialOracles: PartialOracles){
+//        this.partialOracles = partialOracles
+//    }
 
-    private var partialOracles = PartialOracles()
-    private var namingCriteria =  listOf(::criterion1_500, ::criterion5_partialOracle)
-    private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit, ::criterion5_partialOracle)
+//    private var partialOracles = PartialOracles()
+    private var namingCriteria =  listOf(::criterion1_500 ) //, ::criterion5_partialOracle)
+    private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit) //, ::criterion5_partialOracle)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
@@ -227,15 +227,10 @@ class SortingHelper {
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
-    private fun sortByComparatorList (solution: Solution<*>,
-                              namingHelper: NamingHelper,
-                              comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode)
+    private fun sortByComparatorList (comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode),
+                              namingStrategy: TestCaseNamingStrategy
 
     ): List<TestCase> {
-        var counter = 0
-
-        val inds = solution.individuals
-
         /**
          * Comparisons, as far as I understand them, are done as follows:
          * First, the list is sorted based on the first criterion.
@@ -253,29 +248,12 @@ class SortingHelper {
          * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
          */
 
-        comparators.asReversed().forEach {
-            //solution.individuals.sortWith(it)
-            inds.sortWith(it)
-        }
-
-        //return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
-        return inds.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
+        return namingStrategy.getSortedTestCases(comparators)
 
     }
 
-    /**
-     * No sorting, and just basic name with incremental counter
-     */
-    private fun naiveSorting(solution: Solution<*>): List<TestCase> {
-        var counter = 0
-        return solution.individuals.map { ind -> TestCase(ind, "test" + (counter++)) }
-    }
-
-    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), customNaming: Boolean = false): List<TestCase> {
-        val newSort = if (customNaming){
-            sortByComparatorList(solution, namingHelper, comparatorList)
-        }
-        else naiveSorting(solution)
+    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
+        val newSort = sortByComparatorList(comparatorList, namingStrategy)
 
         Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
         return newSort
