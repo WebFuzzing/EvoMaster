@@ -26,6 +26,8 @@ public class QueryResult {
         variableDescriptors.addAll(variableDescriptorList);
     }
 
+
+
     /**
      * WARNING: Constructor only needed for testing
      *
@@ -172,5 +174,18 @@ public class QueryResult {
         dto.rows = rows.stream().map(r -> r.toDto()).collect(Collectors.toList());
 
         return dto;
+    }
+
+    /**
+     * Retrieves the table name of this queryResult.
+     *
+     * @return the table name of the first {@code VariableDescriptor} in the {@code variableDescriptors} list.
+     * @throws IllegalStateException if the {@code variableDescriptors} list is empty.
+     */
+    public String getTableName() {
+        if (variableDescriptors.isEmpty()) {
+            throw new IllegalStateException("No variable descriptors found");
+        }
+        return variableDescriptors.get(0).getTableName();
     }
 }
