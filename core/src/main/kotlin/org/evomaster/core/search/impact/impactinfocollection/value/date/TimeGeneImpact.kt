@@ -3,22 +3,28 @@ package org.evomaster.core.search.impact.impactinfocollection.value.date
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.impact.impactinfocollection.*
+import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
 
 /**
  * created by manzh on 2019-09-16
  */
-class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
-                     val hourGeneImpact: IntegerGeneImpact,
-                     val minuteGeneImpact: IntegerGeneImpact,
-                     val secondGeneImpact : IntegerGeneImpact
+class TimeGeneImpact(
+    sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
+    val hourGeneImpact: IntegerGeneImpact,
+    val minuteGeneImpact: IntegerGeneImpact,
+    val secondGeneImpact: IntegerGeneImpact,
+    val millisecondGeneImpact: OptionalGeneImpact,
+    val offsetGeneImpact: TimeOffsetGeneImpact
 ) : GeneImpact(sharedImpactInfo, specificImpactInfo){
 
     constructor(id: String, gene : TimeGene)
             : this(SharedImpactInfo(id), SpecificImpactInfo(),
             hourGeneImpact = ImpactUtils.createGeneImpact(gene.hour, gene.hour.name) as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
             minuteGeneImpact = ImpactUtils.createGeneImpact(gene.minute, gene.minute.name)as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
-            secondGeneImpact = ImpactUtils.createGeneImpact(gene.second, gene.second.name) as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created")
+            secondGeneImpact = ImpactUtils.createGeneImpact(gene.second, gene.second.name) as? IntegerGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
+            millisecondGeneImpact = ImpactUtils.createGeneImpact(gene.millisecond, gene.millisecond.name) as? OptionalGeneImpact ?:throw IllegalStateException("IntegerGeneImpact should be created"),
+            offsetGeneImpact = ImpactUtils.createGeneImpact(gene.offset, gene.offset.name) as? TimeOffsetGeneImpact ?:throw IllegalStateException("TimeOffsetGeneImpact should be created")
     )
 
     override fun copy(): TimeGeneImpact {
@@ -27,12 +33,14 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
                 specific.copy(),
                 hourGeneImpact = hourGeneImpact.copy(),
                 minuteGeneImpact = minuteGeneImpact.copy(),
-                secondGeneImpact = secondGeneImpact.copy())
+                secondGeneImpact = secondGeneImpact.copy(),
+                millisecondGeneImpact = millisecondGeneImpact.copy(),
+                offsetGeneImpact = offsetGeneImpact.copy())
     }
 
     override fun clone(): TimeGeneImpact {
         return TimeGeneImpact(
-                shared.clone(),specific.clone(), hourGeneImpact = hourGeneImpact.clone(), minuteGeneImpact = minuteGeneImpact.clone(), secondGeneImpact = secondGeneImpact.clone()
+                shared.clone(),specific.clone(), hourGeneImpact = hourGeneImpact.clone(), minuteGeneImpact = minuteGeneImpact.clone(), secondGeneImpact = secondGeneImpact.clone(), millisecondGeneImpact = millisecondGeneImpact.clone(), offsetGeneImpact = offsetGeneImpact.clone()
         )
     }
 
@@ -58,6 +66,7 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
         if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
             innerImpacts.add(secondGeneImpact)
 
+
         if (innerImpacts.isEmpty()) return
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
         innerImpacts.forEach {
@@ -70,11 +79,13 @@ class TimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: Spe
         return mutableMapOf(
                 "${getId()}-${hourGeneImpact.getId()}" to hourGeneImpact,
                 "${getId()}-${minuteGeneImpact.getId()}" to minuteGeneImpact,
-                "${getId()}-${secondGeneImpact.getId()}" to secondGeneImpact
+                "${getId()}-${secondGeneImpact.getId()}" to secondGeneImpact,
+                "${getId()}-${millisecondGeneImpact.getId()}" to millisecondGeneImpact,
+                "${getId()}-${offsetGeneImpact.getId()}" to offsetGeneImpact
         )
     }
 
     override fun innerImpacts(): List<Impact> {
-        return listOf(hourGeneImpact, minuteGeneImpact, secondGeneImpact)
+        return listOf(hourGeneImpact, minuteGeneImpact, secondGeneImpact, millisecondGeneImpact, offsetGeneImpact)
     }
 }
