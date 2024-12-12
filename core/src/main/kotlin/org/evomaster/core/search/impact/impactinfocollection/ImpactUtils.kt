@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.datetime.TimeOffsetGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -32,6 +33,7 @@ import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.SqlMultidimensionalArrayGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeOffsetGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -70,6 +72,7 @@ class ImpactUtils {
                 is DateGene -> DateGeneImpact(id, gene)
                 is DateTimeGene -> DateTimeGeneImpact(id, gene)
                 is TimeGene -> TimeGeneImpact(id, gene)
+                is TimeOffsetGene -> TimeOffsetGeneImpact(id, gene)
                 is SeededGene<*> -> SeededGeneImpact(id, gene)
                 // math
                 is BigDecimalGene -> BigDecimalGeneImpact(id)
