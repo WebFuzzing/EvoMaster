@@ -1073,10 +1073,6 @@ class EMConfig {
     @Max(maxTcpPort)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
-    @Important(6.2)
-    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
-            " Only needed when running EvoMaster inside Docker.")
-    var dockerLocalhost = false
 
     @Important(7.0)
     @Url
@@ -1089,6 +1085,17 @@ class EMConfig {
     @Cfg("Inform EvoMaster process that it is running inside Docker." +
             " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
     var runningInDocker = false
+
+    /**
+     * TODO this is currently not implemented.
+     * Even if did, there would still be major issues with handling WireMock.
+     * Until we can think of a good solution there, no point in implementing this.
+     */
+    @Experimental
+    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
+            " Only needed when running EvoMaster inside Docker.")
+    var dockerLocalhost = false
+
 
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +

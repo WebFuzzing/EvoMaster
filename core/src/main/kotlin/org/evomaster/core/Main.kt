@@ -87,14 +87,25 @@ class Main {
                 val config = EMConfig().apply { updateProperties(options) }
 
                 if(config.runningInDocker){
-                    LoggingUtil.getInfoLogger().info("You are running EvoMaster inside Docker." +
-                            " To access the generated test suite under '/generated_tests', you will need to mount a folder" +
-                            " or volume." +
-                            " Also references to host machine on 'localhost' would need to be replaced with" +
-                            " 'host.docker.internal'." +
-                            " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
-                            " check the documentation at:" +
-                            " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}")
+                    if(config.blackBox) {
+                        LoggingUtil.getInfoLogger().info(
+                            inGreen("You are running EvoMaster inside Docker." +
+                                    " To access the generated test suite under '/generated_tests', you will need to mount a folder" +
+                                    " or volume." +
+                                    " Also references to host machine on 'localhost' would need to be replaced with" +
+                                    " 'host.docker.internal'." +
+                                    " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
+                                    " check the documentation at:") +
+                                    " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}"
+                        )
+                    } else {
+                        LoggingUtil.getInfoLogger().warn(
+                            inYellow(
+                            "White-box testing (default in EvoMaster) is currently not supported / not recommended in Docker." +
+                                    " To run EvoMaster in black-box mode, you can use --blackBox true."
+                            )
+                        )
+                    }
                 }
 
                 initAndRun(args)
