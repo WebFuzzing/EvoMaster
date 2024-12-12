@@ -19,6 +19,10 @@ ENTRYPOINT [  \
 # Run
 # docker run webfuzzing/evomaster  <options>
 #
+# Publish (latest, otherwise tag with :TAG)
+# docker login
+# docker push webfuzzing/evomaster
+#
 # Example remote BB
 # docker run -v "/$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster --blackBox true --bbSwaggerUrl https://api.apis.guru/v2/openapi.yaml  --outputFormat JAVA_JUNIT_4 --maxTime 10s --ratePerMinute 60
 #

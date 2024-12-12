@@ -102,7 +102,9 @@ class Main {
                         LoggingUtil.getInfoLogger().warn(
                             inYellow(
                             "White-box testing (default in EvoMaster) is currently not supported / not recommended in Docker." +
-                                    " To run EvoMaster in black-box mode, you can use --blackBox true."
+                                    " To run EvoMaster in black-box mode, you can use '--blackBox true'." +
+                                    " If you need to run in white-box mode, it is recommended to download an OS installer or" +
+                                    " the uber JAR file from the release-page on GitHub."
                             )
                         )
                     }
