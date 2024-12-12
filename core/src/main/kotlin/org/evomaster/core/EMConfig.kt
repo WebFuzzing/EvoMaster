@@ -1,9 +1,6 @@
 package org.evomaster.core
 
-import joptsimple.BuiltinHelpFormatter
-import joptsimple.OptionDescriptor
-import joptsimple.OptionParser
-import joptsimple.OptionSet
+import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -696,8 +693,11 @@ class EMConfig {
             return
         }
 
-        val opt = options.valueOf(m.name)?.toString()
-                ?: throw ConfigProblemException("Value not found for property ${m.name}")
+        val opt = try{
+            options.valueOf(m.name)?.toString()
+        } catch (e: OptionException){
+          throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
+        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
 
         updateValue(opt, m)
     }
