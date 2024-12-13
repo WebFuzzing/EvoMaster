@@ -2398,9 +2398,8 @@ class EMConfig {
             " instead of OFF.")
     val probabilityOfOnVsOffInAllOptionals = 0.8
 
-    @Experimental
     @Cfg("Add summary comments on each test")
-    var addTestComments = false
+    var addTestComments = true
 
     @Min(1.0)
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
