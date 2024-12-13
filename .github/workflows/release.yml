@@ -141,8 +141,6 @@ jobs:
           if-no-files-found: error
 
   tagged-release:
-    #FIXME remove once done with Docker
-    if: false
     needs: [installer-for-debian,installer-for-windows,installer-for-osx]
     name: "Tagged Release"
     runs-on: "ubuntu-latest"
