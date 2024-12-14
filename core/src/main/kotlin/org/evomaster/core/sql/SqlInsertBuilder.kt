@@ -1005,6 +1005,8 @@ class SqlInsertBuilder(
     }
 
     private fun formatNameInSql(name: String): String {
+
+        //TODO: why this??? needs explanation
         return when {
             databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
             else -> "\"$name\""
