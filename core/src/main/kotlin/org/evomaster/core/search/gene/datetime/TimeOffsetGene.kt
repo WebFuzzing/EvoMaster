@@ -6,7 +6,11 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.impact.impactinfocollection.CompositeFixedGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeOffsetGeneImpact
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 
@@ -86,4 +90,26 @@ class TimeOffsetGene(
         return false
     }
 
+    override fun adaptiveSelectSubsetToMutate(
+        randomness: Randomness,
+        internalGenes: List<Gene>,
+        mwc: MutationWeightControl,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo
+    ): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is TimeOffsetGeneImpact) {
+            val maps = mapOf<Gene, GeneImpact>(
+                type to additionalGeneMutationInfo.impact.typeImpact
+            )
+            return mwc.selectSubGene(
+                internalGenes,
+                adaptiveWeight = true,
+                targets = additionalGeneMutationInfo.targets,
+                impacts = internalGenes.map { i -> maps.getValue(i) },
+                individual = null,
+                evi = additionalGeneMutationInfo.evi
+            )
+                .map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it), it) }
+        }
+        throw IllegalArgumentException("impact is null or not TimeOffsetGeneImpact")
+    }
 }
