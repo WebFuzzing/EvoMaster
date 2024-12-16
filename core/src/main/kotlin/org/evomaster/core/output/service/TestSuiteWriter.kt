@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -207,9 +208,11 @@ class TestSuiteWriter {
         }
         val all = sampler.extractFkTables(accessedTable)
 
-        //if (all.isEmpty()) return "null"
-
-        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+        val tableNamesInSchema = remoteController.getCachedSutInfo()
+            ?.sqlSchemaDto
+            ?.tables
+            ?.map { SqlDtoUtils.getId(it) }
+            ?.toSet()
             ?: setOf()
 
         val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()

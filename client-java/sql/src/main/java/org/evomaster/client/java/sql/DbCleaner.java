@@ -8,9 +8,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -120,16 +118,42 @@ public class DbCleaner {
         }
     }
 
+    public static void clearTables(Connection connection, List<String> tablesToClean, DatabaseType type) {
+
+        String defaultSchema = getDefaultSchema(type);
+        // schema -> table_base_name
+        Map<String, Set<String>> schemaToNames = new HashMap<>();
+
+        for(String t : tablesToClean) {
+            if(! t.contains(".")){
+                Set<String> x = schemaToNames.getOrDefault(defaultSchema, new HashSet<>());
+                x.add(t);
+            } else {
+                String[] tokens = t.split("\\.");
+                String name = tokens[tokens.length - 1];
+                String schema = tokens[tokens.length - 2];
+                Set<String> x = schemaToNames.getOrDefault(schema, new HashSet<>());
+                x.add(name);
+            }
+        }
+
+        for(Map.Entry<String, Set<String>> e : schemaToNames.entrySet()) {
+            List<String> names = new ArrayList<>(e.getValue());
+            clearDatabase(connection, e.getKey(), null, names, type, true);
+        }
+    }
+
+
+    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type) {
+        clearDatabase(connection, tableToSkip, tableToClean, type, true);
+    }
+
     public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence) {
         clearDatabase(connection, getDefaultSchema(type), tablesToSkip, type, doResetSequence);
     }
 
     public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type) {
         clearDatabase(connection, tablesToSkip, type, true);
-    }
-
-    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type) {
-        clearDatabase(connection, tableToSkip, tableToClean, type, true);
     }
 
     public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence) {

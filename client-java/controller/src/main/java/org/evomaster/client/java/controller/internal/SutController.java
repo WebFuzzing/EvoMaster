@@ -651,12 +651,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return false;
     }
 
-    private void cleanDataInDbConnection(Connection connection, DbSpecification dbSpecification){
-        if (dbSpecification.schemaNames != null && !dbSpecification.schemaNames.isEmpty()){
-            dbSpecification.schemaNames.forEach(sch-> DbCleaner.clearDatabase(connection, sch,  null, dbSpecification.dbType));
-        }else
-            DbCleaner.clearDatabase(connection, null, dbSpecification.dbType);
-    }
 
     /**
      * Extra information about the SQL Database Schema, if any is present.
@@ -1539,10 +1533,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
                 if (tablesToClean.isEmpty()) return;
 
-                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
-                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
-                else
-                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
+                DbCleaner.clearTables(spec.connection, tablesToClean, spec.dbType);
+
+//                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+//                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
+//                else
+//                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
 
                 try {
                     handleInitSqlInDbClean(tablesToClean, spec);
