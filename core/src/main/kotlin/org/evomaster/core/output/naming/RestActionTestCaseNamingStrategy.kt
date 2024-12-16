@@ -154,7 +154,8 @@ open class RestActionTestCaseNamingStrategy(
                 restAction.path.getOnlyQuery(restAction.parameters)
             }
             .filter { it.value.isNotEmpty() && it.key.isNotEmpty()}
-            .flatMap { it.value }.toList()
+            .flatMap { it.value }
+            .toList()
     }
 
     /*
@@ -225,8 +226,13 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    private fun getWrappedGene(queryParam: QueryParam): Gene {
-        return (queryParam.getGeneForQuery() as OptionalGene).gene
+    private fun getWrappedGene(queryParam: QueryParam): Gene? {
+        val gene = queryParam.getGeneForQuery()
+        if (gene.staticCheckIfImpactPhenotype()) {
+            return gene
+
+        }
+        return gene.getWrappedGene(OptionalGene::class.java)?.gene
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
