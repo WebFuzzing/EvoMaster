@@ -160,7 +160,7 @@ public class FakeMockObjectController extends SpringController {
                                         data.info = j.get("exInfo").asText();
                                     }
                                 }
-                                ok = ok && client.backdoor(null, data);
+                                ok = ok && client.backdoor(null, data, null);
                             }
                         }else {
                             FakeDatabaseRow data = new FakeDatabaseRow();
@@ -173,13 +173,13 @@ public class FakeMockObjectController extends SpringController {
                                     data.info = json.get("exInfo").asText();
                                 }
                             }
-                            ok = ok && client.backdoor(null, data);
+                            ok = ok && client.backdoor(null, data, null);
                         }
                     }
                 }
                 return ok;
             }else {
-                return client.backdoor(null, null);
+                return client.backdoor(null, null, null);
             }
         } catch (TException | JsonProcessingException e) {
             return false;
@@ -205,12 +205,12 @@ public class FakeMockObjectController extends SpringController {
                                 data.info = json.get("exInfo").asText();
                             }
                         }
-                        ok = ok && client.backdoor(data, null);
+                        ok = ok && client.backdoor(data, null, null);
                     }
                 }
                 return ok;
             }else {
-                return client.backdoor(null, null);
+                return client.backdoor(null, null, null);
             }
         } catch (TException | JsonProcessingException e) {
             return false;

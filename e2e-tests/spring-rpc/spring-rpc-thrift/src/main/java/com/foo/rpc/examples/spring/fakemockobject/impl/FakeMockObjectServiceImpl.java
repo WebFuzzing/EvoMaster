@@ -3,6 +3,7 @@ package com.foo.rpc.examples.spring.fakemockobject.impl;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeDatabaseRow;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeMockObjectService;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeRetrieveData;
+import com.foo.rpc.examples.spring.fakemockobject.generated.FakeScheduleTaskData;
 import org.apache.thrift.TException;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +15,7 @@ public class FakeMockObjectServiceImpl implements FakeMockObjectService.Iface{
 
     private final Map<Integer, FakeRetrieveData> retrieveDataMap = new HashMap<>();
     private final Map<Integer, FakeDatabaseRow> dbDataMap = new HashMap<>();
-
+    private final Map<Integer, FakeScheduleTaskData> scheduleTaskDataMap = new HashMap<>();
 
     @Override
     public String getFooFromExternalService(int id) throws TException {
@@ -35,14 +36,21 @@ public class FakeMockObjectServiceImpl implements FakeMockObjectService.Iface{
     }
 
     @Override
+    public String getCompletedTaskById(int id) throws TException {
+        //TODO
+        return "";
+    }
+
+    @Override
     public List<String> getAllBarFromDatabase() throws TException {
         if (dbDataMap.isEmpty())
             return Collections.emptyList();
         return dbDataMap.values().stream().map(s-> s.name).collect(Collectors.toList());
     }
 
+
     @Override
-    public boolean backdoor(FakeRetrieveData exData, FakeDatabaseRow dbData) throws TException {
+    public boolean backdoor(FakeRetrieveData exData, FakeDatabaseRow dbData, FakeScheduleTaskData scheduleTask) throws TException {
         if (exData == null && dbData == null){
             retrieveDataMap.clear();
             dbDataMap.clear();
