@@ -1,10 +1,11 @@
-package org.evomaster.client.java.sql;
+package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.ci.utils.CIUtils;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -16,6 +17,9 @@ import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+//No longer support MSSQL
+@Deprecated
+@Disabled
 public class DbCleanerSQLServerWithSchemaTest {
 
     private static final int PORT = 1433;

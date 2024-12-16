@@ -1,12 +1,15 @@
-package org.evomaster.client.java.sql;
+package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 //TODO
 //import org.evomaster.e2etests.utils.CIUtils;
 import org.evomaster.ci.utils.CIUtils;
+import org.evomaster.client.java.sql.DbCleaner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -17,6 +20,9 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 
+//No longer support MSSQL
+@Deprecated
+@Disabled
 public class DbCleanerSQLServerTest extends DbCleanerTestBase{
 
     private static final int PORT = 1433;
