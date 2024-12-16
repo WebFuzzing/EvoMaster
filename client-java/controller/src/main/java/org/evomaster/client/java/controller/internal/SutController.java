@@ -499,9 +499,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
-                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
                     } else {
-                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType);
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
                     }
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
@@ -1522,7 +1522,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
                 if(tablesToClean == null){
                     // all data will be reset
-                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType, true);
                     try {
                         reAddAllInitSql();
                     } catch (SQLException e) {

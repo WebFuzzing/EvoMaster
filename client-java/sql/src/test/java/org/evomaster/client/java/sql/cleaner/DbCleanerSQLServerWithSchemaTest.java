@@ -63,10 +63,10 @@ public class DbCleanerSQLServerWithSchemaTest {
 
 
         assertThrows(RuntimeException.class, ()->
-                DbCleaner.clearDatabase(connection, "", null, null, DatabaseType.MS_SQL_SERVER)
+                DbCleaner.clearDatabase(connection, "", null, null, DatabaseType.MS_SQL_SERVER, true)
         );
 
-        DbCleaner.clearDatabase(connection, "Foo", null, null, DatabaseType.MS_SQL_SERVER);
+        DbCleaner.clearDatabase(connection, "Foo", null, null, DatabaseType.MS_SQL_SERVER, true);
         res = SqlScriptRunner.execCommand(connection, "SELECT * FROM Foo.Foo;");
         assertEquals(0, res.seeRows().size());
     }

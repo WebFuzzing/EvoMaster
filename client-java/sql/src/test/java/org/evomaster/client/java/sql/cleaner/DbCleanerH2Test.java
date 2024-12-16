@@ -44,7 +44,7 @@ public class DbCleanerH2Test  extends DbCleanerTestBase{
 
     @Override
     protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
-        DbCleaner.clearDatabase_H2(connection, "PUBLIC", tablesToSkip, tableToClean);
+        DbCleaner.clearDatabase_H2(connection, tablesToSkip, tableToClean);
     }
 
     @Override

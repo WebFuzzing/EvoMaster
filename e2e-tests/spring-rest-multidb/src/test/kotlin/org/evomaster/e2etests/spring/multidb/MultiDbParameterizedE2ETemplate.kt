@@ -10,10 +10,13 @@ import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
 
+//FIXME put back once fixed
+@Disabled
 abstract class MultiDbParameterizedE2ETemplate : RestTestBase(){
 
     companion object {

@@ -38,7 +38,7 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
     }
 
     @AfterAll
-    private static void afterClass() throws Exception{
+    public static void afterClass() throws Exception{
         connection.close();
         postgres.stop();
     }
