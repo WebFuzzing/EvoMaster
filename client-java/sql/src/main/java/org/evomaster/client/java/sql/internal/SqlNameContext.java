@@ -9,6 +9,7 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 
 import java.util.*;
 
@@ -67,8 +68,8 @@ public class SqlNameContext {
      *
      * If no schema is defined, this method returns false.
      */
-    public boolean hasColumn(String tableName, String columnName){
-        Objects.requireNonNull(tableName);
+    public boolean hasColumn(String fullyQualifyingTableName, String columnName){
+        Objects.requireNonNull(fullyQualifyingTableName);
         Objects.requireNonNull(columnName);
 
         if(schema == null){
@@ -76,7 +77,7 @@ public class SqlNameContext {
         }
 
         return this.schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(tableName))
+                .filter(t -> SqlDtoUtils.matchByName(t,fullyQualifyingTableName))
                 .flatMap(t -> t.columns.stream())
                 .filter(c -> c.name.equalsIgnoreCase(columnName))
                 .count() > 0;

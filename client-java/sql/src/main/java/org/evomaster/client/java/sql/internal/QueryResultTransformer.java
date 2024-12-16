@@ -6,7 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.SqlDtoUtils;
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 import org.evomaster.client.java.sql.VariableDescriptor;
 
 import java.time.Instant;
@@ -140,7 +140,10 @@ public class QueryResultTransformer {
             if (found == null)
                 qr = new QueryResult(relatedColumnNames, tableName);
 
-            Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t-> t.name.equalsIgnoreCase(tableName)).findFirst();
+            Optional<TableDto> foundTableSchema = dto.tables.stream()
+                    .filter(t-> SqlDtoUtils.matchByName(t,tableName))
+                    .findFirst();
+
             if (foundTableSchema.isPresent()){
                 TableDto tableDto = foundTableSchema.get();
 

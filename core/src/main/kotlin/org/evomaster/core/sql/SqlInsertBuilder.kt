@@ -1,5 +1,6 @@
 package org.evomaster.core.sql
 
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
@@ -96,24 +97,27 @@ class SqlInsertBuilder(
             val tableConstraints = parseTableConstraints(tableDto).toMutableList()
             val columns = generateColumnsFrom(tableDto, tableConstraints, schemaDto)
 
-            tableToConstraints[tableDto.name] = tableConstraints.toSet()
-            tableToColumns[tableDto.name] = columns
+            tableToConstraints[SqlDtoUtils.getId(tableDto)] = tableConstraints.toSet()
+            tableToColumns[SqlDtoUtils.getId(tableDto)] = columns
         }
 
         // After all columns are loaded, we can load foreign keys
         for (tableDto in schemaDto.tables) {
-            tableToForeignKeys[tableDto.name] = calculateForeignKeysFrom(tableDto, tableToColumns)
+            tableToForeignKeys[SqlDtoUtils.getId(tableDto)] = calculateForeignKeysFrom(tableDto, tableToColumns)
         }
+
+
 
         // Now we can create the tables
         for (tableDto in schemaDto.tables) {
+            val id = SqlDtoUtils.getId(tableDto)
             val table = Table(
-                tableDto.name,
-                tableToColumns[tableDto.name]!!,
-                tableToForeignKeys[tableDto.name]!!,
-                tableToConstraints[tableDto.name]!!
+                id,
+                tableToColumns[id]!!,
+                tableToForeignKeys[id]!!,
+                tableToConstraints[id]!!
             )
-            tables[tableDto.name] = table
+            tables[id] = table
         }
 
         // Setup extended tables
@@ -186,7 +190,7 @@ class SqlInsertBuilder(
                 // val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
                 //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
-                val c = tableToColumns[tableDto.name]!!.find { it.name.equals(cname, ignoreCase = true) }
+                val c = tableToColumns[SqlDtoUtils.getId(tableDto)]!!.find { it.name.equals(cname, ignoreCase = true) }
                     ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.name} does not have a column called $cname")
 
                 sourceColumns.add(c)

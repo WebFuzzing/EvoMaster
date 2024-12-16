@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql;
 
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.sql.internal.constraint.*;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -42,7 +43,7 @@ public class DbInfoExtractor {
             if (schema.enumeraredTypes.stream().noneMatch(k -> k.name.equals(column.type))) {
                 throw new IllegalArgumentException("Missing enumerated type declaration for type " + column.type
                         + " in column " + column.name
-                        + " of table " + table.name);
+                        + " of table " + SqlDtoUtils.getId(table));
             }
         }
     }
@@ -62,9 +63,8 @@ public class DbInfoExtractor {
         }
 
         //TODO proper handling of multi-column PKs/FKs
-
         Optional<TableDto> targetTable = schema.tables.stream()
-                .filter(t -> t.name.equals(fk.get().targetTable))
+                .filter(t -> SqlDtoUtils.matchByName(t, fk.get().targetTable))
                 .findFirst();
 
         if (!targetTable.isPresent()) {
@@ -107,7 +107,7 @@ public class DbInfoExtractor {
         //TODO proper handling of multi-column PKs/FKs
 
         Optional<TableDto> targetTable = schema.tables.stream()
-                .filter(t -> t.name.equals(fk.get().targetTable))
+                .filter(t ->  SqlDtoUtils.matchByName(t, fk.get().targetTable))
                 .findFirst();
 
         if (!targetTable.isPresent()) {
@@ -235,7 +235,7 @@ public class DbInfoExtractor {
 
     private static ColumnDto getColumnDto(DbInfoDto schemaDto, String tableName, String columnName) {
         TableDto tableDto = schemaDto.tables.stream()
-                .filter(t -> t.name.equals(tableName.toLowerCase()))
+                .filter(t -> SqlDtoUtils.matchByName(t,tableName))
                 .findFirst()
                 .orElse(null);
         return tableDto.columns.stream()
@@ -521,7 +521,9 @@ public class DbInfoExtractor {
     private static void addConstraints(DbInfoDto schemaDto, List<DbTableConstraint> constraintList) {
         for (DbTableConstraint constraint : constraintList) {
             String tableName = constraint.getTableName();
-            TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+            TableDto tableDto = schemaDto.tables.stream()
+                    .filter(t ->  SqlDtoUtils.matchByName(t,tableName))
+                    .findFirst().orElse(null);
 
             if (tableDto == null) {
                 throw new NullPointerException("TableDto for table " + tableName + " was not found in the schemaDto");
@@ -808,14 +810,6 @@ public class DbInfoExtractor {
         }
     }
 
-    /**
-     * @return a table DTO for a particular table name
-     */
-    private static TableDto getTable(DbInfoDto schema, String tableName) {
-        return schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(tableName))
-                .findFirst().orElse(null);
-    }
 
     private static ColumnDto getColumn(TableDto table, String columnName) {
         return table.columns.stream()
@@ -861,7 +855,7 @@ public class DbInfoExtractor {
                     support for multi-column PKs/FKs
                  */
                 int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
-                TableDto targetTableDto = getTable(schema, fk.targetTable);
+                TableDto targetTableDto = SqlDtoUtils.getTable(schema, fk.targetTable);
                 String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
                 ColumnDto targetColumnDto = getColumn(targetTableDto, targetColumnName);
 
