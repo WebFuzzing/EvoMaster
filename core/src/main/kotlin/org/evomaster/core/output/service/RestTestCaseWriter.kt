@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
@@ -509,6 +510,25 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val id = x.action.getName()
                 val prefix = if(ea.size == 1) "" else "${i+1} - "
                 lines.addBlockCommentLine("$prefix($status) $id")
+            }
+        }
+
+        //TODO move up when adding test comments to other problem types as well
+        //faults
+        val faults = ea.map { it.result }
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+        if(faults.isNotEmpty()){
+            if(faults.size == 1){
+                lines.addBlockCommentLine("Found 1 potential fault of type-code ${faults.first().category.code}")
+            } else {
+                val codes = faults.asSequence().map { it.category.code }.toSet().toList().sorted()
+                val codeInfo = if (codes.size == 1) {
+                    " of type-code ${codes[0]}"
+                } else {
+                    ". Type-codes: ${codes.joinToString(", ")}"
+                }
+                lines.addBlockCommentLine("Found ${faults.size} potential faults$codeInfo")
             }
         }
 
