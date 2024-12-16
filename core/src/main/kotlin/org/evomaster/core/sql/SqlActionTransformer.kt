@@ -35,7 +35,7 @@ object SqlActionTransformer {
             }
 
 
-            val insertion = InsertionDto().apply { targetTable = action.table.name }
+            val insertion = InsertionDto().apply { targetTable = action.getFullQualifyingTableName() }
 
             for (g in action.seeTopGenes()) {
                 if (g is SqlPrimaryKeyGene) {

@@ -544,12 +544,7 @@ public class DbInfoExtractor {
         }
     }
 
-    private static String getId(TableDto dto){
-        if(dto.schema == null){
-            return dto.name;
-        }
-        return dto.schema + "." + dto.name;
-    }
+
 
     private static void handleTableEntry(Connection connection, DbInfoDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableIds) throws SQLException {
 
@@ -582,13 +577,13 @@ public class DbInfoExtractor {
         tableDto.schema = tableSchema;
         tableDto.catalog = tableCatalog;
 
-        if (tableIds.contains(getId(tableDto))) {
+        if (tableIds.contains(SqlDtoUtils.getId(tableDto))) {
             /*
              * Perhaps we should throw a more specific exception than IllegalArgumentException
              */
-            throw new IllegalArgumentException("Cannot handle repeated table " + getId(tableDto) + " in database");
+            throw new IllegalArgumentException("Cannot handle repeated table " + SqlDtoUtils.getId(tableDto) + " in database");
         } else {
-            tableIds.add(getId(tableDto));
+            tableIds.add(SqlDtoUtils.getId(tableDto));
         }
 
         Set<String> pks = new HashSet<>();

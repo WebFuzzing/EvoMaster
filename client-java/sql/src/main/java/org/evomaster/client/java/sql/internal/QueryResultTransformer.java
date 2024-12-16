@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.SqlDtoUtils;
 import org.evomaster.client.java.sql.VariableDescriptor;
 
 import java.time.Instant;
@@ -129,7 +130,7 @@ public class QueryResultTransformer {
 
 
     private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults){
-        List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNames(insertionDto, relatedColumns);
+        List<String> relatedColumnNames = SqlDtoUtils.extractColumnNames(insertionDto, relatedColumns);
         if (!relatedColumnNames.isEmpty()){
             QueryResult found = null;
             if (!existingQueryResults.isEmpty())
@@ -143,13 +144,13 @@ public class QueryResultTransformer {
             if (foundTableSchema.isPresent()){
                 TableDto tableDto = foundTableSchema.get();
 
-                List<String> printableValue = SqlDatabaseDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
+                List<String> printableValue = SqlDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
                 assert printableValue.size() == relatedColumnNames.size();
 
                 List<Object> values = new ArrayList<>();
 
                 for (int i = 0; i < printableValue.size(); i++){
-                    ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
+                    ColumnDto columnDto = SqlDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
                     if (columnDto == null)
                         throw new IllegalArgumentException("Cannot find column schema of "+ relatedColumnNames.get(i) + " in Table "+ tableName);
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));

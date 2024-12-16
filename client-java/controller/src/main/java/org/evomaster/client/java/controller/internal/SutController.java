@@ -374,9 +374,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (!additionalInfoList.isEmpty()) {
             AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
             last.getSqlInfoData().stream().forEach(it -> {
-//                    String sql = it.getCommand();
                 try {
-                    final SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(it.getSqlCommand(), it.hasThrownSqlException(), it.getExecutionTime());
+                    SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(
+                            it.getSqlCommand(),
+                            it.hasThrownSqlException(),
+                            it.getExecutionTime());
                     sqlHandler.handle(sqlExecutionLogDto);
                 } catch (Exception e) {
                     SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getSqlCommand());
@@ -406,7 +408,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-//            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
@@ -495,13 +496,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             // clean accessed tables
             Set<String> tableDataToInit = null;
             if (!accessedTables.isEmpty()){
-                List<String> tablesToClean = new ArrayList<>();
-                getTableToClean(accessedTables, tablesToClean);
+                List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
-                    }else
-                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+                    } else {
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType);
+                    }
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
                 }
             }
@@ -582,7 +583,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         successfulInitSqlInsertions.add(insertionDto);
     }
 
-    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
+    private List<String> getTablesToClean(List<String> accessedTables) {
+        List<String> tablesToClean = new ArrayList<>();
+        fillTablesToClean(accessedTables,tablesToClean);
+        return tablesToClean;
+    }
+
+    private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
         for (String t: accessedTables){
             if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
                 if (findInMapIgnoreCase(t, fkMap).isPresent()){
@@ -591,7 +598,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                             findInCollectionIgnoreCase(t, e.getValue()).isPresent()
                                     && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
                     if (!fk.isEmpty())
-                        getTableToClean(fk, tablesToClean);
+                        fillTablesToClean(fk, tablesToClean);
                 }else {
                     SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
                 }

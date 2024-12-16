@@ -91,12 +91,12 @@ public class SqlNameContext {
      * @param column a column object
      * @return the name of the table that this column belongs to
      */
-    public String getTableName(Column column) {
+    public String getFullyQualifiedTableName(Column column) {
 
         Table table = column.getTable();
 
         if (table != null) {
-            return tableAliases.getOrDefault(table.getName().toLowerCase(), table.getName().toLowerCase());
+            return tableAliases.getOrDefault(table.getFullyQualifiedName().toLowerCase(), table.getFullyQualifiedName().toLowerCase());
         }
 
         if(statement instanceof Select) {
@@ -112,10 +112,10 @@ public class SqlNameContext {
             }
         } else if(statement instanceof Delete){
             Delete delete = (Delete) statement;
-            return delete.getTable().getName().toLowerCase();
+            return delete.getTable().getFullyQualifiedName().toLowerCase();
         } else if(statement instanceof Update){
             Update update = (Update) statement;
-            return update.getTable().getName().toLowerCase();
+            return update.getTable().getFullyQualifiedName().toLowerCase();
         }else {
             throw new IllegalArgumentException("Cannot handle table name for: " + statement);
         }
@@ -131,7 +131,7 @@ public class SqlNameContext {
         FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
             @Override
             public void visit(Table table) {
-                names.add(table.getName().toLowerCase());
+                names.add(table.getFullyQualifiedName().toLowerCase());
             }
         };
 

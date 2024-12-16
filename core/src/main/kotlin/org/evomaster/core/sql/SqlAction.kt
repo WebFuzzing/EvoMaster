@@ -98,6 +98,13 @@ class SqlAction(
         }
     }
 
+    fun getFullQualifyingTableName() : String{
+        if(openGroupName.isNullOrBlank()){
+            return table.name
+        }
+        return "$openGroupName.${table.name}"
+    }
+
     private val genes: List<Gene> = (computedGenes
         ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(id, table, it) }
             ).also {

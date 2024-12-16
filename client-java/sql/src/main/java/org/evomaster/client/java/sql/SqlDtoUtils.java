@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
@@ -9,8 +9,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SqlDatabaseDtoUtils {
+public class SqlDtoUtils {
 
+
+    public static String getId(TableDto dto){
+        if(dto.schema == null){
+            return dto.name;
+        }
+        return dto.schema + "." + dto.name;
+    }
 
     /**
      *
