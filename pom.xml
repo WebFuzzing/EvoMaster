@@ -163,7 +163,7 @@
         <mariadb.java.client.version>2.7.2</mariadb.java.client.version>
         <mssql.jdbc.version>9.2.1.jre8</mssql.jdbc.version>
         <org.mybatis.spring.boot.version>2.2.0</org.mybatis.spring.boot.version>
-        <thrift.libthrift.version>0.15.0</thrift.libthrift.version>
+        <thrift.libthrift.version>0.21.0</thrift.libthrift.version>
         <io.grpc.version>1.57.2</io.grpc.version>
         <org.xolsticeprotobuf.version>0.6.1</org.xolsticeprotobuf.version>
         <com.google.protobuf.protoc.version>3.17.3</com.google.protobuf.protoc.version>
