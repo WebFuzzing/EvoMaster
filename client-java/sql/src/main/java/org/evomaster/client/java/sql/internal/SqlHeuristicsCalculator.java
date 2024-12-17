@@ -7,6 +7,7 @@ import net.sf.jsqlparser.statement.select.Join;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
+import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 
@@ -18,13 +19,16 @@ import static org.evomaster.client.java.sql.internal.SqlParserUtils.*;
 public class SqlHeuristicsCalculator {
 
     public static double C = 0.1;
-    public static double C_BETTER = C + C / 2;
+    public static double C_BETTER = C + (C / 2);
     public static Truthness TRUE_TRUTHNESS = new Truthness(1, C);
+    public static Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
+    public static Truthness FALSE_TRUTHNESS_BETTER = new Truthness(C_BETTER, 1);
 
-    private QueryResultSet queryResultSet;
-
-    private SqlHeuristicsCalculator(QueryResult[] data) {
+    private final QueryResultSet queryResultSet;
+    private final SqlNameContext sqlNameContext;
+    private SqlHeuristicsCalculator(SqlNameContext sqlNameContext, QueryResult[] data) {
         final boolean isCaseSensitive = false;
+        this.sqlNameContext = sqlNameContext;
         this.queryResultSet = new QueryResultSet(isCaseSensitive);
         for (QueryResult queryResult : data) {
             queryResultSet.addQueryResult(queryResult);
@@ -37,8 +41,11 @@ public class SqlHeuristicsCalculator {
                                                          QueryResult... data) {
 
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(data);
+        SqlNameContext sqlNameContext = new SqlNameContext(parsedSqlCommand);
+        if (schema != null) {
+            sqlNameContext.setSchema(schema);
+        }
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(sqlNameContext, data);
         Truthness t = calculator.computeCommand(parsedSqlCommand);
         double distanceToTrue = 1 - t.getOfTrue();
         return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
@@ -55,6 +62,8 @@ public class SqlHeuristicsCalculator {
             return getTruthnessForTable(null);
         } else if (fromItem != null && joins == null && whereClause == null) {
             return getTruthnessForTable(fromItem);
+        } else if (fromItem != null && joins == null && whereClause != null) {
+            return getTruthnessForCondition(whereClause, fromItem);
         } else if (fromItem != null && joins != null && whereClause == null) {
             final Join join = joins.get(0);
             final FromItem leftFromItem = fromItem;
@@ -67,18 +76,55 @@ public class SqlHeuristicsCalculator {
             } else if (join.isCross()) {
                 Truthness truthnessLeftTable = getTruthnessForTable(leftFromItem);
                 Truthness truthnessRightTable = getTruthnessForTable(rightFromItem);
-                return TruthnessUtils.andAggregation(truthnessLeftTable, truthnessRightTable);
+                return TruthnessUtils.buildAndAggregationTruthness(truthnessLeftTable, truthnessRightTable);
             } else {
                 // inner join?
             }
-
 
         }
 
         return null;
     }
 
+    private Truthness getTruthnessForCondition(Expression whereClause, FromItem fromItem) {
+
+        double maxOfTrue = 0.0d;
+        int rowCount = 0;
+        QueryResult queryResult = getQueryResultForFromItem(fromItem);
+        if (queryResult.isEmpty()) {
+            return FALSE_TRUTHNESS;
+        } else {
+            for (DataRow row : queryResult.seeRows()) {
+                Truthness t = getTruthnessForExpression(whereClause, row);
+                if (t.isTrue()) {
+                    return TRUE_TRUTHNESS;
+                } else {
+                    if (t.getOfTrue() > maxOfTrue) {
+                        maxOfTrue = t.getOfTrue();
+                    }
+                }
+                rowCount++;
+            }
+            return TruthnessUtils.buildScaledTruthness(C, maxOfTrue);
+        }
+
+
+    }
+
+    private Truthness getTruthnessForExpression(Expression whereClause, DataRow row) {
+        SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(sqlNameContext, row);
+        whereClause.accept(expressionEvaluator);
+        return expressionEvaluator.getEvaluatedTruthness();
+    }
+
     private Truthness getTruthnessForTable(FromItem fromItem) {
+        final QueryResult tableData = getQueryResultForFromItem(fromItem);
+        final int len = tableData.size();
+        final Truthness t = TruthnessUtils.getTruthnessToEmpty(len).invert();
+        return t;
+    }
+
+    private QueryResult getQueryResultForFromItem(FromItem fromItem) {
         final QueryResult tableData;
         if (fromItem == null) {
             tableData = queryResultSet.getQueryResultForVirtualTable();
@@ -89,9 +135,7 @@ public class SqlHeuristicsCalculator {
             String tableName = SqlParserUtils.getTableName(fromItem);
             tableData = queryResultSet.getQueryResultForNamedTable(tableName);
         }
-        final int len = tableData.size();
-        final Truthness t = TruthnessUtils.getTruthnessToEmpty(len).invert();
-        return t;
+        return tableData;
     }
 
 

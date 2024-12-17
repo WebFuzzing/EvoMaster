@@ -81,7 +81,7 @@ public class TruthnessUtils {
         return t;
     }
 
-    public static Truthness andAggregation(Truthness... truthnesses) {
+    public static Truthness buildAndAggregationTruthness(Truthness... truthnesses) {
         double averageOfTrue = averageOfTrue(truthnesses);
         double falseOrAverageFalse = falseOrAverageFalse(truthnesses);
         return new Truthness(averageOfTrue, falseOrAverageFalse);
@@ -125,6 +125,12 @@ public class TruthnessUtils {
         } else {
             return averageOfFalse(truthnesses);
         }
+    }
+
+    public static Truthness buildScaledTruthness(double base, double ofTrueToScale) {
+        final double scaledOfTrue = DistanceHelper.scaleHeuristicWithBase(ofTrueToScale, base);
+        final double ofFalse = 1.0d;
+        return new Truthness(scaledOfTrue, ofFalse);
     }
 
 

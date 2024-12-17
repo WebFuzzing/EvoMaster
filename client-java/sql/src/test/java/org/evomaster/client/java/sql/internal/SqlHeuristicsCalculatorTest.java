@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
@@ -155,4 +156,18 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testSelectWithWhereNoRows() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age=18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 15));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = TruthnessUtils.getEqualityTruthness(15.0d, 18.0d).getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
 }
