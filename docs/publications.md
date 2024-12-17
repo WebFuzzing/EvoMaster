@@ -27,7 +27,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * A. Arcuri, A. Poth, O. Rrjolli.
   *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
-  *(To appear)*
+  [[PDF](publications/2025_icst.pdf)]
 
 * S. Seran, O. Duman, A. Arcuri.
   *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.

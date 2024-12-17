@@ -15,15 +15,8 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class WriteXMLTest {
+class WriteXMLTest : WriterTestBase() {
 
-    private fun getConfig(format: OutputFormat): EMConfig {
-        val config = EMConfig()
-        config.outputFormat = format
-        //config.expectationsActive = false
-        config.testTimeout = -1
-        return config
-    }
 
     @Test
     fun testEmptyXML() {
