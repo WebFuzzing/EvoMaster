@@ -180,9 +180,11 @@ class SqlInsertBuilder(
 
         for (fk in tableDto.foreignKeys) {
 
-            tableToColumns[fk.targetTable]
-                ?: throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
+            val tableKey = getTableKey(tableToColumns.keys, fk.targetTable)
 
+            if(tableKey == null || tableToColumns[tableKey] == null) {
+                throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
+            }
             val sourceColumns = mutableSetOf<Column>()
 
             for (cname in fk.sourceColumns) {
@@ -196,7 +198,7 @@ class SqlInsertBuilder(
                 sourceColumns.add(c)
             }
 
-            fks.add(ForeignKey(sourceColumns, fk.targetTable))
+            fks.add(ForeignKey(sourceColumns, tableKey))
         }
         return fks
     }
@@ -616,19 +618,52 @@ class SqlInsertBuilder(
     /**
      * SQL is not case sensitivity.
      * Therefore, table/column must ignore case sensitivity.
+     *
+     * No. This is not strictly true:
+     * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
+     *
+     * quotes "" can be used to force case-sensitivity
      */
-    fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
+    fun isTable(tableName: String) =  getTableKey(tables.keys, tableName) != null
+
+    private fun <T>  getValueByTableNameKey(map: Map<String, T>, tableName: String) : T?{
+
+        val key = getTableKey(map.keys, tableName)
+        return map[key]
+    }
+
+    private fun getTableKey(keys: Set<String>, tableName: String) : String?{
+        /*
+         * SQL is not case sensitivity, table/column must ignore case sensitivity.
+         * No, this is not really true...
+         * Usually, names are lowered-cased by the DB, unless quoted in "":
+         * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
+         *
+         */
+        val tableNameKey = keys.find { tableName.equals(it, ignoreCase = true) }
+        if (!tableName.contains(".") &&  tableNameKey == null){
+            //input name might be without schema, so check for partial match
+            val candidates = keys.filter { it.endsWith(".${tableName}", true) }
+            if(candidates.size > 1){
+                throw IllegalArgumentException("Ambiguity." +
+                        " More than one candidate of table called $tableName." +
+                        " Values: ${candidates.joinToString(", ")}")
+            }
+            if(candidates.size == 1){
+                return candidates[0]
+            }
+        }
+        return tableNameKey
+    }
 
     fun getTable(tableName: String, useExtraConstraints: Boolean): Table {
 
         val data = if (useExtraConstraints) extendedTables else tables
 
-        /*
-         * SQL is not case sensitivity, table/column must ignore case sensitivity.
-         */
-        val tableNameKey = data.keys.find { tableName.equals(it, ignoreCase = true) }
-        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
+        val tableNameKey = getTableKey(data.keys, tableName)
+            ?: throw IllegalArgumentException("No table called $tableName")
 
+        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
     }
 
     /**
@@ -1009,11 +1044,18 @@ class SqlInsertBuilder(
 
     private fun formatNameInSql(name: String): String {
 
+        return name
+
+        /*
+            The handling of "" quotes is extremely tricky.
+            TODO if we really want to support it, would need to have a flag on each name (eg have
+             to pass them as pojo, not string)
+         */
         //TODO: why this??? needs explanation
-        return when {
-            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
-            else -> "\"$name\""
-        }
+//        return when {
+//            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
+//            else -> "\"$name\""
+//        }
     }
 
     /**
