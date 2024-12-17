@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
@@ -21,20 +22,27 @@ class StandardGeneticAlgorithmTest {
         .build().createInjector()
 
     @Test
-    fun search() {
+    fun testStandardGeneticAlgorithm() {
         TestUtils.handleFlaky {
             val standardGeneticAlgorithm = injector.getInstance(
                 Key.get(
-                object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {}))
+                    object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
+            )
 
             val config = injector.getInstance(EMConfig::class.java)
-            config.maxActionEvaluations = 30000
-            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+            config.maxEvaluations = 10000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
 
             val solution = standardGeneticAlgorithm.search()
-            println("size: ${solution.individuals.size}")
-//            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
-            //assertTrue(solution.individuals.size <= 2)
+
+            epc.finishSearch()
+
+            assertTrue(solution.individuals.size == 1)
+            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
         }
     }
+
 }
