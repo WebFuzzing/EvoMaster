@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.ExecutionPhaseController
 import org.junit.jupiter.api.Test
 
@@ -41,7 +42,7 @@ class StandardGeneticAlgorithmTest {
             epc.finishSearch()
 
             assertTrue(solution.individuals.size == 1)
-            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
+            assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
     }
 
