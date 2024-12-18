@@ -7,6 +7,9 @@ import org.evomaster.dbconstraint.TableConstraint
  * Should be immutable
  */
 data class Table(
+        /**
+         * This usually would be fully qualified, ie, including schema
+         */
         val name: String,
 
         val columns: Set<Column>,
