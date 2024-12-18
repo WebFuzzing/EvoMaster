@@ -12,7 +12,6 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
@@ -34,6 +33,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -520,6 +520,10 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
+
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -539,6 +543,10 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RPCIndividual>>() {})
+
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -558,6 +566,9 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<WebIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -577,6 +588,9 @@ class Main {
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.STANDARD_GA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<RestIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
