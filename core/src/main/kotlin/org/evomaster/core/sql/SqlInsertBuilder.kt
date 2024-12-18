@@ -180,7 +180,7 @@ class SqlInsertBuilder(
 
         for (fk in tableDto.foreignKeys) {
 
-            val tableKey = getTableKey(tableToColumns.keys, fk.targetTable)
+            val tableKey = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
 
             if(tableKey == null || tableToColumns[tableKey] == null) {
                 throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
@@ -624,43 +624,21 @@ class SqlInsertBuilder(
      *
      * quotes "" can be used to force case-sensitivity
      */
-    fun isTable(tableName: String) =  getTableKey(tables.keys, tableName) != null
+    fun isTable(tableName: String) =  SqlActionUtils.getTableKey(tables.keys, tableName) != null
 
     private fun <T>  getValueByTableNameKey(map: Map<String, T>, tableName: String) : T?{
 
-        val key = getTableKey(map.keys, tableName)
+        val key = SqlActionUtils.getTableKey(map.keys, tableName)
         return map[key]
     }
 
-    private fun getTableKey(keys: Set<String>, tableName: String) : String?{
-        /*
-         * SQL is not case sensitivity, table/column must ignore case sensitivity.
-         * No, this is not really true...
-         * Usually, names are lowered-cased by the DB, unless quoted in "":
-         * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
-         *
-         */
-        val tableNameKey = keys.find { tableName.equals(it, ignoreCase = true) }
-        if (!tableName.contains(".") &&  tableNameKey == null){
-            //input name might be without schema, so check for partial match
-            val candidates = keys.filter { it.endsWith(".${tableName}", true) }
-            if(candidates.size > 1){
-                throw IllegalArgumentException("Ambiguity." +
-                        " More than one candidate of table called $tableName." +
-                        " Values: ${candidates.joinToString(", ")}")
-            }
-            if(candidates.size == 1){
-                return candidates[0]
-            }
-        }
-        return tableNameKey
-    }
+
 
     fun getTable(tableName: String, useExtraConstraints: Boolean): Table {
 
         val data = if (useExtraConstraints) extendedTables else tables
 
-        val tableNameKey = getTableKey(data.keys, tableName)
+        val tableNameKey = SqlActionUtils.getTableKey(data.keys, tableName)
             ?: throw IllegalArgumentException("No table called $tableName")
 
         return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")

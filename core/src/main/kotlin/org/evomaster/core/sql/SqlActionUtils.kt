@@ -495,7 +495,57 @@ object SqlActionUtils {
      * @return a list of dbactions from [sqlActions] whose related table is [tableName]
      */
     fun findDbActionsByTableName(sqlActions: List<SqlAction>, tableName : String) : List<SqlAction>{
-        return sqlActions.filter { it.table.name.equals(tableName, ignoreCase = true) }
+        return sqlActions.filter { it.table.name.equals(tableName, ignoreCase = true)
+                || it.table.name.endsWith(".$tableName", true)}
     }
 
+
+    /**
+     * Are the 2 names matching? This ignore case.
+     * The first [fullName] is a full qualifying name, including schema.
+     * The second [name] "might" be simple, or full qualifying.
+     */
+    fun isMatchingTableName(fullName: String, name: String) : Boolean{
+
+        if(fullName.equals(name, ignoreCase = true)){
+            return true
+        }
+
+        if(name.contains(".")){
+            return false
+        }
+
+        return fullName.endsWith(".$name", true)
+    }
+
+    /**
+     * Given a set of table ids, returns the one matching the given table name.
+     * There are at least 2 problems handled here:
+     * 1) case sensitiveness
+     * 2) keys having full names (eg, including schemas and possibly catalog) whereas input only having the name.
+     *    this latter case is not a problem if names are unique
+     */
+    fun getTableKey(keys: Set<String>, tableName: String) : String?{
+        /*
+         * SQL is not case sensitivity, table/column must ignore case sensitivity.
+         * No, this is not really true...
+         * Usually, names are lowered-cased by the DB, unless quoted in "":
+         * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
+         *
+         */
+        val tableNameKey = keys.find { tableName.equals(it, ignoreCase = true) }
+        if (!tableName.contains(".") &&  tableNameKey == null){
+            //input name might be without schema, so check for partial match
+            val candidates = keys.filter { it.endsWith(".${tableName}", true) }
+            if(candidates.size > 1){
+                throw IllegalArgumentException("Ambiguity." +
+                        " More than one candidate of table called $tableName." +
+                        " Values: ${candidates.joinToString(", ")}")
+            }
+            if(candidates.size == 1){
+                return candidates[0]
+            }
+        }
+        return tableNameKey
+    }
 }

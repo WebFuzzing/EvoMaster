@@ -69,7 +69,7 @@ class ResourceNodeWithDbTest {
         assertEquals(6, cluster.getCluster().size)
 
         // table in db
-        assertTrue(cluster.getTableInfo().keys.containsAll(setOf("RFOO", "RBAR", "RXYZ")))
+        assertTrue(cluster.getTableInfo().keys.containsAll(setOf("PUBLIC.RFOO", "PUBLIC.RBAR", "PUBLIC.RXYZ")))
 
         // data in db
         assertEquals(2, cluster.getDataInDb("RFOO")?.size)
@@ -79,7 +79,7 @@ class ResourceNodeWithDbTest {
         val rfooNode = cluster.getResourceNode("/v3/api/rfoo")
         assertNotNull(rfooNode)
         rfooNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.contains("RFOO"))
+            assertTrue(derivedMap.keys.contains("PUBLIC.RFOO"), "Keys: ${derivedMap.keys.joinToString(", ")}")
             assertEquals(1, paramToTable.size)
             assertTrue(paramToTable.values.first() is BodyParamRelatedToTable)
             (paramToTable.values.first() as BodyParamRelatedToTable).apply {
