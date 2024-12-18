@@ -11,7 +11,6 @@ import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.Select;
-import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
@@ -40,22 +39,49 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return computedTruthnesses.peek();
     }
 
+    private void visitComparisonOperator(ComparisonOperator comparisonOperator) {
+        final Object concreteRightValue = concreteValues.pop();
+        final Object concreteLeftValue = concreteValues.pop();
+        final Truthness truthness = computeTruthnessForComparisonOperator(concreteLeftValue, concreteRightValue, comparisonOperator);
+        computedTruthnesses.push(truthness);
+    }
+
     @Override
     public void visit(EqualsTo equalsTo) {
         super.visit(equalsTo);
-        final Object concreteRightValue = concreteValues.pop();
-        final Object concreteLeftValue = concreteValues.pop();
+        visitComparisonOperator(equalsTo);
+    }
+
+    private Truthness computeTruthnessForComparisonOperator(Object concreteLeftValue, Object concreteRightValue, ComparisonOperator comparisonOperator) {
         final Truthness truthness;
         if (concreteLeftValue == null && concreteRightValue == null) {
             truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS;
         } else if (concreteLeftValue == null || concreteRightValue == null) {
             truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS_BETTER;
         } else {
-            final double ofTrue;
+            final Truthness truthnessOfExpression;
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
                 double leftValueAsDouble = ((Number) concreteLeftValue).doubleValue();
                 double rightValueAsDouble = ((Number) concreteRightValue).doubleValue();
-                ofTrue = TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble).getOfTrue();
+                if (comparisonOperator instanceof EqualsTo) {
+                    truthnessOfExpression = TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble);
+                } else if (comparisonOperator instanceof NotEqualsTo) {
+                    //a != b => !(a == b)
+                    truthnessOfExpression = TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble).invert();
+                } else if (comparisonOperator instanceof GreaterThan) {
+                    //a > b => b < a
+                    truthnessOfExpression = TruthnessUtils.getLessThanTruthness(rightValueAsDouble, leftValueAsDouble);
+                } else if (comparisonOperator instanceof MinorThan) {
+                    truthnessOfExpression = TruthnessUtils.getLessThanTruthness(leftValueAsDouble, rightValueAsDouble);
+                } else if (comparisonOperator instanceof MinorThanEquals) {
+                    //a <= b => b >= a => !(b < a)
+                    truthnessOfExpression = TruthnessUtils.getLessThanTruthness(rightValueAsDouble, leftValueAsDouble).invert();
+                } else if (comparisonOperator instanceof GreaterThanEquals) {
+                    //a >= b => ! (a < b)
+                    truthnessOfExpression = TruthnessUtils.getLessThanTruthness(leftValueAsDouble, rightValueAsDouble).invert();
+                } else {
+                    throw new UnsupportedOperationException("Unsupported comparison operator: " + comparisonOperator);
+                }
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
                 throw new UnsupportedOperationException("String comparison not yet supported");
             } else if (concreteLeftValue instanceof Timestamp || concreteRightValue instanceof Timestamp
@@ -66,9 +92,13 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             } else {
                 throw new UnsupportedOperationException("type not supported");
             }
-            truthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, ofTrue);
+            if (truthnessOfExpression.isTrue()) {
+                truthness = truthnessOfExpression;
+            } else {
+                truthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, truthnessOfExpression.getOfTrue());
+            }
         }
-        computedTruthnesses.push(truthness);
+        return truthness;
     }
 
     @Override
@@ -185,12 +215,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(GreaterThan greaterThan) {
-        throw new UnsupportedOperationException("visit(GreaterThan) not supported");
+        super.visit(greaterThan);
+        this.visitComparisonOperator(greaterThan);
     }
 
     @Override
     public void visit(GreaterThanEquals greaterThanEquals) {
-        throw new UnsupportedOperationException("visit(GreaterThanEquals) not supported");
+        super.visit(greaterThanEquals);
+        this.visitComparisonOperator(greaterThanEquals);
     }
 
     @Override
@@ -220,17 +252,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(MinorThan minorThan) {
-        throw new UnsupportedOperationException("visit(MinorThan) not supported");
+        super.visit(minorThan);
+        visitComparisonOperator(minorThan);
     }
 
     @Override
     public void visit(MinorThanEquals minorThanEquals) {
-        throw new UnsupportedOperationException("visit(MinorThanEquals) not supported");
+        super.visit(minorThanEquals);
+        visitComparisonOperator(minorThanEquals);
     }
 
     @Override
     public void visit(NotEqualsTo notEqualsTo) {
-        throw new UnsupportedOperationException("visit(NotEqualsTo) not supported");
+        super.visit(notEqualsTo);
+        visitComparisonOperator(notEqualsTo);
     }
 
     @Override

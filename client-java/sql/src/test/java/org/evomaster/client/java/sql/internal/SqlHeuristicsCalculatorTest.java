@@ -157,17 +157,72 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testSelectWithWhereNoRows() {
+    public void testSelectNotEquals() {
         String sqlCommand = "SELECT name, age FROM Persons WHERE age=18";
         QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
-        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 15));
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testSelectMinorThan() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age<18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 33));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
 
-        double equalityTruthness = TruthnessUtils.getEqualityTruthness(15.0d, 18.0d).getOfTrue();
+        double equalityTruthness = TruthnessUtils.getLessThanTruthness(33.0d, 18.0d).getOfTrue();
         double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
         double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
         double expectedDistance = 1 - scaledTruthness;
 
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
+
+    @Test
+    public void testSelectMinorThanEquals() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age<=18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 33));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = TruthnessUtils.getLessThanTruthness(18.0d, 33.0d).invert().getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testSelectGreaterThan() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE 18>age";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 33));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = TruthnessUtils.getLessThanTruthness( 33,18.0d).getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testSelectGreaterThanEquals() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE 18>=age";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 33));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = TruthnessUtils.getLessThanTruthness( 18,33.0d).invert().getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
 }

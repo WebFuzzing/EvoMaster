@@ -46,6 +46,15 @@ public class TruthnessUtils {
         );
     }
 
+
+    public static Truthness getLessThanTruthness(double a, double b) {
+        double distance = DistanceHelper.getDistanceToEquality(a, b);
+        return new Truthness(
+                a < b ? 1d : 1d / (1.1d + distance),
+                a >= b ? 1d : 1d / (1.1d + distance)
+        );
+    }
+
     public static Truthness getLessThanTruthness(long a, long b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         return new Truthness(
