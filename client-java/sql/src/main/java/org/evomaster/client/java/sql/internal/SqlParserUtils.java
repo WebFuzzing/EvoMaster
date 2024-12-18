@@ -3,12 +3,16 @@ package org.evomaster.client.java.sql.internal;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.FromItem;
+import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
+
+import java.util.List;
 
 public class SqlParserUtils {
 
@@ -95,6 +99,16 @@ public class SqlParserUtils {
         }
     }
 
+    public static List<Join> getJoins(Statement parsedStatement) {
+        if (parsedStatement instanceof Select) {
+            Select select = (Select) parsedStatement;
+            PlainSelect plainSelect = select.getPlainSelect();
+            return plainSelect.getJoins();
+        } else {
+            throw new IllegalArgumentException("Cannot get Joins From: " + parsedStatement.toString());
+        }
+    }
+
     /**
      * This method assumes that the SQL command can be successfully parsed.
      *
@@ -116,6 +130,38 @@ public class SqlParserUtils {
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    /**
+     * Checks if the given FromItem is a Table.
+     *
+     * @param fromItem the FromItem to check
+     * @return true if the FromItem is a Table, false otherwise
+     */
+    public static boolean isTable(FromItem fromItem) {
+        return fromItem instanceof Table;
+    }
+
+    /**
+     * Retrieves the fully qualified name of a table from the provided {@link FromItem}.
+     * <p>
+     * This method checks if the given {@code fromItem} is an instance of {@link Table}.
+     * If it is, the method extracts and returns the fully qualified name of the table.
+     * Otherwise, it throws an {@link IllegalArgumentException}.
+     * </p>
+     *
+     * @param fromItem the {@link FromItem} instance to extract the table name from.
+     * @return the fully qualified name of the table as a {@link String}.
+     * @throws IllegalArgumentException if the provided {@code fromItem} is not an instance of {@link Table}.
+     * @see net.sf.jsqlparser.schema.Table#getFullyQualifiedName()
+     */
+    public static String getTableName(FromItem fromItem) {
+        if (fromItem instanceof Table) {
+            Table table = (Table) fromItem;
+            return table.getFullyQualifiedName();
+        } else {
+            throw new IllegalArgumentException("From item " + fromItem + " is not a table");
         }
     }
 }
