@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -45,6 +46,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var z3Solver: SMTLibZ3DbConstraintSolver
 
     override fun addAndHarvestExternalServiceActions(
         individual: EvaluatedIndividual<*>,
@@ -268,7 +272,8 @@ abstract class ApiWsStructureMutator : StructureMutator() {
 
         val oldSqlActions = mutableListOf<EnvironmentAction>().plus(ind.seeInitializingActions())
 
-        val addedSqlInsertions = handleFailedWhereSQL(ind, fw, mutatedGenes, sampler)
+        val failedWhereQueries = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhereQueries()
+        val addedSqlInsertions = handleFailedWhereSQL(ind, fw, failedWhereQueries, mutatedGenes, sampler)
 
         ind.repairInitializationActions(randomness)
         // update impact based on added genes
@@ -289,6 +294,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          * Map of FAILED WHERE clauses. from table name key to column name values
          */
         fw: Map<String, Set<String>>,
+        /**
+         * List queries with FAILED WHERE clauses
+         */
+        failedWhereQueries: List<String>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<SqlAction>>? {
 
@@ -297,7 +306,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
         
         if (config.generateSqlDataWithDSE) {
-            return handleDSE(sampler, fw)
+            return handleDSE(ind, sampler, failedWhereQueries)
         }
 
         return mutableListOf()
@@ -385,9 +394,18 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedSqlInsertions
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
-        /* TODO: DSE should be plugged in here */
-        return mutableListOf()
+    private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
+        val schemaDto = sampler.sqlInsertBuilder?.schemaDto
+            ?: throw IllegalStateException("No DB schema is available")
+
+        val newActions = mutableListOf<List<SqlAction>>()
+        for (query in failedWhereQueries) {
+            val newActionsForQuery = z3Solver.solve(schemaDto, query)
+            newActions.addAll(mutableListOf(newActionsForQuery))
+            ind.addInitializingDbActions(actions = newActionsForQuery)
+        }
+
+        return newActions
     }
 
     private fun <T : ApiWsIndividual> handleFailedFind(
