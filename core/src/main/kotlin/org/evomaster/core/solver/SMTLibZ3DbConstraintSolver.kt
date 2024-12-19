@@ -33,6 +33,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -42,14 +43,11 @@ import javax.annotation.PostConstruct
  */
 class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private val resourcesFolder = System.getProperty("user.dir") + "/target/tmp"
-    private  lateinit var executor: Z3DockerExecutor
+    private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
 
     @Inject
     private lateinit var config: EMConfig
-
-    @Inject
-    private lateinit var time: SearchTimeController
 
     @PostConstruct
     private fun postConstruct() {
@@ -65,6 +63,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     /**
      * Closes the Z3 Docker executor and cleans up temporary files.
      */
+    @PreDestroy
     override fun close() {
         executor.close()
         try {

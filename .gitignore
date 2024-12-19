@@ -13,6 +13,7 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+*.DS_Store
 /.idea/
 .idea/
 *.iml
@@ -168,7 +169,6 @@ Migrations/
 /target/
 /wfc/target/
 
-*.DS_Store
 /e2e-tests/emb-json/target/
 /process_data/
 /e2e-tests/spring-rest-multidb/target/

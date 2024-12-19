@@ -84,6 +84,8 @@ public class Z3DockerExecutor implements AutoCloseable {
      */
     @Override
     public void close() {
-        z3Prover.stop();
+        if (z3Prover != null) {
+            z3Prover.stop();
+        }
     }
 }
