@@ -47,7 +47,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
-    // TODO: z3solver.close() should be invoked when the application is shutting down to stop the Docker container and clean the tmp folder
     @Inject
     protected lateinit var z3Solver: SMTLibZ3DbConstraintSolver
 
