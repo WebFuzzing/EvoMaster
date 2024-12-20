@@ -23,6 +23,17 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+### 2025
+* A. Arcuri, A. Poth, O. Rrjolli.
+  *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
+  [[PDF](publications/2025_icst.pdf)]
+
+* S. Seran, O. Duman, A. Arcuri.
+  *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  *(To appear)*
+
 ### 2024
 
 * A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.

@@ -29,14 +29,9 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
-class TestCaseWriterTest {
+class TestCaseWriterTest : WriterTestBase(){
 
-    private fun getConfig(format: OutputFormat): EMConfig {
-        val config = EMConfig()
-        config.outputFormat = format
-        config.testTimeout = -1
-        return config
-    }
+
 
     @Test
     fun testEmptyDbInitialization() {
