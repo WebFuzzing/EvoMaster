@@ -166,6 +166,7 @@ open class RestActionTestCaseNamingStrategy(
         val result = mutableListOf<String>()
 
         val queryParams = restAction.path.getOnlyQuery(restAction.parameters)
+            .filter { it.getGeneForQuery().staticCheckIfImpactPhenotype() }
         result.add(with)
         result.add(if (queryParams.size > 1) "${queryParam}s" else queryParam)
         if (nameWithQueryParameters) {
@@ -226,13 +227,8 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    private fun getWrappedGene(queryParam: QueryParam): Gene? {
-        val gene = queryParam.getGeneForQuery()
-        if (gene.staticCheckIfImpactPhenotype()) {
-            return gene
-
-        }
-        return gene.getWrappedGene(OptionalGene::class.java)?.gene
+    private fun getWrappedGene(queryParam: QueryParam): Gene {
+        return (queryParam.getGeneForQuery() as OptionalGene).gene
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {

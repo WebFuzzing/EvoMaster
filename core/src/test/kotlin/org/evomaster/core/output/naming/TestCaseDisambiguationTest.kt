@@ -266,22 +266,6 @@ class TestCaseDisambiguationTest {
         assertEquals("test_1_getOnLanguagesWithQueryParamsNegativeLimitEmptyNameReturnsEmpty", testCases[1].name)
     }
 
-    @Test
-    fun unwrappedNegativeNumberQueryParamIsAdded() {
-        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages"))
-        val negativeQPIndividual = getEvaluatedIndividualWith(getRestCallAction("/languages", parameters = mutableListOf(getIntegerQueryParam("limit", false))))
-        ensureGeneValue(negativeQPIndividual, "limit", "-1")
-
-        val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
-
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME)
-
-        val testCases = namingStrategy.getTestCases()
-        assertEquals(2, testCases.size)
-        assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
-        assertEquals("test_1_getOnLanguagesWithQueryParamNegativeLimitReturnsEmpty", testCases[1].name)
-    }
-
     private fun getPathParam(paramName: String): Param {
         return PathParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
     }
