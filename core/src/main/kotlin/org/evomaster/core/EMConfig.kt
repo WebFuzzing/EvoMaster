@@ -1,9 +1,6 @@
 package org.evomaster.core
 
-import joptsimple.BuiltinHelpFormatter
-import joptsimple.OptionDescriptor
-import joptsimple.OptionParser
-import joptsimple.OptionSet
+import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -585,6 +582,18 @@ class EMConfig {
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
         }
+
+        if(blackBox){
+            if(sutControllerHost != ControllerConstants.DEFAULT_CONTROLLER_HOST){
+                throw ConfigProblemException("Changing 'sutControllerHost' has no meaning in black-box testing, as no controller is used")
+            }
+            if(!overrideOpenAPIUrl.isNullOrBlank()){
+                throw ConfigProblemException("Changing 'overrideOpenAPIUrl' has no meaning in black-box testing, as no controller is used")
+            }
+        }
+        if(dockerLocalhost && !runningInDocker){
+            throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -696,8 +705,11 @@ class EMConfig {
             return
         }
 
-        val opt = options.valueOf(m.name)?.toString()
-                ?: throw ConfigProblemException("Value not found for property ${m.name}")
+        val opt = try{
+            options.valueOf(m.name)?.toString()
+        } catch (e: OptionException){
+          throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
+        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
 
         updateValue(opt, m)
     }
@@ -1048,8 +1060,42 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(6.0)
+    @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
+
+
+    @Important(6.1)
+    @Cfg("TCP port of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
+
+
+    @Important(7.0)
+    @Url
+    @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
+        " This option is only needed for white-box testing.")
+    var overrideOpenAPIUrl = ""
 
     //-------- other options -------------
+
+    @Cfg("Inform EvoMaster process that it is running inside Docker." +
+            " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
+    var runningInDocker = false
+
+    /**
+     * TODO this is currently not implemented.
+     * Even if did, there would still be major issues with handling WireMock.
+     * Until we can think of a good solution there, no point in implementing this.
+     */
+    @Experimental
+    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
+            " Only needed when running EvoMaster inside Docker.")
+    var dockerLocalhost = false
+
 
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
@@ -1136,14 +1182,6 @@ class EMConfig {
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
-
-    @Cfg("TCP port of where the SUT REST controller is listening on")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
-
-    @Cfg("Host name or IP address of where the SUT REST controller is listening on")
-    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)
@@ -2398,9 +2436,8 @@ class EMConfig {
             " instead of OFF.")
     val probabilityOfOnVsOffInAllOptionals = 0.8
 
-    @Experimental
     @Cfg("Add summary comments on each test")
-    var addTestComments = false
+    var addTestComments = true
 
     @Min(1.0)
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +

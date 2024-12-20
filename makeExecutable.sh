@@ -39,4 +39,3 @@ VENDOR="EvoMaster Team"
 
 $JPACKAGE --main-jar $JAR --input $BUILD --dest $RELEASE --name evomaster \
   --copyright "$COPYRIGHT" --license-file ./LICENSE --vendor "$VENDOR" --app-version $VERSION $OS
-
