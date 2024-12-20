@@ -227,8 +227,8 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    private fun getWrappedGene(queryParam: QueryParam): Gene {
-        return (queryParam.getGeneForQuery() as OptionalGene).gene
+    private fun getWrappedGene(queryParam: QueryParam): Gene? {
+        return queryParam.getGeneForQuery().getWrappedGene(OptionalGene::class.java)?.gene
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
