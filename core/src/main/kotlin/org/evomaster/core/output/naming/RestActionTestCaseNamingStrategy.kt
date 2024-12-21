@@ -85,7 +85,7 @@ open class RestActionTestCaseNamingStrategy(
      * When two or more individuals share a name, no disambiguation is performed.
      * Otherwise, we would just be increasing test case name length without having actually disambiguated.
      */
-    private fun collectSolvedNames(ambiguitySolversPerIndividual: MutableMap<EvaluatedIndividual<*>, MutableList<(Action) -> List<String>>>): Map<EvaluatedIndividual<*>, String> {
+    private fun collectSolvedNames(ambiguitySolversPerIndividual: Map<EvaluatedIndividual<*>, MutableList<(Action) -> List<String>>>): Map<EvaluatedIndividual<*>, String> {
         return ambiguitySolversPerIndividual
             .map { it.key to expandName(it.key, mutableListOf(), it.value) }
             .groupBy({ it.second }, { it.first })
@@ -151,7 +151,8 @@ open class RestActionTestCaseNamingStrategy(
         return duplicatedIndividuals
             .groupBy {
                 val restAction = it.evaluatedMainActions().last().action as RestCallAction
-                restAction.path.getOnlyQuery(restAction.parameters)
+                restAction.path.getOnlyUsableQueries(restAction.parameters)
+                    .filter { queryParam ->  queryParam.getGeneForQuery().staticCheckIfImpactPhenotype() }
             }
             .filter { it.value.isNotEmpty() && it.key.isNotEmpty()}
             .flatMap { it.value }
@@ -165,7 +166,7 @@ open class RestActionTestCaseNamingStrategy(
         val restAction = action as RestCallAction
         val result = mutableListOf<String>()
 
-        val queryParams = restAction.path.getOnlyQuery(restAction.parameters)
+        val queryParams = restAction.path.getOnlyUsableQueries(restAction.parameters)
             .filter { it.getGeneForQuery().staticCheckIfImpactPhenotype() }
         result.add(with)
         result.add(if (queryParams.size > 1) "${queryParam}s" else queryParam)
@@ -206,29 +207,24 @@ open class RestActionTestCaseNamingStrategy(
     // TODO: need to check if the BooleanGene is not enclosed in an OptionalGene
     private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
-            val wrappedGene = getWrappedGene(it)
-            wrappedGene is BooleanGene && wrappedGene.value
+            val booleanGene = it.getGeneForQuery().getWrappedGene(BooleanGene::class.java)
+            booleanGene != null && booleanGene.staticCheckIfImpactPhenotype() && booleanGene.value
         }
     }
 
     // TODO: need to check if the NumberGene is not enclosed in an OptionalGene
     private fun getNegativeNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
-            val wrappedGene = getWrappedGene(it)
-            wrappedGene is NumberGene<*> && wrappedGene.value.toLong() < 0
+            val numberGene = it.getGeneForQuery().getWrappedGene(NumberGene::class.java)
+            numberGene != null && numberGene.staticCheckIfImpactPhenotype() && numberGene.value.toLong() < 0
         }
     }
 
-    // TODO: need to check if the StringGene is not enclosed in an OptionalGene
     private fun getEmptyStringQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
-            val wrappedGene = getWrappedGene(it)
-            wrappedGene is StringGene && wrappedGene.getValueAsRawString().trim().isEmpty()
+            val stringGene = it.getGeneForQuery().getWrappedGene(StringGene::class.java)
+            stringGene != null && stringGene.staticCheckIfImpactPhenotype() && stringGene.getValueAsRawString().trim().isEmpty()
         }
-    }
-
-    private fun getWrappedGene(queryParam: QueryParam): Gene? {
-        return queryParam.getGeneForQuery().getWrappedGene(OptionalGene::class.java)?.gene
     }
 
     private fun isGetCall(evaluatedAction: EvaluatedAction): Boolean {
