@@ -96,8 +96,8 @@ class ChoiceGene<T>(
     }
 
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    override fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T: K{
-        if(this.javaClass == klass){
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
             return this as T
         }
         return activeGene().getWrappedGene(klass)
