@@ -204,7 +204,6 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    // TODO: need to check if the BooleanGene is not enclosed in an OptionalGene
     private fun getBooleanQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
             val booleanGene = it.getGeneForQuery().getWrappedGene(BooleanGene::class.java)
@@ -212,7 +211,6 @@ open class RestActionTestCaseNamingStrategy(
         }
     }
 
-    // TODO: need to check if the NumberGene is not enclosed in an OptionalGene
     private fun getNegativeNumberQueryParams(queryParams: List<QueryParam>): List<QueryParam> {
         return queryParams.filter {
             val numberGene = it.getGeneForQuery().getWrappedGene(NumberGene::class.java)
