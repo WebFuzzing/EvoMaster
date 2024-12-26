@@ -68,16 +68,29 @@
                 <artifactId>jsonschema2pojo-maven-plugin</artifactId>
                 <version>1.2.2</version>
                 <configuration>
-                    <sourceDirectory>${basedir}/src/main/resources/schemas</sourceDirectory>
-                    <targetPackage>com.webfuzzing</targetPackage>
                     <sourceType>yamlschema</sourceType>
                 </configuration>
                 <executions>
                     <execution>
+                        <id>report.yaml</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/src/main/resources/schemas/report.yaml</sourceDirectory>
+                            <targetPackage>com.webfuzzing.commons.report</targetPackage>
+                        </configuration>
                     </execution>
+<!--                    <execution>-->
+<!--                        <id></id>-->
+<!--                        <goals>-->
+<!--                            <goal>generate</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <sourceDirectory>${basedir}/src/main/resources/schemas/</sourceDirectory>-->
+<!--                            <targetPackage>com.webfuzzing.commons.</targetPackage>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
                 </executions>
             </plugin>
             <plugin>

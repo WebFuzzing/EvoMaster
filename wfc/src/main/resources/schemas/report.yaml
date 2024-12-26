@@ -1,8 +1,8 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "TODO"
 title: "Web Fuzzing Report"
-description: "Schema TODO..."
-type: "object"
+description: "Schema Definition for Web Fuzzing Commons Reports"
+type: object
 properties:
   schema_version:
     type: string
@@ -11,7 +11,24 @@ properties:
   creation_time:
     type: string
     format: date-time
+  rest_report:
+    $ref: "#/$def/RESTReport"
 required: ["schema_version","tool_name","creation_time"]
+$def:
+  RESTReport:
+    type: object
+    properties:
+      faults:
+        $ref: "#/$def/Faults"
+    required: ["faults"]
+
+  Faults:
+    type: object
+    properties:
+      total_number:
+        type: integer
+        min: 0
+    required: ["total_number"]
 
 
 
