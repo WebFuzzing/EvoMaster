@@ -1,0 +1,17 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "TODO"
+title: "Web Fuzzing Report"
+description: "Schema TODO..."
+type: "object"
+properties:
+  schema_version:
+    type: string
+  tool_name:
+    type: string
+  creation_time:
+    type: string
+    format: date-time
+required: ["schema_version","tool_name","creation_time"]
+
+
+
