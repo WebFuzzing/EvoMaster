@@ -11,16 +11,16 @@ properties:
   creation_time:
     type: string
     format: date-time
+  faults:
+    $ref: "#/$def/Faults"
   rest_report:
     $ref: "#/$def/RESTReport"
-required: ["schema_version","tool_name","creation_time"]
+required: ["schema_version","tool_name","creation_time","faults"]
 $def:
   RESTReport:
     type: object
     properties:
-      faults:
-        $ref: "#/$def/Faults"
-    required: ["faults"]
+    required: []
 
   Faults:
     type: object

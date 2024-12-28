@@ -26,14 +26,14 @@ class WFCReportWriter {
         //TODO tool version
         report.creationTime = Date() // FIXME use new JDK dates
 
+        val faults = Faults()
+        report.faults = faults
+        faults.totalNumber = solution.totalNumberOfDetectedFaults()
+
+
         if(config.problemType == EMConfig.ProblemType.REST) {
             val rest = RESTReport()
             report.restReport = rest
-
-            val faults = Faults()
-            rest.faults = faults
-
-            faults.totalNumber = solution.totalNumberOfDetectedFaults()
 
             //TODO all other entries
         }
