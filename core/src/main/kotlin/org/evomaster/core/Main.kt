@@ -18,6 +18,7 @@ import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
@@ -257,6 +258,7 @@ class Main {
 
             writeCoveredTargets(injector, solution)
             writeTests(injector, solution, controllerInfo)
+            writeWFCReport(injector, solution)
             writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
@@ -690,19 +692,14 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
-            if (config.problemType == EMConfig.ProblemType.REST && !config.outputFormat.isCsharp()) {
+            if (config.problemType == EMConfig.ProblemType.REST ) {
 
-                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+                val splitResult = TestSuiteSplitter.split(solution, config)
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                splitResult.splitOutcome
+                    .filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp) }
-
-//                if (config.executiveSummary) {
-//                    writeExecSummary(injector, controllerInfoDto, splitResult, snapshotTimestamp)
-//                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
-//                }
             } else {
                 /*
                     TODO refactor all the PartialOracle stuff that is meant for only REST
@@ -714,6 +711,8 @@ class Main {
 
         fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?,
                        snapshot: String = "") {
+
+            //TODO: the code here is quite messy. Needs to be refactored and simplified
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -727,10 +726,9 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-            //TODO: enable splitting for csharp. Currently not enabled due to an error while running generated tests in multiple classes (error in starting the SUT)
-            if (config.problemType == EMConfig.ProblemType.REST && !config.outputFormat.isCsharp()) {
+            if (config.problemType == EMConfig.ProblemType.REST) {
 
-                val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
+                val splitResult = TestSuiteSplitter.split(solution, config)
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
                 splitResult.splitOutcome
@@ -741,21 +739,11 @@ class Main {
                             config.maxTestsPerTestSuite
                         )
                     }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
+                    .forEach {
+                        writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot)
+                    }
 
-//                if (config.executiveSummary) {
-//
-//                    // Onur - if there are fault cases, executive summary makes sense
-//                    if ( splitResult.splitOutcome.any{ it.individuals.isNotEmpty()
-//                                && it.termination != Termination.SUCCESSES}) {
-//                        writeExecSummary(injector, controllerInfoDto, splitResult)
-//                    }
-//
-//                    //writeExecSummary(injector, controllerInfoDto, splitResult)
-//                    //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
-//                }
-            } else
-                if (config.problemType == EMConfig.ProblemType.RPC){
+            } else if (config.problemType == EMConfig.ProblemType.RPC){
 
                 // Man: only enable for RPC as it lacks of unit tests
                 writer.writeTestsDuringSeeding(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
@@ -766,7 +754,7 @@ class Main {
                         for RPC, just simple split based on whether there exist any exception in a test
                         TODD need to check with Andrea whether we use cluster or other type
                      */
-                    EMConfig.TestSuiteSplitType.FAULTS -> {
+                    else -> {
                         val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
                         splitResult.splitOutcome
                             .filter { !it.individuals.isNullOrEmpty() }
@@ -777,21 +765,13 @@ class Main {
                                 )
                             }
                             .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
-
-                        // disable executiveSummary
-//                        if (config.executiveSummary) {
-//                            writeExecSummary(injector, controllerInfoDto, splitResult)
-//                        }
                     }
                 }
 
             }else if (config.problemType == EMConfig.ProblemType.GRAPHQL) {
                 when(config.testSuiteSplitType){
                     EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
-                    //EMConfig.TestSuiteSplitType.CLUSTER -> throw IllegalStateException("GraphQL problem does not support splitting tests by cluster at this time")
-                    //EMConfig.TestSuiteSplitType.CODE ->
                     else -> {
-                        //throw IllegalStateException("GraphQL problem does not support splitting tests by code at this time")
                         val splitResult = TestSuiteSplitter.split(solution, config)
                         splitResult.splitOutcome
                             .filter{ !it.individuals.isNullOrEmpty() }
@@ -801,20 +781,29 @@ class Main {
                                     config.maxTestsPerTestSuite
                                 )
                             }
-                            .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot ) }
+                            .forEach {
+                                writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot )
+                            }
                     }
-                    /*
-                      GraphQL could be split by code (where code is available and trustworthy)
-                     */
                 }
-            } else
-            {
-                /*
-                    TODO refactor all the PartialOracle stuff that is meant for only REST
-                 */
-
+            } else {
                 writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
             }
+        }
+
+        private fun writeWFCReport(injector: Injector, solution: Solution<*>){
+
+            //TODO will need to change input from Solution to the outout of generated tests
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.writeWFCReport) {
+                return
+            }
+
+            val wfcr = injector.getInstance(WFCReportWriter::class.java)
+
+            wfcr.writeReport(solution)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
