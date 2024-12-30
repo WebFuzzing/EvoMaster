@@ -1041,6 +1041,14 @@
                 <version>${mockserver.client.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <!--  To deal with RFC3339 dateTime -->
+                <groupId>com.ethlo.time</groupId>
+                <artifactId>itu</artifactId>
+                <version>1.10.2</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
