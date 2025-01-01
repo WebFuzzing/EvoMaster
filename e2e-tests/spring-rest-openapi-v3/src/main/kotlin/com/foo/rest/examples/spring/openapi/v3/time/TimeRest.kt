@@ -18,16 +18,19 @@ class TimeRest {
             return ResponseEntity.badRequest().body(e.message)
         }
 
+        //checking different offsets
         if(x.contains("Z") ){
             return ResponseEntity.ok("A")
         }
-        if(x.contains("-") ){
+        // there are always 2 - before the T
+        if(x.chars().filter{it == '-'.code}.count() == 3L ){
             return ResponseEntity.ok("B")
         }
         if(x.contains("+") ){
             return ResponseEntity.ok("C")
         }
 
+        //this shouldn't be reachable
         return ResponseEntity.ok("D")
     }
 }

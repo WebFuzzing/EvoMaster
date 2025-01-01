@@ -23,7 +23,7 @@ class TimeEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "TimeEM",
-                100
+                1000
         ) { args: MutableList<String> ->
 
             val solution = initAndRun(args)
@@ -32,7 +32,7 @@ class TimeEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/time", "A")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/time", "B")
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/time", "C")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/time", "D")
+            assertNone(solution, HttpVerb.GET, 200, "/api/time", "D")
         }
     }
 }

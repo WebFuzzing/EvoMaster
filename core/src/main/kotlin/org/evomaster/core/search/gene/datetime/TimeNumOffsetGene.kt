@@ -20,11 +20,16 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  *    time-minute     = 2DIGIT  ; 00-59
  *    time-numoffset  = ("+" / "-") time-hour ":" time-minute
  *    time-offset     = "Z" / time-numoffset
+ *
+ *    Note: RFC3339 does NOT put constraints on hour, but Java does, ie, range -18,+18.
+ *    Apparently this is based on ISO8601, which RFC3339 "profiles"... but
+ *    that document costs money to read... also, it seems currently only -14,+12 is used
+ *    in practice in the world
  */
 class TimeNumOffsetGene(
   name: String,
   val sign: EnumGene<String> = EnumGene("sign", listOf("-","+"), treatAsNotString = true),
-  val hour: IntegerGene = IntegerGene("hour", min = 0, max = 23),
+  val hour: IntegerGene = IntegerGene("hour", min = 0, max = 18),
   val minute: IntegerGene = IntegerGene("minute", min = 0, max = 59)
 ) : CompositeFixedGene(name, listOf(sign, hour, minute)) {
 
