@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.impactinfocollection.date
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpactTest
 import org.evomaster.core.search.impact.impactinfocollection.ImpactOptions
@@ -16,7 +17,11 @@ import org.junit.jupiter.api.Test
 class TimeGeneImpactTest : GeneImpactTest() {
 
     override fun getGene(): Gene {
-        return TimeGene("d", hour = IntegerGene("h", 16), minute = IntegerGene("m", 36), second = IntegerGene("s", 9))
+        return TimeGene("d",
+            hour = IntegerGene("h", 16),
+            minute = IntegerGene("m", 36),
+            second = IntegerGene("s", 9),
+            millisecond = OptionalGene("millisecond", IntegerGene("millisecond", 42)))
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -30,6 +35,7 @@ class TimeGeneImpactTest : GeneImpactTest() {
                 mutationTag == 0 -> hour.value = (hour.value + 1)%24
                 mutationTag == 1 -> minute.value = (minute.value + 1)%60
                 mutationTag == 2 -> second.value = (second.value + 1)%60
+                mutationTag == 3 -> ((millisecond as OptionalGene).gene as IntegerGene).value = (((millisecond as OptionalGene).gene as IntegerGene).value + 1)%1000
                 else -> throw IllegalArgumentException("bug")
             }
         }
@@ -48,6 +54,8 @@ class TimeGeneImpactTest : GeneImpactTest() {
         assertImpact(impact.hourGeneImpact, updatedImpact.hourGeneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
         assertImpact(impact.minuteGeneImpact, updatedImpact.minuteGeneImpact, ImpactOptions.NONE)
         assertImpact(impact.secondGeneImpact, updatedImpact.secondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.millisecondGeneImpact, updatedImpact.millisecondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.offsetGeneImpact, updatedImpact.offsetGeneImpact, ImpactOptions.NONE)
     }
 
     @Test
@@ -61,6 +69,8 @@ class TimeGeneImpactTest : GeneImpactTest() {
         assertImpact(impact.hourGeneImpact, updatedImpact.hourGeneImpact, ImpactOptions.NONE)
         assertImpact(impact.minuteGeneImpact, updatedImpact.minuteGeneImpact, ImpactOptions.NO_IMPACT)
         assertImpact(impact.secondGeneImpact, updatedImpact.secondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.millisecondGeneImpact, updatedImpact.millisecondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.offsetGeneImpact, updatedImpact.offsetGeneImpact, ImpactOptions.NONE)
     }
 
     @Test
@@ -74,5 +84,22 @@ class TimeGeneImpactTest : GeneImpactTest() {
         assertImpact(impact.hourGeneImpact, updatedImpact.hourGeneImpact, ImpactOptions.NONE)
         assertImpact(impact.minuteGeneImpact, updatedImpact.minuteGeneImpact, ImpactOptions.NONE)
         assertImpact(impact.secondGeneImpact, updatedImpact.secondGeneImpact, ImpactOptions.ONLY_IMPACT)
+        assertImpact(impact.millisecondGeneImpact, updatedImpact.millisecondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.offsetGeneImpact, updatedImpact.offsetGeneImpact, ImpactOptions.NONE)
+    }
+
+    @Test
+    fun testMillisecond(){
+        val gene = getGene()
+        val impact = initImpact(gene)
+        val updatedImpact = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 3).second
+
+        impact as TimeGeneImpact
+        updatedImpact as TimeGeneImpact
+        assertImpact(impact.hourGeneImpact, updatedImpact.hourGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.minuteGeneImpact, updatedImpact.minuteGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.secondGeneImpact, updatedImpact.secondGeneImpact, ImpactOptions.NONE)
+        assertImpact(impact.millisecondGeneImpact, updatedImpact.millisecondGeneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact(impact.offsetGeneImpact, updatedImpact.offsetGeneImpact, ImpactOptions.NONE)
     }
 }
