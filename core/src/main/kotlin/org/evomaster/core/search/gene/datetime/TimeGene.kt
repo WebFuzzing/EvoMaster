@@ -52,6 +52,7 @@ class TimeGene(
             .thenBy(TimeGene::minute)
             .thenBy(TimeGene::second)
             //TODO ms and offset
+            //FIXME: considering offset, this check is wrong.
     }
 
     fun selectZ(){
