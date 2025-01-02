@@ -169,3 +169,4 @@ Migrations/
 /e2e-tests/emb-json/target/
 /process_data/
 /e2e-tests/spring-rest-multidb/target/
+.DS_Store
