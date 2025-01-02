@@ -12,6 +12,8 @@ import org.evomaster.core.sql.schema.Table
 
 object SqlActionUtils {
 
+    const val SCHEMA_TABLE_SEPARATOR = "."
+
     private val log: Logger = LoggerFactory.getLogger(SqlActionUtils::class.java)
 
     fun verifyForeignKeys(actions: List<SqlAction>): Boolean {

@@ -10,11 +10,14 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.util.SimilarityAlgorithm
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.sql.SqlActionUtils.SCHEMA_TABLE_SEPARATOR
+import kotlin.math.max
 
 /**
  * process inference related to resource
@@ -44,8 +47,13 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         if(allTables.isNotEmpty()){
             resourceNode.getAllSegments(flatten = true).forEach { seg ->
                 ParamUtil.parseParams(seg).forEachIndexed stop@{ sindex, token ->
-                    //check whether any table name matches token
-                    val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token)) }.asSequence().sortedBy { e->e.second }
+                    /*
+                        check whether any table name matches token
+                        table name might contain schema,
+                     */
+                    val matchedMap = allTables.keys.map {
+                        Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token))
+                    }.asSequence().sortedBy { e->e.second }
 
                     if(matchedMap.lastOrNull()!= null && matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
@@ -78,7 +86,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
                 if(!resourceNode.isPartOfStaticTokens(type) && allTables.isNotEmpty()){
-                    val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
+                    val matchedMap = allTables.keys.map { Pair(it, calculateStringSimilarityScoreWithTableName(it, type)) }.asSequence().sortedBy { e->e.second }
                     if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
@@ -92,7 +100,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         //1.3 derive resource to tables based on tokens on POST action
         resourceNode.actions.filter {it.verb == HttpVerb.POST }.forEach { post->
             post.tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
-                val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
+                val matchedMap = allTables.keys.map { Pair(it, calculateStringSimilarityScoreWithTableName(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
                 matchedMap.last().apply {
                     if(second >= StringSimilarityComparator.SimilarityThreshold){
                         resourceNode.resourceToTable.derivedMap.getOrPut(first){
@@ -107,6 +115,19 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         deriveParamsToTable(resourceNode.paramsInfo, resourceNode, allTables)
     }
 
+    /**
+     * compare [content] with given [tableName]
+     * tableName can contain info of schema,
+     * in this case we also calculate similarity with the last segment
+     * then return the higher similarity
+     */
+    private fun calculateStringSimilarityScoreWithTableName(tableName: String, content: String): Double{
+        val score = StringSimilarityComparator.stringSimilarityScore(tableName, content)
+        if (!tableName.contains(SCHEMA_TABLE_SEPARATOR)) return score
+
+        val lastScore = StringSimilarityComparator.stringSimilarityScore(tableName.split(SCHEMA_TABLE_SEPARATOR).last(), content)
+        return max(score, lastScore)
+    }
 
     fun deriveParamsToTable(mapParamInfo : Map<String, ParamInfo>, r: RestResourceNode, allTables : Map<String, Table>){
         mapParamInfo.forEach { (paramId, paramInfo) ->
