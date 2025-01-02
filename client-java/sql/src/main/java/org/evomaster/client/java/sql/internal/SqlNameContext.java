@@ -125,9 +125,9 @@ public class SqlNameContext {
 
     private List<String> getTableNamesInFrom() {
 
-        FromItem fromItem = getFromItem();
-
         List<String> names = new ArrayList<>();
+        if (hasFromItem()) {
+            FromItem fromItem = getFromItem();
 
         FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
             @Override
@@ -136,40 +136,50 @@ public class SqlNameContext {
             }
         };
 
-        fromItem.accept(visitor);
-
+            fromItem.accept(visitor);
+        }
         return names;
     }
 
-    private FromItem getFromItem() {
-
-        FromItem fromItem = null;
+    private boolean hasFromItem() {
         if(statement instanceof Select) {
             Select select = (Select)statement;
             PlainSelect plainSelect = select.getPlainSelect();
-            fromItem =  plainSelect.getFromItem();
-        }
-
-        if(fromItem == null) {
-            throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
+            FromItem fromItem =  plainSelect.getFromItem();
+            return fromItem != null;
         } else {
-            return fromItem;
+            return false;
         }
+   }
+
+    private FromItem getFromItem() {
+        if (!hasFromItem()) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a FROM clause");
+        }
+        if (!(statement instanceof Select)) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a SELECT clause");
+        }
+        Select select = (Select)statement;
+        PlainSelect plainSelect = select.getPlainSelect();
+        FromItem fromItem =  plainSelect.getFromItem();
+        return fromItem;
     }
 
 
     private void computeAliases() {
 
         if (statement instanceof Select) {
-            FromItem fromItem = getFromItem();
-            fromItem.accept(new AliasVisitor(tableAliases));
+            if (hasFromItem()) {
+                FromItem fromItem = getFromItem();
+                fromItem.accept(new AliasVisitor(tableAliases));
 
-            Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
+                Select select = (Select)statement;
+                PlainSelect plainSelect = select.getPlainSelect();
 
-            List<Join> joins = plainSelect.getJoins();
-            if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                List<Join> joins = plainSelect.getJoins();
+                if (joins != null) {
+                    joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                }
             }
         } else if(statement instanceof Delete){
             //no alias required?

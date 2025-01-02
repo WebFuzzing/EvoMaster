@@ -118,6 +118,17 @@ __Known limitations__:
 -->
 
 
+### Use in Industry
+
+Several enterprises use _EvoMaster_ to fuzz their Web APIs.
+We do few academia-industry collaborations ([see more info here](docs/contribute.md)), where we help test engineers to apply _EvoMaster_ on their systems, as long as we can then report on such experience.
+Example of Fortune 500 companies using _EvoMaster_ are:
+
+* [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf).
+
+* [Volkswagen](https://www.volkswagen.com): see [AUSE'24](docs/publications/2024_ause_vw.pdf), [ICST'25](docs/publications/2025_icst.pdf).
+
+
 ### Videos
 
 ![](docs/img/video-player-flaticon.png)
