@@ -57,7 +57,7 @@ class TimeGeneImpact(
         if (gc.previous != null && gc.previous !is TimeGene)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be TimeGene")
 
-        val innerImpacts = mutableListOf<IntegerGeneImpact>()
+        val innerImpacts = mutableListOf<GeneImpact>()
 
         if (gc.previous == null || !gc.current.hour.containsSameValueAs((gc.previous as TimeGene).hour))
             innerImpacts.add(hourGeneImpact)
@@ -66,6 +66,11 @@ class TimeGeneImpact(
         if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
             innerImpacts.add(secondGeneImpact)
 
+        if (gc.previous == null || !gc.current.millisecond.containsSameValueAs((gc.previous as TimeGene).millisecond))
+            innerImpacts.add(millisecondGeneImpact)
+
+        if (gc.previous == null || !gc.current.offset.containsSameValueAs((gc.previous as TimeGene).offset))
+            innerImpacts.add(offsetGeneImpact)
 
         if (innerImpacts.isEmpty()) return
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
