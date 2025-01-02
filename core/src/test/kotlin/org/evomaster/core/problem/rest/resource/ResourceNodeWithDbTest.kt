@@ -14,6 +14,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlActionUtils.isMatchingTableName
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -87,7 +88,8 @@ class ResourceNodeWithDbTest {
                 fieldsMap.forEach { t, u ->
                     assertEquals(1, u.derivedMap.size)
                     u.derivedMap.forEach { ut, uu ->
-                        assertEquals("RFOO", ut)
+//                        assertEquals("RFOO", ut)
+                        assertTrue(isMatchingTableName(ut, "RFOO"))
                         assertEquals(uu.input.toLowerCase(), uu.targetMatched.toLowerCase())
                     }
                 }
@@ -97,16 +99,16 @@ class ResourceNodeWithDbTest {
         val rbarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")
         assertNotNull(rbarNode)
         rbarNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.contains("RFOO"))
-            assertTrue(derivedMap.keys.contains("RBAR"))
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RFOO") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RBAR") })
         }
 
         val rxyzNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")
         assertNotNull(rxyzNode)
         rxyzNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.contains("RFOO"))
-            assertTrue(derivedMap.keys.contains("RBAR"))
-            assertTrue(derivedMap.keys.contains("RXYZ"))
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RFOO") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RBAR") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RXYZ") })
         }
     }
 

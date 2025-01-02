@@ -10,10 +10,10 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.problem.util.SimilarityAlgorithm
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.problem.util.StringSimilarityComparator.stringSimilarityScore
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.sql.SqlActionUtils.SCHEMA_TABLE_SEPARATOR
@@ -52,7 +52,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                         table name might contain schema,
                      */
                     val matchedMap = allTables.keys.map {
-                        Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token))
+                        Pair(it, calculateStringSimilarityScoreWithTableName(it, token))
                     }.asSequence().sortedBy { e->e.second }
 
                     if(matchedMap.lastOrNull()!= null && matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
@@ -65,7 +65,9 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                     }
 
                     val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
-                        .map { p-> Pair(p.first, Pair(p.second,StringSimilarityComparator.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
+                        .map { p-> Pair(p.first,
+                            Pair(p.second, calculateStringSimilarityScoreWithTableName(p.second, token)
+                        )) }.asSequence().sortedBy { e->e.second.second }
 
                     if(matchedPropertyMap.lastOrNull() != null && matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
@@ -122,11 +124,18 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      * then return the higher similarity
      */
     private fun calculateStringSimilarityScoreWithTableName(tableName: String, content: String): Double{
-        val score = StringSimilarityComparator.stringSimilarityScore(tableName, content)
-        if (!tableName.contains(SCHEMA_TABLE_SEPARATOR)) return score
+        var score = stringSimilarityScore(tableName, content) // full A vs full B
+        val shortContent = if (content.contains(SCHEMA_TABLE_SEPARATOR)) content.split(SCHEMA_TABLE_SEPARATOR).last() else null
+        val shortTable = if (tableName.contains(SCHEMA_TABLE_SEPARATOR)) tableName.split(SCHEMA_TABLE_SEPARATOR).last() else null
+        if (shortContent == null && shortTable == null) return score
 
-        val lastScore = StringSimilarityComparator.stringSimilarityScore(tableName.split(SCHEMA_TABLE_SEPARATOR).last(), content)
-        return max(score, lastScore)
+        if (shortContent != null)
+            score = max(score, stringSimilarityScore(tableName, shortContent)) // full A vs short B
+        if (shortTable != null)
+            score = max(score, stringSimilarityScore(shortTable, content)) // short A vs full B
+        if (shortTable != null && shortContent != null)
+            score = max(score, stringSimilarityScore(shortTable, shortContent))
+        return score
     }
 
     fun deriveParamsToTable(mapParamInfo : Map<String, ParamInfo>, r: RestResourceNode, allTables : Map<String, Table>){
@@ -211,16 +220,16 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                     .map {
                         Pair(it.name,
                                 if(ParamUtil.isGeneralName(it.name))
-                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore(paramName, "${f.targetTable}${it.name}")}
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, "$tableName${it.name}"))
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTable}${it.name}")}
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, "$tableName${it.name}"))
                                             .asSequence().sorted().last()
                                 else if(ParamUtil.isGeneralName(paramName))
-                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore("${f.targetTable}$paramName", it.name)}
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
-                                            .plus(StringSimilarityComparator.stringSimilarityScore("$tableName$paramName", it.name))
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTable}$paramName", it.name)}
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
+                                            .plus(calculateStringSimilarityScoreWithTableName("$tableName$paramName", it.name))
                                             .asSequence().sorted().last()
-                                else StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
+                                else calculateStringSimilarityScoreWithTableName(paramName, it.name))
                     }.asSequence().sortedBy { e->e.second }
             if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                 matchedMap.filter { it.second == matchedMap.last().second }.forEach {
