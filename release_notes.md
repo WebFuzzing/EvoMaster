@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version: 3.4.0
+
 ### New Features
 - Now EvoMaster is released also on Docker Hub, with id `webfuzzing/evomaster`. 
   However, this is only for black-box mode. For white-box, it is still recommended to use an OS installer or the uber-jar file from release page.
