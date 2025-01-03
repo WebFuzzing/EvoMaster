@@ -107,8 +107,10 @@ class TimeGene(
             val maps = mapOf<Gene, GeneImpact>(
                 hour to additionalGeneMutationInfo.impact.hourGeneImpact,
                 minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
-                second to additionalGeneMutationInfo.impact.secondGeneImpact
-                // TODO millisecond and offset
+                second to additionalGeneMutationInfo.impact.secondGeneImpact,
+                //TODO should be handle in a correct way
+                millisecond to additionalGeneMutationInfo.impact.millisecondGeneImpact,
+                offset to additionalGeneMutationInfo.impact.offsetGeneImpact
             )
             return mwc.selectSubGene(
                 internalGenes,
