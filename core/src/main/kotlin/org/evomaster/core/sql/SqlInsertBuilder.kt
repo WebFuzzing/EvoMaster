@@ -1,5 +1,6 @@
 package org.evomaster.core.sql
 
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
@@ -96,24 +97,27 @@ class SqlInsertBuilder(
             val tableConstraints = parseTableConstraints(tableDto).toMutableList()
             val columns = generateColumnsFrom(tableDto, tableConstraints, schemaDto)
 
-            tableToConstraints[tableDto.name] = tableConstraints.toSet()
-            tableToColumns[tableDto.name] = columns
+            tableToConstraints[SqlDtoUtils.getId(tableDto)] = tableConstraints.toSet()
+            tableToColumns[SqlDtoUtils.getId(tableDto)] = columns
         }
 
         // After all columns are loaded, we can load foreign keys
         for (tableDto in schemaDto.tables) {
-            tableToForeignKeys[tableDto.name] = calculateForeignKeysFrom(tableDto, tableToColumns)
+            tableToForeignKeys[SqlDtoUtils.getId(tableDto)] = calculateForeignKeysFrom(tableDto, tableToColumns)
         }
+
+
 
         // Now we can create the tables
         for (tableDto in schemaDto.tables) {
+            val id = SqlDtoUtils.getId(tableDto)
             val table = Table(
-                tableDto.name,
-                tableToColumns[tableDto.name]!!,
-                tableToForeignKeys[tableDto.name]!!,
-                tableToConstraints[tableDto.name]!!
+                id,
+                tableToColumns[id]!!,
+                tableToForeignKeys[id]!!,
+                tableToConstraints[id]!!
             )
-            tables[tableDto.name] = table
+            tables[id] = table
         }
 
         // Setup extended tables
@@ -176,9 +180,11 @@ class SqlInsertBuilder(
 
         for (fk in tableDto.foreignKeys) {
 
-            tableToColumns[fk.targetTable]
-                ?: throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
+            val tableKey = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
 
+            if(tableKey == null || tableToColumns[tableKey] == null) {
+                throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
+            }
             val sourceColumns = mutableSetOf<Column>()
 
             for (cname in fk.sourceColumns) {
@@ -186,13 +192,13 @@ class SqlInsertBuilder(
                 // val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
                 //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
-                val c = tableToColumns[tableDto.name]!!.find { it.name.equals(cname, ignoreCase = true) }
+                val c = tableToColumns[SqlDtoUtils.getId(tableDto)]!!.find { it.name.equals(cname, ignoreCase = true) }
                     ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.name} does not have a column called $cname")
 
                 sourceColumns.add(c)
             }
 
-            fks.add(ForeignKey(sourceColumns, fk.targetTable))
+            fks.add(ForeignKey(sourceColumns, tableKey))
         }
         return fks
     }
@@ -612,19 +618,30 @@ class SqlInsertBuilder(
     /**
      * SQL is not case sensitivity.
      * Therefore, table/column must ignore case sensitivity.
+     *
+     * No. This is not strictly true:
+     * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
+     *
+     * quotes "" can be used to force case-sensitivity
      */
-    fun isTable(tableName: String) = tables.keys.any { it.equals(tableName, ignoreCase = true) }
+    fun isTable(tableName: String) =  SqlActionUtils.getTableKey(tables.keys, tableName) != null
+
+    private fun <T>  getValueByTableNameKey(map: Map<String, T>, tableName: String) : T?{
+
+        val key = SqlActionUtils.getTableKey(map.keys, tableName)
+        return map[key]
+    }
+
+
 
     fun getTable(tableName: String, useExtraConstraints: Boolean): Table {
 
         val data = if (useExtraConstraints) extendedTables else tables
 
-        /*
-         * SQL is not case sensitivity, table/column must ignore case sensitivity.
-         */
-        val tableNameKey = data.keys.find { tableName.equals(it, ignoreCase = true) }
-        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
+        val tableNameKey = SqlActionUtils.getTableKey(data.keys, tableName)
+            ?: throw IllegalArgumentException("No table called $tableName")
 
+        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
     }
 
     /**
@@ -1005,11 +1022,18 @@ class SqlInsertBuilder(
 
     private fun formatNameInSql(name: String): String {
 
+        return name
+
+        /*
+            The handling of "" quotes is extremely tricky.
+            TODO if we really want to support it, would need to have a flag on each name (eg have
+             to pass them as pojo, not string)
+         */
         //TODO: why this??? needs explanation
-        return when {
-            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
-            else -> "\"$name\""
-        }
+//        return when {
+//            databaseType == DatabaseType.MYSQL || name == SQLKey.ALL.key -> name
+//            else -> "\"$name\""
+//        }
     }
 
     /**

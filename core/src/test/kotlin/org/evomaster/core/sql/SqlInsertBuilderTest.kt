@@ -1067,9 +1067,9 @@ class SqlInsertBuilderTest {
 
         // ABCD or ACBD
         assertEquals(4, enabled.size)
-        assertEquals("ROOTA", enabled[0].table.name)
-        assertEquals("LEAFD", enabled[3].table.name)
-        assertTrue(enabled.subList(1,3).map { it.table.name }.containsAll(listOf("NODEB", "NODEC")))
+        assertEquals("PUBLIC.ROOTA", enabled[0].table.name)
+        assertEquals("PUBLIC.LEAFD", enabled[3].table.name)
+        assertTrue(enabled.subList(1,3).map { it.table.name }.containsAll(listOf("PUBLIC.NODEB", "PUBLIC.NODEC")))
     }
 
     ////// Tests Numeric parsing for Min/Max Bounds

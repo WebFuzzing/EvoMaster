@@ -127,16 +127,16 @@ class ResourceCluster {
      * @return existing rows of the table based on the specified [tableName]
      */
     fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
-        val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
-        if (found.isEmpty()) return null
-        Lazy.assert{found.size == 1}
-        return dataInDB.getValue(found.first())
+        val key = SqlActionUtils.getTableKey(dataInDB.keys, tableName)
+            ?: return null
+        return dataInDB.getValue(key)
     }
 
     /**
      * @return table class based on specified [name]
      */
-    fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
+    private fun getTableByName(name : String) =
+        SqlActionUtils.getTableKey(tables.keys, name)?.run { tables[this] }
 
 
     /**
