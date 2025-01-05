@@ -212,6 +212,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
   * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
 * Troubleshooting
   * [Windows and networking](docs/troubleshooting/windows.md)
+  * [java.lang.OutOfMemoryError](docs/troubleshooting/outofmemory.md)
 * More Info
   * [Academic papers related to EvoMaster](docs/publications.md)
   * [Slides of presentations/seminars](docs/presentations.md)
