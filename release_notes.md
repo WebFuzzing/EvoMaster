@@ -14,6 +14,7 @@ Under development in `master` branch.
 
 ### Addressed GitHub Issues
 - #1150: java.util.NoSuchElementException: Key org.evomaster.core.search.gene.optional.OptionalGene@5dc8227c is missing in the map
+- #301: convert to Docker
 
 # Version: 3.3.0
 
