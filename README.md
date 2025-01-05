@@ -39,7 +39,7 @@ It will fuzz the PetClinic example API from Swagger, for 30 seconds.
 ```
 docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
 ```
-Note, if run in a MSYS shell on Windows like \emph{Git Bash}, there is the need of an extra / before the $ (as in the following video).
+Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $ (as in the following video).
 
 
 ![](docs/img/evomaster_docker_use.gif)
