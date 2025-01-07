@@ -31,7 +31,23 @@ _EvoMaster_ uses several kinds of AI heuristics to improve performance even furt
 building on decades of research in the field of [Search-Based Software Testing](https://en.wikipedia.org/wiki/Search-based_software_engineering).
 
 
-__Key features__:
+### 1-Minute Example 
+
+On a console, copy&paste the following (requires _Docker_ installed).
+It will fuzz the PetClinic example API from Swagger, for 30 seconds. 
+
+```
+docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+```
+Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $ (as in the following video).
+
+
+![](docs/img/evomaster_docker_use.gif)
+
+Once the command is executed, you can inspect the generated files under `generated_tests` folder. 
+
+
+### Key features
 
 * _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
 
@@ -53,6 +69,10 @@ __Key features__:
    Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
+
+* _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
+
+* _GitHub Action_: it is possible to run _EvoMaster_ in GitHub Actions, as part of Continuous Integration, by using the [following custom action](https://github.com/WebFuzzing/evomaster-action) (which is in a different GitHub repository).
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
@@ -83,7 +103,7 @@ __Key features__:
   Besides using fixed HTTP headers, 
   it is also possible to declaratively specify which login endpoint should be used to dynamically obtain authentication info (e.g., auth tokens or cookies) for each test execution. [See documentation](docs/auth.md).
 
-__Known limitations__:
+### Known Limitations
 
 * _Driver_: to be used for _white-box_ testing, users need to write a [driver manually](docs/write_driver.md).
   We recommend to try _black-box_ mode first (should just need a few minutes to get it up and running) to get
@@ -212,6 +232,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
   * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
 * Troubleshooting
   * [Windows and networking](docs/troubleshooting/windows.md)
+  * [java.lang.OutOfMemoryError](docs/troubleshooting/outofmemory.md)
 * More Info
   * [Academic papers related to EvoMaster](docs/publications.md)
   * [Slides of presentations/seminars](docs/presentations.md)

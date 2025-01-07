@@ -22,7 +22,7 @@ class QueryParam(
     init {
         //https://swagger.io/docs/specification/serialization/
         /*
-            sending x=[1,2,3]  intead of x=1,2,3 is wrong, and can lead to crashes in
+            sending x=[1,2,3]  instead of x=1,2,3 is wrong, and can lead to crashes in
             server if desearilazation is not properly handled.
             TODO: But sending such malformatted string should be handled as part of Robustness Testing
          */
