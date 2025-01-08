@@ -54,7 +54,7 @@ class SqlActionGeneBuilder {
             column.autoIncrement ->
                 SqlAutoIncrementGene(column.name)
             fk != null ->
-                SqlForeignKeyGene(column.name, id, fk.targetTable, column.nullable)
+                SqlForeignKeyGene(column.name, id, fk.targetTableId, column.nullable)
 
             else -> when (column.type) {
                 // Man: TODO need to check

@@ -35,12 +35,12 @@ class SqlInsertBuilder(
     /**
      * Information about tables, indexed by id
      */
-    private val tables = mutableMapOf<String, Table>()
+    private val tables = mutableMapOf<TableId, Table>()
 
     /**
      * Same as table, but possibly with extended info on constraints, derived from analyzing the SUT
      */
-    private val extendedTables = mutableMapOf<String, Table>()
+    private val extendedTables = mutableMapOf<TableId, Table>()
 
     private val compositeTypes = mutableMapOf<String, CompositeType>()
 
@@ -87,33 +87,33 @@ class SqlInsertBuilder(
             compositeTypes[compositeTypeDto.name] = CompositeType(compositeTypeDto.name, columns)
         }
 
-        val tableToColumns = mutableMapOf<String, MutableSet<Column>>()
-        val tableToForeignKeys = mutableMapOf<String, MutableSet<ForeignKey>>()
-        val tableToConstraints = mutableMapOf<String, Set<TableConstraint>>()
+        val tableToColumns = mutableMapOf<TableId, MutableSet<Column>>()
+        val tableToForeignKeys = mutableMapOf<TableId, MutableSet<ForeignKey>>()
+        val tableToConstraints = mutableMapOf<TableId, Set<TableConstraint>>()
 
         // Then load all constraints and columns
         for (tableDto in schemaDto.tables) {
 
             val tableConstraints = parseTableConstraints(tableDto).toMutableList()
             val columns = generateColumnsFrom(tableDto, tableConstraints, schemaDto)
-
-            tableToConstraints[SqlDtoUtils.getId(tableDto)] = tableConstraints.toSet()
-            tableToColumns[SqlDtoUtils.getId(tableDto)] = columns
+            val id = TableId.fromDto(databaseType, tableDto.id)
+            tableToConstraints[id] = tableConstraints.toSet()
+            tableToColumns[id] = columns
         }
 
         // After all columns are loaded, we can load foreign keys
         for (tableDto in schemaDto.tables) {
-            tableToForeignKeys[SqlDtoUtils.getId(tableDto)] = calculateForeignKeysFrom(tableDto, tableToColumns)
+            val id = TableId.fromDto(databaseType, tableDto.id)
+            tableToForeignKeys[id] = calculateForeignKeysFrom(tableDto, tableToColumns)
         }
 
 
 
         // Now we can create the tables
         for (tableDto in schemaDto.tables) {
-            val id = SqlDtoUtils.getId(tableDto)
+            val id = TableId.fromDto(schemaDto.databaseType, tableDto.id)
             val table = Table(
-                //FIXME MySQL vs Postgres
-                TableId(tableDto.id.name, /*TODO*/ null, tableDto.id.catalog, tableDto.id.schema),
+                id,
                 tableToColumns[id]!!,
                 tableToForeignKeys[id]!!,
                 tableToConstraints[id]!!
@@ -175,13 +175,14 @@ class SqlInsertBuilder(
 
     private fun calculateForeignKeysFrom(
         tableDto: TableDto,
-        tableToColumns: MutableMap<String, MutableSet<Column>>
+        tableToColumns: MutableMap<TableId, MutableSet<Column>>
     ): MutableSet<ForeignKey> {
         val fks = mutableSetOf<ForeignKey>()
 
         for (fk in tableDto.foreignKeys) {
 
             val tableKey = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
+            FIXME
 
             if(tableKey == null || tableToColumns[tableKey] == null) {
                 throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
@@ -641,14 +642,14 @@ class SqlInsertBuilder(
 
 
 
-    fun getTable(tableName: String, useExtraConstraints: Boolean): Table {
+    fun getTable(tableName: TableId, useExtraConstraints: Boolean): Table {
 
         val data = if (useExtraConstraints) extendedTables else tables
 
-        val tableNameKey = SqlActionUtils.getTableKey(data.keys, tableName)
-            ?: throw IllegalArgumentException("No table called $tableName")
+//        val tableNameKey = SqlActionUtils.getTableKey(data.keys, tableName)
+//            ?: throw IllegalArgumentException("No table called $tableName")
 
-        return data[tableNameKey] ?: throw IllegalArgumentException("No table called $tableName")
+        return data[tableName] ?: throw IllegalArgumentException("No table called $tableName")
     }
 
     /**
@@ -670,7 +671,7 @@ class SqlInsertBuilder(
      * test cases manually for EM
      */
     fun createSqlInsertionAction(
-        tableName: String,
+        tableName: TableId,
         /**
          * Which columns to create data for. Default is all, ie *.
          * Notice that more columns might be added, eg, to satisfy non-null
@@ -680,7 +681,7 @@ class SqlInsertBuilder(
         /**
          * used to avoid infinite recursion
          */
-        history: MutableList<String> = mutableListOf(),
+        history: MutableList<TableId> = mutableListOf(),
         /**
          *   When adding new insertions due to FK constraints, specify if
          *   should get all columns for those new insertions, or just the minimal
@@ -730,7 +731,7 @@ class SqlInsertBuilder(
 
         for (fk in table.foreignKeys) {
 
-            val targetTable = fk.targetTable
+            val targetTable = fk.targetTableId
 
             // if we have already generated the sql inserts for the target table more than 3 times and all columns are nullable, then skip it
             val maxIter = 3 // TODO: as a configurable parameter in EMConfig?
@@ -999,7 +1000,7 @@ class SqlInsertBuilder(
      * @param tables to check
      * @param all is a complete set of tables with their fk
      */
-    fun extractFkTable(tables: Set<String>, all: MutableSet<String> = mutableSetOf()): Set<String> {
+    fun extractFkTable(tables: Set<TableId>, all: MutableSet<TableId> = mutableSetOf()): Set<TableId> {
         tables.forEach { t ->
             if (!all.contains(t))
                 all.add(t)
@@ -1011,13 +1012,10 @@ class SqlInsertBuilder(
         return all.toSet()
     }
 
-    private fun extractFkTable(tableName: String): Set<String> {
+    private fun extractFkTable(tableId: TableId): Set<TableId> {
         return tables.filter { t ->
             t.value.foreignKeys.any { f ->
-                f.targetTable.equals(
-                    tableName,
-                    ignoreCase = true
-                )
+                f.targetTableId == tableId
             }
         }.keys
     }

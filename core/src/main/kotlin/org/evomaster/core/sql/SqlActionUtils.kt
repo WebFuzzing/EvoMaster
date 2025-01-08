@@ -432,8 +432,8 @@ object SqlActionUtils {
         val sorted = table.sortedWith(
             Comparator { o1, o2 ->
                 when {
-                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> -1
-                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> 1
+                    o1.foreignKeys.any { t-> t.targetTableId == o2.id } -> -1
+                    o2.foreignKeys.any { t-> t.targetTableId == o1.id } -> 1
                     else -> 0
                 }
             }

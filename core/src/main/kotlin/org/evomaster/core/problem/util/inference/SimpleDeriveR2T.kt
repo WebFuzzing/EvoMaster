@@ -220,12 +220,12 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                     .map {
                         Pair(it.name,
                                 if(ParamUtil.isGeneralName(it.name))
-                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTable}${it.name}")}
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTableId}${it.name}")}
                                             .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
                                             .plus(calculateStringSimilarityScoreWithTableName(paramName, "$tableName${it.name}"))
                                             .asSequence().sorted().last()
                                 else if(ParamUtil.isGeneralName(paramName))
-                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTable}$paramName", it.name)}
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTableId}$paramName", it.name)}
                                             .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
                                             .plus(calculateStringSimilarityScoreWithTableName("$tableName$paramName", it.name))
                                             .asSequence().sorted().last()

@@ -1,5 +1,11 @@
 package org.evomaster.core.sql.schema
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto
+
+/**
+ * MUST be kept immutable
+ */
 data class TableId(
 
     /**
@@ -47,6 +53,26 @@ data class TableId(
                     "You sure you passed a simple name and not a fully qualified one? Value: $name")
         }
     }
+
+    companion object{
+
+        fun fromDto(type: DatabaseType, dto: TableIdDto) : TableId{
+
+            val connectionId = null //TODO
+
+            return when(type){
+                DatabaseType.POSTGRES, DatabaseType.H2 ->
+                    TableId(dto.name, connectionId, dto.catalog, dto.schema)
+
+                DatabaseType.MYSQL, DatabaseType.MARIADB ->
+                    TableId(dto.name, connectionId, null, dto.schema ?: dto.catalog)
+
+                else ->
+                    TableId(dto.name, connectionId, dto.catalog, dto.schema)
+            }
+        }
+    }
+
 
     fun getFullQualifyingTableName() : String{
         if(openGroupName.isNullOrBlank()){

@@ -12,6 +12,7 @@ import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKot
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -21,6 +22,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -191,10 +193,13 @@ class TestSuiteWriter {
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
+        if(sampler !is EnterpriseSampler<*>){
+            throw IllegalArgumentException("Not dealing with an enterprise application")
+        }
         if (!config.outputFormat.isJavaOrKotlin())
             throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
-        val accessedTable = mutableSetOf<String>()
+        val accessedTable = mutableSetOf<TableId>()
         solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
             if (e.individual is ApiWsIndividual) {
@@ -206,7 +211,7 @@ class TestSuiteWriter {
                 accessedTable.addAll(de.deletedData)
             }
         }
-        val all = sampler.extractFkTables(accessedTable)
+        val all = (sampler as EnterpriseSampler).extractFkTables(accessedTable)
 
         val tableNamesInSchema = remoteController.getCachedSutInfo()
             ?.sqlSchemaDto
