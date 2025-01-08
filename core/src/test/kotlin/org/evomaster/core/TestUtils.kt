@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.sql.schema.TableId
 
 
 object TestUtils {
@@ -63,7 +64,7 @@ object TestUtils {
     // for rest problem
     fun generateFakeDbAction(pkId : Long, pkGeneUniqueId: Long, tableName : String = "Foo", intValue : Int =0, fkColumn : Column?=null, fkGene: SqlForeignKeyGene? = null) : SqlAction {
         val fooId = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
-        val foo = Table(tableName, setOf(fooId), setOf())
+        val foo = Table(TableId(tableName), setOf(fooId), setOf())
         val integerGene = IntegerGene(fooId.name, intValue)
         val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
         if(fkColumn != null && fkGene != null)

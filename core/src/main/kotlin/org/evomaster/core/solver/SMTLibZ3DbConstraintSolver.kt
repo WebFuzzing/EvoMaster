@@ -14,10 +14,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.sql.schema.*
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
@@ -170,7 +167,7 @@ class SMTLibZ3DbConstraintSolver(
         val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
-            tableDto.id.name,
+            TableId(tableDto.id.name) , //TODO other info, eg schema
             findColumns(tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )

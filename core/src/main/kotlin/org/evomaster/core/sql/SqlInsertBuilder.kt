@@ -33,7 +33,7 @@ class SqlInsertBuilder(
      */
 
     /**
-     * Information about tables, indexed by name
+     * Information about tables, indexed by id
      */
     private val tables = mutableMapOf<String, Table>()
 
@@ -112,7 +112,8 @@ class SqlInsertBuilder(
         for (tableDto in schemaDto.tables) {
             val id = SqlDtoUtils.getId(tableDto)
             val table = Table(
-                id,
+                //FIXME MySQL vs Postgres
+                TableId(tableDto.id.name, /*TODO*/ null, tableDto.id.catalog, tableDto.id.schema),
                 tableToColumns[id]!!,
                 tableToForeignKeys[id]!!,
                 tableToConstraints[id]!!

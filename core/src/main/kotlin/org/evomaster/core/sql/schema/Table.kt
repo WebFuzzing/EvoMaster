@@ -7,10 +7,8 @@ import org.evomaster.dbconstraint.TableConstraint
  * Should be immutable
  */
 data class Table(
-        /**
-         * This usually would be fully qualified, ie, including schema
-         */
-        val name: String,
+
+        val id: TableId,
 
         val columns: Set<Column>,
 
@@ -22,6 +20,12 @@ data class Table(
          */
         val tableConstraints: Set<TableConstraint> = setOf()
 ){
+    constructor(name: String, columns: Set<Column>, foreignKeys: Set<ForeignKey>, tableConstraints: Set<TableConstraint> = setOf())
+        : this(TableId(name), columns, foreignKeys, tableConstraints)
+
+    @Deprecated("Use id directly instead")
+    val name: String
+            get() = id.name
 
     fun primaryKeys() = columns.filter { it.primaryKey }
 }
