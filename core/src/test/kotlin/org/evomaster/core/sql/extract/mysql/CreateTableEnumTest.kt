@@ -18,7 +18,7 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
 
         assertNotNull(schema)
 
-        val tableDto = schema.tables.find { it.name.equals("shirts", ignoreCase = true) }
+        val tableDto = schema.tables.find { it.id.name.equals("shirts", ignoreCase = true) }
         assertNotNull(tableDto)
         assertEquals(2, tableDto!!.columns.size)
         assertEquals(1, tableDto.tableCheckExpressions.size)

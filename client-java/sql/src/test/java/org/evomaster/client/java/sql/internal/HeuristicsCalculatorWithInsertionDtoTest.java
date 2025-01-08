@@ -20,7 +20,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
     private DbInfoDto createSchemaDtoWithFooTableAndXColumn(String xDataType){
         DbInfoDto schemaDto = new DbInfoDto();
         TableDto tableDto = new TableDto();
-        tableDto.name = "Foo";
+        tableDto.id.name = "Foo";
         ColumnDto dto = new ColumnDto();
         dto.name = "x";
         dto.type = xDataType;

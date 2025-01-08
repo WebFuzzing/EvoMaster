@@ -32,7 +32,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         assertAll(() -> assertEquals("db_test", schema.name.toLowerCase()),
                 () -> assertEquals(DatabaseType.H2, schema.databaseType),
                 () -> assertEquals(1, schema.tables.size()),
-                () -> assertEquals("foo", schema.tables.get(0).name.toLowerCase()),
+                () -> assertEquals("foo", schema.tables.get(0).id.name.toLowerCase()),
                 () -> assertEquals(1, schema.tables.get(0).columns.size())
         );
     }
@@ -45,8 +45,8 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         assertNotNull(schema);
 
         assertEquals(2, schema.tables.size());
-        assertTrue(schema.tables.stream().map(t -> t.name.toLowerCase()).anyMatch(n -> n.equals("foo")));
-        assertTrue(schema.tables.stream().map(t -> t.name.toLowerCase()).anyMatch(n -> n.equals("bar")));
+        assertTrue(schema.tables.stream().map(t -> t.id.name.toLowerCase()).anyMatch(n -> n.equals("foo")));
+        assertTrue(schema.tables.stream().map(t -> t.id.name.toLowerCase()).anyMatch(n -> n.equals("bar")));
     }
 
 
@@ -135,8 +135,8 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(2, schema.tables.size());
 
-        TableDto bar = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Bar")).findAny().get();
-        TableDto foo = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto bar = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Bar")).findAny().get();
+        TableDto foo = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(0, bar.foreignKeys.size());
         assertEquals(1, foo.foreignKeys.size());
@@ -184,7 +184,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(2, fooTable.columns.size());
 
@@ -212,7 +212,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(2, fooTable.columns.size());
 
@@ -236,7 +236,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -257,7 +257,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(2, fooTable.columns.size());
 
@@ -282,7 +282,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -306,7 +306,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -331,7 +331,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -355,7 +355,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -380,7 +380,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -404,7 +404,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -429,7 +429,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -453,7 +453,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -475,7 +475,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -498,7 +498,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
 
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -520,7 +520,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -546,7 +546,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -571,7 +571,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+        TableDto fooTable = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("Foo")).findAny().get();
 
         assertEquals(1, fooTable.columns.size());
 
@@ -598,7 +598,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 
@@ -621,7 +621,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 
@@ -644,7 +644,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 
@@ -667,7 +667,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 
@@ -690,7 +690,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 
@@ -714,7 +714,7 @@ public class H2SchemaExtractorTest extends DatabaseH2TestInit implements Databas
         DbInfoDto schema = DbInfoExtractor.extract(getConnection());
         assertEquals(1, schema.tables.size());
 
-        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("foo")).findAny();
+        Optional<TableDto> fooTableOptional = schema.tables.stream().filter(t -> t.id.name.equalsIgnoreCase("foo")).findAny();
         assertTrue(fooTableOptional.isPresent());
         TableDto fooTable = fooTableOptional.get();
 

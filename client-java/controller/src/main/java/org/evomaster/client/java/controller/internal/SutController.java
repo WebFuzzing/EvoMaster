@@ -680,10 +680,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (fkMap.isEmpty()){
             schemaDto.tables.forEach(t->{
-                fkMap.putIfAbsent(t.name, new ArrayList<>());
+                fkMap.putIfAbsent(t.id.name, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
                     t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                        fkMap.get(t.id.name).add(f.targetTable.toUpperCase());
                     });
                 }
             });

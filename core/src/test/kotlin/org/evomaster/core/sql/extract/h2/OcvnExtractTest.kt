@@ -64,7 +64,7 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         )
 
         for (name in tableNames) {
-            assertTrue(schema.tables.any { it.name.equals(name, true) }, "Missing table $name")
+            assertTrue(schema.tables.any { it.id.name.equals(name, true) }, "Missing table $name")
         }
     }
 
@@ -77,7 +77,7 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         val builder = SqlInsertBuilder(schema)
 
         val tableName = "FILE_CONTENT"
-        assertTrue(schema.tables.any { it.name.equals(tableName, true) })
+        assertTrue(schema.tables.any { it.id.name.equals(tableName, true) })
 
         val columnName = "BYTES"
         val actions = builder.createSqlInsertionAction(tableName, setOf(columnName))

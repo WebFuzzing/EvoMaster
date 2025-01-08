@@ -140,7 +140,7 @@ class SMTLibZ3DbConstraintSolver(
     }
 
     private fun isBoolean(table: Table, columnName: String?): Boolean {
-        val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
+        val col = schemaDto.tables.first { it.id.name == table.name }.columns.first { it.name == columnName }
         return col.type == "BOOLEAN"
     }
 
@@ -167,10 +167,10 @@ class SMTLibZ3DbConstraintSolver(
      * @return The Table object.
      */
     private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
-        val tableDto = schema.tables.find { it.name.equals(tableName, ignoreCase = true) }
+        val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
-            tableDto.name,
+            tableDto.id.name,
             findColumns(tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )

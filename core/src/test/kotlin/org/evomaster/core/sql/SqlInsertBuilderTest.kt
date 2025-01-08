@@ -1283,7 +1283,7 @@ class SqlInsertBuilderTest {
         val sqlInsertBuilder = SqlInsertBuilder(schemaDto, null)
 
         return sqlInsertBuilder.createSqlInsertionAction(
-            schemaDto.tables[0].name,
+            schemaDto.tables[0].id.name,
             setOf("*"),
             mutableListOf(),
             false,

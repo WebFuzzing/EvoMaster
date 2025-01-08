@@ -68,7 +68,7 @@ public class DbInfoExtractor {
                 .findFirst();
 
         if (!targetTable.isPresent()) {
-            throw new IllegalArgumentException("Foreign key in table " + table.name +
+            throw new IllegalArgumentException("Foreign key in table " + table.id.name +
                     " pointing to non-existent table " + fk.get().targetTable);
         }
 
@@ -77,14 +77,14 @@ public class DbInfoExtractor {
                 .collect(Collectors.toList());
 
         if (pks.isEmpty()) {
-            throw new IllegalArgumentException("No PK in table " + targetTable.get().name + " that has FKs pointing to it");
+            throw new IllegalArgumentException("No PK in table " + targetTable.get().id.name + " that has FKs pointing to it");
         }
 
         for (ColumnDto pk : pks) {
             if (pk.autoIncrement || pk.foreignKeyToAutoIncrement) {
                 throw new IllegalArgumentException("Column " + pk.name + " in table " +
                         pk.table + " is auto-increment, although FK pointing to it does not mark it " +
-                        "as autoincrement in " + column.name + " in " + table.name
+                        "as autoincrement in " + column.name + " in " + table.id.name
                 );
             }
         }
@@ -101,7 +101,7 @@ public class DbInfoExtractor {
 
         if (!fk.isPresent()) {
             throw new IllegalArgumentException("No foreign key constraint for marked column " +
-                    column.name + " in table " + table.name);
+                    column.name + " in table " + table.id.name);
         }
 
         //TODO proper handling of multi-column PKs/FKs
@@ -111,7 +111,7 @@ public class DbInfoExtractor {
                 .findFirst();
 
         if (!targetTable.isPresent()) {
-            throw new IllegalArgumentException("Foreign key in table " + table.name +
+            throw new IllegalArgumentException("Foreign key in table " + table.id.name +
                     " pointing to non-existent table " + fk.get().targetTable);
         }
 
@@ -123,15 +123,15 @@ public class DbInfoExtractor {
 
         if (pks.size() != 1) {
             throw new IllegalArgumentException("There must be only 1 PK in table " +
-                    targetTable.get().name + " pointed by the FK-to-autoincrement " +
-                    column.name + " in " + table.name + ". However, there were: " + pks.size());
+                    targetTable.get().id.name + " pointed by the FK-to-autoincrement " +
+                    column.name + " in " + table.id.name + ". However, there were: " + pks.size());
         }
 
         ColumnDto pk = pks.get(0);
         if (!pk.autoIncrement && !pk.foreignKeyToAutoIncrement) {
             throw new IllegalArgumentException("Column " + pk.name + " in table " +
                     pk.table + " is not auto-increment, although FK pointing to it does mark it" +
-                    "as autoincrement in " + column.name + " in " + table.name
+                    "as autoincrement in " + column.name + " in " + table.id.name
             );
         }
     }
@@ -498,7 +498,7 @@ public class DbInfoExtractor {
                 .filter(c -> c.name.equals(columnName)).findAny().orElse(null);
 
         if (columnDto == null) {
-            throw new IllegalArgumentException("Missing column DTO for column:" + tableDto.name + "." + columnName);
+            throw new IllegalArgumentException("Missing column DTO for column:" + tableDto.id.name + "." + columnName);
         }
 
         columnDto.unique = true;
@@ -575,9 +575,10 @@ public class DbInfoExtractor {
 
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
-        tableDto.name = tables.getString("TABLE_NAME");
-        tableDto.schema = tableSchema;
-        tableDto.catalog = tableCatalog;
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = tables.getString("TABLE_NAME");
+        tableDto.id.schema = tableSchema;
+        tableDto.id.catalog = tableCatalog;
 
         if (tableIds.contains(SqlDtoUtils.getId(tableDto))) {
             /*
@@ -590,7 +591,7 @@ public class DbInfoExtractor {
 
         Set<String> pks = new HashSet<>();
         SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
-        ResultSet rsPK = md.getPrimaryKeys(tableDto.catalog, tableDto.schema, tableDto.name);
+        ResultSet rsPK = md.getPrimaryKeys(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name);
 
         while (rsPK.next()) {
             String pkColumnName = rsPK.getString("COLUMN_NAME");
@@ -603,21 +604,21 @@ public class DbInfoExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
-        ResultSet columns = md.getColumns(tableDto.catalog, tableDto.schema, tableDto.name, null);
+        ResultSet columns = md.getColumns(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name, null);
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {
             ColumnDto columnDto = new ColumnDto();
             tableDto.columns.add(columnDto);
 
-            columnDto.table = tableDto.name;
+            columnDto.table = tableDto.id.name;
             columnDto.name = columns.getString("COLUMN_NAME");
 
             if (columnNames.contains(columnDto.name)) {
                 /*
                  * Perhaps we should throw a more specific exception than IllegalArgumentException
                  */
-                throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.name);
+                throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.id.name);
             } else {
                 columnNames.add(columnDto.name);
             }
@@ -652,7 +653,7 @@ public class DbInfoExtractor {
         columns.close();
 
 
-        ResultSet fks = md.getImportedKeys(tableDto.catalog, tableDto.schema, tableDto.name);
+        ResultSet fks = md.getImportedKeys(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name);
         while (fks.next()) {
             //TODO need to see how to handle case of multi-columns
 
@@ -727,7 +728,7 @@ public class DbInfoExtractor {
              * corresponding [DATA_TYPE] column value.
              */
             String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
-                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.schema, tableDto.name, columnDto.name);
+                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.id.schema, tableDto.id.name, columnDto.name);
             try (Statement statement = connection.createStatement()) {
                 ResultSet rs = statement.executeQuery(sqlQuery);
                 if (rs.next()) {

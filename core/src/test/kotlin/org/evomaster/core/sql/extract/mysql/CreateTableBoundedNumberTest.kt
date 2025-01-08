@@ -25,9 +25,9 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
         assertEquals("test", schema.name)
         assertEquals(DatabaseType.MYSQL, schema.databaseType)
-        assertTrue(schema.tables.any { it.name.equals("BoundedNumberTable", ignoreCase = true) })
+        assertTrue(schema.tables.any { it.id.name.equals("BoundedNumberTable", ignoreCase = true) })
 
-        val columns = schema.tables.first { it.name.equals("BoundedNumberTable", ignoreCase = true) }.columns
+        val columns = schema.tables.first { it.id.name.equals("BoundedNumberTable", ignoreCase = true) }.columns
 
         columns.apply {
             assertEquals(8, size)

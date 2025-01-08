@@ -18,10 +18,10 @@ public class SqlDtoUtils {
      * Return a fully qualifying name for input table, which can be used as id.
      */
     public static String getId(TableDto dto){
-        if(dto.schema == null){
-            return dto.name;
+        if(dto.id.schema == null){
+            return dto.id.name;
         }
-        return dto.schema + "." + dto.name;
+        return dto.id.schema + "." + dto.id.name;
     }
 
     /**
@@ -51,34 +51,34 @@ public class SqlDtoUtils {
             throw new IllegalArgumentException("Invalid table name identifier. Too many '.': " + name);
         }
         if(tokens.length == 1){
-            return dto.name.equalsIgnoreCase(tokens[0]);
+            return dto.id.name.equalsIgnoreCase(tokens[0]);
         }
         if(tokens.length == 2){
-            boolean mn = dto.name.equalsIgnoreCase(tokens[1]);
+            boolean mn = dto.id.name.equalsIgnoreCase(tokens[1]);
             if(!mn){
                 return false;
             }
 
-            if(dto.catalog == null && dto.schema == null){
+            if(dto.id.catalog == null && dto.id.schema == null){
                 //there is no default schema, but DTO is unspecified, then false
                 return tokens[0].equalsIgnoreCase("public");
-            } else if(dto.catalog != null && dto.schema != null){
+            } else if(dto.id.catalog != null && dto.id.schema != null){
                 //both specified... so look at schema
-                return tokens[0].equalsIgnoreCase(dto.schema);
+                return tokens[0].equalsIgnoreCase(dto.id.schema);
             } else {
                 //only one specified, take it
-                if(dto.schema != null){
-                    return tokens[0].equalsIgnoreCase(dto.schema);
+                if(dto.id.schema != null){
+                    return tokens[0].equalsIgnoreCase(dto.id.schema);
                 } else{
                     //this can be the case for MySQL
-                    return tokens[0].equalsIgnoreCase(dto.catalog);
+                    return tokens[0].equalsIgnoreCase(dto.id.catalog);
                 }
             }
         }
         if(tokens.length == 3){
-            return tokens[0].equalsIgnoreCase(dto.catalog)
-                    && tokens[1].equalsIgnoreCase(dto.schema)
-                    && tokens[2].equalsIgnoreCase(dto.name);
+            return tokens[0].equalsIgnoreCase(dto.id.catalog)
+                    && tokens[1].equalsIgnoreCase(dto.id.schema)
+                    && tokens[2].equalsIgnoreCase(dto.id.name);
         }
 
         //shouldn't be reached

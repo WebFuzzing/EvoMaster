@@ -28,7 +28,7 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
         DbInfoDto schema = dbInfoExtractor.extract(connection);
         assertEquals(1, schema.tables.size());
-        assertEquals("Person".toUpperCase(), schema.tables.get(0).name.toUpperCase());
+        assertEquals("Person".toUpperCase(), schema.tables.get(0).id.name.toUpperCase());
 
         SqlHandler sqlHandler = new SqlHandler(null);
         sqlHandler.setConnection(connection);
@@ -60,7 +60,7 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
         DbInfoDto schema = dbInfoExtractor.extract(connection);
         assertEquals(1, schema.tables.size());
-        assertEquals("Person".toUpperCase(), schema.tables.get(0).name.toUpperCase());
+        assertEquals("Person".toUpperCase(), schema.tables.get(0).id.name.toUpperCase());
 
         SqlScriptRunner.execCommand(connection, "INSERT INTO Person (person_id, first_name, last_name, age, email)\n" +
                 "VALUES (1, 'John', 'Doe', 30, 'john.doe@example.com');");

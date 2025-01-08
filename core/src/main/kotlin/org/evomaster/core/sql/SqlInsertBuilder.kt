@@ -193,7 +193,7 @@ class SqlInsertBuilder(
                 //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
                 val c = tableToColumns[SqlDtoUtils.getId(tableDto)]!!.find { it.name.equals(cname, ignoreCase = true) }
-                    ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.name} does not have a column called $cname")
+                    ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.id.name} does not have a column called $cname")
 
                 sourceColumns.add(c)
             }
@@ -212,8 +212,8 @@ class SqlInsertBuilder(
 
         for (column in tableDto.columns) {
 
-            if (!column.table.equals(tableDto.name, ignoreCase = true)) {
-                throw IllegalArgumentException("Column in different table: ${column.table}!=${tableDto.name}")
+            if (!column.table.equals(tableDto.id.name, ignoreCase = true)) {
+                throw IllegalArgumentException("Column in different table: ${column.table}!=${tableDto.id.name}")
             }
 
             val newColumn = createColumnFrom(column, tableConstraints, schemaDto)
@@ -599,7 +599,7 @@ class SqlInsertBuilder(
 
     private fun parseTableConstraints(t: TableDto): List<TableConstraint> {
         val tableConstraints = mutableListOf<TableConstraint>()
-        val tableName = t.name
+        val tableName = t.id.name
         for (sqlCheckExpression in t.tableCheckExpressions) {
             val builder = TableConstraintBuilder()
             val constraintDatabaseType = getConstraintDatabaseType(this.databaseType)

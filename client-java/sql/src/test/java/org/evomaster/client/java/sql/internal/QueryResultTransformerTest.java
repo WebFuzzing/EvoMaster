@@ -23,7 +23,7 @@ public class QueryResultTransformerTest {
     private TableDto createTableDate(List<String> columnTypes, List<String> columnNames, String tableName){
         assertEquals(columnTypes.size(), columnNames.size());
         TableDto tableDto = new TableDto();
-        tableDto.name = tableName;
+        tableDto.id.name = tableName;
         for (int i = 0; i < columnTypes.size(); i++){
             ColumnDto dto = new ColumnDto();
             dto.name = columnNames.get(i);
