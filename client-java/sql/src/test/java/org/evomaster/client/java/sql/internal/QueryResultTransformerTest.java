@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
@@ -23,6 +24,7 @@ public class QueryResultTransformerTest {
     private TableDto createTableDate(List<String> columnTypes, List<String> columnNames, String tableName){
         assertEquals(columnTypes.size(), columnNames.size());
         TableDto tableDto = new TableDto();
+        tableDto.id = new TableIdDto();
         tableDto.id.name = tableName;
         for (int i = 0; i < columnTypes.size(); i++){
             ColumnDto dto = new ColumnDto();

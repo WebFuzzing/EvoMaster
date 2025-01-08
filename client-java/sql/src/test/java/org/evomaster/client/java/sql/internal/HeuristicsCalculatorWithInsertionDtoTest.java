@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
     private DbInfoDto createSchemaDtoWithFooTableAndXColumn(String xDataType){
         DbInfoDto schemaDto = new DbInfoDto();
         TableDto tableDto = new TableDto();
+        tableDto.id = new TableIdDto();
         tableDto.id.name = "Foo";
         ColumnDto dto = new ColumnDto();
         dto.name = "x";

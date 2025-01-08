@@ -130,11 +130,11 @@ class SqlInsertBuilder(
 
     private fun validateExtraConstraintsHandle(schemaDto: DbInfoDto) {
         schemaDto.extraConstraintDtos.forEach { extraConstraintsDto ->
-            val table = tables.values.find { matchJpaName(it.name, extraConstraintsDto.tableName) }
+            val table = tables.values.find { matchJpaName(it.name, extraConstraintsDto.tableId.name) }
             if (table == null) {
                 LoggingUtil.uniqueWarn(
                     log, "Handling of extra constraints failed." +
-                            " There is no SQL table called ${extraConstraintsDto.tableName}"
+                            " There is no SQL table called ${extraConstraintsDto.tableId.name}"
                 )
                 assert(false)
             } else {
@@ -157,7 +157,7 @@ class SqlInsertBuilder(
         table: Table
     ): Table {
         val extrasForTable = schemaDto.extraConstraintDtos
-            .filter { matchJpaName(it.tableName, table.name) }
+            .filter { matchJpaName(it.tableId.name, table.name) }
 
         val columns = table.columns
             .map { column ->
@@ -304,10 +304,16 @@ class SqlInsertBuilder(
     so, if match fails, we try again without _
      */
     private fun matchJpaName(original: String, jpaDefaultMadness: String): Boolean {
-        if (original.equals(jpaDefaultMadness, true)) {
+        /*
+            FIXME this will need to be refactored once we introduce TableId
+         */
+        val name = if(original.contains(".")) original.substring(original.lastIndexOf(".") + 1, original.length)
+            else original
+
+        if (name.equals(jpaDefaultMadness, true)) {
             return true
         }
-        return original.replace("_", "").equals(jpaDefaultMadness.replace("_", ""), true)
+        return name.replace("_", "").equals(jpaDefaultMadness.replace("_", ""), true)
     }
 
     private fun mergeConstraints(column: Column, extra: ExtraConstraintsDto): Column {

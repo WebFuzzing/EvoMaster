@@ -24,6 +24,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.MongoIns
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.sql.DbCleaner;
@@ -1455,7 +1456,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     ec.digitsInteger = c.getDigitsInteger();
                     ec.enumValuesAsStrings = c.getEnumValuesAsStrings() == null ? null : new ArrayList<>(c.getEnumValuesAsStrings());
                     ExtraConstraintsDto jpa = new ExtraConstraintsDto();
-                    jpa.tableName = c.getTableName();
+                    jpa.tableId = new TableIdDto();
+                    jpa.tableId.name = c.getTableName();
+                    jpa.tableId.schema = null; //TODO
+                    jpa.tableId.catalog = null; //TODO
                     jpa.columnName = c.getColumnName();
                     jpa.constraints = ec;
                     return jpa;
