@@ -196,7 +196,7 @@ class SortingHelper {
      */
 
     var comparatorList = listOf(statusCode, coveredTargets)
-    var restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+    val restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
         if (ind.individual is RestIndividual) {
             (ind.evaluatedMainActions().last().action as RestCallAction).path.levels()
         } else 0
@@ -266,7 +266,6 @@ class SortingHelper {
          */
 
         return namingStrategy.getSortedTestCases(restComparator)
-
     }
 
     fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {

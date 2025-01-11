@@ -16,9 +16,9 @@ open class NumberedTestCaseNamingStrategy(
     override fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
         val inds = solution.individuals
 
-        val sortedIndividuals = inds.sortedWith(comparator)
+        inds.sortWith(comparator)
 
-        return generateNames(sortedIndividuals)
+        return generateNames(inds)
     }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
