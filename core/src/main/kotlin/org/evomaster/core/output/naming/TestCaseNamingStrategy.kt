@@ -23,7 +23,7 @@ abstract class TestCaseNamingStrategy(
      *
      * @return the list of sorted TestCase with the generated name given the naming strategy
      */
-    abstract fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase>
+    abstract fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase>
 
     /**
      * @param individual containing information for the test about to be named

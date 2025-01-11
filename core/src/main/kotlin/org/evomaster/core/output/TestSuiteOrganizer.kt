@@ -196,6 +196,23 @@ class SortingHelper {
      */
 
     var comparatorList = listOf(statusCode, coveredTargets)
+    var restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+        if (ind.individual is RestIndividual) {
+            (ind.evaluatedMainActions().last().action as RestCallAction).path.levels()
+        } else 0
+    }
+        .thenBy { ind ->
+            val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
+                it.getStatusCode()?.rem(500) ?: 0
+            }
+            (min?.getStatusCode())?.rem(500) ?: 0
+        }
+        .thenBy { ind ->
+            if (ind.individual is RestIndividual) {
+                (ind.evaluatedMainActions().last().action as RestCallAction).verb
+            } else 0
+        }
+
     private val availableSortCriteria = listOf(statusCode, minActions, coveredTargets, maxStatusCode, maxActions, dbInitSize)
 
 
@@ -248,7 +265,7 @@ class SortingHelper {
          * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
          */
 
-        return namingStrategy.getSortedTestCases(comparators)
+        return namingStrategy.getSortedTestCases(restComparator)
 
     }
 
