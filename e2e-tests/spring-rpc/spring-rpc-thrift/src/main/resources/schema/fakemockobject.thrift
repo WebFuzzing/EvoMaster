@@ -22,10 +22,11 @@ enum FakeScheduleTaskState {
 
 struct FakeScheduleTaskData{
 
-    1: required i32 id,
+    1: required i64 id,
     2: required string name,
     3: required string startTime,
-    4: required FakeScheduleTaskState state
+    4: required string info,
+    5: required FakeScheduleTaskState state
 }
 
 service FakeMockObjectService {
@@ -34,7 +35,7 @@ service FakeMockObjectService {
 
     string getBarFromDatabase(1:i32 id),
 
-    string getCompletedTaskById(1:i32 id),
+    bool isExecutedToday(),
 
     list<string> getAllBarFromDatabase(),
 
