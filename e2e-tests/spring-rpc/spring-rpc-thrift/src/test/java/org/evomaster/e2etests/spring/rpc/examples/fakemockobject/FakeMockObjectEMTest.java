@@ -49,6 +49,8 @@ public class FakeMockObjectEMTest extends SpringRPCTestBase {
                     assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":getFooFromExternalService", "EX:::");
                     assertRPCEndpointResult(solution, FakeMockObjectService.Iface.class.getName()+":getBarFromDatabase", RPCCallResultCategory.HANDLED.name());
                     assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":getBarFromDatabase", "DB:::");
+                    assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":isExecutedToday", "true");
+
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 

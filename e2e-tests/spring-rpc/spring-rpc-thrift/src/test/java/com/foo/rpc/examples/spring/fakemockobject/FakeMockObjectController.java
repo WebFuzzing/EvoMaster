@@ -8,6 +8,7 @@ import com.foo.rpc.examples.spring.SpringController;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeDatabaseRow;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeMockObjectService;
 import com.foo.rpc.examples.spring.fakemockobject.generated.FakeRetrieveData;
+import com.foo.rpc.examples.spring.fakemockobject.generated.FakeScheduleTaskData;
 import com.foo.rpc.examples.spring.fakemockobject.impl.FakeMockObjectApp;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -18,7 +19,6 @@ import org.apache.thrift.transport.THttpClient;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
-import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RPCProblem;
@@ -133,6 +133,24 @@ public class FakeMockObjectController extends SpringController {
                         );
                     }}
                 );
+            }},
+            new SeededRPCTestDto(){{
+                testName = "test_4";
+                rpcFunctions = Arrays.asList(
+                        new SeededRPCActionDto(){{
+                            interfaceName = FakeMockObjectService.Iface.class.getName();
+                            functionName = "isExecutedToday";
+                            inputParams= Arrays.asList();
+                            inputParamTypes= Arrays.asList();
+                            scheduleTaskInvocations = Arrays.asList(
+                                    new CustomizedScheduleTaskInvocationDto(){{
+                                        appKey = "fake.app";
+                                        taskName = "executeFlag";
+                                        descriptiveInfo = "a scheduled task for invoking executeFlag";
+                                    }}
+                            );
+                        }}
+                );
             }}
         );
     }
@@ -215,6 +233,30 @@ public class FakeMockObjectController extends SpringController {
         } catch (TException | JsonProcessingException e) {
             return false;
         }
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        ScheduleTaskInvocationResultDto dto = new ScheduleTaskInvocationResultDto();
+        dto.status = ExecutionStatusDto.FAILED;
+        try {
+            if (invocationDto != null && invoked){
+                FakeScheduleTaskData data = new FakeScheduleTaskData();
+                data.name = invocationDto.taskName;
+                data.info = invocationDto.descriptiveInfo;
+                data.id = System.nanoTime();
+                boolean ok = client.backdoor(null, null, data);
+                if (ok) dto.status = ExecutionStatusDto.COMPLETED;
+            }
+        } catch (TException e) {
+        }
+
+        return dto;
+    }
+
+    @Override
+    public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
+        return true;
     }
 }
 
