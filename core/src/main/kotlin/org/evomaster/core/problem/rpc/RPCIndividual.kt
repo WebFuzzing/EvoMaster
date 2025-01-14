@@ -86,6 +86,7 @@ class RPCIndividual(
             GeneFilter.ONLY_DB -> seeActions(ActionFilter.ONLY_DB).flatMap { it.seeTopGenes() }
             GeneFilter.NO_DB -> seeActions(ActionFilter.NO_DB).flatMap { it.seeTopGenes() }
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_SCHEDULE_TASK -> seeScheduleTaskActions().flatMap { it.seeTopGenes() }
         }
     }
 

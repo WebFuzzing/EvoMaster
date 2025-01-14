@@ -15,6 +15,7 @@ public class CustomizedScheduleTaskInvocationDto {
 
     /**
      * a name referring to schedule task
+     * required, cannot be null
      */
     public String taskName;
 

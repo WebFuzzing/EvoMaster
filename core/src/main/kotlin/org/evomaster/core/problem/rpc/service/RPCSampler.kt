@@ -205,7 +205,8 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
             sampleType =  sampleType,
             trackOperator = if(config.trackingEnabled()) this else null,
             index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1,
-            allActions = scheduleTaskActions.toMutableList()
+            actions = mutableListOf(),
+            scheduleTaskActions = scheduleTaskActions.toMutableList()
         )
     }
 

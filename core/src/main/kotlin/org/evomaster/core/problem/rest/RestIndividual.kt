@@ -131,6 +131,7 @@ class RestIndividual(
             GeneFilter.ONLY_DB -> seeActions(ONLY_DB).flatMap { it.seeTopGenes() }
             GeneFilter.NO_DB -> seeActions(NO_DB).flatMap { it.seeTopGenes() }
             GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
+            GeneFilter.ONLY_SCHEDULE_TASK -> seeScheduleTaskActions().flatMap { it.seeTopGenes() }
         }
     }
 

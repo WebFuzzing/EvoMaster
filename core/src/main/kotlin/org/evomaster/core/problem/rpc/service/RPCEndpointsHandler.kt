@@ -285,7 +285,7 @@ class RPCEndpointsHandler {
     }
 
     private fun extractScheduleTaskAction(dto: ScheduleTaskInvocationDto, cluster : MutableMap<String, Action>){
-        val id = getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName)
+        val id = getScheduleTaskActionId(taskType = dto.scheduleTaskType?:"null", taskName = dto.taskName)
 
         val existing = cluster[id] as? ScheduleTaskAction
         if (existing != null &&
@@ -321,7 +321,7 @@ class RPCEndpointsHandler {
         }
 
         return ScheduleTaskAction(
-            taskId = getScheduleTaskActionId(taskType = dto.scheduleTaskType, taskName = dto.taskName),
+            taskId = getScheduleTaskActionId(taskType = dto.scheduleTaskType?:"null", taskName = dto.taskName),
             taskName = dto.taskName,
             parameters = params,
             immutableExtraInfo = mutableMapOf(

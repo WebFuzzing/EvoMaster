@@ -1404,6 +1404,12 @@ public class RPCEndpointsBuilder {
         // handle schedule task
         List<ScheduleTaskInvocationDto> tasks = null;
         if (dto.scheduleTaskInvocations != null && !dto.scheduleTaskInvocations.isEmpty()){
+
+            if (dto.scheduleTaskInvocations.stream().anyMatch(s-> s.taskName == null)){
+                SimpleLogger.recordErrorMessage("Seeded Test Error: taskName of the schedule task cannot null");
+                return null;
+            }
+
             tasks = new ArrayList<>();
             for (CustomizedScheduleTaskInvocationDto seededTask : dto.scheduleTaskInvocations){
                 ScheduleTaskInvocationDto taskInvocationDto = new ScheduleTaskInvocationDto();
@@ -1422,6 +1428,7 @@ public class RPCEndpointsBuilder {
                 taskInvocationDto.hostName = seededTask.hostName;
                 taskInvocationDto.appKey = seededTask.appKey;
                 taskInvocationDto.scheduleTaskType = seededTask.scheduleTaskType;
+                tasks.add(taskInvocationDto);
             }
         }
 

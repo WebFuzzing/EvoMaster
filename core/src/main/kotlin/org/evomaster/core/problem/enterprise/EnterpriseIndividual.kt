@@ -76,7 +76,7 @@ abstract class EnterpriseIndividual(
 
             if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
@@ -213,6 +213,7 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
+            ActionFilter.ONLY_SCHEDULE_TASK -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
         }
     }
 
@@ -273,6 +274,8 @@ abstract class EnterpriseIndividual(
 
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
+    fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
+
     /**
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions among the main actions
@@ -328,6 +331,9 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
+    private fun getLastIndexOfScheduleTaskActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
@@ -336,6 +342,9 @@ abstract class EnterpriseIndividual(
 
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
+
+    private fun getFirstIndexOfScheduleTaskActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
 
 
 
@@ -350,6 +359,7 @@ abstract class EnterpriseIndividual(
         addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
         addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
+        addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
     }
 
 
@@ -362,6 +372,14 @@ abstract class EnterpriseIndividual(
             addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
         } else{
             addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+    }
+
+    fun addInitializingScheduleTaskActions(relativePosition: Int=-1, actions: List<Action>){
+        if (relativePosition < 0)  {
+            addChildrenToGroup(getLastIndexOfScheduleTaskActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
+        } else{
+            addChildrenToGroup(getFirstIndexOfScheduleTaskActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
         }
     }
 
