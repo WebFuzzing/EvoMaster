@@ -18,6 +18,7 @@ import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -52,6 +53,11 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
 
         run loop@{
+            // handle schedule task
+            individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).forEach { action ->
+
+            }
+
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
                 val ok = executeNewAction(action, index, actionResults)
                 if (!ok) return@loop

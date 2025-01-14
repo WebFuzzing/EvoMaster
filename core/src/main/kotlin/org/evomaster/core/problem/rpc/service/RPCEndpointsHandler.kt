@@ -244,7 +244,6 @@ class RPCEndpointsHandler {
                     }.filterNotNull()
                    external.addAll(dbEx)
                 }
-
                 exActions.add(external)
                 processEndpoint(name, rpcActionDto, true)
             }.toMutableList()

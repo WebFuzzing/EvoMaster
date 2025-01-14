@@ -124,7 +124,7 @@ abstract class EnterpriseIndividual(
                 if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeDNS
+            val initSize = sizeSQL+sizeMongo+sizeDNS+sizeScheduleTasks
 
             val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is EnvironmentAction },
                 if(sizeMain == 0) -1 else initSize, if(sizeMain == 0) -1 else initSize + sizeMain - 1)

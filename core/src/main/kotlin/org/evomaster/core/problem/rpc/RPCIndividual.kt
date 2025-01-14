@@ -60,8 +60,9 @@ class RPCIndividual(
             addAll(dbInitialization)
             addAll(scheduleTaskActions)
             addAll(actions.mapIndexed { index, rpcCallAction ->
-                if (externalServicesActions.isNotEmpty())
+                if (externalServicesActions.isNotEmpty()){
                     Lazy.assert { actions.size == externalServicesActions.size }
+                }
                 EnterpriseActionGroup(mutableListOf(rpcCallAction), RPCCallAction::class.java).apply {
                     addChildrenToGroup(
                         externalServicesActions[index],
