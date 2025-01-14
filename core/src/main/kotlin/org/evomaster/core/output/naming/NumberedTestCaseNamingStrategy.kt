@@ -4,6 +4,7 @@ import org.evomaster.core.output.TestCase
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
+import java.util.Collections.singletonList
 
 open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
@@ -14,9 +15,15 @@ open class NumberedTestCaseNamingStrategy(
     }
 
     override fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
+        return getSortedTestCases(singletonList(comparator))
+    }
+
+    override fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
         val inds = solution.individuals
 
-        inds.sortWith(comparator)
+        comparators.asReversed().forEach {
+            inds.sortWith(it)
+        }
 
         return generateNames(inds)
     }

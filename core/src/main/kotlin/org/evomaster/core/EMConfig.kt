@@ -12,6 +12,7 @@ import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
+import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -82,6 +83,8 @@ class EMConfig {
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
         private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+
+        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -2432,6 +2435,8 @@ class EMConfig {
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
     var nameWithQueryParameters = false
 
+    @Cfg("Specify the test case sorting strategy")
+    var testCaseSortingStrategy = defaultTestCaseSortingStrategy
 
     @Experimental
     @Probability(true)
