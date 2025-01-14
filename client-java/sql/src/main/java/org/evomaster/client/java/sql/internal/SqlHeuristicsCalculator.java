@@ -5,6 +5,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
@@ -26,10 +27,13 @@ public class SqlHeuristicsCalculator {
 
     private final QueryResultSet queryResultSet;
     private final SqlNameContext sqlNameContext;
-    private SqlHeuristicsCalculator(SqlNameContext sqlNameContext, QueryResult[] data) {
+    private final TaintHandler taintHandler;
+
+    private SqlHeuristicsCalculator(SqlNameContext sqlNameContext,  TaintHandler taintHandler, QueryResult[] data) {
         final boolean isCaseSensitive = false;
         this.sqlNameContext = sqlNameContext;
         this.queryResultSet = new QueryResultSet(isCaseSensitive);
+        this.taintHandler = taintHandler;
         for (QueryResult queryResult : data) {
             queryResultSet.addQueryResult(queryResult);
         }
@@ -45,11 +49,13 @@ public class SqlHeuristicsCalculator {
         if (schema != null) {
             sqlNameContext.setSchema(schema);
         }
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(sqlNameContext, data);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(sqlNameContext, taintHandler, data);
         Truthness t = calculator.computeCommand(parsedSqlCommand);
         double distanceToTrue = 1 - t.getOfTrue();
         return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
     }
+
+
 
     private Truthness computeCommand(Statement parsedSqlCommand) {
         final Expression whereClause = getWhere(parsedSqlCommand);
@@ -112,7 +118,7 @@ public class SqlHeuristicsCalculator {
     }
 
     private Truthness getTruthnessForExpression(Expression whereClause, DataRow row) {
-        SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(sqlNameContext, row);
+        SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(sqlNameContext, taintHandler, row);
         whereClause.accept(expressionEvaluator);
         return expressionEvaluator.getEvaluatedTruthness();
     }

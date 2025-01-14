@@ -73,6 +73,8 @@ public class TruthnessUtils {
     }
 
 
+
+
     /**
      * @param len a positive value for a length
      * @return
@@ -141,6 +143,7 @@ public class TruthnessUtils {
         final double ofFalse = 1.0d;
         return new Truthness(scaledOfTrue, ofFalse);
     }
+
 
 
 }

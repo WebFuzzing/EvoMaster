@@ -157,7 +157,7 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testSelectNotEquals() {
+    public void testSelectEqualsTo() {
         String sqlCommand = "SELECT name, age FROM Persons WHERE age=18";
         QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
         personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
@@ -225,4 +225,192 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testSelectNotEqualsTo() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age!=18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = TruthnessUtils.getEqualityTruthness( 18d,18d).invert().getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForSelectNotEqualsToCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age!=18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForSelectGreaterThanEqualsCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE 18>=age";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForSelectGreaterThanCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE 18>age";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForSelectMinorThanEqualsCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age<=18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 15));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForSelectMinorThanCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age<18";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForStringMatching() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name='John'";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnNonZeroDistanceForStringMatching() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name='John'";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("Jack", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness( "John","Jack").getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForStringsNotMatching() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name!='John'";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("Jack", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+
+
+    @Test
+    public void testShouldReturnNoneroDistanceForStringsNotMatching() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name!='John'";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = SqlExpressionEvaluator.getEqualityTruthness( "John","John").invert().getOfTrue();
+        double scaledTruthnessBetter = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, equalityTruthness).getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, scaledTruthnessBetter).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForBooleanMatching() {
+        String sqlCommand = "SELECT name, age, is_member FROM Persons WHERE is_member=true";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age","is_member"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age", "is_member"),"Persons",Arrays.asList("John", 18, true));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForIsNull() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name IS NULL";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList(null, 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForIsNotNull() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name IS NOT NULL";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnNonZeroDistanceForIsNull() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name IS NULL";
+        QueryResult personsContents = new QueryResult(Arrays.asList("name","age"), "Persons");
+        personsContents.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 18));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+
+        double equalityTruthness = SqlExpressionEvaluator.getTruthnessToIsNull( "John").getOfTrue();
+        double scaledTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, equalityTruthness).getOfTrue();
+        double expectedDistance = 1 - scaledTruthness;
+
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForDoubleComparison() {
+        String sqlCommand = "SELECT price FROM Products WHERE price<=19.99";
+        QueryResult personsContents = new QueryResult(Arrays.asList("price"), "Products");
+        personsContents.addRow(Arrays.asList("price"),"Products",Arrays.asList(9.99));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForAddition() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary+bonus > 50000";
+        QueryResult personsContents = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        personsContents.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(40000,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, personsContents);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
 }
