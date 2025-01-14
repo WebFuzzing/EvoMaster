@@ -594,6 +594,9 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
+        if(writeWFCReport && !createTests){
+            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1241,6 +1244,11 @@ class EMConfig {
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
     @FilePath
     var statisticsFile = "statistics.csv"
+
+
+    @Experimental
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
+    var writeWFCReport = false
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
