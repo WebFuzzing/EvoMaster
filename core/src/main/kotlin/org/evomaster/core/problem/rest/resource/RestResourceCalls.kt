@@ -201,6 +201,7 @@ class RestResourceCalls(
             ActionFilter.ONLY_MONGO -> mongoDbActions
             ActionFilter.ONLY_DNS -> dnsActions
             ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ONLY_SCHEDULE_TASK -> throw IllegalStateException("schedule task is not support in resource-based solution for REST Problem")
         }
     }
 
