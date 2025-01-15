@@ -6,7 +6,7 @@ import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Date;
-import java.time.LocalDateTime;
+import java.time.*;
 import java.sql.Timestamp;
 
 import java.time.format.DateTimeFormatter;
@@ -534,8 +534,9 @@ public class SqlHeuristicsCalculatorTest {
                 " WHERE event_date = '2025-01-14' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("event_id","event_date"), "Events");
 
-        String dateString = "2025-01-14";
-        Date date = Date.valueOf(dateString);
+        LocalDate date = LocalDate.of(2025, 1, 14);
+        queryResult.addRow(Arrays.asList("event_id","event_date"),"Events",Arrays.asList(1,date));
+
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -547,9 +548,9 @@ public class SqlHeuristicsCalculatorTest {
                 " FROM Schedules " +
                 " WHERE start_time = '12:30:45' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("schedule_id","start_time"), "Schedules");
+        LocalTime time = LocalTime.of(12, 30, 45);
+        queryResult.addRow(Arrays.asList("schedule_id","start_time"),"Schedules",Arrays.asList(1,time));
 
-        String dateString = "2025-01-14";
-        Date date = Date.valueOf(dateString);
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -561,14 +562,54 @@ public class SqlHeuristicsCalculatorTest {
                 " FROM Appointments " +
                 " WHERE appointment_datetime = '2025-01-14 12:30:45' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("appointment_id","appointment_datetime"), "Appointments");
+        LocalDateTime dateTime = LocalDateTime.of(2025, 1, 14, 12, 30, 45);
+        queryResult.addRow(Arrays.asList("appointment_id", "appointment_datetime"),"Appointments",Arrays.asList(1,dateTime));
 
-        String dateString = "2025-01-14 12:30:45";
-        Date date = Date.valueOf(dateString);
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testShouldReturnZeroDistanceForYear() {
+        String sqlCommand = " SELECT person_id, birth_year " +
+                " FROM Birthdays " +
+                " WHERE birth_year = 2025 ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("person_id", "birth_year"), "Birthdays");
+        Year year = Year.of(2025);
+        queryResult.addRow(Arrays.asList("person_id", "birth_year"),"Birthdays",Arrays.asList(1,year));
 
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
 
+    @Test
+    public void testShouldReturnZeroDistanceForTimeWithTimeZone() {
+        String sqlCommand = "SELECT event_id, event_time " +
+                " FROM Events " +
+                " WHERE event_time = '12:30:45+02:00' ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("event_id", "event_time"), "Events");
+
+        OffsetTime offsetTime = OffsetTime.of(12, 30, 45, 0, ZoneOffset.ofHours(2));
+        queryResult.addRow(Arrays.asList("event_id", "event_time"),"Events",Arrays.asList(1,offsetTime));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForTimeStampWithTimeZone() {
+        String sqlCommand = " SELECT event_id, event_time " +
+                " FROM Events " +
+                " WHERE event_time = '12:30:45+02:00' ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("event_id", "event_time"), "Events");
+        OffsetTime offsetTime = OffsetTime.of(12, 30, 45, 0, ZoneOffset.ofHours(2));
+        queryResult.addRow(Arrays.asList("event_id", "event_time"),"Events",Arrays.asList(1,offsetTime));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
 }
