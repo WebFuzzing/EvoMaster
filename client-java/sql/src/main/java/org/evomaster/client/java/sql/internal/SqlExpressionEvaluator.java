@@ -72,11 +72,12 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, comparisonOperator);
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
                 truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperator);
+            } else if (concreteLeftValue instanceof Boolean && concreteRightValue instanceof Boolean) {
+                truthnessOfExpression = calculateTruthnessForBooleanComparison((Boolean) concreteLeftValue, (Boolean) concreteRightValue, comparisonOperator);
+
             } else if (concreteLeftValue instanceof Timestamp || concreteRightValue instanceof Timestamp
                     || concreteLeftValue instanceof Instant || concreteRightValue instanceof Instant) {
                 throw new UnsupportedOperationException("Timestamp/Instant comparison not yet supported");
-            } else if (concreteLeftValue instanceof Boolean && concreteRightValue instanceof Boolean) {
-                truthnessOfExpression = calculateTruthnessForBooleanComparison((Boolean) concreteLeftValue, (Boolean) concreteRightValue, comparisonOperator);
             } else {
                 throw new UnsupportedOperationException("type not supported");
             }
