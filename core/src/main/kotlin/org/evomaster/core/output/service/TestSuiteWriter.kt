@@ -147,7 +147,7 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy)
+                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"

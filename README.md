@@ -165,6 +165,8 @@ Example of Fortune 500 companies using _EvoMaster_ are:
 
 * [Short presentation](https://youtu.be/iQSAlrr-PZo) (5 minutes) about version 2.0.0. 
 
+* [Demonstration of Docker and GitHub Actions support](https://youtu.be/l1ybs7SjvcA).
+
 ### Alternatives
 
 In the last few years, several few tools have been proposed in the academic literature and in the open-source community.
