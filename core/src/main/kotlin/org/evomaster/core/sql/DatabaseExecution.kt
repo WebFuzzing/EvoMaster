@@ -1,6 +1,7 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
+import org.evomaster.core.sql.schema.TableId
 
 /**
  * When a test case is executed, and the SUT does access a SQL database,
@@ -16,11 +17,11 @@ import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecut
  * This class MUST be immutable
  */
 class DatabaseExecution(
-        val queriedData: Map<String, Set<String>>,
-        val updatedData: Map<String, Set<String>>,
-        val insertedData: Map<String, Set<String>>,
-        val failedWhere: Map<String, Set<String>>,
-        val deletedData: List<String>,
+        val queriedData: Map<TableId, Set<String>>,
+        val updatedData: Map<TableId, Set<String>>,
+        val insertedData: Map<TableId, Set<String>>,
+        val failedWhere: Map<TableId, Set<String>>,
+        val deletedData: List<TableId>,
         val numberOfSqlCommands: Int,
         val sqlParseFailureCount: Int,
         val executionInfo: List<SqlExecutionInfo>
@@ -38,15 +39,15 @@ class DatabaseExecution(
         validateQuotes(deletedData)
     }
 
-    private fun validateQuotes(data: Map<String, Set<String>>) {
-        val quoted = data.keys.filter { it.startsWith("\"") }
+    private fun validateQuotes(data: Map<TableId, Set<String>>) {
+        val quoted = data.keys.filter { it.name.startsWith("\"") }
         if(quoted.isNotEmpty()) {
             throw IllegalArgumentException("Following table names are quoted: ${quoted.joinToString(", ")}")
         }
     }
 
-    private fun validateQuotes(data: List<String>) {
-        val quoted = data.filter { it.startsWith("\"") }
+    private fun validateQuotes(data: List<TableId>) {
+        val quoted = data.filter { it.name.startsWith("\"") }
         if(quoted.isNotEmpty()) {
             throw IllegalArgumentException("Following table names are quoted: ${quoted.joinToString(", ")}")
         }
@@ -65,6 +66,8 @@ class DatabaseExecution(
                 Note: instead of dealing with this in the driver, better here in the core, as what returned in driver
                 might depend on library used to analyze the SQL commands.
              */
+
+            FIXME
 
             return DatabaseExecution(
                     cloneData(dealWithQuotes(dto?.queriedData)),
@@ -92,11 +95,11 @@ class DatabaseExecution(
             return data
         }
 
-        private fun dealWithQuotes(data: Map<String, Set<String>>?): Map<String, Set<String>>? {
+        private fun dealWithQuotes(data: Map<TableId, Set<String>>?): Map<TableId, Set<String>>? {
             if(data == null) return null
 
             return data.entries.associate {
-                (if(it.key.startsWith("\"")) removeQuotes(it.key) else it.key) to it.value
+                (if(it.key.name.startsWith("\"")) removeQuotes(it.key) else it.key) to it.value
             }
         }
 
@@ -124,8 +127,8 @@ class DatabaseExecution(
             return data.map { SqlExecutionInfo(it.sqlCommand, it.threwSqlExeception, it.executionTime) }
         }
 
-        private fun cloneData(data: Map<String, Set<String>>?): Map<String, Set<String>> {
-            val clone = mutableMapOf<String, Set<String>>()
+        private fun cloneData(data: Map<TableId, Set<String>>?): Map<TableId, Set<String>> {
+            val clone = mutableMapOf<TableId, Set<String>>()
 
             data?.keys?.forEach {
                 clone[it] = data[it]!!.toSet()
@@ -133,8 +136,8 @@ class DatabaseExecution(
             return clone
         }
 
-        private fun merge(current: MutableMap<String, MutableSet<String>>,
-                          toAdd: Map<String, Set<String>>) {
+        private fun merge(current: MutableMap<TableId, MutableSet<String>>,
+                          toAdd: Map<TableId, Set<String>>) {
 
             for (e in toAdd.entries) {
                 val key = e.key
