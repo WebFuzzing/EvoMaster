@@ -314,9 +314,9 @@ class SortingHelper {
     }
 
     fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
-        val newSort = when {
-            testCaseSortingStrategy.isCoveredTargets() -> sortByComparatorList(comparatorList, namingStrategy)
-            testCaseSortingStrategy.isTargetIncremental() -> sortByTargetIncremental(solution, namingStrategy)
+        val newSort = when (testCaseSortingStrategy) {
+            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, namingStrategy)
+            SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(solution, namingStrategy)
             else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
         }
 
