@@ -24,6 +24,9 @@ import static org.evomaster.client.java.sql.internal.SqlHeuristicsCalculator.*;
 
 public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
+    public static final char BITWISE_NOT = '~';
+    public static final char MINUS = '-';
+    public static final char PLUS = '+';
     private final DataRow dataRow;
     private final SqlNameContext sqlNameContext;
     private final Stack<Truthness> computedTruthnesses = new Stack<>();
@@ -172,7 +175,27 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(SignedExpression signedExpression) {
-        throw new UnsupportedOperationException("Signed expression not supported");
+        super.visit(signedExpression);
+        final Number numberWithoutSign = (Number) concreteValues.pop();
+        final Number result;
+        switch (signedExpression.getSign()) {
+            case PLUS: {
+                  result = numberWithoutSign.doubleValue();
+                  break;
+            }
+            case MINUS: {
+                result = - (numberWithoutSign.doubleValue());
+                break;
+            }
+            case BITWISE_NOT: {
+                result = ~ (numberWithoutSign.intValue());
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unsupported sign: " + signedExpression.getSign());
+            }
+        }
+        concreteValues.push(result);
     }
 
     @Override
@@ -225,17 +248,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(IntegerDivision integerDivision) {
-        throw new UnsupportedOperationException("visit(IntegerDivision) not supported");
+        super.visit(integerDivision);
+        this.visitArithmeticBinaryExpression(integerDivision);
     }
 
     @Override
     public void visit(Multiplication multiplication) {
-        throw new UnsupportedOperationException("visit(Multiplication) not supported");
+        super.visit(multiplication);
+        this.visitArithmeticBinaryExpression(multiplication);
     }
 
     @Override
     public void visit(Subtraction subtraction) {
-        throw new UnsupportedOperationException("visit(Subtraction) not supported");
+        super.visit(subtraction);
+        this.visitArithmeticBinaryExpression(subtraction);
     }
 
     @Override
@@ -638,19 +664,35 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Addition addition) {
         super.visit(addition);
-        Number concreteRightValue = (Number) concreteValues.pop();
-        Number concreteLeftValue = (Number) concreteValues.pop();
-        Double additionAsDoubleValue = concreteRightValue.doubleValue() + concreteLeftValue.doubleValue();
-        concreteValues.push(additionAsDoubleValue);
+        this.visitArithmeticBinaryExpression(addition);
     }
 
     @Override
     public void visit(Division division) {
         super.visit(division);
-        Number concreteRightValue = (Number) concreteValues.pop();
-        Number concreteLeftValue = (Number) concreteValues.pop();
-        Double additionAsDoubleValue = concreteRightValue.doubleValue() / concreteLeftValue.doubleValue();
-        concreteValues.push(additionAsDoubleValue);
+        this.visitArithmeticBinaryExpression(division);
+    }
+
+    private void visitArithmeticBinaryExpression(BinaryExpression binaryExpression) {
+        final Number concreteRightValueAsNumber = (Number) concreteValues.pop();
+        final Number concreteLeftValueAsNumber = (Number)concreteValues.pop();
+        final double concreteLeftValueAsDouble  = concreteLeftValueAsNumber.doubleValue();
+        final double concreteRightValueAsDouble = concreteRightValueAsNumber.doubleValue();
+        final double resultAsDouble;
+        if (binaryExpression instanceof Division) {
+            resultAsDouble = concreteLeftValueAsDouble / concreteRightValueAsDouble;
+        } else if (binaryExpression instanceof Multiplication) {
+            resultAsDouble = concreteLeftValueAsDouble * concreteRightValueAsDouble;
+        } else if (binaryExpression instanceof Subtraction) {
+            resultAsDouble = concreteLeftValueAsDouble - concreteRightValueAsDouble;
+        } else if (binaryExpression instanceof Addition) {
+            resultAsDouble = concreteLeftValueAsDouble + concreteRightValueAsDouble;
+        } else if (binaryExpression instanceof IntegerDivision) {
+            resultAsDouble = Math.floor(concreteLeftValueAsDouble / concreteRightValueAsDouble);
+        } else {
+            throw new UnsupportedOperationException("unsupported binary expression: " + binaryExpression.getClass().getName());
+        }
+        concreteValues.push(resultAsDouble);
     }
 
 
