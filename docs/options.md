@@ -205,6 +205,7 @@ There are 3 types of options:
 |`taintOnSampling`| __Boolean__. Whether input tracking is used on sampling time, besides mutation time. *Default value*: `true`.|
 |`taintRemoveProbability`| __Double__. Probability of removing a tainted value during mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`tcpTimeoutMs`| __Int__. Number of milliseconds we are going to wait to get a response on a TCP connection, e.g., when making HTTP calls to a Web API. *Default value*: `30000`.|
+|`testCaseSortingStrategy`| __Enum__. Specify the test case sorting strategy. *Valid values*: `COVERED_TARGETS, TARGET_INCREMENTAL`. *Default value*: `COVERED_TARGETS`.|
 |`testSuiteFileName`| __String__. DEPRECATED. Rather use _outputFilePrefix_ and _outputFileSuffix_. *Default value*: `""`.|
 |`testSuiteSplitType`| __Enum__. Instead of generating a single test file, it could be split in several files, according to different strategies. *Valid values*: `NONE, FAULTS`. *Default value*: `FAULTS`.|
 |`tournamentSize`| __Int__. Number of elements to consider in a Tournament Selection (if any is used in the search algorithm). *Constraints*: `min=1.0`. *Default value*: `10`.|
