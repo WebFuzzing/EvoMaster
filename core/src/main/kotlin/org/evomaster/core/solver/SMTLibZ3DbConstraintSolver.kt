@@ -17,7 +17,6 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
@@ -34,6 +33,8 @@ import java.nio.file.Paths
 import java.util.*
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -308,15 +309,35 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return The filename of the stored SMTLib problem.
      */
     private fun storeToTmpFile(smtLib: SMTLib): String {
-        val fileName = "smt2_${System.currentTimeMillis()}.smt2"
-        val filePath = leadingBarResourcesFolder() + fileName
+        val directoryPath = leadingBarResourcesFolder()
+        val fileNameBase = "smt2_${System.currentTimeMillis()}"
+        val fileExtension = ".smt2"
 
         try {
-            Files.write(Paths.get(filePath), smtLib.toString().toByteArray(StandardCharsets.UTF_8))
+            // Create dir if it doesn't exist
+            val directory = Paths.get(directoryPath)
+            if (!directory.exists()) {
+                directory.createDirectories()
+            }
+
+            // Generate a unique file name
+            var fileName = "$fileNameBase$fileExtension"
+            var filePath = directory.resolve(fileName)
+            if (filePath.exists()) {
+                // Add a random suffix to the file name if it already exists
+                val randomSuffix = (1000..9999).random()
+                fileName = "${fileNameBase}_$randomSuffix$fileExtension"
+                filePath = directory.resolve(fileName)
+            }
+
+            // Write the SMTLib content to the file
+            Files.write(filePath, smtLib.toString().toByteArray(StandardCharsets.UTF_8))
+
+            return fileName
         } catch (e: IOException) {
-            throw RuntimeException("Error writing SMTLib to file", e)
+            println("Failed to write SMTLib to file: ${e.message}")
+            return "error_saving_file_${System.currentTimeMillis()}.smt2"
         }
-        return fileName
     }
 
     private fun leadingBarResourcesFolder() = if (resourcesFolder.endsWith("/")) resourcesFolder else "$resourcesFolder/"
