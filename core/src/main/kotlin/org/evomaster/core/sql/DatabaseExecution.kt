@@ -1,7 +1,9 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.sql.schema.TableId
+import org.slf4j.LoggerFactory
 
 /**
  * When a test case is executed, and the SUT does access a SQL database,
@@ -56,7 +58,17 @@ class DatabaseExecution(
 
     companion object {
 
-        fun fromDto(dto: SqlExecutionsDto?): DatabaseExecution {
+        private val log = LoggerFactory.getLogger(DatabaseExecution::class.java)
+
+        /**
+         * From [dto] info on what executed on the SQL database, return an internal representation.
+         * To achieve this, we need to map it to the existing schema definition from which [tableIds]
+         * are inferred.
+         * This is done for few reasons, including:
+         * 1) collected queries might missing schema info
+         * 2) there might be cases we don't handle yet (eg views)
+         */
+        fun fromDto(dto: SqlExecutionsDto, tableIds: Set<TableId>): DatabaseExecution {
 
             /*
                 Dealing with quotes in table names is tricky... could be to handle reserved words or case sensitivity.
@@ -67,18 +79,42 @@ class DatabaseExecution(
                 might depend on library used to analyze the SQL commands.
              */
 
-            FIXME
-
             return DatabaseExecution(
-                    cloneData(dealWithQuotes(dto?.queriedData)),
-                    cloneData(dealWithQuotes(dto?.updatedData)),
-                    cloneData(dealWithQuotes(dto?.insertedData)),
-                    cloneData(dealWithQuotes(dto?.failedWhere)),
-                    dealWithQuotes(dto?.deletedData?.toList()) ?: listOf(),
-                    dto?.numberOfSqlCommands ?: 0,
-                    dto?.sqlParseFailureCount ?: 0,
-                    cloneSqlExecutionInfo(dto?.sqlExecutionLogDtoList)
+                    cloneData(convertData(dto.queriedData, tableIds)),
+                    cloneData(convertData(dto.updatedData, tableIds)),
+                    cloneData(convertData(dto.insertedData, tableIds)),
+                    cloneData(convertData(dto.failedWhere, tableIds)),
+                    convertData(dto.deletedData?.toList(), tableIds) ?: listOf(),
+                    dto.numberOfSqlCommands,
+                    dto.sqlParseFailureCount,
+                    cloneSqlExecutionInfo(dto.sqlExecutionLogDtoList)
             )
+        }
+
+
+        private fun convertData(data: List<String>?, tableIds: Set<TableId>) : List<TableId>?{
+            if(data == null) return null
+
+            return data.mapNotNull {
+                val id = SqlActionUtils.getTableKey(tableIds, removeQuotes(it))
+                if(id == null){
+                    LoggingUtil.uniqueWarn(log, "Cannot identify table: $it")
+                }
+                id
+            }
+        }
+
+        private fun convertData(data: Map<String, Set<String>>?, tableIds: Set<TableId>) : Map<TableId, Set<String>>? {
+            if(data == null) return null
+
+            return data.entries
+                .mapNotNull { e ->
+                    val id =  SqlActionUtils.getTableKey(tableIds, removeQuotes(e.key))
+                    if(id == null){
+                        LoggingUtil.uniqueWarn(log, "Cannot identify table: ${e.key}")
+                    }
+                    id?.let { it  to e.value}
+                }.toMap()
         }
 
         fun mergeData(
@@ -95,21 +131,10 @@ class DatabaseExecution(
             return data
         }
 
-        private fun dealWithQuotes(data: Map<TableId, Set<String>>?): Map<TableId, Set<String>>? {
-            if(data == null) return null
 
-            return data.entries.associate {
-                (if(it.key.name.startsWith("\"")) removeQuotes(it.key) else it.key) to it.value
-            }
-        }
-
-        private fun dealWithQuotes(data: List<String>?) : List<String>?{
-            if(data == null) return null
-
-            return data.map { if(it.startsWith("\"")) removeQuotes(it) else it }
-        }
-
-        private fun removeQuotes(s: String) = s.substring(1,s.length-1)
+        private fun removeQuotes(s: String) =
+            if(s.startsWith("\"") && s.endsWith("\"")) s.substring(1,s.length-1)
+            else s
 
         private fun cloneData(data: List<String>?): List<String> {
             if (data == null) {

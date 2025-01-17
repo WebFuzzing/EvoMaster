@@ -175,7 +175,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         r : RestResourceNode,
         paramId: String,
         paramInfo: ParamInfo,
-        relatedToTables: Set<String>,
+        relatedToTables: Set<TableId>,
         isBodyParam : Boolean,
         inputIndicator: Int,
         alltables : Map<TableId, Table>
@@ -269,7 +269,11 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      * @param sqlActions specifies the tables to be analyzed.
      *          if [dbActions] is empty, the tables would be all related tables extracted from its resource node
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, sqlActions : List<SqlAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(
+        paramsInfo: List<ParamInfo>,
+        calls: RestResourceCalls,
+        sqlActions : List<SqlAction>
+    ): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
         val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 

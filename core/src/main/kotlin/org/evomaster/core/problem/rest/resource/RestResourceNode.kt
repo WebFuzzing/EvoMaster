@@ -19,6 +19,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -666,7 +667,9 @@ open class RestResourceNode(
     /**
      * @return derived tables
      */
-    fun getDerivedTables() : Set<String> = resourceToTable.derivedMap.flatMap { it.value.map { m->m.targetMatched } }.toHashSet()
+    fun getDerivedTables(all: Set<TableId>) : Set<TableId> = resourceToTable.derivedMap
+        .flatMap { it.value.mapNotNull { m-> SqlActionUtils.getTableKey(all, m.targetMatched) } }
+        .toHashSet()
 
     /**
      * @return is any POST, GET, PATCH, DELETE, PUT action?

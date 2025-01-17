@@ -1049,5 +1049,5 @@ class SqlInsertBuilder(
     /**
      * get names of all tables
      */
-    fun getTableNames() = tables.keys
+    fun getTableNames() : Set<TableId> = tables.keys
 }

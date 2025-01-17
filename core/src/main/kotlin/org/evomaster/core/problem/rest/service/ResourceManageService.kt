@@ -53,7 +53,8 @@ class ResourceManageService {
     private val excludedCluster : MutableMap<String, ExcludedResourceNode> = mutableMapOf()
 
 
-    private var sqlInsertBuilder : SqlInsertBuilder? = null
+    var sqlInsertBuilder : SqlInsertBuilder? = null
+        private set
 
     /**
      * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
@@ -185,7 +186,7 @@ class ResourceManageService {
             return
         }
 
-        var employSQL = config.shouldGenerateSqlData() && hasDBHandler() && ar.getDerivedTables().isNotEmpty()
+        var employSQL = config.shouldGenerateSqlData() && hasDBHandler() && ar.getDerivedTables(sqlInsertBuilder!!.getTableNames()).isNotEmpty()
                 && (forceSQLInsert || randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))
 
         var candidate = template

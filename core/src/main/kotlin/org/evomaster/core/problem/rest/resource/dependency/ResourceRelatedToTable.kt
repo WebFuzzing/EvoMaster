@@ -5,6 +5,7 @@ import org.evomaster.core.sql.SQLKey
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
+import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.schema.TableId
 
@@ -17,7 +18,7 @@ class ResourceRelatedToTable(val key: String) {
     companion object {
         private const val FROM_EVO_DTO = "____FROM_DTO____"
 
-        fun generateFromDtoMatchedInfo(table: String) : MatchedInfo = MatchedInfo(FROM_EVO_DTO, table, 1.0, -1, -1)
+        fun generateFromDtoMatchedInfo(table: TableId) : MatchedInfo = MatchedInfo(FROM_EVO_DTO, table.getFullQualifyingTableName(), 1.0, -1, -1)
     }
     /**
      * key is table name
@@ -58,16 +59,17 @@ class ResourceRelatedToTable(val key: String) {
     private val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
 
 
-    fun updateActionRelatedToTable(verb : String, dto: SqlExecutionsDto, existingTables : Set<String>) : Boolean{
+    fun updateActionRelatedToTable(verb : String, de: DatabaseExecution, existingTables : Set<TableId>) : Boolean{
 
-        val tables = mutableListOf<String>()
-            .plus(dto.deletedData)
-            .plus(dto.updatedData.keys)
-            .plus(dto.insertedData.keys)
-            .plus(dto.queriedData.keys)
-            .filter { x ->
-                existingTables.any { x.equals(it, true) }
-            }.toHashSet()
+        val tables = mutableListOf<TableId>()
+            .plus(de.deletedData)
+            .plus(de.updatedData.keys)
+            .plus(de.insertedData.keys)
+            .plus(de.queriedData.keys)
+//            .filter { x ->
+//                existingTables.any { x.equals(it, true) }
+//            }
+            .toHashSet()
 
         if (tables.isEmpty()) return false
 
@@ -82,10 +84,10 @@ class ResourceRelatedToTable(val key: String) {
             actionToTables[verb]!!.add(access)
         }
 
-        access.updateTableWithFields(dto.deletedData.associateWith { mutableSetOf<String>() }, SQLKey.DELETE)
-        access.updateTableWithFields(dto.insertedData, SQLKey.INSERT)
-        access.updateTableWithFields(dto.queriedData, SQLKey.SELECT)
-        access.updateTableWithFields(dto.updatedData, SQLKey.UPDATE)
+        access.updateTableWithFields(de.deletedData.associateWith { mutableSetOf<String>() }, SQLKey.DELETE)
+        access.updateTableWithFields(de.insertedData, SQLKey.INSERT)
+        access.updateTableWithFields(de.queriedData, SQLKey.SELECT)
+        access.updateTableWithFields(de.updatedData, SQLKey.UPDATE)
 
         return doesUpdateParamTable
     }
@@ -222,7 +224,7 @@ class ActionRelatedToTable(
          * key is table name
          * value is how it accessed by dbaction
          */
-        val tableWithFields: MutableMap<String, MutableList<AccessTable>> = mutableMapOf()
+        val tableWithFields: MutableMap<TableId, MutableList<AccessTable>> = mutableMapOf()
 ) {
 
 
@@ -230,7 +232,7 @@ class ActionRelatedToTable(
      * key of result is table name
      * value of result is a set of manipulated columns
      */
-    fun updateTableWithFields(results : Map<String, Set<String>>, method: SQLKey) {
+    fun updateTableWithFields(results : Map<TableId, Set<String>>, method: SQLKey) {
         var doesUpdateTarget = false
         results.forEach { t, u ->
             doesUpdateTarget = doesUpdateTarget || tableWithFields.containsKey(t)
@@ -245,7 +247,7 @@ class ActionRelatedToTable(
         }
     }
 
-    fun doesSubsume(tables : Set<String>, subsumeThis : Boolean) : Boolean{
+    fun doesSubsume(tables : Set<TableId>, subsumeThis : Boolean) : Boolean{
         return if(subsumeThis) tables.toHashSet().containsAll(tableWithFields.keys)
         else tableWithFields.keys.containsAll(tables)
     }
@@ -255,7 +257,7 @@ class ActionRelatedToTable(
      * @property table related table
      * @property field what fields are assess by the sql command
      */
-    class AccessTable(val method : SQLKey, val table : String, val field : MutableSet<String>)
+    class AccessTable(val method : SQLKey, val table : TableId, val field : MutableSet<String>)
 }
 
 /**

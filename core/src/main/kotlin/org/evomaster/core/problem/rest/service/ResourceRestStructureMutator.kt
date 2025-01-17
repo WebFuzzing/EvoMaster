@@ -17,6 +17,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.schema.TableId
 import kotlin.math.max
 import kotlin.math.min
@@ -181,7 +182,9 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
             ind.seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.id }.toSet() // adding an unrelated table would waste budget, then we add existing ones
 
         val selectedAdded = if (config.enableAdaptiveResourceStructureMutation){
-            adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.toList(), targets)
+            val name = adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.map { it.getFullQualifyingTableName() }, targets)
+            SqlActionUtils.getTableKey(this.rm.getTableInfo().keys, name)
+                ?:  randomness.choose(candidates)
         }else{
             randomness.choose(candidates)
         }
@@ -196,7 +199,7 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
         bySQL: Boolean,
         candidates: List<String>,
         targets: Set<Int>?
-    ): TableId{
+    ): String{
 
         evaluatedIndividual?: throw IllegalStateException("lack of impact with specified evaluated individual")
         targets?:throw IllegalStateException("targets must be specified if adaptive resource selection is applied")
@@ -204,7 +207,8 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
             throw IllegalStateException("lack of impact info or mismatched impact type (type: ${evaluatedIndividual.impactInfo?.javaClass?.simpleName?:"null"})")
         val impacts = candidates.map {
             if (bySQL){
-                evaluatedIndividual.impactInfo.sqlTableSizeImpact[it] ?:IntegerGeneImpact("size")
+                val key = SqlActionUtils.getTableKey(rm.getTableInfo().keys, it)
+                evaluatedIndividual.impactInfo.sqlTableSizeImpact[key] ?:IntegerGeneImpact("size")
             }else{
                 evaluatedIndividual.impactInfo.resourceSizeImpact[it] ?:IntegerGeneImpact("size")
             }

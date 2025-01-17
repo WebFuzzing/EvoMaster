@@ -44,6 +44,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
     @Inject
     protected lateinit var searchTimeController: SearchTimeController
 
+    @Inject
+    protected lateinit var sampler: EnterpriseSampler<T>
 
     /**
      * @param allSqlActions specified the db actions to be executed
@@ -255,10 +257,13 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                val databaseExecution = DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto)
-                fv.setDatabaseExecution(i, databaseExecution)
-                if (databaseExecution.sqlParseFailureCount>0) {
-                    statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                val sdto = extra.sqlSqlExecutionsDto
+                if(sdto != null) {
+                    val databaseExecution = DatabaseExecution.fromDto(sdto, sampler.sqlInsertBuilder!!.getTableNames())
+                    fv.setDatabaseExecution(i, databaseExecution)
+                    if (databaseExecution.sqlParseFailureCount > 0) {
+                        statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                    }
                 }
             }
             fv.aggregateDatabaseData()
