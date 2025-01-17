@@ -22,5 +22,5 @@ public class SeededRPCTestDto {
     /**
      * a list of schedule tasks
      */
-    public List<CustomizedScheduleTaskInvocationDto> scheduleTaskInvocations;
+    public List<ScheduleTaskInvocationDto> scheduleTaskInvocations;
 }

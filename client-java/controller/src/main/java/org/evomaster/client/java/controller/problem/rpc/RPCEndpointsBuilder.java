@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.problem.rpc;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.CustomizedScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.auth.JsonAuthRPCEndpointDto;
@@ -1411,17 +1410,17 @@ public class RPCEndpointsBuilder {
             }
 
             tasks = new ArrayList<>();
-            for (CustomizedScheduleTaskInvocationDto seededTask : dto.scheduleTaskInvocations){
+            for (ScheduleTaskInvocationDto seededTask : dto.scheduleTaskInvocations){
                 ScheduleTaskInvocationDto taskInvocationDto = new ScheduleTaskInvocationDto();
                 taskInvocationDto.taskName = seededTask.taskName;
-                if (seededTask.inputParameterValues != null && !seededTask.inputParameterValues.isEmpty()){
+                if (seededTask.requestParamsAsStrings != null && !seededTask.requestParamsAsStrings.isEmpty()){
                     /*
                         when parsing seeded test, it is not feasible to get type of input parameters
                         for schedule tasks as the classes are not available in client library
                         then we save its value as string here
                         later handle them once the info is available, ie, use ParamDto instead of String (see requestParams)
                      */
-                    taskInvocationDto.requestParamsAsStrings = new ArrayList<>(seededTask.inputParameterValues);
+                    taskInvocationDto.requestParamsAsStrings = new ArrayList<>(seededTask.requestParamsAsStrings);
                 }
                 // optional info if seeded test has, such info is typically not changeable
                 taskInvocationDto.descriptiveInfo = seededTask.descriptiveInfo;

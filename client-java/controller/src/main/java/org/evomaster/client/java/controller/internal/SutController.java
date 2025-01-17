@@ -940,11 +940,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
-    public final void invokeScheduleTask(List<CustomizedScheduleTaskInvocationDto> dtos, ActionResponseDto responseDto){
+    public final void invokeScheduleTask(List<ScheduleTaskInvocationDto> dtos, ActionResponseDto responseDto){
         try{
             // TODO, we might need to have timeout for `handleCustomizedMethod`
             List<ScheduleTaskInvocationResultDto> results = new ArrayList<>();
-            for (CustomizedScheduleTaskInvocationDto dto: dtos){
+            for (ScheduleTaskInvocationDto dto: dtos){
                 ScheduleTaskInvocationResultDto result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
                 results.add(result);
             }
@@ -1516,7 +1516,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked) {
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
         return null;
     }
 
@@ -1627,15 +1627,15 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public List<ScheduleTaskInvocationResultDto> invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
-        List<CustomizedScheduleTaskInvocationDto> taskDtos = null;
+        List<ScheduleTaskInvocationDto> taskDtos = null;
         List<ScheduleTaskInvocationResultDto> resultDtos = null;
         try{
             if (scheduleTaskDtos != null && !scheduleTaskDtos.isEmpty()){
-                taskDtos = objectMapper.readValue(scheduleTaskDtos, new TypeReference<List<CustomizedScheduleTaskInvocationDto>>(){});
+                taskDtos = objectMapper.readValue(scheduleTaskDtos, new TypeReference<List<ScheduleTaskInvocationDto>>(){});
                 resultDtos = new ArrayList<>();
             }
 
-            for (CustomizedScheduleTaskInvocationDto dto : taskDtos){
+            for (ScheduleTaskInvocationDto dto : taskDtos){
                 resultDtos.add(customizeScheduleTaskInvocation(dto, enabled));
             }
         } catch (JsonProcessingException e) {

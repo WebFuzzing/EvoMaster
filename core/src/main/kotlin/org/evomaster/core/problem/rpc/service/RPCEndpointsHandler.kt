@@ -455,6 +455,17 @@ class RPCEndpointsHandler {
         }
     }
 
+    fun transformScheduleTaskDto(action: ScheduleTaskAction) : ScheduleTaskInvocationDto{
+        return ScheduleTaskInvocationDto().apply {
+            appKey = action.immutableExtraInfo?.get("appKey")
+            taskName = action.taskName
+            requestParamsAsStrings = if (action.parameters.isEmpty()) null else TODO()
+            scheduleTaskType = action.immutableExtraInfo?.get("scheduleTaskType")
+            descriptiveInfo = action.immutableExtraInfo?.get("descriptiveInfo")
+            hostName = action.immutableExtraInfo?.get("hostName")
+        }
+    }
+
     /**
      * cover [action] to a dto for handling mock RPC external services at the driver side, eg, customized method
      */

@@ -54,7 +54,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 
         run loop@{
             // handle schedule task
-            individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).forEach { action ->
+            val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
+            if (scheduleTasks.isNotEmpty()){
 
             }
 

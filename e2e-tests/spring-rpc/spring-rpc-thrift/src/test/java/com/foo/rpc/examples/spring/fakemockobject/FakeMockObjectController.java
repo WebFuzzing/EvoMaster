@@ -143,7 +143,7 @@ public class FakeMockObjectController extends SpringController {
                             inputParams= Arrays.asList();
                             inputParamTypes= Arrays.asList();
                             scheduleTaskInvocations = Arrays.asList(
-                                    new CustomizedScheduleTaskInvocationDto(){{
+                                    new ScheduleTaskInvocationDto(){{
                                         appKey = "fake.app";
                                         taskName = "executeFlag";
                                         descriptiveInfo = "a scheduled task for invoking executeFlag";
@@ -236,7 +236,7 @@ public class FakeMockObjectController extends SpringController {
     }
 
     @Override
-    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked) {
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
         ScheduleTaskInvocationResultDto dto = new ScheduleTaskInvocationResultDto();
         dto.status = ExecutionStatusDto.FAILED;
         try {

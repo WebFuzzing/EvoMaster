@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.CustomizedScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 
@@ -103,7 +102,7 @@ public interface CustomizationHandler {
      * @param invoked       defines to invoke (invoked is true) or terminate (invoked is false) the specified schedule task
      * @return invocation result dto
      */
-    ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(CustomizedScheduleTaskInvocationDto invocationDto, boolean invoked);
+    ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked);
 
     /**
      *

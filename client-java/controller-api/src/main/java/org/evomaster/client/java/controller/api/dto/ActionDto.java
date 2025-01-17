@@ -1,8 +1,8 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
-import org.evomaster.client.java.controller.api.dto.problem.rpc.CustomizedScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 
 import java.util.*;
 
@@ -42,7 +42,7 @@ public class ActionDto {
      * info to execute a schedule task
      * note that this is only used when handling RPC problem
      */
-    public List<CustomizedScheduleTaskInvocationDto> scheduleTaskInvocationDtos;
+    public List<ScheduleTaskInvocationDto> scheduleTaskInvocationDtos;
 
     /**
      * This list of DTOs represents the external service mappings.
