@@ -22,6 +22,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
@@ -213,14 +214,15 @@ class TestSuiteWriter {
         }
         val all = (sampler as EnterpriseSampler).extractFkTables(accessedTable)
 
-        val tableNamesInSchema = remoteController.getCachedSutInfo()
-            ?.sqlSchemaDto
+        val schema = remoteController.getCachedSutInfo()?.sqlSchemaDto
+
+        val tableNamesInSchema = schema
             ?.tables
-            ?.map { SqlDtoUtils.getId(it) }
+            ?.map { TableId.fromDto(schema.databaseType, it.id) }
             ?.toSet()
             ?: setOf()
 
-        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y == x } }.sortedBy { it.name }
         if(missingTables.isNotEmpty()){
             /*
                 Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
@@ -232,7 +234,10 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
+            else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
+                .map{it.getFullQualifyingTableName()}
+                .sorted()
+                .joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"

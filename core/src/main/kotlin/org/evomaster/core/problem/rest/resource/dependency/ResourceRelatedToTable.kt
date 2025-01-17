@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.schema.TableId
 
 /**
  * related info between resource and tables
@@ -27,7 +28,7 @@ class ResourceRelatedToTable(val key: String) {
      *  2) segments, for instance there are two segments (i.e., /A and /B) regarding the path /A/{a}/B/{b}. for B, the input indicator is 0, for A, the input indicator is 1
      * then detect whether there are tables related to C, A and B.
      */
-    val derivedMap : MutableMap<String, MutableList<MatchedInfo>> = mutableMapOf()
+    val derivedMap : MutableMap<TableId, MutableList<MatchedInfo>> = mutableMapOf()
 
     /**
      * key is id of param
@@ -44,7 +45,7 @@ class ResourceRelatedToTable(val key: String) {
      * to bind param of action regarding table,
      *      we need to further detect whether the relationship between resource and table is direct
      */
-    val confirmedSet : MutableMap<String, Boolean> = mutableMapOf()
+    val confirmedSet : MutableMap<TableId, Boolean> = mutableMapOf()
 
     /**
      * key is verb of the action
@@ -89,21 +90,21 @@ class ResourceRelatedToTable(val key: String) {
         return doesUpdateParamTable
     }
 
-    fun getConfirmedDirectTables() : Set<String>{
+    fun getConfirmedDirectTables() : Set<TableId>{
         return derivedMap.keys
             .filter { t->
-                confirmedSet.any { it.key.equals(t, ignoreCase = true) && it.value }
+                confirmedSet.any { it.key == t && it.value }
             }.toHashSet()
     }
 
 
     fun findBestTableForParam(
-        tables: Set<String>,
+        tables: Set<TableId>,
         simpleP2Table : SimpleParamRelatedToTable,
         onlyConfirmedColumn : Boolean = false
-    ) : Pair<Set<String>, Double>? {
+    ) : Pair<Set<TableId>, Double>? {
         val map = simpleP2Table.derivedMap
-            .filter { d -> tables.any { t-> SqlActionUtils.isMatchingTableName(d.key, t) } }
+            .filter { d -> tables.any { t-> t == d.key } }
             .map {
                     Pair(it.key, it.value.similarity)
             }.toMap()
@@ -116,13 +117,13 @@ class ResourceRelatedToTable(val key: String) {
      * return Pair.first is name of table, Pair.second is column of Table
      */
     fun getSimpleParamToSpecifiedTable(
-        table: String,
+        table: TableId,
         simpleP2Table : SimpleParamRelatedToTable,
         onlyConfirmedColumn : Boolean = false
-    ) : Pair<String, String>? {
+    ) : Pair<TableId, String>? {
 
         return simpleP2Table.derivedMap
-            .filter { table.equals(it.key, ignoreCase = true) }
+            .filter { table == it.key}
             .let { map->
                 if (map.isEmpty())  null
                 else  Pair(table, map.values.first().targetMatched)
@@ -135,16 +136,20 @@ class ResourceRelatedToTable(val key: String) {
      *      key is field name
      *      value is a pair, the first of pair of related table and the second is similarity
      */
-    fun findBestTableForParam(tables: Set<String>, bodyP2Table : BodyParamRelatedToTable, onlyConfirmedColumn : Boolean = false) : MutableMap<String, Pair<Set<String>, Double>>?{
+    fun findBestTableForParam(
+        tables: Set<TableId>,
+        bodyP2Table : BodyParamRelatedToTable,
+        onlyConfirmedColumn : Boolean = false
+    ) : MutableMap<String, Pair<Set<TableId>, Double>>?{
         val fmap = bodyP2Table.fieldsMap
                 .filter {
-                    it.value.derivedMap.any { m-> tables.any { t-> t.equals(m.key, ignoreCase = true) } }
+                    it.value.derivedMap.any { m-> tables.any { t-> t == m.key } }
                 }
         if(fmap.isEmpty()) return null
 
-        val result : MutableMap<String, Pair<Set<String>, Double>> = mutableMapOf()
+        val result : MutableMap<String, Pair<Set<TableId>, Double>> = mutableMapOf()
         fmap.forEach { t, u ->
-            val related = u.derivedMap.filter { m-> tables.any { t-> t.equals(m.key, ignoreCase = true) }}
+            val related = u.derivedMap.filter { m-> tables.any { t-> t == m.key }}
             if (related.isNotEmpty()){
                 val best = related.map { it.value.similarity }.maxOrNull()!!
                 result.put(t, Pair(related.filter { it.value.similarity == best }.keys, best))
@@ -156,10 +161,14 @@ class ResourceRelatedToTable(val key: String) {
     /**
      * return Pair.first is name of table, key of the second is field, value is the column
      */
-    fun getBodyParamToSpecifiedTable(table:String, bodyP2Table : BodyParamRelatedToTable, onlyConfirmedColumn : Boolean = false) : Pair<String, Map<String, String>>? {
+    fun getBodyParamToSpecifiedTable(
+        table:TableId,
+        bodyP2Table : BodyParamRelatedToTable,
+        onlyConfirmedColumn : Boolean = false
+    ) : Pair<TableId, Map<String, String>>? {
         val fmap = bodyP2Table.fieldsMap
                 .filter {
-                    it.value.derivedMap.any { m->m.key.toLowerCase() == table.toLowerCase() }
+                    it.value.derivedMap.any { m->m.key  == table }
                 }
         if(fmap.isEmpty()) return null
         else{
@@ -172,15 +181,20 @@ class ResourceRelatedToTable(val key: String) {
      *
      * @param onlyConfirmedColumn will be used to only find the field that are confirmed based on feedback from evomaster driver
      */
-    fun getBodyParamToSpecifiedTable(table:String, bodyP2Table : BodyParamRelatedToTable, fieldName : String, onlyConfirmedColumn : Boolean = false) : Pair<String, Pair<String, String>>? {
+    fun getBodyParamToSpecifiedTable(
+        table:TableId,
+        bodyP2Table : BodyParamRelatedToTable,
+        fieldName : String,
+        onlyConfirmedColumn : Boolean = false
+    ) : Pair<TableId, Pair<String, String>>? {
         val fmap = bodyP2Table.fieldsMap[fieldName]?: return null
-        fmap.derivedMap.filter { SqlActionUtils.isMatchingTableName(it.key, table)}.let {
+        fmap.derivedMap.filter { it.key == table}.let {
             if (it.isEmpty()) return null
             else return Pair(table, Pair(fieldName, it.values.first().targetMatched))
         }
     }
 
-    fun getTablesInDerivedMap() : Set<String> = derivedMap.keys
+    fun getTablesInDerivedMap() : Set<TableId> = derivedMap.keys
 
     fun getTablesInDerivedMap(segs : List<String>) : Map<String, String>{
         return segs.map { input->
@@ -255,12 +269,12 @@ abstract class ParamRelatedToTable (
      * key is table name
      * value is [MatchedInfo], [MatchInfo.targetMatched] is name of column of the table
      */
-    val derivedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
+    val derivedMap : MutableMap<TableId, MatchedInfo> = mutableMapOf()
 
     val confirmedColumn : MutableSet<String> = mutableSetOf()
 
-    open fun getRelatedColumn(table: String) : Set<String>?  =
-        derivedMap.filterKeys { SqlActionUtils.isMatchingTableName(it, table)}
+    open fun getRelatedColumn(table: TableId) : Set<String>?  =
+        derivedMap.filterKeys { it == table}
             .values.firstOrNull()
             .run {
                 if (this == null) null
@@ -287,16 +301,16 @@ class BodyParamRelatedToTable(key: String, val referParam: Param): ParamRelatedT
      */
     val fieldsMap : MutableMap<String, ParamFieldRelatedToTable> = mutableMapOf()
 
-    override fun getRelatedColumn(table: String) : Set<String>? =
+    override fun getRelatedColumn(table: TableId) : Set<String>? =
         fieldsMap.values
             .filter {
-                it.derivedMap.any {  m-> SqlActionUtils.isMatchingTableName(m.key, table)}
+                it.derivedMap.any {  m-> m.key == table}
             }.run {
                  if (this.isEmpty())
                      return null
                  else
                     this.map { f->
-                        f.derivedMap.filterKeys { k -> SqlActionUtils.isMatchingTableName(k, table) }
+                        f.derivedMap.filterKeys { k -> k == table }
                             .asSequence().first().value.targetMatched
                     }.toHashSet()
             }
@@ -306,8 +320,8 @@ class BodyParamRelatedToTable(key: String, val referParam: Param): ParamRelatedT
  */
 class ParamFieldRelatedToTable(key: String) : ParamRelatedToTable(key){
 
-    override fun getRelatedColumn(table: String) :  Set<String>? {
-        return derivedMap.filter { SqlActionUtils.isMatchingTableName(it.key, table)}
+    override fun getRelatedColumn(table: TableId) :  Set<String>? {
+        return derivedMap.filter { it.key == table}
             .let {
                 if(it.isEmpty()) null
                 else  it.values.map {m-> m.targetMatched}.toSet()

@@ -11,6 +11,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -81,7 +82,7 @@ class FitnessValue(
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
      * to false), in particular the tables and columns in them involved
      */
-    private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
+    private val aggregatedFailedWhere: MutableMap<TableId, Set<String>> = mutableMapOf()
 
     /**
      * When SUT does MONGO commands using FIND, keep track of when those "fails" (ie evaluate

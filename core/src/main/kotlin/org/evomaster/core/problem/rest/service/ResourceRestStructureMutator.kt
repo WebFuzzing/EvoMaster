@@ -17,6 +17,7 @@ import org.evomaster.core.search.impact.impactinfocollection.value.numeric.Integ
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
+import org.evomaster.core.sql.schema.TableId
 import kotlin.math.max
 import kotlin.math.min
 import org.slf4j.Logger
@@ -177,7 +178,7 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
         val candidates = if (doesApplyDependencyHeuristics())
             dm.identifyRelatedSQL(ind)
         else
-            ind.seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.name }.toSet() // adding an unrelated table would waste budget, then we add existing ones
+            ind.seeInitializingActions().filterIsInstance<SqlAction>().map { it.table.id }.toSet() // adding an unrelated table would waste budget, then we add existing ones
 
         val selectedAdded = if (config.enableAdaptiveResourceStructureMutation){
             adaptiveSelectResource(evaluatedIndividual, bySQL = true, candidates.toList(), targets)
@@ -190,7 +191,13 @@ class ResourceRestStructureMutator : ApiWsStructureMutator() {
     }
 
 
-    private fun adaptiveSelectResource(evaluatedIndividual: EvaluatedIndividual<RestIndividual>?, bySQL: Boolean, candidates: List<String>, targets: Set<Int>?): String{
+    private fun adaptiveSelectResource(
+        evaluatedIndividual: EvaluatedIndividual<RestIndividual>?,
+        bySQL: Boolean,
+        candidates: List<String>,
+        targets: Set<Int>?
+    ): TableId{
+
         evaluatedIndividual?: throw IllegalStateException("lack of impact with specified evaluated individual")
         targets?:throw IllegalStateException("targets must be specified if adaptive resource selection is applied")
         if (evaluatedIndividual.impactInfo == null || evaluatedIndividual.impactInfo !is ResourceImpactOfIndividual)

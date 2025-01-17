@@ -83,10 +83,10 @@ class DatabaseExecution(
 
         fun mergeData(
                 executions: Collection<DatabaseExecution>,
-                extractor: (DatabaseExecution) -> Map<String, Set<String>>
-        ): Map<String, Set<String>> {
+                extractor: (DatabaseExecution) -> Map<TableId, Set<String>>
+        ): Map<TableId, Set<String>> {
 
-            val data: MutableMap<String, MutableSet<String>> = mutableMapOf()
+            val data: MutableMap<TableId, MutableSet<String>> = mutableMapOf()
 
             for (ex in executions) {
                 merge(data, extractor.invoke(ex))

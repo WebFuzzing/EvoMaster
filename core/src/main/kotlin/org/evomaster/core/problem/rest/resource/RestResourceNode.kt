@@ -19,6 +19,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -165,7 +166,7 @@ open class RestResourceNode(
         }
 
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
-            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.id)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
         }.filter{it.isMutable() && it !is SqlForeignKeyGene && it !is SqlPrimaryKeyGene}
     }
@@ -235,7 +236,7 @@ open class RestResourceNode(
     /**
      * @return related table for creating resource for [this] node with sql
      */
-    fun getSqlCreationPoints() : List<String>{
+    fun getSqlCreationPoints() : List<TableId>{
         if (resourceToTable.confirmedSet.isNotEmpty()) return resourceToTable.confirmedSet.keys.toList()
         return resourceToTable.derivedMap.keys.toList()
     }

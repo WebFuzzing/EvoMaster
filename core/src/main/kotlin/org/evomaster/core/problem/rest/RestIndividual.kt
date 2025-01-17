@@ -21,6 +21,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -402,8 +403,8 @@ class RestIndividual(
     }
 
 
-    override fun getInsertTableNames(): List<String> {
-        return seeSqlDbActions().filterNot { it.representExistingData }.map { it.table.name }
+    override fun getInsertTableNames(): List<TableId> {
+        return seeSqlDbActions().filterNot { it.representExistingData }.map { it.table.id }
     }
 
     override fun seeMainExecutableActions(): List<RestCallAction> {

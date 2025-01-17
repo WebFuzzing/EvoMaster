@@ -28,6 +28,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
@@ -99,7 +100,7 @@ class ResourceDepManageService {
 
     }
 
-    private fun updateParamInfo(action: RestCallAction, tables: Map<String, Table>) {
+    private fun updateParamInfo(action: RestCallAction, tables: Map<TableId, Table>) {
         val r = rm.getResourceNodeFromCluster(action.path.toString())
         // skip resource if it is ExcludedResourceNode
         if (r is ExcludedResourceNode) return
@@ -222,8 +223,13 @@ class ResourceDepManageService {
         }
     }
 
-    private fun updateResourceToTable(action: RestCallAction, dto: SqlExecutionsDto, tables: Map<String, Table>,
-                                      addedMap: MutableMap<String, MutableSet<String>>, removedMap: MutableMap<String, MutableSet<String>>) {
+    private fun updateResourceToTable(
+        action: RestCallAction,
+        dto: SqlExecutionsDto,
+        tables: Map<TableId, Table>,
+        addedMap: MutableMap<String, MutableSet<String>>,
+        removedMap: MutableMap<String, MutableSet<String>>
+    ) {
 
         dto.insertedData.filter { u -> tables.any { it.key.toLowerCase() == u.key } }.let { added ->
             updateResourceToTable(action, added, (action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
@@ -1001,7 +1007,10 @@ class ResourceDepManageService {
      */
     fun unRelatedSQL(ind: RestIndividual, candidates: List<SqlAction>?) : List<SqlAction>{
         val allrelated = getAllRelatedTables(ind)
-        return (candidates?:ind.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }).filterNot { allrelated.any { r-> r.equals(it.table.name, ignoreCase = true) } }
+        return (candidates ?: ind.seeInitializingActions()
+                    .filterIsInstance<SqlAction>()
+                    .filterNot { it.representExistingData })
+            .filterNot { allrelated.any { r-> r == it.table.id  } }
     }
 
     fun identifyUnRelatedSqlTable(ind: RestIndividual, candidates: List<SqlAction>?) : List<String>{
@@ -1025,7 +1034,7 @@ class ResourceDepManageService {
      * @param probability represent a probability of using identified dependent tables, otherwise employ the tables which are
      * not part of the current dbInitialization
      */
-    fun identifyRelatedSQL(ind: RestIndividual, probability: Double = 1.0): Set<String>{
+    fun identifyRelatedSQL(ind: RestIndividual, probability: Double = 1.0): Set<TableId>{
 
         val allrelated = getAllRelatedTables(ind)
 
@@ -1046,7 +1055,7 @@ class ResourceDepManageService {
         }
     }
 
-    fun createDbActions(name : String, num : Int) : List<List<SqlAction>>{
+    fun createDbActions(name : TableId, num : Int) : List<List<SqlAction>>{
         rm.getSqlBuilder() ?:throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
             throw IllegalArgumentException("invalid num (i.e.,$num) for creating resource")
@@ -1128,7 +1137,7 @@ class ResourceDepManageService {
         ind.addInitializingDbActions(actions = added)
     }
 
-    private fun getAllRelatedTables(ind: RestIndividual) : Set<String>{
+    private fun getAllRelatedTables(ind: RestIndividual) : Set<TableId>{
         return ind.getResourceCalls().flatMap { c->
             extractRelatedTablesForCall(c, withSql = c.is2POST).values.flatMap { it.map { g->g.tableName } }.toSet()
         }.toSet()

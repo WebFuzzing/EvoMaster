@@ -85,7 +85,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         return action
     }
 
-    fun canInsertInto(tableName: String) : Boolean {
+    fun canInsertInto(tableName: TableId) : Boolean {
         //TODO might need to refactor/remove once we deal with VIEWs
         return sqlInsertBuilder?.isTable(tableName) ?: false
     }

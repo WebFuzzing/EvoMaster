@@ -182,7 +182,6 @@ class SqlInsertBuilder(
         for (fk in tableDto.foreignKeys) {
 
             val tableKey = SqlActionUtils.getTableKey(tableToColumns.keys, fk.targetTable)
-            FIXME
 
             if(tableKey == null || tableToColumns[tableKey] == null) {
                 throw IllegalArgumentException("Foreign key for non-existent table ${fk.targetTable}")
@@ -194,7 +193,9 @@ class SqlInsertBuilder(
                 // val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
                 //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
-                val c = tableToColumns[SqlDtoUtils.getId(tableDto)]!!.find { it.name.equals(cname, ignoreCase = true) }
+                val id = TableId.fromDto(databaseType, tableDto.id)
+
+                val c = tableToColumns[id]!!.find { it.name.equals(cname, ignoreCase = true) }
                     ?: throw IllegalArgumentException("Issue in foreign key: table ${tableDto.id.name} does not have a column called $cname")
 
                 sourceColumns.add(c)
@@ -632,13 +633,17 @@ class SqlInsertBuilder(
      *
      * quotes "" can be used to force case-sensitivity
      */
-    fun isTable(tableName: String) =  SqlActionUtils.getTableKey(tables.keys, tableName) != null
+    fun isTable(tableName: TableId) =
+        //SqlActionUtils.getTableKey(tables.keys, tableName) != null
+        tables.contains(tableName)
 
-    private fun <T>  getValueByTableNameKey(map: Map<String, T>, tableName: String) : T?{
 
-        val key = SqlActionUtils.getTableKey(map.keys, tableName)
-        return map[key]
-    }
+
+//    private fun <T>  getValueByTableNameKey(map: Map<String, T>, tableName: String) : T?{
+//
+//        val key = SqlActionUtils.getTableKey(map.keys, tableName)
+//        return map[key]
+//    }
 
 
 
@@ -715,7 +720,7 @@ class SqlInsertBuilder(
 
         val table = getTable(tableName, useExtraSqlDbConstraints)
         val takeAll = columnNames.contains("*")
-        validateColumnNamesInput(takeAll, columnNames, table, tableName)
+        validateColumnNamesInput(takeAll, columnNames, table, tableName.getFullQualifyingTableName())
 
         // filter only columns that will generate value for
         val selectedColumns = table.columns
@@ -735,7 +740,7 @@ class SqlInsertBuilder(
 
             // if we have already generated the sql inserts for the target table more than 3 times and all columns are nullable, then skip it
             val maxIter = 3 // TODO: as a configurable parameter in EMConfig?
-            val visitedTableCount = history.count { it.equals(targetTable, ignoreCase = true) }
+            val visitedTableCount = history.count { it == targetTable }
             if (visitedTableCount >= maxIter && fk.sourceColumns.all { it.nullable }) {
                 continue
             }
@@ -844,7 +849,7 @@ class SqlInsertBuilder(
                     val pkName = pks[i].name
                     val inQuotes = pks[i].type.shouldBePrintedInQuotes || pks[i].dimension > 0
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
-                    val pk = SqlPrimaryKeyGene(pkName, table.name, data, id)
+                    val pk = SqlPrimaryKeyGene(pkName, table.id, data, id)
                     genes.add(pk)
                 }
 
@@ -872,7 +877,7 @@ class SqlInsertBuilder(
      *
      */
     fun extractExistingByCols(
-        tableName: String,
+        tableName: TableId,
         pkValues: DataRowDto,
         useExtraSqlDbConstraints: Boolean,
         columnIds: List<String> = mutableListOf()
@@ -942,7 +947,7 @@ class SqlInsertBuilder(
                 val gene = if (cols[i].primaryKey) {
                     SqlPrimaryKeyGene(
                         colName,
-                        table.name,
+                        table.id,
                         ImmutableDataHolderGene(colName, row.columnData[i], inQuotes),
                         id
                     )
@@ -963,7 +968,7 @@ class SqlInsertBuilder(
     /**
      * get existing pks in db
      */
-    fun extractExistingPKs(dataInDB: MutableMap<String, MutableList<DataRowDto>>) {
+    fun extractExistingPKs(dataInDB: MutableMap<TableId, MutableList<DataRowDto>>) {
 
         if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
@@ -980,7 +985,7 @@ class SqlInsertBuilder(
 
             val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                 ?: continue
-            dataInDB.getOrPut(table.name) { result.rows.map { it }.toMutableList() }
+            dataInDB.getOrPut(table.id) { result.rows.map { it }.toMutableList() }
         }
     }
 
@@ -988,7 +993,7 @@ class SqlInsertBuilder(
     /**
      * get table info
      */
-    fun extractExistingTables(tablesMap: MutableMap<String, Table>? = null) {
+    fun extractExistingTables(tablesMap: MutableMap<TableId, Table>? = null) {
         if (tablesMap != null) {
             tablesMap.clear()
             tablesMap.putAll(tables)

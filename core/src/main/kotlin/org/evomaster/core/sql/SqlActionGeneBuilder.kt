@@ -388,7 +388,7 @@ class SqlActionGeneBuilder {
         }
 
         if (column.primaryKey) {
-            gene = SqlPrimaryKeyGene(column.name, table.name, gene, id)
+            gene = SqlPrimaryKeyGene(column.name, table.id, gene, id)
         }
 
         if (column.nullable && fk == null) {

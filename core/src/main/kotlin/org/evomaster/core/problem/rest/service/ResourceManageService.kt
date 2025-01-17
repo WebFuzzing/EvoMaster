@@ -16,6 +16,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -296,7 +297,7 @@ class ResourceManageService {
     }
 
 
-    private fun employSelect(tables : List<String>) : Boolean{
+    private fun employSelect(tables : List<TableId>) : Boolean{
         return randomness.nextBoolean(config.probOfSelectFromDatabase) && tables.any {
             cluster.getDataInDb(it)?.size?:0 >= config.minRowOfTable
         }

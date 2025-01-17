@@ -25,6 +25,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -258,7 +259,9 @@ abstract class ApiWsStructureMutator : StructureMutator() {
          * its phenotype (otherwise the fitness value would be meaningless).
          */
 
-        val fw = evaluatedIndividual.fitness.getViewOfAggregatedFailedWhere()
+        val fw = evaluatedIndividual
+            .fitness
+            .getViewOfAggregatedFailedWhere()
             //TODO likely to remove/change once we ll support VIEWs
             .filter { sampler.canInsertInto(it.key) }
 
@@ -288,7 +291,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         /**
          * Map of FAILED WHERE clauses. from table name key to column name values
          */
-        fw: Map<String, Set<String>>,
+        fw: Map<TableId, Set<String>>,
         mutatedGenes: MutatedGeneSpecification?, sampler: ApiWsSampler<T>
     ): MutableList<List<SqlAction>>? {
 
@@ -307,7 +310,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         ind: T,
         sampler: ApiWsSampler<T>,
         mutatedGenes: MutatedGeneSpecification?,
-        fw: Map<String, Set<String>>
+        fw: Map<TableId, Set<String>>
     ): MutableList<List<SqlAction>>? {
         /*
             because there might exist representExistingData in db actions which are in between rest actions,
@@ -385,7 +388,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedSqlInsertions
     }
 
-    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<String, Set<String>>): MutableList<List<SqlAction>> {
+    private fun <T : ApiWsIndividual> handleDSE(sampler: ApiWsSampler<T>, fw: Map<TableId, Set<String>>): MutableList<List<SqlAction>> {
         /* TODO: DSE should be plugged in here */
         return mutableListOf()
     }
@@ -407,14 +410,17 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         return addedMongoDbInsertions
     }
 
-    private fun findMissing(fw: Map<String, Set<String>>, dbactions: List<SqlAction>): Map<String, Set<String>> {
+    private fun findMissing(
+        fw: Map<TableId, Set<String>>,
+        dbactions: List<SqlAction>
+    ): Map<TableId, Set<String>> {
 
         return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
             dbactions
                 .filter { !it.representExistingData }
                 .none { a ->
-                    a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
+                    a.table.id == e.key && e.value.all { c ->
                         // either the selected column is already in existing action
                         (c != "*" && a.selectedColumns.any { x ->
                             x.name.equals(c, ignoreCase = true)
@@ -440,25 +446,26 @@ abstract class ApiWsStructureMutator : StructureMutator() {
            note that if there is no any init sql, we randomly select one table to add.
         */
 
-        val candidatesToMutate =
-            individual.seeInitializingActions().filterIsInstance<SqlAction>().filterNot { it.representExistingData }
-        val tables = candidatesToMutate.map { it.table.name }.run {
-            ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
-        }
+        val candidatesToMutate = individual.seeInitializingActions()
+            .filterIsInstance<SqlAction>()
+            .filterNot { it.representExistingData }
+        val tables = candidatesToMutate
+            .map { it.table.id }
+            .ifEmpty { getSqlInsertBuilder()!!.getTableNames() }
 
-        val table = randomness.choose(tables)
-        val total = tables.count { it == table }
+        val tableId = randomness.choose(tables)
+        val total = tables.count { it == tableId }
 
         if (total == 1 || randomness.nextBoolean()) {
             // add action
             val num = randomness.nextInt(1, max(1, getMaxSizeOfMutatingInitAction()))
-            val add = createInsertSqlAction(table, num)
+            val add = createInsertSqlAction(tableId, num)
             handleInitSqlAddition(individual, add, mutatedGenes)
 
         } else {
             // remove action
             val num = randomness.nextInt(1, max(1, min(total - 1, getMaxSizeOfMutatingInitAction())))
-            val candidates = candidatesToMutate.filter { it.table.name == table }
+            val candidates = candidatesToMutate.filter { it.table.id == tableId }
             val remove = randomness.choose(candidates, num)
 
             handleInitSqlRemoval(individual, remove, mutatedGenes)
@@ -520,7 +527,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
      * @param name is the table name
      * @param num is a number of table with [name] to be added
      */
-    fun createInsertSqlAction(name: String, num: Int): List<List<SqlAction>> {
+    fun createInsertSqlAction(name: TableId, num: Int): List<List<SqlAction>> {
         getSqlInsertBuilder()
             ?: throw IllegalStateException("attempt to create resource with SQL but the sqlBuilder is null")
         if (num <= 0)
@@ -537,7 +544,10 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         }
 
         val list = (0 until num)
-                .map { getSqlInsertBuilder()!!.createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable) }
+                .map {
+                    getSqlInsertBuilder()!!
+                        .createSqlInsertionAction(name,chosenColumns, mutableListOf(),true, extraConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
+                }
                 .toMutableList()
 
         if (log.isTraceEnabled) {
