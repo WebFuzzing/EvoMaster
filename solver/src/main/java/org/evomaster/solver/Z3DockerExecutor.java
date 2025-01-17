@@ -62,7 +62,7 @@ public class Z3DockerExecutor implements AutoCloseable {
             // Execute the Z3 solver on the specified file in the container
             Container.ExecResult result = z3Prover.execInContainer("z3", containerPath + fileName);
             if (result.getExitCode() != 0) {
-                throw new RuntimeException("Error executing Z3 solver" + result.getStdout());
+                throw new RuntimeException("Error executing Z3 solver: \n" + result.getStdout() + "\n" + result.getStderr());
             }
             String stdout = result.getStdout();
 
