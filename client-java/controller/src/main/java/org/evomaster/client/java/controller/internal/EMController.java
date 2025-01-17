@@ -666,6 +666,17 @@ public class EMController {
                     return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
                 }
 
+            }else if (dto.scheduleTaskInvocationDtos != null && !dto.scheduleTaskInvocationDtos.isEmpty()){ // handle schedule task execution
+                ActionResponseDto responseDto = null;
+                try{
+                    noKillSwitchForceCheck(() -> sutController.invokeScheduleTask(dto.scheduleTaskInvocationDtos, responseDto));
+                } catch (Exception e) {
+                    String msg = "Thrown exception in executing schedule task: " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    responseDto.error500Msg = msg;
+                    return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
+                }
+
             }
         }
 

@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationResultDto;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.DbSpecification;
 
@@ -232,6 +233,19 @@ public interface SutHandler {
      */
     default boolean mockDatabasesWithCustomizedHandling(String mockDatabaseObjectDtos, boolean enabled){
         return false;
+    }
+
+
+    /**
+     * <p>
+     *     a method to employ customized mocking for database
+     * </p>
+     * @param scheduleTaskDtos contains info about a list of schedule tasks should be invoked
+     * @param enabled reflect to enable (set it true) or terminate (set it false) the schedule task
+     * @return invocation results of schedule task
+     */
+    default List<ScheduleTaskInvocationResultDto> invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled){
+        return null;
     }
 
 }

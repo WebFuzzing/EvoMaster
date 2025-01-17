@@ -940,6 +940,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    public final void invokeScheduleTask(List<CustomizedScheduleTaskInvocationDto> dtos, ActionResponseDto responseDto){
+        try{
+            // TODO, we might need to have timeout for `handleCustomizedMethod`
+            List<ScheduleTaskInvocationResultDto> results = new ArrayList<>();
+            for (CustomizedScheduleTaskInvocationDto dto: dtos){
+                ScheduleTaskInvocationResultDto result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
+                results.add(result);
+            }
+            responseDto.jsonResponse = objectMapper.writeValueAsString(results);
+        } catch (Exception e) {
+            throw new RuntimeException("ERROR: Fail to invoke schedule task with the customized method: "+ e.getMessage());
+        }
+    }
+
     /**
      * execute a RPC request based on the specified dto
      * @param dto is the action DTO to be executed
@@ -1059,7 +1073,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             return call.get();
         }catch (Throwable e){
-            SimpleLogger.error("ERROR: Fail to process mocking with customized method:", e);
+            SimpleLogger.error("ERROR: Fail to process customized method:", e);
         }
         return null;
     }
@@ -1609,6 +1623,28 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("Fail to handle the given mock object for database with the info:", e);
         }
         return customizeMockingDatabase(mockDbObject, enabled);
+    }
+
+    @Override
+    public List<ScheduleTaskInvocationResultDto> invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
+        List<CustomizedScheduleTaskInvocationDto> taskDtos = null;
+        List<ScheduleTaskInvocationResultDto> resultDtos = null;
+        try{
+            if (scheduleTaskDtos != null && !scheduleTaskDtos.isEmpty()){
+                taskDtos = objectMapper.readValue(scheduleTaskDtos, new TypeReference<List<CustomizedScheduleTaskInvocationDto>>(){});
+                resultDtos = new ArrayList<>();
+            }
+
+            for (CustomizedScheduleTaskInvocationDto dto : taskDtos){
+                resultDtos.add(customizeScheduleTaskInvocation(dto, enabled));
+            }
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given schedule task with the info:", e);
+        } catch (Exception e){
+            throw new RuntimeException("Fail to invoke schedule task with the info:", e);
+        }
+
+        return resultDtos;
     }
 
     /**

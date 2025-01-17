@@ -42,7 +42,7 @@ public class ActionDto {
      * info to execute a schedule task
      * note that this is only used when handling RPC problem
      */
-    public CustomizedScheduleTaskInvocationDto scheduleTaskInvocationDto;
+    public List<CustomizedScheduleTaskInvocationDto> scheduleTaskInvocationDtos;
 
     /**
      * This list of DTOs represents the external service mappings.
