@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 
 /**
@@ -297,7 +296,7 @@ object RestActionBuilderV3 {
 
         //FIXME here we are swallowing all error messages in schema
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
-        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName, options, mutableListOf())
+        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName, options, listOf(), mutableListOf())
         dtoCache[dtoSchema] = gene
         return gene.copy()
     }
@@ -652,7 +651,8 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options, messages = messages)
+        val examples = if(options.probUseExamples > 0) exampleObjects(obj.example, obj.examples) else listOf()
+        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
@@ -839,7 +839,7 @@ object RestActionBuilderV3 {
             }
 
             "object" -> {
-                return createObjectGene(name, schema, swagger, history, referenceClassDef, options, messages)
+                return createObjectGene(name, schema, swagger, history, referenceClassDef, options, examples, messages)
             }
             //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             //FIXME is this even a standard type???
@@ -851,13 +851,13 @@ object RestActionBuilderV3 {
                 name == "body": This could happen when parsing a body-payload as formData
                 referenceClassDef != null : this could happen when parsing a reference of a constraint (eg, anyOf) of the additionalProperties
             */
-            return createObjectGene(name, schema, swagger, history, referenceClassDef, options, messages)
+            return createObjectGene(name, schema, swagger, history, referenceClassDef, options, examples, messages)
         }
 
         if (type == null && format == null) {
             return createGeneWithUnderSpecificTypeAndSchemaConstraints(
                 schema, name, swagger, history, referenceClassDef,
-                options, null, isInPath, messages)
+                options, null, isInPath, examples, messages)
         //createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling) //StringGene(name)
         }
 
@@ -873,6 +873,7 @@ object RestActionBuilderV3 {
                                  history: Deque<String>,
                                  referenceTypeName: String?,
                                  options: Options,
+                                 examples: List<Any>,
                                  messages: MutableList<String>
     ): Gene {
 
@@ -984,6 +985,7 @@ object RestActionBuilderV3 {
             history,
             referenceTypeName,
             options,
+            examples,
             messages
         )
 
@@ -1006,6 +1008,7 @@ object RestActionBuilderV3 {
         history: Deque<String>,
         referenceTypeName: String?,
         options: Options,
+        examples: List<Any>,
         messages: MutableList<String>
     ) : Gene{
         /*
@@ -1014,21 +1017,21 @@ object RestActionBuilderV3 {
          */
 
         if (!options.enableConstraintHandling)
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         val allOf = schema.allOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
-            getGene(name, s, swagger, history, null, options, messages = messages)
+            getGene(name, s, swagger, history, null, options, messages = messages, examples = examples)
         }
 
         val anyOf = schema.anyOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
-            getGene(name, s, swagger, history, null, options, messages = messages)
+            getGene(name, s, swagger, history, null, options, messages = messages, examples = examples)
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
             messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         val oneOf = schema.oneOf?.map { s->
@@ -1038,7 +1041,7 @@ object RestActionBuilderV3 {
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
             messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         if (!allOf.isNullOrEmpty()){
@@ -1048,14 +1051,14 @@ object RestActionBuilderV3 {
                     else -> null
                 }
             }.flatten()
-            return assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         if (!oneOf.isNullOrEmpty()){
             val choices = if (fields.isEmpty())
                 oneOf
             else
-                listOf(assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)).plus(oneOf)
+                listOf(assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)).plus(oneOf)
 
             return ChoiceGene(name, choices)
         }
@@ -1070,7 +1073,7 @@ object RestActionBuilderV3 {
             /*
                 currently, we handle anyOf as oneOf plus all combined one
              */
-            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)) else anyOf)
+            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)) else anyOf)
 //            /*
 //                handle all combinations of anyOf
 //                comment it out for the moment
@@ -1096,7 +1099,7 @@ object RestActionBuilderV3 {
 //            })
         }
 
-        return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+        return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         //TODO not
     }
@@ -1111,6 +1114,7 @@ object RestActionBuilderV3 {
         fields: List<Gene>,
         additionalFieldTemplate: PairGene<StringGene, Gene>?,
         referenceTypeName: String?,
+        otherExampleValues: List<Any>,
         messages: MutableList<String>
     ) : Gene{
         if (fields.isEmpty()) {
@@ -1149,6 +1153,8 @@ object RestActionBuilderV3 {
         if(multiExampleValues != null ){
             examples.addAll(multiExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
         }
+        examples.addAll(otherExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+
         val exampleGene = if(examples.isNotEmpty()){
             ChoiceGene(EXAMPLES_NAME, examples)
         } else null
@@ -1179,6 +1185,10 @@ object RestActionBuilderV3 {
                     EnumGene<String>(f.name, listOf(""+e.numberValue()), 0, true)
                 }
             } else {
+                /*
+                    TODO: if a parameter is optional, and was not specified in the example,
+                    should it be rather skipped? maybe, maybe not... unsure
+                 */
                 f.copy()
             }
         }
@@ -1227,13 +1237,14 @@ object RestActionBuilderV3 {
         options: Options,
         collectionTemplate: Gene?,
         isInPath: Boolean,
+        examples: List<Any>,
         messages: MutableList<String>
     ) : Gene{
 
         val mightObject = schema.properties?.isNotEmpty() == true || referenceTypeName != null || containsAllAnyOneOfConstraints(schema)
         if (mightObject){
             try {
-                return createObjectGene(name, schema, swagger, history, referenceTypeName, options, messages = messages)
+                return createObjectGene(name, schema, swagger, history, referenceTypeName, options, examples,  messages)
             }catch (e: Exception){
                 LoggingUtil.uniqueWarn(log, "fail to create ObjectGene for a schema whose `type` and `format` are under specified with error msg: ${e.message?:"no msg"}")
             }

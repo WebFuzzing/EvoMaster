@@ -18,7 +18,6 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -1442,10 +1441,14 @@ class RestActionBuilderV3Test{
     }
 
 
-    @Test
-    fun testExampleObjectSingle(){
-        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_single.yaml", 1,
-            RestActionBuilderV3.Options(probUseExamples = 0.5))
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/swagger/artificial/defaultandexamples/examples_object_single_in.yaml",
+        "/swagger/artificial/defaultandexamples/examples_object_single_out.yaml",
+        "/swagger/artificial/defaultandexamples/default_object_single.yaml"
+    ])
+    fun testExampleObjectSingle(path: String){
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
             .values.first()
 
         val rand = Randomness()
