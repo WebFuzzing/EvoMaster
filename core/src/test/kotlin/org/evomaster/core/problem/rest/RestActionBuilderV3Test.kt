@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
@@ -831,7 +832,10 @@ class RestActionBuilderV3Test{
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        val errors = RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        errors.forEach {
+            println(it)
+        }
 
         assertEquals(expectedNumberOfActions, actions.size)
 
@@ -1435,6 +1439,52 @@ class RestActionBuilderV3Test{
             .seeTopGenes().first()
         val output = certain.getValueAsRawString()
         assertEquals("42", output)
+    }
+
+
+    @Test
+    fun testExampleObjectSingle(){
+        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_single.yaml", 1,
+            RestActionBuilderV3.Options(probUseExamples = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42Pos = false
+        var Bar42Neg = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar" && dto.extra != null){
+                if(dto.extra!! >= 0){
+                    Bar42Pos = true
+                } else {
+                    Bar42Neg = true
+                }
+            }
+
+            if(Bar42Pos && Bar42Neg){
+                break
+            }
+        }
+
+        assertTrue(Bar42Pos)
+        assertTrue(Bar42Neg)
+
     }
 
 

@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
@@ -1013,7 +1014,7 @@ object RestActionBuilderV3 {
          */
 
         if (!options.enableConstraintHandling)
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages)
 
         val allOf = schema.allOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
@@ -1027,7 +1028,7 @@ object RestActionBuilderV3 {
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
             messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
         }
 
         val oneOf = schema.oneOf?.map { s->
@@ -1037,7 +1038,7 @@ object RestActionBuilderV3 {
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
             messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
         }
 
         if (!allOf.isNullOrEmpty()){
@@ -1047,14 +1048,14 @@ object RestActionBuilderV3 {
                     else -> null
                 }
             }.flatten()
-            return assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)
         }
 
         if (!oneOf.isNullOrEmpty()){
             val choices = if (fields.isEmpty())
                 oneOf
             else
-                listOf(assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)).plus(oneOf)
+                listOf(assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)).plus(oneOf)
 
             return ChoiceGene(name, choices)
         }
@@ -1069,7 +1070,7 @@ object RestActionBuilderV3 {
             /*
                 currently, we handle anyOf as oneOf plus all combined one
              */
-            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)) else anyOf)
+            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)) else anyOf)
 //            /*
 //                handle all combinations of anyOf
 //                comment it out for the moment
@@ -1095,7 +1096,7 @@ object RestActionBuilderV3 {
 //            })
         }
 
-        return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+        return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
 
         //TODO not
     }
@@ -1105,6 +1106,7 @@ object RestActionBuilderV3 {
      */
     private fun assembleObjectGene(
         name: String,
+        options: Options,
         schema: Schema<*>,
         fields: List<Gene>,
         additionalFieldTemplate: PairGene<StringGene, Gene>?,
@@ -1117,27 +1119,77 @@ object RestActionBuilderV3 {
 
             messages.add("No fields for object definition: $name")
 
-            if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+            return if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
                 //default is true
-                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+                TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
             } else {
                 /*
-                    If we get here, it is really something wrong with the schema...
-                 */
-                return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+                            If we get here, it is really something wrong with the schema...
+                         */
+                FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
             }
         }
 
-
-        if (additionalFieldTemplate!=null){
-            return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
+        val mainGene = if (additionalFieldTemplate!=null){
+            ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
+        } else {
+            ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
         }
+
+        val defaultValue = if(options.probUseDefault > 0) schema.default else null
+        val exampleValue = if(options.probUseExamples > 0) schema.example else null
+        val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
+
+        val examples = mutableListOf<ObjectGene>()
+        if(exampleValue != null){
+            duplicateObjectWithExampleFields(name,mainGene, exampleValue)?.let {
+                examples.add(it)
+            }
+        }
+        if(multiExampleValues != null ){
+            examples.addAll(multiExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+        }
+        val exampleGene = if(examples.isNotEmpty()){
+            ChoiceGene(EXAMPLES_NAME, examples)
+        } else null
+        val defaultGene = if(defaultValue != null){
+            duplicateObjectWithExampleFields("default", mainGene, defaultValue)
+        } else null
 
         /*
             add refClass with title of SchemaObject
             Man: shall we pop history here?
          */
-        return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
+       return createGeneWithExampleAndDefault(exampleGene,defaultGene,mainGene,options,name)
+    }
+
+    private fun duplicateObjectWithExampleFields(name: String, mainGene: ObjectGene, exampleValue: Any): ObjectGene? {
+
+        if(exampleValue !is ObjectNode){
+            LoggingUtil.uniqueWarn(log, "When building object example, required an ObjectNode, but found a ${exampleValue.javaClass}")
+            return null
+        }
+
+        val modified = mainGene.fields.map { f ->
+            if(exampleValue.has(f.name)){
+                val e = exampleValue.get(f.name)
+                if(e.isTextual){
+                    EnumGene<String>(f.name, listOf(asRawString(e.textValue())), 0, false)
+                } else {
+                    EnumGene<String>(f.name, listOf(""+e.numberValue()), 0, true)
+                }
+            } else {
+                f.copy()
+            }
+        }
+        return ObjectGene(
+            name,
+            modified,
+            mainGene.refType,
+            mainGene.isFixed,
+            mainGene.template?.copy() as PairGene<StringGene,Gene>?,
+            mainGene.additionalFields?.map { it.copy() as PairGene<StringGene,Gene>}?.toMutableList()
+            )
     }
 
     /**
@@ -1396,28 +1448,38 @@ object RestActionBuilderV3 {
             }
         } else null
 
-        if(exampleGene==null && defaultGene==null){
+        return createGeneWithExampleAndDefault(exampleGene, defaultGene, mainGene, options, name)
+    }
+
+    private fun createGeneWithExampleAndDefault(
+        exampleGene: Gene?,
+        defaultGene: Gene?,
+        mainGene: Gene,
+        options: Options,
+        name: String
+    ): Gene {
+        if (exampleGene == null && defaultGene == null) {
             //no special handling
             return mainGene
         }
 
-        if(exampleGene!=null && defaultGene!=null){
+        if (exampleGene != null && defaultGene != null) {
             val pd = options.probUseDefault
             val pe = options.probUseExamples
             val pm = 1 - pd - pe
-            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene),0, listOf(pd, pe, pm))
+            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene), 0, listOf(pd, pe, pm))
         }
 
-        if(exampleGene!=null){
+        if (exampleGene != null) {
             val pe = options.probUseExamples
             val pm = 1 - pe
-            return ChoiceGene(name, listOf(exampleGene, mainGene),0, listOf(pe, pm))
+            return ChoiceGene(name, listOf(exampleGene, mainGene), 0, listOf(pe, pm))
         }
 
-        if(defaultGene!=null){
+        if (defaultGene != null) {
             val pd = options.probUseDefault
             val pm = 1 - pd
-            return ChoiceGene(name, listOf(defaultGene, mainGene),0, listOf(pd, pm))
+            return ChoiceGene(name, listOf(defaultGene, mainGene), 0, listOf(pd, pm))
         }
 
         throw IllegalStateException("BUG: logic error, this code should never be reached")
