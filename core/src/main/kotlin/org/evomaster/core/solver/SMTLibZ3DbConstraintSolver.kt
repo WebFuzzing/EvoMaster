@@ -335,8 +335,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
             return fileName
         } catch (e: IOException) {
-            println("Failed to write SMTLib to file: ${e.message}")
-            return "error_saving_file_${System.currentTimeMillis()}.smt2"
+            throw RuntimeException("Failed to write SMTLib to file: ${e.message}")
         }
     }
 
