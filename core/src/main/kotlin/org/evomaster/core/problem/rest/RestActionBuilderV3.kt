@@ -691,7 +691,7 @@ object RestActionBuilderV3 {
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
-            return createObjectFromReference(name, schema.`$ref`, swagger, history, options, messages)
+            return createObjectFromReference(name, schema.`$ref`, swagger, history, options, examples, messages)
         }
 
 
@@ -950,7 +950,7 @@ object RestActionBuilderV3 {
                support additionalProperties with schema
             */
             if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, options = options, messages = messages)
+                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, options = options, examples = examples, messages = messages)
                 additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }else if(!additional.type.isNullOrBlank() || additional.types?.isNotEmpty() == true){
                 val valueTemplate = getGene("valueTemplate", additional, swagger, history, null, options = options, messages = messages)
@@ -1181,8 +1181,17 @@ object RestActionBuilderV3 {
                 val e = exampleValue.get(f.name)
                 if(e.isTextual){
                     EnumGene<String>(f.name, listOf(asRawString(e.textValue())), 0, false)
+                } else if(e.isObject) {
+                    val nested = f.getWrappedGene(ObjectGene::class.java)
+                    if(nested == null){
+                        LoggingUtil.uniqueWarn(log, "When building object example, cannot handle nested object due to gene type: ${f.javaClass}")
+                        f.copy()
+                    } else {
+                        duplicateObjectWithExampleFields(f.name, nested, e)
+                            ?: f.copy()
+                    }
                 } else {
-                    EnumGene<String>(f.name, listOf(""+e.numberValue()), 0, true)
+                    EnumGene<String>(f.name, listOf(""+e.toString()), 0, true)
                 }
             } else {
                 /*
@@ -1543,6 +1552,7 @@ object RestActionBuilderV3 {
                                           swagger: OpenAPI,
                                           history: Deque<String> = ArrayDeque(),
                                           options: Options,
+                                          examples: List<Any>,
                                           messages: MutableList<String>
     ): Gene {
 
@@ -1598,7 +1608,7 @@ object RestActionBuilderV3 {
 
         history.push(reference)
 
-        val gene = getGene(name, schema, swagger, history, getClassDef(reference), options, messages = messages)
+        val gene = getGene(name, schema, swagger, history, getClassDef(reference), options,  examples = examples, messages = messages)
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
@@ -1702,6 +1712,7 @@ object RestActionBuilderV3 {
                                 it.component1(),
                                 swagger,
                                 options = options,
+                                examples = listOf(),
                                 messages = mutableListOf()
                         )
                         when (model) {

@@ -591,7 +591,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
-            .filterIsInstance<EnumGene<*>>()
             .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
             .filter { it.staticCheckIfImpactPhenotype() }
             .map { it.getValueAsRawString() }
