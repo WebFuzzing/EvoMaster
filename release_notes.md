@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### New Features
+- Support for object in example/examples in OpenAPI schemas.
+
+
 # Version: 3.4.0
 
 ### New Features

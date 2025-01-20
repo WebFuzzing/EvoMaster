@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
@@ -17,7 +18,6 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -831,7 +831,10 @@ class RestActionBuilderV3Test{
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        val errors = RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        errors.forEach {
+            println(it)
+        }
 
         assertEquals(expectedNumberOfActions, actions.size)
 
@@ -1437,6 +1440,98 @@ class RestActionBuilderV3Test{
         assertEquals("42", output)
     }
 
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/swagger/artificial/defaultandexamples/examples_object_single_in.yaml",
+        "/swagger/artificial/defaultandexamples/examples_object_single_out.yaml",
+        "/swagger/artificial/defaultandexamples/default_object_single.yaml"
+    ])
+    fun testExampleObjectSingle(path: String){
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42Pos = false
+        var Bar42Neg = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar" && dto.extra != null){
+                if(dto.extra!! >= 0){
+                    Bar42Pos = true
+                } else {
+                    Bar42Neg = true
+                }
+            }
+
+            if(Bar42Pos && Bar42Neg){
+                break
+            }
+        }
+
+        assertTrue(Bar42Pos)
+        assertTrue(Bar42Neg)
+
+    }
+
+
+    @Test
+    fun testExampleObjectMulti(){
+        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_multi.yaml", 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42 = false
+        var Foo123 = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar"){
+                Bar42 = true
+            }
+            if(dto.id == 123 && dto.name == "Foo" && dto.extra == 77){
+                Foo123 = true
+            }
+
+            if(Bar42 && Foo123){
+                break
+            }
+        }
+
+        assertTrue(Bar42)
+        assertTrue(Foo123)
+    }
 
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
