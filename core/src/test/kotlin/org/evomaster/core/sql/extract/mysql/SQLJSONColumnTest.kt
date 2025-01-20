@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.mysql
 
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
@@ -22,7 +22,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testExtraction() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
@@ -36,7 +36,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertionEmptyObject() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
@@ -63,7 +63,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertionNonEmptyObject() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -107,7 +107,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertionRealValue() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -148,7 +148,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertionArrayValue() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]
@@ -195,7 +195,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertionNestedObject() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
 
         val tableDto = schema.tables[0]

@@ -87,4 +87,8 @@ where T : Individual {
             .map { it.code }
             .toSet()
     }
+
+    fun totalNumberOfDetectedFaults() : Int {
+        return DetectedFaultUtils.getDetectedFaults(this).size
+    }
 }

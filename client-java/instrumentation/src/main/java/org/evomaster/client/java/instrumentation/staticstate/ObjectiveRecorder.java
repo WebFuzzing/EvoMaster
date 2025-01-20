@@ -20,8 +20,11 @@ public class ObjectiveRecorder {
     /**
      * Specify whether the SUT is booting or not.
      * Targets during booting time are treated specially.
+     *
+     * Note: the default MUST be true, as might not be possible to modify this
+     * setting before the SUT is already started
      */
-    private static volatile boolean isBooting = false;
+    private static volatile boolean isBooting = true;
 
     /**
      * Key -> the unique id of the coverage objective
@@ -101,6 +104,7 @@ public class ObjectiveRecorder {
      * Reset all the static state in this class
      */
     public static void reset(boolean alsoAtLoadTime) {
+
         maxObjectiveCoverage.clear();
         idMapping.clear();
         reversedIdMapping.clear();
@@ -116,6 +120,7 @@ public class ObjectiveRecorder {
             allTargets.clear();
 
             bootTimeObjectiveInfo.reset();
+            isBooting = true;
         }
     }
 

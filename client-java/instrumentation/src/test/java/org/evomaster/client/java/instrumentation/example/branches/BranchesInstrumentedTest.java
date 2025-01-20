@@ -57,6 +57,7 @@ public class BranchesInstrumentedTest {
     @BeforeEach
     public void init(){
         ObjectiveRecorder.reset(false);
+        ObjectiveRecorder.setBooting(false);
         ExecutionTracer.reset();
         // force the state as executing action
         ExecutionTracer.setExecutingAction(true);

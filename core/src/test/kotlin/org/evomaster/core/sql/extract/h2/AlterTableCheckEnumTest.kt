@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -16,11 +16,11 @@ class AlterTableCheckEnumTest : ExtractTestBaseH2() {
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.toLowerCase())
+        assertEquals("db_test", schema.name.lowercase())
         assertEquals(DatabaseType.H2, schema.databaseType)
         assertTrue(schema.tables.any { it.name == "X" })
 

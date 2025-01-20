@@ -4,18 +4,18 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.RestLinkParameter
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
@@ -495,4 +495,105 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 //            partialOracles.addExpectations(call, lines, res, name, format)
 //        }
 //    }
+
+    override fun addTestCommentBlock(lines: Lines, test: TestCase) {
+
+        val ind = test.test
+        val ea = ind.evaluatedMainActions()
+
+        //calls
+        if(ea.isNotEmpty()){
+            lines.addBlockCommentLine("Calls:")
+            for(i in ea.indices){
+                val x = ea[i]
+                val status = (x.result as RestCallResult).getStatusCode()
+                val id = x.action.getName()
+                val prefix = if(ea.size == 1) "" else "${i+1} - "
+                lines.addBlockCommentLine("$prefix($status) $id")
+            }
+        }
+
+        //TODO move up when adding test comments to other problem types as well
+        //faults
+        val faults = ea.map { it.result }
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+        if(faults.isNotEmpty()){
+            if(faults.size == 1){
+                lines.addBlockCommentLine("Found 1 potential fault of type-code ${faults.first().category.code}")
+            } else {
+                val codes = faults.asSequence().map { it.category.code }.toSet().toList().sorted()
+                val codeInfo = if (codes.size == 1) {
+                    " of type-code ${codes[0]}"
+                } else {
+                    ". Type-codes: ${codes.joinToString(", ")}"
+                }
+                lines.addBlockCommentLine("Found ${faults.size} potential faults$codeInfo")
+            }
+        }
+
+        //examples
+        val examples = getAllUsedExamples(ind.individual as RestIndividual)
+            .toSet().sorted()
+        if(examples.isNotEmpty()){
+            if(examples.size == 1){
+                lines.addBlockCommentLine("Using 1 example:")
+            } else {
+                lines.addBlockCommentLine("Using ${examples.size} examples:")
+            }
+            examples.forEach {
+                lines.addBlockCommentLine("  $it")
+            }
+
+            /* Andrea: changed based on VW's feedback
+            val el = StringUtils.linesWithMaxLength(examples, ", ", config.maxLengthForCommentLine)
+            val opening = "Using ${examples.size} examples:"
+            if(el.size == 1){
+                lines.addBlockCommentLine("$opening ${el[0]}")
+            } else {
+                lines.addBlockCommentLine(opening)
+                lines.indented {
+                    el.forEach{lines.addBlockCommentLine(it)}
+                }
+            }
+             */
+        }
+
+        //links
+        val links = ea.mapNotNull { (it.action as RestCallAction).backwardLinkReference }
+            .filter { it.isInUse() }
+            .map { it.sourceLinkId }
+        if(links.isNotEmpty()){
+            if(links.size == 1){
+                lines.addBlockCommentLine("Followed 1 link:")
+            } else {
+                lines.addBlockCommentLine("Followed ${links.size} links:")
+            }
+            links.forEach {
+                lines.addBlockCommentLine("  $it")
+            }
+
+            /*
+            val ll = StringUtils.linesWithMaxLength(links, ", ", config.maxLengthForCommentLine)
+            val opening = "Followed ${links.size} links:"
+            if(ll.size == 1){
+                lines.addBlockCommentLine("$opening ${ll[0]}")
+            } else {
+                lines.addBlockCommentLine(opening)
+                lines.indented {
+                    ll.forEach{lines.addBlockCommentLine(it)}
+                }
+            }
+             */
+        }
+    }
+
+
+    private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
+        return ind.seeFullTreeGenes()
+            .filterIsInstance<EnumGene<*>>()
+            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
+            .filter { it.staticCheckIfImpactPhenotype() }
+            .map { it.getValueAsRawString() }
+    }
 }

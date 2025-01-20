@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.lang.reflect.Field;
 import java.util.Objects;
@@ -110,7 +111,10 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         String anyPositionRegexMatch = RegexSharedUtils.handlePartialMatch(regex);
         boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
         boolean matcherFindResult = caller.find();
-        assert (patternMatchResult == matcherFindResult);
+        if(patternMatchResult != matcherFindResult){
+            //TODO we should analyze those cases, and fix them
+            SimpleLogger.uniqueWarn("Failed to handle regex in Matcher.find(): " + regex);
+        }
         return matcherFindResult;
     }
 

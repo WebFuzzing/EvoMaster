@@ -216,7 +216,7 @@ class Archive<T> where T : Individual {
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
-        if(!config.isMIO()){
+        if(!config.isUsingAdvancedTechniques()){
             return  randomness.choose(toChooseFrom)
         }
 

@@ -118,7 +118,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
             val force = randomness.nextBoolean(config.probabilityAllOptionalsAreOnOrOff)
             if(force){
-                val on = randomness.nextBoolean(0.8)
+                val on = randomness.nextBoolean(config.probabilityOfOnVsOffInAllOptionals)
                 allOptionals
                     .filter { it.selectable }
                     .forEach { it.isActive = on }

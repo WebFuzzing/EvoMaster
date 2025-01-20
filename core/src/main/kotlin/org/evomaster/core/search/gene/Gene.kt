@@ -300,13 +300,20 @@ abstract class Gene(
      * Wrapper genes, and only those, will override this method to check their children
      */
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    open  fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T : K{
+    open  fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean = false) : T?  where T : Gene, T : K{
 
-        if(this.javaClass == klass){
+        if(matchingClass(klass,strict)){
             return this as T
         }
 
         return null
+    }
+
+    protected fun matchingClass(klass: Class<*>, strict: Boolean) : Boolean{
+        if(strict){
+           return this.javaClass == klass
+        }
+        return klass.isAssignableFrom(this.javaClass)
     }
 
     /**

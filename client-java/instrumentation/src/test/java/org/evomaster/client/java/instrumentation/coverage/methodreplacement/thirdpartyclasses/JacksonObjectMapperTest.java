@@ -7,7 +7,9 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -17,6 +19,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JacksonObjectMapperTest {
+
+    @BeforeEach
+    public void init(){
+        ObjectiveRecorder.reset(false);
+        ObjectiveRecorder.setBooting(false);
+        ExecutionTracer.reset();
+        // force the state as executing action
+        ExecutionTracer.setExecutingAction(true);
+        assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
+    }
 
     @Test
     public void testReadValue() throws Throwable {

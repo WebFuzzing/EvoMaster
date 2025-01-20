@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RPCTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -21,7 +22,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 /**
  * created by manzhang on 2021/11/26
  */
-class RPCModule : AbstractModule(){
+class RPCModule : EnterpriseModule(){
 
     override fun configure() {
         bind(object : TypeLiteral<Sampler<RPCIndividual>>() {})

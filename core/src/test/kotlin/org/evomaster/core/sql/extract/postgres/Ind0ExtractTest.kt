@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -22,11 +22,11 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
-        assertEquals("public", schema.name.lowercase())
+        assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
         assertTrue(schema.tables.any { it.name == "x" })
         assertTrue(schema.tables.any { it.name == "y" })
@@ -55,7 +55,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testDateGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("expr_date"))
@@ -67,7 +67,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testUUIDGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("id"))
         val genes = actions[0].seeTopGenes()
@@ -76,7 +76,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testXMLGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
@@ -88,7 +88,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testJSONGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("jsonData"))
@@ -100,7 +100,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testSimilarToGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("w_id"))
@@ -112,7 +112,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
     @Test
     fun testLikeGeneCreation() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("f_id"))

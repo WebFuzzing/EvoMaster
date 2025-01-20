@@ -20,13 +20,16 @@ import org.junit.jupiter.api.Test
 
 class RandomWalkSearchTest {
 
-    val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
-            .build().createInjector()
+
 
     @Test
     fun testRandomWalkSearch(){
         TestUtils.handleFlaky {
+
+            val injector: Injector = LifecycleInjector.builder()
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                .build().createInjector()
+
             val rw = injector.getInstance(Key.get(
                     object : TypeLiteral<RandomWalkAlgorithm<OneMaxIndividual>>() {}))
 

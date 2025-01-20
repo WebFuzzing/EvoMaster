@@ -377,6 +377,7 @@ public class EMController {
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
+                        noKillSwitch(() -> sutController.bootingSut(false));
                     }
 
                     /*

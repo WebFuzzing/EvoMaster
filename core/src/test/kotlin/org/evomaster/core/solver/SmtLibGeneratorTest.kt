@@ -3,7 +3,7 @@ package org.evomaster.core.solver
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
@@ -167,7 +167,7 @@ class SmtLibGeneratorTest {
                     "ALTER TABLE users ADD UNIQUE (document);\n" +
                     "CREATE TABLE products(price int not null, min_price int not null, stock int not null, user_id bigint not null);\n" +
                     "ALTER TABLE products add constraint userIdKey foreign key (user_id) REFERENCES users;\n")
-            val schemaDto = SchemaExtractor.extract(connection)
+            val schemaDto = DbInfoExtractor.extract(connection)
 
             generator = SmtLibGenerator(schemaDto, 2)
         }

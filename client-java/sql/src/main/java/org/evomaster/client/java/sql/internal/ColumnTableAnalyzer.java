@@ -30,7 +30,7 @@ public class ColumnTableAnalyzer {
 
         Table table = stmt.getTable();
         if(table != null){
-            set.add(table.getName());
+            set.add(table.getFullyQualifiedName());
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
             throw new IllegalArgumentException("Cannot handle delete: " + delete);
@@ -130,7 +130,7 @@ public class ColumnTableAnalyzer {
     }
 
     private static void handleTable(Map<String, Set<String>> map, Table table){
-        Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
+        Set<String> columns = map.computeIfAbsent(table.getFullyQualifiedName(), k -> new HashSet<>());
         //TODO: should check actual fields... would likely need to pass SelectBody as input as well
         if(! columns.contains("*")) {
             columns.add("*");

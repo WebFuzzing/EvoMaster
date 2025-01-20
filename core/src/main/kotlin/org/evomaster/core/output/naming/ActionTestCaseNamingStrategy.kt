@@ -31,6 +31,7 @@ abstract class ActionTestCaseNamingStrategy(
     protected val with = "with"
     protected val param = "Param"
     protected val queryParam = "query$param"
+    protected val and = "and"
 
     protected fun formatName(nameTokens: List<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"
