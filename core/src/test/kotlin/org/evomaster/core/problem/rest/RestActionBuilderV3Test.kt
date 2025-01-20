@@ -1491,6 +1491,48 @@ class RestActionBuilderV3Test{
     }
 
 
+    @Test
+    fun testExampleObjectMulti(){
+        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_multi.yaml", 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42 = false
+        var Foo123 = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar"){
+                Bar42 = true
+            }
+            if(dto.id == 123 && dto.name == "Foo" && dto.extra == 77){
+                Foo123 = true
+            }
+
+            if(Bar42 && Foo123){
+                break
+            }
+        }
+
+        assertTrue(Bar42)
+        assertTrue(Foo123)
+    }
+
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
         "/swagger/artificial/defaultandexamples/examples_string_out.yml"])

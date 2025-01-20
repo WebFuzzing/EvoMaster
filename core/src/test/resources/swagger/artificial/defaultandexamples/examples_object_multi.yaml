@@ -1,0 +1,37 @@
+---
+openapi: 3.0.3
+info:
+  title: example_object_multi
+  description: example_object_multi
+  version: 1.0.0
+servers:
+  - url: "/v2"
+paths:
+  "/foo":
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                extra:
+                  type: integer
+            examples:
+              Bar:
+                value:
+                  id: 42
+                  name: Bar
+              Foo:
+                value:
+                  id: 123
+                  name: Foo
+                  extra: 77
+      responses:
+        '200':
+          description: OK
