@@ -1,0 +1,93 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/bbexampleobject": {
+      "post": {
+        "tags": [
+          "bb-example-object-application"
+        ],
+        "operationId": "post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExampleObjectDto"
+              },
+              "example": {
+                "id": "Foo",
+                "b": true,
+                "x": 42,
+                "y": 12.3,
+                "other": {
+                  "name": "Bar",
+                  "x": 88
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ExampleObjectDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "x": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "b": {
+            "type": "boolean"
+          },
+          "y": {
+            "type": "number",
+            "format": "double"
+          },
+          "other": {
+            "$ref": "#/components/schemas/OtherDto"
+          }
+        }
+      },
+      "OtherDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "x": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      }
+    }
+  }
+}
