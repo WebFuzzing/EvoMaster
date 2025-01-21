@@ -25,7 +25,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
-* G. Fraase, A. Arcuri.
+* G. Fraser, A. Arcuri.
   *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
   IEEE Transactions on Software Engineering (TSE).
   [[PDF](publications/2025_tse.pdf)]
