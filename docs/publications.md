@@ -24,6 +24,12 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2025
+
+* G. Fraase, A. Arcuri.
+  *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
+  IEEE Transactions on Software Engineering (TSE).
+  [[PDF](publications/2025_tse.pdf)]
+
 * A. Arcuri, A. Poth, O. Rrjolli.
   *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
