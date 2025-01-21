@@ -43,7 +43,9 @@ import kotlin.io.path.exists
  * to satisfy the query.
  */
 class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
-    private val resourcesFolder = System.getProperty("java.io.tmpdir") + "/target/tmp"
+
+    // Create a temporary directory for tests
+    var resourcesFolder = Files.createTempDirectory("tmp").toString()
 
     private lateinit var executor: Z3DockerExecutor
     private var idCounter: Long = 0L
