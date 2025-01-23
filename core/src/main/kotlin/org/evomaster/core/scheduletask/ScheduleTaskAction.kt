@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.scheduletask
+package org.evomaster.core.scheduletask
 
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rpc.param.RPCParam

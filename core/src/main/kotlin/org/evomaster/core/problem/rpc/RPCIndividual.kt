@@ -12,7 +12,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene

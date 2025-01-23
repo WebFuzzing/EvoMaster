@@ -13,6 +13,8 @@ import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskActionResult
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -117,6 +119,15 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 //            }
 //        }
 //    }
+
+    private fun executeScheduleTasks(tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
+        searchTimeController.waitForRateLimiter()
+
+        val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
+        val taskDtos = tasks.map { rpcHandler.transformScheduleTaskInvocationDto(it) }
+
+
+    }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
 

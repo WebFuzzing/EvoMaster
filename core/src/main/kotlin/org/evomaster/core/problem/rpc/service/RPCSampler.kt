@@ -8,7 +8,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
-import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
@@ -109,7 +109,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
      * sample a schedule task action from [scheduleActionCluster] at random
      * @param noSeedProbability specifies a probability which does not apply seeded one
      */
-    fun sampleRandomScheduleTaskAction(noSeedProbability: Double = 0.05) : ScheduleTaskAction{
+    fun sampleRandomScheduleTaskAction(noSeedProbability: Double = 0.05) : ScheduleTaskAction {
         val action = randomness.choose(scheduleActionCluster).copy() as ScheduleTaskAction
         action.doInitialize(randomness)
         rpcHandler.scheduleActionWithRandomSeeded(action, noSeedProbability)

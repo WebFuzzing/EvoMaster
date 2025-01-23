@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.scheduletask
+package org.evomaster.core.scheduletask
 
 import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.problem.rpc.RPCCallResult

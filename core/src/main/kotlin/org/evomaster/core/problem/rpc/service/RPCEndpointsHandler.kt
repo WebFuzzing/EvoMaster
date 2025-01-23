@@ -31,8 +31,8 @@ import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
-import org.evomaster.core.problem.scheduletask.ScheduleTaskAction
-import org.evomaster.core.problem.scheduletask.ScheduleTaskAction.Companion.getScheduleTaskActionId
+import org.evomaster.core.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction.Companion.getScheduleTaskActionId
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -294,7 +294,7 @@ class RPCEndpointsHandler {
         cluster[scheduleTaskAction.taskId] = scheduleTaskAction
     }
 
-    private fun handleScheduleTask(dto: ScheduleTaskInvocationDto) : ScheduleTaskAction{
+    private fun handleScheduleTask(dto: ScheduleTaskInvocationDto) : ScheduleTaskAction {
         val params : MutableList<Param> = if (dto.requestParams == null && dto.requestParamsAsStrings == null) {
             mutableListOf()
         } else if (dto.requestParams == null && dto.requestParamsAsStrings != null){
@@ -455,17 +455,6 @@ class RPCEndpointsHandler {
         }
     }
 
-    fun transformScheduleTaskDto(action: ScheduleTaskAction) : ScheduleTaskInvocationDto{
-        return ScheduleTaskInvocationDto().apply {
-            appKey = action.immutableExtraInfo?.get("appKey")
-            taskName = action.taskName
-            requestParamsAsStrings = if (action.parameters.isEmpty()) null else TODO()
-            scheduleTaskType = action.immutableExtraInfo?.get("scheduleTaskType")
-            descriptiveInfo = action.immutableExtraInfo?.get("descriptiveInfo")
-            hostName = action.immutableExtraInfo?.get("hostName")
-        }
-    }
-
     /**
      * cover [action] to a dto for handling mock RPC external services at the driver side, eg, customized method
      */
@@ -592,7 +581,7 @@ class RPCEndpointsHandler {
      * @param noSeedProbability  is a probability to not apply any seed
      * @return an action with/without seed
      */
-    fun scheduleActionWithRandomSeeded(action: ScheduleTaskAction, noSeedProbability: Double): ScheduleTaskAction{
+    fun scheduleActionWithRandomSeeded(action: ScheduleTaskAction, noSeedProbability: Double): ScheduleTaskAction {
         if (action.seeTopGenes().isEmpty()) return action
         /*
             TODO Man need to check
