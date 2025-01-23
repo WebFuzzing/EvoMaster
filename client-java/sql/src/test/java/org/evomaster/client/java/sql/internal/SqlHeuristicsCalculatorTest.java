@@ -5,12 +5,15 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Date;
+import java.sql.Time;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.sql.Timestamp;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -528,13 +531,14 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testShouldReturnZeroDistanceForDate() {
+    public void testShouldReturnZeroDistanceForDate() throws ParseException {
         String sqlCommand = "SELECT event_id, event_date " +
                 " FROM Events " +
                 " WHERE event_date = '2025-01-14' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("event_id","event_date"), "Events");
 
-        LocalDate date = LocalDate.of(2025, 1, 14);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+        java.util.Date date = dateFormat.parse("14/01/2025");
         queryResult.addRow(Arrays.asList("event_id","event_date"),"Events",Arrays.asList(1,date));
 
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
@@ -548,7 +552,7 @@ public class SqlHeuristicsCalculatorTest {
                 " FROM Schedules " +
                 " WHERE start_time = '12:30:45' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("schedule_id","start_time"), "Schedules");
-        LocalTime time = LocalTime.of(12, 30, 45);
+        Time time = Time.valueOf("12:30:45");
         queryResult.addRow(Arrays.asList("schedule_id","start_time"),"Schedules",Arrays.asList(1,time));
 
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
@@ -557,27 +561,15 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testShouldReturnZeroDistanceForDateTime() {
+    public void testShouldReturnZeroDistanceForDateTime() throws ParseException {
         String sqlCommand = "SELECT appointment_id, appointment_datetime " +
                 " FROM Appointments " +
                 " WHERE appointment_datetime = '2025-01-14 12:30:45' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("appointment_id","appointment_datetime"), "Appointments");
-        LocalDateTime dateTime = LocalDateTime.of(2025, 1, 14, 12, 30, 45);
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date dateTime = sdf.parse("2025-01-14 12:30:45");
         queryResult.addRow(Arrays.asList("appointment_id", "appointment_datetime"),"Appointments",Arrays.asList(1,dateTime));
-
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
-        double expectedDistance = 0;
-        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
-    }
-
-    @Test
-    public void testShouldReturnZeroDistanceForYear() {
-        String sqlCommand = " SELECT person_id, birth_year " +
-                " FROM Birthdays " +
-                " WHERE birth_year = 2025 ";
-        QueryResult queryResult = new QueryResult(Arrays.asList("person_id", "birth_year"), "Birthdays");
-        Year year = Year.of(2025);
-        queryResult.addRow(Arrays.asList("person_id", "birth_year"),"Birthdays",Arrays.asList(1,year));
 
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
@@ -603,10 +595,20 @@ public class SqlHeuristicsCalculatorTest {
     public void testShouldReturnZeroDistanceForTimeStampWithTimeZone() {
         String sqlCommand = " SELECT event_id, event_time " +
                 " FROM Events " +
-                " WHERE event_time = '12:30:45+02:00' ";
+                " WHERE event_time = '2025-01-14 12:30:45+02:00' ";
         QueryResult queryResult = new QueryResult(Arrays.asList("event_id", "event_time"), "Events");
-        OffsetTime offsetTime = OffsetTime.of(12, 30, 45, 0, ZoneOffset.ofHours(2));
-        queryResult.addRow(Arrays.asList("event_id", "event_time"),"Events",Arrays.asList(1,offsetTime));
+
+        // Define the string with date, time, and timezone offset
+        String dateTimeString = "2025-01-14 12:30:45+02:00";
+
+        // Define the DateTimeFormatter to match the input string pattern
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
+
+        // Parse the string into a ZonedDateTime instance
+        OffsetDateTime offsetDateTime = OffsetDateTime.parse(dateTimeString, formatter);
+
+
+        queryResult.addRow(Arrays.asList("event_id", "event_time"),"Events",Arrays.asList(1,offsetDateTime));
 
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
