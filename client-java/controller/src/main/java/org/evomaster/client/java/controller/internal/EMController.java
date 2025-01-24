@@ -616,13 +616,16 @@ public class EMController {
             ScheduleTaskInvocationsDto command,
             @QueryParam("killSwitch") @DefaultValue("false")
             boolean killSwitch,
+            @QueryParam("queryFromDatabase")
+            @DefaultValue("true")
+            boolean queryFromDatabase,
             @Context HttpServletRequest httpServletRequest) {
 
         ScheduleTaskInvocationsResult responseDto = new ScheduleTaskInvocationsResult();
 
         if (command.tasks != null && !command.tasks.isEmpty()){ // handle schedule task execution
             try{
-                noKillSwitchForceCheck(() -> sutController.invokeScheduleTasks(command.tasks, responseDto));
+                noKillSwitchForceCheck(() -> sutController.invokeScheduleTasks(command.tasks, responseDto, queryFromDatabase));
             } catch (Exception e) {
                 String msg = "Thrown exception in executing schedule task: " + e.getMessage();
                 SimpleLogger.error(msg, e);

@@ -62,12 +62,12 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             // handle schedule task
             val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
             if (scheduleTasks.isNotEmpty()){
-                val ok = executeScheduleTasks(individual.seeScheduleTaskActions(), actionResults)
+                val ok = executeScheduleTasks(0, individual.seeScheduleTaskActions(), actionResults)
                 if (!ok) return@loop
             }
 
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
-                val ok = executeNewAction(action, index, actionResults)
+                val ok = executeNewAction(action, scheduleTasks.size + index, actionResults)
                 if (!ok) return@loop
             }
         }
@@ -131,12 +131,15 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 //        }
 //    }
 
-    private fun executeScheduleTasks(tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
+    private fun executeScheduleTasks(firstIndex : Int, tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
         searchTimeController.waitForRateLimiter()
 
         val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
         actionResults.addAll(taskResults)
-        val taskDtos = tasks.map { rpcHandler.transformScheduleTaskInvocationDto(it) }
+        val taskDtos = tasks.mapIndexed { index, scheduleTaskAction -> rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction).apply {
+            this.index = firstIndex + index
+        }
+        }
         val command = ScheduleTaskInvocationsDto()
         command.tasks = taskDtos
         val response = rc.invokeScheduleTasksAndGetResults(command)

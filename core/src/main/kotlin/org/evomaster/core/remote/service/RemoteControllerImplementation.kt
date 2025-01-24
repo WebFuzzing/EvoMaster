@@ -449,6 +449,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                 .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
+                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                 .request()
                 .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
         }

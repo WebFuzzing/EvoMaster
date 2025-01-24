@@ -13,6 +13,8 @@ public class ActionDto {
 
     /**
      * The index of this action in the test.
+     * note that schedule task is executed before this action
+     *
      * Eg, in a test with 10 indices, the index would be
      * between 0 and 9
      */

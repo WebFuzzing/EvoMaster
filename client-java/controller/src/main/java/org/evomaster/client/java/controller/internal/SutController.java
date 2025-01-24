@@ -929,6 +929,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         newActionSpecificHandler(dto);
     }
 
+
+    public final void newScheduleAction(ScheduleTaskInvocationDto dto, boolean queryFromDatabase) {
+
+        if (dto.index > extras.size()) {
+            extras.add(computeExtraHeuristics(queryFromDatabase));
+        }
+        this.actionIndex = dto.index;
+
+        resetExtraHeuristics();
+    }
+
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
 
         LocalAuthSetupSchema endpointSchema = new LocalAuthSetupSchema();
@@ -939,9 +950,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
-    public final void invokeScheduleTasks(List<ScheduleTaskInvocationDto> dtos, ScheduleTaskInvocationsResult responseDto){
+    public final void invokeScheduleTasks(List<ScheduleTaskInvocationDto> dtos, ScheduleTaskInvocationsResult responseDto, boolean queryFromDatabase){
         for (ScheduleTaskInvocationDto dto: dtos){
             try{
+                newScheduleAction(dto, queryFromDatabase);
                 invokeScheduleTask(dto, responseDto);
             }catch (Exception e){
                 SimpleLogger.warn(e.getMessage());

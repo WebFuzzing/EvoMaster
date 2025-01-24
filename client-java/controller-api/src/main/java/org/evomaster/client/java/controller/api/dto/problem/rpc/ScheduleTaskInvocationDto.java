@@ -6,6 +6,11 @@ public class ScheduleTaskInvocationDto {
 
 
     /**
+     * The index of this schedule action in the test.
+     */
+    public Integer index = null;
+
+    /**
      * name for the schedule task
      */
     public String taskName;
