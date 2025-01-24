@@ -144,7 +144,7 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy)
+                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"
@@ -380,6 +380,7 @@ class TestSuiteWriter {
         if (format.isJava()) {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
+            addImport("java.util.Arrays", lines)
         }
 
         if (format.isJavaOrKotlin()) {
@@ -421,8 +422,6 @@ class TestSuiteWriter {
                 addImport(MongoInsertionDto::class.qualifiedName!!, lines)
             }
 
-
-            // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
@@ -440,16 +439,6 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
             }
-
-//            if (config.expectationsActive) {
-//                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
-//                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-//
-//                if (useRestAssured()) {
-//                    addImport("io.restassured.path.json.JsonPath", lines)
-//                }
-//                addImport("java.util.Arrays", lines)
-//            }
 
             if (config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 addImport("org.testcontainers.containers.BrowserWebDriverContainer", lines)

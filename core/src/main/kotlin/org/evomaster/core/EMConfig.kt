@@ -1,9 +1,6 @@
 package org.evomaster.core
 
-import joptsimple.BuiltinHelpFormatter
-import joptsimple.OptionDescriptor
-import joptsimple.OptionParser
-import joptsimple.OptionSet
+import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -15,6 +12,7 @@ import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
+import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -85,6 +83,8 @@ class EMConfig {
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
         private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+
+        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -585,6 +585,21 @@ class EMConfig {
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
         }
+
+        if(blackBox){
+            if(sutControllerHost != ControllerConstants.DEFAULT_CONTROLLER_HOST){
+                throw ConfigProblemException("Changing 'sutControllerHost' has no meaning in black-box testing, as no controller is used")
+            }
+            if(!overrideOpenAPIUrl.isNullOrBlank()){
+                throw ConfigProblemException("Changing 'overrideOpenAPIUrl' has no meaning in black-box testing, as no controller is used")
+            }
+        }
+        if(dockerLocalhost && !runningInDocker){
+            throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
+        }
+        if(writeWFCReport && !createTests){
+            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -696,8 +711,11 @@ class EMConfig {
             return
         }
 
-        val opt = options.valueOf(m.name)?.toString()
-                ?: throw ConfigProblemException("Value not found for property ${m.name}")
+        val opt = try{
+            options.valueOf(m.name)?.toString()
+        } catch (e: OptionException){
+          throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
+        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
 
         updateValue(opt, m)
     }
@@ -749,7 +767,7 @@ class EMConfig {
         throw IllegalArgumentException("Invalid boolean value: $s")
     }
 
-    fun shouldGenerateSqlData() = isMIO() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
+    fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
@@ -1048,8 +1066,42 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(6.0)
+    @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
+
+
+    @Important(6.1)
+    @Cfg("TCP port of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
+
+
+    @Important(7.0)
+    @Url
+    @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
+        " This option is only needed for white-box testing.")
+    var overrideOpenAPIUrl = ""
 
     //-------- other options -------------
+
+    @Cfg("Inform EvoMaster process that it is running inside Docker." +
+            " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
+    var runningInDocker = false
+
+    /**
+     * TODO this is currently not implemented.
+     * Even if did, there would still be major issues with handling WireMock.
+     * Until we can think of a good solution there, no point in implementing this.
+     */
+    @Experimental
+    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
+            " Only needed when running EvoMaster inside Docker.")
+    var dockerLocalhost = false
+
 
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
@@ -1062,7 +1114,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1137,14 +1189,6 @@ class EMConfig {
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
 
-    @Cfg("TCP port of where the SUT REST controller is listening on")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
-
-    @Cfg("Host name or IP address of where the SUT REST controller is listening on")
-    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
-
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)
     var archiveTargetLimit = 10
@@ -1203,6 +1247,11 @@ class EMConfig {
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
     @FilePath
     var statisticsFile = "statistics.csv"
+
+
+    @Experimental
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
+    var writeWFCReport = false
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
@@ -1397,8 +1446,25 @@ class EMConfig {
         /**
          * save covered targets with the specified target format and tests with the specified test format
          */
-        TARGET_TEST_IND
+        TARGET_TEST_IND,
+        /**
+         * save heuristic values for each target as csv file
+         */
+        TARGET_HEURISTIC
     }
+
+    @Experimental
+    @Cfg("Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC.")
+    @FilePath
+    var targetHeuristicsFile = "targets.csv"
+
+    @Experimental
+    @Cfg("Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC.")
+    var appendToTargetHeuristicsFile = false
+
+    @Experimental
+    @Cfg("Prefix specifying which targets to record. Each target can be separated by a comma, such as 'Branch,Line,Success, etc'. It is only used when processFormat is TARGET_HEURISTIC.")
+    var saveTargetHeuristicsPrefixes = "Branch"
 
     @Debug
     @Cfg("Specify a folder to save results when a search monitor is enabled")
@@ -1611,6 +1677,10 @@ class EMConfig {
          */
         ADAPTIVE_WITH_IMPACT
     }
+
+    @Cfg("Whether or not to enable a structure mutation for mutating individuals." +
+            " This feature can only be activated for algorithms that support structural mutation, such as MIO or RW.")
+    var enableStructureMutation = true
 
     @Experimental
     @Cfg("Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources")
@@ -1889,6 +1959,9 @@ class EMConfig {
 
     @Cfg("Whether input tracking is used on sampling time, besides mutation time")
     var taintOnSampling = true
+
+    @Cfg("Apply taint analysis to handle special cases of Maps and Arrays")
+    var taintAnalysisForMapsAndArrays = true
 
     @Probability
     @Experimental
@@ -2363,6 +2436,32 @@ class EMConfig {
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
+    @Experimental
+    @Cfg("Specify if true boolean query parameters are included in the test case name." +
+            " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
+    var nameWithQueryParameters = false
+
+    @Cfg("Specify the test case sorting strategy")
+    var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Probability(true)
+    @Cfg("When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF." +
+            " The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals.")
+    var probabilityAllOptionalsAreOnOrOff = 0.0
+
+    @Experimental
+    @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
+            " instead of OFF.")
+    val probabilityOfOnVsOffInAllOptionals = 0.8
+
+    @Cfg("Add summary comments on each test")
+    var addTestComments = true
+
+    @Min(1.0)
+    @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
+            " on a single line")
+    var maxLengthForCommentLine = 80
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
@@ -2372,22 +2471,22 @@ class EMConfig {
         }
     }
 
-    fun trackingEnabled() = isMIO() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
+    fun trackingEnabled() = isUsingAdvancedTechniques() && (enableTrackEvaluatedIndividual || enableTrackIndividual)
 
     /**
      * impact info can be collected when archive-based solution is enabled or doCollectImpact
      */
-    fun isEnabledImpactCollection() = isMIO() && doCollectImpact || isEnabledArchiveGeneSelection()
+    fun isEnabledImpactCollection() = isUsingAdvancedTechniques() && doCollectImpact || isEnabledArchiveGeneSelection()
 
     /**
      * @return whether archive-based gene selection is enabled
      */
-    fun isEnabledArchiveGeneSelection() = isMIO() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
+    fun isEnabledArchiveGeneSelection() = isUsingAdvancedTechniques() && probOfArchiveMutation > 0.0 && adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun isEnabledArchiveGeneMutation() = isMIO() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
+    fun isEnabledArchiveGeneMutation() = isUsingAdvancedTechniques() && archiveGeneMutation != ArchiveGeneMutation.NONE && probOfArchiveMutation > 0.0
 
     fun isEnabledArchiveSolution() = isEnabledArchiveGeneMutation() || isEnabledArchiveGeneSelection()
 
@@ -2395,7 +2494,7 @@ class EMConfig {
     /**
      * @return whether enable resource-based method
      */
-    fun isEnabledResourceStrategy() = isMIO() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
+    fun isEnabledResourceStrategy() = isUsingAdvancedTechniques() && resourceSampleStrategy != ResourceSamplingStrategy.NONE
 
     /**
      * @return whether enable resource-dependency based method
@@ -2434,27 +2533,31 @@ class EMConfig {
         return IdMapper.ALL_ACCEPTED_OBJECTIVE_PREFIXES.filter { excluded.contains(it.lowercase()) }
     }
 
-    fun isEnabledMutatingResponsesBasedOnActualResponse() = isMIO() && (probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledMutatingResponsesBasedOnActualResponse() = isUsingAdvancedTechniques() && (probOfMutatingResponsesBasedOnActualResponse > 0)
 
-    fun isEnabledHarvestingActualResponse(): Boolean = isMIO() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
+    fun isEnabledHarvestingActualResponse(): Boolean = isUsingAdvancedTechniques() && (probOfHarvestingResponsesFromActualExternalServices > 0 || probOfMutatingResponsesBasedOnActualResponse > 0)
 
     /**
-     * Check if the used algorithm is MIO.
      * MIO is the default search algorithm in EM for white-box testing.
      * Many techniques in EM are defined only for MIO, ie most improvements in EM are
      * done as an extension of MIO.
+     * Other search algorithms might use these advanced techniques, but would require non-standard exceptions.
+     *
      */
-    fun isMIO() = algorithm == Algorithm.MIO || (algorithm == Algorithm.DEFAULT && !blackBox)
+    fun isUsingAdvancedTechniques() =
+        algorithm == Algorithm.MIO
+                || algorithm == Algorithm.RW // Random Walk is just used to study Fitness Landscape in MIO
+                || (algorithm == Algorithm.DEFAULT && !blackBox)
 
-    fun isEnabledTaintAnalysis() = isMIO() && baseTaintAnalysisProbability > 0
+    fun isEnabledTaintAnalysis() = isUsingAdvancedTechniques() && baseTaintAnalysisProbability > 0
 
-    fun isEnabledSmartSampling() = (isMIO() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
+    fun isEnabledSmartSampling() = (isUsingAdvancedTechniques() || algorithm == Algorithm.SMARTS) && probOfSmartSampling > 0
 
-    fun isEnabledWeightBasedMutation() = isMIO() && weightBasedMutationRate
+    fun isEnabledWeightBasedMutation() = isUsingAdvancedTechniques() && weightBasedMutationRate
 
-    fun isEnabledInitializationStructureMutation() = isMIO() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
+    fun isEnabledInitializationStructureMutation() = isUsingAdvancedTechniques() && initStructureMutationProbability > 0 && maxSizeOfMutatingInitAction > 0
 
-    fun isEnabledResourceSizeHandling() = isMIO() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
+    fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 }

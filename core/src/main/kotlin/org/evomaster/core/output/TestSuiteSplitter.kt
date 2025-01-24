@@ -78,8 +78,7 @@ object TestSuiteSplitter {
      * the original [Solution]
      */
     fun split(solution: Solution<*>,
-              config: EMConfig,
-              oracles: PartialOracles = PartialOracles()
+              config: EMConfig
     ): SplitResult {
 
         // TODO splitting support for other problem types

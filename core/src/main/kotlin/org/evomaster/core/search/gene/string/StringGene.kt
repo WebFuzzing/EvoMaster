@@ -46,7 +46,7 @@ import kotlin.math.min
 
 class StringGene(
         name: String,
-        var value: String = "foo",
+        var value: String = DEFAULT_VALUE,
         /** Inclusive */
         val minLength: Int = 0,
         /**
@@ -76,6 +76,9 @@ class StringGene(
         if (minLength>maxLength) {
             throw IllegalArgumentException("Cannot create string gene ${this.name} with minimum length ${this.minLength} and maximum length ${this.maxLength}")
         }
+        if(value == DEFAULT_VALUE && value.length > maxLength){
+            value = value.substring(0, maxLength)
+        }
     }
 
     companion object {
@@ -83,6 +86,8 @@ class StringGene(
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
 
         private const val PROB_CHANGE_SPEC = 0.1
+
+        private const val DEFAULT_VALUE = "foo"
     }
 
     private var validChar: String? = null
@@ -169,10 +174,12 @@ class StringGene(
     }
 
     override fun isMutable(): Boolean {
-        if (getSpecializationGene() != null) {
-            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
-        }
-        return true
+        //a specialization can always be undone... so previous check was wrong
+//        if (getSpecializationGene() != null) {
+//            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
+//        }
+//        return true
+        return maxLength > 0 //otherwise there is only 1 value, the empty string ""
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -659,22 +666,31 @@ class StringGene(
             toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_OBJECT }
                     .forEach {
                         val schema = it.value
-                        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
-                        val ref = t.subSequence(1,t.length-1).toString()
-                        val obj = RestActionBuilderV3.createGeneForDTO(ref, schema, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+                        val obj = createGeneFromSchemaRef(schema, enableConstraintHandling)
                         toAddGenes.add(obj)
                     }
             log.trace("JSON_OBJECT, added specification size: {}", toAddGenes.size)
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_ARRAY }){
-            toAddGenes.add(TaintedArrayGene(name,TaintInputName.getTaintName(StaticCounter.getAndIncrease())))
-            log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+            toAddSpecs.filter { it.stringSpecialization == StringSpecialization.JSON_ARRAY }
+                .forEach {
+                    val schema = it.value
+                    val obj = if(schema != null) {
+                        val template = createGeneFromSchemaRef(schema, enableConstraintHandling)
+                        ArrayGene(name, template)
+                    } else {
+                        //no info on the type of the array. we will find out dynamically with taint analysis
+                        TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+                    }
+                    toAddGenes.add(obj)
+                    log.trace("JSON_ARRAY, added specification size: {}", toAddGenes.size)
+                }
         }
 
         if(toAddSpecs.any { it.stringSpecialization == StringSpecialization.JSON_MAP }){
 
-            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.5, 0.0) ?: 0.1
+            val pempty = getSearchGlobalState()?.apc?.getExploratoryValue(0.8, 0.1) ?: 0.1
 
             val mapGene = if(getSearchGlobalState()?.randomness?.nextBoolean(pempty) != false){
                 FixedMapGene("template", StringGene("keyTemplate"), StringGene("valueTemplate"), maxSize = 0)
@@ -726,6 +742,17 @@ class StringGene(
             val state = getSearchGlobalState()!! //cannot be null when this method is called
             state.spa.updateStats(name, toAddSpecs)
         }
+    }
+
+    private fun createGeneFromSchemaRef(schema: String, enableConstraintHandling: Boolean): Gene {
+        val t = schema.subSequence(0, schema.indexOf(":")).trim().toString()
+        val ref = t.subSequence(1, t.length - 1).toString()
+        val obj = RestActionBuilderV3.createGeneForDTO(
+            ref,
+            schema,
+            RestActionBuilderV3.Options(enableConstraintHandling = enableConstraintHandling)
+        )
+        return obj
     }
 
     private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {

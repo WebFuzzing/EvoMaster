@@ -35,7 +35,9 @@ class DummyController: RemoteController {
         TODO("Not yet implemented")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
+    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean,
+                                fullyCovered: Boolean,
+                                descriptiveIds: Boolean,): TestResultsDto? {
         TODO("Not yet implemented")
     }
 

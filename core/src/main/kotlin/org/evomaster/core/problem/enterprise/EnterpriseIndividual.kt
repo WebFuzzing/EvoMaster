@@ -10,6 +10,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
@@ -236,8 +237,7 @@ abstract class EnterpriseIndividual(
         } else{
             val base = groupsView()!!.startIndexForGroupInsertionInclusive(main)
             val position = base + relativePosition
-            //TODO is this correct??? adding action instead of g
-            addChildToGroup(position, action, main)
+            addChildToGroup(position, g, main)
         }
     }
 
@@ -267,8 +267,6 @@ abstract class EnterpriseIndividual(
      * return a list of all db actions in [this] individual
      * that include all initializing actions plus db actions among main actions.
      *
-     * NOTE THAT if EMConfig.probOfApplySQLActionToCreateResources is 0.0, this method
-     * would be same with [seeInitializingActions]
      */
     fun seeSqlDbActions() : List<SqlAction> = seeActions(ActionFilter.ONLY_SQL) as List<SqlAction>
 
@@ -298,7 +296,7 @@ abstract class EnterpriseIndividual(
         if (log.isTraceEnabled)
             log.trace("invoke GeneUtils.repairGenes")
 
-        GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeFullTreeGenes(ActionFilter.ONLY_SQL))
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.).
@@ -424,5 +422,9 @@ abstract class EnterpriseIndividual(
      */
     open fun getInsertTableNames(): List<String>{
         return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
+    }
+
+    override fun seeTopGenes(filter: ActionFilter): List<Gene> {
+        return seeActions(filter).flatMap { it.seeTopGenes() }
     }
 }

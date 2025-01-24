@@ -5,7 +5,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
@@ -34,7 +34,7 @@ import java.util.*
  * to satisfy the query.
  */
 class SMTLibZ3DbConstraintSolver(
-    private val schemaDto: DbSchemaDto, // Database schema
+    private val schemaDto: DbInfoDto, // Database schema
     private val resourcesFolder: String, // Folder for temporary resources
     numberOfRows: Int = 2 // Number of rows to generate
 ) : DbConstraintSolver {
@@ -166,7 +166,7 @@ class SMTLibZ3DbConstraintSolver(
      * @param tableName The name of the table to find.
      * @return The Table object.
      */
-    private fun findTableByName(schema: DbSchemaDto, tableName: String): Table {
+    private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
         val tableDto = schema.tables.find { it.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(

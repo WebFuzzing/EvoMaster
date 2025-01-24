@@ -110,10 +110,19 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         ind.seeAllActions().forEach { a ->
             val allGenes = a.seeTopGenes().flatMap { it.flatView() }
+            val allOptionals = allGenes.filterIsInstance<OptionalGene>()
 
-            allGenes.filterIsInstance<OptionalGene>()
+            allOptionals
                 .filter { it.searchPercentageActive < time }
                 .forEach { it.forbidSelection() }
+
+            val force = randomness.nextBoolean(config.probabilityAllOptionalsAreOnOrOff)
+            if(force){
+                val on = randomness.nextBoolean(config.probabilityOfOnVsOffInAllOptionals)
+                allOptionals
+                    .filter { it.selectable }
+                    .forEach { it.isActive = on }
+            }
         }
     }
 

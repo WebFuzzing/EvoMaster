@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.GraphQLProblemDto;
@@ -79,7 +79,7 @@ public class SutInfoDto {
      * If the application is using a SQL database, then we need to
      * know its schema to be able to do operations on it.
      */
-    public DbSchemaDto sqlSchemaDto;
+    public DbInfoDto sqlSchemaDto;
 
 
     /**

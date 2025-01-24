@@ -160,6 +160,9 @@ class RestCallAction(
         }
     }
 
+    fun usingSameResolvedPath(other: RestCallAction) =
+        this.resolvedOnlyPath() == other.resolvedOnlyPath()
+
     /**
     Note: in swagger the "consume" type might be missing.
     So, if for any reason there is a form param, then consider

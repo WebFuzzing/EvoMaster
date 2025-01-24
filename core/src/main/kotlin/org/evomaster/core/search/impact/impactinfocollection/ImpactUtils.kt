@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.datetime.TimeOffsetGene
 import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
@@ -32,6 +33,7 @@ import org.evomaster.core.search.gene.string.NumericStringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.regex.*
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.SqlMultidimensionalArrayGeneImpact
+import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeOffsetGeneImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -70,6 +72,7 @@ class ImpactUtils {
                 is DateGene -> DateGeneImpact(id, gene)
                 is DateTimeGene -> DateTimeGeneImpact(id, gene)
                 is TimeGene -> TimeGeneImpact(id, gene)
+                is TimeOffsetGene -> TimeOffsetGeneImpact(id, gene)
                 is SeededGene<*> -> SeededGeneImpact(id, gene)
                 // math
                 is BigDecimalGene -> BigDecimalGeneImpact(id)
@@ -117,7 +120,7 @@ class ImpactUtils {
         }
 
         fun <T : Individual> generateGeneId(individual: T, gene: Gene) : String{
-            if (!individual.seeGenes().contains(gene)){
+            if (!individual.seeTopGenes().contains(gene)){
                 log.warn("cannot find this gene ${gene.name} ($gene) in this individual")
                 return generateGeneId(gene)
             }
@@ -147,7 +150,7 @@ class ImpactUtils {
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             if (individual.seeAllActions().isEmpty()){
-                individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
+                individual.seeTopGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
                     val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
@@ -246,7 +249,7 @@ class ImpactUtils {
             }else{
                 Lazy.assert { !isInit }
 
-                individual.seeGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
+                individual.seeTopGenes().filter { mutatedGeneSpecification.mutatedGeneInfo().contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
                     list.add(MutatedGeneWithContext(g, previous = previous, numOfMutatedGene = num, actionTypeClass = null))
@@ -277,7 +280,7 @@ class ImpactUtils {
         }
 
         private fun findGeneById(individual: Individual, id : String):Gene?{
-            return individual.seeGenes().find { generateGeneId(individual, it) == id }
+            return individual.seeTopGenes().find { generateGeneId(individual, it) == id }
         }
 
         fun extractGeneById(actions: List<Action>, id: String) : MutableList<Gene>{

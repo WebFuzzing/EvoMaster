@@ -85,6 +85,8 @@ class IdMapper {
         reverseMapping[descriptiveId] = id
     }
 
+    fun hasMappingFor(id: Int) = mapping[id] != null
+
     fun getDescriptiveId(id: Int) = mapping[id] ?: "undefined"
 
     fun handleLocalTarget(descriptiveId: String): Int {

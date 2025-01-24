@@ -23,18 +23,47 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+### 2025
+
+* G. Fraser, A. Arcuri.
+  *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
+  IEEE Transactions on Software Engineering (TSE).
+  [[PDF](publications/2025_tse.pdf)]
+
+* A. Arcuri, A. Poth, O. Rrjolli.
+  *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
+  IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
+  [[PDF](publications/2025_icst.pdf)]
+
+* S. Seran, O. Duman, A. Arcuri.
+  *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  *(To appear)*
+
 ### 2024
+
+* A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
+ *Tool Report: EvoMaster -- Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2024_ause_em.pdf)]
+
+
+* A. Poth, O. Rrjolli, A. Arcuri.
+  *Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2024_ause_vw.pdf)]
+
 
 * M. Zhang, A. Arcuri, P. Teng, K. Xue, W. Wang.
   *Seeding and Mocking in White-Box Fuzzing Enterprise RPC APIs: An Industrial Case Study*.
   IEEE/ACM International Conference on Automated Software Engineering (ASE), Industry Track.
-  (To appear)
+  [[PDF](publications/2024_ase.pdf)]
 
 
 * I. Kertusha.
   *Search-Based White-Box Fuzzing of Web Frontend Applications*.
   IEEE International Symposium on Software Reliability Engineering (ISSRE), Doctoral Symposium.
-  (To Appear)
+  [[PDF](publications/2024_issre_ds.pdf)]
 
 
 * S. Seran.

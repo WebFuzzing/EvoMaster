@@ -26,7 +26,8 @@ public class VariableDescriptor {
     }
 
     public VariableDescriptor(String columnName, String alias, String tableName) {
-        this.columnName = columnName.trim().toLowerCase();
+        this.columnName = (columnName==null || columnName.trim().isEmpty() ?
+                null : columnName.trim().toLowerCase());
         this.alias = (alias == null || alias.trim().isEmpty() ?
                 this.columnName :
                 alias.trim().toLowerCase());

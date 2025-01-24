@@ -23,7 +23,9 @@ class BlackBoxRestFitness : RestFitness() {
     override fun doCalculateCoverage(
         individual: RestIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()

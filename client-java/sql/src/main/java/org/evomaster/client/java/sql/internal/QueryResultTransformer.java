@@ -2,7 +2,7 @@ package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
@@ -26,7 +26,7 @@ public class QueryResultTransformer {
      * @param schemaDto     specifies info about schema that is used to parse printable value specified in InsertionDto to Object value
      * @return  extracted an array of QueryResult.
      */
-    public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<String, Set<String>> columns, DbSchemaDto schemaDto){
+    public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<String, Set<String>> columns, DbInfoDto schemaDto){
 
         Map<String, List<QueryResult>> maps = new HashMap<>();
         for (String key : columns.keySet()){
@@ -128,7 +128,7 @@ public class QueryResultTransformer {
     }
 
 
-    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbSchemaDto dto, List<QueryResult> existingQueryResults){
+    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults){
         List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNames(insertionDto, relatedColumns);
         if (!relatedColumnNames.isEmpty()){
             QueryResult found = null;

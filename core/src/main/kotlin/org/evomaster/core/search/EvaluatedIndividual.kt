@@ -17,9 +17,9 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
-import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -41,6 +41,7 @@ class EvaluatedIndividual<T>(
     private val results: List<out ActionResult>,
 
     // for tracking its history
+    @ProcessMonitorExcludeField
     override var trackOperator: TrackOperator? = null,
     override var index: Int = Traceable.DEFAULT_INDEX,
 
@@ -51,6 +52,7 @@ class EvaluatedIndividual<T>(
 
     override var evaluatedResult: EvaluatedMutation? = null
 
+    @ProcessMonitorExcludeField
     override var tracking: TrackingHistory<out Traceable>? = null
 
     companion object {
@@ -695,7 +697,7 @@ class EvaluatedIndividual<T>(
         val action = actions.find {
             it.seeTopGenes().contains(gene)
         }
-        if (action == null && !individual.seeGenes().contains(gene)) return null
+        if (action == null && !individual.seeTopGenes().contains(gene)) return null
 
         val isFixed = individual.seeFixedMainActions().contains(action)
         val index = if (isFixed) individual.seeFixedMainActions().indexOf(action) else -1
@@ -759,7 +761,7 @@ class EvaluatedIndividual<T>(
             actionIndex = null,
             localId = null,
             fixedIndexedAction = false,
-            fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
+            fromInitialization = individual.seeTopGenes(ONLY_SQL).contains(gene)
         )
     }
 

@@ -8,7 +8,7 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -67,7 +67,7 @@ public class SqlHandler {
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
      */
-    private volatile DbSchemaDto schema;
+    private volatile DbInfoDto schema;
 
     public SqlHandler(TaintHandler taintHandler) {
 
@@ -105,7 +105,7 @@ public class SqlHandler {
         this.connection = connection;
     }
 
-    public void setSchema(DbSchemaDto schema) {
+    public void setSchema(DbInfoDto schema) {
         this.schema = schema;
     }
 

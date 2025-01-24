@@ -24,7 +24,7 @@ import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
@@ -269,7 +269,7 @@ abstract class RestIndividualTestBase {
         }
         val openAPI = openApiSchema(spec)
 
-        val schema = SchemaExtractor.extract(getConnection())
+        val schema = DbInfoExtractor.extract(getConnection())
 
         val defaultConfigs : Array<String> = listOf(
             "--useTimeInFeedbackSampling=false",
@@ -591,7 +591,9 @@ abstract class RestIndividualTestBase {
             return true
         }
 
-        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
+        override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean,
+                                    fullyCovered: Boolean,
+                                    descriptiveIds: Boolean,): TestResultsDto? {
             assertNotNull(sqlInsertBuilder)
             newEvaluation()
             val result = TestResultsDto().apply {
@@ -599,6 +601,7 @@ abstract class RestIndividualTestBase {
                     id = targetIdCounter
                     value = 1.0
                     actionIndex = randomness.nextInt(executedActionCounter)
+                    descriptiveId = "FAKE_COVERED_TARGET_$id"
                 })
                 additionalInfoList = (0 until executedActionCounter).map { AdditionalInfoDto() }
                 extraHeuristics = (0 until executedActionCounter).map {

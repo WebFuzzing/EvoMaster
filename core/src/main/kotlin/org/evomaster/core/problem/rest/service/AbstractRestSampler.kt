@@ -91,7 +91,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // set up authentications moved up since we are going to get authentication info from HttpWsSampler
         setupAuthentication(infoDto)
 
-        if(!openApiURL.isNullOrBlank()) {
+        if(!config.overrideOpenAPIUrl.isNullOrBlank()){
+            retrieveSwagger(config.overrideOpenAPIUrl)
+        }else if(!openApiURL.isNullOrBlank()) {
             retrieveSwagger(openApiURL)
         } else if(! openApiSchema.isNullOrBlank()){
             swagger = OpenApiAccess.getOpenApi(openApiSchema)

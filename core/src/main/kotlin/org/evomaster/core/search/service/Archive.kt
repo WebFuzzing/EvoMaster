@@ -216,7 +216,7 @@ class Archive<T> where T : Individual {
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
 
-        if(!config.isMIO()){
+        if(!config.isUsingAdvancedTechniques()){
             return  randomness.choose(toChooseFrom)
         }
 
@@ -697,7 +697,7 @@ class Archive<T> where T : Individual {
      */
     fun areAllPopulationGeneLocallyValid() : Boolean{
         return populations.values.flatten().all {
-            it.individual.seeGenes().all { g-> g.isLocallyValid() }
+            it.individual.seeTopGenes().all { g-> g.isLocallyValid() }
         }
     }
 

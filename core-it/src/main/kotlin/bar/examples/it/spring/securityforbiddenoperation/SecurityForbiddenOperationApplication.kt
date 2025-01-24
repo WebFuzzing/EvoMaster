@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
@@ -23,15 +24,19 @@ open class SecurityForbiddenOperationApplication {
         var disabledCheckPut = false
         var disabledCheckPatch = false
 
-        private val data = mutableMapOf<Int, String>()
+        private val data = ConcurrentHashMap<Int,String>()
         private var counter = 0
+
+        fun cleanState(){
+            counter = 0
+            data.clear()
+        }
 
         fun reset(){
             disabledCheckDelete = false
             disabledCheckPut = false
             disabledCheckPatch = false
-            counter = 0
-            data.clear()
+            cleanState()
         }
     }
 

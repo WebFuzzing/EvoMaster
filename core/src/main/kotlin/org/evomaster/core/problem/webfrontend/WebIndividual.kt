@@ -37,12 +37,6 @@ class WebIndividual(
         )
     }
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        //TODO
-        return listOf()
-    }
-
-
     override fun seeMainExecutableActions(): List<WebAction> {
         return super.seeMainExecutableActions() as List<WebAction>
     }

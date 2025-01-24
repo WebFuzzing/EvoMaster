@@ -557,13 +557,23 @@ class SecurityRest {
             //anyway, let's verify indeed second last action if a 403 target verb. otherwise, it is a problem
             val ema = evaluatedIndividual.evaluatedMainActions()
             val secondLast = ema[ema.size - 2]
-            if (!(secondLast.action is RestCallAction && secondLast.action.verb == verb
-                        && secondLast.result is RestCallResult && secondLast.result.getStatusCode() == 403)
-            ) {
-                log.warn("Issue with constructing evaluated individual. Expected a 403 $verb, but got: $secondLast")
+            val secondLastAction = secondLast.action
+            val secondLastResult = secondLast.result
+            if(secondLastAction !is RestCallAction || secondLastResult !is RestCallResult) {
+                //shouldn't really ever happen...
+                //TODO should refactor code to enforce generics in subclasses
+                log.warn("Wrong type: non-REST action/result")
+                return@forEach
+            }
+            if (secondLastAction.verb != verb ||  secondLastResult.getStatusCode() != 403) {
+                log.warn("Issue with constructing evaluated individual. Expected a 403 $verb," +
+                        " but got: ${secondLastResult.getStatusCode()} ${secondLastAction.verb}")
                 return@forEach
             }
 
+            /*
+                FIXME: isn't this wrong??? ie, should be done in fitness function
+             */
             val scenarioId = idMapper.handleLocalTarget("security:forbidden$verb:${lastAction.path}")
             evaluatedIndividual.fitness.updateTarget(scenarioId, 1.0)
 

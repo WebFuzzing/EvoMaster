@@ -17,6 +17,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.SearchGlobalState
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 
 
 /**
@@ -107,6 +108,7 @@ abstract class Gene(
      *
      * In other words, this relationship is symmetric, transitive but not reflexive
      */
+    @ProcessMonitorExcludeField
     private val bindingGenes: MutableSet<Gene> = mutableSetOf()
 
     init{
@@ -298,13 +300,20 @@ abstract class Gene(
      * Wrapper genes, and only those, will override this method to check their children
      */
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    open  fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T : K{
+    open  fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean = false) : T?  where T : Gene, T : K{
 
-        if(this.javaClass == klass){
+        if(matchingClass(klass,strict)){
             return this as T
         }
 
         return null
+    }
+
+    protected fun matchingClass(klass: Class<*>, strict: Boolean) : Boolean{
+        if(strict){
+           return this.javaClass == klass
+        }
+        return klass.isAssignableFrom(this.javaClass)
     }
 
     /**
@@ -771,7 +780,7 @@ abstract class Gene(
             return listOf()
         }
 
-        return root.seeGenes()
+        return root.seeTopGenes()
     }
 
     /**
@@ -847,7 +856,7 @@ abstract class Gene(
     private fun computeTransitiveBindingGenes(all : MutableSet<Gene>){
         val root = getRoot()
         val allBindingGene = bindingGenes.plus(
-            if (root is Individual) root.seeGenes().flatMap { it.flatView() }.filter {
+            if (root is Individual) root.seeFullTreeGenes().filter {
                 r-> r != this && r.bindingGenes.contains(this)
             }
             else emptyList()

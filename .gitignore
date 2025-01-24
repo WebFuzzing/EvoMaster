@@ -166,5 +166,8 @@ Migrations/
 /e2e-tests/spring-rest-bb/maven/target/
 /target/
 /wfc/target/
+/e2e-tests/emb-json/target/
+/process_data/
+/e2e-tests/spring-rest-multidb/target/
 docs/.DS_Store
 .DS_Store

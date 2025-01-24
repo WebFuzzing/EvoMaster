@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: time
+  version: "1"
+paths:
+  /api/time:
+    get:
+      parameters:
+        - in: query
+          name: x
+          required: true
+          schema:
+            type: string
+            format: 'date-time'
+      responses:
+        200:
+          description: ok

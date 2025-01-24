@@ -444,6 +444,10 @@ public class ExecutionTracer {
         getCurrentAdditionalInfo().popLastExecutedStatement();
     }
 
+    /**
+     * @return reference to internal data structure for found target info.
+     * The keys in such a map are the unique descriptive ids of the coverage objectives
+     */
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
     }
@@ -514,7 +518,7 @@ public class ExecutionTracer {
             }
         }
 
-        ObjectiveRecorder.update(id, value, !executingAction);
+        ObjectiveRecorder.update(id, value);
     }
 
     public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt) {
@@ -611,7 +615,7 @@ public class ExecutionTracer {
 
 
     public static final String EXECUTING_CHECKCAST_METHOD_NAME = "executingCheckCast";
-    public static final String EXECUTING_CHECKCAST_DESCRIPTOR = "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;";
+    public static final String EXECUTING_CHECKCAST_DESCRIPTOR = "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;II)Ljava/lang/Object;";
 
 
     /**
@@ -619,18 +623,47 @@ public class ExecutionTracer {
      *  This assumes that the instrumentation first push the type of CHECKCAST on stack first.
      *  Here, then, we can check for taint analysis
      */
-    public static Object executingCheckCast(Object value, String classType){
+    public static Object executingCheckCast(Object value, String classType, String className, int line, int index){
+
+        String id = ObjectiveNaming.checkcastObjectiveName(className, line, index);
+
+        if(value == null){
+            /*
+                a null value would pass a CHECKCAST, leading to hire code coverage.
+                however, that means that a tainted value would result in worst fitness, and so possibly
+                be lost :(
+                as such, we need to define a testing target to pass CHECKCAST without being null
+             */
+            updateObjective(id, 0.1d);
+        }
+
         if(value instanceof String
                 && isTaintInput((String) value)
                 && !classType.equals("java/lang/String")
                 && !classType.equals("java/lang/CharSequence")
                 && !classType.equals("java/lang/Object")
         ){
-           addStringSpecialization((String)value,
+            //any value greater than what given to null case
+            updateObjective(id, 0.5d);
+
+            addStringSpecialization((String)value,
                    new StringSpecializationInfo(StringSpecialization.CAST_TO_TYPE,classType));
         }
 
         return value;
+    }
+
+    public static final String EXECUTED_CHECKCAST_METHOD_NAME = "executedCheckCast";
+    public static final String EXECUTED_CHECKCAST_DESCRIPTOR = "(Ljava/lang/Object;Ljava/lang/String;II)V";
+
+
+    public static void executedCheckCast(Object value, String className, int line, int index){
+
+        if(value != null) {
+            // target acquired only if value is non-null
+            String id = ObjectiveNaming.checkcastObjectiveName(className, line, index);
+            updateObjective(id, 1d);
+        }
     }
 
 

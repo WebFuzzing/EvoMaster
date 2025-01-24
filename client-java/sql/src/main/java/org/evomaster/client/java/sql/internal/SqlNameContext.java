@@ -8,7 +8,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 
 import java.util.*;
 
@@ -30,7 +30,7 @@ public class SqlNameContext {
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
      */
-    private  DbSchemaDto schema;
+    private DbInfoDto schema;
 
 
     /**
@@ -57,7 +57,7 @@ public class SqlNameContext {
         computeAliases();
     }
 
-    public void setSchema(DbSchemaDto schema) {
+    public void setSchema(DbInfoDto schema) {
         this.schema = Objects.requireNonNull(schema);
     }
 
@@ -124,51 +124,61 @@ public class SqlNameContext {
 
     private List<String> getTableNamesInFrom() {
 
-        FromItem fromItem = getFromItem();
-
         List<String> names = new ArrayList<>();
+        if (hasFromItem()) {
+            FromItem fromItem = getFromItem();
 
-        FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
-            @Override
-            public void visit(Table table) {
-                names.add(table.getName().toLowerCase());
-            }
-        };
+            FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
+                @Override
+                public void visit(Table table) {
+                    names.add(table.getName().toLowerCase());
+                }
+            };
 
-        fromItem.accept(visitor);
-
+            fromItem.accept(visitor);
+        }
         return names;
     }
 
-    private FromItem getFromItem() {
-
-        FromItem fromItem = null;
+    private boolean hasFromItem() {
         if(statement instanceof Select) {
             Select select = (Select)statement;
             PlainSelect plainSelect = select.getPlainSelect();
-            fromItem =  plainSelect.getFromItem();
-        }
-
-        if(fromItem == null) {
-            throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
+            FromItem fromItem =  plainSelect.getFromItem();
+            return fromItem != null;
         } else {
-            return fromItem;
+            return false;
         }
+   }
+
+    private FromItem getFromItem() {
+        if (!hasFromItem()) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a FROM clause");
+        }
+        if (!(statement instanceof Select)) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a SELECT clause");
+        }
+        Select select = (Select)statement;
+        PlainSelect plainSelect = select.getPlainSelect();
+        FromItem fromItem =  plainSelect.getFromItem();
+        return fromItem;
     }
 
 
     private void computeAliases() {
 
         if (statement instanceof Select) {
-            FromItem fromItem = getFromItem();
-            fromItem.accept(new AliasVisitor(tableAliases));
+            if (hasFromItem()) {
+                FromItem fromItem = getFromItem();
+                fromItem.accept(new AliasVisitor(tableAliases));
 
-            Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
+                Select select = (Select)statement;
+                PlainSelect plainSelect = select.getPlainSelect();
 
-            List<Join> joins = plainSelect.getJoins();
-            if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                List<Join> joins = plainSelect.getJoins();
+                if (joins != null) {
+                    joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                }
             }
         } else if(statement instanceof Delete){
             //no alias required?

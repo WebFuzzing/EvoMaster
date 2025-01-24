@@ -19,7 +19,6 @@ import org.evomaster.core.problem.util.RestResourceTemplateHandler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.search.*
-import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -169,12 +168,12 @@ class RestResourceCalls(
     /**
      * @return genes that represents this resource, i.e., longest action in this resource call
      */
-    fun seeGenes(filter: GeneFilter = GeneFilter.NO_SQL): List<out Gene> {
+    fun seeGenes(filter: ActionFilter = ActionFilter.NO_SQL): List<Gene> {
         return when (filter) {
-            GeneFilter.NO_SQL -> mainActions.flatMap(RestCallAction::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeMutableSQLGenes()
+            ActionFilter.NO_SQL -> mainActions.flatMap(RestCallAction::seeTopGenes)
+            ActionFilter.ONLY_SQL -> seeMutableSQLGenes()
             //FIXME would need to return External ones as well
-            GeneFilter.ALL -> seeMutableSQLGenes().plus(mainActions.flatMap(RestCallAction::seeTopGenes))
+            ActionFilter.ALL -> seeMutableSQLGenes().plus(mainActions.flatMap(RestCallAction::seeTopGenes))
             else -> throw IllegalArgumentException("there is no initialization in an ResourceCall")
         }
     }
