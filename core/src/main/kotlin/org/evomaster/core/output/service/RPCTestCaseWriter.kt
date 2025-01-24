@@ -376,6 +376,8 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
             val invocationDtoAsJson = rpcHandler.getJsonStringFromDto(invocation)
 
             if (config.saveScheduleTaskInvocationAsSeparatedFile){
+                if (config.testResourcePathToSaveMockedResponse.isBlank())
+                    throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files")
                 saveJsonAndPrintReadJson(testCaseName, index, invocationDtoAsJson, lines, infoTag = "ScheduleTaskInvocationInfo")
             }else{
                 printExecutionJson(invocationDtoAsJson, lines)
@@ -387,21 +389,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    private fun printJsonForScheduleTaskInvocationDto(mockObj : Any, testCaseName: String, index: Int, lines: Lines, enable: Boolean, infoTag: String){
-        val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(mockObj)
 
-        if (config.saveMockedResponseAsSeparatedFile){
-            if (config.testResourcePathToSaveMockedResponse.isBlank())
-                throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files")
-            saveJsonAndPrintReadJson(testCaseName,index,mockedConfigAsJson, lines, infoTag)
-        }else
-            printExecutionJson(mockedConfigAsJson, lines)
-
-        when {
-            format.isKotlin() -> lines.append(",$enable)")
-            format.isJava() -> lines.append(",$enable);")
-        }
-    }
 
     private fun printJsonForMockObject(mockObj : Any, testCaseName: String, index: Int, lines: Lines, enable: Boolean, infoTag: String){
         val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(mockObj)

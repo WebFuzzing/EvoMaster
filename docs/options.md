@@ -233,6 +233,7 @@ There are 3 types of options:
 |`employResourceSizeHandlingStrategy`| __Enum__. Specify a strategy to determinate a number of resources to be manipulated throughout the search. *Valid values*: `NONE, RANDOM, DPC`. *Default value*: `NONE`.|
 |`enableAdaptiveResourceStructureMutation`| __Boolean__. Specify whether to decide the resource-based structure mutator and resource to be mutated adaptively based on impacts during focused search.Note that it only works when resource-based solution is enabled for solving REST problem. *Default value*: `false`.|
 |`enableCustomizedMethodForMockObjectHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object. *Default value*: `false`.|
+|`enableCustomizedMethodForScheduleTaskHandling`| __Boolean__. Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task. *Default value*: `false`.|
 |`enableRPCCustomizedTestOutput`| __Boolean__. Whether to enable customized RPC Test output if 'customizeRPCTestOutput' is implemented. *Default value*: `false`.|
 |`enableWriteSnapshotTests`| __Boolean__. Enable to print snapshots of the generated tests during the search in an interval defined in snapshotsInterval. *Default value*: `false`.|
 |`executiveSummary`| __Boolean__. Generate an executive summary, containing an example of each category of potential faults found.NOTE: This option is only meaningful when used in conjunction with test suite splitting. *Default value*: `false`.|
@@ -265,6 +266,7 @@ There are 3 types of options:
 |`probOfSmartInitStructureMutator`| __Double__. Specify a probability of applying a smart structure mutator for initialization of the individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probabilityAllOptionalsAreOnOrOff`| __Double__. When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF. The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`saveMockedResponseAsSeparatedFile`| __Boolean__. Whether to save mocked responses as separated files. *Default value*: `false`.|
+|`saveScheduleTaskInvocationAsSeparatedFile`| __Boolean__. Whether to save schedule task invocation as separated files. *Default value*: `false`.|
 |`saveTargetHeuristicsPrefixes`| __String__. Prefix specifying which targets to record. Each target can be separated by a comma, such as 'Branch,Line,Success, etc'. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `Branch`.|
 |`security`| __Boolean__. Apply a security testing phase after functional test cases have been generated. *Default value*: `false`.|
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|

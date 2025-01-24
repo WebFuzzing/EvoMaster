@@ -572,6 +572,9 @@ class EMConfig {
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
 
+        if (saveScheduleTaskInvocationAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files (ie, saveScheduleTaskInvocationAsSeparatedFile=true)")
+
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
