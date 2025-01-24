@@ -445,12 +445,13 @@ class RemoteControllerImplementation() : RemoteController{
                 .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        if (!wasSuccess(response)) {
-            handleFailedResponse(response, "invoke schedule tasks","Schedule task invocations failure")
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ScheduleTaskInvocationsResult>>() {})
+
+        if (!checkResponse(response, dto, "Failed to invoke schedule tasks")) {
             return null
         }
 
-        TODO()
+        return dto?.data
     }
 
     private fun handleFailedResponse(response: Response, endpoint: String, textWarning: String) : Boolean{
