@@ -11,6 +11,9 @@ interface DbConstraintSolver : AutoCloseable {
 
     /**
      * Solves the given constraints and returns the Db Gene to insert in the database
+     * @param schemaDto the schema of the database
+     * @param sqlQuery the query to solve
+     * @param numberOfRows the number of rows to insert in the db per table
      * @return a list of SQLAction with the inserts in the db for the given constraints
      */
     fun solve(schemaDto: DbInfoDto, sqlQuery: String, numberOfRows: Int = 1): List<SqlAction>
