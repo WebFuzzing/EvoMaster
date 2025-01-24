@@ -3,6 +3,8 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExecutionStatusDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -58,7 +60,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
             // handle schedule task
             val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
             if (scheduleTasks.isNotEmpty()){
-
+                val ok = executeScheduleTasks(individual.seeScheduleTaskActions(), actionResults)
+                if (!ok) return@loop
             }
 
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
@@ -124,9 +127,21 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         searchTimeController.waitForRateLimiter()
 
         val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
+        actionResults.addAll(taskResults)
         val taskDtos = tasks.map { rpcHandler.transformScheduleTaskInvocationDto(it) }
+        val command = ScheduleTaskInvocationsDto()
+        command.tasks = taskDtos
+        val response = rc.invokeScheduleTasksAndGetResults(command)
 
-
+        if (response != null){
+            if (taskResults.size == response.results.size){
+                taskResults.forEachIndexed { index, taskResult ->
+                    val resultDto = response.results[index]
+                    taskResult.setResultBasedOnDto(resultDto)
+                }
+            }
+        }
+        return (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
     }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{

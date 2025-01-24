@@ -1,6 +1,9 @@
 package org.evomaster.core.scheduletask
 
 import com.google.common.annotations.VisibleForTesting
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExecutionStatusDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationResultDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.search.action.ActionResult
 
@@ -35,5 +38,16 @@ class ScheduleTaskActionResult : ActionResult {
 
     fun taskStartedButFailed(){
         addResultValue(EXECUTION_STATUS_VARIABLE_NAME, EXECUTION_STATUS_FAILED)
+    }
+
+    fun setResultBasedOnDto(dto: ScheduleTaskInvocationResultDto){
+        when(dto.status){
+            ExecutionStatusDto.FAILED -> taskStartedButFailed()
+            ExecutionStatusDto.RUNNING -> taskStartedAndRunning()
+            ExecutionStatusDto.COMPLETED -> taskCompleted()
+        }
+        if (dto.status == ExecutionStatusDto.FAILED && dto.errorMsg != null){
+            setErrorMessage(dto.errorMsg!!)
+        }
     }
 }
