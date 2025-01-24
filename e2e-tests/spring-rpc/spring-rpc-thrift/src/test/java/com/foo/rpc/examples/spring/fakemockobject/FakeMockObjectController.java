@@ -239,6 +239,7 @@ public class FakeMockObjectController extends SpringController {
     public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
         ScheduleTaskInvocationResultDto dto = new ScheduleTaskInvocationResultDto();
         dto.status = ExecutionStatusDto.FAILED;
+        dto.taskName = invocationDto.taskName;
         try {
             if (invocationDto != null && invoked){
                 FakeScheduleTaskData data = new FakeScheduleTaskData();
@@ -246,6 +247,8 @@ public class FakeMockObjectController extends SpringController {
                 data.info = invocationDto.descriptiveInfo;
                 data.id = System.nanoTime();
                 boolean ok = client.backdoor(null, null, data);
+                dto.status = ExecutionStatusDto.RUNNING;
+                dto.invocationId = String.valueOf(data.id);
                 if (ok) dto.status = ExecutionStatusDto.COMPLETED;
             }
         } catch (TException e) {

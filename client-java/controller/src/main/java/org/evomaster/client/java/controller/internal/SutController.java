@@ -951,7 +951,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
 
-    private final void invokeScheduleTask(ScheduleTaskInvocationDto dto, ScheduleTaskInvocationsResult responseDto){
+    private void invokeScheduleTask(ScheduleTaskInvocationDto dto, ScheduleTaskInvocationsResult responseDto){
         ScheduleTaskInvocationResultDto result = null;
 
         try{
