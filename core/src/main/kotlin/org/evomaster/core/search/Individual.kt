@@ -494,7 +494,11 @@ abstract class Individual(
             if(it !is Action) {
                 listOf(it)
             } else {
-                it.seeTopGenes().flatMap {g ->  g.flatView() }
+                // there might be the case whereby the action does not have genes eg, schedule task
+                if (it.seeTopGenes().isEmpty())
+                    listOf(it)
+                else
+                    it.seeTopGenes().flatMap {g ->  g.flatView() }
             }
         }
     }

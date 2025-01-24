@@ -957,7 +957,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             // TODO, we might need to have timeout for `handleCustomizedMethod`
             result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
-            responseDto.results.add(result);
         } catch (Throwable e) {
             if (result == null){
                 result = new ScheduleTaskInvocationResultDto();

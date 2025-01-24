@@ -611,7 +611,7 @@ public class EMController {
 
     @Path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
     @Consumes(MediaType.APPLICATION_JSON)
-    @PUT
+    @POST
     public Response scheduleTasksCommand(
             ScheduleTaskInvocationsDto command,
             @QueryParam("killSwitch") @DefaultValue("false")
