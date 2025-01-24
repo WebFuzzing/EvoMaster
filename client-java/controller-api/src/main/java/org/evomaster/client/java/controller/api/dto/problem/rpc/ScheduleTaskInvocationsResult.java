@@ -9,4 +9,6 @@ import java.util.List;
 public class ScheduleTaskInvocationsResult {
 
     public List<ScheduleTaskInvocationResultDto> results = new ArrayList<>();
+
+    public String error500Msg;
 }

@@ -3,6 +3,10 @@ package org.evomaster.core.scheduletask
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 
+
+/**
+ * this interface is to handle invocations of schedule tasks
+ */
 interface ScheduleTaskExecutor {
 
     /**

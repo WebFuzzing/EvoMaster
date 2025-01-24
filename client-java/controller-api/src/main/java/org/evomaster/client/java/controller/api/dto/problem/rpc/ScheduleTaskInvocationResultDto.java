@@ -24,5 +24,10 @@ public class ScheduleTaskInvocationResultDto {
     /**
      * status after the schedule is invoked
      */
-    public ExecutionStatusDto status;
+    public ExecutionStatusDto status = ExecutionStatusDto.RUNNING;
+
+    /**
+     * it is used to save any error message if have
+     */
+    public String errorMsg;
 }

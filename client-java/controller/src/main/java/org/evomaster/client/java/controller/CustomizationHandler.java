@@ -96,6 +96,11 @@ public interface CustomizationHandler {
     /**
      * <p>
      * implement how to invoke schedule task for providing a customized solution
+     *
+     * regarding ScheduleTaskInvocationResultDto, its status typed with ExecutionStatusDto indicates invocation status of the schedule tasks
+     * Once the task is successfully invoked, its status should be RUNNING
+     * then if the task is completed, its status should be COMPLETE
+     * FAILED is used to handle any exception in handling invocation of the schedule task.
      * </p>
      *
      * @param invocationDto specified necessary info for invoking/terminating schedule tasks

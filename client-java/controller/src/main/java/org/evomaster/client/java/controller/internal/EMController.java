@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.sql.QueryResult;
@@ -605,6 +607,34 @@ public class EMController {
     }
 
 
+    @Path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @PUT
+    public Response scheduleTasksCommand(
+            ScheduleTaskInvocationsDto command,
+            @QueryParam("killSwitch") @DefaultValue("false")
+            boolean killSwitch,
+            @Context HttpServletRequest httpServletRequest) {
+
+        ScheduleTaskInvocationsResult responseDto = new ScheduleTaskInvocationsResult();
+
+        if (command.tasks != null && !command.tasks.isEmpty()){ // handle schedule task execution
+            try{
+                noKillSwitchForceCheck(() -> sutController.invokeScheduleTasks(command.tasks, responseDto));
+            } catch (Exception e) {
+                String msg = "Thrown exception in executing schedule task: " + e.getMessage();
+                SimpleLogger.error(msg, e);
+                responseDto.error500Msg = msg;
+                return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
+            }
+        }
+
+        if (killSwitch)
+            sutController.setKillSwitch(true);
+
+        return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
+    }
+
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
@@ -661,17 +691,6 @@ public class EMController {
                 } catch (Exception e) {
                     // TODO handle exception on responseDto later
                     String msg = "Thrown exception: " + e.getMessage();
-                    SimpleLogger.error(msg, e);
-                    responseDto.error500Msg = msg;
-                    return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
-                }
-
-            }else if (dto.scheduleTaskInvocationDtos != null && !dto.scheduleTaskInvocationDtos.isEmpty()){ // handle schedule task execution
-                ActionResponseDto responseDto = null;
-                try{
-                    noKillSwitchForceCheck(() -> sutController.invokeScheduleTask(dto.scheduleTaskInvocationDtos, responseDto));
-                } catch (Exception e) {
-                    String msg = "Thrown exception in executing schedule task: " + e.getMessage();
                     SimpleLogger.error(msg, e);
                     responseDto.error500Msg = msg;
                     return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();

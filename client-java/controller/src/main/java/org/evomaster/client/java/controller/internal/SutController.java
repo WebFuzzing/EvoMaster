@@ -939,18 +939,38 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
         }
     }
+    public final void invokeScheduleTasks(List<ScheduleTaskInvocationDto> dtos, ScheduleTaskInvocationsResult responseDto){
+        for (ScheduleTaskInvocationDto dto: dtos){
+            try{
+                invokeScheduleTask(dto, responseDto);
+            }catch (Exception e){
+                SimpleLogger.warn(e.getMessage());
+            }
+        }
+        assert dtos.size() == responseDto.results.size();
+    }
 
-    public final void invokeScheduleTask(List<ScheduleTaskInvocationDto> dtos, ActionResponseDto responseDto){
+
+    private final void invokeScheduleTask(ScheduleTaskInvocationDto dto, ScheduleTaskInvocationsResult responseDto){
+        ScheduleTaskInvocationResultDto result = null;
+
         try{
             // TODO, we might need to have timeout for `handleCustomizedMethod`
-            List<ScheduleTaskInvocationResultDto> results = new ArrayList<>();
-            for (ScheduleTaskInvocationDto dto: dtos){
-                ScheduleTaskInvocationResultDto result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
-                results.add(result);
+            result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
+            responseDto.results.add(result);
+        } catch (Throwable e) {
+            if (result == null){
+                result = new ScheduleTaskInvocationResultDto();
             }
-            responseDto.jsonResponse = objectMapper.writeValueAsString(results);
-        } catch (Exception e) {
-            throw new RuntimeException("ERROR: Fail to invoke schedule task with the customized method: "+ e.getMessage());
+            String msg = "ERROR: Fail to invoke schedule task with the customized method: ";
+            if (e.getMessage() != null){
+                msg += e.getMessage();
+            }
+            result.status = ExecutionStatusDto.FAILED;
+            result.errorMsg = msg;
+            throw new RuntimeException(msg);
+        } finally {
+            responseDto.results.add(result);
         }
     }
 
