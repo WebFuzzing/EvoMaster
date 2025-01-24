@@ -1668,25 +1668,19 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public List<ScheduleTaskInvocationResultDto> invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
-        List<ScheduleTaskInvocationDto> taskDtos = null;
-        List<ScheduleTaskInvocationResultDto> resultDtos = null;
+    public ScheduleTaskInvocationResultDto invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
+        ScheduleTaskInvocationDto taskDto = null;
+        ScheduleTaskInvocationResultDto resultDto = null;
         try{
-            if (scheduleTaskDtos != null && !scheduleTaskDtos.isEmpty()){
-                taskDtos = objectMapper.readValue(scheduleTaskDtos, new TypeReference<List<ScheduleTaskInvocationDto>>(){});
-                resultDtos = new ArrayList<>();
-            }
-
-            for (ScheduleTaskInvocationDto dto : taskDtos){
-                resultDtos.add(customizeScheduleTaskInvocation(dto, enabled));
-            }
+            taskDto = objectMapper.readValue(scheduleTaskDtos, new TypeReference<ScheduleTaskInvocationDto>(){});
+            resultDto = customizeScheduleTaskInvocation(taskDto, enabled);
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Fail to handle the given schedule task with the info:", e);
         } catch (Exception e){
             throw new RuntimeException("Fail to invoke schedule task with the info:", e);
         }
 
-        return resultDtos;
+        return resultDto;
     }
 
     /**

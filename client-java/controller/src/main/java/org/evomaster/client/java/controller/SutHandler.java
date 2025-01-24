@@ -240,11 +240,11 @@ public interface SutHandler {
      * <p>
      *     a method to employ customized mocking for database
      * </p>
-     * @param scheduleTaskDtos contains info about a list of schedule tasks should be invoked
+     * @param scheduleTaskDto contains info about schedule tasks should be invoked
      * @param enabled reflect to enable (set it true) or terminate (set it false) the schedule task
      * @return invocation results of schedule task
      */
-    default List<ScheduleTaskInvocationResultDto> invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled){
+    default ScheduleTaskInvocationResultDto invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDto, boolean enabled){
         return null;
     }
 

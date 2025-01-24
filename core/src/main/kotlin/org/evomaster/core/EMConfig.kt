@@ -2242,9 +2242,18 @@ class EMConfig {
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
     var enableCustomizedMethodForMockObjectHandling = false
 
+
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task.")
+    var enableCustomizedMethodForScheduleTaskHandling = false
+
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Whether to save schedule task invocation as separated files")
+    var saveScheduleTaskInvocationAsSeparatedFile = false
 
     @Experimental
     @Cfg("Specify test resource path where to save mocked responses as separated files")

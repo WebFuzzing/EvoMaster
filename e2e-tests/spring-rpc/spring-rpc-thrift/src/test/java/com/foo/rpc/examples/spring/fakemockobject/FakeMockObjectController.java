@@ -5,10 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.foo.rpc.examples.spring.SpringController;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeDatabaseRow;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeMockObjectService;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeRetrieveData;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeScheduleTaskData;
+import com.foo.rpc.examples.spring.fakemockobject.generated.*;
 import com.foo.rpc.examples.spring.fakemockobject.impl.FakeMockObjectApp;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -246,12 +243,15 @@ public class FakeMockObjectController extends SpringController {
                 data.name = invocationDto.taskName;
                 data.info = invocationDto.descriptiveInfo;
                 data.id = System.nanoTime();
+                data.startTime = String.valueOf(System.nanoTime());
+                data.state = FakeScheduleTaskState.PROCESSING;
                 boolean ok = client.backdoor(null, null, data);
                 dto.status = ExecutionStatusDto.RUNNING;
                 dto.invocationId = String.valueOf(data.id);
                 if (ok) dto.status = ExecutionStatusDto.COMPLETED;
             }
         } catch (TException e) {
+            dto.status = ExecutionStatusDto.FAILED;
         }
 
         return dto;
