@@ -5,5 +5,5 @@ import java.util.List;
 
 public class ScheduleTaskInvocationsResult {
 
-    public List<ScheduleTaskInvocationsResult> results = new ArrayList<>();
+    public List<ScheduleTaskInvocationResultDto> results = new ArrayList<>();
 }
