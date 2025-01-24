@@ -75,6 +75,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         handleExtra(dto, fv)
 
 //        expandIndividual(individual)
+        val scheduleTasksResults = actionResults.filterIsInstance<ScheduleTaskActionResult>()
         /*
             TODO Man handle targets regarding info in responses,
             eg, exception
@@ -83,10 +84,15 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
+
+        val additionalInfoForScheduleTask = dto.additionalInfoList.subList(0, scheduleTasksResults.size)
+        // TODO man might need to handle additional targets for schedule task later
+
+        val additionalInfoForMainTask= dto.additionalInfoList.subList(scheduleTasksResults.size, dto.additionalInfoList.size)
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, additionalInfoForMainTask)
 
         if (config.isEnabledTaintAnalysis()) {
-            Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
+            Lazy.assert { (scheduleTasksResults.size + rpcActionResults.size) == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config.enableSchemaConstraintHandling)
         }
 
@@ -141,7 +147,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 }
             }
         }
-        return (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
+        val ok = (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
+        taskResults.last().stopping = !ok
+        return ok
     }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{

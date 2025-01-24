@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -82,9 +83,9 @@ object TaintAnalysis {
                         randomness: Randomness,
                         enableConstraintHandling: Boolean) {
 
-
-        if (individual.seeMainExecutableActions().size < additionalInfoList.size) {
-            throw IllegalArgumentException("Less main actions than info entries")
+        // schedule tasks need to be considered as well
+        if ((individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).size + individual.seeMainExecutableActions().size) < additionalInfoList.size) {
+            throw IllegalArgumentException("Less main actions or schedule tasks than info entries")
         }
 
         if (log.isTraceEnabled) {
