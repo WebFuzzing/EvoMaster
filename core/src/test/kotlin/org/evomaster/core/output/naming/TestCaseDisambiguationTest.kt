@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
+import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
