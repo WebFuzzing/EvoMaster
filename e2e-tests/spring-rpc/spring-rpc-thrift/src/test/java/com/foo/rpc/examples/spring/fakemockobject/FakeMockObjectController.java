@@ -139,13 +139,13 @@ public class FakeMockObjectController extends SpringController {
                             functionName = "isExecutedToday";
                             inputParams= Arrays.asList();
                             inputParamTypes= Arrays.asList();
-                            scheduleTaskInvocations = Arrays.asList(
-                                    new ScheduleTaskInvocationDto(){{
-                                        appKey = "fake.app";
-                                        taskName = "executeFlag";
-                                        descriptiveInfo = "a scheduled task for invoking executeFlag";
-                                    }}
-                            );
+                        }}
+                );
+                scheduleTaskInvocations = Arrays.asList(
+                        new ScheduleTaskInvocationDto(){{
+                            appKey = "fake.app";
+                            taskName = "executeFlag";
+                            descriptiveInfo = "a scheduled task for invoking executeFlag";
                         }}
                 );
             }}
