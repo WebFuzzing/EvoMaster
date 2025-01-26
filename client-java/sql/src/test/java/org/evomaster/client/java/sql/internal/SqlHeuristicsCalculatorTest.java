@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,7 +23,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testNoWhereNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM Person";
-        QueryResult queryResult = new QueryResult(Arrays.asList("name"), "Person");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Person");
         queryResult.addRow(new DataRow("name","John", "Person"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -31,7 +32,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testWhereNoFromClause() {
         String sqlCommand = "SELECT 1 AS example_column WHERE 1 = 0";
-        QueryResult virtualTableContents = new QueryResult(Arrays.asList("example_column"), null);
+        QueryResult virtualTableContents = new QueryResult(Collections.singletonList("example_column"), null);
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, virtualTableContents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -41,7 +42,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testNoWhereNoFromClause() {
         String sqlCommand = "SELECT 1 AS example_column";
-        QueryResult virtualTableContents = new QueryResult(Arrays.asList("example_column"), null);
+        QueryResult virtualTableContents = new QueryResult(Collections.singletonList("example_column"), null);
         virtualTableContents.addRow(new DataRow("example_column",1, null));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, virtualTableContents);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -51,7 +52,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testNoWhereNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM Person";
-        QueryResult queryResult = new QueryResult(Arrays.asList("name"), "Person");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Person");
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -60,8 +61,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testLeftJoinNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM TableA LEFT JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableAcontents.addRow(new DataRow("name","John", "TableA"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -71,8 +72,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testRightJoinNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM TableA RIGHT JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableBcontents.addRow(new DataRow("name","John", "TableB"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -81,8 +82,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testRightJoinNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM TableA RIGHT JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableAcontents.addRow(new DataRow("name","John", "TableA"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
@@ -92,8 +93,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testLeftJoinNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM TableA LEFT JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableBcontents.addRow(new DataRow("name","John", "TableB"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
@@ -103,8 +104,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testLeftOuterJoinNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM TableA LEFT OUTER JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableBcontents.addRow(new DataRow("name","John", "TableB"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
@@ -114,8 +115,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testRightOuterJoinNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM TableA RIGHT OUTER JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableAcontents.addRow(new DataRow("name","John", "TableA"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
@@ -125,8 +126,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testLeftOuterJoinNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM TableA LEFT OUTER JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableAcontents.addRow(new DataRow("name","John", "TableA"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -136,8 +137,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testRightOuterJoinNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM TableA RIGHT OUTER JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableBcontents.addRow(new DataRow("name","John", "TableB"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         assertEquals(0, distanceWithMetrics.sqlDistance);
@@ -146,8 +147,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testCrossJoinNoFromTableNoRows() {
         String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -156,8 +157,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testCrossJoinNoFromTableWithRows() {
         String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
-        QueryResult tableAcontents = new QueryResult(Arrays.asList("name"), "TableA");
-        QueryResult tableBcontents = new QueryResult(Arrays.asList("name"), "TableB");
+        QueryResult tableAcontents = new QueryResult(Collections.singletonList("name"), "TableA");
+        QueryResult tableBcontents = new QueryResult(Collections.singletonList("name"), "TableB");
         tableAcontents.addRow(new DataRow("name","John", "TableA"));
         tableBcontents.addRow(new DataRow("name","John", "TableB"));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, tableAcontents, tableBcontents);
@@ -405,8 +406,8 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testShouldReturnZeroDistanceForDoubleComparison() {
         String sqlCommand = "SELECT price FROM Products WHERE price<=19.99";
-        QueryResult queryResult = new QueryResult(Arrays.asList("price"), "Products");
-        queryResult.addRow(Arrays.asList("price"),"Products",Arrays.asList(9.99));
+        QueryResult queryResult = new QueryResult(Collections.singletonList("price"), "Products");
+        queryResult.addRow(Collections.singletonList("price"),"Products",Collections.singletonList(9.99));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -447,7 +448,7 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testShouldReturnZeroDistanceForSubstraction() {
+    public void testShouldReturnZeroDistanceForSubtraction() {
         String sqlCommand = "SELECT product_name, original_price, discount_price " +
                 "    FROM Products " +
                 "    WHERE original_price - discount_price > 20";
@@ -475,8 +476,8 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT price " +
                 "    FROM Products " +
                 "    WHERE +price > 100";
-        QueryResult queryResult = new QueryResult(Arrays.asList("price"), "Products");
-        queryResult.addRow(Arrays.asList("price"),"Products",Arrays.asList(200));
+        QueryResult queryResult = new QueryResult(Collections.singletonList("price"), "Products");
+        queryResult.addRow(Collections.singletonList("price"),"Products",Collections.singletonList(200));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -487,8 +488,8 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT price " +
                 "    FROM Products " +
                 "    WHERE -price > 100";
-        QueryResult queryResult = new QueryResult(Arrays.asList("price"), "Products");
-        queryResult.addRow(Arrays.asList("price"),"Products",Arrays.asList(-200));
+        QueryResult queryResult = new QueryResult(Collections.singletonList("price"), "Products");
+        queryResult.addRow(Collections.singletonList("price"),"Products",Collections.singletonList(-200));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -500,9 +501,9 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT permissions " +
                 "    FROM Users " +
                 "    WHERE ~permissions = 0 ";
-        QueryResult queryResult = new QueryResult(Arrays.asList("permissions"), "Users");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("permissions"), "Users");
 
-        queryResult.addRow(Arrays.asList("permissions"),"Users",Arrays.asList(-1));
+        queryResult.addRow(Collections.singletonList("permissions"),"Users",Collections.singletonList(-1));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);

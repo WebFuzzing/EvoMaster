@@ -1,9 +1,7 @@
 package org.evomaster.client.java.sql.internal;
 
 import java.sql.Time;
-import java.text.SimpleDateFormat;
 import java.time.*;
-import java.util.Date;
 
 public class ConversionHelper {
 
@@ -21,8 +19,8 @@ public class ConversionHelper {
             OffsetTime offsetTime = (OffsetTime) object;
             LocalDate localDate = LocalDate.of(1970, 1, 1);
             LocalDateTime localDateTime = LocalDateTime.of(localDate, offsetTime.toLocalTime());
-            Instant instant = localDateTime.atOffset(offsetTime.getOffset()).toInstant();
-            return instant;
+            OffsetDateTime offsetDateTime = localDateTime.atOffset(offsetTime.getOffset());
+            return offsetDateTime.toInstant();
         } else if (object instanceof Long) {
             Long year = (Long) object;
             String yearAsDate = year + "-01-01";

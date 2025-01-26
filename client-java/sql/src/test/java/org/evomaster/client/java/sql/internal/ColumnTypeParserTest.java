@@ -98,7 +98,7 @@ public class ColumnTypeParserTest {
     }
 
     @Test
-    public void testInvalidDateTimeWithEnclosingQuotes() throws ParseException {
+    public void testInvalidDateTimeWithEnclosingQuotes() {
         String dateWithTime = "'2025-01-22 15:30:45'";
         assertThrows(IllegalArgumentException.class , () -> ColumnTypeParser.getAsInstant(dateWithTime));
     }
