@@ -66,6 +66,8 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 if (!ok) return@loop
             }
 
+            // TODO do we need to ensure all schedule tasks are completed before executing main actions?
+
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
                 val ok = executeNewAction(action, scheduleTasks.size + index, actionResults)
                 if (!ok) return@loop
