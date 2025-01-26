@@ -84,6 +84,22 @@ class ConversionHelperTest {
 
         Instant instantFromTime = ConversionHelper.convertToInstant(time);
         Instant instantFromString = ConversionHelper.convertToInstant(timeAsString);
-        assertEquals(instantFromTime,instantFromString);
+        assertEquals(instantFromTime, instantFromString);
+    }
+
+    @Test
+    public void convertLong() {
+        Long year = 2023L;
+        Instant expected = Instant.parse("2023-01-01T00:00:00Z");
+        Instant actual = ConversionHelper.convertToInstant(year);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void convertInvalidLongToInstant() {
+        Long invalidYear = -1L;
+        assertThrows(IllegalArgumentException.class,
+                () -> ConversionHelper.convertToInstant(invalidYear));
+
     }
 }

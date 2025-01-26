@@ -16,8 +16,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 
-import java.sql.Time;
-import java.sql.Timestamp;
+
 import java.time.*;
 import java.util.Objects;
 import java.util.Stack;
@@ -558,7 +557,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-        throw new UnsupportedOperationException("visit(DateTimeLiteralExpression) not supported");
+        String dateTimeAsString = dateTimeLiteralExpression.getValue();
+        String dateTimeWithoutEnclosingQuotes = SqlStringUtils.removeEnclosingQuotes(dateTimeAsString);
+        concreteValues.push(dateTimeWithoutEnclosingQuotes);
     }
 
     @Override

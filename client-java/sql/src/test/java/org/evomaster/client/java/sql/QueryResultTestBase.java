@@ -7,10 +7,7 @@ import java.sql.Connection;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
@@ -27,7 +24,6 @@ public abstract class QueryResultTestBase {
     public void testDateColumn() throws Exception {
         // set up the database
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    event_date DATE NOT NULL\n" +
                 ");");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (event_date)\n" +
@@ -48,9 +44,10 @@ public abstract class QueryResultTestBase {
 
     @Test
     public void testDateTimeColumn() throws Exception {
+        assumeFalse(getDbType()==DatabaseType.POSTGRES);
+
         // set up the database
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    event_date_time DATETIME NOT NULL\n" +
                 ");");
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (event_date_time)\n" +
@@ -84,7 +81,6 @@ public abstract class QueryResultTestBase {
     public void testTimestampColumn() throws Exception {
         // set up the database
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    event_timestamp TIMESTAMP NOT NULL\n" +
                 ");");
 
@@ -113,7 +109,6 @@ public abstract class QueryResultTestBase {
         assumeFalse(getDbType() == DatabaseType.MYSQL);
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    event_zoned_timestamp TIMESTAMP WITH TIME ZONE NOT NULL\n" +
                 ");");
 
@@ -129,17 +124,31 @@ public abstract class QueryResultTestBase {
 
         Object actual = row.getValueByName("event_zoned_timestamp", "example_table");
 
-        assertTrue(actual instanceof OffsetDateTime);
+        Object expected;
+        switch (this.getDbType()) {
+            case POSTGRES: {
+                LocalDateTime localDateTime = LocalDateTime.of(2025, 1, 22, 15, 30, 45);
+                ZoneOffset offset = ZoneOffset.ofHoursMinutes(5, 30);
+                ZonedDateTime zonedDateTime = localDateTime.atOffset(offset).toZonedDateTime();
+                long epochMilli = zonedDateTime.toInstant().toEpochMilli();
+                expected = new Timestamp(epochMilli);
+            } break;
+            case H2:
+            case MYSQL:
+            default: {
+                assertTrue(actual instanceof OffsetDateTime);
 
-        // Define the string with date, time, and timezone offset
-        String dateTimeString = "2025-01-22 15:30:45+05:30";
+                // Define the string with date, time, and timezone offset
+                String dateTimeString = "2025-01-22 15:30:45+05:30";
 
-        // Define the DateTimeFormatter to match the input string pattern
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
+                // Define the DateTimeFormatter to match the input string pattern
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
 
-        // Parse the string into a ZonedDateTime instance
-        OffsetDateTime expected = OffsetDateTime.parse(dateTimeString, formatter);
+                // Parse the string into a ZonedDateTime instance
+                expected = OffsetDateTime.parse(dateTimeString, formatter);
 
+            }
+        }
         assertEquals(expected, actual);
     }
 
@@ -147,7 +156,6 @@ public abstract class QueryResultTestBase {
     public void testTimeColumn() throws Exception {
         // setup the database
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    time_column TIME NOT NULL\n" +
                 ");");
 
@@ -171,7 +179,6 @@ public abstract class QueryResultTestBase {
         assumeFalse(getDbType() == DatabaseType.MYSQL);
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
-                "    id INT PRIMARY KEY AUTO_INCREMENT,\n" +
                 "    time_column TIME WITH TIME ZONE NOT NULL\n" +
                 ");");
 
@@ -185,8 +192,23 @@ public abstract class QueryResultTestBase {
         Object actual = row.getValueByName("time_column", "example_table");
 
         // check the results
-        assertTrue(actual instanceof OffsetTime);
-        OffsetTime expected = OffsetTime.of(15, 30, 45, 0, ZoneOffset.ofHours(+2));
+        Object expected;
+        switch (this.getDbType()) {
+            case POSTGRES: {
+                OffsetTime offsetTime = OffsetTime.of(15, 30, 45, 0, ZoneOffset.of("+02:00"));
+                ZoneId systemZone = ZoneId.systemDefault();
+                LocalDate constantDate = LocalDate.of(1970, 1, 1);
+                ZonedDateTime zonedDateTime = offsetTime.atDate(constantDate).atZoneSameInstant(systemZone);
+                LocalTime systemLocalTime = zonedDateTime.toLocalTime();
+                expected = Time.valueOf(systemLocalTime);
+            } break;
+            case MYSQL:
+            case H2:
+            default: {
+                assertTrue(actual instanceof OffsetTime);
+                expected = OffsetTime.of(15, 30, 45, 0, ZoneOffset.ofHours(+2));
+            }
+        }
         assertEquals(expected, actual);
     }
 }

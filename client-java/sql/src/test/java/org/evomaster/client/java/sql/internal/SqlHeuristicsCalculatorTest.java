@@ -614,4 +614,81 @@ public class SqlHeuristicsCalculatorTest {
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
+
+    @Test
+    public void testShouldReturnZeroDistanceForYear() throws ParseException {
+        String sqlCommand = "SELECT employee_id, hire_year " +
+                " FROM employees " +
+                " WHERE hire_year = 2018 ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("employee_id", "hire_year"), "employees");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date hire_year = sdf.parse("2018-01-01");
+
+        queryResult.addRow(Arrays.asList("employee_id", "hire_year"),"employees",Arrays.asList(1,hire_year));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testVisitDateTimeLiteralExpression() throws ParseException {
+        String sqlCommand = "SELECT * FROM orders WHERE order_date = TIMESTAMP '2025-01-22 15:30:45'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date order_date = sdf.parse("2025-01-22 15:30:45");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testVisitDateLiteralExpression() throws ParseException {
+        String sqlCommand = "SELECT * FROM orders WHERE order_date = DATE '2025-01-22'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date order_date = sdf.parse("2025-01-22");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testVisitTimeLiteralExpression() {
+        String sqlCommand = "SELECT * FROM orders WHERE order_time = TIME '15:30:45'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_time"), "orders");
+
+        Time order_time = Time.valueOf("15:30:45");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_time"), "orders", Arrays.asList(1, order_time));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testVisitTimestampWithTimeZoneLiteralExpression() {
+        String sqlCommand = "SELECT * FROM orders WHERE order_date = TIMESTAMPTZ '2025-01-22 15:30:45+02:00'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
+
+        String timestampString = "2025-01-22 15:30:45+02:00";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX");
+        OffsetDateTime order_date = OffsetDateTime.parse(timestampString, formatter);
+
+        queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
 }
