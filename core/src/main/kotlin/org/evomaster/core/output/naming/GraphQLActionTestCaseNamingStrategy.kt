@@ -1,6 +1,6 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -9,18 +9,18 @@ import org.evomaster.core.search.action.EvaluatedAction
 
 open class GraphQLActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
+    languageConventionFormatter: LanguageConventionFormatter,
+    maxTestCaseNameLength: Int,
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength) {
 
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as GraphQLAction
+        var remainingNameChars = maxTestCaseNameLength - namePrefixChars()
 
-        nameTokens.add(action.methodType.toString().lowercase())
-        nameTokens.add(on)
-        nameTokens.add(TestWriterUtils.safeVariableName(action.methodName))
-        addResult(individual, nameTokens)
+        remainingNameChars = addNameTokensIfAllowed(nameTokens, listOf(action.methodType.toString().lowercase(), on, safeVariableName(action.methodName)), remainingNameChars)
+        addResult(individual, nameTokens, remainingNameChars)
 
         return formatName(nameTokens)
     }
@@ -30,16 +30,17 @@ open class GraphQLActionTestCaseNamingStrategy(
         return emptyMap()
     }
 
-    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
+    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>, remainingNameChars: Int): Int {
         val result = evaluatedAction.result as GraphQlCallResult
-        nameTokens.add(returns)
-        nameTokens.add(
+        val candidateTokens = mutableListOf(returns)
+        candidateTokens.add(
             when {
                 result.hasErrors() -> error
                 result.hasNonEmptyData() -> data
                 else -> empty
             }
         )
+        return addNameTokensIfAllowed(nameTokens, candidateTokens, remainingNameChars)
     }
 
 }

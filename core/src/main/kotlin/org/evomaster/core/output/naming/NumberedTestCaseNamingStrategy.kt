@@ -6,7 +6,7 @@ import org.evomaster.core.search.Solution
 import java.util.Collections.singletonList
 
 open class NumberedTestCaseNamingStrategy(
-    solution: Solution<*>
+    solution: Solution<*>,
 ) : TestCaseNamingStrategy(solution) {
 
     override fun getTestCases(): List<TestCase> {
@@ -35,11 +35,6 @@ open class NumberedTestCaseNamingStrategy(
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
         return emptyMap()
-    }
-
-    // kicking off with an empty mutableListOf for each test case to accumulate their own name tokens
-    private fun getName(counter: Int, individual: EvaluatedIndividual<*>): String {
-        return "test_${counter}${expandName(individual, mutableListOf())}"
     }
 
     private fun concatName(counter: Int, expandedName: String): String {

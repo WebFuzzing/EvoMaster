@@ -14,28 +14,30 @@ import org.junit.jupiter.api.Test
 
 class RPCActionNamingStrategyTest {
 
-    @Test
-    fun testFakeRpcCallAsInterfaceIdAndId() {
+    companion object {
         val outputFormat = OutputFormat.KOTLIN_JUNIT_5
         val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
+        const val MAX_NAME_LENGTH = 80
+    }
+
+    @Test
+    fun testFakeRpcCallAsInterfaceIdAndId() {
         val solution = getSolution(outputFormat)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
-
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
+
         assertEquals(1, testCases.size)
         assertEquals("test_0_fakeRPCCallOnFunction_4ReturnsSuccess", testCases[0].name)
     }
 
     @Test
     fun testFakeRpcCallWithException() {
-        val outputFormat = OutputFormat.KOTLIN_JUNIT_5
-        val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
         val solution = getSolution(outputFormat, true)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
-
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
+
         assertEquals(1, testCases.size)
         assertEquals("test_0_fakeRPCCallOnFunction_4ThrowsRuntimeException", testCases[0].name)
     }

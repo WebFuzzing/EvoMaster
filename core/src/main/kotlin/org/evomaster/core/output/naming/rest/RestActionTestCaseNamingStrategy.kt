@@ -16,34 +16,36 @@ open class RestActionTestCaseNamingStrategy(
     solution: Solution<*>,
     languageConventionFormatter: LanguageConventionFormatter,
     private val nameWithQueryParameters: Boolean,
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
+    maxTestCaseNameLength: Int,
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength) {
 
     override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RestCallAction
+        var remainingNameChars = maxTestCaseNameLength - namePrefixChars()
 
-        nameTokens.add(action.verb.toString().lowercase())
-        nameTokens.add(on)
+        remainingNameChars = addNameTokensIfAllowed(nameTokens, listOf(action.verb.toString().lowercase(), on), remainingNameChars)
         if (ambiguitySolvers.isEmpty()) {
-            nameTokens.add(getPath(action.path.nameQualifier))
+            remainingNameChars = addNameTokenIfAllowed(nameTokens, getPath(action.path.nameQualifier), remainingNameChars)
         } else {
-            // TODO: max chars check. Idea: if len(name) + len(resultTokens) + len(foreach:solverResult) <= MAX_CHARS ---> OK
-            // else keep only name + acceptedSolverResults + resultTokens
-            ambiguitySolvers.forEach { solver -> nameTokens.addAll(solver.apply(action)) }
+            ambiguitySolvers.forEach { solver ->
+                remainingNameChars = addNameTokensIfAllowed(nameTokens, solver.apply(action, remainingNameChars), remainingNameChars)
+            }
         }
-        addResult(individual, nameTokens)
+        addResult(individual, nameTokens, remainingNameChars)
 
         return formatName(nameTokens)
     }
 
-    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
+    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>, remainingNameChars: Int): Int {
         val result = evaluatedAction.result as RestCallResult
-        nameTokens.add(returns)
+        val candidateTokens = mutableListOf(returns)
         if (isGetCall(evaluatedAction) && result.getStatusCode() == 200) {
-            nameTokens.addAll(addBodyShape(result))
+            candidateTokens.addAll(addBodyShape(result))
         } else {
-            nameTokens.add(result.getStatusCode().toString())
+            candidateTokens.add(result.getStatusCode().toString())
         }
+        return addNameTokensIfAllowed(nameTokens, candidateTokens, remainingNameChars)
     }
 
     /**

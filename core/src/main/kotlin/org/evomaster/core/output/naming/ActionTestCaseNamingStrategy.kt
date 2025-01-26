@@ -14,6 +14,8 @@ import org.evomaster.core.sql.SqlAction
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,
     private val languageConventionFormatter: LanguageConventionFormatter,
+    protected val maxTestCaseNameLength: Int,
+    private val testCasesSize: Int = solution.individuals.size,
 ) : NumberedTestCaseNamingStrategy(solution)  {
 
     protected val on = "on"
@@ -45,17 +47,42 @@ abstract class ActionTestCaseNamingStrategy(
         return faults.first().testCaseLabel
     }
 
-    protected fun addResult(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>) {
+    protected fun addResult(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, remainingNameChars: Int) {
         val detectedFaults = DetectedFaultUtils.getDetectedFaultCategories(individual)
-        if (detectedFaults.isNotEmpty()) {
-            nameTokens.add(fault(detectedFaults))
+        val newRemainingNameChars = if (detectedFaults.isNotEmpty()) {
+            addNameTokenIfAllowed(nameTokens, fault(detectedFaults), remainingNameChars)
         } else {
-            addActionResult(individual.evaluatedMainActions().last(), nameTokens)
+            addActionResult(individual.evaluatedMainActions().last(), nameTokens, remainingNameChars)
         }
-        addEnvironmentActions(individual, nameTokens)
+        addEnvironmentActions(individual, nameTokens, newRemainingNameChars)
     }
 
-    private fun addEnvironmentActions(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>) {
+    protected fun namePrefixChars(): Int {
+        return "test_".length + testCasesSize + 1
+    }
+
+    protected fun addNameTokensIfAllowed(nameTokens: MutableList<String>, targetStrings: List<String>, remainingNameChars: Int): Int {
+        val charsToBeUsed = targetStrings.sumOf { it.length }
+        if ((remainingNameChars - charsToBeUsed) >= 0) {
+            nameTokens.addAll(targetStrings)
+            return remainingNameChars - charsToBeUsed
+        }
+        return remainingNameChars
+    }
+
+    protected fun addNameTokenIfAllowed(nameTokens: MutableList<String>, targetString: String, remainingNameChars: Int): Int {
+        if (canAddNameTokens(targetString, remainingNameChars)) {
+            nameTokens.add(targetString)
+            return remainingNameChars - targetString.length
+        }
+        return remainingNameChars
+    }
+
+    private fun canAddNameTokens(targetString: String, remainingNameChars: Int): Boolean {
+        return (remainingNameChars - targetString.length) >= 0
+    }
+
+    private fun addEnvironmentActions(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, remainingNameChars: Int) {
         val initializingActions = individual.individual.seeInitializingActions()
         val allActions = individual.individual.seeAllActions()
 
@@ -65,8 +92,8 @@ abstract class ActionTestCaseNamingStrategy(
         if (usesWireMock(allActions)) initActionNames.add(wiremock)
 
         if (initActionNames.isNotEmpty()) {
-            nameTokens.add(using)
-            nameTokens.addAll(initActionNames)
+            initActionNames.add(0, using)
+            addNameTokensIfAllowed(nameTokens, initActionNames, remainingNameChars)
         }
     }
 
@@ -82,6 +109,6 @@ abstract class ActionTestCaseNamingStrategy(
         return actions.any { it is HttpExternalServiceAction }
     }
 
-    protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>)
+    protected abstract fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>, remainingNameChars: Int): Int
 
 }
