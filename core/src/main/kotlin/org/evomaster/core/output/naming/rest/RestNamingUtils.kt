@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.action.EvaluatedAction
 import javax.ws.rs.core.MediaType
 
-object RestUtils {
+object RestNamingUtils {
 
     private const val EMPTY = "empty"
     private const val CONTENT = "content"

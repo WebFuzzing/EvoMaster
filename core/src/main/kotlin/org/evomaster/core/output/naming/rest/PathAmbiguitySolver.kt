@@ -1,7 +1,7 @@
 package org.evomaster.core.output.naming.rest
 
 import org.evomaster.core.output.naming.AmbiguitySolver
-import org.evomaster.core.output.naming.rest.RestUtils.getPath
+import org.evomaster.core.output.naming.rest.RestNamingUtils.getPath
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.search.action.Action
