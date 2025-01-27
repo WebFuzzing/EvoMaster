@@ -3,6 +3,8 @@ package org.evomaster.client.java.sql.internal;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Time;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.Date;
 
@@ -88,18 +90,20 @@ class ConversionHelperTest {
     }
 
     @Test
-    public void convertLong() {
+    public void convertPositiveYearToInstant() throws ParseException {
         Long year = 2023L;
-        Instant expected = Instant.parse("2023-01-01T00:00:00Z");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Instant expected = sdf.parse("2023-01-01").toInstant();
         Instant actual = ConversionHelper.convertToInstant(year);
         assertEquals(expected, actual);
     }
 
     @Test
-    public void convertInvalidLongToInstant() {
+    public void convertNegativeYearLongToInstant() throws ParseException {
         Long invalidYear = -1L;
-        assertThrows(IllegalArgumentException.class,
-                () -> ConversionHelper.convertToInstant(invalidYear));
-
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Instant expected = sdf.parse("-1-01-01").toInstant();
+        Instant actual = ConversionHelper.convertToInstant(invalidYear);
+        assertEquals(expected, actual);
     }
 }
