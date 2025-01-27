@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
@@ -370,6 +371,28 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
+    public void testShouldReturnZeroDistanceForIsTrue() {
+        String sqlCommand = "SELECT name, age, is_member FROM Persons WHERE is_member IS TRUE";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age","is_member"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age", "is_member"),"Persons",Arrays.asList("John", 18, true));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testShouldReturnZeroDistanceForIsFalse() {
+        String sqlCommand = "SELECT name, age, is_member FROM Persons WHERE is_member IS FALSE";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age","is_member"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age", "is_member"),"Persons",Arrays.asList("John", 18, false));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
     public void testShouldReturnZeroDistanceForIsNull() {
         String sqlCommand = "SELECT name, age FROM Persons WHERE name IS NULL";
         QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
@@ -634,7 +657,7 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testVisitDateTimeLiteralExpression() throws ParseException {
+    public void testDateTimeLiteralExpression() throws ParseException {
         String sqlCommand = "SELECT * FROM orders WHERE order_date = TIMESTAMP '2025-01-22 15:30:45'";
         QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
 
@@ -649,7 +672,22 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testVisitDateLiteralExpression() throws ParseException {
+    public void testTimestampValue() throws ParseException {
+        String sqlCommand = "SELECT * FROM orders WHERE order_date = {ts '2025-01-22 15:30:45'}";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        Date order_date = sdf.parse("2025-01-22 15:30:45");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testDateLiteralExpression() throws ParseException {
         String sqlCommand = "SELECT * FROM orders WHERE order_date = DATE '2025-01-22'";
         QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
 
@@ -664,7 +702,22 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testVisitTimeLiteralExpression() {
+    public void testDateValue() throws ParseException {
+        String sqlCommand = "SELECT * FROM orders WHERE order_date = {d '2025-01-22'}";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
+
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        java.util.Date order_date = sdf.parse("2025-01-22");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testTimeLiteralExpression() {
         String sqlCommand = "SELECT * FROM orders WHERE order_time = TIME '15:30:45'";
         QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_time"), "orders");
 
@@ -678,7 +731,21 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testVisitTimestampWithTimeZoneLiteralExpression() {
+    public void testTimeValue() {
+        String sqlCommand = "SELECT * FROM orders WHERE order_time = {t '15:30:45'}";
+        QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_time"), "orders");
+
+        Time order_time = Time.valueOf("15:30:45");
+
+        queryResult.addRow(Arrays.asList("order_id", "order_time"), "orders", Arrays.asList(1, order_time));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testTimestampWithTimeZoneLiteralExpression() {
         String sqlCommand = "SELECT * FROM orders WHERE order_date = TIMESTAMPTZ '2025-01-22 15:30:45+02:00'";
         QueryResult queryResult = new QueryResult(Arrays.asList("order_id", "order_date"), "orders");
 
@@ -687,6 +754,195 @@ public class SqlHeuristicsCalculatorTest {
         OffsetDateTime order_date = OffsetDateTime.parse(timestampString, formatter);
 
         queryResult.addRow(Arrays.asList("order_id", "order_date"), "orders", Arrays.asList(1, order_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testParenthesis() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE (salary+bonus) > 50000";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(40000,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testAndCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age>18 AND age<30";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 25));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testOrCondition() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age<18 OR age>30";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 17));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBetweenNumbers() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE age BETWEEN 18 AND 30";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 23));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBetweenStrings() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE name BETWEEN 'A' AND 'Z'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 23));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBetweenDates() {
+        String sqlCommand = "SELECT birth_day FROM Persons WHERE birth_day BETWEEN '1990-07-01' AND '1990-07-31'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("birth_day"), "Persons");
+        java.sql.Date date = java.sql.Date.valueOf("1990-07-15");
+        queryResult.addRow(Arrays.asList("birth_day"),"Persons",Collections.singletonList(date));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBetweenTimes() {
+        String sqlCommand = "SELECT start_time FROM Schedules WHERE start_time BETWEEN '09:00:00' AND '17:00:00'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("start_time"), "Schedules");
+        java.sql.Time time = Time.valueOf("12:30:45");
+        queryResult.addRow(Arrays.asList("start_time"),"Schedules",Collections.singletonList(time));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBetweenTimestamps() {
+        String sqlCommand = "SELECT event_timestamp FROM Events WHERE event_timestamp BETWEEN '2023-01-01 00:00:00' AND '2023-12-31 23:59:59'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("event_timestamp"), "Events");
+
+        String timestampString = "2023-01-14 12:30:45";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(timestampString, formatter);
+        Timestamp timestamp = Timestamp.valueOf(localDateTime);
+
+        queryResult.addRow(Collections.singletonList("event_timestamp"),"Events",Collections.singletonList(timestamp));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testXOrCondition() {
+        String sqlCommand = "SELECT salary, age FROM Employees WHERE (age > 30) XOR (salary > 50000)";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","age"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","age"),"Persons",Arrays.asList(40000, 35));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testModule() {
+        String sqlCommand = "SELECT salary FROM Employees WHERE (salary % 2) = 0";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(40000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBitwiseRightShift() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary >> 1) > 20000";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(40010));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBitwiseLeftShift() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary << 1) > 20000";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(10005));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullValue() {
+        String sqlCommand = "SELECT * FROM Employees WHERE salary = NULL";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+
+        Truthness scaledFalseTruthness = TruthnessUtils.buildScaledTruthness(SqlHeuristicsCalculator.C, SqlHeuristicsCalculator.FALSE_TRUTHNESS.getOfTrue());
+        double expectedDistance = 1 - scaledFalseTruthness.getOfTrue();
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testHexValue() {
+        String sqlCommand = "SELECT * FROM Employees WHERE salary= 0x1A";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(26));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testOverlapsTime() {
+        String sqlCommand = "SELECT start_time, end_time FROM Events WHERE (start_time, end_time) OVERLAPS (TIME '10:00:00', TIME '12:00:00') ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("start_time","end_time"), "Events");
+        Time start_time = Time.valueOf("10:30:00");
+        Time end_time = Time.valueOf("13:00:00");
+        queryResult.addRow(Arrays.asList("start_time","end_time"),"Events",Arrays.asList(start_time,end_time));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testOverlapsDate() {
+        String sqlCommand = "SELECT start_date, end_date FROM Events WHERE (start_date, end_date) OVERLAPS (DATE '2023-01-01', DATE '2024-01-01') ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("start_date","end_date"), "Events");
+        java.sql.Date start_date = java.sql.Date.valueOf("2023-05-01");
+        java.sql.Date end_date = java.sql.Date.valueOf("2024-01-10");
+        queryResult.addRow(Arrays.asList("start_date","end_date"),"Events",Arrays.asList(start_date,end_date));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testOverlapsTimestamp() {
+        String sqlCommand = "SELECT start_timestamp, end_timestamp FROM Events WHERE (start_timestamp, end_timestamp) OVERLAPS (TIMESTAMP '2023-01-01 00:00:00', TIMESTAMP '2024-01-01 23:59:59') ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("start_timestamp","end_timestamp"), "Events");
+        Timestamp start_timestamp = Timestamp.valueOf("2023-05-01 00:00:00");
+        Timestamp end_timestamp = Timestamp.valueOf("2024-01-10 23:59:59");
+        queryResult.addRow(Arrays.asList("start_timestamp","end_timestamp"),"Events",Arrays.asList(start_timestamp,end_timestamp));
 
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;

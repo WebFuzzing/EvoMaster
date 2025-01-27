@@ -11,6 +11,9 @@ public class ConversionHelper {
         } else if (object instanceof Time) {
             String timeAsString = object.toString();
             return ColumnTypeParser.getAsInstant(timeAsString);
+        } else if (object instanceof java.sql.Date) {
+            String dateAsString = object.toString();
+            return ColumnTypeParser.getAsInstant(dateAsString);
         } else if (object instanceof java.util.Date) {
             return ((java.util.Date) object).toInstant();
         } else if (object instanceof OffsetDateTime) {
