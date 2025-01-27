@@ -2,23 +2,16 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.ensureGeneValue
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getBooleanQueryParam
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getIntegerQueryParam
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getPathParam
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
+import org.evomaster.core.output.naming.RestActionTestCaseUtils.getStringQueryParam
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.util.Collections.singletonList
@@ -293,41 +286,6 @@ class TestCaseDisambiguationTest {
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnLanguagesWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
-    }
-
-    private fun getPathParam(paramName: String): Param {
-        return PathParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
-    }
-
-    private fun getStringQueryParam(paramName: String, wrapped: Boolean = true): Param {
-        return getQueryParam(paramName, StringGene(paramName), wrapped)
-    }
-
-    private fun getBooleanQueryParam(paramName: String): Param {
-        return getQueryParam(paramName, BooleanGene(paramName))
-    }
-
-    private fun getIntegerQueryParam(paramName: String, wrapped: Boolean = true): Param {
-        return getQueryParam(paramName, IntegerGene(paramName), wrapped)
-    }
-
-    private fun getQueryParam(paramName: String, gene: Gene, wrapped: Boolean = true): Param {
-        return QueryParam(paramName, if (wrapped) getWrappedGene(paramName, gene) else gene)
-    }
-
-    private fun getWrappedGene(paramName: String, gene: Gene): OptionalGene {
-        return OptionalGene(paramName, gene)
-    }
-
-    /*
-        Since the randomization used to construct the evaluated individuals might set a random boolean value,
-        we do this to ensure the one we want for unit testing
-     */
-    private fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
-        val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
-        (restCallAction.parameters.filter { it.name == paramName }).forEach {
-            (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue)
-        }
     }
 
 }

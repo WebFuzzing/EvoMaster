@@ -31,7 +31,7 @@ abstract class ActionTestCaseNamingStrategy(
     protected val wiremock = "wireMock"
 
     protected fun formatName(nameTokens: List<String>): String {
-        return "_${languageConventionFormatter.formatName(nameTokens)}"
+        return if (nameTokens.isNotEmpty()) "_${languageConventionFormatter.formatName(nameTokens)}" else ""
     }
 
     private fun fault(faults: Set<FaultCategory>): String {

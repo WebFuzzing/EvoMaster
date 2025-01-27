@@ -65,6 +65,21 @@ class GraphQLActionNamingStrategyTest {
         assertEquals("test_0_query_on_add_causes500_internalServerError", testCases[0].name)
     }
 
+    @Test
+    fun testActionAndMethodNameAreAddedTogether() {
+        val eIndividual = getEvaluatedIndividualWithFaults(GQMethodType.QUERY, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")))
+        val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val withActionAndMethodName = GraphQLActionTestCaseNamingStrategy(solution, pythonFormatter, 20).getTestCases()
+        val noActionAndMethodName = GraphQLActionTestCaseNamingStrategy(solution, pythonFormatter, 15).getTestCases()
+
+        assertEquals(1, withActionAndMethodName.size)
+        assertEquals(1, noActionAndMethodName.size)
+        assertEquals(withActionAndMethodName[0].test, noActionAndMethodName[0].test)
+        assertEquals("test_0_query_on_add", withActionAndMethodName[0].name)
+        assertEquals("test_0", noActionAndMethodName[0].name)
+    }
+
     private fun getEvaluatedIndividualWith(query: GQMethodType): EvaluatedIndividual<GraphQLIndividual> {
         return getEvaluatedIndividualWithFaults(query, emptyList())
     }

@@ -42,6 +42,19 @@ class RPCActionNamingStrategyTest {
         assertEquals("test_0_fakeRPCCallOnFunction_4ThrowsRuntimeException", testCases[0].name)
     }
 
+    @Test
+    fun testClassAndFunctionNamesAreAddedIfAllowedByLength() {
+        val solution = getSolution(outputFormat, true)
+
+        val withClassAndFunctionName = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, 30).getTestCases()
+        val noClassAndFunctionName = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, 15).getTestCases()
+
+        assertEquals(1, withClassAndFunctionName.size)
+        assertEquals(1, noClassAndFunctionName.size)
+        assertEquals("test_0_fakeRPCCallOnFunction_4", withClassAndFunctionName[0].name)
+        assertEquals("test_0", noClassAndFunctionName[0].name)
+    }
+
     private fun getSolution(outputFormat: OutputFormat, throwsException: Boolean = false): Solution<*> {
         return Solution(
             mutableListOf(getEvaluatedIndividual(outputFormat, throwsException)),
