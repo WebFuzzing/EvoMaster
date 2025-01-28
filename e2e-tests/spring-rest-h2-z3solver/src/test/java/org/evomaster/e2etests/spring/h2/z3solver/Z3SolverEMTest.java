@@ -37,8 +37,8 @@ public class Z3SolverEMTest extends SpringTestBase {
                     assertFalse(solution.getIndividuals().isEmpty());
 
                     // TODO: Add support for queries with empty WHERE in the select
-                    // assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products", null);
-                    // assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products", null);
+                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products", null);
+                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products", null);
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/h2/z3solver/products-1", null);
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/h2/z3solver/products-1", null);
