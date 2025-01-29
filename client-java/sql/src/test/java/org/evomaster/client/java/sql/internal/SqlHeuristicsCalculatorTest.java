@@ -859,7 +859,7 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testModule() {
+    public void testModulo() {
         String sqlCommand = "SELECT salary FROM Employees WHERE (salary % 2) = 0";
         QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
         queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(40000));
@@ -948,4 +948,252 @@ public class SqlHeuristicsCalculatorTest {
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
+
+    @Test
+    public void testNotExpression() {
+        String sqlCommand = "SELECT name, age FROM Persons WHERE NOT age=18";
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age"), "Persons");
+        queryResult.addRow(Arrays.asList("name","age"),"Persons",Arrays.asList("John", 23));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testConcat() {
+        String sqlCommand = "SELECT * FROM Employees WHERE first_name || ' ' || last_name = 'John Doe'";
+        QueryResult queryResult = new QueryResult(Arrays.asList("first_name", "last_name"), "Employees");
+        queryResult.addRow(Arrays.asList("first_name", "last_name"), "Employees", Arrays.asList("John", "Doe"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBitwiseAnd() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary & 1) = 1";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"), "Employees", Collections.singletonList(1));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+
+    @Test
+    public void testBitwiseOr() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary | 1) = 3";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"), "Employees", Collections.singletonList(2));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testBitwiseXor() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary ^ 2) = 3";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"), "Employees", Collections.singletonList(1));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testRegExpMatchOperator() {
+        String sqlCommand = "SELECT * FROM Employees WHERE name ~ 'John.*'";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
+        queryResult.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList("John Doe"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testSimilarToExpression() {
+        String sqlCommand = "SELECT * FROM Employees WHERE name SIMILAR TO 'John%'";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
+        queryResult.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList("John Doe"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testArrayConstructor() {
+        String sqlCommand = "SELECT * FROM Employees WHERE ARRAY[salary, bonus] = ARRAY[50000, 5000]";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary", "bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary", "bonus"), "Employees", Arrays.asList(50000, 5000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testArrayExpressionWithIndex() {
+        String sqlCommand = "SELECT * FROM Employees WHERE ARRAY[salary, bonus][1] = 50000";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary", "bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary", "bonus"), "Employees", Arrays.asList(50000, 5000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testArrayExpressionUsingStartEndIndexes() {
+        String sqlCommand = "SELECT * FROM Employees WHERE ARRAY[salary, bonus][2:2] = ARRAY[5000]";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary", "bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary", "bonus"), "Employees", Arrays.asList(50000, 5000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testArrayExpressionUsingStartEndIndexesAndIndex() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (ARRAY[salary, bonus][2:2])[1] = 5000";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary", "bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary", "bonus"), "Employees", Arrays.asList(50000, 5000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullAddition() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary+bonus IS NULL";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(null,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullSubtracion() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary-bonus IS NULL";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(null,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBitwiseOr() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary | bonus IS NULL";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(null,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBitwiseAnd() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary & bonus IS NULL";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(null,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBitwiseXor() {
+        String sqlCommand = "SELECT salary,bonus FROM Employees WHERE salary ^ bonus IS NULL";
+        QueryResult queryResult = new QueryResult(Arrays.asList("salary","bonus"), "Employees");
+        queryResult.addRow(Arrays.asList("salary","bonus"),"Employees",Arrays.asList(null,20000));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullModulo() {
+        String sqlCommand = "SELECT salary FROM Employees WHERE (salary % 2) IS NULL";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBitwiseRightShift() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary >> 1) IS NULL";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBitwiseLeftShift() {
+        String sqlCommand = "SELECT * FROM Employees WHERE (salary << 1) IS NULL";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(Collections.singletonList("salary"),"Employees",Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullSignedExpression() {
+        String sqlCommand = "SELECT price " +
+                "    FROM Products " +
+                "    WHERE +price IS NULL";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("price"), "Products");
+        queryResult.addRow(Collections.singletonList("price"),"Products",Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullBetweenTimestamps() {
+        String sqlCommand = "SELECT event_timestamp FROM Events WHERE NOT (event_timestamp BETWEEN NULL AND '2023-12-31 23:59:59')";
+        QueryResult queryResult = new QueryResult(Arrays.asList("event_timestamp"), "Events");
+
+        String timestampString = "2023-01-14 12:30:45";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime localDateTime = LocalDateTime.parse(timestampString, formatter);
+        Timestamp timestamp = Timestamp.valueOf(localDateTime);
+
+        queryResult.addRow(Collections.singletonList("event_timestamp"),"Events",Collections.singletonList(timestamp));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullOverlapsTime() {
+        String sqlCommand = "SELECT start_time, end_time FROM Events WHERE NOT ((start_time, end_time) OVERLAPS (NULL, TIME '12:00:00')) ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("start_time","end_time"), "Events");
+        Time start_time = Time.valueOf("10:30:00");
+        Time end_time = Time.valueOf("13:00:00");
+        queryResult.addRow(Arrays.asList("start_time","end_time"),"Events",Arrays.asList(start_time,end_time));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        double expectedDistance = 0;
+        assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullConcat() {
+        String sqlCommand = "SELECT * FROM Employees WHERE first_name || ' ' || last_name IS NULL ";
+        QueryResult queryResult = new QueryResult(Arrays.asList("first_name", "last_name"), "Employees");
+        queryResult.addRow(Arrays.asList("first_name", "last_name"), "Employees", Arrays.asList(null, "Doe"));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testNullRegExpMatchOperator() {
+        String sqlCommand = "SELECT * FROM Employees WHERE NOT(name ~ 'John.*')";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
+        queryResult.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+    @Test
+    public void testNullSimilarToExpression() {
+        String sqlCommand = "SELECT * FROM Employees WHERE NOT(name SIMILAR TO 'John%')";
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
+        queryResult.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList(null));
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
 }

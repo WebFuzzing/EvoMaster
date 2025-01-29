@@ -2,6 +2,8 @@ package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.sql.Connection;
 import java.sql.Time;
@@ -211,4 +213,7 @@ public abstract class QueryResultTestBase {
         }
         assertEquals(expected, actual);
     }
+
+
+
 }

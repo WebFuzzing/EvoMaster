@@ -16,6 +16,46 @@ class SqlStringUtilsTest {
     }
 
     @Test
+    void testRemovesDoubleQuotes() {
+        String input = "\"Hello\"";
+        String expected = "Hello";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testRemovesSingleQuotesWithSpaces() {
+        String input = "' Hello '";
+        String expected = " Hello ";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void removesDoubleQuotesWithSpaces() {
+        String input = "\" Hello \"";
+        String expected = " Hello ";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void mixedQuotesNoRemoval() {
+        String input = "'Hello\"";
+        String expected = "'Hello\"";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testRemovesDoubleQuotesWithSpaces() {
+        String input = "\" Hello \"";
+        String expected = " Hello ";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void testNoQuotesToRemove() {
         String input = "Hello";
         String expected = "Hello";
@@ -58,6 +98,22 @@ class SqlStringUtilsTest {
     void testOnlyEndingQuote() {
         String input = "Hello'";
         String expected = "Hello'";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testMixedQuotesNoRemoval() {
+        String input = "'Hello\"";
+        String expected = "'Hello\"";
+        String actual = SqlStringUtils.removeEnclosingQuotes(input);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testSingleCharacterDoubleQuote() {
+        String input = "\"";
+        String expected = "\"";
         String actual = SqlStringUtils.removeEnclosingQuotes(input);
         assertEquals(expected, actual);
     }

@@ -17,13 +17,9 @@ import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 
 
-import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.*;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Stack;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,7 +52,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return computedTruthnesses.peek();
     }
 
-    private enum BinaryOperator {
+    private enum ComparisonOperatorType {
         EQUALS_TO,
         NOT_EQUALS_TO,
         GREATER_THAN,
@@ -65,19 +61,27 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         MINOR_THAN_EQUALS
     }
 
-    private BinaryOperator getBinaryOperator(ComparisonOperator comparisonOperator) {
+    private enum ArithmeticOperationType {
+        ADDITION,
+        SUBTRACTION,
+        MULTIPLICATION,
+        DIVISION,
+        INTEGER_DIVISION
+    }
+
+    private static ComparisonOperatorType toComparisonOperatorType(ComparisonOperator comparisonOperator) {
         if (comparisonOperator instanceof EqualsTo) {
-            return BinaryOperator.EQUALS_TO;
+            return ComparisonOperatorType.EQUALS_TO;
         } else if (comparisonOperator instanceof NotEqualsTo) {
-            return BinaryOperator.NOT_EQUALS_TO;
+            return ComparisonOperatorType.NOT_EQUALS_TO;
         } else if (comparisonOperator instanceof GreaterThan) {
-            return BinaryOperator.GREATER_THAN;
+            return ComparisonOperatorType.GREATER_THAN;
         } else if (comparisonOperator instanceof GreaterThanEquals) {
-            return BinaryOperator.GREATER_THAN_EQUALS;
+            return ComparisonOperatorType.GREATER_THAN_EQUALS;
         } else if (comparisonOperator instanceof MinorThan) {
-            return BinaryOperator.MINOR_THAN;
+            return ComparisonOperatorType.MINOR_THAN;
         } else if (comparisonOperator instanceof MinorThanEquals) {
-            return BinaryOperator.MINOR_THAN_EQUALS;
+            return ComparisonOperatorType.MINOR_THAN_EQUALS;
         } else {
             throw new IllegalArgumentException("Unsupported ComparisonOperator: " + comparisonOperator.getClass().getName());
         }
@@ -86,8 +90,8 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     private void visitComparisonOperator(ComparisonOperator comparisonOperator) {
         final Object concreteRightValue = concreteValues.pop();
         final Object concreteLeftValue = concreteValues.pop();
-        final BinaryOperator binaryOperator = getBinaryOperator(comparisonOperator);
-        final Truthness truthness = evaluateTruthnessForComparisonOperator(concreteLeftValue, concreteRightValue, binaryOperator);
+        final ComparisonOperatorType comparisonOperatorType = toComparisonOperatorType(comparisonOperator);
+        final Truthness truthness = evaluateTruthnessForComparisonOperator(concreteLeftValue, concreteRightValue, comparisonOperatorType);
         computedTruthnesses.push(truthness);
     }
 
@@ -97,7 +101,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         visitComparisonOperator(equalsTo);
     }
 
-    private Truthness evaluateTruthnessForComparisonOperator(Object concreteLeftValue, Object concreteRightValue, BinaryOperator binaryOperator) {
+    private Truthness evaluateTruthnessForComparisonOperator(Object concreteLeftValue, Object concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
         final Truthness truthness;
         if (concreteLeftValue == null && concreteRightValue == null) {
             truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS;
@@ -106,17 +110,19 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else {
             final Truthness truthnessOfExpression;
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
-                truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, binaryOperator);
+                truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, comparisonOperatorType);
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
-                truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, binaryOperator);
+                truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
             } else if (concreteLeftValue instanceof Boolean && concreteRightValue instanceof Boolean) {
-                truthnessOfExpression = calculateTruthnessForBooleanComparison((Boolean) concreteLeftValue, (Boolean) concreteRightValue, binaryOperator);
+                truthnessOfExpression = calculateTruthnessForBooleanComparison((Boolean) concreteLeftValue, (Boolean) concreteRightValue, comparisonOperatorType);
             } else if (concreteLeftValue instanceof java.util.Date || concreteRightValue instanceof java.util.Date) {
-                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), binaryOperator);
+                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetDateTime || concreteRightValue instanceof OffsetDateTime) {
-                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), binaryOperator);
+                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetTime || concreteRightValue instanceof OffsetTime) {
-                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), binaryOperator);
+                truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), comparisonOperatorType);
+            } else if (concreteLeftValue instanceof Object[] || concreteRightValue instanceof Object[]) {
+                truthnessOfExpression = calculateTruthnessForArrayComparison((Object[]) concreteLeftValue, (Object[]) concreteRightValue, comparisonOperatorType);
             } else {
                 throw new UnsupportedOperationException("types not supported " + concreteLeftValue.getClass().getName() + " and " + concreteRightValue.getClass().getName());
             }
@@ -129,27 +135,60 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return truthness;
     }
 
-    private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, BinaryOperator binaryOperator) {
+    private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftInstant);
         Objects.requireNonNull(rightInstant);
         final long leftInstantMillis = leftInstant.toEpochMilli();
         final long rightInstantMillis = rightInstant.toEpochMilli();
-        return calculateTruthnessForDoubleComparison(leftInstantMillis, rightInstantMillis, binaryOperator);
+        return calculateTruthnessForDoubleComparison(leftInstantMillis, rightInstantMillis, comparisonOperatorType);
     }
 
-    private Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, BinaryOperator binaryOperator) {
+    private static Truthness calculateTruthnessForBooleanComparison(Boolean concreteLeftValue, Boolean concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(concreteLeftValue);
         Objects.requireNonNull(concreteRightValue);
 
         double leftValueAsDouble = toDouble(concreteLeftValue);
         double rightValueAsDouble = toDouble(concreteRightValue);
-        switch (binaryOperator) {
+        switch (comparisonOperatorType) {
             case EQUALS_TO:
                 return TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble);
             case NOT_EQUALS_TO:
                 return TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble).invert();
             default:
-                throw new IllegalArgumentException("Unsupported binary operator: " + binaryOperator);
+                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
+        }
+    }
+
+    private Truthness calculateTruthnessForArrayComparison(Object[] leftArray, Object[] rightArray, ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(leftArray);
+        Objects.requireNonNull(rightArray);
+
+        boolean leftArrayHasNullValue = Stream.of(leftArray).anyMatch(Objects::isNull);
+        boolean rightArrayHasNullValue = Stream.of(rightArray).anyMatch(Objects::isNull);
+
+        if (leftArrayHasNullValue || rightArrayHasNullValue) {
+            return FALSE_TRUTHNESS;
+        } else {
+            final List<Object> leftList = Arrays.asList(leftArray);
+            final List<Object> rightList = Arrays.asList(rightArray);
+            final Truthness truthness;
+            if (rightList.size() != leftList.size()) {
+                truthness = FALSE_TRUTHNESS;
+            } else {
+                Truthness[] truthnesses = new Truthness[leftList.size()];
+                for (int i = 0; i < leftList.size(); i++) {
+                    truthnesses[i] = evaluateTruthnessForComparisonOperator(leftList.get(i), rightList.get(i), ComparisonOperatorType.EQUALS_TO);
+                }
+                truthness = buildAndAggregationTruthness(truthnesses);
+            }
+            switch (comparisonOperatorType) {
+                case EQUALS_TO:
+                    return truthness;
+                case NOT_EQUALS_TO:
+                    return truthness.invert();
+                default:
+                    throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
+            }
         }
     }
 
@@ -168,11 +207,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
     }
 
-    private Truthness calculateTruthnessForStringComparison(String leftString, String rightString, BinaryOperator binaryOperator) {
+    private Truthness calculateTruthnessForStringComparison(String leftString, String rightString, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftString);
         Objects.requireNonNull(rightString);
 
-        switch (binaryOperator) {
+        switch (comparisonOperatorType) {
             case EQUALS_TO:
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(leftString, rightString, false);
@@ -190,20 +229,21 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 return leftString.compareTo(rightString) <= 0 ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
 
             default:
-                throw new IllegalArgumentException("Unsupported binary operator: " + binaryOperator);
+                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
         }
     }
 
-    private static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, BinaryOperator binaryOperator) {
+    private static Truthness calculateTruthnessForNumberComparison(Number leftNumber, Number rightNumber, ComparisonOperatorType comparisonOperatorType) {
         Objects.requireNonNull(leftNumber);
         Objects.requireNonNull(rightNumber);
+
         double leftValueAsDouble = leftNumber.doubleValue();
         double rightValueAsDouble = rightNumber.doubleValue();
-        return calculateTruthnessForDoubleComparison(leftValueAsDouble, rightValueAsDouble, binaryOperator);
+        return calculateTruthnessForDoubleComparison(leftValueAsDouble, rightValueAsDouble, comparisonOperatorType);
     }
 
-    private static Truthness calculateTruthnessForDoubleComparison(double leftValueAsDouble, double rightValueAsDouble, BinaryOperator binaryOperator) {
-        switch (binaryOperator) {
+    private static Truthness calculateTruthnessForDoubleComparison(double leftValueAsDouble, double rightValueAsDouble, ComparisonOperatorType comparisonOperatorType) {
+        switch (comparisonOperatorType) {
             case EQUALS_TO:
                 return TruthnessUtils.getEqualityTruthness(leftValueAsDouble, rightValueAsDouble);
             case NOT_EQUALS_TO:
@@ -221,7 +261,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 //a >= b => ! (a < b)
                 return getLessThanTruthness(leftValueAsDouble, rightValueAsDouble).invert();
             default:
-                throw new IllegalArgumentException("Unsupported binary operator: " + binaryOperator);
+                throw new IllegalArgumentException("Unsupported binary operator: " + comparisonOperatorType);
         }
     }
 
@@ -230,10 +270,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(bitwiseRightShift);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
-        final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
-        final int result = leftValueAsInt >> rightValueAsInt;
-        concreteValues.push(result);
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
+            final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
+            final int result = leftValueAsInt >> rightValueAsInt;
+            concreteValues.push(result);
+        }
     }
 
     @Override
@@ -241,10 +285,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(bitwiseLeftShift);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
-        final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
-        final int result = leftValueAsInt << rightValueAsInt;
-        concreteValues.push(result);
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
+            final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
+            final int result = leftValueAsInt << rightValueAsInt;
+            concreteValues.push(result);
+        }
     }
 
     @Override
@@ -260,26 +308,32 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(SignedExpression signedExpression) {
         super.visit(signedExpression);
-        final Number numberWithoutSign = (Number) concreteValues.pop();
-        final Number result;
-        switch (signedExpression.getSign()) {
-            case PLUS: {
-                result = numberWithoutSign.doubleValue();
-                break;
+        Object expressionValue = concreteValues.pop();
+        if (expressionValue == null) {
+            concreteValues.push(null);
+            return;
+        } else {
+            final Number numberWithoutSign = (Number) expressionValue;
+            final Number result;
+            switch (signedExpression.getSign()) {
+                case PLUS: {
+                    result = numberWithoutSign.doubleValue();
+                    break;
+                }
+                case MINUS: {
+                    result = -(numberWithoutSign.doubleValue());
+                    break;
+                }
+                case BITWISE_NOT: {
+                    result = ~(numberWithoutSign.intValue());
+                    break;
+                }
+                default: {
+                    throw new IllegalArgumentException("Unsupported sign: " + signedExpression.getSign());
+                }
             }
-            case MINUS: {
-                result = -(numberWithoutSign.doubleValue());
-                break;
-            }
-            case BITWISE_NOT: {
-                result = ~(numberWithoutSign.intValue());
-                break;
-            }
-            default: {
-                throw new IllegalArgumentException("Unsupported sign: " + signedExpression.getSign());
-            }
+            concreteValues.push(result);
         }
-        concreteValues.push(result);
     }
 
     @Override
@@ -388,10 +442,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Object startRangeValue = this.concreteValues.pop();
         Object leftExpressionValue = this.concreteValues.pop();
 
-        Truthness startCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, startRangeValue, BinaryOperator.GREATER_THAN_EQUALS);
-        Truthness endCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, endRangeValue, BinaryOperator.MINOR_THAN_EQUALS);
-        Truthness betweenCondition = buildAndAggregationTruthness(startCondition, endCondition);
-        this.computedTruthnesses.push(betweenCondition);
+        if (leftExpressionValue==null || startRangeValue==null || endRangeValue==null) {
+            this.computedTruthnesses.push(FALSE_TRUTHNESS_BETTER);
+        } else {
+            Truthness startCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, startRangeValue, ComparisonOperatorType.GREATER_THAN_EQUALS);
+            Truthness endCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, endRangeValue, ComparisonOperatorType.MINOR_THAN_EQUALS);
+            Truthness betweenCondition = buildAndAggregationTruthness(startCondition, endCondition);
+            this.computedTruthnesses.push(betweenCondition);
+        }
     }
 
     @Override
@@ -403,9 +461,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Object leftEnd = leftRange.get(1);
         Object rightStart = rightRange.get(0);
         Object rightEnd = rightRange.get(1);
-        Truthness rangeStart = evaluateTruthnessForComparisonOperator(leftStart,rightEnd,BinaryOperator.MINOR_THAN_EQUALS);
-        Truthness rangeEnd =  evaluateTruthnessForComparisonOperator(rightStart,leftEnd,BinaryOperator.MINOR_THAN_EQUALS);
-        Truthness overlaps = buildAndAggregationTruthness(rangeStart,rangeEnd);
+        Truthness rangeStart = evaluateTruthnessForComparisonOperator(leftStart, rightEnd, ComparisonOperatorType.MINOR_THAN_EQUALS);
+        Truthness rangeEnd = evaluateTruthnessForComparisonOperator(rightStart, leftEnd, ComparisonOperatorType.MINOR_THAN_EQUALS);
+        Truthness overlaps = buildAndAggregationTruthness(rangeStart, rangeEnd);
         computedTruthnesses.push(overlaps);
     }
 
@@ -559,7 +617,15 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Concat concat) {
-        throw new UnsupportedOperationException("visit(Concat) not supported");
+        super.visit(concat);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue==null || rightConcreteValue==null) {
+            concreteValues.push(null);
+        } else {
+            String result = String.valueOf(leftConcreteValue) + String.valueOf(rightConcreteValue);
+            concreteValues.push(result);
+        }
     }
 
     @Override
@@ -569,17 +635,47 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(BitwiseAnd bitwiseAnd) {
-        throw new UnsupportedOperationException("visit(BitwiseAnd) not supported");
+        super.visit(bitwiseAnd);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
+            final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
+            final int result = leftValueAsInt & rightValueAsInt;
+            concreteValues.push(result);
+        }
     }
 
     @Override
     public void visit(BitwiseOr bitwiseOr) {
-        throw new UnsupportedOperationException("visit(BitwiseOr) not supported");
+        super.visit(bitwiseOr);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
+            final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
+            final int result = leftValueAsInt | rightValueAsInt;
+            concreteValues.push(result);
+        }
     }
 
     @Override
     public void visit(BitwiseXor bitwiseXor) {
-        throw new UnsupportedOperationException("visit(BitwiseXor) not supported");
+        super.visit(bitwiseXor);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue ==null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
+            final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
+            final int result = leftValueAsInt ^ rightValueAsInt;
+            concreteValues.push(result);
+        }
     }
 
     @Override
@@ -592,10 +688,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(modulo);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        final double leftValueAsDouble = ((Number) leftConcreteValue).doubleValue();
-        final double rightValueAsDouble = ((Number) rightConcreteValue).doubleValue();
-        final double result = leftValueAsDouble % rightValueAsDouble;
-        concreteValues.push(result);
+        if (leftConcreteValue ==null || rightConcreteValue == null) {
+            concreteValues.push(null);
+        } else {
+            final double leftValueAsDouble = ((Number) leftConcreteValue).doubleValue();
+            final double rightValueAsDouble = ((Number) rightConcreteValue).doubleValue();
+            final double result = leftValueAsDouble % rightValueAsDouble;
+            concreteValues.push(result);
+        }
     }
 
     @Override
@@ -620,7 +720,18 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(RegExpMatchOperator regExpMatchOperator) {
-        throw new UnsupportedOperationException("visit(RegExpMatchOperator) not supported");
+        super.visit(regExpMatchOperator);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue==null || rightConcreteValue==null) {
+            computedTruthnesses.push(FALSE_TRUTHNESS);
+        } else {
+            String rightString = rightConcreteValue.toString();
+            String leftString = leftConcreteValue.toString();
+            boolean matches = leftString.matches(rightString);
+            Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+            computedTruthnesses.push(truthness);
+        }
     }
 
     @Override
@@ -692,7 +803,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(NotExpression notExpression) {
-        throw new UnsupportedOperationException("visit(NotExpression) not supported");
+        super.visit(notExpression);
+        Truthness truthness = computedTruthnesses.pop();
+        Truthness notTruthness = truthness.invert();
+        computedTruthnesses.push(notTruthness);
     }
 
     @Override
@@ -707,17 +821,76 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(SimilarToExpression similarToExpression) {
-        throw new UnsupportedOperationException("visit(SimilarToExpression) not supported");
+        super.visit(similarToExpression);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            computedTruthnesses.push(FALSE_TRUTHNESS);
+        } else {
+            String rightString = rightConcreteValue.toString();
+            String leftString = leftConcreteValue.toString();
+            boolean matches = leftString.matches(rightString.replace("%", ".*").replace("_", "."));
+            Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+            computedTruthnesses.push(truthness);
+        }
     }
 
     @Override
     public void visit(ArrayExpression arrayExpression) {
-        throw new UnsupportedOperationException("visit(ArrayExpression) not supported");
+        super.visit(arrayExpression);
+
+        Number sqlStopIndex;
+        if (arrayExpression.getStopIndexExpression() != null) {
+            sqlStopIndex = (Number) concreteValues.pop();
+        } else {
+            sqlStopIndex = null;
+        }
+
+        Number sqlStartIndex;
+        if (arrayExpression.getStartIndexExpression() != null) {
+            sqlStartIndex = (Number) concreteValues.pop();
+        } else {
+            sqlStartIndex = 1;
+        }
+
+        final Number sqlIndex;
+        if (arrayExpression.getIndexExpression() != null) {
+            sqlIndex = (Number) concreteValues.pop();
+        } else {
+            sqlIndex = null;
+        }
+
+        final Object[] objectArray = (Object[]) concreteValues.pop();
+
+        if (sqlStopIndex == null) {
+            sqlStopIndex = objectArray.length;
+        }
+        int startIndex = toJavaIndex(sqlStartIndex);
+        int stopIndex = toJavaIndex(sqlStopIndex);
+
+        Object[] subArray = Arrays.copyOfRange(objectArray, startIndex, stopIndex + 1);
+
+        if (sqlIndex == null) {
+            concreteValues.push(subArray);
+        } else {
+            final int index = toJavaIndex(sqlIndex);
+            final Object item = subArray[index];
+            concreteValues.push(item);
+        }
+    }
+
+    private static int toJavaIndex(Number sqlStartIndex) {
+        return sqlStartIndex.intValue() - 1;
     }
 
     @Override
     public void visit(ArrayConstructor arrayConstructor) {
-        throw new UnsupportedOperationException("visit(ArrayConstructor) not supported");
+        super.visit(arrayConstructor);
+        List<Object> list = Stream.generate(() -> concreteValues.pop())
+                .limit(arrayConstructor.getExpressions().size())
+                .collect(Collectors.toList());
+        Collections.reverse(list);
+        concreteValues.push(list.toArray());
     }
 
     @Override
@@ -828,27 +1001,94 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         this.visitArithmeticBinaryExpression(division);
     }
 
-    private void visitArithmeticBinaryExpression(BinaryExpression binaryExpression) {
-        final Number concreteRightValueAsNumber = (Number) concreteValues.pop();
-        final Number concreteLeftValueAsNumber = (Number) concreteValues.pop();
-        final double concreteLeftValueAsDouble = concreteLeftValueAsNumber.doubleValue();
-        final double concreteRightValueAsDouble = concreteRightValueAsNumber.doubleValue();
-        final double resultAsDouble;
-        if (binaryExpression instanceof Division) {
-            resultAsDouble = concreteLeftValueAsDouble / concreteRightValueAsDouble;
-        } else if (binaryExpression instanceof Multiplication) {
-            resultAsDouble = concreteLeftValueAsDouble * concreteRightValueAsDouble;
+    private static ArithmeticOperationType toArithmeticOperationType(BinaryExpression binaryExpression) {
+        if (binaryExpression instanceof Addition) {
+            return ArithmeticOperationType.ADDITION;
         } else if (binaryExpression instanceof Subtraction) {
-            resultAsDouble = concreteLeftValueAsDouble - concreteRightValueAsDouble;
-        } else if (binaryExpression instanceof Addition) {
-            resultAsDouble = concreteLeftValueAsDouble + concreteRightValueAsDouble;
+            return ArithmeticOperationType.SUBTRACTION;
+        } else if (binaryExpression instanceof Multiplication) {
+            return ArithmeticOperationType.MULTIPLICATION;
+        } else if (binaryExpression instanceof Division) {
+            return ArithmeticOperationType.DIVISION;
         } else if (binaryExpression instanceof IntegerDivision) {
-            resultAsDouble = Math.floor(concreteLeftValueAsDouble / concreteRightValueAsDouble);
+            return ArithmeticOperationType.INTEGER_DIVISION;
         } else {
-            throw new UnsupportedOperationException("unsupported binary expression: " + binaryExpression.getClass().getName());
+            throw new IllegalArgumentException("Unsupported BinaryExpression: " + binaryExpression.getClass().getName());
         }
-        concreteValues.push(resultAsDouble);
     }
 
+    private void visitArithmeticBinaryExpression(BinaryExpression binaryExpression) {
+        final Object concreteRightValue = concreteValues.pop();
+        final Object concreteLeftValue = concreteValues.pop();
+        if (concreteLeftValue == null || concreteRightValue == null) {
+            concreteValues.push(null);
+        } else {
+            final ArithmeticOperationType arithmeticOperationType = toArithmeticOperationType(binaryExpression);
+            if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
+                final Number leftNumber = (Number) concreteLeftValue;
+                final Number rightNumber = (Number) concreteRightValue;
+                final double resultAsDouble = computeNumberArithmeticOperation(leftNumber, rightNumber, arithmeticOperationType);
+                concreteValues.push(resultAsDouble);
+            } else if (concreteLeftValue instanceof java.sql.Date && concreteRightValue instanceof java.sql.Date) {
+                final java.sql.Date leftDate = (java.sql.Date) concreteLeftValue;
+                final java.sql.Date rightDate = (java.sql.Date) concreteRightValue;
+                final java.sql.Date resultDate = computeDateArithmeticOperation(leftDate, rightDate, arithmeticOperationType);
+                concreteValues.push(resultDate);
+            }
 
+        }
+
+
+    }
+
+    private static java.sql.Date computeDateArithmeticOperation(java.sql.Date leftDate, java.sql.Date rightDate, ArithmeticOperationType arithmeticOperationType) {
+        Objects.requireNonNull(leftDate);
+        Objects.requireNonNull(rightDate);
+
+        final long leftTime = leftDate.getTime();
+        final long rightTime = rightDate.getTime();
+        final long resultTime;
+
+        switch (arithmeticOperationType) {
+            case SUBTRACTION:
+                resultTime = leftTime - rightTime;
+                break;
+            case ADDITION:
+                resultTime = leftTime + rightTime;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported ArithmeticOperationType: " + arithmeticOperationType);
+        }
+        final java.sql.Date resultDate = new java.sql.Date(resultTime);
+        return resultDate;
+    }
+
+    private static double computeNumberArithmeticOperation(Number leftNumber, Number rightNumber, ArithmeticOperationType arithmeticOperationType) {
+        Objects.requireNonNull(leftNumber);
+        Objects.requireNonNull(rightNumber);
+
+        final double leftDoubleValue = leftNumber.doubleValue();
+        final double rightDoubleValue = rightNumber.doubleValue();
+        final double resultAsDouble;
+        switch (arithmeticOperationType) {
+            case ADDITION:
+                resultAsDouble = leftDoubleValue + rightDoubleValue;
+                break;
+            case SUBTRACTION:
+                resultAsDouble = leftDoubleValue - rightDoubleValue;
+                break;
+            case MULTIPLICATION:
+                resultAsDouble = leftDoubleValue * rightDoubleValue;
+                break;
+            case DIVISION:
+                resultAsDouble = leftDoubleValue / rightDoubleValue;
+                break;
+            case INTEGER_DIVISION:
+                resultAsDouble = Math.floor(leftDoubleValue / rightDoubleValue);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported ArithmeticOperationType: " + arithmeticOperationType);
+        }
+        return resultAsDouble;
+    }
 }

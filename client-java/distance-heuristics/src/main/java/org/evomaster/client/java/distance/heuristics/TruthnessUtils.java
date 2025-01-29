@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class TruthnessUtils {
 
     /**
-     * scales to a positive double value to the [0,1] range
+     * Scales to a positive double value to the [0,1] range
      *
      * @param v a non-negative double value
      * @return
@@ -28,6 +28,17 @@ public class TruthnessUtils {
     }
 
 
+    /**
+     * Returns a Truthness instance for comparing two integer values for equality.
+     *
+     * This method calculates the distance between the two integer values, and creates a Truthness
+     * instance where the `ofTrue` field is 1 minus the normalized distance, and the `ofFalse` field
+     * is 1 if the values are not equal, otherwise 0.
+     *
+     * @param a an integer value
+     * @param b another integer value
+     * @return a Truthness instance representing the equality comparison of the input integer values
+     */
     public static Truthness getEqualityTruthness(int a, int b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         double normalizedDistance = normalizeValue(distance);
@@ -37,6 +48,17 @@ public class TruthnessUtils {
         );
     }
 
+    /**
+     * Returns a Truthness instance for comparing two long values for equality.
+     *
+     * This method calculates the distance between the two long values, and creates a Truthness
+     * instance where the `ofTrue` field is 1 minus the normalized distance, and the `ofFalse` field
+     * is 1 if the values are not equal, otherwise 0.
+     *
+     * @param a an long value
+     * @param b another long value
+     * @return a Truthness instance representing the equality comparison of the input integer values
+     */
     public static Truthness getEqualityTruthness(long a, long b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         double normalizedDistance = normalizeValue(distance);
@@ -47,6 +69,18 @@ public class TruthnessUtils {
     }
 
 
+    /**
+     * Returns a Truthness for comparing if one double value is less than another.
+     *
+     * This method calculates the branch distance, returning <code>ofTrue</code>
+     * of 1.0d if the first value is less than the second, and 1.0d / (1.1d + distance)
+     * otherwise.
+     * The <code>ofFalse</code> value is the opposite of the <code>ofTrue</code> value.
+     *
+     * @param a the first double value
+     * @param b the second double value
+     * @return a Truthness instance representing the less-than comparison of the input long values
+     */
     public static Truthness getLessThanTruthness(double a, double b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         return new Truthness(
@@ -55,6 +89,18 @@ public class TruthnessUtils {
         );
     }
 
+    /**
+     * Returns a Truthness for comparing if one long value is less than another.
+     *
+     * This method calculates the branch distance, returning <code>ofTrue</code>
+     * of 1.0d if the first value is less than the second, and 1.0d / (1.1d + distance)
+     * otherwise.
+     * The <code>ofFalse</code> value is the opposite of the <code>ofTrue</code> value.
+     *
+     * @param a the first long value
+     * @param b the second long value
+     * @return a Truthness instance representing the less-than comparison of the input long values
+     */
     public static Truthness getLessThanTruthness(long a, long b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         return new Truthness(
@@ -63,6 +109,17 @@ public class TruthnessUtils {
         );
     }
 
+    /**
+     * Returns a Truthness instance for comparing two double values for equality.
+     *
+     * This method normalizes the distance between the two double values,
+     * and creates a Truthness instance where the `ofTrue` field is 1 minus the normalized distance,
+     * and the `ofFalse` field is 1 if the values are not equal, otherwise 0.
+     *
+     * @param a a double value
+     * @param b another double value
+     * @return a Truthness instance representing the equality comparison of the input double values
+     */
     public static Truthness getEqualityTruthness(double a, double b) {
         double distance = DistanceHelper.getDistanceToEquality(a, b);
         double normalizedDistance = normalizeValue(distance);
@@ -75,7 +132,7 @@ public class TruthnessUtils {
     /**
      * Returns a truthness value for comparing how close a length was to 0.
      * @param len a positive value for a length
-     * @return
+     * @return a Truthness instance
      */
     public static Truthness getTruthnessToEmpty(int len) {
         Truthness t;
@@ -90,18 +147,52 @@ public class TruthnessUtils {
         return t;
     }
 
+    /**
+     * Aggregates multiple Truthness instances using an AND operation.
+     *
+     * This method returns a Truthness instance where the <code>ofTrue</code> field is the average of the `ofTrue`
+     * values of the input truthnesses, and the <code>ofFalse</code> field is either 1.0d if any of the input Truthness
+     * instances is false, or average of the `ofFalse` values from the provided Truthness instances if none of the
+     * given truthnesses is false.
+     *
+     * @param truthnesses an array of Truthness instances to be aggregated
+     * @return a new Truthness instance representing the AND aggregation of the input Truthness instances
+     * @throws IllegalArgumentException if the input array is null, empty, or contains null elements
+     */
     public static Truthness buildAndAggregationTruthness(Truthness... truthnesses) {
         double averageOfTrue = averageOfTrue(truthnesses);
         double falseOrAverageFalse = falseOrAverageFalse(truthnesses);
         return new Truthness(averageOfTrue, falseOrAverageFalse);
     }
 
+    /**
+     * Aggregates multiple Truthness instances using an OR operation.
+     *
+     * This method returns a Truthness instance where the <code>ofTrue</code> field is either 1.0d if any of the input
+     * Truthness instances is true, or the average of the `ofTrue` values from the provided Truthness instances if none
+     * of the given truthnesses is true. The <code>ofFalse</code> field is the average of the `ofFalse` values of the
+     * input truthnesses.
+     *
+     * @param truthnesses an array of Truthness instances to be aggregated
+     * @return a new Truthness instance representing the OR aggregation of the input Truthness instances
+     * @throws IllegalArgumentException if the input array is null, empty, or contains null elements
+     */
     public static Truthness buildOrAggregationTruthness(Truthness... truthnesses) {
         double trueOrAverageTrue = trueOrAverageTrue(truthnesses);
         double averageOfFalse = averageOfFalse(truthnesses);
         return new Truthness(trueOrAverageTrue, averageOfFalse);
     }
 
+
+    /**
+     * Aggregates two Truthness instances using an XOR operation.
+     *
+     * This method returns XOR(a,b) as (a AND NOT b) OR (NOT a AND b).
+     *
+     * @param left the first Truthness instance
+     * @param right the second Truthness instance
+     * @return a new Truthness instance representing the XOR aggregation of the input Truthness instances
+     */
     public static Truthness buildXorAggregationTruthness(Truthness left, Truthness right) {
         Truthness leftAndNotRight = buildAndAggregationTruthness(left,right.invert());
         Truthness notLeftAndRight = buildAndAggregationTruthness(left.invert(),right);
@@ -112,8 +203,8 @@ public class TruthnessUtils {
     /**
      * Returns an average of the <code>ofTrue</code> values for the truthnesses.
      *
-     * @param truthnesses
-     * @return
+     * @param truthnesses an array of Truthness instances
+     * @return the average of the <code>ofTrue</code> values for the input Truthness instances
      */
     private static double averageOfTrue(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
@@ -122,6 +213,11 @@ public class TruthnessUtils {
         return average(getOfTrueValues);
     }
 
+    /**
+     * Checks if the given array of Truthness is non-empty and all instances are all non-null.
+     *
+     * @param truthnesses an array of Truthness instances
+     */
     private static void checkValidTruthnesses(Truthness[] truthnesses) {
         if (truthnesses == null || truthnesses.length == 0 || Arrays.stream(truthnesses).anyMatch(e -> e == null)) {
             throw new IllegalArgumentException("null or empty Truthness instance");
@@ -192,10 +288,15 @@ public class TruthnessUtils {
     }
 
     /**
-     * Returns
-     * @param base
-     * @param ofTrueToScale
-     * @return
+     * Builds a scaled Truthness instance.
+     *
+     * This method scales the given `ofTrueToScale` value using the provided `base` value
+     * and creates a Truthness instance where the `ofTrue` field is the scaled value and
+     * the `ofFalse` field is set to 1.0.
+     *
+     * @param base the base value used for scaling
+     * @param ofTrueToScale the value to be scaled
+     * @return a new Truthness instance with the scaled `ofTrue` value and `ofFalse` set to 1.0
      */
     public static Truthness buildScaledTruthness(double base, double ofTrueToScale) {
         final double scaledOfTrue = DistanceHelper.scaleHeuristicWithBase(ofTrueToScale, base);
