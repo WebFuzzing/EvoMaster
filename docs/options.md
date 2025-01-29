@@ -245,6 +245,7 @@ There are 3 types of options:
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
+|`hunter`| __Boolean__. Apply vulnerability hunter as part of security testing. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
