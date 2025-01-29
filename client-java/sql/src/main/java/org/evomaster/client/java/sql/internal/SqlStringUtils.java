@@ -9,7 +9,6 @@ public class SqlStringUtils {
 
     /**
      * Removes enclosing single or double quotes from the input string.
-     *
      * If the input string starts and ends with either single or double quotes, it removes the first and last
      * characters of the string.
      *

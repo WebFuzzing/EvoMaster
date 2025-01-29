@@ -813,9 +813,9 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testBetweenDates() {
         String sqlCommand = "SELECT birth_day FROM Persons WHERE birth_day BETWEEN '1990-07-01' AND '1990-07-31'";
-        QueryResult queryResult = new QueryResult(Arrays.asList("birth_day"), "Persons");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("birth_day"), "Persons");
         java.sql.Date date = java.sql.Date.valueOf("1990-07-15");
-        queryResult.addRow(Arrays.asList("birth_day"),"Persons",Collections.singletonList(date));
+        queryResult.addRow(Collections.singletonList("birth_day"),"Persons",Collections.singletonList(date));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -824,9 +824,9 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testBetweenTimes() {
         String sqlCommand = "SELECT start_time FROM Schedules WHERE start_time BETWEEN '09:00:00' AND '17:00:00'";
-        QueryResult queryResult = new QueryResult(Arrays.asList("start_time"), "Schedules");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("start_time"), "Schedules");
         java.sql.Time time = Time.valueOf("12:30:45");
-        queryResult.addRow(Arrays.asList("start_time"),"Schedules",Collections.singletonList(time));
+        queryResult.addRow(Collections.singletonList("start_time"),"Schedules",Collections.singletonList(time));
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, queryResult);
         double expectedDistance = 0;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
@@ -835,7 +835,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testBetweenTimestamps() {
         String sqlCommand = "SELECT event_timestamp FROM Events WHERE event_timestamp BETWEEN '2023-01-01 00:00:00' AND '2023-12-31 23:59:59'";
-        QueryResult queryResult = new QueryResult(Arrays.asList("event_timestamp"), "Events");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("event_timestamp"), "Events");
 
         String timestampString = "2023-01-14 12:30:45";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -1144,7 +1144,7 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testNullBetweenTimestamps() {
         String sqlCommand = "SELECT event_timestamp FROM Events WHERE NOT (event_timestamp BETWEEN NULL AND '2023-12-31 23:59:59')";
-        QueryResult queryResult = new QueryResult(Arrays.asList("event_timestamp"), "Events");
+        QueryResult queryResult = new QueryResult(Collections.singletonList("event_timestamp"), "Events");
 
         String timestampString = "2023-01-14 12:30:45";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

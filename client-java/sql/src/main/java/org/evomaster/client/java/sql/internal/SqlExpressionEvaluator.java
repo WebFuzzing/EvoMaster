@@ -121,7 +121,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetTime || concreteRightValue instanceof OffsetTime) {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), comparisonOperatorType);
-            } else if (concreteLeftValue instanceof Object[] || concreteRightValue instanceof Object[]) {
+            } else if (concreteLeftValue instanceof Object[] && concreteRightValue instanceof Object[]) {
                 truthnessOfExpression = calculateTruthnessForArrayComparison((Object[]) concreteLeftValue, (Object[]) concreteRightValue, comparisonOperatorType);
             } else {
                 throw new UnsupportedOperationException("types not supported " + concreteLeftValue.getClass().getName() + " and " + concreteRightValue.getClass().getName());
@@ -311,7 +311,6 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Object expressionValue = concreteValues.pop();
         if (expressionValue == null) {
             concreteValues.push(null);
-            return;
         } else {
             final Number numberWithoutSign = (Number) expressionValue;
             final Number result;
@@ -767,7 +766,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(ExpressionList<?> expressionList) {
         super.visit(expressionList);
-        List<Object> list = Stream.generate(() -> concreteValues.pop())
+        List<Object> list = Stream.generate(concreteValues::pop)
                 .limit(expressionList.size())
                 .collect(Collectors.toList());
         Collections.reverse(list);
@@ -886,7 +885,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(ArrayConstructor arrayConstructor) {
         super.visit(arrayConstructor);
-        List<Object> list = Stream.generate(() -> concreteValues.pop())
+        List<Object> list = Stream.generate(concreteValues::pop)
                 .limit(arrayConstructor.getExpressions().size())
                 .collect(Collectors.toList());
         Collections.reverse(list);

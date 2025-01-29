@@ -1,6 +1,7 @@
 package org.evomaster.client.java.distance.heuristics;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class TruthnessUtils {
 
@@ -30,7 +31,7 @@ public class TruthnessUtils {
 
     /**
      * Returns a Truthness instance for comparing two integer values for equality.
-     *
+     * <p>
      * This method calculates the distance between the two integer values, and creates a Truthness
      * instance where the `ofTrue` field is 1 minus the normalized distance, and the `ofFalse` field
      * is 1 if the values are not equal, otherwise 0.
@@ -50,12 +51,12 @@ public class TruthnessUtils {
 
     /**
      * Returns a Truthness instance for comparing two long values for equality.
-     *
+     * <p>
      * This method calculates the distance between the two long values, and creates a Truthness
      * instance where the `ofTrue` field is 1 minus the normalized distance, and the `ofFalse` field
      * is 1 if the values are not equal, otherwise 0.
      *
-     * @param a an long value
+     * @param a a long value
      * @param b another long value
      * @return a Truthness instance representing the equality comparison of the input integer values
      */
@@ -71,7 +72,7 @@ public class TruthnessUtils {
 
     /**
      * Returns a Truthness for comparing if one double value is less than another.
-     *
+     * <p>
      * This method calculates the branch distance, returning <code>ofTrue</code>
      * of 1.0d if the first value is less than the second, and 1.0d / (1.1d + distance)
      * otherwise.
@@ -91,7 +92,7 @@ public class TruthnessUtils {
 
     /**
      * Returns a Truthness for comparing if one long value is less than another.
-     *
+     * <p>
      * This method calculates the branch distance, returning <code>ofTrue</code>
      * of 1.0d if the first value is less than the second, and 1.0d / (1.1d + distance)
      * otherwise.
@@ -111,7 +112,7 @@ public class TruthnessUtils {
 
     /**
      * Returns a Truthness instance for comparing two double values for equality.
-     *
+     * <p>
      * This method normalizes the distance between the two double values,
      * and creates a Truthness instance where the `ofTrue` field is 1 minus the normalized distance,
      * and the `ofFalse` field is 1 if the values are not equal, otherwise 0.
@@ -149,7 +150,7 @@ public class TruthnessUtils {
 
     /**
      * Aggregates multiple Truthness instances using an AND operation.
-     *
+     * <p>
      * This method returns a Truthness instance where the <code>ofTrue</code> field is the average of the `ofTrue`
      * values of the input truthnesses, and the <code>ofFalse</code> field is either 1.0d if any of the input Truthness
      * instances is false, or average of the `ofFalse` values from the provided Truthness instances if none of the
@@ -167,7 +168,7 @@ public class TruthnessUtils {
 
     /**
      * Aggregates multiple Truthness instances using an OR operation.
-     *
+     * <p>
      * This method returns a Truthness instance where the <code>ofTrue</code> field is either 1.0d if any of the input
      * Truthness instances is true, or the average of the `ofTrue` values from the provided Truthness instances if none
      * of the given truthnesses is true. The <code>ofFalse</code> field is the average of the `ofFalse` values of the
@@ -186,7 +187,7 @@ public class TruthnessUtils {
 
     /**
      * Aggregates two Truthness instances using an XOR operation.
-     *
+     * <p>
      * This method returns XOR(a,b) as (a AND NOT b) OR (NOT a AND b).
      *
      * @param left the first Truthness instance
@@ -219,7 +220,7 @@ public class TruthnessUtils {
      * @param truthnesses an array of Truthness instances
      */
     private static void checkValidTruthnesses(Truthness[] truthnesses) {
-        if (truthnesses == null || truthnesses.length == 0 || Arrays.stream(truthnesses).anyMatch(e -> e == null)) {
+        if (truthnesses == null || truthnesses.length == 0 || Arrays.stream(truthnesses).anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("null or empty Truthness instance");
         }
     }
@@ -228,7 +229,7 @@ public class TruthnessUtils {
      * Computes an average of the given values.
      * If no values are given, an <code>IllegalArgumentException</code> is thrown.
      *
-     * @param values a non empty list of double values.
+     * @param values a non-empty list of double values.
      * @return
      */
     private static double average(double... values) {
@@ -264,7 +265,7 @@ public class TruthnessUtils {
      */
     private static double falseOrAverageFalse(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
-        if (Arrays.stream(truthnesses).anyMatch(t -> t.isFalse())) {
+        if (Arrays.stream(truthnesses).anyMatch(Truthness::isFalse)) {
             return 1.0d;
         } else {
             return averageOfFalse(truthnesses);
@@ -280,7 +281,7 @@ public class TruthnessUtils {
      */
     private static double trueOrAverageTrue(Truthness... truthnesses) {
         checkValidTruthnesses(truthnesses);
-        if (Arrays.stream(truthnesses).anyMatch(t -> t.isTrue())) {
+        if (Arrays.stream(truthnesses).anyMatch(Truthness::isTrue)) {
             return 1.0d;
         } else {
             return averageOfTrue(truthnesses);
@@ -289,7 +290,6 @@ public class TruthnessUtils {
 
     /**
      * Builds a scaled Truthness instance.
-     *
      * This method scales the given `ofTrueToScale` value using the provided `base` value
      * and creates a Truthness instance where the `ofTrue` field is the scaled value and
      * the `ofFalse` field is set to 1.0.
