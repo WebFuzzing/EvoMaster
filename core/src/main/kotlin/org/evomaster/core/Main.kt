@@ -24,6 +24,7 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.security.VulnerabilityAnalyser
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -247,6 +248,11 @@ class Main {
                     EMConfig.ProblemType.REST -> {
                         val securityRest = injector.getInstance(SecurityRest::class.java)
                         solution = securityRest.applySecurityPhase()
+
+                        if (config.hunter) {
+                            val hunter = injector.getInstance(VulnerabilityAnalyser::class.java)
+                            solution = hunter.applyVulnerabilityAnalyser()
+                        }
                     }
                     else ->{
                         LoggingUtil.getInfoLogger().warn("Security phase currently not handled for problem type: ${config.problemType}")

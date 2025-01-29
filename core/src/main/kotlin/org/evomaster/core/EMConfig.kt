@@ -2349,6 +2349,10 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
+    @Experimental
+    @Cfg("Apply vulnerability hunter as part of security testing.")
+    var hunter = false
+
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
