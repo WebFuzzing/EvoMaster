@@ -6,6 +6,7 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWithFaults
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
+import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.search.Solution

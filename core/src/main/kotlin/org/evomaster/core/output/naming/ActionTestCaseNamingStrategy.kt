@@ -2,7 +2,6 @@ package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -28,20 +27,9 @@ abstract class ActionTestCaseNamingStrategy(
     protected val sql = "sql"
     protected val mongo = "mongo"
     protected val wiremock = "wireMock"
-    protected val with = "with"
-    protected val param = "Param"
-    protected val queryParam = "query$param"
-    protected val and = "and"
 
     protected fun formatName(nameTokens: List<String>): String {
         return "_${languageConventionFormatter.formatName(nameTokens)}"
-    }
-
-    protected fun getPath(nameQualifier: String): String {
-        if (nameQualifier == "/") {
-            return "root"
-        }
-        return TestWriterUtils.safeVariableName(nameQualifier)
     }
 
     private fun fault(faults: Set<FaultCategory>): String {

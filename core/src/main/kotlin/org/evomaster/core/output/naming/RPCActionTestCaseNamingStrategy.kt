@@ -5,7 +5,6 @@ import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.utils.StringUtils
 
@@ -14,7 +13,7 @@ open class RPCActionTestCaseNamingStrategy(
     languageConventionFormatter: LanguageConventionFormatter
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
 
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<(Action) -> List<String>>): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RPCCallAction
 

@@ -1,6 +1,7 @@
 package org.evomaster.core.output.naming
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCIndividual
