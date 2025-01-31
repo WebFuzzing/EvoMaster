@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import org.evomaster.client.java.sql.heuristic.ConversionHelper;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Time;

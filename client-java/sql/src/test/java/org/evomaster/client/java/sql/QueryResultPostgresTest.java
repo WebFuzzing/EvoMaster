@@ -4,11 +4,15 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryResultPostgresTest extends QueryResultTestBase {
 
@@ -58,4 +62,6 @@ public class QueryResultPostgresTest extends QueryResultTestBase {
     protected DatabaseType getDbType() {
         return DatabaseType.POSTGRES;
     }
+
+
 }

@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.heuristic;
 
 import org.junit.jupiter.api.Test;
 

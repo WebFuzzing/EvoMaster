@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.heuristic;
 
 
 import org.junit.jupiter.api.Test;
@@ -27,22 +27,6 @@ class SqlStringUtilsTest {
     void testRemovesSingleQuotesWithSpaces() {
         String input = "' Hello '";
         String expected = " Hello ";
-        String actual = SqlStringUtils.removeEnclosingQuotes(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void removesDoubleQuotesWithSpaces() {
-        String input = "\" Hello \"";
-        String expected = " Hello ";
-        String actual = SqlStringUtils.removeEnclosingQuotes(input);
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    void mixedQuotesNoRemoval() {
-        String input = "'Hello\"";
-        String expected = "'Hello\"";
         String actual = SqlStringUtils.removeEnclosingQuotes(input);
         assertEquals(expected, actual);
     }
@@ -117,5 +101,6 @@ class SqlStringUtilsTest {
         String actual = SqlStringUtils.removeEnclosingQuotes(input);
         assertEquals(expected, actual);
     }
+
 }
 

@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.heuristic;
 
 /**
  * Utility class for SQL strings.
@@ -33,4 +33,5 @@ public class SqlStringUtils {
     private static boolean startsAndEndsWith(String input, String str) {
         return input.startsWith(str) && input.endsWith(str);
     }
-}
+
+ }

@@ -1,10 +1,24 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.heuristic;
+
+import org.evomaster.client.java.sql.internal.ColumnTypeParser;
 
 import java.sql.Time;
 import java.time.*;
 
+/**
+ * Utility class for converting various date/time objects to {@link Instant}.
+ */
 public class ConversionHelper {
 
+    /**
+     * Converts an object to an {@link Instant}.
+     * The object can be of type {@link Time}, {@link java.sql.Date}, {@link java.util.Date},
+     * {@link OffsetDateTime}, {@link OffsetTime}, {@link Long}, or {@link String}.
+     *
+     * @param object the object to convert
+     * @return the converted {@link Instant}, or null if the input object is null
+     * @throws IllegalArgumentException if the object is not a supported type
+     */
     public static Instant convertToInstant(Object object) {
         if (object ==null) {
             return null;

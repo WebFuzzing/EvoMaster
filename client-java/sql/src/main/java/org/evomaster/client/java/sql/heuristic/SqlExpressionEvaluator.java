@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql.internal;
+package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
@@ -15,6 +15,7 @@ import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
+import org.evomaster.client.java.sql.internal.*;
 
 
 import java.sql.Timestamp;
@@ -23,8 +24,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.evomaster.client.java.sql.internal.ConversionHelper.convertToInstant;
-import static org.evomaster.client.java.sql.internal.SqlHeuristicsCalculator.*;
+import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
+import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 
 public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
@@ -441,7 +442,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Object startRangeValue = this.concreteValues.pop();
         Object leftExpressionValue = this.concreteValues.pop();
 
-        if (leftExpressionValue==null || startRangeValue==null || endRangeValue==null) {
+        if (leftExpressionValue == null || startRangeValue == null || endRangeValue == null) {
             this.computedTruthnesses.push(FALSE_TRUTHNESS_BETTER);
         } else {
             Truthness startCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, startRangeValue, ComparisonOperatorType.GREATER_THAN_EQUALS);
@@ -480,7 +481,25 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(InExpression inExpression) {
-        throw new UnsupportedOperationException("visit(InExpression) not supported");
+        super.visit(inExpression);
+        Object rightValues = concreteValues.pop();
+        Object leftValue = concreteValues.pop();
+        final Truthness truthness;
+        if (leftValue == null || rightValues == null) {
+            truthness = FALSE_TRUTHNESS_BETTER;
+        } else {
+            final List<Object> rightValuesList = (List<Object>) rightValues;
+            final Truthness[] truthnesses = rightValuesList.stream()
+                    .map(rightValue -> evaluateTruthnessForComparisonOperator(leftValue, rightValue, ComparisonOperatorType.EQUALS_TO))
+                    .toArray(Truthness[]::new);
+            final Truthness inTruthness = buildOrAggregationTruthness(truthnesses);
+            if (inExpression.isNot()) {
+                truthness = inTruthness.invert();
+            } else {
+                truthness = inTruthness;
+            }
+        }
+        computedTruthnesses.push(truthness);
     }
 
     @Override
@@ -540,7 +559,22 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(LikeExpression likeExpression) {
-        throw new UnsupportedOperationException("visit(LikeExpression) not supported");
+        super.visit(likeExpression);
+        Object rightConcreteValue = concreteValues.pop();
+        Object leftConcreteValue = concreteValues.pop();
+        if (leftConcreteValue == null || rightConcreteValue == null) {
+            computedTruthnesses.push(FALSE_TRUTHNESS_BETTER);
+        } else {
+            final String string = String.valueOf(leftConcreteValue);
+            final String likePattern = String.valueOf(rightConcreteValue);
+            final String javaRegexPattern = new SqlToJavaRegexTranslator().translateLikePattern(likePattern);
+            boolean matches = string.matches(javaRegexPattern);
+            Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+            if (likeExpression.isNot()) {
+                truthness = truthness.invert();
+            }
+            computedTruthnesses.push(truthness);
+        }
     }
 
     @Override
@@ -619,7 +653,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(concat);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        if (leftConcreteValue==null || rightConcreteValue==null) {
+        if (leftConcreteValue == null || rightConcreteValue == null) {
             concreteValues.push(null);
         } else {
             String result = String.valueOf(leftConcreteValue) + String.valueOf(rightConcreteValue);
@@ -629,6 +663,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Matches matches) {
+        // TODO: Implement the @@ operator
         throw new UnsupportedOperationException("visit(Matches) not supported");
     }
 
@@ -667,7 +702,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(bitwiseXor);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        if (leftConcreteValue ==null || rightConcreteValue == null) {
+        if (leftConcreteValue == null || rightConcreteValue == null) {
             concreteValues.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
@@ -687,7 +722,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(modulo);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        if (leftConcreteValue ==null || rightConcreteValue == null) {
+        if (leftConcreteValue == null || rightConcreteValue == null) {
             concreteValues.push(null);
         } else {
             final double leftValueAsDouble = ((Number) leftConcreteValue).doubleValue();
@@ -722,13 +757,48 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(regExpMatchOperator);
         Object rightConcreteValue = concreteValues.pop();
         Object leftConcreteValue = concreteValues.pop();
-        if (leftConcreteValue==null || rightConcreteValue==null) {
+        if (leftConcreteValue == null || rightConcreteValue == null) {
             computedTruthnesses.push(FALSE_TRUTHNESS);
         } else {
-            String rightString = rightConcreteValue.toString();
-            String leftString = leftConcreteValue.toString();
-            boolean matches = leftString.matches(rightString);
+            RegExpMatchOperatorType operatorType = regExpMatchOperator.getOperatorType();
+            String string = leftConcreteValue.toString();
+            String posixPattern = rightConcreteValue.toString();
+            final boolean caseSensitive;
+            final boolean negate;
+            switch (operatorType) {
+                case MATCH_CASESENSITIVE: {
+                    // case for '~'
+                    caseSensitive = true;
+                    negate = false;
+                }
+                break;
+                case NOT_MATCH_CASESENSITIVE: {
+                    // case for '!~'
+                    caseSensitive = true;
+                    negate = true;
+                }
+                break;
+                case MATCH_CASEINSENSITIVE: {
+                    // case for '*~'
+                    caseSensitive = false;
+                    negate = false;
+                }
+                break;
+                case NOT_MATCH_CASEINSENSITIVE: {
+                    // case for '!~*'
+                    caseSensitive = false;
+                    negate = true;
+                }
+                break;
+                default:
+                    throw new IllegalArgumentException("Unsupported operator type: " + operatorType);
+            }
+            String javaRegexPattern = new SqlToJavaRegexTranslator().translatePostgresPosix(posixPattern, caseSensitive);
+            boolean matches = string.matches(javaRegexPattern);
             Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+            if (negate) {
+                truthness = truthness.invert();
+            }
             computedTruthnesses.push(truthness);
         }
     }
@@ -826,10 +896,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         if (leftConcreteValue == null || rightConcreteValue == null) {
             computedTruthnesses.push(FALSE_TRUTHNESS);
         } else {
-            String rightString = rightConcreteValue.toString();
-            String leftString = leftConcreteValue.toString();
-            boolean matches = leftString.matches(rightString.replace("%", ".*").replace("_", "."));
+            String string = leftConcreteValue.toString();
+            String similarToPattern = rightConcreteValue.toString();
+            String javaRegexPattern = new SqlToJavaRegexTranslator().translateSimilarToPattern(similarToPattern);
+            boolean matches = string.matches(javaRegexPattern);
             Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
+            if (similarToExpression.isNot()) {
+                truthness = truthness.invert();
+            }
             computedTruthnesses.push(truthness);
         }
     }
@@ -1034,10 +1108,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 final java.sql.Date resultDate = computeDateArithmeticOperation(leftDate, rightDate, arithmeticOperationType);
                 concreteValues.push(resultDate);
             }
-
         }
-
-
     }
 
     private static java.sql.Date computeDateArithmeticOperation(java.sql.Date leftDate, java.sql.Date rightDate, ArithmeticOperationType arithmeticOperationType) {
