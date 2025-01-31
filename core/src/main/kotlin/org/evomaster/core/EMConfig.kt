@@ -355,9 +355,16 @@ class EMConfig {
             LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
         }
 
-        val cf = ConfigUtil.readFromFile(configPath)
-        cf.validateAndNormalizeAuth()
-        return cf
+        try {
+            val cf = ConfigUtil.readFromFile(configPath)
+            cf.validateAndNormalizeAuth()
+            return cf
+        }catch (e: Exception){
+            val cause = if(e.cause!=null) "\nCause:${e.cause!!.message}" else ""
+            throw ConfigProblemException("Failed when reading configuration file at $configPath." +
+                    "\nError: ${e.message}" +
+                    "$cause")
+        }
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
