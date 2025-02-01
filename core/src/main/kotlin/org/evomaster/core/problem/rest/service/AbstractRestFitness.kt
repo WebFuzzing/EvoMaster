@@ -37,6 +37,7 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
+import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -460,6 +461,30 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         //body payload type in response
         fv.coverTarget(idMapper.handleLocalTarget("RESPONSE_BODY_PAYLOAD_${call.id}_${result.getBodyType()}"))
+
+        /*
+            explicit targets for examples
+         */
+        val examples = call.seeTopGenes()
+            .flatMap { it.flatView() }
+            .filter { it.staticCheckIfImpactPhenotype() }
+            .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
+
+        examples.forEach {
+            val name = (it.parent as Gene).name
+            val label = when(it){
+                is EnumGene<*> -> it.getValueAsRawString()
+                is ChoiceGene<*> -> ""+it.activeGeneIndex
+                else ->{
+                    log.warn("Unhandled example gene type: ${it.javaClass}")
+                    assert(false)
+                    "undefined"
+                }
+            }
+
+            val target = "EXAMPLE_${call.id}_${name}_$label"
+            fv.coverTarget(idMapper.handleLocalTarget(target))
+        }
     }
 
     private fun handleAdditionalStatusTargetDescription(
