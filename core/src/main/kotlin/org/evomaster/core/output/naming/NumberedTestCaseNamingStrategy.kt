@@ -6,7 +6,7 @@ import org.evomaster.core.search.Solution
 import java.util.Collections.singletonList
 
 open class NumberedTestCaseNamingStrategy(
-    solution: Solution<*>,
+    solution: Solution<*>
 ) : TestCaseNamingStrategy(solution) {
 
     override fun getTestCases(): List<TestCase> {

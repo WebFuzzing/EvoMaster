@@ -14,9 +14,10 @@ import org.evomaster.core.sql.SqlAction
 abstract class ActionTestCaseNamingStrategy(
     solution: Solution<*>,
     private val languageConventionFormatter: LanguageConventionFormatter,
-    protected val maxTestCaseNameLength: Int,
-    private val testCasesSize: Int = solution.individuals.size,
+    protected val maxTestCaseNameLength: Int
 ) : NumberedTestCaseNamingStrategy(solution)  {
+
+    private val testCasesSize = solution.individuals.size
 
     protected val on = "on"
     protected val throws = "throws"
