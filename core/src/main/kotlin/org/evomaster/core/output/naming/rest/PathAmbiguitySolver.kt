@@ -14,14 +14,18 @@ class PathAmbiguitySolver : AmbiguitySolver {
      * Example: /products/{productName}/configurations/{configurationName}/features/{featureName}
      * must now include the name qualifier for configurations
      */
-    override fun apply(action: Action): List<String> {
+    override fun apply(action: Action, remainingNameChars: Int): List<String> {
         val restAction = action as RestCallAction
         val lastPath = restAction.path
-        var parentPath = restAction.path.parentPath()
+        val lastPathQualifier = getPath(lastPath.nameQualifier)
+
+        var parentPath = lastPath.parentPath()
         if (lastPath.isLastElementAParameter()) {
             parentPath = parentPath.parentPath()
         }
-        return listOf(getParentPathQualifier(parentPath), getPath(restAction.path.nameQualifier))
+        val candidateTokens = listOf(getParentPathQualifier(parentPath), lastPathQualifier)
+
+        return if (canAddNameTokens(candidateTokens, remainingNameChars)) candidateTokens else listOf(lastPathQualifier)
     }
 
     /*
@@ -31,6 +35,10 @@ class PathAmbiguitySolver : AmbiguitySolver {
     private fun getParentPathQualifier(parentPath: RestPath): String {
         val parentPathQualifier = parentPath.nameQualifier
         return if (parentPathQualifier == "/") "" else getPath(parentPathQualifier)
+    }
+
+    private fun canAddNameTokens(targetString: List<String>, remainingNameChars: Int): Boolean {
+        return (remainingNameChars - targetString.sumOf { it.length }) >= 0
     }
 
 }
