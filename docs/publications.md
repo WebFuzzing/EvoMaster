@@ -18,7 +18,9 @@ Also, some of these papers provides full replication packages, which are linked 
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
-
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
+  [[arXiv](https://arxiv.org/abs/2502.00169)]
 
 
 ## Peer-Reviewed Publications
