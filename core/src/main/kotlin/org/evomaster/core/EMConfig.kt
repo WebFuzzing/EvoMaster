@@ -355,9 +355,16 @@ class EMConfig {
             LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
         }
 
-        val cf = ConfigUtil.readFromFile(configPath)
-        cf.validateAndNormalizeAuth()
-        return cf
+        try {
+            val cf = ConfigUtil.readFromFile(configPath)
+            cf.validateAndNormalizeAuth()
+            return cf
+        }catch (e: Exception){
+            val cause = if(e.cause!=null) "\nCause:${e.cause!!.message}" else ""
+            throw ConfigProblemException("Failed when reading configuration file at $configPath." +
+                    "\nError: ${e.message}" +
+                    "$cause")
+        }
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -2433,6 +2440,9 @@ class EMConfig {
 
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
+
+    @Cfg("Specify the hard limit for test case name length")
+    var maxTestCaseNameLength = 80
 
     @Experimental
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
