@@ -588,6 +588,10 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
+        if(!security && vulnerabilityAnalyser) {
+            throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
+        }
+
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
@@ -2358,7 +2362,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Apply vulnerability hunter as part of security testing.")
-    var hunter = false
+    var vulnerabilityAnalyser = false
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +

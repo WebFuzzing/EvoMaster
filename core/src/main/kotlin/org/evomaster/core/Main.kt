@@ -249,7 +249,7 @@ class Main {
                         val securityRest = injector.getInstance(SecurityRest::class.java)
                         solution = securityRest.applySecurityPhase()
 
-                        if (config.hunter) {
+                        if (config.vulnerabilityAnalyser) {
                             val hunter = injector.getInstance(VulnerabilityAnalyser::class.java)
                             solution = hunter.applyVulnerabilityAnalyser()
                         }
