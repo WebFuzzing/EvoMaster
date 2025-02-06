@@ -14,6 +14,7 @@ import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
+import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.internal.*;
 
@@ -567,7 +568,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else {
             final String string = String.valueOf(leftConcreteValue);
             final String likePattern = String.valueOf(rightConcreteValue);
-            final String javaRegexPattern = new SqlToJavaRegexTranslator().translateLikePattern(likePattern);
+            final String javaRegexPattern = RegexSharedUtils.translateSqlLikePattern(likePattern);
             boolean matches = string.matches(javaRegexPattern);
             Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
             if (likeExpression.isNot()) {
@@ -793,7 +794,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 default:
                     throw new IllegalArgumentException("Unsupported operator type: " + operatorType);
             }
-            String javaRegexPattern = new SqlToJavaRegexTranslator().translatePostgresPosix(posixPattern, caseSensitive);
+            String javaRegexPattern = RegexSharedUtils.translatePostgresqlPosix(posixPattern, caseSensitive);
             boolean matches = string.matches(javaRegexPattern);
             Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
             if (negate) {
@@ -898,7 +899,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else {
             String string = leftConcreteValue.toString();
             String similarToPattern = rightConcreteValue.toString();
-            String javaRegexPattern = new SqlToJavaRegexTranslator().translateSimilarToPattern(similarToPattern);
+            String javaRegexPattern = RegexSharedUtils.translateSqlSimilarToPattern(similarToPattern);
             boolean matches = string.matches(javaRegexPattern);
             Truthness truthness = matches ? TRUE_TRUTHNESS : FALSE_TRUTHNESS;
             if (similarToExpression.isNot()) {

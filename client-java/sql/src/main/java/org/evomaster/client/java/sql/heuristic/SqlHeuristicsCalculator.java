@@ -33,7 +33,7 @@ public class SqlHeuristicsCalculator {
     private final SqlNameContext sqlNameContext;
     private final TaintHandler taintHandler;
 
-    private SqlHeuristicsCalculator(SqlNameContext sqlNameContext, TaintHandler taintHandler, QueryResult[] data) {
+    SqlHeuristicsCalculator(SqlNameContext sqlNameContext, TaintHandler taintHandler, QueryResult[] data) {
         final boolean isCaseSensitive = false;
         this.sqlNameContext = sqlNameContext;
         this.queryResultSet = new QueryResultSet(isCaseSensitive);
@@ -235,7 +235,7 @@ public class SqlHeuristicsCalculator {
     }
 
 
-    private SqlHeuristicResult calculateHeuristicQuery(Statement query) {
+    SqlHeuristicResult calculateHeuristicQuery(Statement query) {
         if (SqlParserUtils.isUnion(query)) {
             List<Select> subqueries = SqlParserUtils.getUnionSubqueries(query);
             return calculateHeuristicUnion(subqueries);
