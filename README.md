@@ -248,7 +248,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
 ### Funding
 
 _EvoMaster_ has been funded by:
-* 2020-2025: a 2 million Euro grant by the European Research Council (ERC),
+* 2020-2026: a 2 million Euro grant by the European Research Council (ERC),
   as part of the *ERC Consolidator* project
   <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN),
