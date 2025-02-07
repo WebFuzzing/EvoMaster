@@ -21,7 +21,25 @@ class EnvironmentActionsInTestCaseNamesTest {
     }
 
     @Test
-    fun testIf9IndividualsWithSqlAllUseSuffix() {
+    fun testIfLessThanTenIndividualsSomeWithSqlSuffixIsPresent() {
+        val restAction = getRestCallAction()
+        val inds = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+        for (i in 1..4) {
+            inds.add(getEvaluatedIndividualWith(restAction, true))
+            inds.add(getEvaluatedIndividualWith(restAction, false))
+        }
+        inds.add(getEvaluatedIndividualWith(restAction, true))
+        val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val testCases = namingStrategy.getTestCases()
+
+        assertEquals(9, testCases.size)
+        assertEquals(5, testCases.count { it.name.endsWith("UsingSql") })
+    }
+
+    @Test
+    fun testIfLessThanTenIndividualsAllWithSqlNoneUseSuffix() {
         val restAction = getRestCallAction()
         val inds = mutableListOf<EvaluatedIndividual<RestIndividual>>()
         for (i in 1..9) {
@@ -33,7 +51,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(9, testCases.size)
-        assertTrue(testCases.stream().allMatch { it.name.endsWith("UsingSql") })
+        assertTrue(testCases.stream().noneMatch { it.name.endsWith("UsingSql") })
     }
 
     @Test

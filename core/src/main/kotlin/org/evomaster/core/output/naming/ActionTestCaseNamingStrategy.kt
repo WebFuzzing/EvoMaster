@@ -37,29 +37,33 @@ abstract class ActionTestCaseNamingStrategy(
     private var shouldAddWireMockSuffix = true
 
     /**
-     * We only add the UsingMongo/Sql/WireMock suffixes if less than half of the test cases in the
-     * suite have those characteristics. These checks are only executed if the test suite has more
-     * than 10 test cases. Otherwise, for short test suites the suffix might differentiate between
-     * different test cases, or at least not result in a great repetition of suffixes.
+     * We do not add the UsingMongo/Sql/WireMock suffixes if:
+     * - All tests in the suite share the same environment action.
+     * - In a suite of more than 10 test cases, more than half of them share the same action.
      *
      * The number 10 as a boundary was chosen thinking of what a "short" test suite size.
+     * Therefore, for short test suites the suffix might differentiate between
+     * different test cases, or at least not result in a great repetition of suffixes.
+     *
+     * Lower boundary is 2 tests, since the goal of test naming is mainly to add information.
      */
     init {
-        val shouldAnalyzeEnvironmentActions = testCasesSize >= 10
-        if (shouldAnalyzeEnvironmentActions) {
-            val individuals = solution.individuals
-            shouldAddSqlSuffix = lessThanHalfOfIndividualsHave(::hasSqlAction, individuals)
-            shouldAddMongoSuffix = lessThanHalfOfIndividualsHave(::hasMongoAction, individuals)
-            shouldAddWireMockSuffix = lessThanHalfOfIndividualsUseWireMock(individuals)
+        val individuals = solution.individuals
+        if (testCasesSize > 2) {
+            shouldAddSqlSuffix = shouldAddEnvironmentAction(::hasSqlAction, individuals)
+            shouldAddMongoSuffix = shouldAddEnvironmentAction(::hasMongoAction, individuals)
+            shouldAddWireMockSuffix = shouldAddWireMock(individuals)
         }
     }
 
-    private fun lessThanHalfOfIndividualsHave(environmentFunction: (List<EnvironmentAction>) -> Boolean,individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
-        return individuals.count { environmentFunction(it.individual.seeInitializingActions()) } < (testCasesSize/2)
+    private fun shouldAddEnvironmentAction(environmentFunction: (List<EnvironmentAction>) -> Boolean, individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
+        val indsWithEnvironmentAction = individuals.count { environmentFunction(it.individual.seeInitializingActions()) }
+        return indsWithEnvironmentAction != testCasesSize && (testCasesSize < 10 || indsWithEnvironmentAction < (testCasesSize/2))
     }
 
-    private fun lessThanHalfOfIndividualsUseWireMock(individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
-        return individuals.count { usesWireMock(it.individual.seeAllActions()) } < (testCasesSize/2)
+    private fun shouldAddWireMock(individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
+        val indsWithWireMock = individuals.count { usesWireMock(it.individual.seeAllActions()) }
+        return indsWithWireMock != testCasesSize && (testCasesSize < 10 || indsWithWireMock < (testCasesSize/2))
     }
 
     protected fun formatName(nameTokens: List<String>): String {
