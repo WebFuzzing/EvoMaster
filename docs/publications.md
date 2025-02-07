@@ -40,7 +40,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * S. Seran, O. Duman, A. Arcuri.
   *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
-  *(To appear)*
+  [[PDF](publications/2025_sbft.pdf)]
 
 ### 2024
 
