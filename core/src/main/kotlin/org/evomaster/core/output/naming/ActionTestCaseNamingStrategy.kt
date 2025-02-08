@@ -5,6 +5,7 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EnvironmentAction
@@ -30,6 +31,40 @@ abstract class ActionTestCaseNamingStrategy(
     protected val sql = "sql"
     protected val mongo = "mongo"
     protected val wiremock = "wireMock"
+
+    private var shouldAddSqlSuffix = true
+    private var shouldAddMongoSuffix = true
+    private var shouldAddWireMockSuffix = true
+
+    /**
+     * We do not add the UsingMongo/Sql/WireMock suffixes if:
+     * - All tests in the suite share the same environment action.
+     * - In a suite of more than 10 test cases, more than half of them share the same action.
+     *
+     * The number 10 as a boundary was chosen thinking of what a "short" test suite size.
+     * Therefore, for short test suites the suffix might differentiate between
+     * different test cases, or at least not result in a great repetition of suffixes.
+     *
+     * Lower boundary is 2 tests, since the goal of test naming is mainly to add information.
+     */
+    init {
+        val individuals = solution.individuals
+        if (testCasesSize > 2) {
+            shouldAddSqlSuffix = shouldAddEnvironmentAction(::hasSqlAction, individuals)
+            shouldAddMongoSuffix = shouldAddEnvironmentAction(::hasMongoAction, individuals)
+            shouldAddWireMockSuffix = shouldAddWireMock(individuals)
+        }
+    }
+
+    private fun shouldAddEnvironmentAction(environmentFunction: (List<EnvironmentAction>) -> Boolean, individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
+        val indsWithEnvironmentAction = individuals.count { environmentFunction(it.individual.seeInitializingActions()) }
+        return indsWithEnvironmentAction != testCasesSize && (testCasesSize < 10 || indsWithEnvironmentAction < (testCasesSize/2))
+    }
+
+    private fun shouldAddWireMock(individuals: MutableList<out EvaluatedIndividual<out Individual>>): Boolean {
+        val indsWithWireMock = individuals.count { usesWireMock(it.individual.seeAllActions()) }
+        return indsWithWireMock != testCasesSize && (testCasesSize < 10 || indsWithWireMock < (testCasesSize/2))
+    }
 
     protected fun formatName(nameTokens: List<String>): String {
         return if (nameTokens.isNotEmpty()) "_${languageConventionFormatter.formatName(nameTokens)}" else ""
@@ -88,9 +123,9 @@ abstract class ActionTestCaseNamingStrategy(
         val allActions = individual.individual.seeAllActions()
 
         val initActionNames = mutableListOf<String>()
-        if (hasSqlAction(initializingActions)) initActionNames.add(sql)
-        if (hasMongoAction(initializingActions)) initActionNames.add(mongo)
-        if (usesWireMock(allActions)) initActionNames.add(wiremock)
+        if (shouldAddSqlSuffix && hasSqlAction(initializingActions)) initActionNames.add(sql)
+        if (shouldAddMongoSuffix && hasMongoAction(initializingActions)) initActionNames.add(mongo)
+        if (shouldAddWireMockSuffix && usesWireMock(allActions)) initActionNames.add(wiremock)
 
         if (initActionNames.isNotEmpty()) {
             initActionNames.add(0, using)
