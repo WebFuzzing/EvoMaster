@@ -24,6 +24,33 @@ public class ClassToSchemaTest {
         return JsonParser.parseString("{" + schema + "}").getAsJsonObject();
     }
 
+
+    @Test
+    public void testDtoEnumMap(){
+
+        String schema = ClassToSchema.getOrDeriveNonNestedSchema(DtoEnumMap.class);
+        JsonObject json = parse(schema);
+
+        JsonObject obj = json.get(DtoEnumMap.class.getName()).getAsJsonObject();
+        assertNotNull(obj);
+        assertNotNull(obj.get("type"));
+        assertNotNull(obj.get("properties"));
+        assertEquals(2, obj.entrySet().size());
+
+        assertEquals("object", obj.get("type").getAsString());
+
+        JsonObject propertiesJson = obj.get("properties").getAsJsonObject();
+        assertEquals(1, propertiesJson.entrySet().size());
+
+        JsonObject data = propertiesJson.get("data").getAsJsonObject();
+        JsonObject propertiesData = data.get("properties").getAsJsonObject();
+        assertEquals(3, propertiesData.entrySet().size());
+
+        assertEquals("boolean", propertiesData.get("ONE").getAsJsonObject().get("type").getAsString());
+        assertEquals("boolean", propertiesData.get("TWO").getAsJsonObject().get("type").getAsString());
+        assertEquals("boolean", propertiesData.get("THREE").getAsJsonObject().get("type").getAsString());
+    }
+
     @Test
     public void testBase(){
 
