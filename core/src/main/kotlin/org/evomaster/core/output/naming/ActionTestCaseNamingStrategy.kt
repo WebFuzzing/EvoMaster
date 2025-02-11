@@ -94,7 +94,8 @@ abstract class ActionTestCaseNamingStrategy(
     }
 
     protected fun namePrefixChars(): Int {
-        return "test_".length + testCasesSize + 1
+        val digitsUsedForTestNumbering = testCasesSize.toString().length
+        return "test_".length + digitsUsedForTestNumbering + 1
     }
 
     protected fun addNameTokensIfAllowed(nameTokens: MutableList<String>, targetStrings: List<String>, remainingNameChars: Int): Int {
