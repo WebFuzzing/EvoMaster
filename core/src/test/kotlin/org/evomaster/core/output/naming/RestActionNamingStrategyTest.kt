@@ -9,9 +9,12 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallActio
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.*
 import java.util.Collections.singletonList
 import javax.ws.rs.core.MediaType
 
@@ -262,6 +265,22 @@ open class RestActionNamingStrategyTest {
 
         assertEquals(1, testCases.size)
         assertEquals("test_0_postOnItemsReturns200UsingSqlWireMock", testCases[0].name)
+    }
+
+    @Test
+    fun testNameLengthUsesNumberLengthNotNumberValue() {
+        val restAction = getRestCallAction()
+        val inds = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+        for (i in 1..10) {
+            inds.add(getEvaluatedIndividualWith(restAction))
+        }
+        val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, 20)
+        val testCases = namingStrategy.getTestCases()
+
+        assertEquals(10, testCases.size)
+        assertTrue(testCases.stream().allMatch { it.name.length > "test_10".length })
     }
 
 }

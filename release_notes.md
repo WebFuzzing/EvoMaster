@@ -6,8 +6,8 @@ Under development in `master` branch.
 - Support for object in example/examples in OpenAPI schemas.
 
 ### Addressed GitHub Issues
+- #1171: IllegalStateException: only support Map with String key in EvoMaster
 - #1159: EvoMaster crashed when reading em.yaml file 
-
 
 
 # Version: 3.4.0
