@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;

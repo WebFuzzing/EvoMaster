@@ -30,10 +30,13 @@ public class SqlScriptRunnerCached {
         }
     }
 
-        /**
-         *  Execute the SQL commands in the given resource file.
-         *  The data is cached, so following requests do not need to re-read the same files.
-         */
+    /**
+     * Executes the SQL commands in the given resource file.
+     * The data is cached, so subsequent requests do not need to re-read the same files.
+     *
+     * @param connection the database connection to use for executing the script
+     * @param resourcePath the path to the resource file containing the SQL commands
+     */
     public static void runScriptFromResourceFile(Connection connection, String resourcePath) {
 
         List<String> sql = extractSqlScriptFromResourceFile(resourcePath);
@@ -42,8 +45,10 @@ public class SqlScriptRunnerCached {
     }
 
     /**
-     * extract sql script based on a given resource path
-     * @return a list of sql commands
+     * Extracts SQL script based on a given resource path.
+     *
+     * @param resourcePath the path to the resource file containing the SQL commands
+     * @return a list of SQL commands
      */
     public static List<String> extractSqlScriptFromResourceFile(String resourcePath){
         List<String> sql = cache.get(resourcePath);

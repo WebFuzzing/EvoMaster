@@ -27,6 +27,7 @@ public class ColumnTypeParser {
         List<Function<String, Instant>> parsers = Arrays.asList(
                 s -> ZonedDateTime.parse(s).toInstant(),
                 Instant::parse,
+                s -> OffsetDateTime.parse(s, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ssXXX")).toInstant(),
                 s -> OffsetDateTime.parse(s, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX")).toInstant(),
                 s -> {
                         /*

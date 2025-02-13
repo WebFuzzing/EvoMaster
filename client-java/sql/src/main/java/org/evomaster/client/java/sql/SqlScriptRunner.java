@@ -60,9 +60,11 @@ public class SqlScriptRunner {
 
 
     /**
-     * Runs an SQL script (read in using the Reader parameter)
+     * Runs an SQL script (read in using the Reader parameter).
      *
-     * @param reader - the source of the script
+     * @param connection the database connection to use for executing the script
+     * @param reader the source of the script
+     * @throws NullPointerException if the reader is null
      */
     public static void runScript(Connection connection, Reader reader) {
         Objects.requireNonNull(reader);
@@ -162,17 +164,17 @@ public class SqlScriptRunner {
 
     /**
      * Execute the different SQL insertions.
-     * Those can refer to each other via foreign keys, even in the case
-     * of auto-generated ids
+     * These can refer to each other via foreign keys, even in the case
+     * of auto-generated IDs.
      *
      * @param conn a JDBC connection to the database
      * @param insertions the SQL insertions to execute
      * @param previous the results of previously executed SQL insertions
-     *
-     * @return a map from InsertionDto id to id of auto-generated primary
-     * keys in the database (if any was generated).
-     * If an InsertionDto has no id, we will not keep track of any auto-generated
+     * @return a map from InsertionDto ID to ID of auto-generated primary
+     * keys in the database (if any were generated).
+     * If an InsertionDto has no ID, we will not keep track of any auto-generated
      * value for it.
+     * @throws SQLException if a database access error occurs
      */
     public static InsertionResultsDto execInsert(Connection conn, List<InsertionDto> insertions, InsertionResultsDto... previous) throws SQLException {
 
@@ -312,11 +314,13 @@ public class SqlScriptRunner {
     }
 
     /**
+     * Executes the given SQL insertion command.
+     *
      * @param conn a JDBC connection to the database
      * @param command the SQL insertion to execute
-     *
-     * @return a single id for the new row, if any was automatically generated, {@code null} otherwise.
-     *         In other words, return the value of auto-generated primary key, if any was created.
+     * @return a single ID for the new row, if any was automatically generated, {@code null} otherwise.
+     *         In other words, returns the value of the auto-generated primary key, if any was created.
+     * @throws SQLException if a database access error occurs
      */
     public static Long execInsert(Connection conn, String command) throws SQLException {
 

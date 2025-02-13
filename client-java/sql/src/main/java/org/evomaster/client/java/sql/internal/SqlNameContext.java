@@ -143,12 +143,13 @@ public class SqlNameContext {
     private boolean hasFromItem() {
         if(statement instanceof Select) {
             Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
-            FromItem fromItem =  plainSelect.getFromItem();
-            return fromItem != null;
-        } else {
-            return false;
+            if (select instanceof PlainSelect) {
+                PlainSelect plainSelect = (PlainSelect) select;
+                FromItem fromItem =  plainSelect.getFromItem();
+                return fromItem != null;
+            }
         }
+        return false;
    }
 
     private FromItem getFromItem() {
