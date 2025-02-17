@@ -24,7 +24,7 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
-import org.evomaster.core.problem.rest.service.security.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.VulnerabilityAnalyser
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.webfrontend.WebIndividual

@@ -2364,6 +2364,24 @@ class EMConfig {
     @Cfg("Apply vulnerability hunter as part of security testing.")
     var vulnerabilityAnalyser = false
 
+    enum class VulnerabilitySelectionStrategy {
+        /**
+         * Uses the manual methods to select the vulnerability classes associated with
+         * an endpoint.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerability classes associated with an
+         * endpoint.
+         */
+        LLM,
+    }
+
+    @Cfg("Potential vulnerability class associated with a endpoint classification strategy.")
+    @Experimental
+    var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
+
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
