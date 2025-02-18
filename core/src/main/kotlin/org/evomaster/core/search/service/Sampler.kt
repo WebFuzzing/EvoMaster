@@ -76,7 +76,16 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         if (config.seedTestCases && seededIndividuals.isNotEmpty()){
             pickingUpLastSeed = seededIndividuals.size == 1
-            return seededIndividuals.removeLast()
+            /*
+                java.lang.NoSuchMethodError exception for removeLast,
+                then change it with removeAt
+
+                see
+                https://slack-chats.kotlinlang.org/t/26911259/latest-version-of-kotlin-2-1-10-removefrist-on-a-non-empty-l
+                https://youtrack.jetbrains.com/issue/KT-71375/Prevent-Kotlins-removeFirst-and-removeLast-from-causing-crashes-on-Android-14-and-below-after-upgrading-to-Android-API-Level-35
+
+             */
+            return seededIndividuals.removeAt(seededIndividuals.lastIndex)
         }
 
         val ind = if (forceRandomSample) {
