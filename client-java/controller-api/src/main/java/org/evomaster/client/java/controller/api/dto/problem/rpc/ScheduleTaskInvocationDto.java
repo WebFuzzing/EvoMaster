@@ -2,6 +2,15 @@ package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
 import java.util.List;
 
+/**
+ * this class is developed for handling invocation of schedule task at driver side.
+ *
+ * for the moment, this extension is enabled only for PRC problem.
+ *
+ * TODO
+ * As the schedule task can also be applied to other problem, eg, REST, GraphQL
+ * in the future, need to refactor this class to other package
+ */
 public class ScheduleTaskInvocationDto {
 
 
