@@ -19,7 +19,6 @@ class ScheduleTaskActionResult : ActionResult {
 
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
-    @VisibleForTesting
     internal constructor(other: ScheduleTaskActionResult): super(other)
 
     override fun copy(): ScheduleTaskActionResult {
