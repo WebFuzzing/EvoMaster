@@ -365,7 +365,7 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
 
     private fun handleCustomizedScheduleTaskInvocationHandling(scheduleTaskAction: ScheduleTaskAction, index: Int, testCaseName: String, enable: Boolean, lines: Lines){
-        if(config.enableCustomizedMethodForMockObjectHandling){
+        if(config.enableCustomizedMethodForScheduleTaskHandling){
 
             when {
                 format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_SCHEDULE_TASKS(")
