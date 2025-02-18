@@ -43,14 +43,12 @@ public class FakeMockObjectEMTest extends SpringRPCTestBase {
                     args.add("--enableBasicAssertions");
                     args.add("true");
 
-//                    args.add("--saveScheduleTaskInvocationAsSeparatedFile");
-//                    args.add("true");
 
-                    args.add("--enableCustomizedMethodForScheduleTaskHandling");
-                    args.add("true");
 
-                    args.add("--probOfSamplingScheduleTask");
-                    args.add("0.5");
+//                    setOption(args, "saveScheduleTaskInvocationAsSeparatedFile", "true");
+                    setOption(args, "enableCustomizedMethodForScheduleTaskHandling", "true");
+                    setOption(args, "probOfSamplingScheduleTask", "0.5");
+
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 
