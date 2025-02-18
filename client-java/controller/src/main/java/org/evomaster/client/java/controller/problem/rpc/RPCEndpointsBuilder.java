@@ -1317,7 +1317,7 @@ public class RPCEndpointsBuilder {
         Map<String, RPCTestDto> results = new HashMap<>();
         
         for (SeededRPCTestDto dto: seedRPCTests){
-            if (dto.rpcFunctions != null && !dto.rpcFunctions.isEmpty()){
+            if (!checkIsEmptySeededTestDto(dto)){
                 try{
                     String testKey = String.format("%s_INDEX_%d", (dto.testName != null)?dto.testName:"untitled", seedRPCTests.indexOf(dto));
 
@@ -1336,10 +1336,14 @@ public class RPCEndpointsBuilder {
                 }
 
             } else {
-                SimpleLogger.warn("Seeded Test: empty RPC function calls for the test "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
+                SimpleLogger.warn("Seeded Test: empty RPC function calls or schedule tasks for the test "+ ((dto.testName != null)? dto.testName:"index_"+seedRPCTests.indexOf(dto)));
             }
         }
         return results;
+    }
+
+    private static boolean checkIsEmptySeededTestDto(SeededRPCTestDto dto){
+        return (dto.rpcFunctions == null || dto.rpcFunctions.isEmpty()) && (dto.scheduleTaskInvocations == null || dto.scheduleTaskInvocations.isEmpty());
     }
 
 
