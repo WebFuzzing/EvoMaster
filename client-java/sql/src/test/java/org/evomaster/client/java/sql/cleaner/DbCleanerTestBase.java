@@ -1,4 +1,4 @@
-package org.evomaster.client.java.sql;
+package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.sql.QueryResult;

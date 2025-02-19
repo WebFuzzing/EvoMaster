@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.schema.TableId
 
 /**
  * A gene specifically designed to handle Foreign Keys in SQL databases.
@@ -25,9 +26,9 @@ class SqlForeignKeyGene(
         sourceColumn: String,
         val uniqueId: Long,
         /**
-         * The name of the table this FK points to
+         * The id of the table this FK points to
          */
-        val targetTable: String,
+        val targetTable: TableId,
         val nullable: Boolean,
         /**
          * A negative value means this FK is not bound yet.

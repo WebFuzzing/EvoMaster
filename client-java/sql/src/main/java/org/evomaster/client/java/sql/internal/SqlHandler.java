@@ -361,7 +361,7 @@ public class SqlHandler {
             @Override
             public void visit(Column column) {
 
-                String tn = context.getTableName(column);
+                String tn = context.getFullyQualifiedTableName(column);
 
                 if (tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
                     // TODO handle it properly when ll have support for sub-selects

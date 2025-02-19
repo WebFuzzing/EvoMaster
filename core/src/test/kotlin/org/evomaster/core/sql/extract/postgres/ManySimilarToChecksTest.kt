@@ -24,7 +24,7 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
     fun testManySimilarToPatternsSchemaExtraction() {
         val schema = DbInfoExtractor.extract(connection)
 
-        assertEquals(2, schema.tables.first { it.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
+        assertEquals(2, schema.tables.first { it.id.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
 
         val builder = SqlInsertBuilder(schema)
         val emailTable = builder.getTable("email_table", useExtraConstraints = true)

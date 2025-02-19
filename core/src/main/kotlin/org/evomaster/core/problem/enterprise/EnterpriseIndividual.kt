@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -391,8 +392,8 @@ abstract class EnterpriseIndividual(
     /**
      * @return a list table names which are used to insert data directly
      */
-    open fun getInsertTableNames(): List<String>{
-        return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
+    open fun getInsertTableNames(): List<TableId>{
+        return sqlInitialization.filterNot { it.representExistingData }.map { it.table.id }
     }
 
     override fun seeTopGenes(filter: ActionFilter): List<Gene> {

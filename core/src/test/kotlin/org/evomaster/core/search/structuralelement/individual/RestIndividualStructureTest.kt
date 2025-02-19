@@ -42,7 +42,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
             unique = false,
             databaseType = DatabaseType.H2)
 
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = foo.name)
+        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = foo.id)
 
         val bar = Table("Bar", setOf(barIdColumn, fkColumn), setOf(foreignKey))
 

@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory
  * This is important to check Foreign Keys referencing it.
  */
 class SqlPrimaryKeyGene(name: String,
-                        val tableName: String,
+                        val tableName: TableId,
                         val gene: Gene,
                         /**
                          * Important for the Foreign Keys referencing it.
