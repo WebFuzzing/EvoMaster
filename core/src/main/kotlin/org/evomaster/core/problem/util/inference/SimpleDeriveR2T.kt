@@ -187,7 +187,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         if(isBodyParam){
             val pToTable = BodyParamRelatedToTable(paramId, paramInfo.referParam)
             ParamUtil.getObjectGene(paramInfo.referParam.gene)?.fields?.forEach { f->
-                val matchedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
+                val matchedMap : MutableMap<TableId, MatchedInfo> = mutableMapOf()
                 deriveParamWithTable(f.name, relatedToTables, matchedMap, inputIndicator, alltables)
                 if(matchedMap.isNotEmpty()){
                     val fToTable = ParamFieldRelatedToTable(f.name)
@@ -200,7 +200,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                 return true
             }
         }else{
-            val matchedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
+            val matchedMap : MutableMap<TableId, MatchedInfo> = mutableMapOf()
             deriveParamWithTable(paramInfo.name, relatedToTables, matchedMap, inputIndicator, alltables)
             if(matchedMap.isNotEmpty()){
                 val pToTable = SimpleParamRelatedToTable(paramId, paramInfo.referParam)
@@ -221,7 +221,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     private fun deriveParamWithTable(
         paramName : String,
         candidateTables : Set<TableId>,
-        pToTable : MutableMap<String, MatchedInfo>,
+        pToTable : MutableMap<TableId, MatchedInfo>,
         inputlevel: Int,
         tables : Map<TableId, Table>){
         candidateTables.forEach { tableName ->
@@ -232,7 +232,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     private fun deriveParamWithTable(
         paramName : String,
         tableName: TableId,
-        pToTable : MutableMap<String, MatchedInfo>,
+        pToTable : MutableMap<TableId, MatchedInfo>,
         inputlevel: Int,
         tables : Map<TableId, Table>
     ){
@@ -285,7 +285,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()
 
-        val relatedTables = sqlActions.map { it.table.name }.toHashSet()
+        val relatedTables = sqlActions.map { it.table.id }.toHashSet()
 
         val list = if(relatedTables.isEmpty())
             getBindMap(missingParams.toSet(), resource.resourceToTable)
@@ -325,7 +325,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         return result
     }
 
-    private fun getBindMap(paramIds : Set<String>, resourceToTable: ResourceRelatedToTable, tables: Set<String>) : MutableList<ParamGeneBindMap>{
+    private fun getBindMap(paramIds : Set<String>, resourceToTable: ResourceRelatedToTable, tables: Set<TableId>) : MutableList<ParamGeneBindMap>{
         val result = mutableListOf<ParamGeneBindMap>()
         paramIds.forEach { p->
             resourceToTable.paramToTable[p]?.let {pToTable->
