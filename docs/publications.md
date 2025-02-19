@@ -18,12 +18,20 @@ Also, some of these papers provides full replication packages, which are linked 
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   [[arXiv](https://arxiv.org/abs/2208.03988)]
 
-
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
+  [[arXiv](https://arxiv.org/abs/2502.00169)]
 
 
 ## Peer-Reviewed Publications
 
 ### 2025
+
+* G. Fraser, A. Arcuri.
+  *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
+  IEEE Transactions on Software Engineering (TSE).
+  [[PDF](publications/2025_tse.pdf)]
+
 * A. Arcuri, A. Poth, O. Rrjolli.
   *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
@@ -32,7 +40,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * S. Seran, O. Duman, A. Arcuri.
   *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
-  *(To appear)*
+  [[PDF](publications/2025_sbft.pdf)]
 
 ### 2024
 

@@ -80,13 +80,19 @@ class FitnessValue(
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
-     * to false), in particular the tables and columns in them involved
+     * to false), in particular, the tables and columns in them involved
      */
     private val aggregatedFailedWhere: MutableMap<TableId, Set<String>> = mutableMapOf()
 
     /**
+     * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
+     * to false), in particular, the sql query involved
+     */
+    private val aggregatedFailedWhereQueries: MutableList<String> = mutableListOf()
+
+    /**
      * When SUT does MONGO commands using FIND, keep track of when those "fails" (ie evaluate
-     * to false), in particular the collection and fields in them involved
+     * to false), in particular, the collection and fields in them involved
      */
     private val aggregatedFailedFind: MutableList<MongoFailedQuery> = mutableListOf()
 
@@ -141,6 +147,11 @@ class FitnessValue(
                 databaseExecutions.values,
                 {x ->  x.failedWhere}
         ))
+
+        aggregatedFailedWhereQueries.clear()
+        aggregatedFailedWhereQueries.addAll(
+            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+        )
     }
     fun aggregateMongoDatabaseData(){
         aggregatedFailedFind.clear()
@@ -166,6 +177,8 @@ class FitnessValue(
     }
 
     fun getViewOfAggregatedFailedWhere() = aggregatedFailedWhere
+
+    fun getViewOfAggregatedFailedWhereQueries() = aggregatedFailedWhereQueries
 
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 

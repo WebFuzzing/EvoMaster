@@ -329,11 +329,36 @@ public class ClassToSchema {
             return fieldArraySchema(klass, pType, nested, allNested, objectFieldsRequired, converters);
         }
 
-        if ((klass != null && Map.class.isAssignableFrom(klass)) || pType != null && Map.class.isAssignableFrom((Class) pType.getRawType())) {
+        if ((klass != null && Map.class.isAssignableFrom(klass))
+                || pType != null && Map.class.isAssignableFrom((Class) pType.getRawType())) {
+
             if (pType != null && pType.getActualTypeArguments().length > 0) {
                 Type keyType = pType.getActualTypeArguments()[0];
-                if (keyType != String.class) {
-                    throw new IllegalStateException("only support Map with String key");
+
+                if(keyType instanceof Class && ((Class<?>) keyType).isEnum()) {
+                    /*
+                        peculiar case... the keys of a map are an enumeration, so can have only a restricted
+                        set of them. can't add any key. adding constraints would be quite complex...
+                        so maybe a valid option is to treat it as an object?
+                        TODO should verify if any side-effects, eg when dealing with null VS undefined
+                     */
+                    Type valueType = pType.getActualTypeArguments()[1];
+                    List<String> properties = new ArrayList<>();
+                    List<String> propertiesNames = new ArrayList<>();
+                    Class<?> enumKeys = (Class<?>) keyType;
+                    for(Object e : enumKeys.getEnumConstants()){
+                       String key = e.toString();
+                        String fieldName = key;
+                        String fieldSchema;
+                        fieldSchema = named(fieldName, getOrDeriveSchema(valueType, true, nested, false, converters));
+                        properties.add(fieldSchema);
+                        propertiesNames.add("\"" + fieldName + "\"");
+                    }
+                    return fieldObjectSchema(properties, propertiesNames, false);
+                }
+
+                if (keyType != String.class ) {
+                    throw new IllegalStateException("only support Map with String and Enum keys. Not supported type: " + keyType);
                 }
             }
 
