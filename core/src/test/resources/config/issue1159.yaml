@@ -1,0 +1,47 @@
+#https://github.com/WebFuzzing/EvoMaster/issues/1159
+
+configs:  # remove this {} when specifying properties
+  bbSwaggerUrl: "http://obedocumentation.fwh.is/?i=1"
+  bbTargetUrl: "http://obedocumentation.fwh.is/?i=1"
+  blackBox: true
+  configPath: "em.yaml"
+  endpointFocus: null
+  endpointPrefix: null
+  endpointTagFilter: null
+  #   header0: ""
+  #   header1: ""
+  #   header2: ""
+  maxTime: "60s"
+  outputFilePrefix: "EvoMaster"
+  outputFileSuffix: "Test"
+  outputFolder: "generated_tests"
+  outputFormat: "DEFAULT"
+  prematureStop: ""
+  ratePerMinute: 0
+  sutControllerHost: "localhost"
+  sutControllerPort: 40100
+  testTimeout: 60
+
+
+auth:
+  - name: i gede
+    loginEndpointAuth:
+      payloadRaw: "{\"email\": \"igsusrama.if@upnjatim.ac.id\", \"password\": \"sainsdata\"}"
+  - name: susrama
+    loginEndpointAuth:
+      payloadUserPwd:
+        email: igsusrama.if@upnjatim.ac.id
+        password: "sainsdata"
+        usernameField: email
+        passwordField: password
+        token:
+          headerPrefix: "Bearer "
+          extractFromField: "/token/authToken"
+          httpHeaderName: "Authorization"
+
+authTemplate:
+  loginEndpointAuth:
+    endpoint: /login
+    verb: POST
+    contentType: application/json
+    expectCookies: true

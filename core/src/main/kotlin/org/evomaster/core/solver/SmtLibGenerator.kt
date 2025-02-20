@@ -497,7 +497,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun getConstructors(table: TableDto): List<DeclareConstSMTNode> {
         return table.columns.map { c ->
             val smtType = TYPE_MAP[c.type.uppercase(Locale.getDefault())]
-            DeclareConstSMTNode(c.name, smtType!!)
+                ?: throw RuntimeException("Unsupported column type: ${c.type}")
+            DeclareConstSMTNode(c.name, smtType)
         }
     }
 
@@ -509,6 +510,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "TIMESTAMP" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
+            "DECIMAL" to "Real",
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
             "CHARACTER LARGE OBJECT" to "String",
