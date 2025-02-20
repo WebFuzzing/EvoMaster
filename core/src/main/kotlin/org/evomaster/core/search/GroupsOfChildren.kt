@@ -31,6 +31,8 @@ class  GroupsOfChildren<T>(
 
         const val EXTERNAL_SERVICES = "EXTERNAL_SERVICES"
 
+        const val INITIALIZATION_SCHEDULE_TASK = "INITIALIZATION_SCHEDULE_TASK"
+
         const val RESOURCE_SQL = "RESOURCE_SQL"
     }
 

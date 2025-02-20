@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCActionDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 
 import java.util.*;
 
@@ -12,6 +13,8 @@ public class ActionDto {
 
     /**
      * The index of this action in the test.
+     * note that schedule task is executed before this action
+     *
      * Eg, in a test with 10 indices, the index would be
      * between 0 and 9
      */
@@ -36,6 +39,7 @@ public class ActionDto {
      * note that this is only used when handling RPC problem
      */
     public RPCActionDto rpcCall;
+    
 
     /**
      * This list of DTOs represents the external service mappings.

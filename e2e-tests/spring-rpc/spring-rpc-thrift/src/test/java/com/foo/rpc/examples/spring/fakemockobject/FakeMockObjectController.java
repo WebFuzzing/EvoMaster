@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.foo.rpc.examples.spring.SpringController;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeDatabaseRow;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeMockObjectService;
-import com.foo.rpc.examples.spring.fakemockobject.generated.FakeRetrieveData;
+import com.foo.rpc.examples.spring.fakemockobject.generated.*;
 import com.foo.rpc.examples.spring.fakemockobject.impl.FakeMockObjectApp;
 import org.apache.thrift.TException;
 import org.apache.thrift.TSerializer;
@@ -132,9 +130,28 @@ public class FakeMockObjectController extends SpringController {
                         );
                     }}
                 );
+            }},
+            new SeededRPCTestDto(){{
+                testName = "test_4";
+                rpcFunctions = Arrays.asList(
+                        new SeededRPCActionDto(){{
+                            interfaceName = FakeMockObjectService.Iface.class.getName();
+                            functionName = "isExecutedToday";
+                            inputParams= Arrays.asList();
+                            inputParamTypes= Arrays.asList();
+                        }}
+                );
+                scheduleTaskInvocations = Arrays.asList(
+                        new ScheduleTaskInvocationDto(){{
+                            appKey = "fake.app";
+                            taskName = "executeFlag";
+                            descriptiveInfo = "a scheduled task for invoking executeFlag";
+                        }}
+                );
             }}
         );
     }
+
 
     @Override
     public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
@@ -158,7 +175,7 @@ public class FakeMockObjectController extends SpringController {
                                         data.info = j.get("exInfo").asText();
                                     }
                                 }
-                                ok = ok && client.backdoor(null, data);
+                                ok = ok && client.backdoor(null, data, null);
                             }
                         }else {
                             FakeDatabaseRow data = new FakeDatabaseRow();
@@ -171,13 +188,13 @@ public class FakeMockObjectController extends SpringController {
                                     data.info = json.get("exInfo").asText();
                                 }
                             }
-                            ok = ok && client.backdoor(null, data);
+                            ok = ok && client.backdoor(null, data, null);
                         }
                     }
                 }
                 return ok;
             }else {
-                return client.backdoor(null, null);
+                return client.backdoor(null, null, null);
             }
         } catch (TException | JsonProcessingException e) {
             return false;
@@ -203,16 +220,46 @@ public class FakeMockObjectController extends SpringController {
                                 data.info = json.get("exInfo").asText();
                             }
                         }
-                        ok = ok && client.backdoor(data, null);
+                        ok = ok && client.backdoor(data, null, null);
                     }
                 }
                 return ok;
             }else {
-                return client.backdoor(null, null);
+                return client.backdoor(null, null, null);
             }
         } catch (TException | JsonProcessingException e) {
             return false;
         }
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        ScheduleTaskInvocationResultDto dto = new ScheduleTaskInvocationResultDto();
+        dto.status = ExecutionStatusDto.FAILED;
+        dto.taskName = invocationDto.taskName;
+        try {
+            if (invocationDto != null && invoked){
+                FakeScheduleTaskData data = new FakeScheduleTaskData();
+                data.name = invocationDto.taskName;
+                data.info = invocationDto.descriptiveInfo;
+                data.id = System.nanoTime();
+                data.startTime = String.valueOf(System.nanoTime());
+                data.state = FakeScheduleTaskState.PROCESSING;
+                boolean ok = client.backdoor(null, null, data);
+                dto.status = ExecutionStatusDto.RUNNING;
+                dto.invocationId = String.valueOf(data.id);
+                if (ok) dto.status = ExecutionStatusDto.COMPLETED;
+            }
+        } catch (TException e) {
+            dto.status = ExecutionStatusDto.FAILED;
+        }
+
+        return dto;
+    }
+
+    @Override
+    public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
+        return true;
     }
 }
 

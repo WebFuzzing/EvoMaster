@@ -21,10 +21,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -41,7 +38,7 @@ public class RPCSutControllerTest {
     public final static FakeSutController rpcController = new FakeSutController();
 
     private static List<RPCInterfaceSchemaDto> interfaceSchemas;
-    private static Map<String, List<RPCActionDto>> seededTestDtos;
+    private static Map<String, RPCTestDto> seededTestDtos;
 
     @BeforeAll
     public static void initClass() {
@@ -63,7 +60,9 @@ public class RPCSutControllerTest {
                 .extract().body().jsonPath().getObject("data.rpcProblem.", RPCProblemDto.class);
 
         interfaceSchemas = dto.schemas;
-        seededTestDtos = dto.seededTestDtos;
+        seededTestDtos = new HashMap<String, RPCTestDto>(){{
+            putAll(dto.seededTestDtos);
+        }};
     }
 
     @AfterAll
@@ -113,11 +112,11 @@ public class RPCSutControllerTest {
     public void testSeedcheck(){
 
         assertEquals(3, seededTestDtos.size());
-        List<List<RPCActionDto>> list = new ArrayList<>(seededTestDtos.values());
+        List<String> testNameList = seededTestDtos.keySet().stream().sorted().collect(Collectors.toList());
 
-        assertEquals(1, list.get(0).size());
+        assertEquals(1, seededTestDtos.get(testNameList.get(0)).rpcFuctions.size());
 
-        RPCActionDto test_1 = list.get(0).get(0);
+        RPCActionDto test_1 = seededTestDtos.get(testNameList.get(0)).rpcFuctions.get(0);
         RPCActionDto dto = test_1.copy();
 
         assertNotNull(dto.mockRPCExternalServiceDtos);
@@ -145,7 +144,7 @@ public class RPCSutControllerTest {
         assertEquals(expectedResponse, responseDto.rpcResponse.stringValue);
 
 
-        RPCActionDto test_2 = list.get(1).get(0);
+        RPCActionDto test_2 = seededTestDtos.get(testNameList.get(1)).rpcFuctions.get(0);
         RPCActionDto dto2 = test_2.copy();
 
         dto2.doGenerateAssertions = true;
@@ -161,7 +160,7 @@ public class RPCSutControllerTest {
         assertEquals("", responseDto2.rpcResponse.stringValue);
 
 
-        RPCActionDto test_3 = list.get(2).get(0);
+        RPCActionDto test_3 = seededTestDtos.get(testNameList.get(2)).rpcFuctions.get(0);
         RPCActionDto dto3 = test_3.copy();
 
         dto3.doGenerateAssertions = true;

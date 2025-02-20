@@ -579,6 +579,9 @@ class EMConfig {
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
 
+        if (saveScheduleTaskInvocationAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files (ie, saveScheduleTaskInvocationAsSeparatedFile=true)")
+
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
@@ -1629,6 +1632,12 @@ class EMConfig {
     @Probability
     var probOfApplySQLActionToCreateResources = 0.1
 
+
+    @Experimental
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.0
+
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
     @Min(0.0)
@@ -2243,9 +2252,18 @@ class EMConfig {
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
     var enableCustomizedMethodForMockObjectHandling = false
 
+
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task.")
+    var enableCustomizedMethodForScheduleTaskHandling = false
+
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Whether to save schedule task invocation as separated files")
+    var saveScheduleTaskInvocationAsSeparatedFile = false
 
     @Experimental
     @Cfg("Specify test resource path where to save mocked responses as separated files")

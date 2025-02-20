@@ -59,5 +59,10 @@ enum class ActionFilter {
     /**
      * Actions related to setup hostname DNS resolutions
      */
-    ONLY_DNS
+    ONLY_DNS,
+
+    /**
+     * Actions related to invoke schedule task
+     */
+    ONLY_SCHEDULE_TASK
 }

@@ -15,7 +15,6 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
@@ -60,9 +59,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
 
 //        if (shouldCheckExpectations()) {
 //            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)

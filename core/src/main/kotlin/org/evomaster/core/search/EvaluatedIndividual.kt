@@ -12,6 +12,7 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -161,6 +162,8 @@ class EvaluatedIndividual<T>(
      * the total number of actions
      */
     fun evaluatedMainActions(): List<EvaluatedAction> {
+        // main action might not be executed if any init actions (such as schedule task) failed
+        if (!didExecuteMainAction()) return emptyList()
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
         val actions = individual.seeMainExecutableActions()
@@ -176,6 +179,8 @@ class EvaluatedIndividual<T>(
 
         return list
     }
+
+    private fun didExecuteMainAction() : Boolean = results.any { it is EnterpriseActionResult }
 
     /**
      * @return grouped evaluated actions based on its resource structure
