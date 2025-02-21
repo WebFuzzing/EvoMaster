@@ -30,14 +30,14 @@ FOLDER = sys.argv[2]
 
 SHELL = platform.system() == 'Windows'
 
-SCRIPTS_FOLDER = os.path.join(FOLDER, "scripts")
+# Changed, as now we might have few subfolders with scripts, eg for generated tests
+# SCRIPTS_FOLDER = os.path.join(FOLDER, "scripts")
+SCRIPTS_FOLDER = FOLDER
 
 buffer = []
 
 #collect name of all bash files
 scripts = [f for f in os.listdir(SCRIPTS_FOLDER) if os.path.isfile(os.path.join(SCRIPTS_FOLDER, f))  and f.endswith(".sh")]
-# and f.startswith("evomaster")
-# as we might want to use this script for BB experiments, let's not bind it to EvoMaster
 
 print("There are " + str(len(scripts)) + " Bash script files", flush=True)
 
