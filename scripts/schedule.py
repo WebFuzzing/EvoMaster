@@ -11,6 +11,7 @@ import os
 import subprocess
 import time
 import platform
+import pathlib
 
 # Note: here we for flush on ALL prints, otherwise we would end up with messed up logs
 
@@ -32,7 +33,7 @@ SHELL = platform.system() == 'Windows'
 
 # Changed, as now we might have few subfolders with scripts, eg for generated tests
 # SCRIPTS_FOLDER = os.path.join(FOLDER, "scripts")
-SCRIPTS_FOLDER = FOLDER
+SCRIPTS_FOLDER = pathlib.PurePath(FOLDER).as_posix()
 
 buffer = []
 
@@ -50,9 +51,9 @@ def runScript(s):
     print("Running script " + str(k)+ "/"+ str(len(scripts)) +": " + s, flush=True)
     k = k + 1
 
-    command = ["bash", os.path.join("scripts", s)]
+    command = ["bash", s]
 
-    handler = subprocess.Popen(command, shell=SHELL, cwd=FOLDER, start_new_session=True)
+    handler = subprocess.Popen(command, shell=SHELL, cwd=SCRIPTS_FOLDER, start_new_session=True)
     buffer.append(handler)
 
 for s in scripts:
