@@ -412,8 +412,26 @@ object RestActionBuilderV3 {
                         null
                     }
                 } ?: listOf()
+
+
+            val parameterDescriptions: MutableMap<String, String> = mutableMapOf()
+            // Header values and descriptions
+            swagger.paths.forEach { (_, v) ->
+                v.post.parameters.forEach { x ->
+                    parameterDescriptions[x.name] = x.description
+                }
+            }
+
+            // Body parameters descriptions
+            swagger.components.schemas.forEach { (_, x) ->
+                x.properties.forEach { (n, d) ->
+                    parameterDescriptions[n] = d.description
+                }
+            }
+
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links)
+                operationId = operation.operationId, links = links, schemaDescriptions = parameterDescriptions
+            )
 
             //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are
@@ -1771,7 +1789,7 @@ object RestActionBuilderV3 {
                 return null
             }
         }?.toMutableList()?: mutableListOf()
-        return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks)
+        return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks, schemaDescriptions = mutableMapOf())
     }
 
     private fun getMapStringFromSchemas(schemas: String) : Map<String, String>{

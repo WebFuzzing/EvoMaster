@@ -33,7 +33,7 @@ class BindingBuildTest {
         val f4 = FloatGene("floatValue", 4f)
         val bodyGene = ObjectGene("foo", fields = listOf(f1,f2,f3,f4))
         val bodyParam = BodyParam(bodyGene, EnumGene("contentType", listOf("application/json")))
-        val post = RestCallAction(id="post",verb = HttpVerb.POST,path = ancestorPath.copy(), parameters = mutableListOf(bodyParam))
+        val post = RestCallAction(id="post",verb = HttpVerb.POST,path = ancestorPath.copy(), parameters = mutableListOf(bodyParam), schemaDescriptions = mutableMapOf())
 
         val path = RestPath("/api/foo/{id}")
         val disruptiveGene = CustomMutationRateGene("id", f1.copy(), 1.0)
@@ -41,7 +41,7 @@ class BindingBuildTest {
         val pathParam = PathParam("id", disruptiveGene)
         val queryPathParam = QueryParam("doubleValue", f2.copy())
         (queryPathParam.gene as DoubleGene).value = 6.0
-        val get = RestCallAction("get", HttpVerb.GET, path = path.copy(), parameters = mutableListOf(pathParam.copy(), queryPathParam.copy()))
+        val get = RestCallAction("get", HttpVerb.GET, path = path.copy(), parameters = mutableListOf(pathParam.copy(), queryPathParam.copy()), schemaDescriptions = mutableMapOf())
 
         val map = BindingBuilder.buildBindBetweenParams(bodyParam, post.path, get.path, get.parameters, randomness = null)
         assertEquals(2, map.size)
@@ -73,7 +73,7 @@ class BindingBuildTest {
         val f4 = FloatGene("floatValue", 4f)
         val bodyGene = ObjectGene("foo", fields = listOf(f1,f2,f3,f4))
         val bodyParam = BodyParam(bodyGene, EnumGene("contentType", listOf("application/json")))
-        val post = RestCallAction(id="post",verb = HttpVerb.POST,path = ancestorPath.copy(), parameters = mutableListOf(bodyParam))
+        val post = RestCallAction(id="post",verb = HttpVerb.POST,path = ancestorPath.copy(), parameters = mutableListOf(bodyParam), schemaDescriptions = mutableMapOf())
 
 
     }

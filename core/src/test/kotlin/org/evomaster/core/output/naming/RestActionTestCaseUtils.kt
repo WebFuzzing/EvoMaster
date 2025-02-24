@@ -108,7 +108,7 @@ object RestActionTestCaseUtils {
     }
 
     fun getRestCallAction(path: String = "/items", verb: HttpVerb = HttpVerb.GET, parameters: MutableList<Param> = mutableListOf()): RestCallAction {
-        return RestCallAction("1", verb, RestPath(path), parameters)
+        return RestCallAction("1", verb, RestPath(path), parameters, schemaDescriptions = mutableMapOf())
     }
 
     fun getPathParam(paramName: String): Param {
