@@ -87,9 +87,7 @@ object TestUtils {
         val queryNameParam = QueryParam("name", StringGene("name"))
         val queryIdParam = QueryParam("id", IntegerGene("id"))
         val actions : MutableList<Param> = if (onlyId) mutableListOf(queryIdParam) else  mutableListOf(queryIdParam, queryNameParam)
-        return RestCallAction(
-            id, HttpVerb.GET, RestPath(pathString), actions
-        )
+        return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
     }
 
 }
