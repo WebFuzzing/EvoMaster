@@ -434,7 +434,7 @@ object RestActionBuilderV3 {
             }
 
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links, schemaDescriptions = parameterDescriptions
+                operationId = operation.operationId, links = links
             )
 
             //TODO update for new parser
