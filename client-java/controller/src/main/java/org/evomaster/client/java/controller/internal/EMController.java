@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
 import org.evomaster.client.java.sql.QueryResult;
@@ -606,6 +608,37 @@ public class EMController {
         }
     }
 
+
+    @Path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @POST
+    public Response scheduleTasksCommand(
+            ScheduleTaskInvocationsDto command,
+            @QueryParam("killSwitch") @DefaultValue("false")
+            boolean killSwitch,
+            @QueryParam("queryFromDatabase")
+            @DefaultValue("true")
+            boolean queryFromDatabase,
+            @Context HttpServletRequest httpServletRequest) {
+
+        ScheduleTaskInvocationsResult responseDto = new ScheduleTaskInvocationsResult();
+
+        if (command.tasks != null && !command.tasks.isEmpty()){ // handle schedule task execution
+            try{
+                noKillSwitchForceCheck(() -> sutController.invokeScheduleTasks(command.tasks, responseDto, queryFromDatabase));
+            } catch (Exception e) {
+                String msg = "Thrown exception in executing schedule task: " + e.getMessage();
+                SimpleLogger.error(msg, e);
+                responseDto.error500Msg = msg;
+                return Response.status(500).entity(WrappedResponseDto.withData(responseDto)).build();
+            }
+        }
+
+        if (killSwitch)
+            sutController.setKillSwitch(true);
+
+        return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
+    }
 
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)

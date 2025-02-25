@@ -184,6 +184,7 @@ abstract class Individual(
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
 
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE, NO_DB, ONLY_DB, ONLY_SCHEDULE_TASK }
 
     /**
      * Return a view of all the top Genes in this chromosome/individual.
@@ -493,7 +494,11 @@ abstract class Individual(
             if(it !is Action) {
                 listOf(it)
             } else {
-                it.seeTopGenes().flatMap {g ->  g.flatView() }
+                // there might be the case whereby the action does not have genes eg, schedule task
+                if (it.seeTopGenes().isEmpty())
+                    listOf(it)
+                else
+                    it.seeTopGenes().flatMap {g ->  g.flatView() }
             }
         }
     }
