@@ -417,24 +417,31 @@ object RestActionBuilderV3 {
             val parameterDescriptions: SchemaDescription = SchemaDescription()
 
             // Header values and descriptions
-            swagger.paths.forEach { (_, v) ->
-                v.get.parameters.forEach { x ->
-                    parameterDescriptions.addHeader(x.name, x.description)
-                }
-                v.post.parameters.forEach { x ->
-                    parameterDescriptions.addHeader(x.name, x.description)
+            swagger.paths.forEach { (_, paths) ->
+                if (paths.post != null && paths.post.parameters != null) {
+                    paths.post.parameters.forEach { x ->
+                        if (!x.name.isNullOrEmpty() && !x.description.isNullOrEmpty()) {
+                            parameterDescriptions.addHeader(x.name, x.description)
+                        }
+                    }
                 }
             }
 
             // Body parameters descriptions
-            swagger.components.schemas.forEach { (_, x) ->
-                x.properties.forEach { (n, d) ->
-                    parameterDescriptions.addBody(n, d.description)
+            if (swagger.components != null && swagger.components.schemas != null) {
+                swagger.components.schemas.forEach { (_, x) ->
+                    if (x.properties != null) {
+                        x.properties.forEach { (n, d) ->
+                            if (!n.isNullOrEmpty() && !d.description.isNullOrEmpty()) {
+                                parameterDescriptions.addBody(n, d.description)
+                            }
+                        }
+                    }
                 }
             }
 
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links
+                operationId = operation.operationId, links = links, schemaDescriptions = parameterDescriptions
             )
 
             //TODO update for new parser
