@@ -11,6 +11,6 @@ public class PostSearchActionDto {
     /**
      * a list of rpc test dto
      */
-    public List<RPCTestDto> rpcTests;
+    public List<RPCTestWithResultsDto> rpcTests;
 
 }

@@ -269,7 +269,7 @@ class Statistics : SearchListener {
             add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
             add(Pair("numberOfRPCFunctions", "${rpcInfo?.schemas?.sumOf { it.skippedEndpoints?.size ?: 0 }}"))
             add(Pair("numberOfRPCSeededTests", "${rpcInfo?.seededTestDtos?.size?:0}" ))
-            add(Pair("numberOfRPCSeededTestsHaveMock", "${rpcInfo?.seededTestDtos?.filter { s-> s.value?.isNotEmpty() == true &&  s.value?.any { a -> a.mockObjectNeeded() } == true}?.size?:0}" ))
+            add(Pair("numberOfRPCSeededTestsHaveMock", "${rpcInfo?.seededTestDtos?.filter { s-> s.value?.rpcFuctions?.isNotEmpty() == true &&  s.value?.rpcFuctions?.any { a -> a.mockObjectNeeded() } == true}?.size?:0}" ))
 
             // RPC
             add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))

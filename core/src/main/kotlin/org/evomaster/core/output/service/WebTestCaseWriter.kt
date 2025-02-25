@@ -17,7 +17,8 @@ class WebTestCaseWriter : TestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
         //nothing to do? at least for now...
     }
