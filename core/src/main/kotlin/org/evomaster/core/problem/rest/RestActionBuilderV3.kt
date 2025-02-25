@@ -414,18 +414,22 @@ object RestActionBuilderV3 {
                 } ?: listOf()
 
 
-            val parameterDescriptions: MutableMap<String, String> = mutableMapOf()
+            val parameterDescriptions: SchemaDescription = SchemaDescription()
+
             // Header values and descriptions
             swagger.paths.forEach { (_, v) ->
+                v.get.parameters.forEach { x ->
+                    parameterDescriptions.addHeader(x.name, x.description)
+                }
                 v.post.parameters.forEach { x ->
-                    parameterDescriptions[x.name] = x.description
+                    parameterDescriptions.addHeader(x.name, x.description)
                 }
             }
 
             // Body parameters descriptions
             swagger.components.schemas.forEach { (_, x) ->
                 x.properties.forEach { (n, d) ->
-                    parameterDescriptions[n] = d.description
+                    parameterDescriptions.addBody(n, d.description)
                 }
             }
 
@@ -1789,7 +1793,7 @@ object RestActionBuilderV3 {
                 return null
             }
         }?.toMutableList()?: mutableListOf()
-        return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks, schemaDescriptions = mutableMapOf())
+        return RestCallAction(id, verb, path, query, skipOracleChecks= skipOracleChecks)
     }
 
     private fun getMapStringFromSchemas(schemas: String) : Map<String, String>{

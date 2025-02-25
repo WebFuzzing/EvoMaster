@@ -938,7 +938,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val format = OutputFormat.JAVA_JUNIT_4
 
         val baseUrlOfSut = "baseUrlOfSut"
-        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, SampleType.RANDOM)
         TestUtils.doInitializeIndividualForTesting(individual)
@@ -1025,8 +1025,8 @@ class TestCaseWriterTest : WriterTestBase(){
         val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
-        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -1097,8 +1097,8 @@ public void test() throws Exception {
         val foreignKeyGene = SqlForeignKeyGene(fkId.name, barInsertionId, "Foo", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
         val barInsertion = SqlAction(bar, setOf(fooId, fkId), barInsertionId, listOf(pkBar, foreignKeyGene))
 
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
-        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
 
         val groups =  mutableListOf(
             (mutableListOf(fooInsertion.copy() as SqlAction) to mutableListOf(fooAction.copy() as RestCallAction)),
@@ -1155,8 +1155,8 @@ public void test() throws Exception {
     @Test
     fun testDbInBetweenWithEmptyDb() {
 
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
-        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+        val barAction = RestCallAction("2", HttpVerb.GET, RestPath("/bar"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -1200,7 +1200,7 @@ public void test() throws Exception {
 
     @Test
     fun testTestWithObjectAssertion(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -1274,7 +1274,7 @@ public void test() throws Exception {
 
     @Test
     fun testTestWithObjectLengthAssertion(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -1345,7 +1345,7 @@ public void test() throws Exception {
 
     @Test
     fun testApplyAssertionEscapes(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),

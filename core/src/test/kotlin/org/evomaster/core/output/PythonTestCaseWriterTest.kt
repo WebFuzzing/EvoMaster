@@ -65,7 +65,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
         val baseUrlOfSut = "baseUrlOfSut"
         val sampleType = SampleType.RANDOM
-        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val action = RestCallAction("1", HttpVerb.GET, RestPath("/"), mutableListOf())
         val restActions = listOf(action).toMutableList()
         val individual = RestIndividual(restActions, sampleType)
         TestUtils.doInitializeIndividualForTesting(individual)
@@ -117,7 +117,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
     @Test
     fun testTestWithObjectAssertion(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -192,7 +192,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
     @Test
     fun testTestWithObjectLengthAssertion(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),
@@ -264,7 +264,7 @@ class PythonTestCaseWriterTest : WriterTestBase(){
 
     @Test
     fun testApplyAssertionEscapes(){
-        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
             dbInitialization = mutableListOf(),

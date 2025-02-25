@@ -2,8 +2,10 @@ package org.evomaster.e2etests.spring.openapi.v3.swagger
 
 import com.foo.rest.examples.spring.openapi.v3.swagger.PerfectSwaggerController
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -27,6 +29,15 @@ class PerfectSwaggerEMTest: SpringTestBase() {
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
+
+            solution.individuals.forEach { v ->
+                val x = v.evaluatedMainActions().get(0).action as RestCallAction
+                if (x.verb.name.lowercase() == "post") {
+                    assertEquals( x.schemaDescriptions!!.getBodyDescriptions().size, 2)
+                    assertEquals( x.schemaDescriptions!!.getHeaderDescriptions().size, 1)
+                }
+
+            }
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/v1", "GET is working")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/v1", "POST is working")
         }

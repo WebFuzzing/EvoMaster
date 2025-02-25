@@ -61,7 +61,7 @@ class RestCallAction(
     val operationId: String? = null,
     val links: List<RestLink> = listOf(),
     var backwardLinkReference: BackwardLinkReference? = null,
-    val schemaDescriptions: MutableMap<String, String>,
+    val schemaDescriptions: SchemaDescription? = null,
 ) : HttpWsAction(auth, parameters) {
 
     companion object{

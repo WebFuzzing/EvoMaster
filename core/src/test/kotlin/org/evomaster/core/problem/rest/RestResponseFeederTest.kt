@@ -37,7 +37,7 @@ class RestResponseFeederTest{
         payload: String
     ) : EvaluatedAction {
 
-        val action = RestCallAction("42",verb,RestPath(path), mutableListOf(), schemaDescriptions = mutableMapOf())
+        val action = RestCallAction("42",verb,RestPath(path), mutableListOf())
         action.setLocalId("foo")
 
         val response = RestCallResult(action.getLocalId(), false)

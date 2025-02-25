@@ -77,8 +77,7 @@ class BodyParamTest {
                     id = "post",
                     verb = HttpVerb.POST,
                     path = restPath,
-                    parameters = mutableListOf(bodyParam),
-                    schemaDescriptions = mutableMapOf()
+                    parameters = mutableListOf(bodyParam)
                 )
 
             assertFalse(bodyParam.contentRemoveQuotesGene.gene.value)
@@ -120,7 +119,7 @@ class BodyParamTest {
 
         val restPath = RestPath("/foo/bar")
         val restCallAction =
-            RestCallAction(id = "post", verb = HttpVerb.POST, path = restPath, parameters = mutableListOf(bodyParam), schemaDescriptions = mutableMapOf())
+            RestCallAction(id = "post", verb = HttpVerb.POST, path = restPath, parameters = mutableListOf(bodyParam))
 
         assertFalse(bodyParam.contentRemoveQuotesGene.gene.value)
         val randomness = Randomness()
@@ -149,7 +148,7 @@ class BodyParamTest {
 
         val restPath = RestPath("/foo/bar")
         val restCallAction =
-            RestCallAction(id = "post", verb = HttpVerb.POST, path = restPath, parameters = mutableListOf(bodyParam), schemaDescriptions = mutableMapOf())
+            RestCallAction(id = "post", verb = HttpVerb.POST, path = restPath, parameters = mutableListOf(bodyParam))
 
         val individual =
             RestIndividual(mutableListOf(restCallAction), SampleType.RANDOM, dbInitialization = mutableListOf())
