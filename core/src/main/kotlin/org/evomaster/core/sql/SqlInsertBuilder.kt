@@ -658,6 +658,21 @@ class SqlInsertBuilder(
         return data[tableName] ?: throw IllegalArgumentException("No table called $tableName")
     }
 
+
+    @Deprecated("User version with TableId")
+    fun createSqlInsertionAction(
+        tableName: String,
+        columnNames: Set<String> = setOf("*"),
+        history: MutableList<TableId> = mutableListOf(),
+        forceAll: Boolean = false,
+        useExtraSqlDbConstraints: Boolean = false,
+        enableSingleInsertionForTable: Boolean = false
+    ): List<SqlAction> {
+        return createSqlInsertionAction(TableId(tableName), columnNames, history, forceAll,useExtraSqlDbConstraints, enableSingleInsertionForTable)
+    }
+
+
+
     /**
      * Create a SQL insertion operation into the table called [tableName].
      * Use columns only from [columnNames], to avoid wasting resources in setting

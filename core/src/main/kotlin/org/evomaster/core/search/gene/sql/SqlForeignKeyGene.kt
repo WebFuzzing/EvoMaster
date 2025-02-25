@@ -39,6 +39,10 @@ class SqlForeignKeyGene(
 
 ) : SqlWrapperGene, SimpleGene(sourceColumn) {
 
+    @Deprecated("Rather use the one forcing TableId")
+    constructor(sourceColumn: String, uniqueId: Long, targetTable: String, nullable: Boolean, uniqueIdOfPrimaryKey: Long =-1)
+            : this(sourceColumn, uniqueId, TableId(targetTable), nullable, uniqueIdOfPrimaryKey)
+
     init {
         if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")

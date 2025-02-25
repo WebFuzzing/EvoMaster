@@ -611,7 +611,7 @@ abstract class RestIndividualTestBase {
                                 .apply {
                                 val table = randomness.choose( sqlInsertBuilder!!.getTableNames())
                                 val failed = randomness.choose(sqlInsertBuilder!!.getTable(table,true).columns.map { it.name })
-                                failedWhere = mapOf(table to setOf(failed))
+                                failedWhere = mapOf(table.name to setOf(failed))
                             }
                         }
                     }

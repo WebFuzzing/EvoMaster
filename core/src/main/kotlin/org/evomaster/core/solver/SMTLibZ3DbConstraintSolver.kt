@@ -152,7 +152,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
                 val currentColumn = table.columns.firstOrNull(){ it.name == columnName}
                 if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, tableName, gene, idCounter)
+                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, idCounter)
                     idCounter++
                 }
                 gene.markAllAsInitialized()
@@ -203,9 +203,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
             TableId(tableDto.id.name) , //TODO other info, eg schema
-            findColumns(tableDto), // Convert columns from DTO
-            tableDto.name,
-            findColumns(schema, tableDto), // Convert columns from DTO
+            findColumns(schema,tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )
     }

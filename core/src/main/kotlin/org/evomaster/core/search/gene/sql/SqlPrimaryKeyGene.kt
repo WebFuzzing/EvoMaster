@@ -29,6 +29,9 @@ class SqlPrimaryKeyGene(name: String,
                         val uniqueId: Long
 ) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
+    @Deprecated("Rather use the one forcing TableId")
+    constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
+
 
     init {
         if (uniqueId < 0) {

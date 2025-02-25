@@ -66,7 +66,7 @@ object TestUtils {
         val fooId = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
         val foo = Table(TableId(tableName), setOf(fooId), setOf())
         val integerGene = IntegerGene(fooId.name, intValue)
-        val pkFoo = SqlPrimaryKeyGene(fooId.name, "Foo", integerGene, pkGeneUniqueId)
+        val pkFoo = SqlPrimaryKeyGene(fooId.name, TableId("Foo"), integerGene, pkGeneUniqueId)
         if(fkColumn != null && fkGene != null)
             return SqlAction(foo, setOf(fooId, fkColumn), pkId, listOf(pkFoo, fkGene))
         return SqlAction(foo, setOf(fooId), pkId, listOf(pkFoo))
@@ -77,7 +77,7 @@ object TestUtils {
 
         val fkColumName = "fkId"
         val fkId = Column(fkColumName, ColumnDataType.INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
-        val foreignKeyGene = SqlForeignKeyGene(fkColumName, bId, aTable, false, uniqueIdOfPrimaryKey = aUniqueId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumName, bId, TableId(aTable), false, uniqueIdOfPrimaryKey = aUniqueId)
 
         val barInsertion = generateFakeDbAction(bId, bUniqueId,  bTable, bValue, fkId, foreignKeyGene)
 
