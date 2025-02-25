@@ -291,7 +291,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Column column) {
         String name = column.getColumnName();
-        String table = sqlNameContext.getTableName(column);
+        String table = sqlNameContext.getFullyQualifiedTableName(column);
         Object value = dataRow.getValueByName(name, table);
         concreteValues.push(value);
     }

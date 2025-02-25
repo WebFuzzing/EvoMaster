@@ -12,10 +12,10 @@ class ConflictingConstraintsTest : MultiDbTestBase() {
         val info = DbInfoExtractor.extract(connection)
         assertEquals(name.lowercase(), info.name.lowercase())
         assertEquals(2, info.tables.size)
-        val first = info.tables.find { it.schema.equals("first",true) }!!
-        val second = info.tables.find { it.schema.equals("other",true) }!!
+        val first = info.tables.find { it.id.schema.equals("first",true) }!!
+        val second = info.tables.find { it.id.schema.equals("other",true) }!!
 
-        assertEquals(first.name, second.name)
+        assertEquals(first.id.name, second.id.name)
 
         assertEquals(2, first.columns.size)
         assertTrue(first.columns.any { it.name.equals("x", true) })
