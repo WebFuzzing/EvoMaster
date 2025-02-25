@@ -15,6 +15,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.sql.SqlActionUtils.isMatchingTableName
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -70,17 +71,17 @@ class ResourceNodeWithDbTest {
         assertEquals(6, cluster.getCluster().size)
 
         // table in db
-        assertTrue(cluster.getTableInfo().keys.containsAll(setOf("PUBLIC.RFOO", "PUBLIC.RBAR", "PUBLIC.RXYZ")))
+        assertTrue(cluster.getTableInfo().keys.map { it.getFullQualifyingTableName() }.containsAll(setOf("PUBLIC.RFOO", "PUBLIC.RBAR", "PUBLIC.RXYZ")))
 
         // data in db
-        assertEquals(2, cluster.getDataInDb("RFOO")?.size)
-        assertEquals(1, cluster.getDataInDb("RBAR")?.size)
-        assertEquals(1, cluster.getDataInDb("RXYZ")?.size)
+        assertEquals(2, cluster.getDataInDb(TableId("RFOO"))?.size)
+        assertEquals(1, cluster.getDataInDb(TableId("RBAR"))?.size)
+        assertEquals(1, cluster.getDataInDb(TableId("RXYZ"))?.size)
 
         val rfooNode = cluster.getResourceNode("/v3/api/rfoo")
         assertNotNull(rfooNode)
         rfooNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.contains("PUBLIC.RFOO"), "Keys: ${derivedMap.keys.joinToString(", ")}")
+            assertTrue(derivedMap.keys.map { it.getFullQualifyingTableName() }.contains("PUBLIC.RFOO"), "Keys: ${derivedMap.keys.joinToString(", ")}")
             assertEquals(1, paramToTable.size)
             assertTrue(paramToTable.values.first() is BodyParamRelatedToTable)
             (paramToTable.values.first() as BodyParamRelatedToTable).apply {
@@ -89,7 +90,7 @@ class ResourceNodeWithDbTest {
                     assertEquals(1, u.derivedMap.size)
                     u.derivedMap.forEach { ut, uu ->
 //                        assertEquals("RFOO", ut)
-                        assertTrue(isMatchingTableName(ut, "RFOO"))
+                        assertTrue(isMatchingTableName(ut.name, "RFOO"))
                         assertEquals(uu.input.toLowerCase(), uu.targetMatched.toLowerCase())
                     }
                 }
@@ -99,38 +100,38 @@ class ResourceNodeWithDbTest {
         val rbarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")
         assertNotNull(rbarNode)
         rbarNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RFOO") })
-            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RBAR") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it.name, "RFOO") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it.name, "RBAR") })
         }
 
         val rxyzNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")
         assertNotNull(rxyzNode)
         rxyzNode!!.resourceToTable.apply {
-            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RFOO") })
-            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RBAR") })
-            assertTrue(derivedMap.keys.any { isMatchingTableName(it, "RXYZ") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it.name, "RFOO") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it.name, "RBAR") })
+            assertTrue(derivedMap.keys.any { isMatchingTableName(it.name, "RXYZ") })
         }
     }
 
     @Test
     fun testDbActionCreation(){
 
-        val fooAndBar = cluster.createSqlAction(listOf("RFOO","RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
+        val fooAndBar = cluster.createSqlAction(listOf("RFOO","RBAR").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
         assertEquals(2, fooAndBar.size)
 
-        val fooAndBar2 =  cluster.createSqlAction(listOf("RFOO","RBAR"), sqlInsertBuilder, fooAndBar, true, randomness= randomness)
+        val fooAndBar2 =  cluster.createSqlAction(listOf("RFOO","RBAR").map { TableId(it) }, sqlInsertBuilder, fooAndBar, true, randomness= randomness)
         assertEquals(0, fooAndBar2.size)
 
-        val xyz = cluster.createSqlAction(listOf("RXYZ"), sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
+        val xyz = cluster.createSqlAction(listOf("RXYZ").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness= randomness)
         assertEquals(3, xyz.size)
 
-        val xyz2 = cluster.createSqlAction(listOf("RFOO","RBAR"), sqlInsertBuilder, xyz, true, randomness= randomness)
+        val xyz2 = cluster.createSqlAction(listOf("RFOO","RBAR").map { TableId(it) }, sqlInsertBuilder, xyz, true, randomness= randomness)
         assertEquals(0, xyz2.size)
 
-        val xyz3 = cluster.createSqlAction(listOf("RFOO","RFOO","RBAR","RBAR"), sqlInsertBuilder, mutableListOf(), false, randomness= randomness)
+        val xyz3 = cluster.createSqlAction(listOf("RFOO","RFOO","RBAR","RBAR").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), false, randomness= randomness)
         assertEquals(2 + 2*2, xyz3.size)
 
-        val xyzSelect = cluster.createSqlAction(listOf("RXYZ"), sqlInsertBuilder, mutableListOf(), true, isInsertion = false, randomness = randomness)
+        val xyzSelect = cluster.createSqlAction(listOf("RXYZ").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, isInsertion = false, randomness = randomness)
         assertEquals(1, xyzSelect.size)
     }
 
@@ -171,7 +172,7 @@ class ResourceNodeWithDbTest {
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}
         val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
         val getBar = getBarNode.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
-        val fooBarDbActionToCreate = cluster.createSqlAction(listOf("RFOO", "RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val fooBarDbActionToCreate = cluster.createSqlAction(listOf("RFOO", "RBAR").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         assertEquals(2, fooBarDbActionToCreate.size)
         getBar.initDbActions(fooBarDbActionToCreate, cluster, false, false)
         val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
@@ -186,7 +187,7 @@ class ResourceNodeWithDbTest {
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}
         val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
         val getXYZ = xYZNode.sampleRestResourceCalls("GET", randomness, 10)
-        val xyzDbActions = cluster.createSqlAction(listOf("RXYZ", "RBAR", "RFOO"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val xyzDbActions = cluster.createSqlAction(listOf("RXYZ", "RBAR", "RFOO").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         getGenePredict(xyzDbActions[0], "id"){g: Gene-> g is LongGene }.apply {
             (this as? LongGene)?.value = 42
         }
@@ -221,7 +222,7 @@ class ResourceNodeWithDbTest {
 
         val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
         val getXYZ = xYZNode.sampleRestResourceCalls("GET", randomness, 10)
-        val dbXYZ = cluster.createSqlAction(listOf("RFOO", "RBAR", "RXYZ"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val dbXYZ = cluster.createSqlAction(listOf("RFOO", "RBAR", "RXYZ").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         getGenePredict(dbXYZ[0], "id"){g: Gene-> g is LongGene }.apply {
             (this as? LongGene)?.value = 42
         }
@@ -241,7 +242,7 @@ class ResourceNodeWithDbTest {
 
         val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
         val getBar = getBarNode.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
-        val dbBar = cluster.createSqlAction(listOf("RFOO", "RBAR"), sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val dbBar = cluster.createSqlAction(listOf("RFOO", "RBAR").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         getBar.initDbActions(dbBar, cluster, false, false)
         assertEquals(2, getBar.seeActionSize(ActionFilter.ONLY_SQL))
 
