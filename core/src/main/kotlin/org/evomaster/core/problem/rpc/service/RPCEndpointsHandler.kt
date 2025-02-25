@@ -201,7 +201,7 @@ class RPCEndpointsHandler {
      */
     fun handledSeededTests(tests: Map<String, RPCTestDto>): List<RPCIndividual>{
         return tests.map {e->
-            val rpcActionDtos = e.value.rpcFuctions
+            val rpcActionDtos = e.value.rpcFuctions?: emptyList()
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = rpcActionDtos.map { rpcActionDto->
                 val external = mutableListOf<ApiExternalServiceAction>()
