@@ -26,6 +26,7 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
+import org.evomaster.core.problem.util.SecurityUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
@@ -414,31 +415,8 @@ object RestActionBuilderV3 {
                 } ?: listOf()
 
 
-            val parameterDescriptions: SchemaDescription = SchemaDescription()
-
-            // Header values and descriptions
-            swagger.paths.forEach { (_, paths) ->
-                if (paths.post != null && paths.post.parameters != null) {
-                    paths.post.parameters.forEach { x ->
-                        if (!x.name.isNullOrEmpty() && !x.description.isNullOrEmpty()) {
-                            parameterDescriptions.addHeader(x.name, x.description)
-                        }
-                    }
-                }
-            }
-
-            // Body parameters descriptions
-            if (swagger.components != null && swagger.components.schemas != null) {
-                swagger.components.schemas.forEach { (_, x) ->
-                    if (x.properties != null) {
-                        x.properties.forEach { (n, d) ->
-                            if (!n.isNullOrEmpty() && !d.description.isNullOrEmpty()) {
-                                parameterDescriptions.addBody(n, d.description)
-                            }
-                        }
-                    }
-                }
-            }
+            // Extract descriptions from the OpenAPI schema
+            val parameterDescriptions: SchemaDescription = SecurityUtil.extractDescriptionFromSchema(swagger)
 
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
                 operationId = operation.operationId, links = links, schemaDescriptions = parameterDescriptions
