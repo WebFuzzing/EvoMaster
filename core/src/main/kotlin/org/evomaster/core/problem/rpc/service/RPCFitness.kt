@@ -3,6 +3,8 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExecutionStatusDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -13,11 +15,14 @@ import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskActionResult
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -54,8 +59,17 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
 
         run loop@{
+            // handle schedule task
+            val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
+            if (scheduleTasks.isNotEmpty()){
+                val ok = executeScheduleTasks(0, individual.seeScheduleTaskActions(), actionResults)
+                if (!ok) return@loop
+            }
+
+            // TODO do we need to ensure all schedule tasks are completed before executing main actions?
+
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
-                val ok = executeNewAction(action, index, actionResults)
+                val ok = executeNewAction(action, scheduleTasks.size + index, actionResults)
                 if (!ok) return@loop
             }
         }
@@ -65,6 +79,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         handleExtra(dto, fv)
 
 //        expandIndividual(individual)
+        val scheduleTasksResults = actionResults.filterIsInstance<ScheduleTaskActionResult>()
         /*
             TODO Man handle targets regarding info in responses,
             eg, exception
@@ -73,10 +88,15 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
+
+        val additionalInfoForScheduleTask = dto.additionalInfoList.subList(0, scheduleTasksResults.size)
+        // TODO man might need to handle additional targets for schedule task later
+
+        val additionalInfoForMainTask= dto.additionalInfoList.subList(scheduleTasksResults.size, dto.additionalInfoList.size)
+        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, additionalInfoForMainTask)
 
         if (config.isEnabledTaintAnalysis()) {
-            Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
+            Lazy.assert { (scheduleTasksResults.size + rpcActionResults.size) == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
@@ -112,6 +132,32 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 //            }
 //        }
 //    }
+
+    private fun executeScheduleTasks(firstIndex : Int, tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
+        searchTimeController.waitForRateLimiter()
+
+        val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
+        actionResults.addAll(taskResults)
+        val taskDtos = tasks.mapIndexed { index, scheduleTaskAction -> rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction).apply {
+            this.index = firstIndex + index
+        }
+        }
+        val command = ScheduleTaskInvocationsDto()
+        command.tasks = taskDtos
+        val response = rc.invokeScheduleTasksAndGetResults(command)
+
+        if (response != null){
+            if (taskResults.size == response.results.size){
+                taskResults.forEachIndexed { index, taskResult ->
+                    val resultDto = response.results[index]
+                    taskResult.setResultBasedOnDto(resultDto)
+                }
+            }
+        }
+        val ok = (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
+        taskResults.last().stopping = !ok
+        return ok
+    }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
 
