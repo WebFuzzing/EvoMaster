@@ -17,4 +17,10 @@ public class SeededRPCTestDto {
      * a list of rpc functions in the test
      */
     public List<SeededRPCActionDto> rpcFunctions;
+
+
+    /**
+     * a list of schedule tasks
+     */
+    public List<ScheduleTaskInvocationDto> scheduleTaskInvocations;
 }

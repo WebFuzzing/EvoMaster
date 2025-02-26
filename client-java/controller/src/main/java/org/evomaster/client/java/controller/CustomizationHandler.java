@@ -4,10 +4,10 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.CustomizedCallResultCode;
 import org.evomaster.client.java.controller.api.dto.CustomizedRequestValueDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.RPCTestWithResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.problem.rpc.CustomizedNotNullAnnotationForRPCDto;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,16 +60,16 @@ public interface CustomizationHandler {
     List<SeededRPCTestDto> seedRPCTests();
 
 
+
     /**
      * <p>
      *     here we provide additional handling on the generated RPC tests
      * </p>
-     * @param externalServiceDtos represent info is to mock responses of external services
-     * @param sqlInsertions represent a sequence of SQL insertions
-     * @param actions represent a list of RPC actions to execute in this test with returned responses
+     * @param rpcTest represent generated tests by evomaster which contains executed actions and executed results, ie, return, for deriving assertions
      * @return a result of handling of additional RPC Test
      */
-    boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions);
+    boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest);
+
 
     /**
      * <p>
@@ -92,6 +92,29 @@ public interface CustomizationHandler {
      * @return whether the mocked instance starts successfully,
      */
     boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled);
+
+    /**
+     * <p>
+     * implement how to invoke schedule task for providing a customized solution
+     *
+     * regarding ScheduleTaskInvocationResultDto, its status typed with ExecutionStatusDto indicates invocation status of the schedule tasks
+     * Once the task is successfully invoked, its status should be RUNNING
+     * then if the task is completed, its status should be COMPLETE
+     * FAILED is used to handle any exception in handling invocation of the schedule task.
+     * </p>
+     *
+     * @param invocationDto specified necessary info for invoking/terminating schedule tasks
+     * @param invoked       defines to invoke (invoked is true) or terminate (invoked is false) the specified schedule task
+     * @return invocation result dto
+     */
+    ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked);
+
+    /**
+     *
+     * @param invocationInfo has the info about the invoked schedule task
+     * @return whether the task is completed
+     */
+    boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo);
 
     /**
      * <p>

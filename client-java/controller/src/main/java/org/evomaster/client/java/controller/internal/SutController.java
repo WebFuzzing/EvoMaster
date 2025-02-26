@@ -26,6 +26,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstra
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -789,7 +790,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *      key is a name of the seeded test case,
      *      value is a list of RCPActionDto for the test case
      */
-    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, RPCTestDto> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -809,7 +810,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTestWithRPCFunctions(rpcInterfaceSchema, seedRPCTests, rpcType);
 
 //        try{
 //            if (isSUTRunning){
@@ -879,7 +880,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             if (dto != null && dto.rpcTests != null && !dto.rpcTests.isEmpty()){
                 dto.rpcTests.forEach(s->
-                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+//                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+                        customizeRPCTestOutput(s)
                 );
             }
         }catch (Exception e){
@@ -927,6 +929,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         newActionSpecificHandler(dto);
     }
 
+
+    public final void newScheduleAction(ScheduleTaskInvocationDto dto, boolean queryFromDatabase) {
+
+        if (dto.index > extras.size()) {
+            extras.add(computeExtraHeuristics(queryFromDatabase));
+        }
+        this.actionIndex = dto.index;
+
+        resetExtraHeuristics();
+    }
+
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
 
         LocalAuthSetupSchema endpointSchema = new LocalAuthSetupSchema();
@@ -935,6 +948,41 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
             responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
+        }
+    }
+    public final void invokeScheduleTasks(List<ScheduleTaskInvocationDto> dtos, ScheduleTaskInvocationsResult responseDto, boolean queryFromDatabase){
+        for (ScheduleTaskInvocationDto dto: dtos){
+            try{
+                newScheduleAction(dto, queryFromDatabase);
+                invokeScheduleTask(dto, responseDto);
+            }catch (Exception e){
+                // now we execute all schedule tasks
+                SimpleLogger.warn(e.getMessage());
+            }
+        }
+        assert dtos.size() == responseDto.results.size();
+    }
+
+
+    private void invokeScheduleTask(ScheduleTaskInvocationDto dto, ScheduleTaskInvocationsResult responseDto){
+        ScheduleTaskInvocationResultDto result = null;
+
+        try{
+            // TODO, we might need to have timeout for `handleCustomizedMethod`
+            result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
+        } catch (Throwable e) {
+            if (result == null){
+                result = new ScheduleTaskInvocationResultDto();
+            }
+            String msg = "ERROR: Fail to invoke schedule task with the customized method: ";
+            if (e.getMessage() != null){
+                msg += e.getMessage();
+            }
+            result.status = ExecutionStatusDto.FAILED;
+            result.errorMsg = msg;
+            throw new RuntimeException(msg);
+        } finally {
+            responseDto.results.add(result);
         }
     }
 
@@ -1057,7 +1105,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             return call.get();
         }catch (Throwable e){
-            SimpleLogger.error("ERROR: Fail to process mocking with customized method:", e);
+            SimpleLogger.error("ERROR: Fail to process customized method:", e);
         }
         return null;
     }
@@ -1496,7 +1544,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions) {
+    public boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest) {
         return false;
     }
 
@@ -1507,6 +1555,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
+        return false;
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        return null;
+    }
+
+    @Override
+    public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
         return false;
     }
 
@@ -1608,6 +1666,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("Fail to handle the given mock object for database with the info:", e);
         }
         return customizeMockingDatabase(mockDbObject, enabled);
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
+        ScheduleTaskInvocationDto taskDto = null;
+        ScheduleTaskInvocationResultDto resultDto = null;
+        try{
+            taskDto = objectMapper.readValue(scheduleTaskDtos, new TypeReference<ScheduleTaskInvocationDto>(){});
+            resultDto = customizeScheduleTaskInvocation(taskDto, enabled);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given schedule task with the info:", e);
+        } catch (Exception e){
+            throw new RuntimeException("Fail to invoke schedule task with the info:", e);
+        }
+
+        return resultDto;
     }
 
     /**
