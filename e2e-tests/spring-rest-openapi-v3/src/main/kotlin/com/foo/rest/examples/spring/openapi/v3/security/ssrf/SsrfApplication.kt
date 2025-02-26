@@ -1,5 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.security.ssrf
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -51,11 +53,19 @@ open class SsrfApplication {
         if (remoteData.sensorUrl!!.isNotEmpty()) {
             val url = URL(remoteData.sensorUrl)
             val value = url.openConnection().getInputStream().readBytes()
+            val mapper = ObjectMapper()
 
-            // TODO: Need to change it represent some values
-            if (value.isNotEmpty()) {
-                return ResponseEntity.status(200).build()
+            try {
+                if (value.isNotEmpty()) {
+                    val data = mapper.readValue(value, SensorDataDto::class.java)
+                    if (data.temp > 1.0) {
+                        return ResponseEntity.status(200).build()
+                    }
+                }
+            } catch (e: Exception) {
+                return ResponseEntity.internalServerError().body("Could not fetch the data")
             }
+
         }
         return ResponseEntity.badRequest().body("Invalid request")
     }
