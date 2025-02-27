@@ -58,7 +58,10 @@ open class ImpactsOfIndividual(
             fixedMainActionImpacts = individual.seeFixedMainActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
             dynamicMainActionImpacts = individual.seeDynamicMainActions().map { a-> ImpactsOfAction(a) }.toMutableList()
     ) {
-        if (individual.seeActions(ActionFilter.NO_INIT).isEmpty())
+        if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()
+            // It allows to have tests which are only composed of schedule actions,
+            // then we need to put it as part of main action later
+            && individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).isEmpty())
             throw IllegalArgumentException("there is no main action")
 
         if (fitnessValue != null) {
