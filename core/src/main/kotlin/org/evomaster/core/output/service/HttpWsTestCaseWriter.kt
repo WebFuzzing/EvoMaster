@@ -54,9 +54,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
 
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
         TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)

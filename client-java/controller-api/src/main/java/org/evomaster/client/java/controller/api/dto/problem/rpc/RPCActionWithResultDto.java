@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto.problem.rpc;
 
-public class EvaluatedRPCActionDto {
+public class RPCActionWithResultDto {
 
     /**
      * rpc action to execute

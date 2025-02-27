@@ -14,30 +14,45 @@ import org.junit.jupiter.api.Test
 
 class RPCActionNamingStrategyTest {
 
-    @Test
-    fun testFakeRpcCallAsInterfaceIdAndId() {
+    companion object {
         val outputFormat = OutputFormat.KOTLIN_JUNIT_5
         val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
+        const val MAX_NAME_LENGTH = 80
+    }
+
+    @Test
+    fun testFakeRpcCallAsInterfaceIdAndId() {
         val solution = getSolution(outputFormat)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
-
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
+
         assertEquals(1, testCases.size)
         assertEquals("test_0_fakeRPCCallOnFunction_4ReturnsSuccess", testCases[0].name)
     }
 
     @Test
     fun testFakeRpcCallWithException() {
-        val outputFormat = OutputFormat.KOTLIN_JUNIT_5
-        val languageConventionFormatter = LanguageConventionFormatter(outputFormat)
         val solution = getSolution(outputFormat, true)
 
-        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter)
-
+        val namingStrategy = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
+
         assertEquals(1, testCases.size)
         assertEquals("test_0_fakeRPCCallOnFunction_4ThrowsRuntimeException", testCases[0].name)
+    }
+
+    @Test
+    fun testClassAndFunctionNamesAreAddedIfAllowedByLength() {
+        val solution = getSolution(outputFormat, true)
+
+        val withClassAndFunctionName = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, 30).getTestCases()
+        val noClassAndFunctionName = RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, 15).getTestCases()
+
+        assertEquals(1, withClassAndFunctionName.size)
+        assertEquals(1, noClassAndFunctionName.size)
+        assertEquals("test_0_fakeRPCCallOnFunction_4", withClassAndFunctionName[0].name)
+        assertEquals("test_0", noClassAndFunctionName[0].name)
     }
 
     private fun getSolution(outputFormat: OutputFormat, throwsException: Boolean = false): Solution<*> {

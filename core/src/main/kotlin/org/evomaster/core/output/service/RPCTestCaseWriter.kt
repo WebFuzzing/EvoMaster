@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCEndpointsHandler
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -39,10 +40,35 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
          * note that it is only for RPC problem now
          */
         const val CUSTOMIZED_MOCK_DATABASE_OBJECTS = "mockDatabasesWithCustomizedHandling"
+
+
+        /**
+         * name of method of customizing handling of invoking schedule tasks
+         * note that it is only for RPC problem now
+         */
+        const val CUSTOMIZED_SCHEDULE_TASKS = "invokeScheduleTaskWithCustomizedHandling"
     }
 
     @Inject
     protected lateinit var rpcHandler: RPCEndpointsHandler
+
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
+    ) {
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
+
+
+        val initializingScheduleTaskActions = ind.individual.seeInitializingActions().filterIsInstance<ScheduleTaskAction>()
+        if (initializingScheduleTaskActions.isNotEmpty()) {
+            initializingScheduleTaskActions.forEachIndexed { index, t ->
+                handleCustomizedScheduleTaskInvocationHandling(t, index, testName, true, lines)
+            }
+        }
+    }
 
     override fun handleActionCalls(
             lines: Lines,
@@ -336,6 +362,34 @@ class RPCTestCaseWriter : ApiTestCaseWriter() {
 
         }
     }
+
+
+    private fun handleCustomizedScheduleTaskInvocationHandling(scheduleTaskAction: ScheduleTaskAction, index: Int, testCaseName: String, enable: Boolean, lines: Lines){
+        if(config.enableCustomizedMethodForScheduleTaskHandling){
+
+            when {
+                format.isKotlin() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_SCHEDULE_TASKS(")
+                format.isJava() -> lines.add("${TestSuiteWriter.controller}.$CUSTOMIZED_SCHEDULE_TASKS(")
+            }
+
+            val invocation = rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction)
+            val invocationDtoAsJson = rpcHandler.getJsonStringFromDto(invocation)
+
+            if (config.saveScheduleTaskInvocationAsSeparatedFile){
+                if (config.testResourcePathToSaveMockedResponse.isBlank())
+                    throw IllegalArgumentException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files")
+                saveJsonAndPrintReadJson(testCaseName, index, invocationDtoAsJson, lines, infoTag = "ScheduleTaskInvocationInfo")
+            }else{
+                printExecutionJson(invocationDtoAsJson, lines)
+            }
+            when {
+                format.isKotlin() -> lines.append(",$enable)")
+                format.isJava() -> lines.append(",$enable);")
+            }
+        }
+    }
+
+
 
     private fun printJsonForMockObject(mockObj : Any, testCaseName: String, index: Int, lines: Lines, enable: Boolean, infoTag: String){
         val mockedConfigAsJson = rpcHandler.getJsonStringFromDto(mockObj)
