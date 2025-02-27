@@ -124,15 +124,16 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         }.toMutableList()
 
         val leftlen = config.maxTestSize - len
-        if (leftlen > 0 && randomness.nextBoolean(config.probOfSamplingScheduleTask)){
+        val scheduleTaskSize = if (leftlen > 0 && randomness.nextBoolean(config.probOfSamplingScheduleTask)){
             val slen = randomness.nextInt(1, leftlen)
             val scheduleActions = (0 until slen).map {
                 sampleRandomScheduleTaskAction()
             }
             actions.addAll(0, scheduleActions)
-        }
+            scheduleActions.size
+        }else 0
 
-        val ind = createRPCIndividual(sampleType = SampleType.RANDOM, actions)
+        val ind = createRPCIndividual(sampleType = SampleType.RANDOM, actions, scheduleTaskSize)
         ind.doGlobalInitialize(searchGlobalState)
         return ind
     }
@@ -211,13 +212,15 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         )
     }
 
-    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<ActionComponent>) : RPCIndividual{
+    private fun createRPCIndividual(sampleType: SampleType, actions : MutableList<ActionComponent>, scheduleTaskSize : Int = 0) : RPCIndividual{
         // enable tracking in rpc
         return RPCIndividual(
             sampleType = sampleType,
             trackOperator = if(config.trackingEnabled()) this else null,
             index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1,
-            allActions=actions
+            allActions=actions,
+            mainSize = actions.size - scheduleTaskSize,
+            scheduleTaskSize = scheduleTaskSize
         )
     }
 }
