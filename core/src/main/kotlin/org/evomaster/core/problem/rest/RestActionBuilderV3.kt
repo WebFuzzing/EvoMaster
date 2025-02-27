@@ -412,8 +412,10 @@ object RestActionBuilderV3 {
                         null
                     }
                 } ?: listOf()
+
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links)
+                operationId = operation.operationId, links = links
+            )
 
             //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are
@@ -502,6 +504,7 @@ object RestActionBuilderV3 {
                             messages: MutableList<String>
     ) {
         val name = p.name ?: "undefined"
+        val description = p.description ?: null
 
         if(p.schema == null){
             messages.add("No schema definition for parameter $name")
@@ -529,14 +532,20 @@ object RestActionBuilderV3 {
         when (p.`in`) {
 
             "query" -> {
-                params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM))
+                val queryParam = QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
+                queryParam.setDescription(description)
+                params.add(queryParam)
             }
             /*
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
             "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
-            "header" -> params.add(HeaderParam(name, gene))
+            "header" -> {
+                val headerParam = HeaderParam(name, gene)
+                headerParam.setDescription(description)
+                params.add(headerParam)
+            }
             "cookie" -> params // do nothing?
             //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
             else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
