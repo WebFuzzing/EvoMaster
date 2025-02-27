@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.swagger
 
-import com.foo.rest.examples.spring.openapi.v3.swagger.PerfectSwaggerController
+import com.foo.rest.examples.spring.openapi.v3.swagger.SwaggerDescriptionController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -9,13 +9,13 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class PerfectSwaggerEMTest: SpringTestBase() {
+class SwaggerDescriptionEMTest: SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(PerfectSwaggerController())
+            initClass(SwaggerDescriptionController())
         }
     }
 

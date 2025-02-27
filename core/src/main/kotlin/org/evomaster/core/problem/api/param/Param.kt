@@ -6,8 +6,15 @@ import org.evomaster.core.search.gene.Gene
 
 abstract class Param(
         val name: String,
-        val genes : MutableList<Gene>
+        val genes : MutableList<Gene>,
 ) : StructuralElement(genes){
+
+    // String contains the field description from OpenAPI specification
+    private var description: String? = null
+
+    open fun setDescription(desc: String) {
+        description = desc
+    }
 
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene. Rather use primaryGene()")
@@ -15,10 +22,10 @@ abstract class Param(
 
     /**
      * Return the most important gene defining this parameter.
-     * This is parameter type dependent.
+     * This is parameter-type-dependent.
      * Note that a parameter could have more than 1 gene.
      * For example, a body param could have a gene for the object, and one for its
-     * representation (eg, JSON vs XML)
+     * representation (e.g., JSON vs. XML)
      */
     open fun primaryGene() = genes[0]  //can be overridden if needed
 

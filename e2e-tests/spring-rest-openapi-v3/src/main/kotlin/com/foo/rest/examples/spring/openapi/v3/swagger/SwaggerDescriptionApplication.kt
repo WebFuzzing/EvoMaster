@@ -2,7 +2,6 @@ package com.foo.rest.examples.spring.openapi.v3.swagger
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
-import io.swagger.v3.oas.annotations.headers.Header
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.boot.SpringApplication
@@ -11,17 +10,16 @@ import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfi
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
-import javax.validation.constraints.NotNull
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/v1"])
 @RestController
-open class PerfectSwaggerApplication {
+open class SwaggerDescriptionApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(PerfectSwaggerApplication::class.java, *args)
+            SpringApplication.run(SwaggerDescriptionApplication::class.java, *args)
         }
     }
 
