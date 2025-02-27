@@ -26,7 +26,6 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.util.ActionBuilderUtil
-import org.evomaster.core.problem.util.SecurityUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
@@ -414,12 +413,8 @@ object RestActionBuilderV3 {
                     }
                 } ?: listOf()
 
-
-            // Extract descriptions from the OpenAPI schema
-            val parameterDescriptions: SchemaDescription = SecurityUtil.extractDescriptionFromSchema(swagger)
-
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links, schemaDescriptions = parameterDescriptions
+                operationId = operation.operationId, links = links
             )
 
             //TODO update for new parser
