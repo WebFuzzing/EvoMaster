@@ -12,7 +12,7 @@ abstract class Param(
     // String contains the field description from OpenAPI specification
     private var description: String? = null
 
-    open fun setDescription(desc: String) {
+    open fun setDescription(desc: String?) {
         description = desc
     }
 
