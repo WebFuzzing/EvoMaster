@@ -17,8 +17,8 @@ public class FormLoginController extends SpringController {
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return Arrays.asList(
-                AuthUtils.getForDefaultSpringFormLogin("user", "foo", "123456"),
-                AuthUtils.getForDefaultSpringFormLogin("admin", "admin", "bar")
+                AuthUtils.getForDefaultSpringFormLogin("user", "foo", "123456", "/login"),
+                AuthUtils.getForDefaultSpringFormLogin("admin", "admin", "bar", "/login")
         );
     }
 }

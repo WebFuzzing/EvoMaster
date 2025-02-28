@@ -66,11 +66,11 @@ public class AuthUtils {
      * @param password  password for that user
      * @return a DTO
      */
-    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
+    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password, String endpoint){
 
         LoginEndpointDto cookie = new LoginEndpointDto();
 
-        cookie.endpoint = "/login";
+        cookie.endpoint = endpoint;
         cookie.verb = HttpVerb.POST;
         cookie.contentType = "application/x-www-form-urlencoded";
         cookie.expectCookies = true;
