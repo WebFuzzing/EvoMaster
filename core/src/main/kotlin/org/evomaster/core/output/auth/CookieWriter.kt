@@ -146,7 +146,7 @@ object CookieWriter {
             callPost(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
-                lines.add("headers=headers, data=body)")
+                lines.add("headers=headers, data=body, allow_redirects=False)")
             }
             lines.deindent(2)
         }
