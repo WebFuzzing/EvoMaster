@@ -66,6 +66,45 @@ public class AuthUtils {
      * @param password  password for that user
      * @return a DTO
      */
+    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
+
+        LoginEndpointDto cookie = new LoginEndpointDto();
+
+        cookie.endpoint = "/login";
+        cookie.verb = HttpVerb.POST;
+        cookie.contentType = "application/x-www-form-urlencoded";
+        cookie.expectCookies = true;
+        try {
+            String payload;
+            String usernameField = URLEncoder.encode("username", "UTF-8");
+            String passwordField = URLEncoder.encode("password", "UTF-8");
+            payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
+            payload += "&";
+            payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
+            cookie.payloadRaw = payload;
+        }catch (UnsupportedEncodingException e){
+            throw new RuntimeException(e); //ah, the joys of Java...
+        }
+        AuthenticationDto dto = new AuthenticationDto(dtoName);
+        dto.loginEndpointAuth = cookie;
+
+        return dto;
+    }
+
+
+    /**
+     * DTO representing the use of authentication via a X-WWW-FORM-URLENCODED POST submission.
+     * Assuming default names used in SpringSecurity for default formLogin() configuration.
+     *
+     * When using this kind of DTO, EM will first do a POST on such endpoint with valid credentials,
+     * and then use the resulting cookie for the following HTTP requests.
+     *
+     * @param dtoName a name used to identify this dto. Mainly needed for debugging
+     * @param username    the id of a user
+     * @param password  password for that user
+     * @param endpoint  the url of the endpoint to use for the login
+     * @return a DTO
+     */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password, String endpoint){
 
         LoginEndpointDto cookie = new LoginEndpointDto();
