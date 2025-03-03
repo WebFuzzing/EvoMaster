@@ -103,6 +103,12 @@ class Lines(val format: OutputFormat) {
         buffer[buffer.lastIndex] = buffer.last() + token
     }
 
+    fun addMultiLineComment(lines: List<String>) {
+        startCommentBlock()
+        lines.forEach { addBlockCommentLine(it) }
+        endCommentBlock()
+    }
+
     fun startCommentBlock() {
         if (!format.isPython()) {
             add("/**")
