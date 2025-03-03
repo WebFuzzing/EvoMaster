@@ -630,6 +630,7 @@ object RestActionBuilderV3 {
         }
 
         val name = "body"
+        val description = operation.description ?: null
 
         val bodies = resolvedBody.content?.filter {
             /*
@@ -670,6 +671,7 @@ object RestActionBuilderV3 {
 
         val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
+        bodyParam.setDescription(description)
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
             messages.add("Not supported content types for body payload in $verb:$restPath : ${ns.joinToString()}")
