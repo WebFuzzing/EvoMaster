@@ -67,10 +67,28 @@ public class AuthUtils {
      * @return a DTO
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
+        return getForDefaultSpringFormLogin(dtoName, username, password, "/login");
+    }
+
+
+    /**
+     * DTO representing the use of authentication via a X-WWW-FORM-URLENCODED POST submission.
+     * Assuming default names used in SpringSecurity for default formLogin() configuration.
+     *
+     * When using this kind of DTO, EM will first do a POST on such endpoint with valid credentials,
+     * and then use the resulting cookie for the following HTTP requests.
+     *
+     * @param dtoName a name used to identify this dto. Mainly needed for debugging
+     * @param username    the id of a user
+     * @param password  password for that user
+     * @param endpoint  the url of the endpoint to use for the login
+     * @return a DTO
+     */
+    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password, String endpoint){
 
         LoginEndpointDto cookie = new LoginEndpointDto();
 
-        cookie.endpoint = "/login";
+        cookie.endpoint = endpoint;
         cookie.verb = HttpVerb.POST;
         cookie.contentType = "application/x-www-form-urlencoded";
         cookie.expectCookies = true;
