@@ -50,7 +50,7 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = (")
+                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = ")
             }
 
             if (!format.isPython()) {
@@ -72,8 +72,13 @@ object CookieWriter {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
-                format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
                 format.isPython() -> lines.append(".cookies")
+            }
+
+            if(format.isJavaScript()){
+                lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
+                lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+                lines.appendSemicolon()
             }
 
             if (format.isPython()) {
@@ -81,7 +86,10 @@ object CookieWriter {
             }
             //TODO check response status and cookie headers?
 
-            lines.appendSemicolon()
+            if(!format.isJavaScript()){
+                lines.appendSemicolon()
+            }
+
             lines.addEmpty()
 
             if (!format.isPython()) {
@@ -130,6 +138,11 @@ object CookieWriter {
             }
         }
 
+        if (format.isJavaScript()){
+            // disable redirections
+            lines.add(".redirects(0)")
+        }
+
         /*
             For RestAssure, the call to "post" must be last, which is in opposite of what
             needed in used libraries for Python and JS
@@ -146,7 +159,7 @@ object CookieWriter {
             callPost(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
-                lines.add("headers=headers, data=body)")
+                lines.add("headers=headers, data=body, allow_redirects=False)")
             }
             lines.deindent(2)
         }
