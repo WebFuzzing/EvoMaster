@@ -67,28 +67,7 @@ public class AuthUtils {
      * @return a DTO
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
-
-        LoginEndpointDto cookie = new LoginEndpointDto();
-
-        cookie.endpoint = "/login";
-        cookie.verb = HttpVerb.POST;
-        cookie.contentType = "application/x-www-form-urlencoded";
-        cookie.expectCookies = true;
-        try {
-            String payload;
-            String usernameField = URLEncoder.encode("username", "UTF-8");
-            String passwordField = URLEncoder.encode("password", "UTF-8");
-            payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
-            payload += "&";
-            payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
-            cookie.payloadRaw = payload;
-        }catch (UnsupportedEncodingException e){
-            throw new RuntimeException(e); //ah, the joys of Java...
-        }
-        AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.loginEndpointAuth = cookie;
-
-        return dto;
+        return getForDefaultSpringFormLogin(dtoName, username, password, "/login");
     }
 
 
