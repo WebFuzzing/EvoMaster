@@ -45,13 +45,10 @@ class CookieLoginRest {
 
             response.addCookie(cookie)
 
-//            response.sendRedirect("/api/logintoken/dashboard")
             response.status = HttpServletResponse.SC_FOUND // 302 status code
             response.setHeader("Location", "/dashboard") // Redirect URL
 
-            // Return an empty ResponseEntity with the 302 status
             return ResponseEntity.status(HttpStatus.FOUND).build()
-//            return ResponseEntity.ok("OK")
         }
 
         return ResponseEntity.status(400).build()

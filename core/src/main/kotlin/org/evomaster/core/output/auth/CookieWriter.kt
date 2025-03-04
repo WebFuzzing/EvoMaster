@@ -50,12 +50,7 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-                format.isJavaScript() -> lines.add("let ${cookiesName(k)};")
-            }
-
-            if(format.isJavaScript()){
-                lines.add("try {")
-                lines.add("const response = ")
+                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = ")
             }
 
             if (!format.isPython()) {
@@ -77,19 +72,13 @@ object CookieWriter {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
-//                format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
                 format.isPython() -> lines.append(".cookies")
             }
 
             if(format.isJavaScript()){
-                lines.add(targetCookieVariable)
-                lines.append(" = response.header['set-cookie'][0].split(';')[0];")
-                lines.add("} catch (error) {")
-                lines.add("if (error.status === 302) {")
-                lines.add(targetCookieVariable)
-                lines.append(" = error.response.header['set-cookie'][0].split(';')[0];")
-                lines.add("}")
-                lines.add("}")
+                lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
+                lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+                lines.appendSemicolon()
             }
 
             if (format.isPython()) {
