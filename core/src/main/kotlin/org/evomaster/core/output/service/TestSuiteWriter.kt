@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import io.swagger.v3.oas.models.media.Schema
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -8,6 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.dto.JavaDtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
@@ -16,6 +18,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -84,6 +87,24 @@ class TestSuiteWriter {
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
+
+    fun writeDtos(solutionFilename: String) {
+        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+        getSchemaComponents()
+            .filterKeys { it != null }
+            .filterValues { it?.properties != null }
+            .map {
+                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
+            }
+    }
+
+    private fun getSchemaComponents(): Map<String?, Schema<*>?> {
+        val restSampler = sampler as RestSampler
+        val openAPI = restSampler.getOpenAPI()
+        val schema = openAPI.schemaParsed
+        val components = schema.components
+        return components.schemas ?: emptyMap()
+    }
 
 
     fun writeTests(

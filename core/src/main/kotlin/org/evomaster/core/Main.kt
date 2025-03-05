@@ -726,6 +726,10 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             if (config.problemType == EMConfig.ProblemType.REST) {
 
+                if (config.dtoForRequestPayload && config.outputFormat.isJavaOrKotlin()) {
+                    writer.writeDtos(solution.getFileName())
+                }
+
                 val splitResult = TestSuiteSplitter.split(solution, config)
 
                 solution.clusteringTime = splitResult.clusteringTime.toInt()
