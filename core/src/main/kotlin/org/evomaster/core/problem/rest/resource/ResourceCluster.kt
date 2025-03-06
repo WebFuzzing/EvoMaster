@@ -130,7 +130,7 @@ class ResourceCluster {
     fun getDataInDb(tableName: TableId) : MutableList<DataRowDto>?{
 //        val key = SqlActionUtils.getTableKey(dataInDB.keys, tableName)
 //            ?: return null
-        return dataInDB.getValue(tableName)
+        return dataInDB.entries.find { it.key.isEquivalentIgnoringCase(tableName) }?.value
     }
 
     /**
@@ -166,7 +166,8 @@ class ResourceCluster {
                         enableSingleInsertionForTable : Boolean = false
     ) : MutableList<SqlAction>{
         val sorted = SqlActionUtils.sortTable(
-            tables.mapNotNull { this.tables[it] }.run { if (doNotCreateDuplicatedAction) this.distinct() else this }
+            tables.mapNotNull { t -> this.tables.entries.find { it.key.isEquivalentIgnoringCase(t) }?.value }
+                .run { if (doNotCreateDuplicatedAction) this.distinct() else this }
         )
         val added = mutableListOf<SqlAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
