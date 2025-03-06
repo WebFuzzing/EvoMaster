@@ -18,7 +18,7 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+    @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
 
