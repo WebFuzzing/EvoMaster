@@ -25,7 +25,7 @@ class BBAuthCookieRedirectEMTest : SpringTestBase() {
 
         executeAndEvaluateBBTest(
             outputFormat,
-            "authcookie",
+            "authcookieredirect",
             20,
             3,
             "FOO"
