@@ -655,11 +655,14 @@ class SqlInsertBuilder(
 //        val tableNameKey = SqlActionUtils.getTableKey(data.keys, tableName)
 //            ?: throw IllegalArgumentException("No table called $tableName")
 
-        return data[tableName] ?: throw IllegalArgumentException("No table called $tableName")
+        val key = data.keys.find { tableName.isEquivalentIgnoringCase(it) }
+            ?: throw IllegalArgumentException("No table called ${tableName.getFullQualifyingTableName()}")
+
+        return data[key]!!
     }
 
 
-    @Deprecated("User version with TableId")
+    @Deprecated("Use version with TableId")
     fun createSqlInsertionAction(
         tableName: String,
         columnNames: Set<String> = setOf("*"),
@@ -668,7 +671,10 @@ class SqlInsertBuilder(
         useExtraSqlDbConstraints: Boolean = false,
         enableSingleInsertionForTable: Boolean = false
     ): List<SqlAction> {
-        return createSqlInsertionAction(TableId(tableName), columnNames, history, forceAll,useExtraSqlDbConstraints, enableSingleInsertionForTable)
+
+        val id = TableId(tableName.lowercase(), openGroupName = "public")
+
+        return createSqlInsertionAction(id, columnNames, history, forceAll,useExtraSqlDbConstraints, enableSingleInsertionForTable)
     }
 
 

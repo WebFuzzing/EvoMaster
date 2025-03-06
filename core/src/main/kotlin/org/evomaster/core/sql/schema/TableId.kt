@@ -80,4 +80,9 @@ data class TableId(
         }
         return "$openGroupName.${name}"
     }
+
+    fun isEquivalentIgnoringCase(other: TableId) : Boolean{
+        return  getFullQualifyingTableName().equals(other.getFullQualifyingTableName(), true)
+                && connectionId == other.connectionId
+    }
 }

@@ -59,8 +59,8 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
         SqlActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
 
         assertEquals(2, insertions.size)
-        assert(insertions[0].table.name.equals("PUBLIC.PROJECT", ignoreCase = true))
-        assert(insertions[1].table.name.equals("PUBLIC.lANGUAGE_LIST", ignoreCase = true))
+        assert(insertions[0].table.id.getFullQualifyingTableName().equals("PUBLIC.PROJECT", ignoreCase = true))
+        assert(insertions[1].table.id.getFullQualifyingTableName().equals("PUBLIC.lANGUAGE_LIST", ignoreCase = true))
 
         val projectId = (insertions[0].seeTopGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 
