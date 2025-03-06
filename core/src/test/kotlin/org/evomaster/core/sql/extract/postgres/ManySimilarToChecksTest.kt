@@ -28,7 +28,7 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
         assertEquals(2, schema.tables.first { it.id.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
 
         val builder = SqlInsertBuilder(schema)
-        val emailTable = builder.getTable(TableId("email_table"), useExtraConstraints = true)
+        val emailTable = builder.getTable(TableId("email_table", openGroupName = "public"), useExtraConstraints = true)
 
         assertEquals(1, emailTable.columns.size)
         val emailColumn = emailTable.columns.first()

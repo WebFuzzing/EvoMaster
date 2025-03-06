@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -25,7 +26,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
@@ -39,7 +40,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -69,7 +70,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val tableDto = schema.tables[0]
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
 
         val action = actions[0]
         val genes = action.seeTopGenes()
@@ -113,7 +114,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val tableDto = schema.tables[0]
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
 
         val action = actions[0]
         val genes = action.seeTopGenes()
@@ -154,7 +155,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val tableDto = schema.tables[0]
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
 
         val action = actions[0]
         val genes = action.seeTopGenes()
@@ -201,7 +202,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val tableDto = schema.tables[0]
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "jsonData"))
 
         val action = actions[0]
         val genes = action.seeTopGenes()

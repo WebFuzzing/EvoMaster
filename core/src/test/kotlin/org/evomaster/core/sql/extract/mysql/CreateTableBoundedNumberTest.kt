@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -47,7 +48,9 @@ class CreateTableBoundedNumberTest : ExtractTestBaseMySQL() {
 
         val builder = SqlInsertBuilder(schema)
 
-        val actions = builder.createSqlInsertionAction("BoundedNumberTable", setOf("*"))
+        val actions = builder.createSqlInsertionAction(
+            TableId("BoundedNumberTable", openGroupName = MYSQL_DB_NAME)
+            , setOf("*"))
 
         actions[0].seeTopGenes().apply {
             assertEquals(8, size)

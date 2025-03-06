@@ -4,6 +4,7 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -32,7 +33,7 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
         assertEquals("size enum('x-small','small','medium','large','x-large')",tableDto.tableCheckExpressions[0].sqlCheckExpression.toLowerCase())
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("shirts", setOf("name", "size"))
+        val actions = builder.createSqlInsertionAction(TableId("shirts", openGroupName = MYSQL_DB_NAME), setOf("name", "size"))
 
         val sizeGene = actions[0].seeTopGenes().find { it.name == "size" }
         assertTrue(sizeGene is NullableGene)
