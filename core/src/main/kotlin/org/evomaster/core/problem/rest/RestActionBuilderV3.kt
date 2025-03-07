@@ -25,6 +25,9 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocation
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
@@ -123,16 +126,14 @@ object RestActionBuilderV3 {
     }
 
 
-    /**
-     * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
-     */
+    @Deprecated("User other version instead")
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
                               enableConstraintHandling: Boolean
     ) : List<String> {
-        return addActionsFromSwagger(swagger, actionCluster, endpointsToSkip,
+        return addActionsFromSwagger(RestSchema(SchemaOpenAPI("",swagger, SchemaLocation.MEMORY)), actionCluster, endpointsToSkip,
             Options(doParseDescription = doParseDescription, enableConstraintHandling = enableConstraintHandling)
         )
     }
@@ -142,7 +143,7 @@ object RestActionBuilderV3 {
      *
      * @return list of error/warning messages
      */
-    fun addActionsFromSwagger(swagger: OpenAPI,
+    fun addActionsFromSwagger(schemaHolder: RestSchema,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               options: Options
@@ -154,6 +155,8 @@ object RestActionBuilderV3 {
         val messages = mutableListOf<String>()
         val skipped = mutableListOf<Endpoint>()
         val errorEndpoints = mutableListOf<String>()
+
+        val swagger = schemaHolder.main.schemaParsed
 
         val basePath = getBasePathFromURL(swagger)
 

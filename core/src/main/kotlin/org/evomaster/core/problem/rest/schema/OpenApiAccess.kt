@@ -27,7 +27,7 @@ object OpenApiAccess {
 
     private val log = LoggerFactory.getLogger(OpenApiAccess::class.java)
 
-    fun parseOpenApi(schemaText: String, sourceLocation: String?): SchemaOpenAPI {
+    fun parseOpenApi(schemaText: String, sourceLocation: SchemaLocation): SchemaOpenAPI {
 
         var parseResults: SwaggerParseResult? = null
 
@@ -102,13 +102,27 @@ object OpenApiAccess {
     ): SchemaOpenAPI {
 
         //could be either JSON or YAML
-       val data = if(openApiLocation.startsWith("http", true)){
-           readFromRemoteServer(openApiLocation, authentication)
+       val data: String
+       val location: SchemaLocation
+       if(openApiLocation.startsWith("http", true)){
+           data = readFromRemoteServer(openApiLocation, authentication)
+           location = SchemaLocation(openApiLocation, SchemaLocationType.REMOTE)
        } else {
-           readFromDisk(openApiLocation)
+           data = readFromDisk(openApiLocation)
+           location = SchemaLocation(openApiLocation, SchemaLocationType.LOCAL)
        }
 
-        return parseOpenApi(data,openApiLocation)
+        return parseOpenApi(data,location)
+    }
+
+    /**
+     * This should only be used in tests
+     */
+    fun getOpenAPIFromResource(openApiLocation: String): SchemaOpenAPI{
+
+        val data = this.javaClass.getResource(openApiLocation).readText()
+
+        return parseOpenApi(data,SchemaLocation(openApiLocation,SchemaLocationType.RESOURCE))
     }
 
     private fun readFromRemoteServer(openApiUrl: String, authentication : AuthenticationInfo) : String{

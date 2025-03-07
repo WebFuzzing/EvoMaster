@@ -20,6 +20,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
@@ -96,7 +97,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }else if(!openApiURL.isNullOrBlank()) {
             OpenApiAccess.getOpenAPIFromLocation(openApiURL,authentications)
         } else if(! openApiSchema.isNullOrBlank()){
-            OpenApiAccess.parseOpenApi(openApiSchema,null)
+            OpenApiAccess.parseOpenApi(openApiSchema, SchemaLocation.MEMORY)
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
@@ -105,7 +106,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
         val skip = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, skip, RestActionBuilderV3.Options(config))
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, skip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         if(config.extraQueryParam){
@@ -271,7 +272,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
         val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
-        val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
+        val messages = RestActionBuilderV3.addActionsFromSwagger(schemaHolder, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
         initAdHocInitialIndividuals()

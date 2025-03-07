@@ -4,13 +4,14 @@ import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 
 object EndpointFilter {
 
     @Deprecated("Rather use version with RestSchema instead")
     fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint>{
-        return getEndpointsToSkip(config, RestSchema(SchemaOpenAPI("", swagger,"")))
+        return getEndpointsToSkip(config, RestSchema(SchemaOpenAPI("", swagger, SchemaLocation.MEMORY)))
     }
 
      fun getEndpointsToSkip(config: EMConfig, schema: RestSchema):List<Endpoint> {

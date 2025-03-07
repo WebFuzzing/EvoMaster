@@ -15,5 +15,5 @@ class SchemaOpenAPI(
      * the location the schema was retrieved from.
      * It can be null, eg, if provided as string in our own EM tests
      */
-    val sourceLocation: String?
+    val sourceLocation: SchemaLocation
 )
