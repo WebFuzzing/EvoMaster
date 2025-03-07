@@ -1,6 +1,5 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.schema
 
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import org.evomaster.core.AnsiColor
@@ -9,6 +8,7 @@ import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
+import org.evomaster.core.problem.rest.SchemaOpenAPI
 import org.evomaster.core.remote.AuthenticationRequiredException
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.LoggerFactory
@@ -47,9 +47,12 @@ object OpenApiAccess {
 
         if(parseResults.messages.isNotEmpty()){
             LoggingUtil.getInfoLogger().warn(
-                AnsiColor.inRed("There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
-                    " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
-                    " Errors/warnings:"))
+                AnsiColor.inRed(
+                    "There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
+                            " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
+                            " Errors/warnings:"
+                )
+            )
             parseResults.messages.forEachIndexed{ i, m ->
                 LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$i: $m"))
             }
@@ -57,7 +60,7 @@ object OpenApiAccess {
         return SchemaOpenAPI(schemaText, schema)
     }
 
-    fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth() ): SchemaOpenAPI {
+    fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth()): SchemaOpenAPI {
 
         //could be either JSON or YAML
        val data = if(openApiUrl.startsWith("http", true)){
@@ -76,14 +79,18 @@ object OpenApiAccess {
 
         // check for status code 401 or 403
         if (response.status == 401 || response.status == 403) {
-            throw AuthenticationRequiredException("OpenAPI could not be accessed because access to the schema with " +
-                    "the authentication information '" + authentication.toString() + "' was denied.")
+            throw AuthenticationRequiredException(
+                "OpenAPI could not be accessed because access to the schema with " +
+                        "the authentication information '" + authentication.toString() + "' was denied."
+            )
         }
         // if the problem is not due to not being able to access to an authenticated swagger,
         // just throw an exception and show the status and body
         else if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl ," +
-                    " status=${response.status} , body: $body")
+            throw SutProblemException(
+                "Cannot retrieve OpenAPI schema from $openApiUrl ," +
+                        " status=${response.status} , body: $body"
+            )
         }
 
         return body
@@ -106,8 +113,10 @@ object OpenApiAccess {
         // Exception is thrown if the path is not valid
         catch (e: Exception) {
             // state the exception with the error message
-            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl" +
-                        " ended up with the following error: " + e.message)
+            throw SutProblemException(
+                "The file path provided for the OpenAPI Schema $openApiUrl" +
+                        " ended up with the following error: " + e.message
+            )
         }
 
         // If the path is valid but the file does not exist, an exception is thrown
@@ -124,7 +133,7 @@ object OpenApiAccess {
         for (i in 0 until attempts) {
             try {
 
-                 val client =  ClientBuilder.newClient()
+                 val client = ClientBuilder.newClient()
                  val builder = client.target(openApiUrl)
                      .request("*/*") //cannot assume it is in JSON... could be YAML as well
 
@@ -139,12 +148,20 @@ object OpenApiAccess {
                       */
                      val baseUrl = "${url.protocol}://${url.host}:${url.port}"
 
-                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(client, baseUrl, listOf(ecl))
+                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(
+                         client,
+                         baseUrl,
+                         listOf(ecl)
+                     )
                         else mapOf()
-                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(client, baseUrl, listOf(ecl))
+                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(
+                         client,
+                         baseUrl,
+                         listOf(ecl)
+                     )
                         else mapOf()
 
-                     AuthUtils.addAuthHeaders(authentication,builder, cookies, tokens)
+                     AuthUtils.addAuthHeaders(authentication, builder, cookies, tokens)
                  }
 
                 return builder.get()

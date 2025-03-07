@@ -116,7 +116,6 @@ object RestActionBuilderV3 {
 
     /**
      * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling.
-     * Only needed for testing.
      */
     fun cleanCache(){
         refCache.clear()
@@ -150,8 +149,7 @@ object RestActionBuilderV3 {
     ) : List<String> {
 
         actionCluster.clear()
-        refCache.clear()
-        dtoCache.clear()
+        cleanCache()
 
         val messages = mutableListOf<String>()
         val skipped = mutableListOf<Endpoint>()
