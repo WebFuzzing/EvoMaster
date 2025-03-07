@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -49,7 +50,7 @@ class BlackBoxUtilsTest{
         config.bbSwaggerUrl = "$target/swagger.json"
 
         val sampler = mockk<AbstractRestSampler>()
-        every{sampler.swagger} returns SchemaOpenAPI("",OpenAPI(),config.bbSwaggerUrl)
+        every{sampler.schemaHolder} returns RestSchema( SchemaOpenAPI("",OpenAPI(),config.bbSwaggerUrl))
         assertEquals(target, BlackBoxUtils.targetUrl(config, sampler))
     }
 
@@ -64,7 +65,7 @@ class BlackBoxUtilsTest{
         config.bbSwaggerUrl = "$target/swagger.json"
 
         val sampler = mockk<AbstractRestSampler>()
-        every{sampler.swagger} returns SchemaOpenAPI("", OpenAPI(),config.bbSwaggerUrl)
+        every{sampler.schemaHolder} returns RestSchema(SchemaOpenAPI("", OpenAPI(),config.bbSwaggerUrl))
 
         assertEquals(target, BlackBoxUtils.targetUrl(config,sampler))
     }
