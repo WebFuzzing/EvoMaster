@@ -3,11 +3,22 @@ package org.evomaster.core.problem.rest
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 
 object EndpointFilter {
 
-     fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint> {
-        if(config.endpointFocus.isNullOrBlank()
+    @Deprecated("Rather use version with RestSchema instead")
+    fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI):List<Endpoint>{
+        return getEndpointsToSkip(config, RestSchema(SchemaOpenAPI("", swagger,"")))
+    }
+
+     fun getEndpointsToSkip(config: EMConfig, schema: RestSchema):List<Endpoint> {
+
+         //FIXME/TODO: should handle $ref in this code, and not just rely on main
+         val swagger = schema.main.schemaParsed
+
+         if(config.endpointFocus.isNullOrBlank()
             && config.endpointPrefix.isNullOrBlank()
             && config.endpointTagFilter.isNullOrBlank()){
             return listOf()
@@ -51,16 +62,16 @@ object EndpointFilter {
 
 
 
-     fun getEndpointsToSkip(config: EMConfig, swagger: OpenAPI, infoDto: SutInfoDto)
+     fun getEndpointsToSkip(config: EMConfig, schema: RestSchema, infoDto: SutInfoDto)
             : List<Endpoint>{
 
         /*
             Check if we are manually configuring some as well as what configured in the SUT EM Driver.
          */
 
-        val fromConfig = getEndpointsToSkip(config, swagger)
+        val fromConfig = getEndpointsToSkip(config, schema)
 
-        val all = Endpoint.fromOpenApi(swagger)
+        val all = Endpoint.fromOpenApi(schema.main.schemaParsed) //TODO use schema, ie, handle $ref
 
         val fromDriver =  infoDto.restProblem?.endpointsToSkip
             ?.flatMap {s ->  all.filter { e -> e.path.toString() == s } }

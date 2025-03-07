@@ -19,6 +19,7 @@ import org.evomaster.core.problem.rest.RestActionBuilderV3.buildActionBasedOnUrl
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
@@ -52,7 +53,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
-    lateinit var swagger: SchemaOpenAPI
+    lateinit var schemaHolder: RestSchema
         protected set
 
     private lateinit var infoDto: SutInfoDto
@@ -90,7 +91,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // set up authentications moved up since we are going to get authentication info from HttpWsSampler
         setupAuthentication(infoDto)
 
-        swagger = if(!config.overrideOpenAPIUrl.isNullOrBlank()){
+        val swagger = if(!config.overrideOpenAPIUrl.isNullOrBlank()){
             OpenApiAccess.getOpenAPIFromLocation(config.overrideOpenAPIUrl,authentications)
         }else if(!openApiURL.isNullOrBlank()) {
             OpenApiAccess.getOpenAPIFromLocation(openApiURL,authentications)
@@ -99,10 +100,11 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
+        schemaHolder = RestSchema(swagger)
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
-        val skip = EndpointFilter.getEndpointsToSkip(config, swagger.schemaParsed, infoDto)
+        val skip = EndpointFilter.getEndpointsToSkip(config, schemaHolder, infoDto)
         val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, skip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
@@ -262,20 +264,13 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         addAuthFromConfig()
 
         // retrieve the swagger
-        swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
+        val swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
 
-        if (swagger.schemaParsed.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
-        }
-        // give the error message if there is nothing to test
-        if (swagger.schemaParsed.paths.size == 0){
-            throw SutProblemException("The OpenAPI file ${configuration.bbSwaggerUrl} " +
-                    "is either invalid or it does not define endpoints")
-        }
+        schemaHolder = RestSchema(swagger)
 
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
-        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,swagger.schemaParsed)
+        val endpointsToSkip = EndpointFilter.getEndpointsToSkip(config,schemaHolder)
         val messages = RestActionBuilderV3.addActionsFromSwagger(swagger.schemaParsed, actionCluster, endpointsToSkip, RestActionBuilderV3.Options(config))
         printMessages(messages)
 
@@ -300,10 +295,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         messages.forEachIndexed { index, s ->
             LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$index: $s"))
         }
-    }
-
-    fun getOpenAPI(): SchemaOpenAPI {
-        return swagger
     }
 
     override fun hasSpecialInitForSmartSampler(): Boolean {
@@ -341,7 +332,8 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun getParser(): Parser {
         return when(config.seedTestCasesFormat) {
-            EMConfig.SeedTestCasesFormat.POSTMAN -> PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), swagger.schemaParsed)
+            EMConfig.SeedTestCasesFormat.POSTMAN ->
+                PostmanParser(seeAvailableActions().filterIsInstance<RestCallAction>(), schemaHolder.main.schemaParsed)
         }
     }
 
