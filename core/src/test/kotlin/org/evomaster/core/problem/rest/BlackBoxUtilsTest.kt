@@ -49,7 +49,7 @@ class BlackBoxUtilsTest{
         config.bbSwaggerUrl = "$target/swagger.json"
 
         val sampler = mockk<AbstractRestSampler>()
-        every{sampler.swagger} returns SchemaOpenAPI("",OpenAPI())
+        every{sampler.swagger} returns SchemaOpenAPI("",OpenAPI(),config.bbSwaggerUrl)
         assertEquals(target, BlackBoxUtils.targetUrl(config, sampler))
     }
 
@@ -64,7 +64,7 @@ class BlackBoxUtilsTest{
         config.bbSwaggerUrl = "$target/swagger.json"
 
         val sampler = mockk<AbstractRestSampler>()
-        every{sampler.swagger} returns SchemaOpenAPI("", OpenAPI())
+        every{sampler.swagger} returns SchemaOpenAPI("", OpenAPI(),config.bbSwaggerUrl)
 
         assertEquals(target, BlackBoxUtils.targetUrl(config,sampler))
     }

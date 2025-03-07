@@ -27,7 +27,7 @@ object OpenApiAccess {
 
     private val log = LoggerFactory.getLogger(OpenApiAccess::class.java)
 
-    fun parseOpenApi(schemaText: String): SchemaOpenAPI {
+    fun parseOpenApi(schemaText: String, sourceLocation: String?): SchemaOpenAPI {
 
         var parseResults: SwaggerParseResult? = null
 
@@ -57,7 +57,7 @@ object OpenApiAccess {
                 LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$i: $m"))
             }
         }
-        return SchemaOpenAPI(schemaText, schema)
+        return SchemaOpenAPI(schemaText, schema, sourceLocation)
     }
 
     /**
@@ -108,7 +108,7 @@ object OpenApiAccess {
            readFromDisk(openApiLocation)
        }
 
-        return parseOpenApi(data)
+        return parseOpenApi(data,openApiLocation)
     }
 
     private fun readFromRemoteServer(openApiUrl: String, authentication : AuthenticationInfo) : String{

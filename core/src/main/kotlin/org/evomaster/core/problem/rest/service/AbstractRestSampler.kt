@@ -95,7 +95,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         }else if(!openApiURL.isNullOrBlank()) {
             OpenApiAccess.getOpenAPIFromLocation(openApiURL,authentications)
         } else if(! openApiSchema.isNullOrBlank()){
-            OpenApiAccess.parseOpenApi(openApiSchema)
+            OpenApiAccess.parseOpenApi(openApiSchema,null)
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
