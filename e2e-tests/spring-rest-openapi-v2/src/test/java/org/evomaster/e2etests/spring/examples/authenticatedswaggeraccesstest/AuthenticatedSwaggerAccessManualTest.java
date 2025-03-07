@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo;
 
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
-import org.evomaster.core.problem.rest.OpenApiAccess;
+import org.evomaster.core.problem.rest.schema.OpenApiAccess;
 import org.evomaster.core.remote.SutProblemException;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.Assert;
@@ -39,7 +39,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
         JUnitExtra.assertThrowsInnermost(SutProblemException.class, () ->
 
-                OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+                OpenApiAccess.INSTANCE.getOpenAPIFromLocation(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
         );
 
 
@@ -60,7 +60,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
             HttpWsAuthenticationInfo currentInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
 
             OpenAPI swagger = OpenApiAccess.INSTANCE
-                    .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", currentInfo)
+                    .getOpenAPIFromLocation(baseUrlOfSut + "/v2/api-docs", currentInfo)
                     .getSchemaParsed();
 
             if (swagger != null) {
@@ -97,7 +97,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
         HttpWsAuthenticationInfo finalUnsuccessfulInfo = unsuccessfulInfo;
         Assert.assertThrows(SutProblemException.class, () ->
 
-                OpenApiAccess.INSTANCE.getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", finalUnsuccessfulInfo)
+                OpenApiAccess.INSTANCE.getOpenAPIFromLocation(baseUrlOfSut + "/v2/api-docs", finalUnsuccessfulInfo)
 
                 );
     }
