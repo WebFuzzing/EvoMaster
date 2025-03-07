@@ -11,14 +11,17 @@ class RestSchema(
     val main: SchemaOpenAPI
 ) {
 
+
+
     init{
         //need to check for all $ref, recursively
         //TODO
 
-        validate()
+
+
     }
 
-    private fun validate(){
+    fun validate(){
         if (main.schemaParsed.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
         }

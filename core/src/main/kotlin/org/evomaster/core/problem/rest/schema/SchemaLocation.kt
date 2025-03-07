@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.schema
 
-class SchemaLocation(
+data class SchemaLocation(
     val location: String,
     val type: SchemaLocationType
 ){

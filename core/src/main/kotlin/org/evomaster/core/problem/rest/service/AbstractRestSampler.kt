@@ -102,6 +102,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
         schemaHolder = RestSchema(swagger)
+        schemaHolder.validate()
 
         // The code should never reach this line without a valid swagger.
         actionCluster.clear()
@@ -268,6 +269,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
 
         schemaHolder = RestSchema(swagger)
+        schemaHolder.validate()
 
         actionCluster.clear()
         // Add all paths to list of paths to ignore except endpointFocus
