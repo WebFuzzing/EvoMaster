@@ -1,13 +1,9 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.schema
 
 import org.evomaster.core.remote.SutProblemException
-
-import io.swagger.v3.oas.models.OpenAPI
-
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-
 import java.util.*
 
 /*
@@ -73,7 +69,7 @@ class OpenAPILocalURLIssueTest {
         }
 
         // create swagger from URL
-        swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+        swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
 
         // a valid swagger is created with 13 endpoints
         Assertions.assertTrue(swagger.schemaParsed.paths.size == 13)
@@ -101,13 +97,17 @@ class OpenAPILocalURLIssueTest {
             SutProblemException::class.java
         ) {
             // create swagger from URL
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // the message in the SutException should be "The provided swagger file does not exist: $urlToTest
         // check that the message is correct", it is the same for both Windows and other operating systems
-        Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file does " +
-                "not exist: $urlToTest"))
+        Assertions.assertTrue(
+            exception.message!!.contains(
+                "The provided OpenAPI file does " +
+                        "not exist: $urlToTest"
+            )
+        )
     }
 
     /*
@@ -132,17 +132,25 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // In windows, the file cannot be located, in others the error is URL related
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
-                    "does not exist: $urlToTest"))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The provided OpenAPI file " +
+                            "does not exist: $urlToTest"
+                )
+            )
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest ended up with the following error: "))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The file path provided for the " +
+                            "OpenAPI Schema $urlToTest ended up with the following error: "
+                )
+            )
         }
 
     }
@@ -167,17 +175,25 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // In windows, the file cannot be located, in others the error is URL related
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
-                    "does not exist: $urlToTest"))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The provided OpenAPI file " +
+                            "does not exist: $urlToTest"
+                )
+            )
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the OpenAPI " +
-                    "Schema $urlToTest ended up with the following error: "))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The file path provided for the OpenAPI " +
+                            "Schema $urlToTest ended up with the following error: "
+                )
+            )
         }
     }
 
@@ -201,17 +217,25 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Assert the thrown exception
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The provided OpenAPI file " +
-                    "does not exist: $urlToTest"))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The provided OpenAPI file " +
+                            "does not exist: $urlToTest"
+                )
+            )
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest ended up with the following error: "))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The file path provided for the " +
+                            "OpenAPI Schema $urlToTest ended up with the following error: "
+                )
+            )
         }
     }
 
@@ -230,19 +254,25 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Check the thrown exception for windows and others
         if (hostOs.contains("win")) {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest ended up with the following error: " +
-                    "URI path component is empty"))
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The file path provided for the " +
+                            "OpenAPI Schema $urlToTest ended up with the following error: " +
+                            "URI path component is empty"
+                )
+            )
         }
         else {
-            Assertions.assertTrue(exception.message!!.contains("The file path provided for the " +
-                    "OpenAPI Schema $urlToTest ended up with the following error: " +
-                    "URI has an authority component"
+            Assertions.assertTrue(
+                exception.message!!.contains(
+                    "The file path provided for the " +
+                            "OpenAPI Schema $urlToTest ended up with the following error: " +
+                            "URI has an authority component"
                 )
             )
         }
@@ -264,7 +294,7 @@ class OpenAPILocalURLIssueTest {
         }
 
         // create swagger
-        swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+        swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
 
         //An empty swagger should be created
         Assertions.assertTrue(swagger.schemaParsed.paths.size == 0)
@@ -290,10 +320,10 @@ class OpenAPILocalURLIssueTest {
             SutProblemException::class.java
         ) {
             // create swagger
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Failed to parse OpenApi schema
-        Assertions.assertTrue( exception.message!!.contains("Failed to parse OpenApi schema"))
+        Assertions.assertTrue(exception.message!!.contains("Failed to parse OpenApi schema"))
     }
 }

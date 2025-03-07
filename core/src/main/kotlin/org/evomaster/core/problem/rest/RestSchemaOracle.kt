@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory
 
 
 class RestSchemaOracle(
+    //TODO how to deal with $ref?
     schema: String
 ) {
 

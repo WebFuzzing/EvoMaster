@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 import com.foo.rest.examples.spring.unauthenticatedswaggeraccesscontroller.UnauthenticatedSwaggerAccessController;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
-import org.evomaster.core.problem.rest.OpenApiAccess;
+import org.evomaster.core.problem.rest.schema.OpenApiAccess;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -26,7 +26,7 @@ public class UnauthenticatedSwaggerAccessManualTest extends SpringTestBase {
 
         // get all paths from the swagger
         OpenAPI swagger = OpenApiAccess.INSTANCE
-                .getOpenAPIFromURL(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
+                .getOpenAPIFromLocation(baseUrlOfSut + "/v2/api-docs", new HttpWsNoAuth())
                 .getSchemaParsed();
 
         // api paths should not be null

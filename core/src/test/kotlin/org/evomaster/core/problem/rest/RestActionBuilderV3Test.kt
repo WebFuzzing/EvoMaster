@@ -8,6 +8,8 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
@@ -827,11 +829,11 @@ class RestActionBuilderV3Test{
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
             : MutableMap<String, Action> {
 
-        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+        val holder = RestSchema(OpenApiAccess.getOpenAPIFromResource(resourcePath))
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        val errors = RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        val errors = RestActionBuilderV3.addActionsFromSwagger(holder, actions, options=options)
         errors.forEach {
             println(it)
         }
@@ -839,7 +841,7 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
+        RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
 
         return actions
     }
