@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.schema
 
 import io.swagger.v3.oas.models.OpenAPI
 

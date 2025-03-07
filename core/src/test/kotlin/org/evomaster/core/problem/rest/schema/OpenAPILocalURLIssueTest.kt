@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.schema
 
-import org.evomaster.core.problem.rest.SchemaOpenAPI
 import org.evomaster.core.remote.SutProblemException
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
@@ -70,7 +69,7 @@ class OpenAPILocalURLIssueTest {
         }
 
         // create swagger from URL
-        swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+        swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
 
         // a valid swagger is created with 13 endpoints
         Assertions.assertTrue(swagger.schemaParsed.paths.size == 13)
@@ -98,7 +97,7 @@ class OpenAPILocalURLIssueTest {
             SutProblemException::class.java
         ) {
             // create swagger from URL
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // the message in the SutException should be "The provided swagger file does not exist: $urlToTest
@@ -133,7 +132,7 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // In windows, the file cannot be located, in others the error is URL related
@@ -176,7 +175,7 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // In windows, the file cannot be located, in others the error is URL related
@@ -218,7 +217,7 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Assert the thrown exception
@@ -255,7 +254,7 @@ class OpenAPILocalURLIssueTest {
         val exception = Assertions.assertThrows(
             SutProblemException::class.java
         ) {
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Check the thrown exception for windows and others
@@ -295,7 +294,7 @@ class OpenAPILocalURLIssueTest {
         }
 
         // create swagger
-        swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+        swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
 
         //An empty swagger should be created
         Assertions.assertTrue(swagger.schemaParsed.paths.size == 0)
@@ -321,7 +320,7 @@ class OpenAPILocalURLIssueTest {
             SutProblemException::class.java
         ) {
             // create swagger
-            swagger = OpenApiAccess.getOpenAPIFromURL(urlToTest)
+            swagger = OpenApiAccess.getOpenAPIFromLocation(urlToTest)
         }
 
         // Failed to parse OpenApi schema
