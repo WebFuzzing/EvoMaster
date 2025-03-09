@@ -956,8 +956,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 newScheduleAction(dto, queryFromDatabase);
                 invokeScheduleTask(dto, responseDto);
             }catch (Exception e){
-                // now we execute all schedule tasks
-                SimpleLogger.warn(e.getMessage());
+                // we stop executing the following schedule task
+                throw new RuntimeException(e);
             }
         }
         assert dtos.size() == responseDto.results.size();
