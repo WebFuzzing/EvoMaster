@@ -136,8 +136,6 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
     private fun executeScheduleTasks(firstIndex : Int, tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
         searchTimeController.waitForRateLimiter()
 
-        val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
-        actionResults.addAll(taskResults)
         val taskDtos = tasks.mapIndexed { index, scheduleTaskAction -> rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction).apply {
             this.index = firstIndex + index
         }
@@ -147,15 +145,20 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val response = rc.invokeScheduleTasksAndGetResults(command)
 
         if (response != null){
-            if (taskResults.size == response.results.size){
-                taskResults.forEachIndexed { index, taskResult ->
-                    val resultDto = response.results[index]
-                    taskResult.setResultBasedOnDto(resultDto)
-                }
+            if (response.results.size > tasks.size)
+                throw IllegalStateException("Received more responses (ie, ${response.results.size}) than tasks (ie, ${tasks.size})")
+
+            val taskResults = response.results.mapIndexed { index, resultDto ->
+                val taskResult = ScheduleTaskActionResult(tasks[index].getLocalId())
+                taskResult.setResultBasedOnDto(resultDto)
+                taskResult.stopping = resultDto.status == ExecutionStatusDto.FAILED
+                taskResult
             }
+            actionResults.addAll(taskResults)
+        }else{
+            log.warn("no response when executing schedule tasks")
         }
-        val ok = (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
-        taskResults.last().stopping = !ok
+        val ok = (response != null && response.results.size == tasks.size && response.results.none { it.status == ExecutionStatusDto.FAILED })
         return ok
     }
 
