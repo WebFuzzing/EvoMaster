@@ -172,7 +172,7 @@ class ResourceNodeWithDbTest {
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}
         val getBarNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}")!!
         val getBar = getBarNode.sampleRestResourceCalls("GET", randomness, maxTestSize = 10)
-        val fooBarDbActionToCreate = cluster.createSqlAction(listOf("RFOO", "RBAR").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val fooBarDbActionToCreate = cluster.createSqlAction(listOf("RFOO", "RBAR").map { TableId(it, sealedGroupName = "DB_TEST", openGroupName = "PUBLIC") }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         assertEquals(2, fooBarDbActionToCreate.size)
         getBar.initDbActions(fooBarDbActionToCreate, cluster, false, false)
         val barFooId = getGenePredict(getBar.seeActions(ActionFilter.NO_SQL).first(), "rfooId"){ g: Gene-> g is LongGene }
@@ -187,7 +187,7 @@ class ResourceNodeWithDbTest {
         // /v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}
         val xYZNode = cluster.getResourceNode("/v3/api/rfoo/{rfooId}/rbar/{rbarId}/rxyz/{rxyzId}")!!
         val getXYZ = xYZNode.sampleRestResourceCalls("GET", randomness, 10)
-        val xyzDbActions = cluster.createSqlAction(listOf("RXYZ", "RBAR", "RFOO").map { TableId(it) }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
+        val xyzDbActions = cluster.createSqlAction(listOf("RXYZ", "RBAR", "RFOO").map { TableId(it, sealedGroupName = "DB_TEST", openGroupName = "PUBLIC") }, sqlInsertBuilder, mutableListOf(), true, randomness = randomness)
         getGenePredict(xyzDbActions[0], "id"){g: Gene-> g is LongGene }.apply {
             (this as? LongGene)?.value = 42
         }
