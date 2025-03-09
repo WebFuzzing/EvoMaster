@@ -245,14 +245,14 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                     .map {
                         Pair(it.name,
                                 if(ParamUtil.isGeneralName(it.name))
-                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTableId}${it.name}")}
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTableId.name}${it.name}")}
                                             .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
-                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, "$tableName${it.name}"))
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, "${tableName.name}${it.name}"))
                                             .asSequence().sorted().last()
                                 else if(ParamUtil.isGeneralName(paramName))
-                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTableId}$paramName", it.name)}
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTableId.name}$paramName", it.name)}
                                             .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
-                                            .plus(calculateStringSimilarityScoreWithTableName("$tableName$paramName", it.name))
+                                            .plus(calculateStringSimilarityScoreWithTableName("${tableName.name}$paramName", it.name))
                                             .asSequence().sorted().last()
                                 else calculateStringSimilarityScoreWithTableName(paramName, it.name))
                     }.asSequence().sortedBy { e->e.second }
