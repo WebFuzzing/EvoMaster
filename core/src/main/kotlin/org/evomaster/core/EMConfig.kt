@@ -591,6 +591,10 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
+        if(!security && vulnerabilityAnalyser) {
+            throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
+        }
+
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
@@ -2373,6 +2377,28 @@ class EMConfig {
     @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
+
+    @Experimental
+    @Cfg("Apply vulnerability hunter as part of security testing.")
+    var vulnerabilityAnalyser = false
+
+    enum class VulnerabilitySelectionStrategy {
+        /**
+         * Uses the manual methods to select the vulnerability classes associated with
+         * an endpoint.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerability classes associated with an
+         * endpoint.
+         */
+        LLM,
+    }
+
+    @Cfg("Potential vulnerability class associated with a endpoint classification strategy.")
+    @Experimental
+    var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
