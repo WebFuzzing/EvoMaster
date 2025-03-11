@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -94,7 +95,7 @@ class BasicEMTest : RestTestBase() {
             val injector = init(args)
 
             val sampler = injector.getInstance(RestSampler::class.java)
-            val dbactions = sampler.sampleSqlInsertion("X", setOf("*"))
+            val dbactions = sampler.sampleSqlInsertion(TableId("X"), setOf("*"))
 
             assertEquals(1, dbactions.size)
 

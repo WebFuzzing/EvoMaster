@@ -1,6 +1,8 @@
-package org.evomaster.client.java.sql;
+package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.sql.DbCleaner;
+import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +38,7 @@ public class DbCleanerPostgresTest extends DbCleanerTestBase{
     }
 
     @AfterAll
-    private static void afterClass() throws Exception{
+    public static void afterClass() throws Exception{
         connection.close();
         postgres.stop();
     }
