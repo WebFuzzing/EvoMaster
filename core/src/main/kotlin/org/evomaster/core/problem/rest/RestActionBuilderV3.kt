@@ -28,6 +28,7 @@ import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
@@ -392,7 +393,7 @@ object RestActionBuilderV3 {
                         val link = if (ref.isNullOrBlank()) {
                             it.third
                         } else {
-                            getReferenceLink(swagger, ref, messages)
+                            SchemaUtils.getReferenceLink(swagger, ref, messages)
                         }
                         if (link == null) {
                             null
@@ -444,14 +445,6 @@ object RestActionBuilderV3 {
         }
     }
 
-    private fun getReferenceLink(swagger: OpenAPI, reference: String, messages: MutableList<String>) : Link?{
-        val name = extractReferenceName(reference)
-        val link =  swagger.components.links[name]
-        if(link == null){
-            messages.add("Cannot find reference to link: $reference")
-        }
-        return link
-    }
 
     private fun extractParams(
             verb: HttpVerb,

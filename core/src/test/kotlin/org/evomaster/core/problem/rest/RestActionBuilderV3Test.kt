@@ -2058,4 +2058,14 @@ class RestActionBuilderV3Test{
             assertEquals(1, stringGene.maxLength)
         }
     }
+
+
+    @Test
+    fun testRefLinkRef() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/linkref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
 }

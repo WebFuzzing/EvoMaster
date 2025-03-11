@@ -2,7 +2,9 @@ package org.evomaster.core.problem.rest.schema
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import org.evomaster.core.remote.SutProblemException
+
 
 /**
  * Given a schema file, the whole schema might not be included in just it.
@@ -17,20 +19,28 @@ class RestSchema(
         private val log = org.slf4j.LoggerFactory.getLogger(RestSchema::class.java)
     }
 
+    /**
+     * Key -> location
+     */
     private val otherSpecs = mutableMapOf<String, SchemaOpenAPI>()
+
+    /**
+     * Locations of all other specs that we failed to retrieve
+     */
+    private val failedRetrievedSpecLocations = mutableSetOf<String>()
 
     init{
         //need to check for all $ref, recursively
-
-        //TODO enable once fixed and tested
-        //handleRefs(main)
+        handleRefs(main)
     }
+
+    fun getSpec  main otherSpecs or failed. throw exception only if not recognized, which should not happened
 
     private fun handleRefs(schema: SchemaOpenAPI){
 
         //https://swagger.io/docs/specification/v3_0/using-ref/
 
-        val mapper = ObjectMapper()
+        val mapper = ObjectMapper(YAMLFactory())
         val tree = mapper.readTree(schema.schemaRaw)
         val refs = findAllSRef(tree)
 
@@ -38,17 +48,24 @@ class RestSchema(
             if(SchemaUtils.isLocalRef(it)){
                 return@forEach
             }
-            val rawLocation = SchemaUtils.extractLocation(it)
-            val location = computeLocation(rawLocation, schema.sourceLocation)
-            if(otherSpecs.containsKey(location)){
+
+            val location = SchemaUtils.computeLocation(it, schema.sourceLocation)
+            if(otherSpecs.containsKey(location) || failedRetrievedSpecLocations.contains(location)){
                 //we already handled it
                 return@forEach
             }
 
-            val other = if(schema.sourceLocation.type == SchemaLocationType.RESOURCE){
-                OpenApiAccess.getOpenAPIFromResource(location)
-            } else {
-                OpenApiAccess.getOpenAPIFromLocation(location)
+            val other = try{
+                if(schema.sourceLocation.type == SchemaLocationType.RESOURCE){
+                    OpenApiAccess.getOpenAPIFromResource(location)
+                } else {
+                    OpenApiAccess.getOpenAPIFromLocation(location)
+                }
+            }catch (e: Exception){
+                //TODO should it go to messages
+                log.warn("Failed to retrieve spec at $location")
+                failedRetrievedSpecLocations.add(location)
+                return@forEach
             }
 
             otherSpecs[location] = other
@@ -56,34 +73,7 @@ class RestSchema(
         }
     }
 
-    private fun computeLocation(rawLocation: String, currentSource: SchemaLocation) : String{
-        if(rawLocation.startsWith("http:",true) || rawLocation.startsWith("https:",true)){
-            //location is absolute, so no need to do anything
-            return rawLocation
-        }
 
-        //TODO does it make any sense to have file:// here???
-
-        if(currentSource.type == SchemaLocationType.MEMORY){
-            throw IllegalArgumentException("Can't handle relative location for memory files: $rawLocation")
-        }
-
-        val csl = currentSource.location
-
-        if(rawLocation.startsWith("//")){
-            //as per specs, use same protocol as source
-            val protocol = csl.substring(0, csl.indexOf(":"))
-            if(protocol.isNullOrBlank()){
-                log.warn("No protocol can be inferred for $rawLocation from $csl")
-            }
-            return "$protocol:$rawLocation"
-        }
-
-        //if arrive here, it is a relative path
-        val delimiter = if(csl.endsWith("/")) "" else "/"
-        val parentFolder = "../" // this is based to what discussed in the specs
-        return "$csl$delimiter$parentFolder$rawLocation"
-    }
 
     private fun findAllSRef(node: JsonNode): List<String> {
         val refNodes = mutableListOf<JsonNode>()
