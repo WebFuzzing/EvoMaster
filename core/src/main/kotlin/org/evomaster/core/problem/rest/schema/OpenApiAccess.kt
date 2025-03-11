@@ -1,10 +1,10 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.schema
 
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.core.models.SwaggerParseResult
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -27,7 +27,7 @@ object OpenApiAccess {
 
     private val log = LoggerFactory.getLogger(OpenApiAccess::class.java)
 
-    fun getOpenApi(schemaText: String): SchemaOpenAPI {
+    fun parseOpenApi(schemaText: String, sourceLocation: SchemaLocation): SchemaOpenAPI {
 
         var parseResults: SwaggerParseResult? = null
 
@@ -47,26 +47,82 @@ object OpenApiAccess {
 
         if(parseResults.messages.isNotEmpty()){
             LoggingUtil.getInfoLogger().warn(
-                AnsiColor.inRed("There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
-                    " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
-                    " Errors/warnings:"))
+                AnsiColor.inRed(
+                    "There are ${parseResults.messages.size} validation errors and warnings when parsing the schema." +
+                            " It is strongly recommended to fix these issues to enable EvoMaster to achieve better results." +
+                            " Errors/warnings:"
+                )
+            )
             parseResults.messages.forEachIndexed{ i, m ->
                 LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("$i: $m"))
             }
         }
-        return SchemaOpenAPI(schemaText, schema)
+        return SchemaOpenAPI(schemaText, schema, sourceLocation)
     }
 
-    fun getOpenAPIFromURL(openApiUrl: String, authentication : AuthenticationInfo = HttpWsNoAuth() ): SchemaOpenAPI {
+    /**
+     *  Retrieve and parse an OpenAPI schema.
+     *  The location can be a remote URL in http(s), local file URL, or local OS file path
+     */
+    fun getOpenAPIFromLocation(
+        openApiLocation: String,
+        authentications : AuthSettings
+    ): SchemaOpenAPI {
+        // first try to retrieve the OpenAPI without authentication
+        try {
+            return getOpenAPIFromLocation(openApiLocation, HttpWsNoAuth())
+        }
+        catch (sutException : AuthenticationRequiredException) {
+            log.warn(sutException.message)
+
+            // First check if we have authentication information available inside infoDto.infoForAuthentication
+            if (authentications.isNotEmpty()) {
+
+                //get the first authentication info
+                val currentAuthInfo = authentications.getFirstAuthentication()
+
+                // try to retrieve the swagger with authentication info
+                return getOpenAPIFromLocation(openApiLocation, currentAuthInfo)
+            }
+            else {
+                throw AuthenticationRequiredException("Accessing the OpenAPI schema from $openApiLocation" +
+                        " requires authentication, but there is no auth info provided that can be used")
+            }
+        }
+    }
+
+
+    /**
+     *  Retrieve and parse an OpenAPI schema.
+     *  The location can be a remote URL in http(s), local file URL, or local OS file path
+     */
+    fun getOpenAPIFromLocation(
+        openApiLocation: String,
+        authentication : AuthenticationInfo = HttpWsNoAuth()
+    ): SchemaOpenAPI {
 
         //could be either JSON or YAML
-       val data = if(openApiUrl.startsWith("http", true)){
-           readFromRemoteServer(openApiUrl, authentication)
+       val data: String
+       val location: SchemaLocation
+       if(openApiLocation.startsWith("http", true)){
+           data = readFromRemoteServer(openApiLocation, authentication)
+           location = SchemaLocation(openApiLocation, SchemaLocationType.REMOTE)
        } else {
-           readFromDisk(openApiUrl)
+           data = readFromDisk(openApiLocation)
+           location = SchemaLocation(openApiLocation, SchemaLocationType.LOCAL)
        }
 
-        return getOpenApi(data)
+        return parseOpenApi(data,location)
+    }
+
+    /**
+     * This should only be used in tests
+     */
+    fun getOpenAPIFromResource(openApiLocation: String): SchemaOpenAPI{
+
+        val data = this.javaClass.getResource(openApiLocation).readText()
+
+        return parseOpenApi(data,SchemaLocation(openApiLocation,SchemaLocationType.RESOURCE))
     }
 
     private fun readFromRemoteServer(openApiUrl: String, authentication : AuthenticationInfo) : String{
@@ -76,43 +132,49 @@ object OpenApiAccess {
 
         // check for status code 401 or 403
         if (response.status == 401 || response.status == 403) {
-            throw AuthenticationRequiredException("OpenAPI could not be accessed because access to the schema with " +
-                    "the authentication information '" + authentication.toString() + "' was denied.")
+            throw AuthenticationRequiredException(
+                "OpenAPI could not be accessed because access to the schema with " +
+                        "the authentication information '" + authentication.toString() + "' was denied."
+            )
         }
         // if the problem is not due to not being able to access to an authenticated swagger,
         // just throw an exception and show the status and body
         else if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            throw SutProblemException("Cannot retrieve OpenAPI schema from $openApiUrl ," +
-                    " status=${response.status} , body: $body")
+            throw SutProblemException(
+                "Cannot retrieve OpenAPI schema from $openApiUrl ," +
+                        " status=${response.status} , body: $body"
+            )
         }
 
         return body
     }
 
-    private fun readFromDisk(openApiUrl: String) : String {
+    private fun readFromDisk(openApiLocation: String) : String {
 
         // file schema
         val fileScheme = "file:"
 
         // create paths
         val path = try {
-            if (openApiUrl.startsWith(fileScheme, true)) {
-                Paths.get(URI.create(openApiUrl))
+            if (openApiLocation.startsWith(fileScheme, true)) {
+                Paths.get(URI.create(openApiLocation))
             }
             else {
-                Paths.get(openApiUrl)
+                Paths.get(openApiLocation)
             }
         }
         // Exception is thrown if the path is not valid
         catch (e: Exception) {
             // state the exception with the error message
-            throw SutProblemException("The file path provided for the OpenAPI Schema $openApiUrl" +
-                        " ended up with the following error: " + e.message)
+            throw SutProblemException(
+                "The file path provided for the OpenAPI Schema $openApiLocation" +
+                        " ended up with the following error: " + e.message
+            )
         }
 
         // If the path is valid but the file does not exist, an exception is thrown
         if (!Files.exists(path)) {
-            throw SutProblemException("The provided OpenAPI file does not exist: $openApiUrl")
+            throw SutProblemException("The provided OpenAPI file does not exist: $openApiLocation")
         }
 
         // return the schema text
@@ -124,7 +186,7 @@ object OpenApiAccess {
         for (i in 0 until attempts) {
             try {
 
-                 val client =  ClientBuilder.newClient()
+                 val client = ClientBuilder.newClient()
                  val builder = client.target(openApiUrl)
                      .request("*/*") //cannot assume it is in JSON... could be YAML as well
 
@@ -139,12 +201,20 @@ object OpenApiAccess {
                       */
                      val baseUrl = "${url.protocol}://${url.host}:${url.port}"
 
-                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(client, baseUrl, listOf(ecl))
+                     val cookies = if(ecl != null && ecl.expectsCookie()) AuthUtils.getCookies(
+                         client,
+                         baseUrl,
+                         listOf(ecl)
+                     )
                         else mapOf()
-                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(client, baseUrl, listOf(ecl))
+                     val tokens = if(ecl != null && !ecl.expectsCookie()) AuthUtils.getTokens(
+                         client,
+                         baseUrl,
+                         listOf(ecl)
+                     )
                         else mapOf()
 
-                     AuthUtils.addAuthHeaders(authentication,builder, cookies, tokens)
+                     AuthUtils.addAuthHeaders(authentication, builder, cookies, tokens)
                  }
 
                 return builder.get()
