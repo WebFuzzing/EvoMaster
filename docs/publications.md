@@ -27,6 +27,11 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
+* A. Arcuri, P. Garrett, J.P. Galeotti, M . Zhang.
+  *Widening The Adoption of Web API Fuzzing: Docker, GitHub Action and Python Support for EvoMaster*.
+  ACM International Conference on the Foundations of Software Engineering (FSE), Demo Track.
+  _(To appear)_
+
 * G. Fraser, A. Arcuri.
   *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
   IEEE Transactions on Software Engineering (TSE).
