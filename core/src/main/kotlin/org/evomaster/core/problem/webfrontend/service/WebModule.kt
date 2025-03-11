@@ -6,6 +6,7 @@ import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -28,6 +29,9 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class WebModule: EnterpriseModule() {
 
     override fun configure() {
+        bind(object : TypeLiteral<EnterpriseSampler<WebIndividual>>() {})
+            .to(WebSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<WebIndividual>>() {})
             .to(WebSampler::class.java)
             .asEagerSingleton()
