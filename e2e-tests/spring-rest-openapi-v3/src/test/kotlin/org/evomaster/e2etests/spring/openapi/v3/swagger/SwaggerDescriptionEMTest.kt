@@ -30,15 +30,22 @@ class SwaggerDescriptionEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
 
+            val descriptions = mutableMapOf<String, String>()
             solution.individuals.forEach { v ->
-                val x = v.evaluatedMainActions().get(0).action as RestCallAction
-                if (x.verb.name.lowercase() == "post") {
-                    x.getDescription()
-//                    assertEquals( x.schemaDescriptions!!.getBodyDescriptions().size, 2)
-//                    assertEquals( x.schemaDescriptions!!.getHeaderDescriptions().size, 1)
+                val a = v.evaluatedMainActions()[0].action
+                if (a is RestCallAction) {
+                    a.parameters.forEach {
+                        if (it.name != "body") {
+                            descriptions[it.name] = it.getDescription().toString()
+                        }
+                    }
                 }
-
             }
+
+            // For now only header parameter description is available
+            assertEquals(3, descriptions.size)
+            assertEquals(null, descriptions["X-Custom-Header"])  // Actual value: Custom header for testing
+
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/v1", "GET is working")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/v1", "POST is working")
         }

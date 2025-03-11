@@ -16,6 +16,10 @@ abstract class Param(
         description = desc
     }
 
+    open fun getDescription(): String? {
+        return description
+    }
+
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene. Rather use primaryGene()")
      val gene : Gene = genes[0]

@@ -505,7 +505,7 @@ object RestActionBuilderV3 {
                             messages: MutableList<String>
     ) {
         val name = p.name ?: "undefined"
-        val description = p.description ?: null
+        val description = p.description
 
         if(p.schema == null){
             messages.add("No schema definition for parameter $name")
