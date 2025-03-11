@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
@@ -22,6 +23,9 @@ class BlackBoxRestModule(
 
         super.configure()
 
+        bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
+            .to(ResourceSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(RestSampler::class.java)
                 .asEagerSingleton()
