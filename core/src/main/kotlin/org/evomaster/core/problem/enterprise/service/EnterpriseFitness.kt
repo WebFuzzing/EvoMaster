@@ -258,7 +258,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 val sdto = extra.sqlSqlExecutionsDto
-                if(sdto != null) {
+                if(sampler.sqlInsertBuilder != null && sdto != null) {
                     val databaseExecution = DatabaseExecution.fromDto(sdto, sampler.sqlInsertBuilder!!.getTableNames())
                     fv.setDatabaseExecution(i, databaseExecution)
                     if (databaseExecution.sqlParseFailureCount > 0) {
