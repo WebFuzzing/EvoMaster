@@ -5,10 +5,6 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.sql.DatabaseExecution
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
-import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
@@ -25,6 +21,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -46,7 +43,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
 
     /**
-     * @param allSqlActions specified the db actions to be executed
+     * @param allSqlActions specified the db actions to be executed.
+     *        This requires that, if any is representExistingData, they should all be at beginning of list
      * @param sqlIdMap indicates the map id of pk to generated id
      * @param allSuccessBefore indicates whether all SQL before this [allSqlActions] are executed successfully
      * @param previous specified the previous db actions which have been executed
@@ -63,6 +61,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return true
         }
 
+        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+        if(!SqlActionUtils.verifyExistingDataFirst(allSqlActions)){
+            throw IllegalArgumentException("SQLAction representing existing data are not in order")
+        }
+
         val dbresults = (allSqlActions).map { SqlActionResult(it.getLocalId()) }
         actionResults.addAll(dbresults)
 
@@ -74,14 +77,17 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 existing data (which of course should not be re-inserted...)
              */
             // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
-            allSqlActions.filter { it.representExistingData }.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
-                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
-            }
+            allSqlActions.filter { it.representExistingData }
+                .flatMap { it.seeTopGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .forEach {
+                    sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+                }
             previous.addAll(allSqlActions)
             return true
         }
 
-        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+
         val dto = try {
             SqlActionTransformer.transform(allSqlActions, sqlIdMap, previous)
         }catch (e : IllegalArgumentException){
