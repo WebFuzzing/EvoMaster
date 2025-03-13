@@ -61,6 +61,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -491,10 +492,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (getConnectionIfExist() == null || !emDbClean.employSmartDbClean) return;
 
         try {
-            setExecutingInitSql(true);
+            Statement statement = getConnectionIfExist().createStatement();
 
+            setExecutingInitSql(true);
+            DbCleaner.disableReferentialIntegrity(statement, emDbClean.dbType);
             // clean accessed tables
             Set<String> tableDataToInit = null;
+
             if (!accessedTables.isEmpty()){
                 List<String> tablesToClean = new ArrayList<>();
                 getTableToClean(accessedTables, tablesToClean);
@@ -507,10 +511,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
+            DbCleaner.enableReferentialIntegrity(statement, emDbClean.dbType);
 
         }catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
         }finally {
+
             setExecutingInitSql(false);
         }
     }
@@ -523,7 +529,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
+                            Statement statement = getConnectionIfExist().createStatement();
+                            DbCleaner.disableReferentialIntegrity(statement, spec.dbType);
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                            DbCleaner.disableReferentialIntegrity(statement, spec.dbType);
+
                         } catch (SQLException e) {
                             throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
                         }
@@ -1581,7 +1591,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     // all data will be reset
                     DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
                     try {
+                        Statement statement = spec.connection.createStatement();
+                        DbCleaner.disableReferentialIntegrity(statement, spec.dbType);
                         reAddAllInitSql();
+                        DbCleaner.enableReferentialIntegrity(statement, spec.dbType);
+
                     } catch (SQLException e) {
                         throw new RuntimeException("Fail to process all specified initSqlScript "+e);
                     }

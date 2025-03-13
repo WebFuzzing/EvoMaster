@@ -344,7 +344,7 @@ public class DbCleaner {
     }
 
 
-    private static void disableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
+    public static void disableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type) {
             case POSTGRES:
                 break;
@@ -366,7 +366,7 @@ public class DbCleaner {
         }
     }
 
-    private static void enableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
+    public static void enableReferentialIntegrity(Statement s, DatabaseType type) throws SQLException {
         switch (type) {
             case POSTGRES:
                 break;
