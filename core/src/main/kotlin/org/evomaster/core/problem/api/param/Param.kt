@@ -45,6 +45,7 @@ abstract class Param(
         val copy = super.copy()
         if (copy !is Param)
             throw IllegalStateException("mismatched type: the type should be Param, but it is ${this::class.java.simpleName}")
+        copy.description = description
         return copy as Param
     }
 

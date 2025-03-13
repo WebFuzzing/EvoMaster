@@ -44,7 +44,7 @@ class SwaggerDescriptionEMTest: SpringTestBase() {
 
             // For now only header parameter description is available
             assertEquals(3, descriptions.size)
-            assertEquals(null, descriptions["X-Custom-Header"])  // Actual value: Custom header for testing
+            assertEquals("Custom header for testing", descriptions["X-Custom-Header"])  // Actual value: Custom header for testing
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/v1", "GET is working")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/v1", "POST is working")
