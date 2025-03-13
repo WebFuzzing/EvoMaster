@@ -512,6 +512,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
             DbCleaner.enableReferentialIntegrity(statement, emDbClean.dbType);
+            statement.close();
 
         }catch (SQLException e) {
             throw new RuntimeException("SQL Init Execution Error: fail to execute "+e);
@@ -649,7 +650,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
              */
 //            cleanDataInDbConnection(connection, dbSpecification);
             // insert data
+            Statement statement = connection.createStatement();
+            DbCleaner.disableReferentialIntegrity(statement, dbSpecification.dbType);
             SqlScriptRunner.runCommands(connection, all);
+            DbCleaner.enableReferentialIntegrity(statement, dbSpecification.dbType);
+            statement.close();
             return true;
         }
         return false;
@@ -1595,7 +1600,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         DbCleaner.disableReferentialIntegrity(statement, spec.dbType);
                         reAddAllInitSql();
                         DbCleaner.enableReferentialIntegrity(statement, spec.dbType);
-
+                        statement.close();
                     } catch (SQLException e) {
                         throw new RuntimeException("Fail to process all specified initSqlScript "+e);
                     }
