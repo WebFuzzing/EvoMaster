@@ -79,6 +79,12 @@ public class DbSpecification {
         );
     }
 
+
+    /**
+     * @return this with disabled smart cleaning. The cleaning of added/modified/deleted data in the database will have to
+     *         be handled manually in the driver in the resetStateOfSUT() method.
+     *
+     */
     public DbSpecification withDisabledSmartClean(){
         return new DbSpecification(
                 this.dbType,
@@ -91,6 +97,11 @@ public class DbSpecification {
     }
 
 
+    /**
+     * @param script a series of INSERT SQL commands, as a string.
+     * @return this, with the given INSERT operations used to initialize the database, used as starting point for each
+     *         test execution
+     */
     public DbSpecification withInitSqlScript(String script){
 
         if(script==null || script.isEmpty() || script.trim().isEmpty()){
@@ -107,6 +118,11 @@ public class DbSpecification {
         );
     }
 
+    /**
+     * @param path to a classpath resource having a text file with a series of INSERT SQL commands, read as strings.
+     * @return this, with the given INSERT operations used to initialize the database, used as starting point for each
+     *         test execution
+     */
     public DbSpecification withInitSqlOnResourcePath(String path){
 
         if(path==null || path.isEmpty() || path.trim().isEmpty()){
