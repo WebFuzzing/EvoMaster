@@ -1,12 +1,16 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
+#https://www.learnjsonschema.com/2020-12/core/id/
 $id: "TODO"
 title: "Web Fuzzing Report"
 description: "Schema Definition for Web Fuzzing Commons Reports"
 type: object
 properties:
+  # REQUIRED
   schema_version:
     type: string
   tool_name:
+    type: string
+  tool_version:
     type: string
   creation_time:
     type: string
@@ -15,12 +19,100 @@ properties:
     $ref: "#/$def/Faults"
   rest_report:
     $ref: "#/$def/RESTReport"
-required: ["schema_version","tool_name","creation_time","faults"]
+  total_tests:
+    type: integer
+    min: 0
+  test_file_paths:
+    type: array
+    items:
+      $ref: "#/$def/TestFilePath"
+  test_cases:
+    type: array
+    items:
+      $ref: "#/$def/TestCase"
+  #OPTIONAL
+  coverage:
+    $ref: "#/$def/Coverage"
+
+required: ["schema_version","tool_name","tool_version","creation_time","faults","total_tests","test_file_paths","test_cases"]
+
 $def:
+  EndpointId:
+    type: string
+  TestCaseId:
+    type: string
+  FaultCategoryId:
+    type: object
+    properties:
+      code:
+        type: integer
+      context:
+        type: string
+    required: ["code"]
+  TestFilePath:
+    type: string
+  CoveredEndpoint:
+    type: object
+    properties:
+      endpoint_id:
+        $ref: "#/$def/EndpointId"
+      test_case_id:
+        $ref: "#/$def/TestCaseId"
+      http_status:
+        type: array
+        items:
+          $ref: "#/$def/HttpStatus"
+        minItems: 1
+    required: ["endpoint_id","test_case_id","http_status"]
+  HttpStatus:
+    type: integer
+    min: 0
+    max: 599
+  FoundFault:
+    type: object
+    properties:
+      endpoint_id:
+        $ref: "#/$def/EndpointId"
+      test_case_id:
+        $ref: "#/$def/TestCaseId"
+      fault_categories:
+        type: array
+        items:
+          $ref: "#/$def/FaultCategoryId"
+        minItems: 1
+    required: ["endpoint_id","test_case_id","fault_categories"]
+
   RESTReport:
     type: object
     properties:
+      total_http_calls:
+        type: integer
+        min: 0
+      endpoint_ids:
+        type: array
+        items:
+          $ref: "#/$def/EndpointId"
+      covered_http_status:
+        type: array
+        items:
+          $ref: "#/$def/CoveredEndpoint"
     required: []
+
+  TestCase:
+    type: object
+    properties:
+      id:
+        $ref: "#/$def/TestCaseId"
+      file_path:
+        $ref: "#/$def/TestFilePath"
+      name:
+        type: string
+      start_line:
+        type: integer
+        min: 0
+      end_line:
+        type: integer
+        min: 0
 
   Faults:
     type: object
@@ -28,7 +120,32 @@ $def:
       total_number:
         type: integer
         min: 0
-    required: ["total_number"]
+      found_faults:
+        type: array
+        items:
+          $ref: "#/$def/FoundFault"
+    required: ["total_number","found_faults"]
 
+  Coverage:
+    type: object
+    properties:
+      tool_name:
+        type: string
+      criteria:
+        type: array
+        items:
+          type: CoverageCriterion
+    required: ["tool_name","criteria"]
 
-
+  CoverageCriterion:
+    type: object
+    properties:
+      name:
+        type: string
+      covered:
+        type: integer
+        min: 0
+      total:
+        type: integer
+        min: 0
+    required: ["name","covered","total"]
