@@ -365,7 +365,7 @@ object RestActionBuilderV3 {
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, currentSchema.schemaParsed, options, messages)
+            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages)
             repairParams(params, restPath, messages)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
@@ -451,29 +451,30 @@ object RestActionBuilderV3 {
             verb: HttpVerb,
             restPath: RestPath,
             operation: Operation,
-            swagger: OpenAPI,
+            schemaHolder: RestSchema,
+            currentSchema: SchemaOpenAPI,
             options: Options,
             messages: MutableList<String>
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
 
-        removeDuplicatedParams(swagger,operation,messages)
+        removeDuplicatedParams(schemaHolder,currentSchema,operation,messages)
                 .forEach { p ->
 
                     if(p.`$ref` != null){
-                        val param = getLocalParameter(swagger, p.`$ref`, messages)
+                        val param = SchemaUtils.getReferenceParameter(schemaHolder,currentSchema, p.`$ref`, messages)
                         if(param == null){
                             messages.add("Failed to handle ${p.`$ref`} in $verb:$restPath")
                         } else {
-                            handleParam(param, swagger, params, options, messages)
+                            handleParam(param, currentSchema.schemaParsed, params, options, messages)
                         }
                     } else {
-                        handleParam(p, swagger, params, options, messages)
+                        handleParam(p, currentSchema.schemaParsed, params, options, messages)
                     }
                 }
 
-        handleBodyPayload(operation, verb, restPath, swagger, params, options, messages)
+        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages)
 
         return params
     }
@@ -568,21 +569,12 @@ object RestActionBuilderV3 {
         }
     }
 
-
-    private fun resolveRequestBody(swagger: OpenAPI, reference: String, messages: MutableList<String>): RequestBody? {
-        val classDef = extractReferenceName(reference)
-        val body =  swagger.components.requestBodies[classDef]
-        if(body == null){
-            messages.add("Cannot find reference to request body: $reference")
-        }
-        return body
-    }
-
     private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
             restPath: RestPath,
-            swagger: OpenAPI,
+            schemaHolder: RestSchema,
+            currentSchema: SchemaOpenAPI,
             params: MutableList<Param>,
             options: Options,
             messages: MutableList<String>
@@ -610,7 +602,7 @@ object RestActionBuilderV3 {
 
         // Handle dereferencing if requestBody is referenced
         val resolvedBody = if (body.`$ref` != null) {
-            resolveRequestBody(swagger, body.`$ref`, messages) ?: return
+            SchemaUtils.getReferenceRequestBody(schemaHolder,currentSchema, body.`$ref`, messages) ?: return
         } else {
             body
         }
@@ -627,7 +619,8 @@ object RestActionBuilderV3 {
                 false
             } else {
                 val reference = it.value.schema.`$ref`
-                reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
+                reference.isNullOrBlank()
+                        || SchemaUtils.getReferenceSchema(schemaHolder,currentSchema, reference,messages) != null
             }
         } ?: emptyMap()
 
@@ -647,7 +640,7 @@ object RestActionBuilderV3 {
         */
         val obj: MediaType = bodies.values.first()
         val examples = if(options.probUseExamples > 0) exampleObjects(obj.example, obj.examples) else listOf()
-        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        var gene = getGene("body", obj.schema, currentSchema.schemaParsed, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
@@ -1618,15 +1611,7 @@ object RestActionBuilderV3 {
 
     private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
-    private fun getLocalParameter(swagger: OpenAPI, reference: String, messages: MutableList<String>) : Parameter?{
-        val name = extractReferenceName(reference)
 
-        val p = swagger.components.parameters[name]
-        if(p==null){
-            messages.add("Cannot find parameter reference: $reference")
-        }
-        return p
-    }
 
     private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
 
@@ -1646,7 +1631,12 @@ object RestActionBuilderV3 {
         return reference.substring(reference.lastIndexOf("/") + 1)
     }
 
-    private fun removeDuplicatedParams(swagger: OpenAPI, operation: Operation, messages: MutableList<String>): List<Parameter> {
+    private fun removeDuplicatedParams(
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        operation: Operation,
+        messages: MutableList<String>
+    ): List<Parameter> {
 
         /*
             Duplicates are not allowed, based on combination of "name" and "location".
@@ -1664,7 +1654,7 @@ object RestActionBuilderV3 {
        operation.parameters.forEach {
 
             val p = if(it.`$ref` != null)
-                getLocalParameter(swagger, it.`$ref`, messages = messages)
+                SchemaUtils.getReferenceParameter(schemaHolder,currentSchema, it.`$ref`, messages = messages)
            else
                it
            if(p != null) {
