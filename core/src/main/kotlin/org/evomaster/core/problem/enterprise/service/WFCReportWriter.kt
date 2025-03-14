@@ -18,16 +18,19 @@ class WFCReportWriter {
 
 
     fun writeReport(solution: Solution<*>) {
+        //FIXME: should get as input a list of Solution, one per generated test suite
 
         val report = com.webfuzzing.commons.report.Report()
 
         report.schemaVersion = "0.0.1" //TODO
         report.toolName = "EvoMaster"
-        //TODO tool version
-        report.creationTime = Date() // FIXME use new JDK dates
+        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
+        report.creationTime = Date()
+        report.totalTests = solution.individuals.size
 
         val faults = Faults()
         report.faults = faults
+        //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
 
 
