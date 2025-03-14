@@ -34,7 +34,21 @@ class RestSchema(
         handleRefs(main)
     }
 
-    fun getSpec  main otherSpecs or failed. throw exception only if not recognized, which should not happened
+    fun getSpec(location: String) : SchemaOpenAPI?{
+        if(failedRetrievedSpecLocations.contains(location)){
+            return null
+        }
+        if(otherSpecs.containsKey(location)){
+            return otherSpecs[location]
+        }
+        if(main.sourceLocation.location == location){
+            return main
+        }
+
+        //if we arrive here, it is likely a bug in EvoMaster
+        throw IllegalArgumentException("Unrecognized location: $location")
+    }
+
 
     private fun handleRefs(schema: SchemaOpenAPI){
 

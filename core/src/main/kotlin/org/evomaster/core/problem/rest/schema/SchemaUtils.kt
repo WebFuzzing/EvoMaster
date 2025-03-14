@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.schema
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.links.Link
+import org.evomaster.core.logging.LoggingUtil
 import java.net.URI
 import java.net.URISyntaxException
 
@@ -81,16 +82,25 @@ object SchemaUtils {
         val name = extractReferenceName(reference,messages)
 
         if(isLocalRef(reference)) {
-            val link = current.schemaParsed.components.links[name]
-            if (link == null) {
-                messages.add("Cannot find reference to link: $reference")
-            }
-            return link
+            return getLink(current, name, messages, reference)
         } else {
 
             val location = computeLocation(reference, current.sourceLocation)
+            val other = schema.getSpec(location)
+            if(other == null){
+                messages.add("Cannot retrieve schema from:  $location")
+                return null
+            }
 
-            return null //TODO
+            return getLink(other, name, messages, reference)
         }
+    }
+
+    private fun getLink(openAPI: SchemaOpenAPI, name: String, messages: MutableList<String>,reference: String) : Link?{
+        val link = openAPI.schemaParsed.components.links[name]
+        if (link == null) {
+            messages.add("Cannot find reference to link $reference")
+        }
+        return link
     }
 }

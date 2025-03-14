@@ -194,7 +194,7 @@ object RestActionBuilderV3 {
                         if(endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }){
                             skipped.add(Endpoint(verb,restPath))
                         } else {
-                            handleOperation(actionCluster, verb, restPath, operation, swagger, options, errorEndpoints, messages)
+                            handleOperation(actionCluster, verb, restPath, operation, schemaHolder, schemaHolder.main, options, errorEndpoints, messages)
                         }
                     }
 
@@ -357,19 +357,20 @@ object RestActionBuilderV3 {
         verb: HttpVerb,
         restPath: RestPath,
         operation: Operation,
-        swagger: OpenAPI,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
         options: Options,
         errorEndpoints: MutableList<String>,
         messages: MutableList<String>
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, swagger, options, messages)
+            val params = extractParams(verb, restPath, operation, currentSchema.schemaParsed, options, messages)
             repairParams(params, restPath, messages)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.asSequence()
-                ?.map { resolveResponse(swagger, it) }
+                ?.map { resolveResponse(currentSchema.schemaParsed, it) }
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
@@ -393,7 +394,7 @@ object RestActionBuilderV3 {
                         val link = if (ref.isNullOrBlank()) {
                             it.third
                         } else {
-                            SchemaUtils.getReferenceLink(swagger, ref, messages)
+                            SchemaUtils.getReferenceLink(schemaHolder,currentSchema, ref, messages)
                         }
                         if (link == null) {
                             null
