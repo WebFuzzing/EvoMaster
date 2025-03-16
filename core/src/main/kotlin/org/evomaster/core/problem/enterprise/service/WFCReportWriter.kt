@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import com.webfuzzing.commons.report.Faults
+import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
@@ -33,10 +34,11 @@ class WFCReportWriter {
         //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
 
+        report.problemDetails = ProblemDetails()
 
         if(config.problemType == EMConfig.ProblemType.REST) {
             val rest = RESTReport()
-            report.restReport = rest
+            report.problemDetails.rest = rest
 
             //TODO all other entries
         }

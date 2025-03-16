@@ -21,8 +21,19 @@ properties:
     description: "The timestamp of when this report file was created."
   faults:
     $ref: "#/$def/Faults"
-  rest_report:
-    $ref: "#/$def/RESTReport"
+#### Unfortunately, there is no support for oneOf in jsonschema2pojo
+#  problem_details:
+#    type: object
+#    oneOf:
+#      - $ref: "#/$def/RESTReport"
+#      # TODO GraphQL, RPC and Web
+  problem_details:
+    type: object
+    properties:
+      rest:
+        $ref: "#/$def/RESTReport"
+      # TODO GraphQL, RPC and Web
+      # expressing that only 1 should be present is possible, but super-verbose and convoluted
   total_tests:
     type: integer
     min: 0
@@ -42,11 +53,12 @@ properties:
   coverage:
     $ref: "#/$def/Coverage"
 
-required: ["schema_version","tool_name","tool_version","creation_time","faults","total_tests","test_file_paths","test_cases"]
+required: ["schema_version","tool_name","tool_version","creation_time","faults","problem_details","total_tests","test_file_paths","test_cases"]
 
 $def:
-  EndpointId:
-    description: "A unique identifier for an HTTP endpoint, including verb. E.g., GET:/users/{id}."
+  OperationId:
+    description: "A unique identifier for an operation. For example, in REST, it would be a HTTP endpoint, including 
+                  verb, e.g., 'GET:/users/{id}'."
     type: string
   TestCaseId:
     description: "A unique identifier for a test case. It could include its name and file location."
@@ -71,7 +83,7 @@ $def:
     type: object
     properties:
       endpoint_id:
-        $ref: "#/$def/EndpointId"
+        $ref: "#/$def/OperationId"
       test_case_id:
         $ref: "#/$def/TestCaseId"
       http_status:
@@ -88,11 +100,12 @@ $def:
     min: 0
     max: 599
   FoundFault:
-    description: "Data-structure to represent found faults, based on endpoints and which tests find faults in them."
+    description: "Data-structure to represent found faults, based on operations (e.g., HTTP endpoints in REST, and methods
+                  in GraphQL and RPC) and which tests find faults in them."
     type: object
     properties:
-      endpoint_id:
-        $ref: "#/$def/EndpointId"
+      operation_id:
+        $ref: "#/$def/OperationId"
       test_case_id:
         $ref: "#/$def/TestCaseId"
       fault_categories:
@@ -115,7 +128,7 @@ $def:
         description: "Unique ids of all the endpoints in the tested API."
         type: array
         items:
-          $ref: "#/$def/EndpointId"
+          $ref: "#/$def/OperationId"
         uniqueItems: true
       covered_http_status:
         description: "List of which HTTP status codes were covered, based on endpoints."
