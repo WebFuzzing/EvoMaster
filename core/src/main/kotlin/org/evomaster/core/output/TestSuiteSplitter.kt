@@ -137,7 +137,11 @@ object TestSuiteSplitter {
      * @return split test suite based on specified maximum number [limit]
      */
     fun <T:Individual> splitSolutionByLimitSize(solution: Solution<T>, limit: Int): List<Solution<T>> {
-        if (limit < 0) return listOf(solution)
+
+        if (limit < 0 || solution.individuals.size <= limit){
+            return listOf(solution)
+        }
+
         val group = solution.individuals.groupBy {
             solution.individuals.indexOf(it) / limit
         }
