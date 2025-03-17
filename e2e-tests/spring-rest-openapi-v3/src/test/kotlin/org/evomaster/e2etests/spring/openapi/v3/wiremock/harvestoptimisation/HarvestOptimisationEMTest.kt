@@ -47,7 +47,7 @@ class HarvestOptimisationEMTest: SpringTestBase() {
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Yes! Working\"}"))
         )
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.1")
+        DnsCacheManipulator.setDnsCache("mock.test", "127.0.0.1")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestOptimisationEM",
