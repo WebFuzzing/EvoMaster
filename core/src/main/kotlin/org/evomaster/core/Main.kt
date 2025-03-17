@@ -226,14 +226,14 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
-            solution = phaseHttpOracle(injector,config,solution)
-            solution = phaseSecurity(injector,config, epc, solution)
+            solution = phaseHttpOracle(injector, config, solution)
+            solution = phaseSecurity(injector, config, epc, solution)
+
+
+            val splitResult = writeTests(injector, solution, controllerInfo)
+            writeWFCReport(injector, solution, splitResult)
 
             writeCoveredTargets(injector, solution)
-
-            writeTests(injector, solution, controllerInfo)
-            writeWFCReport(injector, solution)
-
             writeStatistics(injector, solution)
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
@@ -249,8 +249,8 @@ class Main {
             val faults = solution.overall.potentialFoundFaults(idMapper)
             LoggingUtil.getInfoLogger().info("Potential faults: ${faults.size}")
 
-            logCodeCoverage(injector,config, solution, idMapper)
-            logActionCoverage(injector,config,data)
+            logCodeCoverage(injector, config, solution, idMapper)
+            logActionCoverage(injector, config, data)
             logDefaultTimeBudgetWarning(config)
 
             solution.statistics = data.toMutableList()
@@ -784,62 +784,28 @@ class Main {
             injector: Injector,
             solution: Solution<*>,
             controllerInfoDto: ControllerInfoDto?,
-            snapshotTimestamp: String = ""
+            snapshotTimestamp: String
         ) {
 
             val config = injector.getInstance(EMConfig::class.java)
-
             if (!config.createTests) {
                 return
             }
+            LoggingUtil.getInfoLogger().info("Saving snapshot of tests so far")
 
-            val n = solution.individuals.size
-            val tests = if (n == 1) "1 test" else "$n tests"
-
-            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
-
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-
-            if (config.problemType == EMConfig.ProblemType.REST) {
-
-                val splitResult = TestSuiteSplitter.split(solution, config)
-
-                solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome
-                    .filter { !it.individuals.isNullOrEmpty() }
-                    .forEach {
-                        writer.writeTests(
-                            it,
-                            controllerInfoDto?.fullName,
-                            controllerInfoDto?.executableFullPath,
-                            snapshotTimestamp
-                        )
-                    }
-            } else {
-                /*
-                    TODO refactor all the PartialOracle stuff that is meant for only REST
-                 */
-
-                writer.writeTests(
-                    solution,
-                    controllerInfoDto?.fullName,
-                    controllerInfoDto?.executableFullPath,
-                    snapshotTimestamp
-                )
-            }
+            writeTests(injector,solution,controllerInfoDto,snapshotTimestamp)
         }
 
         fun writeTests(
-            injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?,
-            snapshot: String = ""
-        ) {
-
-            //TODO: the code here is quite messy. Needs to be refactored and simplified
+            injector: Injector,
+            solution: Solution<*>,
+            controllerInfoDto: ControllerInfoDto?,
+            snapshotTimestamp: String = ""
+        ): SplitResult? {
 
             val config = injector.getInstance(EMConfig::class.java)
-
             if (!config.createTests) {
-                return
+                return null
             }
 
             val n = solution.individuals.size
@@ -848,114 +814,43 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-            if (config.problemType == EMConfig.ProblemType.REST) {
 
-                val splitResult = TestSuiteSplitter.split(solution, config)
+            val splitResult = TestSuiteSplitter.split(solution, config)
 
-                solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome
-                    .filter { !it.individuals.isNullOrEmpty() }
-                    .flatMap {
-                        TestSuiteSplitter.splitSolutionByLimitSize(
-                            it as Solution<ApiWsIndividual>,
-                            config.maxTestsPerTestSuite
-                        )
-                    }
-                    .forEach {
-                        writer.writeTests(
-                            it,
-                            controllerInfoDto?.fullName,
-                            controllerInfoDto?.executableFullPath,
-                            snapshot
-                        )
-                    }
+            splitResult.splitOutcome.forEach {
+                writer.writeTests(
+                    it,
+                    controllerInfoDto?.fullName,
+                    controllerInfoDto?.executableFullPath,
+                    snapshotTimestamp
+                )
+            }
 
-            } else if (config.problemType == EMConfig.ProblemType.RPC) {
-
+            if (config.problemType == EMConfig.ProblemType.RPC) {
+                //TODO what is this? need to clarify
                 // Man: only enable for RPC as it lacks of unit tests
                 writer.writeTestsDuringSeeding(
                     solution,
                     controllerInfoDto?.fullName,
                     controllerInfoDto?.executableFullPath
                 )
-
-                when (config.testSuiteSplitType) {
-                    EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(
-                        solution,
-                        controllerInfoDto?.fullName,
-                        controllerInfoDto?.executableFullPath
-                    )
-                    /*
-                        for RPC, just simple split based on whether there exist any exception in a test
-                        TODD need to check with Andrea whether we use cluster or other type
-                     */
-                    else -> {
-                        val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
-                        splitResult.splitOutcome
-                            .filter { !it.individuals.isNullOrEmpty() }
-                            .flatMap {
-                                TestSuiteSplitter.splitSolutionByLimitSize(
-                                    it as Solution<ApiWsIndividual>,
-                                    config.maxTestsPerTestSuite
-                                )
-                            }
-                            .forEach {
-                                writer.writeTests(
-                                    it,
-                                    controllerInfoDto?.fullName,
-                                    controllerInfoDto?.executableFullPath,
-                                    snapshot
-                                )
-                            }
-                    }
-                }
-
-            } else if (config.problemType == EMConfig.ProblemType.GRAPHQL) {
-                when (config.testSuiteSplitType) {
-                    EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(
-                        solution,
-                        controllerInfoDto?.fullName,
-                        controllerInfoDto?.executableFullPath,
-                    )
-
-                    else -> {
-                        val splitResult = TestSuiteSplitter.split(solution, config)
-                        splitResult.splitOutcome
-                            .filter { !it.individuals.isNullOrEmpty() }
-                            .flatMap {
-                                TestSuiteSplitter.splitSolutionByLimitSize(
-                                    it as Solution<ApiWsIndividual>,
-                                    config.maxTestsPerTestSuite
-                                )
-                            }
-                            .forEach {
-                                writer.writeTests(
-                                    it,
-                                    controllerInfoDto?.fullName,
-                                    controllerInfoDto?.executableFullPath,
-                                    snapshot
-                                )
-                            }
-                    }
-                }
-            } else {
-                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
             }
+
+            return splitResult
         }
 
-        private fun writeWFCReport(injector: Injector, solution: Solution<*>) {
 
-            //TODO will need to change input from Solution to the outout of generated tests
+        private fun writeWFCReport(injector: Injector, solution: Solution<*>, splitResult : SplitResult?) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (!config.writeWFCReport) {
+            if (!config.writeWFCReport || splitResult == null) {
                 return
             }
 
             val wfcr = injector.getInstance(WFCReportWriter::class.java)
 
-            wfcr.writeReport(solution)
+            wfcr.writeReport(solution,splitResult)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
