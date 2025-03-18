@@ -18,7 +18,7 @@ class WmJsonMapRest {
     @GetMapping(path=["/gson"])
     fun getGsonObject() : ResponseEntity<String> {
 
-        val url = URL("http://json.map:10422/api/foo")
+        val url = URL("http://json.test:10422/api/foo")
         val connection = url.openConnection()
         connection.setRequestProperty("accept", "application/json")
 

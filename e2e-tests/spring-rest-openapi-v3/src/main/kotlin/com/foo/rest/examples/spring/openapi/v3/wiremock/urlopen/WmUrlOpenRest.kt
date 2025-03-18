@@ -15,7 +15,7 @@ class WmUrlOpenRest {
     @GetMapping(path = ["/string"])
     fun getString() : ResponseEntity<String> {
 
-        val url = URL("http://hello.there:8123/api/string")
+        val url = URL("http://hello.test:8123/api/string")
         val connection = url.openConnection()
         connection.setRequestProperty("accept", "application/json")
         val data = connection.getInputStream().bufferedReader().use(BufferedReader::readText)
@@ -31,7 +31,7 @@ class WmUrlOpenRest {
     @GetMapping(path = ["/object"])
     fun getObject() : ResponseEntity<String> {
 
-        val url = URL("http://hello.there:8877/api/object")
+        val url = URL("http://hello.test:8877/api/object")
         val connection = url.openConnection()
         connection.setRequestProperty("accept", "application/json")
 
@@ -48,7 +48,7 @@ class WmUrlOpenRest {
     @GetMapping(path = ["/sstring"])
     fun getSString() : ResponseEntity<String> {
 
-        val url = URL("https://hello.there:8443/api/string")
+        val url = URL("https://hello.test:8443/api/string")
         val connection = url.openConnection()
         connection.setRequestProperty("accept", "application/json")
         val data = connection.getInputStream().bufferedReader().use(BufferedReader::readText)

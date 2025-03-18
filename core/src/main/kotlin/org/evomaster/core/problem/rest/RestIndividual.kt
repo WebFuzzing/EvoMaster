@@ -126,7 +126,9 @@ class RestIndividual(
         removeAllBindingAmongGenes()
 
         val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
-        val sqlActions = resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>
+        val sqlActions = (resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>)
+            .sortedBy { !it.representExistingData } // existing data should always be at beginning
+
         val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
 
         val groups = resources.flatMap { it.seeEnterpriseActionGroup() }

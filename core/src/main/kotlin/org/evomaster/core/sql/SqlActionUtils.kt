@@ -172,10 +172,16 @@ object SqlActionUtils {
     fun verifyActions(actions: List<SqlAction>): Boolean {
         return verifyUniqueColumns(actions)
                 && verifyForeignKeys(actions)
+                && verifyExistingDataFirst(actions)
+    }
+
+    fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{
+        val startingIndex = actions.indexOfLast { it.representExistingData } + 1
+        return actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }.isEmpty()
     }
 
     /**
-     * Returns true if a insertion tries to insert a repeated value
+     * Returns false if a insertion tries to insert a repeated value
      * in a unique column
      */
     fun verifyUniqueColumns(actions: List<SqlAction>): Boolean {

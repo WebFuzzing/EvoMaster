@@ -1,14 +1,9 @@
 package org.evomaster.e2etests.spring.openapi.v3.wiremock.socket
 
-import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
 import com.foo.rest.examples.spring.openapi.v3.wiremock.socket.SocketController
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.service.ResourceRestFitness
-import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
