@@ -16,7 +16,7 @@ class HarvestStrategyRest {
 
     @GetMapping(path = ["/exact"])
     fun getMockExternalResponse(): ResponseEntity<String> {
-        val url = URL("http://mock.int:13579/api/mock")
+        val url = URL("http://mock.test:13579/api/mock")
 
         val request = Request.Builder().url(url).build()
         val client = OkHttpClient()
@@ -40,7 +40,7 @@ class HarvestStrategyRest {
 
     @GetMapping(path = ["/closest"])
     fun getMockExternalResponseClosest(): ResponseEntity<String> {
-        val url = URL("http://mock.int:13578/api/mock/closest")
+        val url = URL("http://mock.test:13578/api/mock/closest")
 
         val request = Request.Builder().url(url).build()
         val client = OkHttpClient()

@@ -19,6 +19,8 @@ class Solution<T>(
 where T : Individual {
 
     val overall: FitnessValue = FitnessValue(0.0)
+
+    @Deprecated("No longer used, but might be reintroduced with different form in future")
     var clusteringTime = 0
     var statistics = mutableListOf<Any>()
 

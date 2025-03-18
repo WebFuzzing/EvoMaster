@@ -25,6 +25,7 @@ import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.uri.UriGene
@@ -1015,9 +1016,22 @@ class StringGene(
                 if (gene is SqlForeignKeyGene){
                     LoggingUtil.uniqueWarn(
                         log,
-                        "attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
+                        "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
                     )
                     value = "${gene.uniqueIdOfPrimaryKey}"
+                } else if(gene is SqlAutoIncrementGene){
+                    /*
+                        This happens in tiltaksgjennomforing-api, where a SqlAutoIncrementGene is not marked
+                        as a Primary Key.
+                        Might be an issue in current limited handling of primary keys.
+                        Or are there legitimate cases for this?
+                        TODO will need to investigate
+                     */
+                    LoggingUtil.uniqueWarn(
+                        log,
+                        "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}."
+                    )
+                    //do nothing
                 } else{
                     value = gene.getValueAsRawString()
                 }

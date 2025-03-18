@@ -59,18 +59,28 @@ object RestSecurityOracle {
 
         verifySampleType(individual)
 
-        val a403 = individual.seeMainExecutableActions()
+        val actions = individual.seeMainExecutableActions()
             .filter {
-                it.verb == HttpVerb.GET
-                        && it.path == path
-                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                it.verb == HttpVerb.GET && it.path == path
+            }
+
+        val actionsWithResults = actions.filter {
+            //can be null if sequence was stopped
+            actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null
+        }
+
+        if(actions.size != actionsWithResults.size){
+            assert(actionResults.any { it.stopping }) {
+                "Not all actions have results, but sequence was not stopped"
+            }
+        }
+
+        val a403 = actionsWithResults.filter {
+                        (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                     .getStatusCode() == 403
             }
-        val a404 = individual.seeMainExecutableActions()
-            .filter {
-                it.verb == HttpVerb.GET
-                        && it.path == path
-                        && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+        val a404 = actionsWithResults.filter {
+                        (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                     .getStatusCode() == 404
             }
 
