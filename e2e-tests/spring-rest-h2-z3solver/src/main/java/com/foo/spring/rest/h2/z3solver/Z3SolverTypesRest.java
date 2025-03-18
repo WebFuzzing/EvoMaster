@@ -21,19 +21,19 @@ public class Z3SolverTypesRest {
     @Autowired
     private EntityManager em;
 
-//    // TODO: Fix this. This fails to load, as when the WHERE clause is empty, it fails to calculate the failedWhere
-//    @GetMapping("/products")
-//    public ResponseEntity<Void> getEmptyWhere() {
-//        Query query = em.createNativeQuery(
-//                "select (1) from products");
-//        List<?> data = query.getResultList();
-//
-//        if (data.isEmpty()) {
-//            return ResponseEntity.status(400).build();
-//        } else {
-//            return ResponseEntity.status(200).build();
-//        }
-//    }
+    // TODO: Fix this. This fails to load, as when the WHERE clause is empty, it fails to calculate the failedWhere
+    @GetMapping("/products")
+    public ResponseEntity<Void> getEmptyWhere() {
+        Query query = em.createNativeQuery(
+                "select (1) from products");
+        List<?> data = query.getResultList();
+
+        if (data.isEmpty()) {
+            return ResponseEntity.status(400).build();
+        } else {
+            return ResponseEntity.status(200).build();
+        }
+    }
 
     @GetMapping("/products-1")
     public ResponseEntity<Void> getId1() {
