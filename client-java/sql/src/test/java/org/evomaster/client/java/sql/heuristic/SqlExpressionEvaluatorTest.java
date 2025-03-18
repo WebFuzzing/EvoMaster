@@ -1102,4 +1102,28 @@ class SqlExpressionEvaluatorTest {
     }
 
 
+    @Test
+    public void testTableAlias() {
+        String sqlCommand = "SELECT * FROM Employees AS e WHERE e.salary > 100";
+        DataRow row = new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(101)
+        );
+
+        assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
+
+    }
+
+    @Test
+    public void testColumnAlias() {
+        String sqlCommand = "SELECT * FROM Employees AS e WHERE e.salary > 100";
+        DataRow row = new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(101)
+        );
+
+        assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
+    }
 }

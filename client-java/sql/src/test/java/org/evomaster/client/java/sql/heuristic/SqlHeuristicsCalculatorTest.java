@@ -6,6 +6,7 @@ import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
+import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.junit.jupiter.api.Test;
 
@@ -289,7 +290,61 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
     }
 
+    @Test
+    public void testSelectFromSubqueryWithAlias() {
+        String sqlCommand = "SELECT name, income\n" +
+                "FROM (\n" +
+                "    SELECT first_name AS name, salary AS income\n" +
+                "    FROM Employees\n" +
+                ") AS subquery\n" +
+                "WHERE income > 100";
 
+        QueryResult employees = new QueryResult(Arrays.asList("first_name","salary"), "Employees");
+        employees.addRow(new DataRow("Employees", Arrays.asList("first_name","salary"), Arrays.asList("John",10000)));
 
+        QueryResult[] arrayOfQueryResultSet = {employees};
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
 
+        SqlNameContext sqlNameContext = new SqlNameContext(parsedSqlCommand);
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(sqlNameContext, null,arrayOfQueryResultSet);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+        assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
+        assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("income"));
+    }
+
+    @Test
+    public void testInnerJoinWithAliases() {
+        String sqlCommand = "SELECT e.name, d.department_name\n" +
+                "FROM Employees e\n" +
+                "JOIN Departments d ON e.department_id = d.department_id";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "employees", Arrays.asList("John", 1));
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, employees, departments);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testInnerJoinWithSubqueries() {
+        String sqlCommand = "SELECT e.name, d.department_name\n" +
+                "FROM (SELECT name, department_id FROM Employees) e\n" +
+                "JOIN (SELECT department_id, department_name FROM Departments) d ON e.department_id = d.department_id";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "employees", Arrays.asList("John", 1));
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+
+        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, employees, departments);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
 }
