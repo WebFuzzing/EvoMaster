@@ -6,6 +6,7 @@ import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
+import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import java.net.URI
@@ -174,6 +175,24 @@ object SchemaUtils {
             messages.add("Cannot find reference to schema object $reference")
         }
         return schema
+    }
+
+
+    fun getReferenceResponse(
+        schema: RestSchema,
+        current: SchemaOpenAPI,
+        reference: String,
+        messages: MutableList<String>
+    ) : ApiResponse?{
+        return getReference(schema,current,reference,messages,SchemaUtils::getResponse)
+    }
+
+    private fun getResponse(openAPI: SchemaOpenAPI, name: String, messages: MutableList<String>,reference: String): ApiResponse? {
+        val response = openAPI.schemaParsed.components?.responses?.get(name)
+        if(response == null){
+            messages.add("Cannot find response object $reference")
+        }
+        return response
     }
 
 }

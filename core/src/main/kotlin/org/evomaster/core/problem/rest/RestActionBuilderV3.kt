@@ -344,12 +344,17 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun resolveResponse(swagger: OpenAPI, responseOrRef: ApiResponse): ApiResponse {
-        responseOrRef.`$ref`?.let { ref ->
-            val refKey = extractReferenceName(ref)
-            return swagger.components.responses[refKey] ?: responseOrRef
-        }
-        return responseOrRef
+    private fun resolveResponse(
+        schema: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        responseOrRef: ApiResponse,
+        messages: MutableList<String>
+    ): ApiResponse? {
+
+        val sref = responseOrRef.`$ref`
+            ?: return responseOrRef
+
+        return SchemaUtils.getReferenceResponse(schema,currentSchema,sref, messages)
     }
 
     private fun handleOperation(
@@ -370,7 +375,7 @@ object RestActionBuilderV3 {
 
             val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.asSequence()
-                ?.map { resolveResponse(currentSchema.schemaParsed, it) }
+                ?.mapNotNull { resolveResponse(schemaHolder,currentSchema, it,messages) }
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
