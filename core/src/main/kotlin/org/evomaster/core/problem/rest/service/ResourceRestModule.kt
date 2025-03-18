@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.TypeLiteral
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
@@ -29,9 +30,13 @@ class ResourceRestModule(private val bindRemote : Boolean = true) : RestBaseModu
                     .asEagerSingleton()
         }
 
+
+        bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
+            .to(ResourceSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
-                .to(ResourceSampler::class.java)
-                .asEagerSingleton()
+            .to(ResourceSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<AbstractRestSampler>() {})
                 .to(ResourceSampler::class.java)
                 .asEagerSingleton()
