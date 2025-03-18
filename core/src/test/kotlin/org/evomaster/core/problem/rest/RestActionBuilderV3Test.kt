@@ -2068,4 +2068,13 @@ class RestActionBuilderV3Test{
         assertEquals(1, post.links.size)
         assertTrue(post.links.all { it.canUse() })
     }
+
+    @Test
+    fun testRefCycle() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/cycleA.yaml", 1, true)
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertTrue(get.produces.any { it.contains("xml") })
+        assertEquals(1, get.parameters.size)
+    }
 }

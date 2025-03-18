@@ -63,7 +63,9 @@ class RestSchema(
                 return@forEach
             }
 
-            val location = SchemaUtils.computeLocation(it, schema.sourceLocation)
+            val location = SchemaUtils.computeLocation(it, schema.sourceLocation, mutableListOf())
+                ?: return@forEach
+
             if(otherSpecs.containsKey(location) || failedRetrievedSpecLocations.contains(location)){
                 //we already handled it
                 return@forEach

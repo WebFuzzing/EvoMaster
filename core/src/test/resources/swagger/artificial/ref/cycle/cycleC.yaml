@@ -1,0 +1,16 @@
+---
+openapi: 3.1.0
+info:
+  title: cycleC
+  version: 1.0.0
+components:
+  responses:
+    GenericOK:
+      description: "CycleC"
+      content:
+        application/xml:
+          schema:
+            $ref: '../cycleB.yaml#/components/schemas/FOO'
+  schemas:
+    BasicString:
+      type: string

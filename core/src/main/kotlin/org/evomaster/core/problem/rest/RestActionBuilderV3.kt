@@ -1583,6 +1583,7 @@ object RestActionBuilderV3 {
         }
 
         try {
+            //FIXME should not usi URI. see SchemaUtils
             URI(reference)
         } catch (e: URISyntaxException) {
             LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
@@ -1616,25 +1617,6 @@ object RestActionBuilderV3 {
 
     private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
-
-
-    private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
-
-        val classDef = extractReferenceName(reference)
-
-        return swagger.components.schemas[classDef]
-    }
-
-    private fun extractReferenceName(reference: String): String {
-        try {
-            URI(reference)
-        } catch (e: URISyntaxException) {
-            LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
-        }
-
-        //token after last /
-        return reference.substring(reference.lastIndexOf("/") + 1)
-    }
 
     private fun removeDuplicatedParams(
         schemaHolder: RestSchema,

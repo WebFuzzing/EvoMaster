@@ -11,31 +11,48 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import java.net.URI
 import java.net.URISyntaxException
+import java.nio.file.Paths
 
 /**
  * https://swagger.io/docs/specification/v3_0/using-ref/
  * https://swagger.io/docs/specification/v3_0/components/
- * https://swagger.io/specification/   (Components Object)
  */
 object SchemaUtils {
 
     private val log = org.slf4j.LoggerFactory.getLogger(SchemaUtils::class.java)
 
 
+    /*
+        For handling of $ref
+        https://swagger.io/specification/   (Components Object)
+
+        - schemas (DONE)
+        - responses (DONE)
+        - parameters (DONE)
+        - examples (TODO)
+        - requestBodies (DONE)
+        - headers (TODO)
+        - securitySchemes (TODO is it needed?)
+        - links (DONE)
+        - callbacks (TODO is it needed?)
+        - pathItems (TODO)
+     */
+
+
     fun isLocalRef(sref: String) = sref.startsWith("#")
 
-    private fun extractLocation(sref: String) : String{
+    private fun extractLocation(sref: String, messages: MutableList<String>) : String?{
         if(!sref.contains("#")){
-            //FIXME add to messages, no exception
-            throw IllegalArgumentException("Not a valid \$ref, as it contains no #: $sref")
+            messages.add("Not a valid \$ref, as it contains no #: $sref")
         }
         return sref.substring(0, sref.indexOf("#"))
     }
 
 
-    fun computeLocation(ref: String, currentSource: SchemaLocation) : String{
+    fun computeLocation(ref: String, currentSource: SchemaLocation, messages: MutableList<String>) : String?{
 
-        val rawLocation = extractLocation(ref)
+        val rawLocation = extractLocation(ref, messages)
+            ?: return null
 
         if(rawLocation.startsWith("http:",true) || rawLocation.startsWith("https:",true)){
             //location is absolute, so no need to do anything
@@ -62,7 +79,15 @@ object SchemaUtils {
         //if arrive here, it is a relative path
         val delimiter = if(csl.endsWith("/")) "" else "/"
         val parentFolder = "../" // this is based to what discussed in the specs
-        return "$csl$delimiter$parentFolder$rawLocation"
+
+        val location = "$csl$delimiter$parentFolder$rawLocation"
+
+        //FIXME should not usi URI
+        return try{
+            URI(location).normalize().toString()
+        } catch (e: Exception){
+            location
+        }
     }
 
 
@@ -115,7 +140,8 @@ object SchemaUtils {
         if(isLocalRef(reference)){
             return lambda(current, name, messages, reference)
         } else {
-            val location = computeLocation(reference, current.sourceLocation)
+            val location = computeLocation(reference, current.sourceLocation, messages)
+                ?: return null
             val other = schema.getSpec(location)
             if(other == null){
                 messages.add("Cannot retrieve schema from:  $location")
