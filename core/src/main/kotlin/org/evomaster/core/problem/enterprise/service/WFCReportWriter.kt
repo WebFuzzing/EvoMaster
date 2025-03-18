@@ -6,6 +6,7 @@ import com.webfuzzing.commons.report.Faults
 import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -18,7 +19,7 @@ class WFCReportWriter {
     private lateinit var config: EMConfig
 
 
-    fun writeReport(solution: Solution<*>) {
+    fun writeReport(solution: Solution<*>, splitResult: SplitResult) {
         //FIXME: should get as input a list of Solution, one per generated test suite
 
         val report = com.webfuzzing.commons.report.Report()
