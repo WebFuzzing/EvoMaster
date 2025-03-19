@@ -237,7 +237,8 @@ open class ImpactsOfIndividual(
         //for fixed action
         val fixed = individual.seeFixedMainActions()
         if ((fixed.isNotEmpty() && fixed.size != fixedMainActionImpacts.size) ||
-            (fixed.isEmpty() && !noneActionIndividual()))
+            (fixed.isEmpty() && individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).isEmpty() // TODO Man: need a better way to handle schedule task and main action
+                    && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
         fixed.forEach { action ->
