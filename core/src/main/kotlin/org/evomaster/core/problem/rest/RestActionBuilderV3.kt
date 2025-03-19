@@ -730,17 +730,24 @@ object RestActionBuilderV3 {
         if (schema.enum?.isNotEmpty() == true) {
 
             when (type) {
-                "string" ->
-                    return EnumGene(name, (schema.enum.map {
+                "string" -> {
+                    val g = EnumGene(name, (schema.enum.map {
                         if (it !is String)
-                            LoggingUtil.uniqueWarn(log, "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name")
+                            LoggingUtil.uniqueWarn(
+                                log,
+                                "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name"
+                            )
                         it.toString()
                     } as MutableList<String>).apply {
-                        if(options.invalidData) {
+                        if (options.invalidData) {
                             //Besides the defined values, add one to test robustness
                             add("EVOMASTER")
                         }
                     })
+                    g.setDescription(schema.description)
+
+                    return g
+                }
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
                     issue in GitLab schemas, eg for visibility_level
@@ -1405,6 +1412,10 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
+        if (!schema.description.isNullOrEmpty()) {
+            mainGene.setDescription(schema.description)
+        }
+
         /*
             See:
             https://swagger.io/docs/specification/adding-examples/
@@ -1550,13 +1561,19 @@ object RestActionBuilderV3 {
 
         val defaultMin = if(isInPath) 1 else 0
 
-        return StringGene(
+        val g = StringGene(
             name,
             maxLength = if (options.enableConstraintHandling) schema.maxLength
                 ?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
             minLength = max(defaultMin, if (options.enableConstraintHandling) schema.minLength ?: 0 else 0),
             invalidChars = if(isInPath) listOf('/','.') else listOf()
         )
+
+        if (!schema.description.isNullOrEmpty()) {
+            g.setDescription(schema.description)
+        }
+
+        return g
     }
 
     private fun createObjectFromReference(name: String,

@@ -35,15 +35,29 @@ class SwaggerDescriptionEMTest: SpringTestBase() {
                 val a = v.evaluatedMainActions()[0].action
                 if (a is RestCallAction) {
                     a.parameters.forEach {
-                        if (it.name != "body") {
-                            descriptions[it.name] = it.getDescription().toString()
+                        descriptions[it.name] = it.getDescription().toString()
+
+                        if (it.name == "body") {
+                            it.seeGenes().forEach { g ->
+                                if (!g.getDescription().isNullOrEmpty()) {
+                                    descriptions[g.name] = g.getDescription().toString()
+                                }
+
+                                if (g.name == "body") {
+                                    g.getAllGenesInIndividual().forEach { r ->
+                                        if (!r.getDescription().isNullOrEmpty()) {
+                                            descriptions[r.name] = r.getDescription().toString()
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
 
             // For now only header parameter description is available
-            assertEquals(3, descriptions.size)
+            assertEquals(6, descriptions.size)
             assertEquals("Custom header for testing", descriptions["X-Custom-Header"])  // Actual value: Custom header for testing
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/v1", "GET is working")
