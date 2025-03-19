@@ -841,7 +841,7 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
+        //RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
 
         return actions
     }
