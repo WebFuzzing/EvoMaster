@@ -534,7 +534,9 @@ object RestActionBuilderV3 {
 
             "query" -> {
                 val queryParam = QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
-                queryParam.setDescription(description)
+                if (!description.isNullOrEmpty()) {
+                    queryParam.setDescription(description)
+                }
                 params.add(queryParam)
             }
             /*
@@ -544,7 +546,9 @@ object RestActionBuilderV3 {
             "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
             "header" -> {
                 val headerParam = HeaderParam(name, gene)
-                headerParam.setDescription(description)
+                if (!description.isNullOrEmpty()) {
+                    headerParam.setDescription(description)
+                }
                 params.add(headerParam)
             }
             "cookie" -> params // do nothing?
@@ -672,7 +676,11 @@ object RestActionBuilderV3 {
 
         val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
-        bodyParam.setDescription(description)
+
+        if (!description.isNullOrEmpty()) {
+            bodyParam.setDescription(description)
+        }
+
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
             messages.add("Not supported content types for body payload in $verb:$restPath : ${ns.joinToString()}")
