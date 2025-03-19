@@ -20,11 +20,10 @@
         <module>spring-rest-openapi-v2</module>
         <module>spring-rest-openapi-v3</module>
         <module>spring-graphql</module>
-        <module>spring-rest-mysql</module>
+        <module>spring-rest-mysql-kotlin</module>
         <module>spring-rpc</module>
         <module>spring-rest-h2-v1</module>
         <module>spring-rest-postgres-column-types</module>
-        <module>spring-rest-mysql-column-types</module>
         <module>spring-rest-h2-column-types</module>
         <module>spring-rest-h2-z3solver</module>
         <module>spring-web</module>
