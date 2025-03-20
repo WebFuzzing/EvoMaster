@@ -44,6 +44,7 @@ object SchemaUtils {
     private fun extractLocation(sref: String, messages: MutableList<String>) : String?{
         if(!sref.contains("#")){
             messages.add("Not a valid \$ref, as it contains no #: $sref")
+            return null
         }
         return sref.substring(0, sref.indexOf("#"))
     }
