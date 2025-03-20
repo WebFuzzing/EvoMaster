@@ -125,15 +125,22 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
 
 
-
-            // table is accessed with INSERT
-            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 0, 0);", true);
+            //2nd-round test: table is accessed with INSERT
+            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, 0, 0);", true);
 
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(2, res.seeRows().size());
+            assertEquals(4, res.seeRows().size());
 
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Abc;", true);
+            assertEquals(3, res.seeRows().size());
+
+            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Xyz (id, valueColumn, abc_id) VALUES (2, 0, 2);", true);
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(3, res.seeRows().size());
+
 
             RestAssured.given().accept(ContentType.JSON)
                 .get(url + ControllerConstants.TEST_RESULTS)
@@ -144,10 +151,16 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
             // db only contains init data
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
 
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Abc;", true);
+            assertEquals(3, res.seeRows().size());
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(2, res.seeRows().size());
 
         } finally {
             starter.stop();
