@@ -18,7 +18,8 @@ open class ExternalSrefApplication {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(ExternalSrefApplication::class.java, *args)
+//            SpringApplication.run(ExternalSrefApplication::class.java, *args)
+            SpringApplication.run(ExternalSrefApplication::class.java,  "--server.port=10189")
         }
     }
 

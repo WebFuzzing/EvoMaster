@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:10123",
+      "url": "http://localhost:10189",
       "description": "Generated server url"
     }
   ],
@@ -21,8 +21,8 @@
           {"$ref": "a.json#/components/parameters/a"},
           {"$ref": "../b.json#/components/parameters/b"},
           {"$ref": "./others/c.json#/components/parameters/c"},
-          {"$ref": "http://localhost:10123/sref/schema/others/d.json#/components/parameters/d"},
-          {"$ref": "//localhost:10123/sref/schema/others/e.json#/components/parameters/e"}
+          {"$ref": "http://localhost:10189/sref/schema/others/d.json#/components/parameters/d"},
+          {"$ref": "//localhost:10189/sref/schema/others/e.json#/components/parameters/e"}
         ],
         "responses": {
           "200": {

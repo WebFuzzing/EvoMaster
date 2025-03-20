@@ -18,7 +18,7 @@ class ExternalSrefController : SpringController(ExternalSrefApplication::class.j
 
     override fun startSut(): String {
         //need to hardcode port, as used in the schema static files
-        ctx = SpringApplication.run(applicationClass, "--server.port=10123")
+        ctx = SpringApplication.run(applicationClass, "--server.port=10189")
         return "http://localhost:$sutPort"
     }
 
