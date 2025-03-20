@@ -17,14 +17,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate {
 
     default String getInitSqlScript() {
-        return String.join("\n", Arrays.asList("INSERT INTO Bar (id, valueColumn) VALUES (0, 0);", "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0);"));
+        return String.join("\n",
+                Arrays.asList(
+                        "INSERT INTO Bar (id, valueColumn) VALUES (0, 0);",
+                        "INSERT INTO Bar (id, valueColumn) VALUES (1, 0);",
+                        "INSERT INTO Bar (id, valueColumn) VALUES (2, 0);",
+                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0);",
+                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 0, 1);",
+                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 2);",
+                        "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (0, 0, 0);",
+                        "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (1, 0, 1);",
+                        "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (2, 0, 2);",
+                        "INSERT INTO Xyz (id, valueColumn, abc_id) VALUES (0, 0, 0);",
+                        "INSERT INTO Xyz (id, valueColumn, abc_id) VALUES (1, 0, 1);"
+//                        "INSERT INTO Xyz (id, valueColumn, abc_id) VALUES (2, 0, 2);"
+
+                )
+        );
     }
 
     @Test
     default void testAccessedFkClean() throws Exception {
         EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
         EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
-                "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
+                "CONSTRAINT fk_foo FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Abc(id INT Primary Key, valueColumn INT, foo_id INT, " +
+                "CONSTRAINT fk_abc FOREIGN KEY (foo_id) REFERENCES Foo(id) )", true);
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Xyz(id INT Primary Key, valueColumn INT, abc_id INT, " +
+                "CONSTRAINT fk_xyz FOREIGN KEY (abc_id) REFERENCES Abc(id) )", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
@@ -43,9 +63,13 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
             // db with init data
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Abc;", true);
+            assertEquals(3, res.seeRows().size());
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(2, res.seeRows().size());
 
             RestAssured.given().accept(ContentType.JSON)
                     .get(url + ControllerConstants.TEST_RESULTS)
@@ -56,17 +80,28 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
             // db with init data
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Abc;", true);
+            assertEquals(3, res.seeRows().size());
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(2, res.seeRows().size());
+
 
             // table is accessed with INSERT
-            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (1, 1);", true);
-            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
-
+            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, valueColumn) VALUES (4, 4);", true);
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(2, res.seeRows().size());
+            assertEquals(4, res.seeRows().size());
+
+            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Xyz (id, valueColumn, abc_id) VALUES (2, 0, 2);", true);
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(3, res.seeRows().size());
+
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
+            assertEquals(3, res.seeRows().size());
+
 
             RestAssured.given().accept(ContentType.JSON)
                     .get(url + ControllerConstants.TEST_RESULTS)
@@ -77,10 +112,18 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
             // db only contains init data
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
 
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;", true);
-            assertEquals(1, res.seeRows().size());
+            assertEquals(3, res.seeRows().size());
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Abc;", true);
+            assertEquals(3, res.seeRows().size());
+
+            res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Xyz;", true);
+            assertEquals(2, res.seeRows().size());
+
+
 
 
             // table is accessed with INSERT
