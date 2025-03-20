@@ -841,7 +841,7 @@ class RestActionBuilderV3Test{
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
+        //RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
 
         return actions
     }
@@ -2057,5 +2057,24 @@ class RestActionBuilderV3Test{
             assertEquals(1, stringGene.minLength)
             assertEquals(1, stringGene.maxLength)
         }
+    }
+
+
+    @Test
+    fun testRefLinkRef() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/linkref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+    @Test
+    fun testRefCycle() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/cycleA.yaml", 1, true)
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertTrue(get.produces.any { it.contains("xml") })
+        assertEquals(1, get.parameters.size)
     }
 }

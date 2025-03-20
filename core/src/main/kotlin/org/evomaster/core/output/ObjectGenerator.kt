@@ -14,12 +14,12 @@ class ObjectGenerator {
     private lateinit var swagger: OpenAPI
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    fun setSwagger(sw: OpenAPI,
-                   enableConstraintHandling: Boolean){
-        swagger = sw
-        modelCluster.clear()
-        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
-    }
+//    fun setSwagger(sw: OpenAPI,
+//                   enableConstraintHandling: Boolean){
+//        swagger = sw
+//        modelCluster.clear()
+//        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+//    }
 
     fun getSwagger(): OpenAPI{
         return swagger
