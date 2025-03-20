@@ -17,6 +17,10 @@ class RestSchema(
 
     companion object{
         private val log = org.slf4j.LoggerFactory.getLogger(RestSchema::class.java)
+
+        fun fromLocation(location: String) = RestSchema(OpenApiAccess.getOpenAPIFromLocation(location))
+
+        fun fromResource(path: String) = RestSchema(OpenApiAccess.getOpenAPIFromResource(path))
     }
 
     /**
@@ -33,6 +37,8 @@ class RestSchema(
         //need to check for all $ref, recursively
         handleRefs(main)
     }
+
+    fun hasExternalRefs() = otherSpecs.isNotEmpty()
 
     fun getSpec(location: String) : SchemaOpenAPI?{
         if(failedRetrievedSpecLocations.contains(location)){
