@@ -1,18 +1,17 @@
 package com.foo.spring.rest.mysql;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+
 
 import javax.persistence.*;
 import javax.validation.constraints.Email;
 
 @Entity
 @Table(name ="myentities")
-@Getter
-@Setter
-@NoArgsConstructor
 public class MyEntity {
+
+    public MyEntity() {
+
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +23,28 @@ public class MyEntity {
     @Column(nullable = false)
     @Email
     private String email;
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public @Email String getEmail() {
+        return email;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setEmail(@Email String email) {
+        this.email = email;
+    }
 }
