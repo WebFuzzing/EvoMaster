@@ -22,9 +22,9 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
                         "INSERT INTO Bar (id, valueColumn) VALUES (0, 0);",
                         "INSERT INTO Bar (id, valueColumn) VALUES (1, 0);",
                         "INSERT INTO Bar (id, valueColumn) VALUES (2, 0);",
-                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (0, 0, 0);",
-                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (1, 0, 1);",
-                        "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (2, 0, 2);",
+                        "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (0, 0, NULL, 0);",
+                        "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (1, 0, 0, 1);",
+                        "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (2, 0, 1, 2);",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (0, 0, 0);",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (1, 0, 1);",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (2, 0, 2);",
@@ -39,8 +39,9 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
     @Test
     default void testAccessedFkClean() throws Exception {
         EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
-        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, bar_id INT, " +
-                "CONSTRAINT fk_foo FOREIGN KEY (bar_id) REFERENCES Bar(id) )", true);
+        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, refer_foo INT DEFAULT NULL, bar_id INT, " +
+                "CONSTRAINT fk_foo FOREIGN KEY (bar_id) REFERENCES Bar(id)," +
+                "CONSTRAINT fk_self_foo FOREIGN KEY (refer_foo) REFERENCES Foo(id) )", true);
         EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Abc(id INT Primary Key, valueColumn INT, foo_id INT, " +
                 "CONSTRAINT fk_abc FOREIGN KEY (foo_id) REFERENCES Foo(id) )", true);
         EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Xyz(id INT Primary Key, valueColumn INT, abc_id INT, " +
@@ -126,7 +127,7 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
 
             //2nd-round test: table is accessed with INSERT
-            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, bar_id) VALUES (3, 0, 0);", true);
+            EMSqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (3, 0, 1, 0);", true);
 
             res = EMSqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;", true);
             assertEquals(4, res.seeRows().size());
