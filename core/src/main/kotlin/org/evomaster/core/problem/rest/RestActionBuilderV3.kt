@@ -775,7 +775,9 @@ object RestActionBuilderV3 {
                             add("EVOMASTER")
                         }
                     })
-                    g.setDescription(schema.description)
+                    if (!schema.description.isNullOrEmpty()) {
+                        g.setDescription(schema.description)
+                    }
 
                     return g
                 }
