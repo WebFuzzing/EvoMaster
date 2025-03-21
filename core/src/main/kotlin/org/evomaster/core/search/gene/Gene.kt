@@ -78,6 +78,12 @@ abstract class Gene(
     }
 
     /**
+     * Introduced to hold description about the param from swagger
+     * documentation related to vulnerability analyser.
+     */
+    private var description: String? = null
+
+    /**
      * Whether this gene has been initialized, and can be used.
      * Note that gene can have validity constraints, and those might not be satisfied
      * when the constructor of a gene is called to create a new instance.
@@ -130,6 +136,13 @@ abstract class Gene(
             throw IllegalStateException("Trying to use a gene that is not initialized")
     }
 
+    open fun setDescription(description: String) {
+        this.description = description
+    }
+
+    open fun getDescription() : String? {
+        return description
+    }
 
     /**
      * Return all direct children of this gene.
@@ -250,6 +263,7 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
+        copy.description = description
         //this was incorrect, as subchildren might had different init state compared to this
         //copy.flatView().forEach{it.initialized = initialized}
         return copy
