@@ -114,7 +114,7 @@ public class SpringRestMyEntityController extends EmbeddedSutController {
     }
 
     private String pathToFlywayFiles() {
-        return "classpath:/schema/mysql";
+        return "classpath:/schema/entity";
     }
 
     @Override
