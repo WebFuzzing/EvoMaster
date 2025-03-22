@@ -20,7 +20,7 @@ class MySQLColumnTypesEMTest : RestTestBase() {
     @Test
     fun testRunEM() {
 
-        val budget = 200
+        val budget = 400
         runTestHandlingFlakyAndCompilation(
                 "MySQLColumnTypesEM",
                 "org.foo.spring.rest.mysql.columntypes.MySQLColumnTypesEM",

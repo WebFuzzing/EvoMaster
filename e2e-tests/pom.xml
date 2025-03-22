@@ -24,7 +24,6 @@
         <module>spring-rpc</module>
         <module>spring-rest-h2-v1</module>
         <module>spring-rest-postgres-column-types</module>
-        <module>spring-rest-mysql-column-types</module>
         <module>spring-rest-h2-column-types</module>
         <module>spring-rest-h2-z3solver</module>
         <module>spring-web</module>
