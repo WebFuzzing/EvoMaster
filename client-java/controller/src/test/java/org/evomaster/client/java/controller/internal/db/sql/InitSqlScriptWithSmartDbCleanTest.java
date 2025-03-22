@@ -25,7 +25,7 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
                         "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (0, 0, NULL, 0);",
                         "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (1, 0, 0, 1);",
                         "INSERT INTO Foo (id, valueColumn, refer_foo, bar_id) VALUES (2, 0, 1, 2);",
-                        "UPDATE FOO SET valueColumn = 2 WHERE id = 2;",
+                        "UPDATE Foo SET valueColumn = 2 WHERE id = 2;",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (0, 0, 0);",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (1, 0, 1);",
                         "INSERT INTO Abc (id, valueColumn, foo_id) VALUES (2, 0, 2);",
