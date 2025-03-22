@@ -561,7 +561,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
         int sum = fks.size();
         for (String fk: fks){
-            if (!checked.contains(fk)){
+            if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
                 sum += getFkDepth(fk, checked);
             }
         }
