@@ -44,7 +44,7 @@ public class WireMockRest {
           to resolve to localhost, so the WireMock will act as the
           target server.
          */
-        String uri = "http://foo.bar:8080/api/echo/foo";
+        String uri = "http://foo.test:8080/api/echo/foo";
 
         try {
             ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);

@@ -60,8 +60,7 @@ class RestCallAction(
      */
     val operationId: String? = null,
     val links: List<RestLink> = listOf(),
-    var backwardLinkReference: BackwardLinkReference? = null,
-    val schemaDescriptions: SchemaDescription? = null,
+    var backwardLinkReference: BackwardLinkReference? = null
 ) : HttpWsAction(auth, parameters) {
 
     companion object{
@@ -112,7 +111,7 @@ class RestCallAction(
         return RestCallAction(
             id, verb, path, p, auth, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
-            backwardLinkReference?.copy(), schemaDescriptions)
+            backwardLinkReference?.copy())
         //note: immutable objects (eg String) do not need to be copied
     }
 

@@ -14,7 +14,7 @@ class SocketRest {
 
     @GetMapping(path = ["/resolve"])
     fun exp(): ResponseEntity<String> {
-        val a = InetSocketAddress("imaginary-socket-evomaster.com", 12345)
+        val a = InetSocketAddress("imaginary-socket-evomaster.test", 12345)
 
         return try {
 

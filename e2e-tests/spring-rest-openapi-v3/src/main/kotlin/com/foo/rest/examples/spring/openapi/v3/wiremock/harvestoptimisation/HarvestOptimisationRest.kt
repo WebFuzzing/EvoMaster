@@ -16,7 +16,7 @@ class HarvestOptimisationRest {
     @GetMapping(path = ["/external"])
     fun getMockExternalResponse(): ResponseEntity<String> {
 
-        val url = URL("http://mock.int:9999/api/mock")
+        val url = URL("http://mock.test:9999/api/mock")
 
         val request = Request.Builder().url(url).build()
         val client = OkHttpClient()
@@ -30,7 +30,7 @@ class HarvestOptimisationRest {
             val message = dto.message
 
             if (message.equals("Working")) {
-                val secondURL = URL("http://mock.int:9999/api/mock/second")
+                val secondURL = URL("http://mock.test:9999/api/mock/second")
                 val secondRequest = Request.Builder().url(secondURL).build()
                 val secondData = client.newCall(secondRequest).execute()
                 val secondBody = secondData.body()?.string()
