@@ -109,7 +109,9 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
      * sample a schedule task action from [scheduleActionCluster] at random
      * @param noSeedProbability specifies a probability which does not apply seeded one
      */
-    fun sampleRandomScheduleTaskAction(noSeedProbability: Double = 0.05) : ScheduleTaskAction {
+    private fun sampleRandomScheduleTaskAction(noSeedProbability: Double = 0.05) : ScheduleTaskAction {
+        if (scheduleActionCluster.isEmpty())
+            throw IllegalStateException("cannot sample schedule action with empty cluster")
         val action = randomness.choose(scheduleActionCluster).copy() as ScheduleTaskAction
         action.doInitialize(randomness)
         rpcHandler.scheduleActionWithRandomSeeded(action, noSeedProbability)
@@ -124,7 +126,7 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         }.toMutableList()
 
         val leftlen = config.maxTestSize - len
-        val scheduleTaskSize = if (leftlen > 0 && randomness.nextBoolean(config.probOfSamplingScheduleTask)){
+        val scheduleTaskSize = if (scheduleActionCluster.isNotEmpty() && leftlen > 0 && randomness.nextBoolean(config.probOfSamplingScheduleTask)){
             val slen = randomness.nextInt(1, leftlen)
             val scheduleActions = (0 until slen).map {
                 sampleRandomScheduleTaskAction()
