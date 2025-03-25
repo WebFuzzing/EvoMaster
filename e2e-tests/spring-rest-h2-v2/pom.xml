@@ -8,7 +8,7 @@
         <version>3.4.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-e2e-tests-spring-rest-h2-column-types</artifactId>
+    <artifactId>evomaster-e2e-tests-spring-rest-h2-v2</artifactId>
     <packaging>jar</packaging>
 
 

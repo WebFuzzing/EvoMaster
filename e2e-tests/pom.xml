@@ -23,7 +23,7 @@
         <module>spring-rest-mysql</module>
         <module>spring-rpc</module>
         <module>spring-rest-h2-v1</module>
-        <module>spring-rest-h2-column-types</module>
+        <module>spring-rest-h2-v2</module>
         <module>spring-rest-h2-z3solver</module>
         <module>spring-web</module>
         <module>spring-rest-mongo</module>
