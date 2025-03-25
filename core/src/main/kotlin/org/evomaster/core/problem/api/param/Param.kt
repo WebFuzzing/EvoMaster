@@ -9,15 +9,17 @@ abstract class Param(
         val genes : MutableList<Gene>,
 ) : StructuralElement(genes){
 
-    // String contains the field description from OpenAPI specification
+    /**
+     * String contains the field description from OpenAPI specification
+     */
     private var description: String? = null
 
-    open fun setDescription(desc: String?) {
-        description = desc
+    fun getDescription() : String{
+        return description!!
     }
 
-    open fun getDescription(): String? {
-        return description
+    fun setDescription(description: String?){
+        this.description = description
     }
 
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure

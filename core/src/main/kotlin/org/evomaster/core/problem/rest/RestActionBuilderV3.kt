@@ -564,9 +564,9 @@ object RestActionBuilderV3 {
 
             "query" -> {
                 val queryParam = QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
-                if (!description.isNullOrEmpty()) {
+//                if (!description.isNullOrEmpty()) {
                     queryParam.setDescription(description)
-                }
+//                }
                 params.add(queryParam)
             }
             /*
@@ -576,9 +576,9 @@ object RestActionBuilderV3 {
             "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
             "header" -> {
                 val headerParam = HeaderParam(name, gene)
-                if (!description.isNullOrEmpty()) {
+//                if (!description.isNullOrEmpty()) {
                     headerParam.setDescription(description)
-                }
+//                }
                 params.add(headerParam)
             }
             "cookie" -> params // do nothing?
@@ -699,9 +699,9 @@ object RestActionBuilderV3 {
         val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
 
-        if (!description.isNullOrEmpty()) {
+//        if (!description.isNullOrEmpty()) {
             bodyParam.setDescription(description)
-        }
+//        }
 
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
@@ -775,9 +775,9 @@ object RestActionBuilderV3 {
                             add("EVOMASTER")
                         }
                     })
-                    if (!schema.description.isNullOrEmpty()) {
+//                    if (!schema.description.isNullOrEmpty()) {
                         g.setDescription(schema.description)
-                    }
+//                    }
 
                     return g
                 }
@@ -1468,9 +1468,9 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-        if (!schema.description.isNullOrEmpty()) {
+//        if (!schema.description.isNullOrEmpty()) {
             mainGene.setDescription(schema.description)
-        }
+//        }
 
         /*
             See:
@@ -1625,9 +1625,9 @@ object RestActionBuilderV3 {
             invalidChars = if(isInPath) listOf('/','.') else listOf()
         )
 
-        if (!schema.description.isNullOrEmpty()) {
+//        if (!schema.description.isNullOrEmpty()) {
             g.setDescription(schema.description)
-        }
+//        }
 
         return g
     }

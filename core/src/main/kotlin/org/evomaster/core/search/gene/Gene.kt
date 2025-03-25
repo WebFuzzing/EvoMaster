@@ -78,10 +78,17 @@ abstract class Gene(
     }
 
     /**
-     * Introduced to hold description about the param from swagger
-     * documentation related to vulnerability analyser.
+     * Description about the gene.
      */
     private var description: String? = null
+
+    fun getDescription(): String? {
+        return description
+    }
+
+    fun setDescription(description: String?){
+        this.description = description
+    }
 
     /**
      * Whether this gene has been initialized, and can be used.
@@ -134,14 +141,6 @@ abstract class Gene(
     private fun checkInitialized(){
         if(! initialized)
             throw IllegalStateException("Trying to use a gene that is not initialized")
-    }
-
-    open fun setDescription(description: String) {
-        this.description = description
-    }
-
-    open fun getDescription() : String? {
-        return description
     }
 
     /**
