@@ -14,8 +14,8 @@ abstract class Param(
      */
     private var description: String? = null
 
-    fun getDescription() : String{
-        return description!!
+    fun getDescription() : String? {
+        return description
     }
 
     fun setDescription(description: String?){

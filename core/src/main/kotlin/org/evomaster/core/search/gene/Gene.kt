@@ -86,7 +86,7 @@ abstract class Gene(
         return description
     }
 
-    fun setDescription(description: String?){
+    fun setDescription(description: String?) {
         this.description = description
     }
 
