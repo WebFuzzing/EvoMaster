@@ -6,7 +6,7 @@ import org.evomaster.core.search.gene.Gene
 
 abstract class Param(
         val name: String,
-        val genes : MutableList<Gene>,
+        val genes : MutableList<Gene>
 ) : StructuralElement(genes){
 
     /**

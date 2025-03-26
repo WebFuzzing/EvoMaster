@@ -561,7 +561,6 @@ object RestActionBuilderV3 {
         }
 
         when (p.`in`) {
-
             "query" -> params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
                     .apply { this.setDescription(description) })
             /*
@@ -760,7 +759,8 @@ object RestActionBuilderV3 {
                             //Besides the defined values, add one to test robustness
                             add("EVOMASTER")
                         }
-                    }).apply { this.setDescription(schema.description) }
+                    })
+                        .apply { this.setDescription(schema.description) }
                 }
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
@@ -1449,9 +1449,7 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-//        if (!schema.description.isNullOrEmpty()) {
-            mainGene.setDescription(schema.description)
-//        }
+        mainGene.setDescription(schema.description)
 
         /*
             See:
@@ -1604,7 +1602,8 @@ object RestActionBuilderV3 {
                 ?: EMConfig.stringLengthHardLimit else EMConfig.stringLengthHardLimit,
             minLength = max(defaultMin, if (options.enableConstraintHandling) schema.minLength ?: 0 else 0),
             invalidChars = if(isInPath) listOf('/','.') else listOf()
-        ).apply { this.setDescription(schema.description) }
+        )
+            .apply { this.setDescription(schema.description) }
     }
 
     private fun createObjectFromReference(name: String,
