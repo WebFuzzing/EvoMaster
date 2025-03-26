@@ -10,7 +10,7 @@ abstract class Param(
 ) : StructuralElement(genes){
 
     /**
-     * String contains the field description from OpenAPI specification
+     * Contains the description of the parameter.
      */
     private var description: String? = null
 
@@ -18,7 +18,7 @@ abstract class Param(
         return description
     }
 
-    fun setDescription(description: String?){
+    fun setDescription(description: String?) {
         this.description = description
     }
 
