@@ -448,8 +448,10 @@ object RestActionBuilderV3 {
                         null
                     }
                 } ?: listOf()
+
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
-                operationId = operation.operationId, links = links)
+                operationId = operation.operationId, links = links
+            )
 
             //TODO update for new parser
 //                        /*This section collects information regarding the types of data that are
@@ -532,6 +534,7 @@ object RestActionBuilderV3 {
                             messages: MutableList<String>
     ) {
         val name = p.name ?: "undefined"
+        val description = p.description
 
         if(p.schema == null){
             messages.add("No schema definition for parameter $name")
@@ -558,16 +561,14 @@ object RestActionBuilderV3 {
         }
 
         when (p.`in`) {
-
-            "query" -> {
-                params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM))
-            }
+            "query" -> params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
+                    .apply { this.setDescription(description) })
             /*
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
             "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
-            "header" -> params.add(HeaderParam(name, gene))
+            "header" -> params.add(HeaderParam(name, gene).apply { this.setDescription(description) })
             "cookie" -> params // do nothing?
             //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
             else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
@@ -643,6 +644,7 @@ object RestActionBuilderV3 {
         }
 
         val name = "body"
+        val description = operation.description ?: null
 
         val bodies = resolvedBody.content?.filter {
             /*
@@ -684,6 +686,8 @@ object RestActionBuilderV3 {
 
         val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
+            .apply { this.setDescription(description) }
+
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
             messages.add("Not supported content types for body payload in $verb:$restPath : ${ns.joinToString()}")
@@ -742,17 +746,22 @@ object RestActionBuilderV3 {
         if (schema.enum?.isNotEmpty() == true) {
 
             when (type) {
-                "string" ->
+                "string" -> {
                     return EnumGene(name, (schema.enum.map {
                         if (it !is String)
-                            LoggingUtil.uniqueWarn(log, "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name")
+                            LoggingUtil.uniqueWarn(
+                                log,
+                                "an item of enum is not string (ie, ${it::class.java.simpleName}) for a property whose `type` is string and `name` is $name"
+                            )
                         it.toString()
                     } as MutableList<String>).apply {
-                        if(options.invalidData) {
+                        if (options.invalidData) {
                             //Besides the defined values, add one to test robustness
                             add("EVOMASTER")
                         }
                     })
+                        .apply { this.setDescription(schema.description) }
+                }
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
                     issue in GitLab schemas, eg for visibility_level
@@ -1440,6 +1449,8 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
+        mainGene.setDescription(schema.description)
+
         /*
             See:
             https://swagger.io/docs/specification/adding-examples/
@@ -1592,6 +1603,7 @@ object RestActionBuilderV3 {
             minLength = max(defaultMin, if (options.enableConstraintHandling) schema.minLength ?: 0 else 0),
             invalidChars = if(isInPath) listOf('/','.') else listOf()
         )
+            .apply { this.setDescription(schema.description) }
     }
 
     private fun createObjectFromReference(name: String,
