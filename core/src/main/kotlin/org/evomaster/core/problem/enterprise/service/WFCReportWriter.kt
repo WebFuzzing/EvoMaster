@@ -20,7 +20,6 @@ class WFCReportWriter {
 
 
     fun writeReport(solution: Solution<*>, splitResult: SplitResult) {
-        //FIXME: should get as input a list of Solution, one per generated test suite
 
         val report = com.webfuzzing.commons.report.Report()
 
