@@ -135,6 +135,7 @@ class  GroupsOfChildren<T>(
     }
 
     fun sizeOfGroup(id: String) = groupMap[id]?.size() ?: throw IllegalArgumentException("No group $id")
+
     fun getAllInGroup(id: String) : List<T>{
         val g = groupMap[id] ?: throw IllegalArgumentException("Invalid group id $id")
         if(!g.isNotEmpty()){

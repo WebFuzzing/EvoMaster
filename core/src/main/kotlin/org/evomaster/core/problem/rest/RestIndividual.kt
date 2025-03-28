@@ -126,7 +126,6 @@ class RestIndividual(
 
         val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
         val sqlActions = (resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>)
-            .sortedBy { !it.representExistingData } // existing data should always be at beginning
 
         val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
 
@@ -138,6 +137,14 @@ class RestIndividual(
         addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+
+        val gsql = groupsView()!!.getGroup(GroupsOfChildren.INITIALIZATION_SQL)
+        if(gsql.size() >= 1) {
+            // existing data should always be at beginning
+            children.subList(gsql.startIndex, gsql.endIndex + 1)
+                .sortBy { if ((it as SqlAction).representExistingData) 0 else 1 }
+        }
 
         /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
