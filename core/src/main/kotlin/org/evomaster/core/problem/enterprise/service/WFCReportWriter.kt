@@ -3,10 +3,12 @@ package org.evomaster.core.problem.enterprise.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import com.webfuzzing.commons.report.Faults
+import com.webfuzzing.commons.report.FoundFault
 import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.SplitResult
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -33,6 +35,19 @@ class WFCReportWriter {
         report.faults = faults
         //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
+        //faults.foundFaults =
+        for(suite in splitResult.splitOutcome){
+            for(test in suite.individuals){
+                for(ea in test.evaluatedMainActions()){
+                    (ea.result as EnterpriseActionResult)
+                        .getFaults()
+                        .forEach {
+                            val ff = FoundFault()
+                            ff.testCaseId =
+                        }
+                }
+            }
+        }
 
         report.problemDetails = ProblemDetails()
 
