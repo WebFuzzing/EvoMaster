@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.security.path_conflict
+package com.foo.rest.examples.spring.openapi.v3.security.pathconflict
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
 import org.evomaster.client.java.controller.AuthUtils
