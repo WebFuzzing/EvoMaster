@@ -13,15 +13,13 @@ abstract class Param(
      * Contains the description of the parameter.
      */
     var description: String? = null
-        set(value) {
-            if (this.description == null) {
-                field = value
-            } else {
-                throw IllegalStateException("Description is not null or empty")
-            }
-
-        }
-
+//        set(value) {
+//            if (field.isNullOrEmpty()) {
+//                field = value
+//            } else {
+//                throw IllegalStateException("Description is not null or empty")
+//            }
+//        }
 
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene. Rather use primaryGene()")

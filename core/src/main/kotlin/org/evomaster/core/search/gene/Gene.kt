@@ -81,14 +81,13 @@ abstract class Gene(
      * Description about the gene.
      */
     var description: String? = null
-        set(value) {
-            if (this.description == null) {
-                field = value
-            } else {
-                throw IllegalStateException("Description is not null or empty")
-            }
-
-        }
+//        set(value) {
+//            if (field.isNullOrEmpty()) {
+//                field = value
+//            } else {
+//                throw IllegalStateException("Description is not null or empty")
+//            }
+//        }
 
     /**
      * Whether this gene has been initialized, and can be used.
