@@ -562,13 +562,13 @@ object RestActionBuilderV3 {
 
         when (p.`in`) {
             "query" -> params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
-                    .apply { this.setDescription(description) })
+                    .apply { this.description = description })
             /*
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
             "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
-            "header" -> params.add(HeaderParam(name, gene).apply { this.setDescription(description) })
+            "header" -> params.add(HeaderParam(name, gene).apply { this.description = description })
             "cookie" -> params // do nothing?
             //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
             else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
@@ -686,7 +686,7 @@ object RestActionBuilderV3 {
 
         val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
         val bodyParam = BodyParam(gene, contentTypeGene)
-            .apply { this.setDescription(description) }
+            .apply { this.description = description }
 
         val ns = bodyParam.notSupportedContentTypes
         if(ns.isNotEmpty()){
@@ -760,7 +760,7 @@ object RestActionBuilderV3 {
                             add("EVOMASTER")
                         }
                     })
-                        .apply { this.setDescription(schema.description) }
+                        .apply { this.description = schema.description }
                 }
                 /*
                     Looks like a possible bug in the parser, where numeric enums can be read as strings... got this
@@ -1449,7 +1449,7 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-        mainGene.setDescription(schema.description)
+        mainGene.description = schema.description
 
         /*
             See:
@@ -1603,7 +1603,7 @@ object RestActionBuilderV3 {
             minLength = max(defaultMin, if (options.enableConstraintHandling) schema.minLength ?: 0 else 0),
             invalidChars = if(isInPath) listOf('/','.') else listOf()
         )
-            .apply { this.setDescription(schema.description) }
+            .apply { this.description = schema.description }
     }
 
     private fun createObjectFromReference(name: String,

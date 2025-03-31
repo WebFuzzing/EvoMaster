@@ -36,18 +36,18 @@ class SwaggerDescriptionEMTest : SpringTestBase() {
                 if (evaluatedAction is RestCallAction) {
                     evaluatedAction.parameters
                         .forEach {
-                            descriptions[it.name] = it.getDescription().toString()
+                            descriptions[it.name] = it.description.toString()
 
                             if (it.name == "body") {
                                 it.seeGenes().forEach { gene ->
-                                    if (!gene.getDescription().isNullOrEmpty()) {
-                                        descriptions[gene.name] = gene.getDescription().toString()
+                                    if (!gene.description.isNullOrEmpty()) {
+                                        descriptions[gene.name] = gene.description.toString()
                                     }
                                     if (gene.name == "body") {
                                         gene.getAllGenesInIndividual()
                                             .forEach { g ->
-                                                if (!g.getDescription().isNullOrEmpty()) {
-                                                    descriptions[g.name] = g.getDescription().toString()
+                                                if (!g.description.isNullOrEmpty()) {
+                                                    descriptions[g.name] = g.description.toString()
                                                 }
                                             }
                                     }

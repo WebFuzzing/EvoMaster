@@ -12,15 +12,16 @@ abstract class Param(
     /**
      * Contains the description of the parameter.
      */
-    private var description: String? = null
+    var description: String? = null
+        set(value) {
+            if (this.description == null) {
+                field = value
+            } else {
+                throw IllegalStateException("Description is not null or empty")
+            }
 
-    fun getDescription() : String? {
-        return description
-    }
+        }
 
-    fun setDescription(description: String?) {
-        this.description = description
-    }
 
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene. Rather use primaryGene()")

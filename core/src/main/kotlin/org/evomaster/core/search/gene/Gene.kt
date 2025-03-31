@@ -80,15 +80,15 @@ abstract class Gene(
     /**
      * Description about the gene.
      */
-    private var description: String? = null
+    var description: String? = null
+        set(value) {
+            if (this.description == null) {
+                field = value
+            } else {
+                throw IllegalStateException("Description is not null or empty")
+            }
 
-    fun getDescription(): String? {
-        return description
-    }
-
-    fun setDescription(description: String?) {
-        this.description = description
-    }
+        }
 
     /**
      * Whether this gene has been initialized, and can be used.
