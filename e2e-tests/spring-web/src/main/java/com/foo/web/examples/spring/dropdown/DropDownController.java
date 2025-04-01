@@ -1,9 +1,7 @@
 package com.foo.web.examples.spring.dropdown;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,18 +9,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 @Controller
 public class DropDownController {
 
-    @Autowired
-    private ResourceLoader resourceLoader;
-
     @GetMapping("/")
     public String index0() {
-        System.out.println("in main controller");
         return "/dropdown/index.html";
-    }
-
-    @GetMapping("/dropdown")
-    public String index1() {
-        return "dropdown/index.html";
     }
 
     @GetMapping("/navigate/{page}")
