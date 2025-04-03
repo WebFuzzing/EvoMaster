@@ -80,31 +80,37 @@ class LanguageModelConnector {
      * https://medium.com/dcoderai/how-to-handle-cors-settings-in-ollama-a-comprehensive-guide-ee2a5a1beef0
      */
     private fun call(languageModelServerURL: String, requestBody: String): String? {
-        val connection = URL(languageModelServerURL).openConnection() as HttpURLConnection
-        connection.requestMethod = "POST"
-        // TODO: set to avoid long running calls
-        connection.connectTimeout = 4000
-        connection.setRequestProperty("Content-Type", "application/json")
-        connection.useCaches = false
-        connection.doInput = true
-        connection.doOutput = true
+       try {
+           val connection = URL(languageModelServerURL).openConnection() as HttpURLConnection
+           connection.requestMethod = "POST"
+           // TODO: set to avoid long running calls
+           connection.connectTimeout = 4000
+           connection.setRequestProperty("Content-Type", "application/json")
+           connection.useCaches = false
+           connection.doInput = true
+           connection.doOutput = true
 
-        val writer = DataOutputStream(connection.outputStream)
-        writer.writeBytes(requestBody)
-        writer.flush()
-        writer.close()
+           val writer = DataOutputStream(connection.outputStream)
+           writer.writeBytes(requestBody)
+           writer.flush()
+           writer.close()
 
-        if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-            LoggingUtil.uniqueWarn(log, "Failed to connect to language model server")
-            return null
-        }
+           if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+               LoggingUtil.uniqueWarn(log, "Failed to connect to language model server")
+               return null
+           }
 
-        // This is designed to use the non-stream outputs.
-        // If stream is needed, consider implementing a
-        // different method to handle stream outputs.
-        val response = objectMapper.readValue(connection.inputStream, OllamaResponseDto::class.java)
+           // This is designed to use the non-stream outputs.
+           // If stream is needed, consider implementing a
+           // different method to handle stream outputs.
+           val response = objectMapper.readValue(connection.inputStream, OllamaResponseDto::class.java)
 
-        return response.response
+           return response.response
+       } catch (e: Exception) {
+           LoggingUtil.uniqueWarn(log, "Failed to connect to language model server: ${e.message}")
+
+           return null
+       }
     }
 
 
