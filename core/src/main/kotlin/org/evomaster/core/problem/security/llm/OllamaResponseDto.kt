@@ -3,12 +3,18 @@ package org.evomaster.core.problem.security.llm
 /**
  * DTO to represent the Ollama response schema.
  */
-class LanguageModelResponseDto {
+class OllamaResponseDto {
 
+    /**
+     * Used model name
+     */
     val model: String = ""
 
     val created_at: String = ""
 
+    /**
+     * Contains the response string for non-stream output
+     */
     val response: String = ""
 
     val done: Boolean = false

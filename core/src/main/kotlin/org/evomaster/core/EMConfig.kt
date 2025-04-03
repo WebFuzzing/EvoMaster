@@ -2402,7 +2402,7 @@ class EMConfig {
 
     @Cfg("Large-language model URL")
     @Experimental
-    var languageModelUrl: String? = null
+    var languageModelServerURL: String? = null
 
     @Cfg("Large-language model name string from Ollama")
     @Experimental

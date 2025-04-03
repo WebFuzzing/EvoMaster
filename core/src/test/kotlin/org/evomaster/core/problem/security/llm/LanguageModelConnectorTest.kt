@@ -14,13 +14,16 @@ class LanguageModelConnectorTest {
     private lateinit var config: EMConfig
     private lateinit var languageModelConnector: LanguageModelConnector
 
-    @BeforeAll
-    fun skipOnGA() {
-        CIUtils.skipIfOnGA()
+    companion object {
+        @BeforeAll
+        @JvmStatic
+        fun skipOnGA() {
+            CIUtils.skipIfOnGA()
+        }
     }
 
     @Test
-    fun testLlm() {
+    fun testLocalOllamaConnection() {
 
         val injector: Injector = LifecycleInjector.builder()
             .withModules(BaseModule())
@@ -28,6 +31,11 @@ class LanguageModelConnectorTest {
 
         config = injector.getInstance(EMConfig::class.java)
         languageModelConnector = injector.getInstance(LanguageModelConnector::class.java)
+
+        // If languageModelName or languageModelURL set to empty, an exception
+        // will the thrown.
+//         config.languageModelName = ""
+//         config.languageModelURL = ""
 
         languageModelConnector.initialise()
 

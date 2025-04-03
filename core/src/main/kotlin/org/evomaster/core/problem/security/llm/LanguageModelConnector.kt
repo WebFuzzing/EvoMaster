@@ -10,6 +10,12 @@ import javax.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 
+/**
+ * A utility service designed to handle large language model server
+ * related functions.
+ *
+ * Designed to work with Ollama (version 0.6.2).
+ */
 class LanguageModelConnector {
 
     companion object {
@@ -24,39 +30,57 @@ class LanguageModelConnector {
     @Inject
     private lateinit var config: EMConfig
 
+    private val objectMapper = ObjectMapper()
+
+
     /**
-     * To query the LLM.
-     *
-     * Note: If you are using Ollama as a server, please make sure to set the
-     * CORS origin for Ollama on the host operating system.
-     *
-     * https://medium.com/dcoderai/how-to-handle-cors-settings-in-ollama-a-comprehensive-guide-ee2a5a1beef0
+     * To query the large language server with a simple prompt.
      */
     fun query(prompt: String): String? {
         if (prompt.isBlank()) {
             throw IllegalArgumentException("Prompt cannot be empty")
         }
 
-        val languageModelURL = if (config.languageModelUrl == null) {
-            URL("http://localhost:11434/api/generate")
-        } else {
-            URL(config.languageModelUrl)
-        }
+        val languageModelServerURL = getLanguageModelServerURL()
 
-        val languageModelName = if (config.languageModelName == null) {
-            "llama3.2:latest"
-        } else {
-            config.languageModelName
-        }
+        val languageModelName = getLanguageModelName()
 
-        val objectMapper = ObjectMapper()
-        val requestBody = objectMapper.writeValueAsString(LanguageModelRequestDto(
+        val requestBody = objectMapper.writeValueAsString(OllamaRequestDto(
             prompt = prompt,
             stream = false,
             model = languageModelName.toString()
         ))
 
-        val connection = languageModelURL.openConnection() as HttpURLConnection
+        val response = call(languageModelServerURL, requestBody)
+
+        return response
+    }
+
+
+    /**
+     * To query the large language model server with a structured output schema.
+     * TODO: Could be useful in some cases.
+     */
+    fun queryStructured(prompt: String): String? {
+        if (prompt.isBlank()) {
+            throw IllegalArgumentException("Prompt cannot be empty")
+        }
+
+        TODO("Can be used to extract structured output.")
+    }
+
+
+    /**
+     * Private method to make the call to the large language model server.
+     *
+     * Note: If you are using Ollama as a server, please make sure to set the
+     * CORS origin for Ollama on the host operating system.
+     *
+     * Reference:
+     * https://medium.com/dcoderai/how-to-handle-cors-settings-in-ollama-a-comprehensive-guide-ee2a5a1beef0
+     */
+    private fun call(languageModelServerURL: String, requestBody: String): String? {
+        val connection = URL(languageModelServerURL).openConnection() as HttpURLConnection
         connection.requestMethod = "POST"
         // TODO: set to avoid long running calls
         connection.connectTimeout = 4000
@@ -75,8 +99,50 @@ class LanguageModelConnector {
             return null
         }
 
-        val response = objectMapper.readValue(connection.inputStream, LanguageModelResponseDto::class.java)
+        // This is designed to use the non-stream outputs.
+        // If stream is needed, consider implementing a
+        // different method to handle stream outputs.
+        val response = objectMapper.readValue(connection.inputStream, OllamaResponseDto::class.java)
 
         return response.response
+    }
+
+
+    /**
+     * Private method, returns the large language model server URL from
+     * EMConfig, otherwise returns the possible default local URL.
+     */
+    private fun getLanguageModelServerURL(): String {
+        val languageModelServerURL = if (config.languageModelServerURL == null) {
+            "http://localhost:11434/api/generate"
+        } else {
+            config.languageModelServerURL
+        }
+
+        if (languageModelServerURL.isNullOrEmpty()) {
+            throw IllegalArgumentException("Language model URL cannot be empty")
+        }
+
+        return languageModelServerURL
+    }
+
+    /**
+     * Private method, returns the large language model server name from
+     * EMConfig, otherwise return llama3.2:latest.
+     *
+     * TODO: Failsafe model name yet to be decided
+     */
+    private fun getLanguageModelName(): String {
+        val languageModelName = if (config.languageModelName == null) {
+            "llama3.2:latest"
+        } else {
+            config.languageModelName
+        }
+
+        if (languageModelName.isNullOrEmpty()) {
+            throw IllegalArgumentException("Language model name cannot be empty")
+        }
+
+        return languageModelName
     }
 }
