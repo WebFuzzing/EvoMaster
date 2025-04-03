@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SwaggerDescriptionEMTest: SpringTestBase() {
+class SwaggerDescriptionEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -31,34 +31,38 @@ class SwaggerDescriptionEMTest: SpringTestBase() {
             Assertions.assertTrue(solution.individuals.size >= 1)
 
             val descriptions = mutableMapOf<String, String>()
-            solution.individuals.forEach { v ->
-                val a = v.evaluatedMainActions()[0].action
-                if (a is RestCallAction) {
-                    a.parameters.forEach {
-                        descriptions[it.name] = it.getDescription().toString()
+            solution.individuals.forEach { actions ->
+                val evaluatedAction = actions.evaluatedMainActions()[0].action
+                if (evaluatedAction is RestCallAction) {
+                    evaluatedAction.parameters
+                        .forEach {
+                            descriptions[it.name] = it.description.toString()
 
-                        if (it.name == "body") {
-                            it.seeGenes().forEach { g ->
-                                if (!g.getDescription().isNullOrEmpty()) {
-                                    descriptions[g.name] = g.getDescription().toString()
-                                }
-
-                                if (g.name == "body") {
-                                    g.getAllGenesInIndividual().forEach { r ->
-                                        if (!r.getDescription().isNullOrEmpty()) {
-                                            descriptions[r.name] = r.getDescription().toString()
-                                        }
+                            if (it.name == "body") {
+                                it.seeGenes().forEach { gene ->
+                                    if (!gene.description.isNullOrEmpty()) {
+                                        descriptions[gene.name] = gene.description.toString()
+                                    }
+                                    if (gene.name == "body") {
+                                        gene.getAllGenesInIndividual()
+                                            .forEach { g ->
+                                                if (!g.description.isNullOrEmpty()) {
+                                                    descriptions[g.name] = g.description.toString()
+                                                }
+                                            }
                                     }
                                 }
                             }
                         }
-                    }
                 }
             }
 
             // For now only header parameter description is available
             assertEquals(6, descriptions.size)
-            assertEquals("Custom header for testing", descriptions["X-Custom-Header"])  // Actual value: Custom header for testing
+            assertEquals("Custom header for testing", descriptions["X-Custom-Header"])
+            assertEquals("Returns a greeting message.", descriptions["body"])
+            assertEquals("Name to be greeted", descriptions["name"])
+            assertEquals("Age of the person", descriptions["age"])
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/v1", "GET is working")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/v1", "POST is working")

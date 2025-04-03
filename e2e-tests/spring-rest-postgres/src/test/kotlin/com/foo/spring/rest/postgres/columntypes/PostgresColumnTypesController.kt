@@ -7,5 +7,5 @@ import com.foo.spring.rest.postgres.SpringRestPostgresController
  */
 class PostgresColumnTypesController : SpringRestPostgresController(PostgresColumnTypesApplication::class.java) {
 
-    override fun pathToFlywayFiles() = "classpath:/schema/postgresdb"
+    override fun pathToFlywayFiles() = "classpath:/schema/columntypes"
 }
