@@ -2404,6 +2404,10 @@ class EMConfig {
     @Experimental
     var languageModelUrl: String? = null
 
+    @Cfg("Large-language model name string from Ollama")
+    @Experimental
+    var languageModelName: String? = null
+
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
