@@ -247,9 +247,10 @@ There are 3 types of options:
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
-|`hunter`| __Boolean__. Apply vulnerability hunter as part of security testing. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
+|`languageModelName`| __String__. Large-language model name string from Ollama. *Default value*: `null`.|
+|`languageModelServerURL`| __String__. Large-language model URL. *Default value*: `null`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
@@ -283,6 +284,8 @@ There are 3 types of options:
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
+|`vulnerabilityAnalyser`| __Boolean__. Apply vulnerability hunter as part of security testing. *Default value*: `false`.|
+|`vulnerabilitySelectionStrategy`| __Enum__. Potential vulnerability class associated with a endpoint classification strategy. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
 |`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. *Default value*: `false`.|
