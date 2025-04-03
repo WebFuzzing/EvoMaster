@@ -109,7 +109,7 @@ class EvaluatedIndividual<T>(
                 trackOperator = trackOperator,
                 index = index,
                 impactInfo = if ((config.isEnabledImpactCollection())) {
-                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class.java.name }.keys.toList()
+                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class }.keys.toList()
                     if (individual is RestIndividual && config.isEnabledResourceDependency())
                         ResourceImpactOfIndividual(individual, initActionTypes, config.abstractInitializationGeneToMutate, fitness)
                     else

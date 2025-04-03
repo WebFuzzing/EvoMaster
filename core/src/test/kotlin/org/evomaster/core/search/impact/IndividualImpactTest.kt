@@ -30,7 +30,7 @@ class IndividualImpactTest {
 
         val ind = generateFkIndividual()
 
-        val impactInfo = ImpactsOfIndividual(ind, listOf(SqlAction::class.java.name),false, null)
+        val impactInfo = ImpactsOfIndividual(ind, listOf(SqlAction::class),false, null)
 
         impactInfo.fixedMainActionImpacts.apply {
             assertEquals(2, size)

@@ -153,7 +153,6 @@ class RPCSampler: ApiWsSampler<RPCIndividual>() {
         adHocInitialIndividuals.forEach {
             it.doGlobalInitialize(searchGlobalState)
         }
-        adHocInitialIndividuals
     }
 
     override fun initSeededTests(infoDto: SutInfoDto?) {

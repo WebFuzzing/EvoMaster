@@ -49,8 +49,8 @@ open class ImpactsOfIndividual(
     val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize")
 ) {
 
-    constructor(individual: Individual, initActionTypes: List<String>, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
-            initActionImpacts = initActionTypes.associateWith {
+    constructor(individual: Individual, initActionTypes: List<KClass<*>>, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
+            initActionImpacts = initActionTypes.map { it.java.name }.associateWith {
                 InitializationGroupedActionsImpacts(
                     abstractInitializationGeneToMutate
                 )
@@ -66,6 +66,12 @@ open class ImpactsOfIndividual(
 
         if (fitnessValue != null) {
             impactsOfStructure.updateStructure(individual, fitnessValue)
+        }
+        val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
+        if (scheduleTasks.isNotEmpty()){
+            scheduleTasks.groupBy { it::class.java.name }.forEach { (t, u) ->
+                initActionImpacts[t]?.initInitializationActions(listOf(u), 0)?:throw IllegalStateException("InitializationGroupedActionsImpacts is not created for $t")
+            }
         }
     }
 
