@@ -91,6 +91,10 @@ object TestUtils {
         return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
     }
 
+    /**
+     * generate fake schedule task for unit testing,
+     * the schedule task has two query parameters, ie, name typed with string, and id typed with integer
+     */
     fun generateFakeScheduleAction() : ScheduleTaskAction{
         val queryNameParam = QueryParam("name", StringGene("name"))
         val queryIdParam = QueryParam("id", IntegerGene("id"))
