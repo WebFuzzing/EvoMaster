@@ -3,8 +3,10 @@ package org.evomaster.core.problem.enterprise.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import com.webfuzzing.commons.report.Faults
+import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -17,23 +19,27 @@ class WFCReportWriter {
     private lateinit var config: EMConfig
 
 
-    fun writeReport(solution: Solution<*>) {
+    fun writeReport(solution: Solution<*>, splitResult: SplitResult) {
+        //FIXME: should get as input a list of Solution, one per generated test suite
 
         val report = com.webfuzzing.commons.report.Report()
 
         report.schemaVersion = "0.0.1" //TODO
         report.toolName = "EvoMaster"
-        //TODO tool version
-        report.creationTime = Date() // FIXME use new JDK dates
+        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
+        report.creationTime = Date()
+        report.totalTests = solution.individuals.size
 
         val faults = Faults()
         report.faults = faults
+        //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
 
+        report.problemDetails = ProblemDetails()
 
         if(config.problemType == EMConfig.ProblemType.REST) {
             val rest = RESTReport()
-            report.restReport = rest
+            report.problemDetails.rest = rest
 
             //TODO all other entries
         }

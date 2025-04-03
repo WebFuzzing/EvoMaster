@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.rest
 
 import com.atlassian.oai.validator.report.ValidationReport
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -16,9 +19,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testNoIssuesInBranches(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/branches.json"))
 
         val response = RestCallResult("id",false)
         response.setStatusCode(401)
@@ -31,8 +32,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testWrongStatusInBranches(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/branches.json"))
         val response = RestCallResult("id",false)
 
         response.setStatusCode(204) // not declared
@@ -45,8 +45,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testValidBodyInBranches(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/branches.json"))
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
@@ -63,8 +62,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testMissingBodyInBranches(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/branches.json"))
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
@@ -86,8 +84,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testExtraParamBodyInBranches(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/branches.json").readText()
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/branches.json"))
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)
@@ -106,8 +103,7 @@ class RestSchemaOraclesTest{
     @Test
     fun testRequiredParam(){
 
-        val schema = RestSchemaOraclesTest::class.java.getResource("/swagger/artificial/openapi-validation.yaml").readText()
-        val oracles = RestSchemaOracle(schema)
+        val oracles = RestSchemaOracle(RestSchema.fromResource("/swagger/artificial/openapi-validation.yaml"))
         val response = RestCallResult("id",false)
 
         response.setStatusCode(200)

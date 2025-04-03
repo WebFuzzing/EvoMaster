@@ -74,8 +74,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @PostConstruct
     fun initBean(){
-        //TODO how to deal with $ref?
-        schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder.main.schemaRaw)
+        schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
     }
 
 
