@@ -133,6 +133,16 @@ public class FakeMockObjectController extends SpringController {
             }},
             new SeededRPCTestDto(){{
                 testName = "test_4";
+                scheduleTaskInvocations = Arrays.asList(
+                        new ScheduleTaskInvocationDto(){{
+                            appKey = "fake.app";
+                            taskName = "executeFlag";
+                            descriptiveInfo = "a scheduled task for invoking executeFlag";
+                        }}
+                );
+            }},
+            new SeededRPCTestDto(){{
+                testName = "test_5";
                 rpcFunctions = Arrays.asList(
                         new SeededRPCActionDto(){{
                             interfaceName = FakeMockObjectService.Iface.class.getName();
