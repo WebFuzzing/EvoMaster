@@ -14,6 +14,7 @@ import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -88,6 +89,20 @@ object TestUtils {
         val queryIdParam = QueryParam("id", IntegerGene("id"))
         val actions : MutableList<Param> = if (onlyId) mutableListOf(queryIdParam) else  mutableListOf(queryIdParam, queryNameParam)
         return RestCallAction(id, HttpVerb.GET, RestPath(pathString), actions)
+    }
+
+    fun generateFakeScheduleAction() : ScheduleTaskAction{
+        val queryNameParam = QueryParam("name", StringGene("name"))
+        val queryIdParam = QueryParam("id", IntegerGene("id"))
+
+        return ScheduleTaskAction(
+            taskId = "fake.schedule.task",
+            taskName = "fake.task",
+            parameters = mutableListOf(queryNameParam, queryIdParam),
+            immutableExtraInfo = mutableMapOf(
+                "ip" to "www.foo.org"
+            )
+        )
     }
 
 }
