@@ -2400,6 +2400,10 @@ class EMConfig {
     @Experimental
     var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
 
+    @Cfg("Large-language model URL")
+    @Experimental
+    var languageModelUrl: String? = null
+
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
