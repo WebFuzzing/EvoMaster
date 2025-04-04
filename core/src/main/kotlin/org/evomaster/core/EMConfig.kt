@@ -2374,6 +2374,14 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
+    @Cfg("Large-language model URL")
+    @Experimental
+    var languageModelServerURL: String? = null
+
+    @Cfg("Large-language model name string from Ollama")
+    @Experimental
+    var languageModelName: String? = null
+
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
             " However this is done only on the 'default' location. If you change 'configPath', no new file will be" +
