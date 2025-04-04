@@ -9,16 +9,28 @@ abstract class Param(
         val genes : MutableList<Gene>
 ) : StructuralElement(genes){
 
+    /**
+     * Contains the description of the parameter.
+     */
+    var description: String? = null
+        set(value) {
+            if (field.isNullOrEmpty()) {
+                field = value
+            } else {
+                throw IllegalStateException("Description is not null or empty")
+            }
+        }
+
     //TODO need refactoring. eg shared abstract class for cases in which only 1 gene for sure
     @Deprecated("Assumes there is only 1 gene. Rather use primaryGene()")
      val gene : Gene = genes[0]
 
     /**
      * Return the most important gene defining this parameter.
-     * This is parameter type dependent.
+     * This is parameter-type-dependent.
      * Note that a parameter could have more than 1 gene.
      * For example, a body param could have a gene for the object, and one for its
-     * representation (eg, JSON vs XML)
+     * representation (e.g., JSON vs. XML)
      */
     open fun primaryGene() = genes[0]  //can be overridden if needed
 
@@ -34,6 +46,7 @@ abstract class Param(
         val copy = super.copy()
         if (copy !is Param)
             throw IllegalStateException("mismatched type: the type should be Param, but it is ${this::class.java.simpleName}")
+        copy.description = description
         return copy as Param
     }
 
