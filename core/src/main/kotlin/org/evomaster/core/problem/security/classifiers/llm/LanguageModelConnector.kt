@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.security.llm
+package org.evomaster.core.problem.security.classifiers.llm
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject

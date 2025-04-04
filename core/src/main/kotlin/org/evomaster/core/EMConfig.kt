@@ -62,7 +62,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.4"
+        private const val defaultExternalServiceIP = "127.0.0.5"
 
         //leading zeros are allowed
         private const val lz = "0*"
@@ -70,9 +70,9 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.4) are reserved
         // this is done with a negated lookahead ?!
-        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[01234]$)"
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
@@ -2224,7 +2224,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
