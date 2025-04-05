@@ -179,6 +179,8 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
+        verifyValidity()
+
         return issues
     }
 

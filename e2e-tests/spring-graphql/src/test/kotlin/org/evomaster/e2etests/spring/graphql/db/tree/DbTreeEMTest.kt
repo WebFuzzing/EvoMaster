@@ -22,7 +22,7 @@ class DbTreeEMTest : SpringTestBase() {
     @Test
     fun testEM(){
 
-        defaultSeed = 0
+        defaultSeed = 1
 
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
