@@ -64,11 +64,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     ) {
         super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
 
-//        if (shouldCheckExpectations()) {
-//            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
-//            //TODO: -> also check expectation generation before adding declarations
-//        }
-
         if (hasChainedLocations(ind.individual)) {
             assert(ind.individual is RestIndividual)
             /*
@@ -85,8 +80,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedMainActions().asSequence()
                 .map { it.action }
                 .filterIsInstance(RestCallAction::class.java)
-                .filter { it.usePreviousLocationId != null }
-                .map { it.usePreviousLocationId }
+                /*
+                    FIXME postLocationId() is not guaranteed to be unique...
+                    in fitness function it works because we handle it by taking last definition,
+                    but, here, if we refactor to declare it on its first use, we might end up with
+                    variable name clashes, unless we change the id to consider the action index, somehow
+                 */
+                .filter { it.saveCreatedResourceLocation }
+                .map { it.postLocationId() }
+//                .filter { it.usePreviousLocationId != null }
+//                .map { it.usePreviousLocationId }
                 .distinct()
                 .forEach { id ->
                     val name = locationVar(id!!)

@@ -218,7 +218,7 @@ object RestIndividualSelectorUtils {
         if(existingPosts.isNotEmpty()){
             return Pair(
                 existingPosts.sortedBy { it.individual.size() }[0],
-                Endpoint(HttpVerb.POST, resourcePath)
+                Endpoint(HttpVerb.POST, parent)
             )
         }
 
