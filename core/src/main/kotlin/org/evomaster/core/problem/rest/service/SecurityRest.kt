@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -47,7 +48,7 @@ class SecurityRest {
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var fitness: RestFitness
+    private lateinit var fitness: FitnessFunction<RestIndividual>
 
     @Inject
     private lateinit var idMapper: IdMapper
