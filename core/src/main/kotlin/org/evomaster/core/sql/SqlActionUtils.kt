@@ -172,6 +172,21 @@ object SqlActionUtils {
                 && verifyExistingDataFirst(actions)
     }
 
+    fun checkActions(actions: List<SqlAction>){
+
+        if(!verifyActions(actions)){
+            if(!verifyUniqueColumns(actions)){
+                throw IllegalStateException("Unsatisfied unique column constraints")
+            }
+            if(!verifyForeignKeys(actions)){
+                throw IllegalStateException("Unsatisfied foreign key constraints")
+            }
+            if(!verifyExistingDataFirst(actions)){
+                throw IllegalStateException("Unsatisfied existing data constraints")
+            }
+        }
+    }
+
     fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{
         val startingIndex = actions.indexOfLast { it.representExistingData } + 1
         return actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }.isEmpty()
