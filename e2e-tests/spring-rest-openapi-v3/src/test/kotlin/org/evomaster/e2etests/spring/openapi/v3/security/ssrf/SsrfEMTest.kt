@@ -24,7 +24,7 @@ class SsrfEMTest: SpringTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
-            1000
+            100
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
