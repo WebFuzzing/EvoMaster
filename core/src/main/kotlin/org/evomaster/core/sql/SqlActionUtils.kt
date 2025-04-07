@@ -184,6 +184,7 @@ object SqlActionUtils {
             if(!verifyExistingDataFirst(actions)){
                 throw IllegalStateException("Unsatisfied existing data constraints")
             }
+            throw IllegalStateException("Bug in EvoMaster, unhandled verification case in SQL properties")
         }
     }
 
