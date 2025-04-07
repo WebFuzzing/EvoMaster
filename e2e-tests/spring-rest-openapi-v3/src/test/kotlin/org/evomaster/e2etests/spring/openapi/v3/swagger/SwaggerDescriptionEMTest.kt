@@ -28,7 +28,7 @@ class SwaggerDescriptionEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.size >= 1)
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
 
             val descriptions = mutableMapOf<String, String>()
             solution.individuals.forEach { actions ->

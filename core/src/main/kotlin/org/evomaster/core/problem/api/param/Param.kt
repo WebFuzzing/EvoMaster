@@ -14,10 +14,8 @@ abstract class Param(
      */
     var description: String? = null
         set(value) {
-            if (field.isNullOrEmpty()) {
+            if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
                 field = value
-            } else {
-                throw IllegalStateException("Description is not null or empty")
             }
         }
 

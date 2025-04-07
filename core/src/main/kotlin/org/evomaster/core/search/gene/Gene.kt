@@ -81,6 +81,11 @@ abstract class Gene(
      * Description about the gene.
      */
     var description: String? = null
+        set(value) {
+            if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
+                field = value
+            }
+        }
 
 
     /**
