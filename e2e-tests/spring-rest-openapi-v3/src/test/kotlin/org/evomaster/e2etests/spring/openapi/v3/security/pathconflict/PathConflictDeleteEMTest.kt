@@ -37,6 +37,8 @@ class PathConflictDeleteEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/articles/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/articles/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/articles/{id}/comments", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/articles/{id}/comments/{commentId}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/articles/{id}/comments/{commentId}", null)
 
         }
     }

@@ -3,6 +3,7 @@ package com.foo.rest.examples.spring.openapi.v3.security.pathconflict
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,6 +31,8 @@ open class PathConflictDeleteApplication {
         fun reset() {
             articles.clear()
             comments.clear()
+            articleCounter.set(0)
+            commentCounter.set(0)
         }
     }
 
@@ -43,7 +46,7 @@ open class PathConflictDeleteApplication {
         val id = articleCounter.incrementAndGet()
         articles[id] = auth!!
         comments[id] = mutableMapOf()
-        return ResponseEntity.status(201).build()
+        return ResponseEntity.status(201).header(HttpHeaders.LOCATION, "/api/articles/$id").build()
     }
 
     @GetMapping("/api/articles/{id}")
@@ -81,7 +84,7 @@ open class PathConflictDeleteApplication {
 
         val commentId = commentCounter.incrementAndGet()
         comments[id]?.put(commentId, auth!!)
-        return ResponseEntity.status(201).build()
+        return ResponseEntity.status(201).header(HttpHeaders.LOCATION, "/api/articles/$id/comments/$commentId").build()
     }
 
     @GetMapping("/api/articles/{id}/comments/{commentId}")
@@ -125,6 +128,7 @@ open class PathConflictDeleteApplication {
         }
 
         articles.remove(id)
+        comments.remove(id)
         return ResponseEntity.status(204).build()
     }
 
