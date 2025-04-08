@@ -93,7 +93,7 @@ class TestSuiteWriter {
         snapshotTimestamp: String = ""
     ) {
 
-        val name = TestSuiteFileName(solution.getFileName())
+        val name = solution.getFileName()
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
         saveToDisk(content, getTestSuitePath(name, config))
     }
@@ -125,8 +125,6 @@ class TestSuiteWriter {
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
         val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
-
-       // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 

@@ -37,13 +37,17 @@ class WFCReportWriter {
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
         //faults.foundFaults =
         for(suite in splitResult.splitOutcome){
+
+            val suitePath = suite.getFileRelativePath(config.outputFormat)
+
             for(test in suite.individuals){
+
                 for(ea in test.evaluatedMainActions()){
                     (ea.result as EnterpriseActionResult)
                         .getFaults()
                         .forEach {
                             val ff = FoundFault()
-                            ff.testCaseId =
+                            //ff.testCaseId =
                         }
                 }
             }
