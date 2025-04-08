@@ -50,8 +50,11 @@ properties:
     items:
       $ref: "#/$def/TestCase"
   #OPTIONAL
-  coverage:
-    $ref: "#/$def/Coverage"
+  extra:
+    description: "Extra, optional coverage information, collected by different tools."
+    type: array
+    items:
+      $ref: "#/$def/Coverage"
 
 required: ["schema_version","tool_name","tool_version","creation_time","faults","problem_details","total_tests","test_file_paths","test_cases"]
 
@@ -179,7 +182,7 @@ $def:
       criteria:
         type: array
         items:
-          type: CoverageCriterion
+          $ref: "#/$def/CoverageCriterion"
     required: ["tool_name","criteria"]
 
   CoverageCriterion:

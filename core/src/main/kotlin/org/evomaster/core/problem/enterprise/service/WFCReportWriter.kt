@@ -2,18 +2,14 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
-import com.webfuzzing.commons.report.FaultCategoryId
-import com.webfuzzing.commons.report.Faults
-import com.webfuzzing.commons.report.FoundFault
-import com.webfuzzing.commons.report.ProblemDetails
-import com.webfuzzing.commons.report.RESTReport
-import com.webfuzzing.commons.report.TestCase
+import com.webfuzzing.commons.report.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestCaseCode
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.Statistics
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -24,15 +20,20 @@ class WFCReportWriter {
     @Inject
     private lateinit var config: EMConfig
 
+    @Inject
+    private lateinit var statistics: Statistics
+
+
     private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
         suite.testSuitePath + "#" + test.name
 
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
         val report = com.webfuzzing.commons.report.Report()
+        val toolName = "EvoMaster"
 
         report.schemaVersion = "0.0.1" //TODO
-        report.toolName = "EvoMaster"
+        report.toolName = toolName
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
         report.creationTime = Date()
         report.totalTests = solution.individuals.size
@@ -77,6 +78,25 @@ class WFCReportWriter {
         }
         //TODO other problem types
 
+        if(!config.blackBox){
+            val data = statistics.getData(solution)
+            val coverage = Coverage()
+            coverage.toolName = toolName
+
+            val lines = CoverageCriterion()
+            lines.name = "Line Coverage"
+            lines.covered = data.first{ it.header == Statistics.COVERED_LINES }.element.toInt()
+            lines.total = data.first{ it.header == Statistics.TOTAL_LINES }.element.toInt()
+            coverage.criteria.add(lines)
+
+            val branches = CoverageCriterion()
+            branches.name = "Branch Coverage"
+            branches.covered = data.first{ it.header == Statistics.COVERED_BRANCHES }.element.toInt()
+            branches.total = data.first{ it.header == Statistics.TOTAL_BRANCHES }.element.toInt()
+            coverage.criteria.add(branches)
+
+            report.extra.add(coverage)
+        }
 
 
         val jackson = ObjectMapper()
