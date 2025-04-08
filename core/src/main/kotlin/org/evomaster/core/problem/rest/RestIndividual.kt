@@ -216,7 +216,17 @@ class RestIndividual(
 
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
+        return SqlActionUtils.verifyActions(seeInitializingActionsPlusRelatedActions().filterIsInstance<SqlAction>())
+    }
+
+    /**
+     * Return a view of all initializing actions plus related actions which are after initialization
+     * eg, SQL actions in resource calls
+     * TODO we need to further check if this function should be put in individual or enterprise individual
+     */
+    private fun seeInitializingActionsPlusRelatedActions() : List<EnvironmentAction> {
+        val all = seeInitializingActions()
+        return all.plus(seeActions(ActionFilter.ONLY_SQL).filterNot { all.contains(it) }) as List<EnvironmentAction>
     }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
