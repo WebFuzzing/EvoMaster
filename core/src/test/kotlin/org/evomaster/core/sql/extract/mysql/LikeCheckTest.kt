@@ -6,6 +6,7 @@ import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.TableId
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -19,7 +20,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
+        val actions = builder.createSqlInsertionAction(TableId("x", openGroupName = MYSQL_DB_NAME), setOf("f_id"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(1, genes.size)
@@ -32,7 +33,7 @@ class LikeCheckTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
+        val actions = builder.createSqlInsertionAction(TableId("x", openGroupName = MYSQL_DB_NAME), setOf("f_id"))
 
         val genes = actions[0].seeTopGenes()
         val regexGene = genes.firstIsInstance<RegexGene>()

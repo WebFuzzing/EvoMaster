@@ -7,6 +7,7 @@ import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.sql.Date
@@ -20,7 +21,7 @@ class SqlDateColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
+        val actions = builder.createSqlInsertionAction(TableId("logins", openGroupName = MYSQL_DB_NAME), setOf("userId", "lastLogin"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(2, genes.size)
@@ -34,7 +35,7 @@ class SqlDateColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
+        val actions = builder.createSqlInsertionAction(TableId("logins", openGroupName = MYSQL_DB_NAME), setOf("userId", "lastLogin"))
         val genes = actions[0].seeTopGenes()
         val userIdValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
         val lastLoginDayValue = (genes[1] as DateGene).day.value

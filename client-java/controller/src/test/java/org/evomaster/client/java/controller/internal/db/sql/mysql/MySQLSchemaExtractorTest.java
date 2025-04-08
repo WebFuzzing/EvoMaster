@@ -86,7 +86,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
 
         TableDto table = schema.tables.get(0);
         assertEquals("intColumn",table.columns.get(0).name);
-        assertEquals("TableNot", table.name);
+        assertEquals("TableNot", table.id.name);
 
     }
 
@@ -163,7 +163,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
         DbInfoDto schemaTest0 = DbInfoExtractor.extract(testUser0Connection);
         assertEquals("test", schemaTest0.name);
         assertEquals(1, schemaTest0.tables.size());
-        assertEquals("my_table", schemaTest0.tables.get(0).name);
+        assertEquals("my_table", schemaTest0.tables.get(0).id.name);
 
         DbInfoDto newSchema = DbInfoExtractor.extract(testUser1Connection);
 //        assertEquals("new_schema", newSchema.name);
@@ -171,7 +171,7 @@ public class MySQLSchemaExtractorTest extends DatabaseMySQLTestInit implements D
         //assertEquals(1, newSchema.tables.size());
         //we are now fetching data for all schemas (/catalogs in MySQL)
         assertEquals(2, newSchema.tables.size());
-        assertEquals("my_table", newSchema.tables.get(0).name);
+        assertEquals("my_table", newSchema.tables.get(0).id.name);
 
         SqlScriptRunner.execCommand(testUser1Connection, "DROP SCHEMA IF EXISTS new_schema");
         deleteUserInDatabase(url, anotherTestUserName);

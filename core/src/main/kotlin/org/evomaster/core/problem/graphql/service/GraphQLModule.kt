@@ -6,6 +6,7 @@ import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
@@ -22,9 +23,12 @@ class GraphQLModule : EnterpriseModule() {
 
     override fun configure() {
 
+        bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<GraphQLIndividual>>() {})
-                .to(GraphQLSampler::class.java)
-                .asEagerSingleton()
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(GraphQLSampler::class.java)
