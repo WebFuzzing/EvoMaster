@@ -550,19 +550,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private int tableFkCompartor(String tableA, String tableB){
-        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+        return Integer.compare(getFkDepth(tableA, new HashSet<>()), getFkDepth(tableB, new HashSet<>()));
     }
 
     private int getFkDepth(String tableName, Set<String> checked){
-        if(!fkMap.containsKey(tableName)) return -1;
+        List<String> keys = fkMap.keySet().stream().filter(s-> s.equalsIgnoreCase(tableName)).collect(Collectors.toList());
+        if(keys.isEmpty()) return -1;
         checked.add(tableName);
-        List<String> fks = fkMap.get(tableName);
+        List<String> fks = keys.stream().map(s -> fkMap.get(s)).flatMap(List::stream).collect(Collectors.toList());
         if (fks.isEmpty()) {
             return 0;
         }
         int sum = fks.size();
         for (String fk: fks){
-            if (!checked.contains(fk)){
+            if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
                 sum += getFkDepth(fk, checked);
             }
         }

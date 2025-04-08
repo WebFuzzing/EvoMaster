@@ -7,12 +7,13 @@ import com.atlassian.oai.validator.report.ValidationReport
 import com.atlassian.oai.validator.whitelist.StatusType
 import com.atlassian.oai.validator.whitelist.ValidationErrorsWhitelist
 import com.atlassian.oai.validator.whitelist.rule.WhitelistRules.*
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocationType
 import org.slf4j.LoggerFactory
 
 
 class RestSchemaOracle(
-    //TODO how to deal with $ref?
-    schema: String
+    schemaHolder: RestSchema
 ) {
 
     companion object{
@@ -36,11 +37,22 @@ class RestSchemaOracle(
 //                    )
 //                )
 
-            OpenApiInteractionValidator.createForInlineApiSpecification(schema)
-                //.withWhitelist(whitelist)
-                .build()
+            if(!schemaHolder.hasExternalRefs()) {
+                OpenApiInteractionValidator.createForInlineApiSpecification(schemaHolder.main.schemaRaw)
+                    //.withWhitelist(whitelist)
+                    .build()
+            } else {
+                //need to handle external $ref in validation
+                OpenApiInteractionValidator.createForSpecificationUrl(schemaHolder.main.sourceLocation.location)
+                    //.withWhitelist(whitelist)
+                    .build()
+            }
         }catch (e: Exception){
-            log.error("Failed to parse OpenAPI schema for response validation: " + e.message)
+            log.error("Failed to parse OpenAPI schema for response validation." +
+                    " This could be an error in the schema." +
+                    " However, the current library we use for validation has few limitations." +
+                    " The problem could hence be in the library and not the schema." +
+                    " Error message: " + e.message)
             null
         }
 
