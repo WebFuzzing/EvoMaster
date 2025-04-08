@@ -12,6 +12,10 @@ class Lines(val format: OutputFormat) {
     var indentation = 0
         private set
 
+    fun isEmpty() = buffer.isEmpty()
+
+    fun nextLineNumber() = buffer.size
+
     fun shouldUseSemicolon() = format.isJava() || format.isJavaScript() || format.isCsharp()
 
     fun appendSemicolon() {

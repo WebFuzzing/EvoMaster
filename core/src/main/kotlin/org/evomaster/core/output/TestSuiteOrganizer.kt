@@ -32,7 +32,6 @@ import kotlin.reflect.KFunction1
 class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
-    private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
 
@@ -41,12 +40,6 @@ class TestSuiteOrganizer {
         //TODO here in the future we will have something a bit smarter
         return sortingHelper.sort(solution, namingStrategy, testCaseSortingStrategy)
     }
-
-//    fun setPartialOracles(partialOracles: PartialOracles){
-//        this.partialOracles = partialOracles
-//        namingHelper.setPartialOracles(partialOracles)
-//    }
-
 }
 
 class NamingHelper {
