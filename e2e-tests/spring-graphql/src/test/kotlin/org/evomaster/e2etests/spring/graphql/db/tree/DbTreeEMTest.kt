@@ -37,7 +37,8 @@ class DbTreeEMTest : SpringTestBase() {
             args.add("true")
             args.add("--generateSqlDataWithSearch")
             args.add("true")
-
+            //issues with CI... trying to debug
+            setOption(args,"useTimeInFeedbackSampling","false")
 
             val solution = initAndRun(args)
 
