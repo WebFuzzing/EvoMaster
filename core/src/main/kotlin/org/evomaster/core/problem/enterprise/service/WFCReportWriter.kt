@@ -55,11 +55,14 @@ class WFCReportWriter {
                     val faultIds = (ea.result as EnterpriseActionResult)
                         .getFaults()
                         .map { FaultCategoryId().apply { code = it.category.code; context = it.context} }
-                    val ff = FoundFault()
-                    ff.testCaseId = testId
-                    ff.operationId = ea.action.getName()
-                    ff.faultCategories = faultIds.toSet()
-                    faults.foundFaults.add(ff)
+
+                    if(faultIds.isNotEmpty()) {
+                        val ff = FoundFault()
+                        ff.testCaseId = testId
+                        ff.operationId = ea.action.getName()
+                        ff.faultCategories = faultIds.toSet()
+                        faults.foundFaults.add(ff)
+                    }
                 }
 
                 val tc = TestCase()
