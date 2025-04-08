@@ -2,11 +2,14 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
+import com.webfuzzing.commons.report.FaultCategoryId
 import com.webfuzzing.commons.report.Faults
 import com.webfuzzing.commons.report.FoundFault
 import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
+import com.webfuzzing.commons.report.TestCase
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.TestCaseCode
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
@@ -21,6 +24,8 @@ class WFCReportWriter {
     @Inject
     private lateinit var config: EMConfig
 
+    private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
+        suite.testSuitePath + "#" + test.name
 
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
@@ -31,27 +36,34 @@ class WFCReportWriter {
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
         report.creationTime = Date()
         report.totalTests = solution.individuals.size
+        report.testFilePaths = suites.map { it.testSuitePath }.toSet()
+
 
         val faults = Faults()
         report.faults = faults
-        //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
-        //faults.foundFaults.add()
         for(suite in suites){
-
             for(test in suite.tests){
 
-                val testId = suite.testSuitePath + "#" + test.name
-
+                val testId = getTestId(suite, test)
                 for(ea in test.evaluatedIndividual.evaluatedMainActions()){
-                    (ea.result as EnterpriseActionResult)
+                    val faultIds = (ea.result as EnterpriseActionResult)
                         .getFaults()
-                        .forEach {
-                            val ff = FoundFault()
-                            ff.testCaseId = testId
-                            //ff.
-                        }
+                        .map { FaultCategoryId().apply { code = it.category.code; context = it.context} }
+                    val ff = FoundFault()
+                    ff.testCaseId = testId
+                    ff.operationId = ea.action.getName()
+                    ff.faultCategories = faultIds.toSet()
+                    faults.foundFaults.add(ff)
                 }
+
+                val tc = TestCase()
+                tc.id = testId
+                tc.name = test.name
+                tc.filePath = suite.testSuitePath
+                tc.startLine = test.startLine
+                tc.endLine = test.endLine
+                report.testCases.add(tc)
             }
         }
 
@@ -64,6 +76,8 @@ class WFCReportWriter {
             //TODO all other entries
         }
         //TODO other problem types
+
+
 
         val jackson = ObjectMapper()
         val json = jackson.writeValueAsString(report)
