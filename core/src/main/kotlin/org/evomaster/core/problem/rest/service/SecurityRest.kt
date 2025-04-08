@@ -557,6 +557,13 @@ class SecurityRest {
 
             //anyway, let's verify indeed second last action if a 403 target verb. otherwise, it is a problem
             val ema = evaluatedIndividual.evaluatedMainActions()
+
+            val n = evaluatedIndividual.individual.seeMainExecutableActions().size
+            if(ema.size != n){
+                log.warn("Failed to build security test. Premature stopping of HTTP call sequence")
+                return@forEach
+            }
+
             val secondLast = ema[ema.size - 2]
             val secondLastAction = secondLast.action
             val secondLastResult = secondLast.result
