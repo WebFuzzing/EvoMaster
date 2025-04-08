@@ -26,7 +26,7 @@ public class DbTreeEMTest extends SpringRPCTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "DbTreeEM",
+                "DbTreeEMRpc",
                 "org.bar.db.TreeEM",
                 1000,
                 (args) -> {

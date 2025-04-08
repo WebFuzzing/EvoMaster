@@ -23,7 +23,7 @@ public class DbTreeEMTest  extends SpringTestBase  {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "DbTreeEM",
+                "DbTreeEMH2",
                 "org.bar.db.TreeEM",
                 1000,
                 (args) -> {
