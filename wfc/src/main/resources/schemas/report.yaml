@@ -138,7 +138,7 @@ $def:
         type: array
         items:
           $ref: "#/$def/CoveredEndpoint"
-    required: []
+    required: ["total_http_calls","endpoint_ids","covered_http_status"]
 
   TestCase:
     type: object

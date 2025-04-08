@@ -8,7 +8,9 @@ import org.evomaster.core.output.TestCaseCode
 import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -23,6 +25,8 @@ class WFCReportWriter {
     @Inject
     private lateinit var statistics: Statistics
 
+    @Inject
+    private lateinit var sampler: Sampler<*>
 
     private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
         suite.testSuitePath + "#" + test.name
@@ -74,7 +78,27 @@ class WFCReportWriter {
             val rest = RESTReport()
             report.problemDetails.rest = rest
 
-            //TODO all other entries
+            rest.totalHttpCalls = solution.individuals.sumOf { it.individual.size() }
+            rest.endpointIds = sampler.getActionDefinitions().map { it.getName() }.toSet()
+
+            for(suite in suites) {
+                for (test in suite.tests) {
+                    val testId = getTestId(suite, test)
+
+                    val eas = test.evaluatedIndividual.evaluatedMainActions()
+                    val statusMap = eas.groupBy( { it.action.getName() }, { (it.result as RestCallResult).getStatusCode()})
+
+                    val ces = statusMap.entries
+                        .map {
+                            val ce = CoveredEndpoint()
+                            ce.testCaseId = testId
+                            ce.endpointId = it.key
+                            ce.httpStatus = it.value.toSet()
+                            ce
+                        }
+                    rest.coveredHttpStatus.addAll(ces)
+                }
+            }
         }
         //TODO other problem types
 
