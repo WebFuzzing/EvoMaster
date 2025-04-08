@@ -12,6 +12,7 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -232,8 +233,8 @@ class Main {
             solution = phaseVulnerabilityAnalyser(injector, config, solution)
 
 
-            val splitResult = writeTests(injector, solution, controllerInfo)
-            writeWFCReport(injector, solution, splitResult)
+            val suites = writeTests(injector, solution, controllerInfo)
+            writeWFCReport(injector, solution, suites)
 
             writeCoveredTargets(injector, solution)
             writeStatistics(injector, solution)
@@ -827,11 +828,11 @@ class Main {
             solution: Solution<*>,
             controllerInfoDto: ControllerInfoDto?,
             snapshotTimestamp: String = ""
-        ): SplitResult? {
+        ): List<TestSuiteCode> {
 
             val config = injector.getInstance(EMConfig::class.java)
             if (!config.createTests) {
-                return null
+                return listOf()
             }
 
             val n = solution.individuals.size
@@ -843,14 +844,16 @@ class Main {
 
             val splitResult = TestSuiteSplitter.split(solution, config)
 
-            splitResult.splitOutcome.forEach {
-                writer.writeTests(
+            val suites = splitResult.splitOutcome.map {
+                writer.convertToCompilableTestCode(
                     it,
+                    it.getFileName(),
+                    snapshotTimestamp,
                     controllerInfoDto?.fullName,
-                    controllerInfoDto?.executableFullPath,
-                    snapshotTimestamp
+                    controllerInfoDto?.executableFullPath
                 )
             }
+            suites.forEach { suite -> writer.writeTests(suite) }
 
             if (config.problemType == EMConfig.ProblemType.RPC) {
                 //TODO what is this? need to clarify
@@ -862,21 +865,21 @@ class Main {
                 )
             }
 
-            return splitResult
+            return suites
         }
 
 
-        private fun writeWFCReport(injector: Injector, solution: Solution<*>, splitResult : SplitResult?) {
+        private fun writeWFCReport(injector: Injector, solution: Solution<*>, suites: List<TestSuiteCode>) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (!config.writeWFCReport || splitResult == null) {
+            if (!config.writeWFCReport || suites.isEmpty()) {
                 return
             }
 
             val wfcr = injector.getInstance(WFCReportWriter::class.java)
 
-            wfcr.writeReport(solution,splitResult)
+            wfcr.writeReport(solution,suites)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
