@@ -7,6 +7,7 @@ import com.webfuzzing.commons.report.FoundFault
 import com.webfuzzing.commons.report.ProblemDetails
 import com.webfuzzing.commons.report.RESTReport
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.Solution
@@ -21,7 +22,7 @@ class WFCReportWriter {
     private lateinit var config: EMConfig
 
 
-    fun writeReport(solution: Solution<*>, splitResult: SplitResult) {
+    fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
         val report = com.webfuzzing.commons.report.Report()
 
@@ -35,19 +36,20 @@ class WFCReportWriter {
         report.faults = faults
         //FIXME
         faults.totalNumber = solution.totalNumberOfDetectedFaults()
-        //faults.foundFaults =
-        for(suite in splitResult.splitOutcome){
+        //faults.foundFaults.add()
+        for(suite in suites){
 
-            val suitePath = suite.getFileRelativePath(config.outputFormat)
+            for(test in suite.tests){
 
-            for(test in suite.individuals){
+                val testId = suite.testSuitePath + "#" + test.name
 
-                for(ea in test.evaluatedMainActions()){
+                for(ea in test.evaluatedIndividual.evaluatedMainActions()){
                     (ea.result as EnterpriseActionResult)
                         .getFaults()
                         .forEach {
                             val ff = FoundFault()
-                            //ff.testCaseId =
+                            ff.testCaseId = testId
+                            //ff.
                         }
                 }
             }
