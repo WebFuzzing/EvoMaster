@@ -557,6 +557,13 @@ class SecurityRest {
 
             //anyway, let's verify indeed second last action if a 403 target verb. otherwise, it is a problem
             val ema = evaluatedIndividual.evaluatedMainActions()
+
+            val n = evaluatedIndividual.individual.seeMainExecutableActions().size
+            if(ema.size != n){
+                log.warn("Failed to build security test. Premature stopping of HTTP call sequence")
+                return@forEach
+            }
+
             val secondLast = ema[ema.size - 2]
             val secondLastAction = secondLast.action
             val secondLastResult = secondLast.result
@@ -627,11 +634,11 @@ class SecurityRest {
         // but, first let's check if we can have any successfully delete action
 
         /*
-            We have a DELETE path in form for example
+            We have a "verb" (eg, a DELETE) path in form for example
             /users/{id}
             and want to get a _resolved_ creation action (either PUT or POST) for it.
-            The new DELETE we are going to create must point to the same resolved action.
-            But DELETE could have query parameters and possibly body payloads... all with
+            The new "verb" we are going to create must point to the same resolved action.
+            But "verb" could have query parameters and possibly body payloads... all with
             constraints that must be satisfied.
             So we cannot easily just create it from scratch.
             Need to re-use an existing one, if any.
@@ -646,7 +653,7 @@ class SecurityRest {
         if (successIndividuals.isEmpty()) {
             /*
                 This needs a bit of explanation.
-                We want to get an action that works, with failed constraint validation on
+                We want to get an action that works, without failed constraint validation on
                 query parameters or body payloads.
                 Ideally, a 2xx would do.
                 But what if we could not create any because they all fail to point to an existing
