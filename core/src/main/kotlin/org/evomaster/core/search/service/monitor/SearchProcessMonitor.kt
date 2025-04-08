@@ -221,11 +221,12 @@ class SearchProcessMonitor: SearchListener {
             targetsDuringSeeding = listOf()
         )
         val content = writer.convertToCompilableTestCode(
-                solution = solution,
-                testSuiteFileName = testFile, controllerName = controllerName, controllerInput = null)
-        writeByChannel(
-                Paths.get(getStepAsPath(index)),
-                content)
+            solution = solution,
+            testSuiteFileName = testFile,
+            controllerName = controllerName,
+            controllerInput = null
+        ).code
+        writeByChannel(Paths.get(getStepAsPath(index)), content)
         if (doesIncludeTarget){
             val info = archive.exportCoveredTargetsAsPair(solution)
             writeByChannel(

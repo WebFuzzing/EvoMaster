@@ -126,7 +126,6 @@ class RestIndividual(
 
         val dnsActions = resources.flatMap { it.seeActions(ONLY_DNS)} as List<HostnameResolutionAction>
         val sqlActions = (resources.flatMap { it.seeActions(ONLY_SQL) } as List<SqlAction>)
-            .sortedBy { !it.representExistingData } // existing data should always be at beginning
 
         val mongoDbActions = resources.flatMap { it.seeActions(ONLY_MONGO) } as List<MongoDbAction>
 
@@ -138,6 +137,14 @@ class RestIndividual(
         addChildrenToGroup(sqlActions, GroupsOfChildren.INITIALIZATION_SQL)
         addChildrenToGroup(mongoDbActions, GroupsOfChildren.INITIALIZATION_MONGO)
         addChildrenToGroup(dnsActions, GroupsOfChildren.INITIALIZATION_DNS)
+
+
+        val gsql = groupsView()!!.getGroup(GroupsOfChildren.INITIALIZATION_SQL)
+        if(gsql.size() >= 1) {
+            // existing data should always be at beginning
+            children.subList(gsql.startIndex, gsql.endIndex + 1)
+                .sortBy { if ((it as SqlAction).representExistingData) 0 else 1 }
+        }
 
         /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
@@ -209,7 +216,17 @@ class RestIndividual(
 
     //FIXME refactor
     override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
+        return SqlActionUtils.verifyActions(seeInitializingActionsPlusRelatedActions().filterIsInstance<SqlAction>())
+    }
+
+    /**
+     * Return a view of all initializing actions plus related actions which are after initialization
+     * eg, SQL actions in resource calls
+     * TODO we need to further check if this function should be put in individual or enterprise individual
+     */
+    private fun seeInitializingActionsPlusRelatedActions() : List<EnvironmentAction> {
+        val all = seeInitializingActions()
+        return all.plus(seeActions(ActionFilter.ONLY_SQL).filterNot { all.contains(it) }) as List<EnvironmentAction>
     }
 
     override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {

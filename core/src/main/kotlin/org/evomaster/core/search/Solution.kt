@@ -2,7 +2,9 @@ package org.evomaster.core.search
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.action.ActionFilter
@@ -32,16 +34,21 @@ where T : Individual {
         overall.setTargetsCoveredBySeeding(targetsDuringSeeding)
     }
 
-    fun getFileName() : String{
+    fun getFileRelativePath(format: OutputFormat): String{
+        return getFileName().getAsPath(format)
+    }
 
-        val name = testSuiteNamePrefix + termination.suffix
-        if(testSuiteNameSuffix.isBlank()){
-            return name
+    fun getFileName() : TestSuiteFileName {
+
+        val baseName = testSuiteNamePrefix + termination.suffix
+        val name = if(testSuiteNameSuffix.isBlank()){
+            baseName
+        } else if(testSuiteNameSuffix.startsWith("_")){
+            "$baseName$testSuiteNameSuffix"
+        } else {
+            "${baseName}_$testSuiteNameSuffix"
         }
-        if(testSuiteNameSuffix.startsWith("_")){
-            return "$name$testSuiteNameSuffix"
-        }
-        return  "${name}_$testSuiteNameSuffix"
+        return TestSuiteFileName(name)
     }
 
     fun needWireMockServers() : Boolean{
