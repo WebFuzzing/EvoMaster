@@ -84,6 +84,8 @@ abstract class Gene(
         set(value) {
             if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
                 field = value
+            } else {
+                throw IllegalStateException("Description already set for Gene '$name'")
             }
         }
 

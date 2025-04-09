@@ -16,6 +16,8 @@ abstract class Param(
         set(value) {
             if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
                 field = value
+            } else {
+                throw IllegalStateException("Description already set for Parameter '$name'")
             }
         }
 
