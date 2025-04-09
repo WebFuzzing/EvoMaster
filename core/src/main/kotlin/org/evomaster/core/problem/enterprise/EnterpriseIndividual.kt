@@ -179,6 +179,8 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
+        verifyValidity()
+
         return issues
     }
 
@@ -309,7 +311,8 @@ abstract class EnterpriseIndividual(
             if (log.isTraceEnabled)
                 log.trace("invoke GeneUtils.repairBrokenDbActionsList")
             val previous = sqlInitialization.toMutableList()
-            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
+            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
             resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
         }

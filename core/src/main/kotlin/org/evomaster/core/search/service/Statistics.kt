@@ -30,6 +30,10 @@ class Statistics : SearchListener {
         const val GQL_NO_ERRORS = "gqlNoErrors"
         const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement"
         const val EVALUATED_ACTIONS = "evaluatedActions"
+        const val TOTAL_LINES = "numberOfLines"
+        const val TOTAL_BRANCHES = "numberOfBranches"
+        const val COVERED_LINES = "coveredLines"
+        const val COVERED_BRANCHES = "coveredBranches"
     }
 
     @Inject
@@ -281,16 +285,16 @@ class Statistics : SearchListener {
             add(Pair("rpcHandledButError", "" + solution.overall.rpcHandledButError(idMapper).size))
             add(Pair("rpcSpecifiedServiceError", "" + solution.overall.rpcServiceError(idMapper).size))
 
-            add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
-            add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
+            add(Pair(TOTAL_BRANCHES, "" + (unitsInfo?.numberOfBranches ?: 0)))
+            add(Pair(TOTAL_LINES, "" + (unitsInfo?.numberOfLines ?: 0)))
             add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
             add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
             add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
             add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
-            add(Pair("coveredLines", "${linesInfo.total}"))
-            add(Pair("coveredBranches", "${branchesInfo.total}"))
+            add(Pair(COVERED_LINES, "${linesInfo.total}"))
+            add(Pair(COVERED_BRANCHES, "${branchesInfo.total}"))
 
             // statistic info during sut boot time
             add(Pair("bootTimeCoveredTargets", "${targetsInfo.bootTime}"))

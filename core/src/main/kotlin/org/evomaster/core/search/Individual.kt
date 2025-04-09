@@ -163,9 +163,11 @@ abstract class Individual(
 
         groupsView()?.verifyGroups()
 
-        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
-            throw IllegalStateException("Initializing actions break SQL constraints")
-        }
+        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
+
+//        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
+//            throw IllegalStateException("Initializing actions break SQL constraints")
+//        }
 
         seeAllActions().forEach { a ->
             a.seeTopGenes().forEach { g ->

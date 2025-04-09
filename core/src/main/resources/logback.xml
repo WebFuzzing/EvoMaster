@@ -18,6 +18,10 @@
     <!-- Avoid annoying and pointless WARN messages from Governator -->
     <logger name="com.netflix.governator.lifecycle.ClasspathScanner" level="ERROR" />
 
+    <!-- Schema issues should be handled programmatically, and not flood the logs-->
+    <logger name="io.swagger" level="OFF" />
+
+
     <root level="warn">
         <appender-ref ref="REGULAR_STDOUT" />
     </root>
