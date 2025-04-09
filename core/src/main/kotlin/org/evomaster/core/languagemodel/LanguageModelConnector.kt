@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.languagemodel.OllamaRequestDto
-import org.evomaster.core.languagemodel.OllamaResponseDto
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
