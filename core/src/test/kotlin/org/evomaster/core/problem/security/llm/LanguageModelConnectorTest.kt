@@ -5,6 +5,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.languagemodel.LanguageModelConnector
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll

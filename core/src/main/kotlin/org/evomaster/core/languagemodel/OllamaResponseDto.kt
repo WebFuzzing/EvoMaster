@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.security.llm
+package org.evomaster.core.languagemodel
 
 /**
  * DTO to represent the Ollama response schema.

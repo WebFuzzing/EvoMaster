@@ -1,14 +1,16 @@
-package org.evomaster.core.problem.security.llm
+package org.evomaster.core.languagemodel
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.languagemodel.OllamaRequestDto
+import org.evomaster.core.languagemodel.OllamaResponseDto
+import org.slf4j.LoggerFactory
+import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.annotation.PostConstruct
-import org.slf4j.LoggerFactory
-import java.io.DataOutputStream
 
 /**
  * A utility service designed to handle large language model server
@@ -45,11 +47,13 @@ class LanguageModelConnector {
 
         val languageModelName = getLanguageModelName()
 
-        val requestBody = objectMapper.writeValueAsString(OllamaRequestDto(
-            prompt = prompt,
-            stream = false,
-            model = languageModelName.toString()
-        ))
+        val requestBody = objectMapper.writeValueAsString(
+            OllamaRequestDto(
+                prompt = prompt,
+                stream = false,
+                model = languageModelName.toString()
+            )
+        )
 
         val response = call(languageModelServerURL, requestBody)
 
@@ -96,7 +100,7 @@ class LanguageModelConnector {
             writer.close()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.uniqueWarn(log, "Failed to connect to language model server")
+                LoggingUtil.Companion.uniqueWarn(log, "Failed to connect to language model server")
                 return null
             }
 
@@ -107,7 +111,7 @@ class LanguageModelConnector {
 
             return response.response
         } catch (e: Exception) {
-            LoggingUtil.uniqueWarn(log, "Failed to connect to language model server: ${e.message}")
+            LoggingUtil.Companion.uniqueWarn(log, "Failed to connect to language model server: ${e.message}")
 
             return null
         }
