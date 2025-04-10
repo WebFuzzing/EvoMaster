@@ -74,12 +74,18 @@ class IntegerGene(
     }
 
     override fun setFromStringValue(value: String) : Boolean{
+
+        val previousValue = this.value
         try{
             this.value = value.toInt()
-            return true
         }catch (e: NumberFormatException){
             return false
         }
+        if(!isGloballyValid()){
+            this.value = previousValue
+            return false
+        }
+        return true
     }
 
     override fun copyContent(): Gene {

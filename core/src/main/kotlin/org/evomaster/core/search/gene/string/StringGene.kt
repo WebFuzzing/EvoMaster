@@ -1087,7 +1087,7 @@ class StringGene(
 
         this.value = value
         selectedSpecialization = -1
-        if(!isLocallyValid() || !checkForGloballyValid()){
+        if(!isGloballyValid()){
             this.value = previousValue
             this.selectedSpecialization = previousSpecialization
             return false

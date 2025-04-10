@@ -93,6 +93,7 @@ class DataPool() {
         val applied = gene.setFromStringValue(x)
         return applied
     }
+
     fun addValue(key: String, data: String){
 
         val queue = pool.getOrPut(normalize(key)) { ArrayDeque() }
