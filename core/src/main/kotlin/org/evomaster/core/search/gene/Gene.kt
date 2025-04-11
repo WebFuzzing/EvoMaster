@@ -1065,7 +1065,7 @@ abstract class Gene(
     internal open fun setValueBasedOn(value: String) : Boolean{
         //TODO in future this should be abstract, to force each gene to handle it.
         //few implementations can be based on AbstractParser class for Postman
-        throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")
+        throw IllegalStateException("setValueBasedOn() is not implemented for gene ${this::class.simpleName}")
     }
 
 
