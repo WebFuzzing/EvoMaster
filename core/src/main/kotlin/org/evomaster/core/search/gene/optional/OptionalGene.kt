@@ -81,8 +81,8 @@ class OptionalGene(name: String,
         )
     }
 
-    override fun setFromStringValue(value: String) : Boolean{
-        val modified = gene.setFromStringValue(value)
+    override fun setValueBasedOn(value: String) : Boolean{
+        val modified = gene.setValueBasedOn(value)
         if(modified){
             isActive = true
         }

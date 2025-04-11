@@ -174,16 +174,11 @@ class DoubleGene(name: String,
     /**
      * Set Double Gene from string value
      */
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun setValueBasedOn(value: String) : Boolean{
 
-        val previousValue = this.value
         try{
             this.value = value.toDouble()
         }catch (e: NumberFormatException){
-            return false
-        }
-        if(!isGloballyValid()){
-            this.value = previousValue
             return false
         }
         return true

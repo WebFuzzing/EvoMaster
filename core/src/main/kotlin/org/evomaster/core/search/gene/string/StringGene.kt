@@ -1076,18 +1076,10 @@ class StringGene(
     }
 
 
-    override fun setFromStringValue(value: String): Boolean {
-
-        val previousSpecialization = selectedSpecialization
-        val previousValue = value
+    override fun setValueBasedOn(value: String): Boolean {
 
         this.value = value
         selectedSpecialization = -1
-        if(!isGloballyValid()){
-            this.value = previousValue
-            this.selectedSpecialization = previousSpecialization
-            return false
-        }
 
         return true
     }

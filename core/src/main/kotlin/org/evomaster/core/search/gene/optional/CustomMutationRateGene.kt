@@ -51,8 +51,8 @@ class CustomMutationRateGene<out T>(
     }
 
 
-    override fun setFromStringValue(value: String) : Boolean{
-        return gene.setFromStringValue(value)
+    override fun setValueBasedOn(value: String) : Boolean{
+        return gene.setValueBasedOn(value)
     }
 
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")

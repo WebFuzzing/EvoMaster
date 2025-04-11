@@ -1040,16 +1040,29 @@ abstract class Gene(
      * @return if the update was successful
      */
     fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true) : Boolean{
-        return updateValueOnlyIfValid( {setValueBasedOn(gene) } , undoIfUpdateFails)
+        return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
     }
-
-    //setFromStringValue
 
     /**
      * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
-     * If it fails for any reason, return false, without modifying its state.
+     * If it fails for any reason, return false.
+     * This method guarantees the validity of the resulting gene, ie, changes are reverted if any constraints
+     * is violated.
      */
-    open fun setFromStringValue(value: String) : Boolean{
+    fun setFromStringValue(value: String, undoIfUpdateFails: Boolean = true) : Boolean{
+        return updateValueOnlyIfValid( { setValueBasedOn(value) } , undoIfUpdateFails)
+    }
+
+    /**
+     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
+     * If it fails for any reason, return false.
+     * WARNING: There is no guarantee that constraints are kept satisfied.
+     * As such, should not call this method directly, but rather use [setFromStringValue]
+     *
+     * TODO @PackagePrivate
+     */
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    internal open fun setValueBasedOn(value: String) : Boolean{
         //TODO in future this should be abstract, to force each gene to handle it.
         //few implementations can be based on AbstractParser class for Postman
         throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")

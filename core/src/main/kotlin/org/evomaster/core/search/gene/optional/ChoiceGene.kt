@@ -197,10 +197,10 @@ class ChoiceGene<T>(
         return false
     }
 
-    override fun setFromStringValue(value: String): Boolean {
+    override fun setValueBasedOn(value: String): Boolean {
         for(i in geneChoices.indices){
             val g = geneChoices[i]
-            val updated = g.setFromStringValue(value)
+            val updated = g.setValueBasedOn(value)
             if(updated){
                 activeGeneIndex = i
                 return true

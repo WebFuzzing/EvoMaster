@@ -33,7 +33,7 @@ class BooleanGene(
         this.value = value.toBoolean()
     }
 
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun setValueBasedOn(value: String) : Boolean{
         try{
             this.value = value.toBoolean()
             return true

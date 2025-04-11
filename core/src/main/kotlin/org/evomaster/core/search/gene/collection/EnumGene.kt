@@ -219,7 +219,7 @@ class EnumGene<T : Comparable<T>>(
         return true
     }
 
-    override fun setFromStringValue(value: String): Boolean {
+    override fun setValueBasedOn(value: String): Boolean {
 
         val target = values.indexOfFirst { it == value }
         if(target < 0){
