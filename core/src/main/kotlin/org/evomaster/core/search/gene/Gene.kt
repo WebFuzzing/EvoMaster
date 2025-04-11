@@ -798,15 +798,7 @@ abstract class Gene(
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
 
-    /**
-     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
-     * If it fails for any reason, return false, without modifying its state.
-     */
-    open fun setFromStringValue(value: String) : Boolean{
-        //TODO in future this should be abstract, to force each gene to handle it.
-        //few implementations can be based on AbstractParser class for Postman
-        throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")
-    }
+
 
 
     //========================= handing binding genes ===================================
@@ -1031,8 +1023,37 @@ abstract class Gene(
      * FIXME: change name, because it is not modifying binding, and just copy over
      * the values
      *
+     * TODO unfortunately, Kotlin has major design flows that do not allow package-level and true protected-level
+     * scope, like in Java :(
+     * This is a case in which is much worse than Java.
+     * But it could be simulated with Detekt and a rule like @PackagePrivate
+     *
      */
-    abstract fun bindValueBasedOn(gene: Gene) : Boolean
+    @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
+    //TODO remove deprecated once we integrate @PackagePrivate
+    internal abstract fun bindValueBasedOn(gene: Gene) : Boolean
+
+
+    /**
+     * Update current value of this gene, base on other gene.
+     * This is not [copyValueFrom], as the gene could be different.
+     * If for any reason the update fails, there is not going to be any side-effects.
+     *
+     * @return if the update was successful
+     */
+    fun setFromDifferentGene(gene: Gene) : Boolean{
+        return updateValueOnlyIfValid( {bindValueBasedOn(gene) } , true)
+    }
+
+    /**
+     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
+     * If it fails for any reason, return false, without modifying its state.
+     */
+    open fun setFromStringValue(value: String) : Boolean{
+        //TODO in future this should be abstract, to force each gene to handle it.
+        //few implementations can be based on AbstractParser class for Postman
+        throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")
+    }
 
 
     /**
