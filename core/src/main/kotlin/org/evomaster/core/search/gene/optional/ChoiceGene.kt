@@ -12,7 +12,6 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.Collections
 
 /**
  * A gene that holds many potential genes (genotype) but
@@ -232,11 +231,11 @@ class ChoiceGene<T>(
      * gene choices, one gene choice to the corresponding gene choice in
      * the other gene.
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is ChoiceGene<*> && gene.geneChoices.size == geneChoices.size) {
             var result = true
             geneChoices.indices.forEach { i ->
-                val r = geneChoices[i].bindValueBasedOn(gene.geneChoices[i])
+                val r = geneChoices[i].setValueBasedOn(gene.geneChoices[i])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${geneChoices[i].name}) at index $i")
                 result = result && r

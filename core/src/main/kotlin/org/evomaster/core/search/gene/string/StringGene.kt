@@ -13,9 +13,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestResponseFeeder
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -34,7 +31,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -982,7 +978,7 @@ class StringGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
 
         Lazy.assert { isLocallyValid() }
         val current = value
@@ -1005,10 +1001,10 @@ class StringGene(
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 //return false

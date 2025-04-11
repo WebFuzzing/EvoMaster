@@ -830,7 +830,7 @@ abstract class Gene(
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b->
             all.add(b)
-            if(!b.bindValueBasedOn(this))
+            if(!b.setValueBasedOn(this))
                 LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
             b.syncBindingGenesBasedOnThis(all)
         }
@@ -1013,25 +1013,23 @@ abstract class Gene(
 
 
     /**
-     * bind value of [this] gene based on [gene].
+     * set the value of this gene based on input [gene].
      * The type of genes can be different.
-     * @return whether the binding performs successfully
+     * However, there is no check if constraints are kept satisfied.
+     * So, this method should not be called directly.
+     * Rather use [setFromDifferentGene], which internally it calls this method,
+     * and then revert in case of constraint violations.
      *
-     * TODO what if this lead to isLocallyValid to be false? can we prevent it?
-     * or just return false here?
-     *
-     * FIXME: change name, because it is not modifying binding, and just copy over
-     * the values
+     * @return whether the binding performs successfully.
      *
      * TODO unfortunately, Kotlin has major design flows that do not allow package-level and true protected-level
      * scope, like in Java :(
      * This is a case in which is much worse than Java.
      * But it could be simulated with Detekt and a rule like @PackagePrivate
-     *
      */
     @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
     //TODO remove deprecated once we integrate @PackagePrivate
-    internal abstract fun bindValueBasedOn(gene: Gene) : Boolean
+    internal abstract fun setValueBasedOn(gene: Gene) : Boolean
 
 
     /**
@@ -1041,9 +1039,11 @@ abstract class Gene(
      *
      * @return if the update was successful
      */
-    fun setFromDifferentGene(gene: Gene) : Boolean{
-        return updateValueOnlyIfValid( {bindValueBasedOn(gene) } , true)
+    fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true) : Boolean{
+        return updateValueOnlyIfValid( {setValueBasedOn(gene) } , undoIfUpdateFails)
     }
+
+    //setFromStringValue
 
     /**
      * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).

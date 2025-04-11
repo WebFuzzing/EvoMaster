@@ -184,7 +184,7 @@ class IntegerGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when (gene) {
             is IntegerGene -> value = gene.value
             is FloatGene -> value = gene.value.toInt()
@@ -205,10 +205,10 @@ class IntegerGene(
                 value = gene.uniqueId.toInt()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")

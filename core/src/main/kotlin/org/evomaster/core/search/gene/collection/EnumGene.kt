@@ -206,10 +206,10 @@ class EnumGene<T : Comparable<T>>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when {
             gene is EnumGene<*> -> index == gene.index
-            gene is StringGene && gene.getSpecializationGene() != null -> return bindValueBasedOn(gene.getSpecializationGene()!!)
+            gene is StringGene && gene.getSpecializationGene() != null -> return setValueBasedOn(gene.getSpecializationGene()!!)
             else -> {
                 // since the binding is derived, it is not always true.
                 log.info("cannot bind EnumGene with ${gene::class.java.simpleName}")

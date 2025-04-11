@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -157,9 +156,9 @@ class OptionalGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is OptionalGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
+        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
     override fun isChildUsed(child: Gene) : Boolean {

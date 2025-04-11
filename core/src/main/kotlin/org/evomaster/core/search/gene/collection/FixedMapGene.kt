@@ -76,7 +76,7 @@ class FixedMapGene<K, V>(
     /*
         Note that value binding cannot be performed on the [elements]
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene is FixedMapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
