@@ -737,14 +737,6 @@ abstract class Gene(
     Note: above, null target format means that no characters are escaped.
      */
 
-    /**
-     * copy value based on [other]
-     * in some case, the [other] might not satisfy constraints of [this gene],
-     * then copying will not be performed successfully
-     *
-     * @return whether the value is copied based on [other] successfully
-     */
-    abstract fun copyValueFrom(other: Gene): Boolean
 
     /**
      * If this gene represents a variable, then return its name.
@@ -1033,15 +1025,37 @@ abstract class Gene(
 
 
     /**
+     * copy value based on [other]
+     * in some case, the [other] might not satisfy constraints of [this gene],
+     * then copying will not be performed successfully
+     *
+     * FIXME unclear if side-effects or not
+     *
+     * @return whether the value is copied based on [other] successfully
+     */
+    abstract fun copyValueFrom(other: Gene): Boolean
+
+
+    /**
      * Update current value of this gene, base on other gene.
      * This is not [copyValueFrom], as the gene could be different.
+     * FIXME that comment seems wrong
      * If for any reason the update fails, there is not going to be any side-effects.
      *
      * @return if the update was successful
      */
     fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true) : Boolean{
-        return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
+
+        //FIXME current implementation leads to infinite loops. must fix copyValueFrom
+        //return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
+        //TODO update once fixed
+        return setValueBasedOn(gene)
     }
+
+    /*
+        FIXME: looks like redundancies and inconsistencies between copyValueFrom and setFromDifferentGene.
+        TODO once fixed, update
+     */
 
     /**
      * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
