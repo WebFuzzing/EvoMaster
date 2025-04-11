@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -126,10 +125,10 @@ class SqlTextSearchQueryGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTextSearchQueryGene -> {
-                queryLexemes.bindValueBasedOn(gene.queryLexemes)
+                queryLexemes.setValueBasedOn(gene.queryLexemes)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

@@ -144,7 +144,7 @@ class CharacterRangeRxGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){
             value = gene.value
             return true

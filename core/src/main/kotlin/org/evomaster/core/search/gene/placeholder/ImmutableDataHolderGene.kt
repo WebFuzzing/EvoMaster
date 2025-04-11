@@ -67,7 +67,7 @@ class ImmutableDataHolderGene(
     override fun mutationWeight(): Double = 0.0
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }

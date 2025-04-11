@@ -53,7 +53,7 @@ where T : Gene {
         }.all { it }
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         //TODO
         return false
     }

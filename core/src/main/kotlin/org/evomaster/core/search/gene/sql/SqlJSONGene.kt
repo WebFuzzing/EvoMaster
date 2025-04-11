@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -105,11 +104,11 @@ class SqlJSONGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){
-            is SqlJSONGene -> objectGene.bindValueBasedOn(gene.objectGene)
-            is SqlXMLGene -> objectGene.bindValueBasedOn(gene.objectGene)
-            is ObjectGene -> objectGene.bindValueBasedOn(gene)
+            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
+            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
+            is ObjectGene -> objectGene.setValueBasedOn(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
                 false

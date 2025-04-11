@@ -78,5 +78,6 @@ abstract class SimpleGene(name: String) : Gene(name, mutableListOf()){
     /**
      * set value of simple gene based on [value]
      */
+    @Deprecated("Rather use setFromStringValue once fully implemented")
     abstract fun setValueWithRawString(value: String)
 }

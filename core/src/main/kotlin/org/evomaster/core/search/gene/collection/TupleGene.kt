@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GraphQLUtils
@@ -203,7 +202,7 @@ class TupleGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
 
         if (gene is TupleGene
             && elements.size == gene.elements.size
@@ -212,7 +211,7 @@ class TupleGene(
         ) {
             var result = true
             (elements.indices).forEach {
-                val r = elements[it].bindValueBasedOn(gene.elements[it])
+                val r = elements[it].setValueBasedOn(gene.elements[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the element at $it with the name ${elements[it].name}")
                 result = result && r

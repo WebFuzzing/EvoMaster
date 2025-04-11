@@ -67,7 +67,7 @@ class PatternCharacterBlockGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }

@@ -33,7 +33,7 @@ class BooleanGene(
         this.value = value.toBoolean()
     }
 
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun setValueBasedOn(value: String) : Boolean{
         try{
             this.value = value.toBoolean()
             return true
@@ -84,9 +84,9 @@ class BooleanGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is SeededGene<*>){
-            return this.bindValueBasedOn(gene.getPhenotype()as Gene)
+            return this.setValueBasedOn(gene.getPhenotype()as Gene)
         }
         if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")

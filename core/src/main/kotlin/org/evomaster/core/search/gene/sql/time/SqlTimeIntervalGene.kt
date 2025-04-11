@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.time
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -87,11 +86,11 @@ class SqlTimeIntervalGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTimeIntervalGene -> {
-                days.bindValueBasedOn(gene.days) &&
-                        time.bindValueBasedOn(gene.time)
+                days.setValueBasedOn(gene.days) &&
+                        time.setValueBasedOn(gene.time)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")

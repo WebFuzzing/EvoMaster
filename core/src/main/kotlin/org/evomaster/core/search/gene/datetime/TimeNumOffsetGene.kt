@@ -92,7 +92,7 @@ class TimeNumOffsetGene(
                 && minute.containsSameValueAs(other.minute)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         //TODO
         return false
     }

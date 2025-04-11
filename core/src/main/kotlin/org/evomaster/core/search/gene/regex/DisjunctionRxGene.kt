@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -185,11 +184,11 @@ class DisjunctionRxGene(
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
             var result = true
             terms.indices.forEach { i->
-                val r = terms[i].bindValueBasedOn(gene.terms[i])
+                val r = terms[i].setValueBasedOn(gene.terms[i])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
                 result = result && r

@@ -146,18 +146,18 @@ open class DateTimeGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is DateTimeGene -> {
-                date.bindValueBasedOn(gene.date) &&
-                        time.bindValueBasedOn(gene.time)
+                date.setValueBasedOn(gene.date) &&
+                        time.setValueBasedOn(gene.time)
             }
-            gene is DateGene -> date.bindValueBasedOn(gene)
-            gene is TimeGene -> time.bindValueBasedOn(gene)
+            gene is DateGene -> date.setValueBasedOn(gene)
+            gene is TimeGene -> time.setValueBasedOn(gene)
             gene is StringGene && gene.getSpecializationGene() != null -> {
-                bindValueBasedOn(gene.getSpecializationGene()!!)
+                setValueBasedOn(gene.getSpecializationGene()!!)
             }
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()as Gene)
+            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype()as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false

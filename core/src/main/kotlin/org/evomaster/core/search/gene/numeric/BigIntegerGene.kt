@@ -150,10 +150,10 @@ class BigIntegerGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){
-            is SeededGene<*> -> return this.bindValueBasedOn(gene.getPhenotype() as Gene)
-            is NumericStringGene -> return this.bindValueBasedOn(gene.number)
+            is SeededGene<*> -> return this.setValueBasedOn(gene.getPhenotype() as Gene)
+            is NumericStringGene -> return this.setValueBasedOn(gene.number)
             is LongGene -> setValueWithLong(gene.value)
             is FloatGene -> setValueWithLong(gene.value.toLong())
             is IntegerGene -> setValueWithLong(gene.value.toLong())

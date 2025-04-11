@@ -109,7 +109,7 @@ object BindingBuilder {
     }
 
     private fun bindValues(p: Pair<Gene,Gene>, doBuildBindingGene: Boolean){
-        val ok = p.first.bindValueBasedOn(p.second)
+        val ok = p.first.setFromDifferentGene(p.second)
         if (ok && doBuildBindingGene){
             p.first.addBindingGene(p.second)
             p.second.addBindingGene(p.first)

@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.string
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -109,10 +108,10 @@ class NumericStringGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){
-            is NumericStringGene -> number.bindValueBasedOn(gene.number)
-            else-> number.bindValueBasedOn(gene)
+            is NumericStringGene -> number.setValueBasedOn(gene.number)
+            else-> number.setValueBasedOn(gene)
         }
     }
 

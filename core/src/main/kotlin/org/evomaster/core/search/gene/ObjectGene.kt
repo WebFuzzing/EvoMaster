@@ -271,7 +271,7 @@ class ObjectGene(
         )
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is ObjectGene
                 && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
                 && isFixed == gene.isFixed
@@ -279,7 +279,7 @@ class ObjectGene(
 
             var result = true
             (fixedFields.indices).forEach {
-                val r = fixedFields[it].bindValueBasedOn(gene.fixedFields[it])
+                val r = fixedFields[it].setValueBasedOn(gene.fixedFields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
                 result = result && r

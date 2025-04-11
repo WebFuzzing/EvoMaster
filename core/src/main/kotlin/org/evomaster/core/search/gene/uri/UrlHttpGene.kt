@@ -100,7 +100,7 @@ class UrlHttpGene(
                 && path.containsSameValueAs(other.path)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

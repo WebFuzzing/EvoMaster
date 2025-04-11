@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -139,13 +138,13 @@ class TaintedArrayGene(
         return this.taintedValue == other.taintedValue
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${gene::class.java}")
         }
 
         if(arrayGene != null && gene.arrayGene != null){
-            return arrayGene!!.bindValueBasedOn(gene.arrayGene!!)
+            return arrayGene!!.setValueBasedOn(gene.arrayGene!!)
         }
 
         return false

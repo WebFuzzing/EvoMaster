@@ -82,7 +82,7 @@ class UriDataGene(
                 && data.containsSameValueAs(other.data)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

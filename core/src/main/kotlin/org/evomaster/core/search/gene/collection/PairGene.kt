@@ -78,11 +78,11 @@ class PairGene<F,S>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene !is PairGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
         }
-        return first.bindValueBasedOn(gene.first) && second.bindValueBasedOn(gene.second)
+        return first.setValueBasedOn(gene.first) && second.setValueBasedOn(gene.second)
     }
 
 

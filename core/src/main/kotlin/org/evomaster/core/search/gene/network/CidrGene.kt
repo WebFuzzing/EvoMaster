@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.network
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -62,12 +61,12 @@ class CidrGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is CidrGene -> {
                 var result = true
                 repeat(octets.size) {
-                    result = result && octets[it].bindValueBasedOn(gene.octets[it])
+                    result = result && octets[it].setValueBasedOn(gene.octets[it])
                 }
                 result
             }

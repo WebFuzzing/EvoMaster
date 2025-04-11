@@ -85,7 +85,7 @@ class TimeOffsetGene(
         return type.containsSameValueAs(other.type)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         //TODO
         return false
     }

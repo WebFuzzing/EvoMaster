@@ -134,7 +134,7 @@ object RestActionTestCaseUtils {
     fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
         val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
         (restCallAction.parameters.filter { it.name == paramName }).forEach {
-            (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue)
+            (it as QueryParam).getGeneForQuery().setValueBasedOn(paramValue)
         }
     }
 

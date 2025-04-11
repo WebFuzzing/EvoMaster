@@ -94,7 +94,7 @@ class LongGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){
             is LongGene -> value = gene.value
             is FloatGene -> value = gene.value.toLong()
@@ -115,10 +115,10 @@ class LongGene(
                 value = gene.uniqueId
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")
