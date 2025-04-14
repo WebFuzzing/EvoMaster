@@ -49,8 +49,8 @@ open class ImpactsOfIndividual(
     val impactsOfStructure: ActionStructureImpact = ActionStructureImpact("StructureSize")
 ) {
 
-    constructor(individual: Individual, initActionTypes: List<String>, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
-            initActionImpacts = initActionTypes.associateWith {
+    constructor(individual: Individual, initActionTypes: List<KClass<*>>, abstractInitializationGeneToMutate: Boolean,  fitnessValue: FitnessValue?) : this(
+            initActionImpacts = initActionTypes.map { it.java.name }.associateWith {
                 InitializationGroupedActionsImpacts(
                     abstractInitializationGeneToMutate
                 )
@@ -58,11 +58,20 @@ open class ImpactsOfIndividual(
             fixedMainActionImpacts = individual.seeFixedMainActions().map { a -> ImpactsOfAction(a) }.toMutableList(),
             dynamicMainActionImpacts = individual.seeDynamicMainActions().map { a-> ImpactsOfAction(a) }.toMutableList()
     ) {
-        if (individual.seeActions(ActionFilter.NO_INIT).isEmpty())
+        if (individual.seeActions(ActionFilter.NO_INIT).isEmpty()
+            // It allows to have tests which are only composed of schedule actions,
+            // then we need to put it as part of main action later
+            && individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).isEmpty())
             throw IllegalArgumentException("there is no main action")
 
         if (fitnessValue != null) {
             impactsOfStructure.updateStructure(individual, fitnessValue)
+        }
+        val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
+        if (scheduleTasks.isNotEmpty()){
+            scheduleTasks.groupBy { it::class.java.name }.forEach { (t, u) ->
+                initActionImpacts[t]?.initInitializationActions(listOf(u), 0)?:throw IllegalStateException("InitializationGroupedActionsImpacts is not created for $t")
+            }
         }
     }
 
@@ -234,7 +243,8 @@ open class ImpactsOfIndividual(
         //for fixed action
         val fixed = individual.seeFixedMainActions()
         if ((fixed.isNotEmpty() && fixed.size != fixedMainActionImpacts.size) ||
-            (fixed.isEmpty() && !noneActionIndividual()))
+            (fixed.isEmpty() && individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK).isEmpty() // TODO Man: need a better way to handle schedule task and main action
+                    && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
 
         fixed.forEach { action ->
