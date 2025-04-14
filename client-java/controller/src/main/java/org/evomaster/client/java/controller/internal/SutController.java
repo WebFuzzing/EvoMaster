@@ -684,7 +684,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 fkMap.putIfAbsent(t.name, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
                     t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                        fkMap.get(t.name).add(f.targetTable.toUpperCase(Locale.ENGLISH));
                     });
                 }
             });

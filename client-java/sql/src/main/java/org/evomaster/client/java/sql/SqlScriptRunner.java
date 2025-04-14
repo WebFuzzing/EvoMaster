@@ -331,7 +331,7 @@ public class SqlScriptRunner {
         String insert = "INSERT ";
 
         command = command.trim();
-        if (!command.toUpperCase().startsWith(insert)) {
+        if (!command.toUpperCase(Locale.ENGLISH).startsWith(insert)) {
             throw new IllegalArgumentException("SQL command is not an INSERT\n" + command);
         }
 
