@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -245,12 +244,12 @@ class QuantifierRxGene(
     /*
         Note that value binding cannot be performed on the [atoms]
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is QuantifierRxGene){
             var result = true
             if(atoms.size == gene.atoms.size){
                 atoms.indices.forEach {
-                    val r = atoms[it].bindValueBasedOn(gene.atoms[it])
+                    val r = atoms[it].setValueBasedOn(gene.atoms[it])
                     if (!r)
                         LoggingUtil.uniqueWarn(log, "value binding for QuantifierRxGene does not perform successfully at index $it")
                     result =  r && result

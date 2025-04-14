@@ -13,6 +13,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SqlParserUtils {
 
@@ -40,7 +41,7 @@ public class SqlParserUtils {
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix){
-        return input!= null && input.trim().toLowerCase().startsWith(prefix);
+        return input!= null && input.trim().toLowerCase(Locale.ENGLISH).startsWith(prefix);
     }
 
     private static boolean isASequence(String input) {
