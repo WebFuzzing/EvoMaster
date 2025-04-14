@@ -182,7 +182,9 @@ object RestActionBuilderV3 {
                     }
 
                     if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
-                        //TODO what is this even for???
+                        /*
+                            TODO this is for parameters that apply to all endpoints for given path
+                         */
                         messages.add("Currently cannot handle 'path-scope' parameters in ${e.key}")
                     }
 
