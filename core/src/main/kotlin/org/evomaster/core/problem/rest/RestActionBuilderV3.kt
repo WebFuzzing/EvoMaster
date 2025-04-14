@@ -5,15 +5,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.examples.Example
-import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.JsonSchema
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
-import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
@@ -159,61 +158,97 @@ object RestActionBuilderV3 {
 
         val swagger = schemaHolder.main.schemaParsed
 
-        val basePath = getBasePathFromURL(swagger)
-
         swagger.paths
                 .forEach { e ->
-
-                    /*
-                        In V2 there that a "host" and "basePath".
-                        In V3, this was replaced by a "servers" list of URLs.
-                        The "paths" are then appended to such URLs, which works
-                        like a "host+basePath"
-                     */
-                    val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
-
-                    //filtering is based on raw path declaration, without base
-                    //TODO might want to support both cases in the future
-                    val rawPath = RestPath(e.key)
-
-                    if (e.value.`$ref` != null) {
-                        //TODO
-                        messages.add("Currently cannot handle \$ref in ${e.key}: ${e.value.`$ref`}")
-                    }
-
-                    if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
-                        /*
-                            TODO this is for parameters that apply to all endpoints for given path
-                         */
-                        messages.add("Currently cannot handle 'path-scope' parameters in ${e.key}")
-                    }
-
-                    if (!e.value.description.isNullOrBlank()) {
-                        //TODO should we do something with it for doParseDescription?
-                    }
-
-                    val h = { verb: HttpVerb, operation: Operation ->
-                        if(endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }){
-                            skipped.add(Endpoint(verb,restPath))
-                        } else {
-                            handleOperation(actionCluster, verb, restPath, operation, schemaHolder, schemaHolder.main, options, errorEndpoints, messages)
-                        }
-                    }
-
-                    if (e.value.get != null)     h(HttpVerb.GET,     e.value.get)
-                    if (e.value.post != null)    h(HttpVerb.POST,    e.value.post)
-                    if (e.value.put != null)     h(HttpVerb.PUT,     e.value.put)
-                    if (e.value.patch != null)   h(HttpVerb.PATCH,   e.value.patch)
-                    if (e.value.options != null) h(HttpVerb.OPTIONS, e.value.options)
-                    if (e.value.delete != null)  h(HttpVerb.DELETE,  e.value.delete)
-                    if (e.value.trace != null)   h(HttpVerb.TRACE,   e.value.trace)
-                    if (e.value.head != null)    h(HttpVerb.HEAD,    e.value.head)
+                    handlePathItem(
+                        e.key,
+                        e.value,
+                        messages,
+                        endpointsToSkip,
+                        skipped,
+                        actionCluster,
+                        schemaHolder,
+                        options,
+                        errorEndpoints
+                    )
                 }
 
         ActionBuilderUtil.verifySkipped(skipped,endpointsToSkip)
         ActionBuilderUtil.printActionNumberInfo("RESTful API", actionCluster.size, skipped.size, errorEndpoints.size)
 
         return messages
+    }
+
+    private fun handlePathItem(
+        pathKey: String,
+        pathItem: PathItem,
+        messages: MutableList<String>,
+        endpointsToSkip: List<Endpoint>,
+        skipped: MutableList<Endpoint>,
+        actionCluster: MutableMap<String, Action>,
+        schemaHolder: RestSchema,
+        options: Options,
+        errorEndpoints: MutableList<String>
+    ) {
+        val swagger = schemaHolder.main.schemaParsed
+        val basePath = getBasePathFromURL(swagger)
+
+        /*
+           In V2 there that a "host" and "basePath".
+           In V3, this was replaced by a "servers" list of URLs.
+           The "paths" are then appended to such URLs, which works
+           like a "host+basePath"
+         */
+        val restPath = RestPath(if (basePath == "/") pathKey else (basePath + pathKey))
+
+        //filtering is based on raw path declaration, without base
+        //TODO might want to support both cases in the future
+        val rawPath = RestPath(pathKey)
+
+        if (pathItem.`$ref` != null) {
+            val pi = SchemaUtils.getReferencePathItem(schemaHolder,schemaHolder.main,pathItem.`$ref`,messages)
+                ?: return
+            handlePathItem(pathKey, pi, messages,endpointsToSkip,skipped,actionCluster,schemaHolder,options,errorEndpoints)
+            return
+        }
+
+        if (pathItem.parameters != null && pathItem.parameters.isNotEmpty()) {
+            /*
+              TODO this is for parameters that apply to all endpoints for given path
+             */
+            messages.add("Currently cannot handle 'path-scope' parameters in $pathKey")
+        }
+
+        if (!pathItem.description.isNullOrBlank()) {
+            //TODO should we do something with it for doParseDescription?
+        }
+
+        val h = { verb: HttpVerb, operation: Operation ->
+            if (endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }) {
+                skipped.add(Endpoint(verb, restPath))
+            } else {
+                handleOperation(
+                    actionCluster,
+                    verb,
+                    restPath,
+                    operation,
+                    schemaHolder,
+                    schemaHolder.main,
+                    options,
+                    errorEndpoints,
+                    messages
+                )
+            }
+        }
+
+        if (pathItem.get != null) h(HttpVerb.GET, pathItem.get)
+        if (pathItem.post != null) h(HttpVerb.POST, pathItem.post)
+        if (pathItem.put != null) h(HttpVerb.PUT, pathItem.put)
+        if (pathItem.patch != null) h(HttpVerb.PATCH, pathItem.patch)
+        if (pathItem.options != null) h(HttpVerb.OPTIONS, pathItem.options)
+        if (pathItem.delete != null) h(HttpVerb.DELETE, pathItem.delete)
+        if (pathItem.trace != null) h(HttpVerb.TRACE, pathItem.trace)
+        if (pathItem.head != null) h(HttpVerb.HEAD, pathItem.head)
     }
 
     /**
@@ -514,14 +549,29 @@ object RestActionBuilderV3 {
         return params
     }
 
-    private fun exampleObjects(example: Any?, examples: Map<String, Example>?) : List<Any>{
+    private fun exampleObjects(
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        example: Any?,
+        examples: Map<String, Example>?,
+        messages: MutableList<String>
+    ) : List<Any>{
 
         val data = mutableListOf<Any>()
         if(example != null){
             data.add(example)
         }
         if(!examples.isNullOrEmpty()){
-            examples.values.forEach { data.add(it.value) }
+            examples.values.forEach {
+                val exm = if(it.`$ref` != null){
+                    SchemaUtils.getReferenceExample(schemaHolder, currentSchema, it.`$ref`, messages)
+                } else {
+                    it
+                }
+                if(exm != null) {
+                    data.add(exm.value)
+                }
+            }
         }
         return data
     }
@@ -540,7 +590,11 @@ object RestActionBuilderV3 {
             return
         }
 
-        val examples = if(options.probUseExamples > 0) exampleObjects(p.example, p.examples) else listOf()
+        val examples = if(options.probUseExamples > 0) {
+            exampleObjects(schemaHolder, currentSchema, p.example, p.examples, messages)
+        } else {
+            listOf()
+        }
 
         var gene = getGene(
             name,
@@ -676,7 +730,12 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        val examples = if(options.probUseExamples > 0) exampleObjects(obj.example, obj.examples) else listOf()
+        val examples = if(options.probUseExamples > 0) {
+            exampleObjects(schemaHolder, currentSchema, obj.example, obj.examples, messages)
+        } else {
+            listOf()
+        }
+
         var gene = getGene("body", obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
 
@@ -1452,7 +1511,7 @@ object RestActionBuilderV3 {
             - example/examples can be defined at same level of "schema" object, ie, in a Parameter Object.
               "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
               whereas there in a Parameter Object as an array of object definitions).
-            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexcepted and counter
+            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexpected and counter
               intuitive behavior. should be avoided.
             - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
                 did not support example/examples keywords as widely as now?)
