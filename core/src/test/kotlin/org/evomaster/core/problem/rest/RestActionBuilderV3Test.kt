@@ -2077,4 +2077,21 @@ class RestActionBuilderV3Test{
         assertTrue(get.produces.any { it.contains("xml") })
         assertEquals(1, get.parameters.size)
     }
+
+    @Test
+    fun testPathItem(){
+        val map = loadAndAssertActions(
+            "/swagger/artificial/ref/pathitem.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val certain = map.values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("FOO", output)
+    }
+
 }
