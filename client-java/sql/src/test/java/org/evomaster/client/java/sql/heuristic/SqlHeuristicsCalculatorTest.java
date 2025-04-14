@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
@@ -347,4 +348,5 @@ public class SqlHeuristicsCalculatorTest {
         SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, null, null, employees, departments);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
+
 }

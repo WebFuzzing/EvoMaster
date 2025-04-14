@@ -1,18 +1,19 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.Select;
 
 class TableReference {
-    private final String baseTableName;
-    private final Select derivedTableParenthesedSelect;
+    private final Table table;
+    private final Select select;
 
-    private TableReference(String baseTableName, Select derivedTableParenthesedSelect) {
-        this.baseTableName = baseTableName;
-        this.derivedTableParenthesedSelect = derivedTableParenthesedSelect;
+    private TableReference(Table table, Select select) {
+        this.table = table;
+        this.select = select;
     }
 
-    public static TableReference createBaseTableReference(String name) {
-        return new TableReference(name, null);
+    public static TableReference createBaseTableReference(Table table) {
+        return new TableReference(table, null);
     }
 
     public static TableReference createDerivedTableReference(Select select) {
@@ -20,23 +21,23 @@ class TableReference {
     }
 
     public boolean isBaseTableReference() {
-        return baseTableName != null;
+        return table != null;
     }
 
     public boolean isDerivedTableReference() {
-        return derivedTableParenthesedSelect != null;
+        return select != null;
     }
 
-    public String getBaseTableName() {
-        return baseTableName;
+    public Table getBaseTable() {
+        return table;
     }
 
     public Select getDerivedTableSelect() {
-        return derivedTableParenthesedSelect;
+        return select;
     }
 
     @Override
     public String toString() {
-        return baseTableName;
+        return isBaseTableReference() ? table.toString() : select.toString();
     }
 }

@@ -39,9 +39,18 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     private final Stack<Truthness> computedTruthnesses = new Stack<>();
     private final Stack<Object> concreteValues = new Stack<>();
     private final TaintHandler taintHandler;
+    private final TableReferenceResolver tableReferenceResolver;
 
     public SqlExpressionEvaluator(SqlNameContext sqlNameContext, TaintHandler taintHandler, DataRow dataRow) {
+        this.tableReferenceResolver = null;
         this.sqlNameContext = sqlNameContext;
+        this.taintHandler = taintHandler;
+        this.dataRow = dataRow;
+    }
+
+    public SqlExpressionEvaluator(TableReferenceResolver tableReferenceResolver, TaintHandler taintHandler, DataRow dataRow) {
+        this.tableReferenceResolver = tableReferenceResolver;
+        this.sqlNameContext = null;
         this.taintHandler = taintHandler;
         this.dataRow = dataRow;
     }
@@ -619,9 +628,8 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Column column) {
         String name = column.getColumnName();
-        String tableName = column.getTable().getFullyQualifiedName();
-
         String table = sqlNameContext.getTableName(column);
+
         Object value = dataRow.getValueByName(name, table);
         concreteValues.push(value);
     }

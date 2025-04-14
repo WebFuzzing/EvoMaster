@@ -3,12 +3,15 @@ package org.evomaster.client.java.sql.internal;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SqlParserUtils {
@@ -173,6 +176,14 @@ public class SqlParserUtils {
         }
     }
 
+    public static Table getTable(FromItem fromItem) {
+        if (fromItem instanceof Table) {
+            return (Table) fromItem;
+        } else {
+            throw new IllegalArgumentException("From item " + fromItem + " is not a table");
+        }
+    }
+
     /**
      * Retrieves the {@link PlainSelect} object from a {@link FromItem} that represents a subquery.
      *
@@ -208,6 +219,26 @@ public class SqlParserUtils {
         }
         SetOperationList unionQuery = (SetOperationList) query;
         return unionQuery.getSelects();
+    }
 
+    /**
+     * Retrieves the "FROM" and "JOIN" items from a given SQL SELECT statement.
+     *
+     * @param select the SQL SELECT statement
+     * @return a list of FromItem objects representing the "FROM" and "JOIN" items
+     */
+    public static List<FromItem> getFromAndJoinItems(Select select) {
+        final FromItem fromItem = SqlParserUtils.getFrom(select);
+        final List<Join> joins = SqlParserUtils.getJoins(select);
+        List<FromItem> fromAndJoinItems = new ArrayList<>();
+        if (fromItem !=null) {
+            fromAndJoinItems.add(fromItem);
+        }
+        if (joins!=null) {
+            for (Join join : joins) {
+                fromAndJoinItems.add(join.getRightItem());
+            }
+        }
+        return fromAndJoinItems;
     }
 }
