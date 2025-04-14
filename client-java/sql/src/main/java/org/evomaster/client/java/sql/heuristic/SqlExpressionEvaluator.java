@@ -7,6 +7,7 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.conditional.XorExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
@@ -35,22 +36,13 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public static final char MINUS = '-';
     public static final char PLUS = '+';
     private final DataRow dataRow;
-    private final SqlNameContext sqlNameContext;
     private final Stack<Truthness> computedTruthnesses = new Stack<>();
     private final Stack<Object> concreteValues = new Stack<>();
     private final TaintHandler taintHandler;
-    private final TableReferenceResolver tableReferenceResolver;
+    private final ColumnReferenceResolver columnReferenceResolver;
 
-    public SqlExpressionEvaluator(SqlNameContext sqlNameContext, TaintHandler taintHandler, DataRow dataRow) {
-        this.tableReferenceResolver = null;
-        this.sqlNameContext = sqlNameContext;
-        this.taintHandler = taintHandler;
-        this.dataRow = dataRow;
-    }
-
-    public SqlExpressionEvaluator(TableReferenceResolver tableReferenceResolver, TaintHandler taintHandler, DataRow dataRow) {
-        this.tableReferenceResolver = tableReferenceResolver;
-        this.sqlNameContext = null;
+    public SqlExpressionEvaluator(ColumnReferenceResolver columnReferenceResolver, TaintHandler taintHandler, DataRow dataRow) {
+        this.columnReferenceResolver = columnReferenceResolver;
         this.taintHandler = taintHandler;
         this.dataRow = dataRow;
     }
@@ -627,11 +619,22 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Column column) {
-        String name = column.getColumnName();
-        String table = sqlNameContext.getTableName(column);
-
-        Object value = dataRow.getValueByName(name, table);
-        concreteValues.push(value);
+        if (column.getColumnName().equalsIgnoreCase("true")) {
+            concreteValues.push(Boolean.TRUE);
+        } else if (column.getColumnName().equalsIgnoreCase("false")) {
+            concreteValues.push(Boolean.FALSE);
+        } else {
+            ColumnReference columnReference = columnReferenceResolver.resolveColumnReference(column);
+            Object value;
+            if (columnReference.getTableReference().isBaseTableReference()) {
+                Table table = columnReference.getTableReference().getBaseTable();
+                String name = column.getColumnName();
+                value = dataRow.getValueByName(name, table.getName());
+            } else {
+                throw new UnsupportedOperationException("must implement evaluation of subquery ");
+            }
+            concreteValues.push(value);
+        }
     }
 
     @Override

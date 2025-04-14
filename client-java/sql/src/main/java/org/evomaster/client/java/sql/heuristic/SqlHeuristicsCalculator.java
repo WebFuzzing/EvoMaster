@@ -327,7 +327,7 @@ public class SqlHeuristicsCalculator {
     private Truthness evaluateAllConditions(Collection<Expression> conditions, DataRow row) {
         List<Truthness> truthnesses = new ArrayList<>();
         for (Expression condition : conditions) {
-            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(sqlNameContext, taintHandler, row);
+            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(null, taintHandler, row);
             condition.accept(expressionEvaluator);
             truthnesses.add(expressionEvaluator.getEvaluatedTruthness());
         }

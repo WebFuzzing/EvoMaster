@@ -2,14 +2,15 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.Select;
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
-import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
+
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Time;
@@ -25,34 +26,119 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
-import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
 import static org.junit.jupiter.api.Assertions.*;
 
 class SqlExpressionEvaluatorTest {
+    private DbInfoDto schema;
 
-    private static void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow row) {
+    private static ColumnDto createColumnDto(String columnName) {
+        ColumnDto column = new ColumnDto();
+        column.name = columnName;
+        return column;
+    }
+
+    private static TableDto createTableDto(String tableName) {
+        TableDto table = new TableDto();
+        table.name = tableName;
+        return table;
+    }
+
+    @BeforeEach
+    void setUp() {
+
+        schema = new DbInfoDto();
+        TableDto personsTable = createTableDto("persons");
+        personsTable.columns.add(createColumnDto("name"));
+        personsTable.columns.add(createColumnDto("age"));
+        personsTable.columns.add(createColumnDto("birth_day"));
+        personsTable.columns.add(createColumnDto("is_member"));
+
+        TableDto employeesTable = createTableDto("employees");
+        employeesTable.columns.add(createColumnDto("salary"));
+        employeesTable.columns.add(createColumnDto("bonus"));
+        employeesTable.columns.add(createColumnDto("first_name"));
+        employeesTable.columns.add(createColumnDto("last_name"));
+        employeesTable.columns.add(createColumnDto("age"));
+        employeesTable.columns.add(createColumnDto("name"));
+        employeesTable.columns.add(createColumnDto("department_id"));
+        employeesTable.columns.add(createColumnDto("employee_id"));
+        employeesTable.columns.add(createColumnDto("hire_year"));
+
+        TableDto schedulesTable = createTableDto("schedules");
+        schedulesTable.columns.add(createColumnDto("start_time"));
+
+        TableDto eventsTable = createTableDto("events");
+        eventsTable.columns.add(createColumnDto("event_id"));
+        eventsTable.columns.add(createColumnDto("event_timestamp"));
+        eventsTable.columns.add(createColumnDto("event_date"));
+        eventsTable.columns.add(createColumnDto("event_time"));
+        eventsTable.columns.add(createColumnDto("start_date"));
+        eventsTable.columns.add(createColumnDto("end_date"));
+        eventsTable.columns.add(createColumnDto("start_time"));
+        eventsTable.columns.add(createColumnDto("end_time"));
+        eventsTable.columns.add(createColumnDto("start_timestamp"));
+        eventsTable.columns.add(createColumnDto("end_timestamp"));
+
+        TableDto usersTable = createTableDto("users");
+        usersTable.columns.add(createColumnDto("permissions"));
+
+        TableDto ordersTable = createTableDto("orders");
+        ordersTable.columns.add(createColumnDto("order_id"));
+        ordersTable.columns.add(createColumnDto("order_date"));
+        ordersTable.columns.add(createColumnDto("order_time"));
+        ordersTable.columns.add(createColumnDto("customer_id"));
+        ordersTable.columns.add(createColumnDto("order_timestamp"));
+
+        TableDto productsTable = createTableDto("products");
+        productsTable.columns.add(createColumnDto("price"));
+        productsTable.columns.add(createColumnDto("product_name"));
+        productsTable.columns.add(createColumnDto("original_price"));
+        productsTable.columns.add(createColumnDto("discount_price"));
+        productsTable.columns.add(createColumnDto("quantity"));
+
+        TableDto appointmentsTable = createTableDto("appointments");
+        appointmentsTable.columns.add(createColumnDto("appointment_id"));
+        appointmentsTable.columns.add(createColumnDto("appointment_datetime"));
+
+        schema.tables.add(personsTable);
+        schema.tables.add(employeesTable);
+        schema.tables.add(schedulesTable);
+        schema.tables.add(eventsTable);
+        schema.tables.add(usersTable);
+        schema.tables.add(ordersTable);
+        schema.tables.add(productsTable);
+        schema.tables.add(appointmentsTable);
+
+    }
+
+    private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow row) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         Select select = (Select) parsedSqlCommand;
 
-        SqlNameContext sqlNameContext = new SqlNameContext(parsedSqlCommand);
+
+        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
         TaintHandler taintHandler = null;
 
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(sqlNameContext, taintHandler, row);
+        columnReferenceResolver.enterSelectContext(select);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
+        columnReferenceResolver.exitCurrentSelectContext();
 
         Truthness truthness = evaluator.getEvaluatedTruthness();
         assertTrue(truthness.isTrue());
     }
 
-    private static void assertSqlExpressionEvaluatesToFalse(String sqlCommand, DataRow row) {
+    private void assertSqlExpressionEvaluatesToFalse(String sqlCommand, DataRow row) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         Select select = (Select) parsedSqlCommand;
 
-        SqlNameContext sqlNameContext = new SqlNameContext(parsedSqlCommand);
         TaintHandler taintHandler = null;
+        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
 
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(sqlNameContext, taintHandler, row);
+        columnReferenceResolver.enterSelectContext(select);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
+        columnReferenceResolver.exitCurrentSelectContext();
 
         Truthness truthness = evaluator.getEvaluatedTruthness();
         assertFalse(truthness.isTrue());
@@ -192,9 +278,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testEqualsToBoolean() {
-        String sqlCommand = "SELECT name, age, is_member FROM Persons WHERE is_member=true";
+        String sqlCommand = "SELECT name, age, is_member FROM persons WHERE is_member=true";
         DataRow row = new DataRow(
-                "Persons",
+                "persons",
                 Arrays.asList("name", "age", "is_member"),
                 Arrays.asList("John", 18, true));
 
@@ -247,7 +333,7 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testDoubleComparison() {
-        String sqlCommand = "SELECT price FROM Products WHERE price<=19.99";
+        String sqlCommand = "SELECT price FROM products WHERE price<=19.99";
         DataRow row = new DataRow(
                 "Products",
                 Collections.singletonList("price"),
@@ -280,9 +366,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testMultiplication() {
-        String sqlCommand = "SELECT product_name, price, quantity FROM Products WHERE price * quantity > 100";
+        String sqlCommand = "SELECT product_name, price, quantity FROM products WHERE price * quantity > 100";
         DataRow row = new DataRow(
-                "Products",
+                "products",
                 Arrays.asList("product_name", "price", "quantity"),
                 Arrays.asList("Laptop", 120, 2));
 
@@ -291,9 +377,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testSubtraction() {
-        String sqlCommand = "SELECT product_name, original_price, discount_price FROM Products WHERE original_price - discount_price > 20";
+        String sqlCommand = "SELECT product_name, original_price, discount_price FROM products WHERE original_price - discount_price > 20";
         DataRow row = new DataRow(
-                "Products",
+                "products",
                 Arrays.asList("product_name", "original_price", "discount_price"),
                 Arrays.asList("Laptop", 300, 200));
 
@@ -346,9 +432,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testShouldReturnZeroDistanceForTimestamp() {
-        String sqlCommand = "SELECT order_id, customer_id, order_timestamp FROM Orders WHERE order_timestamp = '2025-01-14 12:30:45'";
+        String sqlCommand = "SELECT order_id, customer_id, order_timestamp FROM orders WHERE order_timestamp = '2025-01-14 12:30:45'";
         DataRow row = new DataRow(
-                "Orders",
+                "orders",
                 Arrays.asList("order_id", "customer_id", "order_timestamp"),
                 Arrays.asList(1, 1, Timestamp.valueOf("2025-01-14 12:30:45")));
 
@@ -357,12 +443,12 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testEqualsToDate() throws ParseException {
-        String sqlCommand = "SELECT event_id, event_date FROM Events WHERE event_date = '2025-01-14'";
+        String sqlCommand = "SELECT event_id, event_date FROM events WHERE event_date = '2025-01-14'";
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
         java.util.Date date = dateFormat.parse("2025-01-14");
 
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Arrays.asList("event_id", "event_date"),
                 Arrays.asList(1, date));
 
@@ -384,12 +470,12 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testEqualToDateTime() throws ParseException {
-        String sqlCommand = "SELECT appointment_id, appointment_datetime FROM Appointments WHERE appointment_datetime = '2025-01-14 12:30:45'";
+        String sqlCommand = "SELECT appointment_id, appointment_datetime FROM appointments WHERE appointment_datetime = '2025-01-14 12:30:45'";
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Date dateTime = sdf.parse("2025-01-14 12:30:45");
 
         DataRow row = new DataRow(
-                "Appointments",
+                "appointments",
                 Arrays.asList("appointment_id", "appointment_datetime"),
                 Arrays.asList(1, dateTime));
 
@@ -411,11 +497,11 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testEqualsToTimeStampWithTimeZone() {
-        String sqlCommand = "SELECT event_id, event_time FROM Events WHERE event_time = '2025-01-14 12:30:45+02:00'";
+        String sqlCommand = "SELECT event_id, event_time FROM events WHERE event_time = '2025-01-14 12:30:45+02:00'";
         OffsetDateTime offsetDateTime = OffsetDateTime.parse("2025-01-14T12:30:45+02:00");
 
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Arrays.asList("event_id", "event_time"),
                 Arrays.asList(1, offsetDateTime));
 
@@ -570,11 +656,11 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testBetweenTimes() {
-        String sqlCommand = "SELECT start_time FROM Schedules WHERE start_time BETWEEN '09:00:00' AND '17:00:00'";
+        String sqlCommand = "SELECT start_time FROM schedules WHERE start_time BETWEEN '09:00:00' AND '17:00:00'";
         Time startTime = Time.valueOf("12:00:00");
 
         DataRow row = new DataRow(
-                "Schedules",
+                "schedules",
                 Collections.singletonList("start_time"),
                 Collections.singletonList(startTime));
 
@@ -583,11 +669,11 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testBetweenTimestamps() {
-        String sqlCommand = "SELECT event_timestamp FROM Events WHERE event_timestamp BETWEEN '2023-01-01 00:00:00' AND '2023-12-31 23:59:59'";
+        String sqlCommand = "SELECT event_timestamp FROM events WHERE event_timestamp BETWEEN '2023-01-01 00:00:00' AND '2023-12-31 23:59:59'";
         Timestamp eventTimestamp = Timestamp.valueOf("2023-06-15 12:00:00");
 
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Collections.singletonList("event_timestamp"),
                 Collections.singletonList(eventTimestamp));
 
@@ -596,9 +682,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testXOrCondition() {
-        String sqlCommand = "SELECT salary, age FROM Employees WHERE (age > 30) XOR (salary > 50000)";
+        String sqlCommand = "SELECT salary, age FROM employees WHERE (age > 30) XOR (salary > 50000)";
         DataRow row = new DataRow(
-                "Employees",
+                "employees",
                 Arrays.asList("age", "salary"),
                 Arrays.asList(35, 40000));
 
@@ -651,9 +737,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testOverlapsTime() {
-        String sqlCommand = "SELECT start_time, end_time FROM Events WHERE (start_time, end_time) OVERLAPS (TIME '10:00:00', TIME '12:00:00')";
+        String sqlCommand = "SELECT start_time, end_time FROM events WHERE (start_time, end_time) OVERLAPS (TIME '10:00:00', TIME '12:00:00')";
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Arrays.asList("start_time", "end_time"),
                 Arrays.asList(Time.valueOf("09:00:00"), Time.valueOf("11:00:00"))
         );
@@ -663,9 +749,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testOverlapsDate() {
-        String sqlCommand = "SELECT start_date, end_date FROM Events WHERE (start_date, end_date) OVERLAPS (DATE '2023-01-01', DATE '2024-01-01')";
+        String sqlCommand = "SELECT start_date, end_date FROM events WHERE (start_date, end_date) OVERLAPS (DATE '2023-01-01', DATE '2024-01-01')";
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Arrays.asList("start_date", "end_date"),
                 Arrays.asList(java.sql.Date.valueOf("2022-12-31"), java.sql.Date.valueOf("2023-06-01"))
         );
@@ -675,9 +761,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testOverlapsTimestamp() {
-        String sqlCommand = "SELECT start_timestamp, end_timestamp FROM Events WHERE (start_timestamp, end_timestamp) OVERLAPS (TIMESTAMP '2023-01-01 00:00:00', TIMESTAMP '2024-01-01 23:59:59')";
+        String sqlCommand = "SELECT start_timestamp, end_timestamp FROM events WHERE (start_timestamp, end_timestamp) OVERLAPS (TIMESTAMP '2023-01-01 00:00:00', TIMESTAMP '2024-01-01 23:59:59')";
         DataRow row = new DataRow(
-                "Events",
+                "events",
                 Arrays.asList("start_timestamp", "end_timestamp"),
                 Arrays.asList(Timestamp.valueOf("2023-05-01 00:00:00"), Timestamp.valueOf("2024-01-10 23:59:59"))
         );
@@ -699,9 +785,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testConcat() {
-        String sqlCommand = "SELECT * FROM Employees WHERE first_name || ' ' || last_name = 'John Doe'";
+        String sqlCommand = "SELECT * FROM employees WHERE first_name || ' ' || last_name = 'John Doe'";
         DataRow row = new DataRow(
-                "Employees",
+                "employees",
                 Arrays.asList("first_name", "last_name"),
                 Arrays.asList("John", "Doe")
         );
@@ -759,9 +845,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testSimilarToExpression() {
-        String sqlCommand = "SELECT * FROM Employees WHERE name SIMILAR TO 'John%'";
+        String sqlCommand = "SELECT * FROM employees WHERE name SIMILAR TO 'John%'";
         DataRow row = new DataRow(
-                "Employees",
+                "employees",
                 Collections.singletonList("name"),
                 Collections.singletonList("John Doe")
         );
@@ -771,9 +857,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testArrayConstructor() {
-        String sqlCommand = "SELECT * FROM Employees WHERE ARRAY[salary, bonus] = ARRAY[50000, 5000]";
+        String sqlCommand = "SELECT * FROM employees WHERE ARRAY[salary, bonus] = ARRAY[50000, 5000]";
         DataRow row = new DataRow(
-                "Employees",
+                "employees",
                 Arrays.asList("salary", "bonus"),
                 Arrays.asList(50000, 5000)
         );
@@ -1079,9 +1165,9 @@ class SqlExpressionEvaluatorTest {
 
     @Test
     public void testNullInExpression() {
-        String sqlCommand = "SELECT * FROM Employees WHERE NOT (department_id IN (1, 2, 3))";
+        String sqlCommand = "SELECT * FROM employees WHERE NOT (department_id IN (1, 2, 3))";
         DataRow row = new DataRow(
-                "Employees",
+                "employees",
                 Collections.singletonList("department_id"),
                 Collections.singletonList(null)
         );

@@ -39,7 +39,6 @@ public class ColumnReferenceResolver {
 
         return this.schema.tables.stream()
                 .filter(t -> t.name.equalsIgnoreCase(tableName))
-                .flatMap(t -> t.columns.stream())
                 .count() > 0;
     }
 
