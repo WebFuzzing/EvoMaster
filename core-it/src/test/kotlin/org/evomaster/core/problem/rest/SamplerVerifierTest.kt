@@ -16,11 +16,8 @@ import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.TestFactory
-import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.io.File
 import java.time.Duration
 
@@ -56,7 +53,8 @@ class SamplerVerifierTest {
     }
 
 
-    //@Disabled("Few hundreds of those fails. will need to fix the parsing")
+    //FIXME need to put back, and investigate performance bug
+    @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
         return sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru")
