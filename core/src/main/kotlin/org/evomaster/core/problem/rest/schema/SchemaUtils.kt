@@ -2,6 +2,8 @@ package org.evomaster.core.problem.rest.schema
 
 
 import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.examples.Example
 import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
@@ -29,13 +31,13 @@ object SchemaUtils {
         - schemas (DONE)
         - responses (DONE)
         - parameters (DONE)
-        - examples (TODO)
+        - examples (DONE)
         - requestBodies (DONE)
-        - headers (TODO)
+        - headers (TODO is it needed? this is for response objects)
         - securitySchemes (TODO is it needed?)
         - links (DONE)
         - callbacks (TODO is it needed?)
-        - pathItems (TODO)
+        - pathItems (DONE)
      */
 
 
@@ -168,6 +170,42 @@ object SchemaUtils {
         }
         return p
     }
+
+
+    fun getReferencePathItem(
+        schema: RestSchema,
+        current: SchemaOpenAPI,
+        reference: String,
+        messages: MutableList<String>
+    ) : PathItem?{
+        return getReference(schema,current,reference,messages,SchemaUtils::getPathItem)
+    }
+
+    private fun getPathItem(openAPI: SchemaOpenAPI, name: String, messages: MutableList<String>,reference: String): PathItem?{
+        val p = openAPI.schemaParsed.components?.pathItems?.get(name)
+        if(p == null){
+            messages.add("Cannot find reference to path item $reference")
+        }
+        return p
+    }
+
+    fun getReferenceExample(
+        schema: RestSchema,
+        current: SchemaOpenAPI,
+        reference: String,
+        messages: MutableList<String>
+    ) : Example?{
+        return getReference(schema,current,reference,messages,SchemaUtils::getExample)
+    }
+
+    private fun getExample(openAPI: SchemaOpenAPI, name: String, messages: MutableList<String>, reference: String) : Example?{
+        val e = openAPI.schemaParsed.components?.examples?.get(name)
+        if(e == null){
+            messages.add("Cannot find reference to example $reference")
+        }
+        return e
+    }
+
 
     fun getReferenceRequestBody(
         schema: RestSchema,

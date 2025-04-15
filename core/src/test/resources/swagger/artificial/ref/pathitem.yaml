@@ -1,0 +1,12 @@
+---
+openapi: 3.1.0
+info:
+  title: links_base
+  version: 1.0.0
+paths:
+  "/users/{id}":
+    $ref: "pathitem_examples.yaml#/components/pathitems/getById"
+components:
+  examples:
+    foo:
+      value: FOO
