@@ -105,7 +105,7 @@ public class DataRow {
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if (n.equalsIgnoreCase(desc.getColumnName()) &&
+            if ((n.equalsIgnoreCase(desc.getColumnName()) || n.equalsIgnoreCase(desc.getAlias())) &&
                     (t == null || t.isEmpty()
                             || t.equalsIgnoreCase(desc.getTableName())
                             /*
