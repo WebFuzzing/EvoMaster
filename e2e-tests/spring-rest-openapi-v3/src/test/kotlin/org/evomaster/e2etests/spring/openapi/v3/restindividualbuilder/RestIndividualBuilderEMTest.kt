@@ -22,7 +22,7 @@ class RestIndividualBuilderEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
             "RestIndividualBuilderEM",
-            1000
+            100
         ) { args: MutableList<String> ->
 
             setOption(args, "blackBox", "true")

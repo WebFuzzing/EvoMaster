@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
-@RequestMapping(path = ["/x"])
+@RequestMapping(path = ["/"])
 @RestController
 open class RestIndividualBuilderApplication {
 
@@ -20,25 +20,29 @@ open class RestIndividualBuilderApplication {
         fun main(args: Array<String>) {
             SpringApplication.run(RestIndividualBuilderApplication::class.java, *args)
         }
-
-
-        fun reset() {
-
-        }
     }
+//    @PostMapping(path = ["/"])
+//    open fun create1(
+//    ): ResponseEntity<Any> {
+//        return ResponseEntity.status(201).build<Any>()
+//    }
 
-    @PostMapping(path = ["/{id}/y/z"])
+    @PostMapping(path = ["{id}/x"])
     open fun create(
-        @RequestHeader("Authorization") auth: String?,
         @PathVariable("id") id: Int,
-        @RequestBody body: String,
     ): ResponseEntity<Any> {
         return ResponseEntity.status(201).build<Any>()
     }
 
-    @PutMapping(path = ["/{id}/y/z"])
+    @PutMapping(path = ["{id}/x"])
     open fun change(
-        @RequestHeader("Authorization") auth: String?,
+        @PathVariable("id") id: Int,
+    ): ResponseEntity<Any> {
+        return ResponseEntity.status(201).build()
+    }
+
+    @GetMapping(path = ["{id}/x"])
+    open fun get(
         @PathVariable("id") id: Int,
     ): ResponseEntity<Any> {
         return ResponseEntity.status(201).build()
