@@ -625,20 +625,21 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             concreteValues.push(Boolean.FALSE);
         } else {
             ColumnReference columnReference = columnReferenceResolver.resolveColumnReference(column);
-            Object value;
-            if (columnReference.getTableReference().isBaseTableReference()) {
-                Table table = columnReference.getTableReference().getBaseTable();
-                String name = columnReference.getColumnName();
-                value = dataRow.getValueByName(name, table.getName());
+            final String baseTableName;
+            final String columnName;
+            if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
+                baseTableName = ((SqlBaseTableReference) columnReference.getTableReference()).getName();
+                columnName = columnReference.getColumnName();
+
+            } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
+                Select select = ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect();
+                ColumnReference resolvedColumnReference = this.columnReferenceResolver.findBaseTableColumnReference(select, column);
+                baseTableName = ((SqlBaseTableReference) resolvedColumnReference.getTableReference()).getName();
+                columnName = resolvedColumnReference.getColumnName();
             } else {
-                Select select = columnReference.getTableReference().getDerivedTableSelect();
-                this.columnReferenceResolver.enterSelectContext(select);
-                ColumnReference resolvedColumnReference = this.columnReferenceResolver.findColumn(select, column);
-                Table table = resolvedColumnReference.getTableReference().getBaseTable();
-                String name = resolvedColumnReference.getColumnName();
-                value = dataRow.getValueByName(name, table.getName());
-                this.columnReferenceResolver.exitCurrentSelectContext();
+                throw new IllegalStateException("Unexpected table reference type: " + columnReference.getTableReference().getClass().getName());
             }
+            Object value = dataRow.getValueByName(columnName, baseTableName);
             concreteValues.push(value);
         }
     }

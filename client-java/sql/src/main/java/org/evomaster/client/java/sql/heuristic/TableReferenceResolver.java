@@ -13,7 +13,7 @@ import java.util.*;
  */
 public class TableReferenceResolver {
 
-    private final Deque<Map<String, TableReference>> stackOfTableAliases = new ArrayDeque<>();
+    private final Deque<Map<String, SqlTableReference>> stackOfTableAliases = new ArrayDeque<>();
 
     /**
      * This method is called when entering a new alias context.
@@ -52,8 +52,8 @@ public class TableReferenceResolver {
 
                 final String aliasName = withItem.getAlias().getName();
                 final Select subquery = withItem.getSelect();
-                final TableReference derivedTableReference = TableReference.createDerivedTableReference(subquery);
-                stackOfTableAliases.peek().put(aliasName, derivedTableReference);
+                final SqlTableReference derivedSqlTableReference = new SqlDerivedTableReference(subquery);
+                stackOfTableAliases.peek().put(aliasName, derivedSqlTableReference);
             }
         }
     }
@@ -73,12 +73,12 @@ public class TableReferenceResolver {
         if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {
-                stackOfTableAliases.peek().put(table.getAlias().getName(), TableReference.createBaseTableReference(table));
+                stackOfTableAliases.peek().put(table.getAlias().getName(), new SqlBaseTableReference(table.getFullyQualifiedName()));
             }
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
             if (subSelect.getAlias() != null) {
-                stackOfTableAliases.peek().put(subSelect.getAlias().getName(), TableReference.createDerivedTableReference(subSelect));
+                stackOfTableAliases.peek().put(subSelect.getAlias().getName(), new SqlDerivedTableReference(subSelect));
             }
         }
     }
@@ -90,13 +90,13 @@ public class TableReferenceResolver {
      * @param alias the alias to resolve
      * @return a TableReference object with the table or the derived table (e.g. view)
      */
-    public TableReference resolveTableReference(String alias) {
+    public SqlTableReference resolveTableReference(String alias) {
         if (!isAliasDeclaredInAnyContext(alias)) {
             throw new IllegalArgumentException("Alias not found in any context: " + alias);
         }
 
         // The Deque's iterator traverses the stack from top (latest push) to bottom (first push)
-        for (Map<String, TableReference> context : stackOfTableAliases) {
+        for (Map<String, SqlTableReference> context : stackOfTableAliases) {
             if (context.containsKey(alias)) {
                 return context.get(alias);
             }
@@ -140,7 +140,7 @@ public class TableReferenceResolver {
      * @return
      */
     public boolean isAliasDeclaredInAnyContext(String alias) {
-        for (Map<String, TableReference> context : stackOfTableAliases) {
+        for (Map<String, SqlTableReference> context : stackOfTableAliases) {
             if (context.containsKey(alias)) {
                 return true;
             }

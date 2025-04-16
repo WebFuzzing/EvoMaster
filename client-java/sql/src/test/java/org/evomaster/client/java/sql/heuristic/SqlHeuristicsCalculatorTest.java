@@ -12,7 +12,6 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.VariableDescriptor;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -20,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+
 import net.sf.jsqlparser.schema.Column;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -437,13 +438,13 @@ public class SqlHeuristicsCalculatorTest {
 
         columnReferenceResolver.enterSelectContext(select);
 
-        ColumnReference nameColumnReference =  columnReferenceResolver.resolveColumnReference(nameColumn);
-        Select nameColumnView = nameColumnReference.getTableReference().getDerivedTableSelect();
-        ColumnReference nameColumnBaseTableReference = columnReferenceResolver.findColumn(nameColumnView, nameColumn);
+        ColumnReference nameColumnReference = columnReferenceResolver.resolveColumnReference(nameColumn);
+        Select nameColumnView = ((SqlDerivedTableReference) nameColumnReference.getTableReference()).getSelect();
+        ColumnReference nameColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(nameColumnView, nameColumn);
 
-        ColumnReference incomeColumnReference =  columnReferenceResolver.resolveColumnReference(incomeColumn);
-        Select incomeColumnView = incomeColumnReference.getTableReference().getDerivedTableSelect();
-        ColumnReference incomeColumnBaseTableReference = columnReferenceResolver.findColumn(incomeColumnView, incomeColumn);
+        ColumnReference incomeColumnReference = columnReferenceResolver.resolveColumnReference(incomeColumn);
+        Select incomeColumnView = ((SqlDerivedTableReference) incomeColumnReference.getTableReference()).getSelect();
+        ColumnReference incomeColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(incomeColumnView, incomeColumn);
 
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName(nameColumnBaseTableReference.getColumnName()));
         assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName(incomeColumnBaseTableReference.getColumnName()));

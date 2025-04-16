@@ -43,11 +43,11 @@ public class ColumnReferenceResolver {
                 .count() > 0;
     }
 
-    private boolean hasColumn(Table baseTable, Column column) {
-        Objects.requireNonNull(baseTable);
+    private boolean hasColumn(String baseTableFullyQualifiedName, Column column) {
+        Objects.requireNonNull(baseTableFullyQualifiedName);
 
         return this.schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(baseTable.getFullyQualifiedName()))
+                .filter(t -> t.name.equalsIgnoreCase(baseTableFullyQualifiedName))
                 .flatMap(t -> t.columns.stream())
                 .filter(c -> c.name.equalsIgnoreCase(column.getColumnName()))
                 .count() > 0;
@@ -69,13 +69,13 @@ public class ColumnReferenceResolver {
                 }
             }
             for (FromItem fromOrJoinItem : SqlParserUtils.getFromAndJoinItems(plainSelect)) {
-                if (findColumn(fromOrJoinItem, column) != null) {
+                if (findBaseTableColumnReference(fromOrJoinItem, column) != null) {
                     return createColumnReference(column, fromOrJoinItem, sourceColumnName);
                 }
             }
         } else {
-            if (findColumn(currentSelect, column) != null) {
-                return new ColumnReference(TableReference.createDerivedTableReference(currentSelect), sourceColumnName);
+            if (findBaseTableColumnReference(currentSelect, column) != null) {
+                return new ColumnReference(new SqlDerivedTableReference(currentSelect), sourceColumnName);
             }
         }
         // column was not found
@@ -85,69 +85,73 @@ public class ColumnReferenceResolver {
     private ColumnReference createColumnReference(Column column, FromItem fromOrJoinItem, String sourceColumnName) {
         if (fromOrJoinItem instanceof Table) {
             Table table = (Table) fromOrJoinItem;
-            TableReference tableReference;
+            SqlTableReference sqlTableReference;
             if (tableReferenceResolver.isAliasDeclaredInAnyContext(table.getName())) {
-                tableReference = tableReferenceResolver.resolveTableReference(table.getName());
+                sqlTableReference = tableReferenceResolver.resolveTableReference(table.getName());
             } else if (hasBaseTable(table.getName())) {
-                tableReference = TableReference.createBaseTableReference(table);
+                sqlTableReference = new SqlBaseTableReference(table.getFullyQualifiedName());
             } else {
                 throw new IllegalArgumentException("Table " + table.getName() + " not found in schema");
             }
-            return new ColumnReference(tableReference, column.getColumnName());
+            return new ColumnReference(sqlTableReference, column.getColumnName());
         } else if (fromOrJoinItem instanceof ParenthesedFromItem) {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromOrJoinItem;
             return createColumnReference(column, parenthesedFromItem.getFromItem(), sourceColumnName);
         } else {
-            return new ColumnReference(TableReference.createDerivedTableReference((Select) fromOrJoinItem), sourceColumnName);
+            return new ColumnReference(new SqlDerivedTableReference((Select) fromOrJoinItem), sourceColumnName);
         }
     }
 
 
-    private ColumnReference findColumn(FromItem fromItem, Column column) {
+    private ColumnReference findBaseTableColumnReference(FromItem fromItem, Column column) {
         if (fromItem instanceof LateralSubSelect) {
             LateralSubSelect lateralSubSelect = (LateralSubSelect) fromItem;
             Select subquery = lateralSubSelect.getSelectBody();
-            ColumnReference columnReference = findColumn(subquery, column);
+            ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
             if (columnReference != null) {
                 return columnReference;
             }
         } else if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             String tableName = table.getFullyQualifiedName();
-            TableReference tableReference;
+            SqlTableReference sqlTableReference;
             if (tableReferenceResolver.isAliasDeclaredInAnyContext(tableName)) {
-                tableReference = tableReferenceResolver.resolveTableReference(tableName);
+                sqlTableReference = tableReferenceResolver.resolveTableReference(tableName);
             } else if (hasBaseTable(tableName)) {
-                tableReference = TableReference.createBaseTableReference(table);
+                sqlTableReference = new SqlBaseTableReference(table.getFullyQualifiedName());
             } else {
                 throw new IllegalArgumentException("Table " + tableName + " not found in schema");
             }
-            if (tableReference.isBaseTableReference()) {
-                if (hasColumn(tableReference.getBaseTable(), column)) {
-                    return new ColumnReference(tableReference, column.getColumnName());
+            if (sqlTableReference instanceof SqlBaseTableReference) {
+                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
+                if (hasColumn(sqlBaseTableReference.getFullyQualifiedName(), column)) {
+                    return new ColumnReference(sqlTableReference, column.getColumnName());
                 }
-            } else if (tableReference.isDerivedTableReference()) {
-                if (findColumn(tableReference.getDerivedTableSelect(), column) != null) {
-                    return new ColumnReference(tableReference, column.getColumnName());
+            } else if (sqlTableReference instanceof SqlDerivedTableReference) {
+                SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
+                if (findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), column) != null) {
+                    return new ColumnReference(sqlTableReference, column.getColumnName());
                 }
+            } else {
+                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
             }
         } else if (fromItem instanceof ParenthesedFromItem) {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
-            ColumnReference columnReference = findColumn(parenthesedFromItem.getFromItem(), column);
+            ColumnReference columnReference = findBaseTableColumnReference(parenthesedFromItem.getFromItem(), column);
             if (columnReference != null) {
                 return columnReference;
             }
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
             Select subquery = parenthesedSelect.getSelect();
-            ColumnReference columnReference = findColumn(subquery, column);
+            ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
             if (columnReference != null) {
                 return columnReference;
             }
         } else if (fromItem instanceof WithItem) {
             WithItem withItem = (WithItem) fromItem;
             Select subquery = withItem.getSelect();
-            ColumnReference columnReference = findColumn(subquery, column);
+            ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
             if (columnReference != null) {
                 return columnReference;
             }
@@ -162,10 +166,10 @@ public class ColumnReferenceResolver {
         return null;
     }
 
-    private ColumnReference findColumn(final List<FromItem> fromOrJoinItems, Column column) {
+    private ColumnReference findBaseTableColumnReference(final List<FromItem> fromOrJoinItems, Column column) {
         // check if the column exists in any of them
         for (FromItem fromOrJoinItem : fromOrJoinItems) {
-            ColumnReference columnReference = findColumn(fromOrJoinItem, column);
+            ColumnReference columnReference = findBaseTableColumnReference(fromOrJoinItem, column);
             if (columnReference != null) {
                 return columnReference;
             }
@@ -174,7 +178,7 @@ public class ColumnReferenceResolver {
         return null;
     }
 
-    private ColumnReference findColumn(PlainSelect plainSelect, Column column) {
+    private ColumnReference findBaseTableColumnReference(PlainSelect plainSelect, Column column) {
         List<SelectItem<?>> selectItems = plainSelect.getSelectItems();
         for (SelectItem selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllColumns) {
@@ -183,12 +187,12 @@ public class ColumnReferenceResolver {
                 // get all tables and subqueries used in FROM and JOINs
                 final List<FromItem> fromOrJoinItems = SqlParserUtils.getFromAndJoinItems(plainSelect);
                 // check if the column exists in any of them
-                return findColumn(fromOrJoinItems, column);
+                return findBaseTableColumnReference(fromOrJoinItems, column);
             } else if (selectItem.getExpression() instanceof AllTableColumns) {
                 // handle table.*
                 AllTableColumns allTableColumns = (AllTableColumns) selectItem.getExpression();
                 Table table = allTableColumns.getTable();
-                return findColumn(table, column);
+                return findBaseTableColumnReference(table, column);
             } else if (selectItem.getExpression() instanceof Column) {
                 // handle column and column alias (if any)
                 Column selectItemColumn = (Column) selectItem.getExpression();
@@ -197,9 +201,9 @@ public class ColumnReferenceResolver {
                 if (selectItemColumn.getColumnName().equalsIgnoreCase(column.getColumnName()) || (alias != null && alias.getName().equalsIgnoreCase(column.getColumnName()))) {
                     final ColumnReference columnReference;
                     if (columnTable != null) {
-                        columnReference = findColumn(columnTable, selectItemColumn);
+                        columnReference = findBaseTableColumnReference(columnTable, selectItemColumn);
                     } else {
-                        columnReference = findColumn(SqlParserUtils.getFromAndJoinItems(plainSelect), selectItemColumn);
+                        columnReference = findBaseTableColumnReference(SqlParserUtils.getFromAndJoinItems(plainSelect), selectItemColumn);
                     }
                     if (columnReference != null) {
                         return columnReference;
@@ -214,15 +218,15 @@ public class ColumnReferenceResolver {
         return null;
     }
 
-    public ColumnReference findColumn(Select select, Column column) {
+    public ColumnReference findBaseTableColumnReference(Select select, Column column) {
         if (select instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) select;
-            return findColumn(plainSelect, column);
+            return findBaseTableColumnReference(plainSelect, column);
         } else if (select instanceof SetOperationList) {
             // Handle UNION, INTERSECT, etc.
             SetOperationList setOperationList = (SetOperationList) select.getSelectBody();
             for (Select subquery : setOperationList.getSelects()) {
-                ColumnReference columnReference = findColumn(subquery, column);
+                ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
                 if (columnReference != null) {
                     return columnReference;
                 }
@@ -231,7 +235,7 @@ public class ColumnReferenceResolver {
             // Handle WITH clause
             WithItem withItem = (WithItem) select.getSelectBody();
             Select subquery = withItem.getSelect();
-            ColumnReference columnReference = findColumn(subquery, column);
+            ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
             if (columnReference != null) {
                 return columnReference;
             }
@@ -239,7 +243,7 @@ public class ColumnReferenceResolver {
             // Handle parenthesized select
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select.getSelectBody();
             Select subquery = parenthesedSelect.getSelect();
-            ColumnReference columnReference = findColumn(subquery, column);
+            ColumnReference columnReference = findBaseTableColumnReference(subquery, column);
             if (columnReference != null) {
                 return columnReference;
             }

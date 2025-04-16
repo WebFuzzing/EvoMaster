@@ -9,9 +9,6 @@ import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class ColumnReferenceResolverTest {
@@ -63,7 +60,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertEquals("employees", reference.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -80,7 +77,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertEquals("employees", reference.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -98,7 +95,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceE = resolver.resolveColumnReference(columnE);
         assertNotNull(referenceE);
-        assertEquals("employees", referenceE.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) referenceE.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnD = new Column();
@@ -107,7 +104,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceD = resolver.resolveColumnReference(columnD);
         assertNotNull(referenceD);
-        assertEquals("departments", referenceD.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("departments", ((SqlBaseTableReference) referenceD.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceD.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -125,8 +122,8 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
-        assertEquals("(SELECT * FROM employees) e", reference.getTableReference().getDerivedTableSelect().toString());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
+        assertEquals("(SELECT * FROM employees) e", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -145,7 +142,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -163,7 +160,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -180,7 +177,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference columnReference = resolver.resolveColumnReference(column);
         assertEquals("id", columnReference.getColumnName());
-        assertEquals("employees", columnReference.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) columnReference.getTableReference()).getFullyQualifiedName());
 
         resolver.exitCurrentSelectContext();
     }
@@ -196,7 +193,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference columnReference = resolver.resolveColumnReference(column);
         assertEquals("id", columnReference.getColumnName());
-        assertEquals("SELECT id FROM employees UNION SELECT id FROM departments", columnReference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("SELECT id FROM employees UNION SELECT id FROM departments", ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect().toString());
         resolver.exitCurrentSelectContext();
     }
 
@@ -213,7 +210,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceE = resolver.resolveColumnReference(columnE);
         assertNotNull(referenceE);
-        assertEquals("employees", referenceE.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) referenceE.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnSubquery = new Column();
@@ -222,7 +219,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceSubquery = resolver.resolveColumnReference(columnSubquery);
         assertNotNull(referenceSubquery);
-        assertTrue(referenceSubquery.getTableReference().isDerivedTableReference());
+        assertTrue(referenceSubquery.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("department_name", referenceSubquery.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -239,7 +236,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference columnReference = resolver.resolveColumnReference(column);
         assertEquals("department_name", columnReference.getColumnName());
-        assertEquals("departments", columnReference.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("departments", ((SqlBaseTableReference) columnReference.getTableReference()).getFullyQualifiedName());
 
         resolver.exitCurrentSelectContext();
     }
@@ -269,9 +266,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference columnReference = resolver.resolveColumnReference(column);
         assertNotNull(columnReference);
-        assertTrue(columnReference.getTableReference().isDerivedTableReference());
+        assertTrue(columnReference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", columnReference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", columnReference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect().toString());
 
         resolver.exitCurrentSelectContext();
     }
@@ -294,10 +291,10 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceEmployeeId = resolver.resolveColumnReference(columnEmployeeId);
         assertNotNull(referenceEmployeeId);
-        assertTrue(referenceEmployeeId.getTableReference().isDerivedTableReference());
+        assertTrue(referenceEmployeeId.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("employee_id", referenceEmployeeId.getColumnName());
         assertEquals("(SELECT id AS employee_id, department_id FROM employees WHERE salary > 50000) e",
-                referenceEmployeeId.getTableReference().getDerivedTableSelect().toString());
+                ((SqlDerivedTableReference) referenceEmployeeId.getTableReference()).getSelect().toString());
 
         // Resolve department_name from table d
         Column columnDepartmentName = new Column();
@@ -305,7 +302,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceDepartmentName = resolver.resolveColumnReference(columnDepartmentName);
         assertNotNull(referenceDepartmentName);
-        assertEquals("departments", referenceDepartmentName.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("departments", ((SqlBaseTableReference) referenceDepartmentName.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceDepartmentName.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -322,9 +319,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
-        assertEquals("(SELECT * FROM employees)",reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT * FROM employees)", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
 
         resolver.exitCurrentSelectContext();
     }
@@ -342,9 +339,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceName = resolver.resolveColumnReference(columnName);
         assertNotNull(referenceName);
-        assertTrue(referenceName.getTableReference().isDerivedTableReference());
+        assertTrue(referenceName.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("name", referenceName.getColumnName());
-        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", referenceName.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", ((SqlDerivedTableReference) referenceName.getTableReference()).getSelect().toString());
 
         // Resolve alias 'income' from subquery
         Column columnIncome = new Column();
@@ -353,12 +350,12 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceIncome = resolver.resolveColumnReference(columnIncome);
         assertNotNull(referenceIncome);
-        assertTrue(referenceIncome.getTableReference().isDerivedTableReference());
+        assertTrue(referenceIncome.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("income", referenceIncome.getColumnName());
-        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", referenceIncome.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect().toString());
 
-        Select view = referenceIncome.getTableReference().getDerivedTableSelect();
-        ColumnReference baseTableColumnReference = resolver.findColumn(view, columnIncome);
+        Select view = ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect();
+        ColumnReference baseTableColumnReference = resolver.findBaseTableColumnReference(view, columnIncome);
 
         resolver.exitCurrentSelectContext();
     }
@@ -375,7 +372,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertEquals("(SELECT employees.* FROM employees) AS e", reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT employees.* FROM employees) AS e", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -392,7 +389,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertEquals("employees", reference.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -410,9 +407,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("fname", reference.getColumnName());
-        assertEquals("(SELECT first_name AS fname FROM employees) subquery",reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name AS fname FROM employees) subquery", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
         resolver.exitCurrentSelectContext();
     }
 
@@ -430,7 +427,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceE = resolver.resolveColumnReference(columnE);
         assertNotNull(referenceE);
-        assertTrue(referenceE.getTableReference().isDerivedTableReference());
+        assertTrue(referenceE.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("fname", referenceE.getColumnName());
 
         // Resolve department_name from table d
@@ -440,7 +437,7 @@ class ColumnReferenceResolverTest {
 
         ColumnReference referenceD = resolver.resolveColumnReference(columnD);
         assertNotNull(referenceD);
-        assertEquals("departments", referenceD.getTableReference().getBaseTable().getFullyQualifiedName());
+        assertEquals("departments", ((SqlBaseTableReference) referenceD.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceD.getColumnName());
 
         resolver.exitCurrentSelectContext();
@@ -457,9 +454,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
 
         resolver.exitCurrentSelectContext();
     }
@@ -475,9 +472,9 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
 
         resolver.exitCurrentSelectContext();
     }
@@ -493,9 +490,10 @@ class ColumnReferenceResolverTest {
 
         ColumnReference reference = resolver.resolveColumnReference(column);
         assertNotNull(reference);
-        assertTrue(reference.getTableReference().isDerivedTableReference());
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("emp_id", reference.getColumnName());
-        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", reference.getTableReference().getDerivedTableSelect().toString());
+        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString())
+        ;
 
         resolver.exitCurrentSelectContext();
     }
