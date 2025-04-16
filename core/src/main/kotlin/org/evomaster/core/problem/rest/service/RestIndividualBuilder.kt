@@ -243,7 +243,7 @@ class RestIndividualBuilder {
            }
         }
 
-        if(test.filter { it.path == template.path && it.verb == template.verb}.size > 0){
+        if(test.filter { it.path == template.path && it.verb == template.verb}.isNotEmpty()){
             //we already have a resource creation for this path
             return false
         }
