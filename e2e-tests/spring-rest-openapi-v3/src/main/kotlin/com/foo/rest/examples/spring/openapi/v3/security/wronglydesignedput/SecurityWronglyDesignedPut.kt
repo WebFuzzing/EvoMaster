@@ -20,14 +20,6 @@ open class SecurityWronglyDesignedPut {
         fun main(args: Array<String>) {
             SpringApplication.run(SecurityWronglyDesignedPut::class.java, *args)
         }
-
-        private val data = ConcurrentHashMap<Int, String>()
-        private val counter = AtomicInteger(0)
-
-        fun reset(){
-            counter.set(0)
-            data.clear()
-        }
     }
 
 
@@ -40,8 +32,6 @@ open class SecurityWronglyDesignedPut {
             return ResponseEntity.status(401).build()
         }
 
-        data[counter.get()] = auth!!
-        counter.getAndIncrement()
         return ResponseEntity.status(200).build<Any>()
     }
 
@@ -58,16 +48,10 @@ open class SecurityWronglyDesignedPut {
             return ResponseEntity.status(401).build()
         }
 
-        // This is a security issue, as the user with "BAR" should not be able to delete the resource.
         if(auth == "BAR"){
             return ResponseEntity.status(403).build()
         }
 
-        if(!data.containsKey(id)){
-            return ResponseEntity.status(404).build()
-        }
-
-        data.remove(id)
         return ResponseEntity.status(204).build()
     }
 
@@ -81,16 +65,7 @@ open class SecurityWronglyDesignedPut {
             return ResponseEntity.status(401).build()
         }
 
-        if(!data.containsKey(id)){
-            return ResponseEntity.status(404).build()
-        }
-
-        val source = data.getValue(id)
-        if(source != auth){
-            return ResponseEntity.status(401).build()
-        }
-        data[id] = auth!!
-        return ResponseEntity.status(201).build()
+        return ResponseEntity.status(404).build()
     }
 
 }

@@ -28,16 +28,11 @@ class SecurityWronglyDesignedEMTest : SpringTestBase(){
                 1000
         ) { args: MutableList<String> ->
 
-            args.add("--blackBox")
-            args.add("true")
-            args.add("--security")
-            args.add("true")
-            args.add("--bbTargetUrl")
-            args.add(baseUrlOfSut)
-            args.add("--bbSwaggerUrl")
-            args.add("$baseUrlOfSut/v3/api-docs")
-            args.add("--configPath")
-            args.add("src/main/resources/config/securitylogin.yaml")
+            setOption(args, "security", "true")
+            setOption(args, "blackBox", "true")
+            setOption(args, "bbTargetUrl", baseUrlOfSut)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
+            setOption(args, "configPath", "src/main/resources/config/securitylogin.yaml")
 
             val solution = initAndRun(args)
 
