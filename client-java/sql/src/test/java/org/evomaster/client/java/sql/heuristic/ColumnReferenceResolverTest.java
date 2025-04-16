@@ -27,6 +27,7 @@ class ColumnReferenceResolverTest {
         employeesTable.columns.add(createColumnDto("id"));
         employeesTable.columns.add(createColumnDto("first_name"));
         employeesTable.columns.add(createColumnDto("department_id"));
+        employeesTable.columns.add(createColumnDto("salary"));
 
         TableDto departmentsTable = createTableDto("departments");
         departmentsTable.columns.add(createColumnDto("id"));
@@ -324,6 +325,40 @@ class ColumnReferenceResolverTest {
         assertTrue(reference.getTableReference().isDerivedTableReference());
         assertEquals("first_name", reference.getColumnName());
         assertEquals("(SELECT * FROM employees)",reference.getTableReference().getDerivedTableSelect().toString());
+
+        resolver.exitCurrentSelectContext();
+    }
+
+    @Test
+    void resolveColumnAliasInSubqueryWithWhereClause() throws Exception {
+        String sql = "SELECT name, income FROM (SELECT first_name AS name, salary AS income FROM Employees) AS subquery WHERE income > 100";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterSelectContext(select);
+
+        // Resolve alias 'name' from subquery
+        Column columnName = new Column();
+        columnName.setColumnName("name");
+        columnName.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+
+        ColumnReference referenceName = resolver.resolveColumnReference(columnName);
+        assertNotNull(referenceName);
+        assertTrue(referenceName.getTableReference().isDerivedTableReference());
+        assertEquals("name", referenceName.getColumnName());
+        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", referenceName.getTableReference().getDerivedTableSelect().toString());
+
+        // Resolve alias 'income' from subquery
+        Column columnIncome = new Column();
+        columnIncome.setColumnName("income");
+        columnIncome.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+
+        ColumnReference referenceIncome = resolver.resolveColumnReference(columnIncome);
+        assertNotNull(referenceIncome);
+        assertTrue(referenceIncome.getTableReference().isDerivedTableReference());
+        assertEquals("income", referenceIncome.getColumnName());
+        assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", referenceIncome.getTableReference().getDerivedTableSelect().toString());
+
+        Select view = referenceIncome.getTableReference().getDerivedTableSelect();
+        ColumnReference baseTableColumnReference = resolver.findColumn(view, columnIncome);
 
         resolver.exitCurrentSelectContext();
     }

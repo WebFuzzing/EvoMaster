@@ -628,10 +628,16 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             Object value;
             if (columnReference.getTableReference().isBaseTableReference()) {
                 Table table = columnReference.getTableReference().getBaseTable();
-                String name = column.getColumnName();
+                String name = columnReference.getColumnName();
                 value = dataRow.getValueByName(name, table.getName());
             } else {
-                throw new UnsupportedOperationException("must implement evaluation of subquery ");
+                Select select = columnReference.getTableReference().getDerivedTableSelect();
+                this.columnReferenceResolver.enterSelectContext(select);
+                ColumnReference resolvedColumnReference = this.columnReferenceResolver.findColumn(select, column);
+                Table table = resolvedColumnReference.getTableReference().getBaseTable();
+                String name = resolvedColumnReference.getColumnName();
+                value = dataRow.getValueByName(name, table.getName());
+                this.columnReferenceResolver.exitCurrentSelectContext();
             }
             concreteValues.push(value);
         }

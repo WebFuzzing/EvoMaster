@@ -21,6 +21,7 @@ public class ColumnReferenceResolver {
     private final DbInfoDto schema;
 
     public ColumnReferenceResolver(DbInfoDto schema) {
+        Objects.requireNonNull(schema);
         this.schema = schema;
     }
 
@@ -213,7 +214,7 @@ public class ColumnReferenceResolver {
         return null;
     }
 
-    private ColumnReference findColumn(Select select, Column column) {
+    public ColumnReference findColumn(Select select, Column column) {
         if (select instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) select;
             return findColumn(plainSelect, column);
