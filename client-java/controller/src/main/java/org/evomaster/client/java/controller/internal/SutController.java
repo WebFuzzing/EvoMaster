@@ -148,6 +148,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private int actionIndex = -1;
 
     /**
+     * possible quotation marks used in SQL commands
+     */
+    private final List<String> possibleQuotationMarksInDb = Arrays.asList("\"","'","`");
+
+    /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
      * port and host.
@@ -503,7 +508,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
                     }else
                         DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
@@ -515,12 +520,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    private boolean isSameTable(String tableA, String tableB) {
+        if (tableA.equalsIgnoreCase(tableB)) return true;
+        for (String qm : possibleQuotationMarksInDb){
+            if (wrapWithQuotationMarks(tableA, qm).equalsIgnoreCase(tableB)) return true;
+            if (wrapWithQuotationMarks(tableB, qm).equalsIgnoreCase(tableA)) return true;
+        }
+        return false;
+    }
+
+    private String wrapWithQuotationMarks(String wrap, String mark) {
+        return String.format("%s%s%s", mark, wrap, mark);
+    }
+
+
     private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
         if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
             tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                tableInitSqlMap.keySet().stream().filter(t-> isSameTable(t, a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
