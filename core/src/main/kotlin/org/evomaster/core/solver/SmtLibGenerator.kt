@@ -511,8 +511,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
             "DECIMAL" to "Real",
+            "REAL" to "Real",
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
+            "VARCHAR" to "String",
             "CHARACTER LARGE OBJECT" to "String",
             "BOOLEAN" to "String", // TODO: Check this
         )
