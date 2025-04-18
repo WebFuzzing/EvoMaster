@@ -1,6 +1,8 @@
 package org.evomaster.core.solver
 
+import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
