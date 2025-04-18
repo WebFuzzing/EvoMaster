@@ -425,7 +425,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val fromItem = plainSelect.fromItem
-            val tableName = (fromItem as net.sf.jsqlparser.schema.Table).name
+            val tableName = getTableName(fromItem)
             val alias = fromItem.alias?.name ?: tableName
             tableAliasMap[alias] = tableName
 
@@ -433,13 +433,16 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             if (joins != null) {
                 for (join in joins) {
                     val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                    val joinName = (join.rightItem as net.sf.jsqlparser.schema.Table).name
+                    val joinName = getTableName(join.rightItem)
                     tableAliasMap[joinAlias] = joinName
                 }
             }
         }
         return tableAliasMap
     }
+
+    private fun getTableName(fromItem: FromItem?): String =
+        (fromItem as Table).getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
