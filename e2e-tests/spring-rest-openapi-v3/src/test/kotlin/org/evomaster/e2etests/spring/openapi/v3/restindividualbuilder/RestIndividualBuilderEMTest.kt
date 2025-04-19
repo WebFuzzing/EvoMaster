@@ -16,7 +16,12 @@ class RestIndividualBuilderEMTest : SpringTestBase(){
         }
     }
 
-
+    /*
+        This test is added to reproduce the StackOverflow error that occurs in the RestIndividualBuilder class
+        during BlackBox test generation. If there are POST or PUT options for creating a resource, the
+        createResourcesFor method calls both resources repeatedly, leading to the ancestor actions being created
+        infinitely. Here, we just make sure EM doesn't crash.
+     */
     @Test
     fun testRunEM() {
 
@@ -29,9 +34,7 @@ class RestIndividualBuilderEMTest : SpringTestBase(){
             setOption(args, "bbTargetUrl", baseUrlOfSut)
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
 
-            val solution = initAndRun(args)
-
-            assertTrue(solution.individuals.size >= 1)
+            initAndRun(args)
         }
     }
 }

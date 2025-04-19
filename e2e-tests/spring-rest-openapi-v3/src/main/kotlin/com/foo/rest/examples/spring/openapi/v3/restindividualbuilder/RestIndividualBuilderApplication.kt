@@ -21,11 +21,6 @@ open class RestIndividualBuilderApplication {
             SpringApplication.run(RestIndividualBuilderApplication::class.java, *args)
         }
     }
-//    @PostMapping(path = ["/"])
-//    open fun create1(
-//    ): ResponseEntity<Any> {
-//        return ResponseEntity.status(201).build<Any>()
-//    }
 
     @PostMapping(path = ["{id}/x"])
     open fun create(
