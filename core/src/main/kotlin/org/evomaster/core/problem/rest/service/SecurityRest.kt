@@ -542,6 +542,12 @@ class SecurityRest {
                     sqlActions = listOf()
                 )
             )
+
+            finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                it.saveCreatedResourceLocation = true
+            }
+            finalIndividual.fixResourceForwardLinks()
+
             finalIndividual.modifySampleType(SampleType.SECURITY)
             finalIndividual.ensureFlattenedStructure()
 
