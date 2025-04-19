@@ -243,6 +243,11 @@ class RestIndividualBuilder {
            }
         }
 
+        if(test.filter { it.path == template.path && it.verb == template.verb}.isNotEmpty()){
+            //we already have a resource creation for this path
+            return false
+        }
+
         val create = createBoundActionFor(template, target)
 
         if(template.verb == HttpVerb.PUT){
