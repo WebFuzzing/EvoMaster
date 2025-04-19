@@ -427,16 +427,18 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val fromItem = plainSelect.fromItem
-            val tableName = getTableName(fromItem)
-            val alias = fromItem.alias?.name ?: tableName
-            tableAliasMap[alias] = tableName
+            if (fromItem != null) {
+                val tableName = getTableName(fromItem)
+                val alias = fromItem.alias?.name ?: tableName
+                tableAliasMap[alias] = tableName
 
-            val joins = plainSelect.joins
-            if (joins != null) {
-                for (join in joins) {
-                    val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                    val joinName = getTableName(join.rightItem)
-                    tableAliasMap[joinAlias] = joinName
+                val joins = plainSelect.joins
+                if (joins != null) {
+                    for (join in joins) {
+                        val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
+                        val joinName = getTableName(join.rightItem)
+                        tableAliasMap[joinAlias] = joinName
+                    }
                 }
             }
         }
