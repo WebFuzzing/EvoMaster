@@ -148,4 +148,54 @@ public class SMTResultParserTest {
         assertTrue(users2.getField("POINTS") instanceof LongValue);
         assertEquals(7, ((LongValue) users2.getField("POINTS")).getValue());
     }
+
+    
+    @Test
+    public void testNegativeLong() {
+        String response = "sat\n" +
+                "((documents_specs1 (id-first_page-last_page-printing_schema-document_id 5 6 7 8 (- 4194297))))\n" +
+                "((printing_schemas1 (id-binding_specs-cover_specs-is_deleted-pschema_name-paper_specs-consumer_id\n" +
+                "  8\n" +
+                "  \"true\"\n" +
+                "  \"true\"\n" +
+                "  \"true\"\n" +
+                "  \"true\"\n" +
+                "  \"true\"\n" +
+                "  2)))\n";
+
+        Map<String, SMTLibValue> result = SMTResultParser.parseZ3Response(response);
+        assertEquals(2, result.size());
+
+        assertTrue(result.get("documents_specs1") instanceof StructValue);
+        StructValue documents_specs1 = (StructValue) result.get("documents_specs1");
+        assertEquals(5, documents_specs1.getFields().size());
+        assertTrue(documents_specs1.getField("ID") instanceof LongValue);
+        assertEquals(5, ((LongValue) documents_specs1.getField("ID")).getValue());
+        assertTrue(documents_specs1.getField("FIRST_PAGE") instanceof LongValue);
+        assertEquals(6, ((LongValue) documents_specs1.getField("FIRST_PAGE")).getValue());
+        assertTrue(documents_specs1.getField("LAST_PAGE") instanceof LongValue);
+        assertEquals(7, ((LongValue) documents_specs1.getField("LAST_PAGE")).getValue());
+        assertTrue(documents_specs1.getField("PRINTING_SCHEMA") instanceof LongValue);
+        assertEquals(8, ((LongValue) documents_specs1.getField("PRINTING_SCHEMA")).getValue());
+        assertTrue(documents_specs1.getField("DOCUMENT_ID") instanceof LongValue);
+        assertEquals(-4194297, ((LongValue) documents_specs1.getField("DOCUMENT_ID")).getValue());
+
+        assertTrue(result.get("printing_schemas1") instanceof StructValue);
+        StructValue printing_schemas1 = (StructValue) result.get("printing_schemas1");
+        assertEquals(7, printing_schemas1.getFields().size());
+        assertTrue(printing_schemas1.getField("ID") instanceof LongValue);
+        assertEquals(8, ((LongValue) printing_schemas1.getField("ID")).getValue());
+        assertTrue(printing_schemas1.getField("BINDING_SPECS") instanceof StringValue);
+        assertEquals("true", ((StringValue) printing_schemas1.getField("BINDING_SPECS")).getValue());
+        assertTrue(printing_schemas1.getField("COVER_SPECS") instanceof StringValue);
+        assertEquals("true", ((StringValue) printing_schemas1.getField("COVER_SPECS")).getValue());
+        assertTrue(printing_schemas1.getField("IS_DELETED") instanceof StringValue);
+        assertEquals("true", ((StringValue) printing_schemas1.getField("IS_DELETED")).getValue());
+        assertTrue(printing_schemas1.getField("PSCHEMA_NAME") instanceof StringValue);
+        assertEquals("true", ((StringValue) printing_schemas1.getField("PSCHEMA_NAME")).getValue());
+        assertTrue(printing_schemas1.getField("PAPER_SPECS") instanceof StringValue);
+        assertEquals("true", ((StringValue) printing_schemas1.getField("PAPER_SPECS")).getValue());
+        assertTrue(printing_schemas1.getField("CONSUMER_ID") instanceof LongValue);
+        assertEquals(2, ((LongValue) printing_schemas1.getField("CONSUMER_ID")).getValue());
+    }
 }
