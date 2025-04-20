@@ -19,7 +19,11 @@ class SecurityWronglyDesignedEMTest : SpringTestBase(){
         }
     }
 
-
+    /*
+        This test is added to reproduce the IllegalStateException: Call expected a missing chained 'location'
+        error during black box test generation. After creating a new individual for security checks, resource
+        forward links may break, leading to this exception. Here, we just make sure EM doesn't crash.
+    */
     @Test
     fun testRunEM() {
 
