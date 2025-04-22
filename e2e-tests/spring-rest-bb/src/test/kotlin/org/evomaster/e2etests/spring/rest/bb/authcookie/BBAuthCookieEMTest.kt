@@ -20,7 +20,7 @@ class BBAuthCookieEMTest : SpringTestBase() {
     }
 
     @ParameterizedTest
-    @EnumSource(names = ["JS_JEST"]) //TODO add Python
+    @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(

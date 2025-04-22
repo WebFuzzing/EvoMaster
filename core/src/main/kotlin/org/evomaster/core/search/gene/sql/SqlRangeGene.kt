@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -47,9 +46,8 @@ class SqlRangeGene<T>(
         repairGeneIfNeeded()
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
-                && left <= right
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return left <= right
     }
 
     private fun swapLeftRightValues() {
@@ -153,12 +151,12 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
-            this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
-            this.left.bindValueBasedOn(gene.left as Gene)
-            this.right.bindValueBasedOn(gene.right as Gene)
-            this.isRightClosed.bindValueBasedOn(gene.isRightClosed)
+            this.isLeftClosed.setValueBasedOn(gene.isLeftClosed)
+            this.left.setValueBasedOn(gene.left as Gene)
+            this.right.setValueBasedOn(gene.right as Gene)
+            this.isRightClosed.setValueBasedOn(gene.isRightClosed)
         }
         LoggingUtil.uniqueWarn(
                 log,

@@ -8,8 +8,9 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 3.0.1
-  jdk: 21
+  evomaster-version: 3.4.1
+  jdk-jar: 1.8
+  jdk-jpackage: 21
   retention-days: 1
 ## Doesn't work, ie, use env in env
 #  installer-windows: evomaster-${evomaster-version}.msi
@@ -22,10 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jar}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jar}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -38,24 +39,41 @@ jobs:
         env:
           CI_env: GithubAction
       - name: Upload evomaster.jar
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.jar
           path: core/target/evomaster.jar
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: webfuzzing/evomaster
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Build and push Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
   installer-for-windows:
     needs: build-base
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -63,7 +81,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh WINDOWS
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.msi
           path: release/evomaster-${{env.evomaster-version}}.msi
@@ -75,12 +93,12 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -88,7 +106,7 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh OSX
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.dmg
           path: release/evomaster-${{env.evomaster-version}}.dmg
@@ -100,12 +118,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.jdk}}
+      - name: Setup JDK ${{env.jdk-jpackage}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.jdk}}
+          java-version: ${{env.jdk-jpackage}}
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
           path: core/target
@@ -113,10 +131,12 @@ jobs:
         shell: bash
         run: bash makeExecutable.sh DEBIAN
       - name: Upload installation file
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: evomaster.deb
-          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          #          JDK 17 and 21 use different suffixes... doesn't seem configurable :(
+          #          path: release/evomaster_${{env.evomaster-version}}-1_amd64.deb
+          path: release/evomaster_${{env.evomaster-version}}_amd64.deb
           retention-days: ${{env.retention-days}}
           if-no-files-found: error
 
@@ -126,36 +146,22 @@ jobs:
     runs-on: "ubuntu-latest"
 
     steps:
-
       - name: Download fat jar
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.jar
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.deb
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.dmg
       - name: Download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: evomaster.msi
-
-
-## Doesn't seem any longer mantained... plus usability issues
-#      - uses: "marvinpinto/action-automatic-releases@latest"
-#        with:
-#          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-#          prerelease: false
-#          files: |
-#            evomaster.jar
-#            ${{env.installer-windows}}
-#            ${{env.installer-osx}}
-#            ${{env.installer-debian}}
-
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
@@ -166,6 +172,6 @@ jobs:
           files: |
             evomaster.jar
             evomaster-${{env.evomaster-version}}.msi
-            evomaster-${{env.evomaster-version}}.dmg
-            evomaster_${{env.evomaster-version}}-1_amd64.deb
-
+            evomaster-${{env.evomaster-version}}.dmg           
+            evomaster_${{env.evomaster-version}}_amd64.deb
+          #   JDK 17 and 21 use different suffixes... doesn't seem configurable :(

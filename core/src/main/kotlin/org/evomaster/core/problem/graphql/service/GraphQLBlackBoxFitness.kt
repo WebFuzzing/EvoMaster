@@ -21,7 +21,9 @@ class GraphQLBlackBoxFitness : GraphQLFitness() {
     override fun doCalculateCoverage(
         individual: GraphQLIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<GraphQLIndividual>? {
 
         if(config.bbExperiments){

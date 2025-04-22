@@ -4,12 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.sql.DatabaseExecution
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
-import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
@@ -26,6 +21,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -47,7 +43,8 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
 
     /**
-     * @param allSqlActions specified the db actions to be executed
+     * @param allSqlActions specified the db actions to be executed.
+     *        This requires that, if any is representExistingData, they should all be at beginning of list
      * @param sqlIdMap indicates the map id of pk to generated id
      * @param allSuccessBefore indicates whether all SQL before this [allSqlActions] are executed successfully
      * @param previous specified the previous db actions which have been executed
@@ -64,6 +61,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return true
         }
 
+        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+        if(!SqlActionUtils.verifyExistingDataFirst(allSqlActions)){
+            throw IllegalArgumentException("SQLAction representing existing data are not in order")
+        }
+
         val dbresults = (allSqlActions).map { SqlActionResult(it.getLocalId()) }
         actionResults.addAll(dbresults)
 
@@ -75,23 +77,33 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 existing data (which of course should not be re-inserted...)
              */
             // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
-            allSqlActions.filter { it.representExistingData }.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
-                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
-            }
+            allSqlActions.filter { it.representExistingData }
+                .flatMap { it.seeTopGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .forEach {
+                    sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+                }
             previous.addAll(allSqlActions)
             return true
         }
 
-        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+
         val dto = try {
             SqlActionTransformer.transform(allSqlActions, sqlIdMap, previous)
-        }catch (e : IllegalArgumentException){
+        }catch (e : Exception){
             // the failure might be due to previous failure
             if (!allSuccessBefore){
                 previous.addAll(allSqlActions)
-                return false
-            } else
-                throw e
+            } else {
+                log.warn("Failed to create SQL command from internal representation: ${e.message}",e)
+                assert(false)
+            /*
+                shouldn't happen in tests... but don't crash EM either... as
+                support for SQL is still not fully
+                TODO check again once we fully support FKs
+             */
+            }
+            return false
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
@@ -174,13 +186,23 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
     }
 
-    protected fun updateFitnessAfterEvaluation(targets: Set<Int>, allCovered: Boolean, individual: T, fv: FitnessValue) : TestResultsDto?{
+    protected fun updateFitnessAfterEvaluation(
+        targets: Set<Int>,
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
+        individual: T,
+        fv: FitnessValue
+    ) : TestResultsDto?{
 
-        val dto = if(allCovered){
-                rc.getTestResults(allCovered = true)
+        if(allTargets && targets.isNotEmpty()){
+            throw IllegalArgumentException("Cannot specify all targets and a specific subset at same time")
+        }
+        val dto = if(allTargets){
+                rc.getTestResults(ids = setOf(), fullyCovered = fullyCovered, descriptiveIds = descriptiveIds)
         } else {
             val ids = targetsToEvaluate(targets, individual)
-            rc.getTestResults(ids)
+            rc.getTestResults(ids, fullyCovered = fullyCovered, descriptiveIds = descriptiveIds)
         }
 
         if (dto == null) {
@@ -188,19 +210,43 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return null
         }
 
+        val problems = dto.targets.filter { it.descriptiveId == null && !idMapper.hasMappingFor(it.id) }
+        if(problems.isNotEmpty()){
+            val update = rc.getTestResults(ids = dto.targets.map { it.id }.toSet(), descriptiveIds = true)
+            if (update == null) {
+                log.warn("Cannot retrieve coverage with full descriptive ids")
+                return null
+            }
+            val np = problems.size
+            val nu = update.targets.size
+            if(nu != np){
+                log.warn("Asked for $np updates but got $nu")
+            }
+            val list = update.targets.joinToString("\n") { it.descriptiveId }
+            log.warn("There were ${problems.size} targets with no descriptive ids:\n$list")
+
+            //assert(false)// FIXME should understand why happens in the tests. likely a bug somewhere... :(
+            update.targets.forEach { idMapper.addMapping(it.id, it.descriptiveId) }
+        }
+
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
 
-                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
-                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(
-                    ObjectiveNaming.NUMERIC_COMPARISON)
-
-                if (noMethodReplacement || noNonIntegerReplacement) {
-                    return@forEach
-                }
+                //outdated code, now wrong
+//                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+//                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(
+//                    ObjectiveNaming.NUMERIC_COMPARISON)
+//
+//                if (noMethodReplacement || noNonIntegerReplacement) {
+//                    return@forEach
+//                }
 
                 idMapper.addMapping(t.id, t.descriptiveId)
+            } else if(!idMapper.hasMappingFor(t.id)){
+                // shouldn't really no longer happen after check above
+                log.warn("No descriptive id for unknown code: ${t.id}")
+                assert(false)
             }
 
             fv.updateTarget(t.id, t.value, t.actionIndex)
@@ -211,99 +257,114 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
 
-        if(!config.isMIO()){
+        if (!config.isUsingAdvancedTechniques()) {
             return
         }
 
         if (configuration.heuristicsForSQL) {
-
-            for (i in 0 until dto.extraHeuristics.size) {
-
-                val extra = dto.extraHeuristics[i]
-
-                //TODO handling of toMaximize as well
-                //TODO refactoring when will have other heuristics besides for SQL
-
-                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
-
-                val toMinimize = extra.heuristics
-                    .filter {
-                        it != null
-                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == ExtraHeuristicEntryDto.Type.SQL
-                    }.map { it.value }
-                    .toList()
-
-                if (!toMinimize.isEmpty()) {
-                    fv.setExtraToMinimize(i, toMinimize)
-                }
-
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
-
-
-            }
-
-            fv.aggregateDatabaseData()
-
-            if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
-                searchTimeController.newIndividualsWithSqlFailedWhere()
-            }
-        } else if (configuration.extractSqlExecutionInfo) {
-            /*
-                this code here is done in previous block as well
-             */
-            for (i in 0 until dto.extraHeuristics.size) {
-                val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto))
-            }
+            handleSqlHeuristics(dto, fv)
         }
 
-        handleMongoHeuristics(dto, fv)
-    }
-
-    private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
-        if (configuration.heuristicsForMongo) {
-
-
+        if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
-
                 val extra = dto.extraHeuristics[i]
-
-                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
-
-                val toMinimize = extra.heuristics
-                    .filter {
-                        it != null
-                                && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
-                                && it.type == ExtraHeuristicEntryDto.Type.MONGO
-                    }.map { it.value }
-                    .toList()
-
-                if (toMinimize.isNotEmpty()) fv.setExtraToMinimize(i, toMinimize)
-
-                extra.heuristics
-                    .filter {
-                        it != null
-                    }.forEach {
-                        if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
-                            statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
-                        } else if (it.type==ExtraHeuristicEntryDto.Type.SQL) {
-                            statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
-                        }
-                    }
-
-
+                val databaseExecution = DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto)
+                fv.setDatabaseExecution(i, databaseExecution)
+                if (databaseExecution.sqlParseFailureCount>0) {
+                    statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                }
             }
+            fv.aggregateDatabaseData()
+            if (fv.getViewOfAggregatedFailedWhere().isNotEmpty()) {
+                searchTimeController.newIndividualsWithSqlFailedWhere()
+            }
+
+        }
+
+        if (configuration.heuristicsForMongo) {
+            handleMongoHeuristics(dto, fv)
         }
 
         if (configuration.extractMongoExecutionInfo) {
-
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
                 fv.setMongoExecution(i, MongoExecution.fromDto(extra.mongoExecutionsDto))
             }
-
             fv.aggregateMongoDatabaseData()
+        }
+    }
+
+    private fun handleSqlHeuristics(
+        dto: TestResultsDto,
+        fv: FitnessValue,
+    ) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            //TODO handling of toMaximize as well
+            //TODO refactoring when will have other heuristics besides for SQL
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.SQL
+                }.map { it.value }
+                .toList()
+
+            if (!toMinimize.isEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.SQL) {
+
+                        statistics.reportNumberOfEvaluatedRowsForSqlHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportSqlHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportSqlHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+
+    }
+
+    private fun handleMongoHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.MONGO
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.MONGO) {
+                        statistics.reportNumberOfEvaluatedDocumentsForMongoHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportMongoHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportMongoHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
         }
     }
 }

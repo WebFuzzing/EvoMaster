@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.string.StringGene
@@ -18,10 +17,9 @@ class PairGene<F,S>(
         val first: F,
         val second : S,
         /**
-         *
-         * whether the [first] is mutable
+         * Note: allowing does not imply it can be mutated, eg, if first.isMutable() gives false
          */
-        val isFirstMutable : Boolean = true //TODO shouldn't be first.isMutable()?
+        val allowedToMutateFirst : Boolean = true
 ): CompositeFixedGene(name, listOf(first, second)) where F: Gene, S: Gene {
 
     companion object{
@@ -37,17 +35,17 @@ class PairGene<F,S>(
             val key = StringGene(gene.name)
             if (isFixedFirst)
                 key.value = gene.name
-            return PairGene(gene.name, key, gene, isFirstMutable = !isFixedFirst)
+            return PairGene(gene.name, key, gene, allowedToMutateFirst = !isFixedFirst)
         }
 
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        if(first.isMutable()) {
+        if(first.isMutable()  && (allowedToMutateFirst || !first.initialized)) {
             first.randomize(randomness, tryToForceNewValue)
         }
         if(second.isMutable()) {
@@ -80,16 +78,16 @@ class PairGene<F,S>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene !is PairGene<*, *>) {
             throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
         }
-        return first.bindValueBasedOn(gene.first) && second.bindValueBasedOn(gene.second)
+        return first.setValueBasedOn(gene.first) && second.setValueBasedOn(gene.second)
     }
 
 
     override fun copyContent(): Gene {
-        return PairGene(name, first.copy(), second.copy(), isFirstMutable)
+        return PairGene(name, first.copy(), second.copy(), allowedToMutateFirst)
     }
 
     override fun isMutable(): Boolean {
@@ -97,7 +95,7 @@ class PairGene<F,S>(
             Can be tricky... assume a first that is mutable, but we do not want to change it.
             we still need to initialize with randomize, otherwise its constraints might fail
          */
-        return (first.isMutable() && (isFirstMutable || !first.initialized)) || second.isMutable()
+        return (first.isMutable() && (allowedToMutateFirst || !first.initialized)) || second.isMutable()
     }
 
     override fun isPrintable(): Boolean {
@@ -106,13 +104,8 @@ class PairGene<F,S>(
 
     override fun mutablePhenotypeChildren(): List<Gene> {
 
-        /*
-            FIXME what is the role of isFirstMutable???
-            couldn't had used a DisruptiveGene instead?
-         */
-
         val list = mutableListOf<Gene>()
-        if (first.isMutable() && isFirstMutable)
+        if (first.isMutable() && allowedToMutateFirst)
             list.add(first)
         if (second.isMutable())
             list.add(second)
@@ -120,7 +113,7 @@ class PairGene<F,S>(
     }
 
     override fun mutationWeight(): Double {
-        return (if (isFirstMutable) first.mutationWeight() else 0.0) + second.mutationWeight()
+        return (if (allowedToMutateFirst) first.mutationWeight() else 0.0) + second.mutationWeight()
     }
 
     override fun customShouldApplyShallowMutation(

@@ -2,6 +2,9 @@ package org.evomaster.e2etests.spring.examples.sort;
 
 import org.evomaster.core.output.TestCase;
 import org.evomaster.core.output.TestSuiteOrganizer;
+import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy;
+import org.evomaster.core.output.naming.TestCaseNamingStrategy;
+import org.evomaster.core.output.sorting.SortingStrategy;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
@@ -42,7 +45,9 @@ public class SortEMTest extends NRTestBase {
 
                     TestSuiteOrganizer organizer = new TestSuiteOrganizer();
 
-                    List<TestCase> tclist = organizer.sortTests(solution, true);
+                    TestCaseNamingStrategy namingStrategy = new NumberedTestCaseNamingStrategy(solution);
+
+                    List<TestCase> tclist = organizer.sortTests(solution, namingStrategy, SortingStrategy.COVERED_TARGETS);
 
                     //Iterator<TestCase> iterator = tclist.iterator();
                     //TestCase current, previous = iterator.next();

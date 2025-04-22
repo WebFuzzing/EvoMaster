@@ -7,13 +7,12 @@ import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
-import org.evomaster.core.output.auth.CookieWriter
-import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.search.EvaluatedDbAction
+import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.EvaluatedMongoDbAction
+import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.utils.StringUtils
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
 
@@ -29,7 +28,13 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return name
     }
 
-    override fun handleTestInitialization(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
+    ) {
 
         //TODO: REFACTOR TO HANDLE MULTIPLE DATABASES
         val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()
@@ -131,10 +136,25 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
 
     private fun handlePrimitive(lines: Lines, bodyString: String, fieldPath: String, responseVariableName: String?) {
 
+        /*
+            If we arrive here, it means we have free text.
+            Such free text could be a primitive value, like a number or boolean.
+            if not, and it is a text, then most likely it is a bug in the API,
+            as free unquoted text would not be a valid JSON element.
+            Still, even in those cases, we want to capture such data in an assertion
+
+            https://www.rfc-editor.org/rfc/rfc8259.html
+         */
+
         val s = bodyString.trim()
 
         when {
             format.isJavaOrKotlin() -> {
+                /*
+                    Unfortunately, a limitation of RestAssured is that for JSON it only handles
+                    object and array.
+                    The rest is either ignored or leads to crash
+                 */
                 lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
             }
             format.isJavaScript() || format.isCsharp() || format.isPython() -> {
@@ -151,7 +171,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     return
                 }
 
-                throw IllegalStateException("Cannot parse: $s")
+                /*
+                    Note: for JS, this will not work, as call would crash due to invalid JSON
+                    payload (Java and Python don't seem to have such issue)
+                 */
+                lines.add(bodyIsString(s, GeneUtils.EscapeMode.BODY, responseVariableName))
             }
             else -> throw IllegalStateException("Format not supported yet: $format")
         }
@@ -274,6 +298,8 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (format.isJavaScript() || format.isCsharp() || format.isPython()) {
             val toPrint = if (value is String) {
                 "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
+            } else if(value is Boolean && format.isPython()) {
+                StringUtils.capitalization(value.toString())
             } else {
                 value.toString()
             }

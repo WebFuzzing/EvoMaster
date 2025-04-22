@@ -39,7 +39,7 @@ class GeneUtilsGetDeltaTest {
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
         randomness = injector.getInstance(Randomness::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
     }
 
@@ -64,7 +64,7 @@ class GeneUtilsGetDeltaTest {
     @ParameterizedTest
     @MethodSource("getBudgetAndRange")
     fun testGetDelta(iteration: Int, range: Long) {
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         (0 until iteration).forEach { _ ->
             fakeOneEvaluation()
             val delta = GeneUtils.getDelta(randomness, apc, range = range)

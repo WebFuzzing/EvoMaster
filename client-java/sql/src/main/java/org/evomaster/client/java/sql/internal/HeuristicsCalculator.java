@@ -6,26 +6,19 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
+import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
-import java.util.function.Function;
 
-import static org.evomaster.client.java.sql.internal.ParserUtils.getWhere;
+import static org.evomaster.client.java.sql.internal.SqlParserUtils.getWhere;
 
 public class HeuristicsCalculator {
 
@@ -44,34 +37,40 @@ public class HeuristicsCalculator {
     }
 
     //only for tests
-    protected static double computeDistance(String statement, QueryResult data) {
-        return computeDistance(statement, data, null, null,false).sqlDistance;
+    protected static double computeDistance(String statement, QueryResult... data) {
+        return computeDistance(statement, null, null, false, data).sqlDistance;
     }
 
     public static SqlDistanceWithMetrics computeDistance(
-            String statement,
-            QueryResult data,
-            DbSchemaDto schema,
+            String sqlCommand,
+            DbInfoDto schema,
             TaintHandler taintHandler,
             /**
              * Enable more advance techniques since first SQL support
              */
-            boolean advancedHeuristics
+            boolean advancedHeuristics,
+            QueryResult... data
     ) {
 
-        if (data.isEmpty()) {
-            //if no data, we have no info whatsoever
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0);
+        /**
+         * This is not an ideal solution, but it will remain this way until config.heuristicsForSQLAdvanced remains
+         * experimental and it does not replace the "Plain" SqlHeuristicsCalculator
+         */
+        if (advancedHeuristics) {
+            return SqlHeuristicsCalculator.computeDistance(sqlCommand,schema,taintHandler,data);
         }
 
-        Statement stmt = ParserUtils.asStatement(statement);
+        if (data.length == 0 || Arrays.stream(data).allMatch(QueryResult::isEmpty)){
+            //if no data, we have no info whatsoever
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE,0, false);
+        }
 
+        Statement stmt = SqlParserUtils.parseSqlCommand(sqlCommand);
         Expression where = getWhere(stmt);
         if (where == null) {
             //no constraint and at least one data point
-            return new SqlDistanceWithMetrics(0.0,0);
+            return new SqlDistanceWithMetrics(0.0,0, false);
         }
-
 
         SqlNameContext context = new SqlNameContext(stmt);
         if (schema != null) {
@@ -81,22 +80,24 @@ public class HeuristicsCalculator {
 
         double minSqlDistance = Double.MAX_VALUE;
         int rowCount = 0;
-        for (DataRow row : data.seeRows()) {
-            rowCount++;
-            try {
-                double dist = calculator.computeExpression(where, row);
-                if (dist == 0.0) {
-                    return new SqlDistanceWithMetrics(0.0, rowCount);
-                } else if (dist < minSqlDistance) {
-                    minSqlDistance = dist;
+        for(QueryResult qr: data){
+            for (DataRow row : qr.seeRows()) {
+                rowCount++;
+                try {
+                    double dist = calculator.computeExpression(where, row);
+                    if (dist == 0.0) {
+                        return new SqlDistanceWithMetrics(0.0, rowCount, false);
+                    } else if (dist < minSqlDistance) {
+                        minSqlDistance = dist;
+                    }
+                } catch (Exception ex) {
+                    SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
+                    return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount, true);
                 }
-            } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed to compute where expression: " + where + " with data " + row);
-                return new SqlDistanceWithMetrics(Double.MAX_VALUE, rowCount);
             }
         }
 
-        return new SqlDistanceWithMetrics(minSqlDistance,rowCount);
+        return new SqlDistanceWithMetrics(minSqlDistance,rowCount, false);
     }
 
     /**
@@ -281,6 +282,9 @@ public class HeuristicsCalculator {
             return null;
         }
 
+        if (obj instanceof Instant)
+            return (Instant) obj;
+
         if (obj instanceof Timestamp) {
             Timestamp timestamp = (Timestamp) obj;
             return timestamp.toInstant();
@@ -288,55 +292,7 @@ public class HeuristicsCalculator {
 
         if (obj instanceof String) {
 
-
-            List<Function<String, Instant>> parsers = Arrays.asList(
-                    s -> ZonedDateTime.parse(s).toInstant(),
-                    Instant::parse,
-                    s -> OffsetDateTime.parse(s, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm:ss.SSSX")).toInstant(),
-                    s -> {
-                        /*
-                           maybe it is in some weird format like 28-Feb-17...
-                           this shouldn't really happen, but looks like Hibernate generate SQL from
-                           JPQL with Date handled like this :(
-                        */
-                        DateTimeFormatter df = new DateTimeFormatterBuilder()
-                                // case insensitive to parse JAN and FEB
-                                .parseCaseInsensitive()
-                                // add pattern
-                                .appendPattern("dd-MMM-yy")
-                                // create formatter (use English Locale to parse month names)
-                                .toFormatter(Locale.ENGLISH);
-
-                        return LocalDate.parse(obj.toString(), df)
-                                .atStartOfDay().toInstant(ZoneOffset.UTC);
-                    },
-                    s -> {
-                        try {
-                            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSSS").parse(s).toInstant();
-                        } catch (ParseException ex) {
-                            throw new DateTimeParseException("Cannot parse to yyyy-MM-dd HH:mm:ss.SSSS", s, ex.getErrorOffset(), ex);
-                        }
-                    }
-            );
-
-            String s = obj.toString();
-
-            /*
-                Dealing with timestamps is a mess, including bugs in the JDK itself...
-                https://stackoverflow.com/questions/43360852/cannot-parse-string-in-iso-8601-format-lacking-colon-in-offset-to-java-8-date
-                So, here we try different date parsers, hoping at least one will work...
-             */
-
-            for (Function<String, Instant> p : parsers) {
-                try {
-                    return p.apply(s);
-                } catch (DateTimeParseException t) {
-                    // Do nothing
-                }
-            }
-
-            SimpleLogger.warn("Cannot handle time value in the format: " + s);
-            return null;
+            return ColumnTypeParser.getAsInstant((String) obj);
         }
 
         SimpleLogger.warn("Cannot handle time value for class: " + obj.getClass());
@@ -348,7 +304,9 @@ public class HeuristicsCalculator {
         Object left = getValue(exp.getLeftExpression(), data);
         Object right = getValue(exp.getRightExpression(), data);
 
-        if (left instanceof Timestamp || right instanceof Timestamp) {
+
+        if (left instanceof Timestamp || right instanceof Timestamp
+                || left instanceof Instant || right instanceof Instant) {
 
             Instant a = getAsInstant(left);
             Instant b = getAsInstant(right);

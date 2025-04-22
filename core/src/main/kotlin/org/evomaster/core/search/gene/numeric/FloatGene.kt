@@ -107,7 +107,7 @@ class FloatGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){
             is FloatGene -> value = gene.value
             is DoubleGene -> value = gene.value.toFloat()
@@ -128,10 +128,10 @@ class FloatGene(name: String,
                 value = gene.uniqueId.toFloat()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(

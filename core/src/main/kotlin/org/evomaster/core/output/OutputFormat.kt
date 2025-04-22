@@ -18,18 +18,9 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
-    //CSHARP_XUNIT,
+    //CSHARP_XUNIT, //no longer supported, but there is still legacy code not removed
     PYTHON_UNITTEST
     ;
-
-    /*
-        TODO:
-        JAVA_TESTNG
-        KOTLIN_TESTNG
-
-        and in the future, also support other languages,
-        eg JavaScript
-     */
 
     fun isJava() = this.name.startsWith("java_", true)
 

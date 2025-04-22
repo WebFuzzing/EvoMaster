@@ -36,9 +36,9 @@ class UriDataGene(
         )
     }
 
-    override fun isLocallyValid(): Boolean {
-        return getViewOfChildren().all { it.isLocallyValid() }
-                && try{ URI(getValueAsRawString()); true}catch (e: Exception){false}
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        //FIXME URI implementation in Java is broken
+        return try{ URI(getValueAsRawString()); true}catch (e: Exception){false}
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -82,7 +82,7 @@ class UriDataGene(
                 && data.containsSameValueAs(other.data)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

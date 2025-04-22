@@ -124,7 +124,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     fun testIndividualResourceManipulation(iteration: Int, numResource: Int){
         initResourceNode(numResource, 5)
 
-        config.maxActionEvaluations = iteration
+        config.maxEvaluations = iteration
         config.maxTestSize = 20
         (0 until iteration).forEach { _ ->
             val dbSize = randomness.nextInt(1, 15)
@@ -188,7 +188,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                 if a sql gene is binding with rest gene,
                 then only the rest gene is exposed to be mutable
              */
-            val sql = call.seeGenes(Individual.GeneFilter.ONLY_SQL)
+            val sql = call.seeGenes(ActionFilter.ONLY_SQL)
 
 
             /*
@@ -217,7 +217,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                 }
             }
 
-            val nosql = call.seeGenes(Individual.GeneFilter.NO_SQL).filter {
+            val nosql = call.seeGenes(ActionFilter.NO_SQL).filter {
                 !isExtraTaintParam(it.name) && it.isMutable()
             }
 

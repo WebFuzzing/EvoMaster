@@ -19,18 +19,15 @@ import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.Individual.GeneFilter.ALL
-import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
@@ -47,8 +44,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
+        if(!config.enableStructureMutation)
+            return false
 
-        val prob = if(config.isMIO()){
+        val prob = if(config.isUsingAdvancedTechniques()){
             when (config.structureMutationProbStrategy) {
                 EMConfig.StructureMutationProbStrategy.SPECIFIED -> config.structureMutationProbability
                 EMConfig.StructureMutationProbStrategy.SPECIFIED_FS -> if (apc.doesFocusSearch()) config.structureMutationProFS else config.structureMutationProbability
@@ -83,8 +82,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>): List<Gene> {
-        val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        val genes = individual.seeGenes(filterMutate).filter { it.isMutable() }
+        val filterMutate = if (config.shouldGenerateSqlData()) ActionFilter.ALL else ActionFilter.NO_SQL
+        val genes = individual.seeTopGenes(filterMutate).filter { it.isMutable() }
         return genes
     }
 
@@ -99,14 +98,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         if (geneCandidates.isEmpty()) return mutableListOf()
 
         val filterN = when (config.geneMutationStrategy) {
-            ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL
+            ONE_OVER_N -> ActionFilter.ALL
+            ONE_OVER_N_BIASED_SQL -> ActionFilter.NO_SQL
         }
         // the actual chosen genes, that will be mutated
         val toMutate = mutableListOf<Gene>()
 
         if (!config.isEnabledWeightBasedMutation()) {
-            val p = 1.0 / max(1, individual.seeGenes(filterN).filter { geneCandidates.contains(it) }.size)
+            val p = 1.0 / max(1, individual.seeTopGenes(filterN).filter { geneCandidates.contains(it) }.size)
             while (toMutate.isEmpty()) {
                 geneCandidates.forEach { g ->
                     if (randomness.nextBoolean(p))
@@ -117,7 +116,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val enableAPC = config.isEnabledWeightBasedMutation()
                     && archiveGeneSelector.applyArchiveSelection()
 
-            val noSQLGenes = individual.seeGenes(NO_SQL).filter { geneCandidates.contains(it) }
+            val noSQLGenes = individual.seeTopGenes(ActionFilter.NO_SQL).filter { geneCandidates.contains(it) }
             val sqlGenes = geneCandidates.filterNot { noSQLGenes.contains(it) }
             while (toMutate.isEmpty()) {
                 if (config.specializeSQLGeneSelection && noSQLGenes.isNotEmpty() && sqlGenes.isNotEmpty()) {
@@ -162,11 +161,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         if(config.taintForceSelectionOfGenesWithSpecialization){
-            individual.seeGenes()
-                .filterIsInstance<StringGene>()
-                .filter { it.selectionUpdatedSinceLastMutation }
+            /*
+                FIXME this should be removed, and rather handled with an "evolve".
+                but need refactoring of StringGene mutation
+             */
+            TaintAnalysis.dormantGenes(individual)
                 .forEach {
                     if(!toMutate.contains(it)){
+                        Lazy.assert { it.isMutable() }
                         toMutate.add(it)
                     }
                 }
@@ -176,6 +178,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     private fun mutationPreProcessing(individual: T) {
+
+        val applyEvolve = config.taintAnalysisForMapsAndArrays
+        TaintAnalysis.evolveIndividual(individual,applyEvolve,applyEvolve)
 
         for(a in individual.seeAllActions()){
             val update =if(a is ApiWsAction) {
@@ -196,10 +201,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             allGenes.filterIsInstance<OptionalGene>()
                 .filter { it.selectable && it.requestSelection }
                 .forEach { it.isActive = true; it.requestSelection = false }
-
-            allGenes.filterIsInstance<TaintedArrayGene>()
-                .filter{!it.isActive && it.isResolved()}
-                .forEach { it.activate() }
 
             //disable genes that should no longer be mutated
             val state = individual.searchGlobalState
@@ -294,6 +295,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         targets: Set<Int>,
         mutatedGenes: MutatedGeneSpecification?
     ): T {
+        preActionBeforeMutatoin(individual)
 
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
@@ -340,8 +342,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             Lazy.assert { mutatedIndividual.verifyBindingGenes() }
         }
 
-        if (mutatedIndividual is RestIndividual)
+        if (mutatedIndividual is RestIndividual) {
             mutatedIndividual.repairDbActionsInCalls()
+            mutatedIndividual.fixResourceForwardLinks()
+        }
 
         // update MutatedGeneSpecification after the post-handling
         if(mutated?.repairInitAndDbSpecification(mutatedIndividual) == true){
@@ -448,7 +452,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
                 else if (!individual.hasAnyAction())
-                    ImpactUtils.findMutatedGene(it.individual.seeGenes(), gene, includeSameValue)
+                    ImpactUtils.findMutatedGene(it.individual.seeTopGenes(), gene, includeSameValue)
                 else
                     null
             })
@@ -458,7 +462,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 (if (action != null)
                     ImpactUtils.findMutatedGene(action, gene, includeSameValue)
                 else if (!e.individual.hasAnyAction())
-                    ImpactUtils.findMutatedGene(e.individual.seeGenes(), gene, includeSameValue)
+                    ImpactUtils.findMutatedGene(e.individual.seeTopGenes(), gene, includeSameValue)
                 else null)?.run {
                     this to EvaluatedInfo(
                         index = e.index,

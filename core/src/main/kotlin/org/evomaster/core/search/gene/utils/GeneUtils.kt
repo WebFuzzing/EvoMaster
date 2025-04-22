@@ -1,16 +1,20 @@
 package org.evomaster.core.search.gene.utils
 
 import org.apache.commons.text.StringEscapeUtils
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.collection.*
+import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
+import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -782,4 +786,147 @@ object GeneUtils {
         return gene
     }
 
+    fun getBasicGeneBasedOnJavaTypeBytecodeName(typeName: String, geneName: String) : Gene?{
+
+        val valueType = if(typeName.startsWith("L") && typeName.endsWith(";")){
+            typeName.substring(1, typeName.length - 1)
+        } else {
+            typeName
+        }
+
+        if(!valueType.startsWith("java")){
+            /*
+                not part of JDK... would a deserializer for a Map do that?
+                eg, maybe using a library class? still feel weird, would need to double-check if this happens
+             */
+            log.warn("Not supported gene type for non-JDK class: $typeName")
+            return null
+        }
+
+        val className = valueType.replace("/",".")
+        val type = try{
+            this::class.java.classLoader.loadClass(className)
+        } catch (e: ClassNotFoundException) {
+            log.warn("Unable to load class $className when inferring type for valueType $valueType")
+            return null
+        }
+
+        return getBasicGeneBasedOnJavaType(type, geneName)
+    }
+
+    fun getBasicGeneBasedOnJavaType(type: Class<*>, name: String): Gene? {
+
+        /*
+            Note we could end up dealing with Number when having code like:
+
+            INVOKEINTERFACE java/util/List.get (I)Ljava/lang/Object; (itf)
+            CHECKCAST java/lang/Number
+            INVOKEVIRTUAL java/lang/Number.intValue ()I
+
+            in this case, just using an Int should "hopefully" be fine, regardless of which xValue() is called afterwards
+         */
+
+        return when{
+            String::class.java.isAssignableFrom(type)
+                    || java.lang.String::class.java.isAssignableFrom(type) -> StringGene(name)
+            Integer::class.java.isAssignableFrom(type)
+                    || java.lang.Integer::class.java.isAssignableFrom(type)
+                    || type == Integer.TYPE-> IntegerGene(name)
+            Double::class.java.isAssignableFrom(type)
+                    || java.lang.Double::class.java.isAssignableFrom(type)
+                    || type == java.lang.Double.TYPE-> DoubleGene(name)
+            Boolean::class.java.isAssignableFrom(type)
+                    || java.lang.Boolean::class.java.isAssignableFrom(type)
+                    || type == java.lang.Boolean.TYPE-> BooleanGene(name)
+            Float::class.java.isAssignableFrom(type)
+                    || java.lang.Float::class.java.isAssignableFrom(type)
+                    || type == java.lang.Float.TYPE-> FloatGene(name)
+            Long::class.java.isAssignableFrom(type)
+                    || java.lang.Long::class.java.isAssignableFrom(type)
+                    || type == java.lang.Long.TYPE-> LongGene(name)
+            Short::class.java.isAssignableFrom(type)
+                    || java.lang.Short::class.java.isAssignableFrom(type)
+                    || type == java.lang.Short.TYPE -> instantiateShortGene(name)
+            Byte::class.java.isAssignableFrom(type)
+                    || java.lang.Byte::class.java.isAssignableFrom(type)
+                    || type == java.lang.Byte.TYPE-> instantiateByteGene(name)
+            Char::class.java.isAssignableFrom(type)
+                    || java.lang.Character::class.java.isAssignableFrom(type)
+                    || type == java.lang.Character.TYPE -> instantiateCharGene(name)
+            Map::class.java.isAssignableFrom(type)
+                    || java.util.Map::class.java.isAssignableFrom(type) ->
+                        TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            List::class.java.isAssignableFrom(type)
+                    || java.util.List::class.java.isAssignableFrom(type)
+                    || Set::class.java.isAssignableFrom(type)
+                    || java.util.Set::class.java.isAssignableFrom(type) ->
+                        TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            //important this is last, as it matches all its subclasses
+            Number::class.java.isAssignableFrom(type)
+                    || java.lang.Number::class.java.isAssignableFrom(type)-> IntegerGene(name)
+            else -> {
+                null
+            }
+        }
+    }
+
+    fun getBasicGeneBasedOnBytecodeType(type: String, name: String) : Gene?{
+        /*
+        https://lambdaurora.dev/tutorials/java/bytecode/types.html
+        V, represents void, it exists as a type descriptor for method return types.
+        Z, represents a boolean type.
+        B, represents a byte type.
+        C, represents a char type.
+        S, represents a short type.
+        I, represents an int type.
+        J, represents a long type.
+        F, represents a float type.
+        D, represents a double type.
+
+        Objects -> L...;  eg Ljava/lang/String;
+        */
+
+        return when(type){
+            "Z" -> BooleanGene(name)
+            "B" -> instantiateByteGene(name)
+            "C" -> instantiateCharGene(name)
+            "S" -> instantiateShortGene(name)
+            "I" -> IntegerGene(name)
+            "J" -> LongGene(name)
+            "F" -> FloatGene(name)
+            "D" -> DoubleGene(name)
+            else -> when{
+                type.startsWith("[") -> instantiateArrayGeneBasedOnBytecodeType(type,name)
+                else ->   getBasicGeneBasedOnJavaTypeBytecodeName(type, name)
+            }
+        }
+    }
+
+    fun instantiateArrayGeneBasedOnBytecodeType(type: String, name: String) : Gene?{
+        if(!type.startsWith("[")){
+            throw IllegalArgumentException("Array type not starting with [ -> $type")
+        }
+        val subtype = type.substring(1)
+
+        if(subtype.contains("java/lang/Object")){
+            return TaintedArrayGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+        }
+
+        val template = getBasicGeneBasedOnBytecodeType(subtype, name)
+        if(template == null){
+            log.warn("Failed to instantiate gene for subtype: $subtype")
+            return null
+        }
+
+        return ArrayGene(name, template)
+    }
+
+    fun instantiateByteGene(name: String) =
+        IntegerGene(name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
+
+    fun instantiateCharGene(name: String) =
+        StringGene(name, minLength = 1, maxLength = 1)
+
+    fun instantiateShortGene(name: String) =
+        IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
 }

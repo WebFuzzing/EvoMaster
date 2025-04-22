@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.network
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -33,8 +32,8 @@ class MacAddrGene(
         val log: Logger = LoggerFactory.getLogger(MacAddrGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -61,12 +60,12 @@ class MacAddrGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is MacAddrGene -> {
                 var result = true
                 repeat(octets.size) {
-                    result = result && octets[it].bindValueBasedOn(gene.octets[it])
+                    result = result && octets[it].setValueBasedOn(gene.octets[it])
                 }
                 result
             }

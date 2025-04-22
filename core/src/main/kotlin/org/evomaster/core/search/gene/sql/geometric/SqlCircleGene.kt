@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.geometric
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -24,8 +23,8 @@ class SqlCircleGene(
         val log: Logger = LoggerFactory.getLogger(SqlCircleGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
 
@@ -73,11 +72,11 @@ class SqlCircleGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlCircleGene -> {
-                c.bindValueBasedOn(gene.c) &&
-                        r.bindValueBasedOn(gene.r)
+                c.setValueBasedOn(gene.c) &&
+                        r.setValueBasedOn(gene.r)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind CircleGene with ${gene::class.java.simpleName}")

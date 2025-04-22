@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.Randomness
 
 class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
@@ -62,7 +62,7 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
     override fun mutationWeight(): Double = 0.0
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing, cannot bind with others
         return true
     }

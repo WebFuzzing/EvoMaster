@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -39,8 +38,8 @@ class UUIDGene(
         private val log: Logger = LoggerFactory.getLogger(UUIDGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -99,13 +98,13 @@ class UUIDGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when{
             gene is UUIDGene ->{
-                mostSigBits.bindValueBasedOn(gene.mostSigBits) && leastSigBits.bindValueBasedOn(gene.leastSigBits)
+                mostSigBits.setValueBasedOn(gene.mostSigBits) && leastSigBits.setValueBasedOn(gene.leastSigBits)
             }
             gene is StringGene && gene.getSpecializationGene() != null ->{
-                bindValueBasedOn(gene.getSpecializationGene()!!)
+                setValueBasedOn(gene.getSpecializationGene()!!)
             }
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind UUIDGene with ${gene::class.java.simpleName}")

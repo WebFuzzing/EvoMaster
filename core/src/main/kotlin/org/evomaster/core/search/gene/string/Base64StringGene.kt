@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.string
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
@@ -22,8 +21,8 @@ class Base64StringGene(
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = Base64StringGene(name, data.copy() as StringGene)
@@ -55,10 +54,10 @@ class Base64StringGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){
-            is Base64StringGene -> data.bindValueBasedOn(gene.data)
-            is StringGene -> data.bindValueBasedOn(gene)
+            is Base64StringGene -> data.setValueBasedOn(gene.data)
+            is StringGene -> data.setValueBasedOn(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
                 false

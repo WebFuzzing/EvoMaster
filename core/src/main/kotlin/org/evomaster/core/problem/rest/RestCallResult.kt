@@ -14,14 +14,14 @@ class RestCallResult : HttpWsCallResult {
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: RestCallResult) : super(other)
 
     companion object {
         const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
     }
 
 
-    override fun copy(): ActionResult {
+    override fun copy(): RestCallResult {
         return RestCallResult(this)
     }
 
@@ -30,7 +30,7 @@ class RestCallResult : HttpWsCallResult {
     fun getResourceId(): String? {
 
         /*
-            TODO should use more sophisticated algorithm, taking into what done in RestResponseFeeder
+            TODO should use more sophisticated algorithm, taking into account what done in RestResponseFeeder
          */
 
         if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){

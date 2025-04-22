@@ -18,7 +18,7 @@ class WebIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize, 0)
 ) : GuiIndividual(
     sampleType = sampleType,
     children = children,
@@ -36,12 +36,6 @@ class WebIndividual(
             dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
     }
-
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        //TODO
-        return listOf()
-    }
-
 
     override fun seeMainExecutableActions(): List<WebAction> {
         return super.seeMainExecutableActions() as List<WebAction>

@@ -4,6 +4,7 @@ import bar.examples.it.spring.multipleendpoints.MultipleEndpointsController
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.junit.Assert
 import org.junit.jupiter.api.Assertions
@@ -225,8 +226,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
         // in the beginning all the individuals are selected since each has GET request
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null,
-            null, null, null, true
+            listOfIndividuals, authenticated = true
         )
 
         // Only 1 individual has a request with the path "/api/endpoint5/setStatus/{status}"
@@ -343,8 +343,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null, null, null,
-            null, true)
+            listOfIndividuals, authenticated = true)
 
         Assertions.assertTrue(selectedIndividuals.size == 3)
 
@@ -356,8 +355,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(
-            listOfIndividuals, null, null, null,
-            null, false)
+            listOfIndividuals, authenticated = false)
 
         Assertions.assertTrue(selectedIndividuals.size == 4)
 
@@ -418,7 +416,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfAction() {
+    fun testFindIndexOfAction() {
 
         val listOfIndividuals = initializeIndividuals()
 
@@ -438,7 +436,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
      * Test getting indices of actions in individuals.
      */
     @Test
-    fun testGetIndexOfActionNonExistent() {
+    fun testFindIndexOfActionNonExistent() {
 
         val listOfIndividuals = initializeIndividuals()
 
@@ -458,7 +456,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
     fun testSliceAllCallsInIndividualAfterAction() {
         val listOfIndividuals = initializeIndividuals()
 
-        val newIndividual = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+        val newIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
             listOfIndividuals[1].individual, 2)
 
         // now check actions in the newIndividual
@@ -476,7 +474,7 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
 
         // now try from index 1
-        val newIndividualSecond = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+        val newIndividualSecond = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
             listOfIndividuals[1].individual, 1)
 
         // now check actions in the newIndividual
@@ -498,12 +496,12 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
         val listOfIndividuals = initializeIndividuals()
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
-            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                 listOfIndividuals[1].individual, 10)
         }
 
         Assert.assertThrows(IllegalArgumentException::class.java) {
-            RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
+            RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
                 listOfIndividuals[1].individual, -10)
         }
 

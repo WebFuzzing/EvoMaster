@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
@@ -13,11 +13,11 @@ class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.lowercase()) },
+        assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(14, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "ACTIVITY" }, "missing table ACTIVITY") },

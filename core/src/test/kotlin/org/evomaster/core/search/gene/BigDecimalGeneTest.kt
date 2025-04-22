@@ -25,9 +25,9 @@ class BigDecimalGeneTest {
         val config = injector.getInstance(EMConfig::class.java)
         val apc = injector.getInstance(AdaptiveParameterControl::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
         config.useTimeInFeedbackSampling = false
         config.seed = 42
 

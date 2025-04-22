@@ -86,6 +86,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 || (structureMutator.canApplyInitStructureMutator() && randomness.nextBoolean(config.initStructureMutationProbability)))
     }
 
+    /**
+     * a set of actions/handling which are required to be executed before mutations
+     */
+    fun preActionBeforeMutatoin(evaluatedIndividual: EvaluatedIndividual<T>){
+        /*
+            tracking might be null if the current is never mutated
+            then need to handle it before mutation
+         */
+        preHandlingTrackedIndividual(evaluatedIndividual)
+    }
+
     open fun postActionAfterMutation(individual: T, mutated: MutatedGeneSpecification?){}
 
     open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
@@ -112,8 +123,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         var current = individual
 
-        // tracking might be null if the current is never mutated
-        preHandlingTrackedIndividual(current)
+        // we run pre-actions before upToNTimes mutations
+        preActionBeforeMutatoin(current)
 
         val targets = archive.notCoveredTargets().toMutableSet()
 

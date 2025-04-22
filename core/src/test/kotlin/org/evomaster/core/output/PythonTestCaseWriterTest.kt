@@ -15,15 +15,8 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
 
-class PythonTestCaseWriterTest {
+class PythonTestCaseWriterTest : WriterTestBase(){
 
-    private fun getConfig(format: OutputFormat): EMConfig {
-        val config = EMConfig()
-        config.outputFormat = format
-        config.expectationsActive = false
-        config.testTimeout = -1
-        return config
-    }
 
     @Test
     fun testEmptyTest() {
@@ -83,7 +76,7 @@ class PythonTestCaseWriterTest {
         val results = listOf(result)
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         val config = getConfig(format)
-        config.expectationsActive = true
+        //config.expectationsActive = true
 
         val test = TestCase(test = ei, name = "test")
 

@@ -3,10 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.object.JsonTaint;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.stream.Collectors;
 
@@ -32,7 +29,32 @@ public class JsonUtils {
     public static InputStream analyzeClass(InputStream entityStream, Class<Object> type){
         String content = JsonUtils.readStream(entityStream);
         ClassToSchema.registerSchemaIfNeeded(type);
-        JsonTaint.handlePossibleJsonTaint(content, type);
+        JsonTaint.handlePossibleJsonTaint(content, type, false);
         return JsonUtils.toStream(content);
+    }
+
+    /**
+     * Reader the JSON string from Reader.
+     */
+    public static String getStringFromReader(Reader reader){
+        StringBuilder s = new StringBuilder();
+        int character;
+
+        try {
+            while ((character = reader.read()) != -1) {
+                s.append((char) character);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        return s.toString();
+    }
+
+    /**
+     * Returns Reader from JSON string
+     */
+    public static Reader stringToReader(String content) {
+        return new StringReader(content);
     }
 }

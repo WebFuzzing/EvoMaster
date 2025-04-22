@@ -10,7 +10,9 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TupleGene
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -412,5 +414,24 @@ internal class GeneUtilsTest {
                 .replace(" ", "") // remove empty space to make assertion less brittle
 
         assertEquals("{foo{...onA{a1}b1,b2}}", res)//with the name foo and without "...on" for the object B
+    }
+
+    @Test
+    fun testGetBasicGeneBasedOnJavaType(){
+
+        val intGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Integer::class.java, "foo")
+        assertTrue(intGene is IntegerGene)
+
+        val doubleGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Double::class.java, "foo")
+        assertTrue(doubleGene is DoubleGene)
+
+        val longGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Long::class.java, "foo")
+        assertTrue(longGene is LongGene)
+
+        val shortGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Short::class.java, "foo")
+        assertTrue(shortGene is IntegerGene && shortGene.min != null && shortGene.max != null) //no ShortGene
+
+        val numberGene = GeneUtils.getBasicGeneBasedOnJavaType(java.lang.Number::class.java, "foo")
+        assertTrue(numberGene is IntegerGene)
     }
 }

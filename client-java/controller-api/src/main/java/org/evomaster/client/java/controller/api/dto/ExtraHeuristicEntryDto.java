@@ -55,14 +55,32 @@ public class ExtraHeuristicEntryDto implements Serializable {
      */
     public int numberOfEvaluatedRecords;
 
+    /**
+     * Indicates whether the heuristic computation failed.
+     *
+     * If this is set to {@code true}, it means that an error or issue occurred during
+     * the evaluation of the heuristic score, and the value of the heuristic fails to
+     * the greatest value. When {@code false}, the heuristic was computed successfully.
+     *
+     *
+     * Example scenarios where this might be {@code true} include:
+     * <ul>
+     *   <li>Database query errors (e.g., timeouts, syntax issues)</li>
+     *   <li>Parsing SQL query errors</li>
+     *   <li>Unsupported Mongo Query operators</li>
+     * </ul>
+     */
+    public boolean extraHeuristicEvaluationFailure;
+
     public ExtraHeuristicEntryDto() {
     }
 
-    public ExtraHeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords) {
+    public ExtraHeuristicEntryDto(Type type, Objective objective, String id, Double value, int numberOfEvaluatedRecords, boolean heuristicEvaluationFailure) {
         this.type = type;
         this.objective = objective;
         this.id = id;
         this.value = value;
         this.numberOfEvaluatedRecords = numberOfEvaluatedRecords;
+        this.extraHeuristicEvaluationFailure = heuristicEvaluationFailure;
     }
 }

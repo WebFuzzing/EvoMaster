@@ -21,7 +21,7 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
 
     override fun isMutable() = false
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
     override fun copyContent(): Gene = CycleObjectGene(name)
@@ -48,7 +48,7 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
         return other is CycleObjectGene
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

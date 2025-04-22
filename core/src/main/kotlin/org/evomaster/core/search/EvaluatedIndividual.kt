@@ -8,19 +8,19 @@ import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
-import org.evomaster.core.search.Individual.GeneFilter
+import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
-import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import org.evomaster.core.search.tracer.TrackingHistory
 import org.slf4j.Logger
@@ -42,6 +42,7 @@ class EvaluatedIndividual<T>(
     private val results: List<out ActionResult>,
 
     // for tracking its history
+    @ProcessMonitorExcludeField
     override var trackOperator: TrackOperator? = null,
     override var index: Int = Traceable.DEFAULT_INDEX,
 
@@ -52,6 +53,7 @@ class EvaluatedIndividual<T>(
 
     override var evaluatedResult: EvaluatedMutation? = null
 
+    @ProcessMonitorExcludeField
     override var tracking: TrackingHistory<out Traceable>? = null
 
     companion object {
@@ -160,6 +162,8 @@ class EvaluatedIndividual<T>(
      * the total number of actions
      */
     fun evaluatedMainActions(): List<EvaluatedAction> {
+        // main action might not be executed if any init actions (such as schedule task) failed
+        if (!didExecuteMainAction()) return emptyList()
 
         val list: MutableList<EvaluatedAction> = mutableListOf()
         val actions = individual.seeMainExecutableActions()
@@ -175,6 +179,8 @@ class EvaluatedIndividual<T>(
 
         return list
     }
+
+    private fun didExecuteMainAction() : Boolean = results.any { it is EnterpriseActionResult }
 
     /**
      * @return grouped evaluated actions based on its resource structure
@@ -696,7 +702,7 @@ class EvaluatedIndividual<T>(
         val action = actions.find {
             it.seeTopGenes().contains(gene)
         }
-        if (action == null && !individual.seeGenes().contains(gene)) return null
+        if (action == null && !individual.seeTopGenes().contains(gene)) return null
 
         val isFixed = individual.seeFixedMainActions().contains(action)
         val index = if (isFixed) individual.seeFixedMainActions().indexOf(action) else -1
@@ -760,7 +766,7 @@ class EvaluatedIndividual<T>(
             actionIndex = null,
             localId = null,
             fixedIndexedAction = false,
-            fromInitialization = individual.seeGenes(GeneFilter.ONLY_SQL).contains(gene)
+            fromInitialization = individual.seeTopGenes(ONLY_SQL).contains(gene)
         )
     }
 

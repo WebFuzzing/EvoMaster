@@ -23,7 +23,9 @@ class BlackBoxRestFitness : RestFitness() {
     override fun doCalculateCoverage(
         individual: RestIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<RestIndividual>? {
 
         val cookies = mutableMapOf<String, List<NewCookie>>()
@@ -48,31 +50,20 @@ class BlackBoxRestFitness : RestFitness() {
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
+        val mainActions = individual.seeMainExecutableActions()
 
         //run the test, one action at a time
-        for (i in 0 until individual.seeAllActions().size) {
-
-            val a = individual.seeAllActions()[i]
-
-            var ok = false
-
-            if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState, cookies, tokens)
-                actionResults[i].stopping = !ok
-            } else {
-                throw IllegalStateException("Cannot handle: ${a.javaClass}")
-            }
+        for (i in mainActions.indices) {
+            val a = mainActions[i]
+            val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)
+            actionResults[i].stopping = !ok
 
             if (!ok) {
                 break
             }
         }
 
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, listOf())
-
-        if (config.useResponseDataPool) {
-            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
-        }
+        analyzeResponseData(fv,individual,actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

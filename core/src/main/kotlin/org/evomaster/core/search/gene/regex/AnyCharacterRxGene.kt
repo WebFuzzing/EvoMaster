@@ -27,7 +27,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
 
     var value: Char = 'a'
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
@@ -83,7 +83,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){
             is AnyCharacterRxGene -> {
                 value = gene.value
@@ -96,7 +96,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
                 if (gene is StringGene && gene.value.length == 1)
                     value = gene.value.first()
                 else if(gene is StringGene && gene.getSpecializationGene() != null){
-                    return bindValueBasedOn(gene.getSpecializationGene()!!)
+                    return setValueBasedOn(gene.getSpecializationGene()!!)
                 }else{
                     LoggingUtil.uniqueWarn(log, "cannot bind AnyCharacterRxGene with ${gene::class.java.simpleName}")
                     return false

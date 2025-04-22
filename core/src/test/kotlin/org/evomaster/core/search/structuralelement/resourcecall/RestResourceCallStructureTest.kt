@@ -35,7 +35,7 @@ class RestResourceCallPostGetStructureTest : StructuralElementBaseTest(){
         return fooNode?.sampleRestResourceCalls("POST-GET", ResourceNodeCluster.randomness, 10)?: throw IllegalStateException("cannot sample resource call with the template")
     }
 
-    override fun getExpectedChildrenSize(): Int = 2
+    override fun getExpectedChildrenSize(): Int = 3
 
 
 

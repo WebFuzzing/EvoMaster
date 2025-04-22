@@ -78,15 +78,22 @@ class RestResourceTemplateHandler{
                 maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1) }
             }
 
-            if(_space.first() || _space.last()){
+            val createActionVerb = if(_space.first() || _space.last()){
+                HttpVerb.POST
+            }else if(_space[getIndexOfHttpVerb(HttpVerb.PUT)]){
+                HttpVerb.PUT
+            }else null
+
+            if (createActionVerb != null){
                 val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
                 chosen.forEach {
-                    val key = formatTemplate(arrayOf(HttpVerb.POST, it))
+                    val key = formatTemplate(arrayOf(createActionVerb, it))
                     maps.getOrPut(key){
-                       CallsTemplate(key, false, 2)
+                        CallsTemplate(key, false, 2)
                     }
                 }
             }
+
         }
 
         private fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)

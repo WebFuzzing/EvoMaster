@@ -6,6 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.interfaces.CollectionGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -109,9 +110,8 @@ class ArrayGene<T>(
         killAllChildren()
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return elements.size >= (minSize ?: 0) && elements.size <= (maxSize ?: Int.MAX_VALUE)
-                && elements.all { it.isLocallyValid() }
     }
 
     override fun copyContent(): Gene {
@@ -270,7 +270,7 @@ class ArrayGene<T>(
 
         TODO might bind based on value instead of replacing them
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
@@ -314,6 +314,8 @@ class ArrayGene<T>(
         } else if(gene.isMutable()) {
             gene.randomize(randomness, false)
         }
+
+        gene.getWrappedGene(TaintableGene::class.java)?.forceNewTaintId()
 
         if (uniqueElements && doesExist(gene)){
             gene.randomize(randomness, true)

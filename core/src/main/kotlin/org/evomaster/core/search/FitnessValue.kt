@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
 import org.evomaster.core.EMConfig
@@ -78,13 +79,19 @@ class FitnessValue(
 
     /**
      * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
-     * to false), in particular the tables and columns in them involved
+     * to false), in particular, the tables and columns in them involved
      */
     private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
 
     /**
+     * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
+     * to false), in particular, the sql query involved
+     */
+    private val aggregatedFailedWhereQueries: MutableList<String> = mutableListOf()
+
+    /**
      * When SUT does MONGO commands using FIND, keep track of when those "fails" (ie evaluate
-     * to false), in particular the collection and fields in them involved
+     * to false), in particular, the collection and fields in them involved
      */
     private val aggregatedFailedFind: MutableList<MongoFailedQuery> = mutableListOf()
 
@@ -139,6 +146,11 @@ class FitnessValue(
                 databaseExecutions.values,
                 {x ->  x.failedWhere}
         ))
+
+        aggregatedFailedWhereQueries.clear()
+        aggregatedFailedWhereQueries.addAll(
+            databaseExecutions.values.flatMap { a -> a.executionInfo }.map{ b -> b.sqlCommand }
+        )
     }
     fun aggregateMongoDatabaseData(){
         aggregatedFailedFind.clear()
@@ -164,6 +176,8 @@ class FitnessValue(
     }
 
     fun getViewOfAggregatedFailedWhere() = aggregatedFailedWhere
+
+    fun getViewOfAggregatedFailedWhereQueries() = aggregatedFailedWhereQueries
 
     fun getViewOfAggregatedFailedFind() = aggregatedFailedFind
 
@@ -288,10 +302,10 @@ class FitnessValue(
 
     private fun getCoveredTargetKeys() : Set<Int> = targets.filter { it.value.score == MAX_VALUE }.keys
 
-    fun gqlErrors(idMapper: IdMapper, withLine : Boolean): List<String>{
+    fun gqlErrors(idMapper: IdMapper): List<String>{
         // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
         return getCoveredTargetKeys()
-                .filter { idMapper.isGQLErrors(it, withLine) }
+                .filter { idMapper.isSpecifiedFault(it, FaultCategory.GQL_ERROR_FIELD) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -312,7 +326,7 @@ class FitnessValue(
 
     fun potential500Faults(idMapper: IdMapper): List<String>{
         return getCoveredTargetKeys()
-                .filter{ idMapper.isFault500(it)}
+                .filter{ idMapper.isSpecifiedFault(it,FaultCategory.HTTP_STATUS_500)}
                 .map{idMapper.getDescriptiveId(it)}
     }
 
@@ -323,7 +337,7 @@ class FitnessValue(
      */
     fun rpcInternalError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isRPCInternalError(it)}
+            .filter { idMapper.isSpecifiedFault(it,FaultCategory.RPC_INTERNAL_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -332,7 +346,7 @@ class FitnessValue(
      */
     fun rpcUnexpectedException(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isUnexpectedException(it)}
+            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_UNEXPECTED_EXCEPTION)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -341,7 +355,7 @@ class FitnessValue(
      */
     fun rpcDeclaredException(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isRPCDeclaredException(it)}
+            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_DECLARED_EXCEPTION)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -350,7 +364,8 @@ class FitnessValue(
      */
     fun rpcException(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isRPCException(it)}
+            .filter { idMapper.isAnySpecifiedFault(it,
+                listOf(FaultCategory.RPC_DECLARED_EXCEPTION, FaultCategory.RPC_UNEXPECTED_EXCEPTION))}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -380,7 +395,7 @@ class FitnessValue(
      */
     fun rpcHandledButError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isRPCHandledButError(it)}
+            .filter { idMapper.isSpecifiedFault(it,FaultCategory.RPC_HANDLED_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -390,7 +405,7 @@ class FitnessValue(
      */
     fun rpcServiceError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isRPCServiceError(it)}
+            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_SERVICE_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 

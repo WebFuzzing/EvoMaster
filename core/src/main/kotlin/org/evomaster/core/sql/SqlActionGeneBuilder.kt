@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.sql.time.SqlTimeIntervalGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.geometric.*
@@ -772,6 +773,7 @@ class SqlActionGeneBuilder {
     ): RegexGene {
         return when(databaseType) {
              DatabaseType.POSTGRES,
+             DatabaseType.MYSQL,
              DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPattern)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(
@@ -793,7 +795,7 @@ class SqlActionGeneBuilder {
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                timeGeneFormat = TimeGene.TimeGeneFormat.TIME_WITH_MILLISECONDS
+                format = FormatForDatesAndTimes.RFC3339
         )
     }
 
@@ -804,7 +806,7 @@ class SqlActionGeneBuilder {
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
     }
 
@@ -828,15 +830,17 @@ class SqlActionGeneBuilder {
                         year = IntegerGene("year", 2016, minYear, maxYear),
                         month = IntegerGene("month", 3, 1, 12),
                         day = IntegerGene("day", 12, 1, 31),
-                        onlyValidDates = true
+                        onlyValidDates = true,
+                        format = FormatForDatesAndTimes.DATETIME
                 ),
                 time = TimeGene(
                         "time",
                         hour = IntegerGene("hour", 0, 0, 23),
                         minute = IntegerGene("minute", 0, 0, 59),
-                        second = IntegerGene("second", 0, 0, 59)
+                        second = IntegerGene("second", 0, 0, 59),
+                        format = FormatForDatesAndTimes.DATETIME
                 ),
-                dateTimeGeneFormat = DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+                format = FormatForDatesAndTimes.DATETIME
         )
 
     }

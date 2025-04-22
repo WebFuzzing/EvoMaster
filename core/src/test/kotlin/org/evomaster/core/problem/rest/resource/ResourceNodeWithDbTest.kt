@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.resource
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.controller.api.dto.database.operations.*
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecutor
@@ -50,7 +50,7 @@ class ResourceNodeWithDbTest {
             SqlScriptRunner.execCommand(connection, "INSERT INTO RXYZ (id, name, barId) VALUES (2, 'xyz', 1)")
             SqlScriptRunner.execCommand(connection, "INSERT INTO RFOO (id, doubleValue, intValue, floatValue) VALUES (3, 4.0, 5, 6.0)")
 
-            val dbschema = SchemaExtractor.extract(connection)
+            val dbschema = DbInfoExtractor.extract(connection)
             sqlInsertBuilder = SqlInsertBuilder(dbschema, DbExecutor())
 
             val config = EMConfig()

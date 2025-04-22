@@ -1,7 +1,7 @@
 package org.evomaster.core.sql.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -23,11 +23,11 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
     @Test
     fun testCreateAndExtract() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("public", schema.name.toLowerCase()) },
+        assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(15, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.name == "ADMIN" }) },
@@ -90,7 +90,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
     @Test
     fun testIssueWithUsers() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
 
@@ -111,7 +111,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
     @Test
     fun testIssueWithFK() {
 
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
 

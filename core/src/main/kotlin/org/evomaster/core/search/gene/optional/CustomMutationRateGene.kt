@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -52,12 +51,13 @@ class CustomMutationRateGene<out T>(
     }
 
 
-    override fun setFromStringValue(value: String) : Boolean{
-        return gene.setFromStringValue(value)
+    override fun setValueBasedOn(value: String) : Boolean{
+        return gene.setValueBasedOn(value)
     }
 
-    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
-        if(this.javaClass == klass){
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
             return this as T
         }
         return gene.getWrappedGene(klass)
@@ -67,8 +67,8 @@ class CustomMutationRateGene<out T>(
         probability = 0.0
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {
@@ -76,7 +76,13 @@ class CustomMutationRateGene<out T>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-        gene.randomize(randomness, tryToForceNewValue)
+        /*
+            randomize can be used for mutation... but, if gene is not initialized yet, we should
+            randomize anyway, to make sure wrapped gene is going to be locally valid
+         */
+        if(!initialized || randomness.nextBoolean(probability)) {
+            gene.randomize(randomness, tryToForceNewValue)
+        }
     }
 
     override fun customShouldApplyShallowMutation(
@@ -126,6 +132,14 @@ class CustomMutationRateGene<out T>(
 
     override fun isMutable() = probability > 0 && gene.isMutable()
 
+    override fun requiresRandomInitialization(): Boolean {
+        /*
+            even if this gene is not mutable, its initialization
+            at random might still be required
+         */
+        return gene.requiresRandomInitialization()
+    }
+
     override fun isPrintable() = gene.isPrintable()
 
     override fun copyValueFrom(other: Gene): Boolean {
@@ -172,7 +186,7 @@ class CustomMutationRateGene<out T>(
         return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

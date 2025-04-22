@@ -5,6 +5,7 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.output.service.WebTestCaseWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -24,7 +25,7 @@ import org.evomaster.core.search.service.mutator.StructureMutator
  *
  * TODO See equivalent RestModule
  */
-class WebModule: AbstractModule() {
+class WebModule: EnterpriseModule() {
 
     override fun configure() {
         bind(object : TypeLiteral<Sampler<WebIndividual>>() {})

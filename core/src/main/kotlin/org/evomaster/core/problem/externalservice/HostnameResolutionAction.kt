@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.externalservice
 
-import org.evomaster.core.search.EnvironmentAction
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene

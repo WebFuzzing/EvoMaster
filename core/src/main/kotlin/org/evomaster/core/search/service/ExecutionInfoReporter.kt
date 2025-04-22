@@ -119,7 +119,7 @@ class ExecutionInfoReporter {
 
     private fun outputSqlExecution(action: String, sqlInfo: DatabaseExecution){
         sqlInfo.executionInfo.forEach {
-            save(getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.command), "${it.executionTime}"))+System.lineSeparator(), true)
+            save(getRowString(arrayOf(wrapWithQuotation(action), wrapWithQuotation(it.sqlCommand), "${it.executionTime}", "${it.threwSqlException}"))+System.lineSeparator(), true)
         }
     }
 

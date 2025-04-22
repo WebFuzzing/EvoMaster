@@ -14,8 +14,7 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackService
-
-
+import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
 
 
 /**
@@ -28,6 +27,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
     constructor() : this(emptyArray())
 
     override fun configure() {
+
+        bind(ExecutionPhaseController::class.java)
+            .asEagerSingleton()
 
         bind(DataPool::class.java)
             .asEagerSingleton()
@@ -83,6 +85,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
 
         bind(ExecutionInfoReporter::class.java)
                 .asEagerSingleton()
+
+        bind(SMTLibZ3DbConstraintSolver::class.java)
+            .asEagerSingleton()
 
         //no longer needed if TestSuiteWriter is moved out?
 //        if(noTests){

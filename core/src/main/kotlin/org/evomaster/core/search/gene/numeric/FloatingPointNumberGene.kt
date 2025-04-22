@@ -72,14 +72,14 @@ abstract class FloatingPointNumberGene<T:Number>(
      *      1) within min..max if they are specified
      *      2) precision if it is specified
      */
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
 
         //Need to remove scientific notation, which is default when printing double/float
         val plainValue = if(value is BigDecimal){
             (value as BigDecimal).toPlainString()
         } else BigDecimal(value.toString()).toPlainString()
 
-        return super.isLocallyValid() && (scale == null
+        return  super.checkForLocallyValidIgnoringChildren() && (scale == null
                 || !plainValue.contains(".")
                 || (if (scale == 0) plainValue.split(".")[1].toDouble() == 0.0 else plainValue.split(".")[1].length <= scale))
     }

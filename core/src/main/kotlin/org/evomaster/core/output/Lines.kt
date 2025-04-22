@@ -12,11 +12,13 @@ class Lines(val format: OutputFormat) {
     var indentation = 0
         private set
 
-    //TODO what about C#???
+    fun isEmpty() = buffer.isEmpty()
+
+    fun nextLineNumber() = buffer.size
+
     fun shouldUseSemicolon() = format.isJava() || format.isJavaScript() || format.isCsharp()
 
     fun appendSemicolon() {
-
         if (shouldUseSemicolon()) {
             append(";")
         }
@@ -103,6 +105,12 @@ class Lines(val format: OutputFormat) {
 
     fun append(token: String) {
         buffer[buffer.lastIndex] = buffer.last() + token
+    }
+
+    fun addMultiLineComment(lines: List<String>) {
+        startCommentBlock()
+        lines.forEach { addBlockCommentLine(it) }
+        endCommentBlock()
     }
 
     fun startCommentBlock() {

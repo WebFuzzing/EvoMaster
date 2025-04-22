@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.datetime
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -35,7 +34,7 @@ class DateGene(
     val month: IntegerGene = IntegerGene("month", 3, MIN_MONTH, MAX_MONTH),
     val day: IntegerGene = IntegerGene("day", 12, MIN_DAY, MAX_DAY),
     val onlyValidDates: Boolean = false, //TODO refactor once dealing with Robustness Testing
-    val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
+    val format: FormatForDatesAndTimes = FormatForDatesAndTimes.ISO_LOCAL
 ) : ComparableGene, CompositeFixedGene(name, listOf(year, month, day)) {
 
     companion object {
@@ -53,12 +52,9 @@ class DateGene(
 
     }
 
-    enum class DateGeneFormat {
-        ISO_LOCAL_DATE_FORMAT
-    }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = DateGene(
@@ -66,7 +62,7 @@ class DateGene(
         year.copy() as IntegerGene,
         month.copy() as IntegerGene,
         day.copy() as IntegerGene,
-        dateGeneFormat = this.dateGeneFormat,
+        format = this.format,
         onlyValidDates = this.onlyValidDates
     )
 
@@ -125,15 +121,9 @@ class DateGene(
     }
 
     override fun getValueAsRawString(): String {
-        return when (dateGeneFormat) {
-            DateGeneFormat.ISO_LOCAL_DATE_FORMAT -> GeneUtils.let {
-                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${
-                    GeneUtils.padded(
-                        day.value,
-                        2
-                    )
-                }"
-            }
+        return when (format) {
+             FormatForDatesAndTimes.ISO_LOCAL, FormatForDatesAndTimes.DATETIME, FormatForDatesAndTimes.RFC3339->
+                "${GeneUtils.padded(year.value, 4)}-${GeneUtils.padded(month.value, 2)}-${GeneUtils.padded(day.value, 2)}"
         }
     }
 
@@ -178,16 +168,16 @@ class DateGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is DateGene -> {
-                day.bindValueBasedOn(gene.day) &&
-                        month.bindValueBasedOn(gene.month) &&
-                        year.bindValueBasedOn(gene.year)
+                day.setValueBasedOn(gene.day) &&
+                        month.setValueBasedOn(gene.month) &&
+                        year.setValueBasedOn(gene.year)
             }
-            gene is DateTimeGene -> bindValueBasedOn(gene.date)
-            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype() as Gene)
+            gene is DateTimeGene -> setValueBasedOn(gene.date)
+            gene is StringGene && gene.getSpecializationGene() != null -> setValueBasedOn(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype() as Gene)
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")
