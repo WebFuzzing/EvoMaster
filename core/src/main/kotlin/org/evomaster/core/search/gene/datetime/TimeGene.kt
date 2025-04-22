@@ -52,6 +52,7 @@ class TimeGene(
             .thenBy(TimeGene::minute)
             .thenBy(TimeGene::second)
             //TODO ms and offset
+            //FIXME: considering offset, this check is wrong.
     }
 
     fun selectZ(){
@@ -106,8 +107,10 @@ class TimeGene(
             val maps = mapOf<Gene, GeneImpact>(
                 hour to additionalGeneMutationInfo.impact.hourGeneImpact,
                 minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
-                second to additionalGeneMutationInfo.impact.secondGeneImpact
-                // TODO millisecond and offset
+                second to additionalGeneMutationInfo.impact.secondGeneImpact,
+                //TODO should be handle in a correct way
+                millisecond to additionalGeneMutationInfo.impact.millisecondGeneImpact,
+                offset to additionalGeneMutationInfo.impact.offsetGeneImpact
             )
             return mwc.selectSubGene(
                 internalGenes,
@@ -204,16 +207,16 @@ class TimeGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is TimeGene -> {
-                hour.bindValueBasedOn(gene.hour) &&
-                        second.bindValueBasedOn(gene.minute) &&
-                        minute.bindValueBasedOn(gene.second)
+                hour.setValueBasedOn(gene.hour) &&
+                        second.setValueBasedOn(gene.minute) &&
+                        minute.setValueBasedOn(gene.second)
             }
-            gene is DateTimeGene -> bindValueBasedOn(gene.time)
-            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()  as Gene)
+            gene is DateTimeGene -> setValueBasedOn(gene.time)
+            gene is StringGene && gene.getSpecializationGene() != null -> setValueBasedOn(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype()  as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false

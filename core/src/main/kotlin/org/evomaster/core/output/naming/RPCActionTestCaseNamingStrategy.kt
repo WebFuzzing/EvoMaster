@@ -1,27 +1,26 @@
 package org.evomaster.core.output.naming
 
-import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.safeVariableName
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.utils.StringUtils
 
 open class RPCActionTestCaseNamingStrategy(
     solution: Solution<*>,
-    languageConventionFormatter: LanguageConventionFormatter
-) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter)  {
+    languageConventionFormatter: LanguageConventionFormatter,
+    maxTestCaseNameLength: Int,
+) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength) {
 
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
         val evaluatedAction = individual.evaluatedMainActions().last()
         val action = evaluatedAction.action as RPCCallAction
+        var remainingNameChars = maxTestCaseNameLength - namePrefixChars()
 
-        nameTokens.add(TestWriterUtils.safeVariableName(action.getSimpleClassName()))
-        nameTokens.add(on)
-        nameTokens.add(TestWriterUtils.safeVariableName(action.getExecutedFunctionName()))
-        addResult(individual, nameTokens)
+        remainingNameChars = addNameTokensIfAllowed(nameTokens, listOf(safeVariableName(action.getSimpleClassName()), on, safeVariableName(action.getExecutedFunctionName())), remainingNameChars)
+        addResult(individual, nameTokens, remainingNameChars)
 
         return formatName(nameTokens)
     }
@@ -31,18 +30,20 @@ open class RPCActionTestCaseNamingStrategy(
         return emptyMap()
     }
 
-    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>) {
+    override fun addActionResult(evaluatedAction: EvaluatedAction, nameTokens: MutableList<String>, remainingNameChars: Int): Int {
         val result = evaluatedAction.result as RPCCallResult
         if (result.hasPotentialFault()) {
-            nameTokens.add(throws)
+            val candidateTokens = mutableListOf(throws)
             val thrownException = StringUtils.extractSimpleClass(result.getExceptionTypeName()?: "")
-            nameTokens.add(TestWriterUtils.safeVariableName(thrownException))
+            candidateTokens.add(safeVariableName(thrownException))
+            return addNameTokensIfAllowed(nameTokens, candidateTokens, remainingNameChars)
         } else {
-            nameTokens.add(returns)
-            nameTokens.add(when {
+            val candidateTokens = mutableListOf(returns)
+            candidateTokens.add(when {
                 result.failedCall() -> error
                 else -> success
             })
+            return addNameTokensIfAllowed(nameTokens, candidateTokens, remainingNameChars)
         }
     }
 

@@ -1,0 +1,16 @@
+---
+openapi: 3.1.0
+info:
+  title: cycleB
+  version: 1.0.0
+components:
+  parameters:
+    ID:
+      in: path
+      name: id
+      schema:
+        $ref: "./cycle/cycleC.yaml#/components/schemas/BasicString"
+      required: true
+  schemas:
+    FOO:
+      type: integer

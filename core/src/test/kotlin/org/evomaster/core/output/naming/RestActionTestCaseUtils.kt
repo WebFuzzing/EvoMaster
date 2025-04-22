@@ -12,12 +12,20 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.sql.SqlAction
@@ -101,6 +109,41 @@ object RestActionTestCaseUtils {
 
     fun getRestCallAction(path: String = "/items", verb: HttpVerb = HttpVerb.GET, parameters: MutableList<Param> = mutableListOf()): RestCallAction {
         return RestCallAction("1", verb, RestPath(path), parameters)
+    }
+
+    fun getPathParam(paramName: String): Param {
+        return PathParam(paramName, CustomMutationRateGene(paramName, StringGene(paramName), 1.0))
+    }
+
+    fun getStringQueryParam(paramName: String, wrapped: Boolean = true): Param {
+        return getQueryParam(paramName, StringGene(paramName), wrapped)
+    }
+
+    fun getBooleanQueryParam(paramName: String): Param {
+        return getQueryParam(paramName, BooleanGene(paramName))
+    }
+
+    fun getIntegerQueryParam(paramName: String, wrapped: Boolean = true): Param {
+        return getQueryParam(paramName, IntegerGene(paramName), wrapped)
+    }
+
+    /*
+        Since the randomization used to construct the evaluated individuals might set a random boolean value,
+        we do this to ensure the one we want for unit testing
+     */
+    fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
+        val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
+        (restCallAction.parameters.filter { it.name == paramName }).forEach {
+            (it as QueryParam).getGeneForQuery().setValueBasedOn(paramValue)
+        }
+    }
+
+    private fun getQueryParam(paramName: String, gene: Gene, wrapped: Boolean = true): Param {
+        return QueryParam(paramName, if (wrapped) getWrappedGene(paramName, gene) else gene)
+    }
+
+    private fun getWrappedGene(paramName: String, gene: Gene): OptionalGene {
+        return OptionalGene(paramName, gene)
     }
 
     private fun getRestCallResult(sourceLocalId: String, statusCode: Int, resultBodyString: String, bodyType: MediaType): RestCallResult {

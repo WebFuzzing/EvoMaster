@@ -1,18 +1,18 @@
 package org.evomaster.core.problem.rest
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.node.ObjectNode
 import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.examples.Example
-import io.swagger.v3.oas.models.links.Link
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.JsonSchema
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
-import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_COMPONENT_NAME
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_SCHEMA_NAME
@@ -24,6 +24,10 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.problem.rest.schema.SchemaLocation
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.*
@@ -47,7 +51,6 @@ import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URISyntaxException
 import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
 
 /**
@@ -116,7 +119,6 @@ object RestActionBuilderV3 {
 
     /**
      * clean cache in order to avoid different dto schema with different configurations, eg, enableConstraintHandling.
-     * Only needed for testing.
      */
     fun cleanCache(){
         refCache.clear()
@@ -124,16 +126,14 @@ object RestActionBuilderV3 {
     }
 
 
-    /**
-     * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
-     */
+    @Deprecated("User other version instead")
     fun addActionsFromSwagger(swagger: OpenAPI,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               doParseDescription: Boolean = false,
                               enableConstraintHandling: Boolean
     ) : List<String> {
-        return addActionsFromSwagger(swagger, actionCluster, endpointsToSkip,
+        return addActionsFromSwagger(RestSchema(SchemaOpenAPI("",swagger, SchemaLocation.MEMORY)), actionCluster, endpointsToSkip,
             Options(doParseDescription = doParseDescription, enableConstraintHandling = enableConstraintHandling)
         )
     }
@@ -143,73 +143,112 @@ object RestActionBuilderV3 {
      *
      * @return list of error/warning messages
      */
-    fun addActionsFromSwagger(swagger: OpenAPI,
+    fun addActionsFromSwagger(schemaHolder: RestSchema,
                               actionCluster: MutableMap<String, Action>,
                               endpointsToSkip: List<Endpoint> = listOf(),
                               options: Options
     ) : List<String> {
 
         actionCluster.clear()
-        refCache.clear()
-        dtoCache.clear()
+        cleanCache()
 
         val messages = mutableListOf<String>()
         val skipped = mutableListOf<Endpoint>()
         val errorEndpoints = mutableListOf<String>()
 
-        val basePath = getBasePathFromURL(swagger)
+        val swagger = schemaHolder.main.schemaParsed
 
         swagger.paths
                 .forEach { e ->
-
-                    /*
-                        In V2 there that a "host" and "basePath".
-                        In V3, this was replaced by a "servers" list of URLs.
-                        The "paths" are then appended to such URLs, which works
-                        like a "host+basePath"
-                     */
-                    val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
-
-                    //filtering is based on raw path declaration, without base
-                    //TODO might want to support both cases in the future
-                    val rawPath = RestPath(e.key)
-
-                    if (e.value.`$ref` != null) {
-                        //TODO
-                        messages.add("Currently cannot handle \$ref in ${e.key}: ${e.value.`$ref`}")
-                    }
-
-                    if (e.value.parameters != null && e.value.parameters.isNotEmpty()) {
-                        //TODO what is this even for???
-                        messages.add("Currently cannot handle 'path-scope' parameters in ${e.key}")
-                    }
-
-                    if (!e.value.description.isNullOrBlank()) {
-                        //TODO should we do something with it for doParseDescription?
-                    }
-
-                    val h = { verb: HttpVerb, operation: Operation ->
-                        if(endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }){
-                            skipped.add(Endpoint(verb,restPath))
-                        } else {
-                            handleOperation(actionCluster, verb, restPath, operation, swagger, options, errorEndpoints, messages)
-                        }
-                    }
-
-                    if (e.value.get != null)     h(HttpVerb.GET,     e.value.get)
-                    if (e.value.post != null)    h(HttpVerb.POST,    e.value.post)
-                    if (e.value.put != null)     h(HttpVerb.PUT,     e.value.put)
-                    if (e.value.patch != null)   h(HttpVerb.PATCH,   e.value.patch)
-                    if (e.value.options != null) h(HttpVerb.OPTIONS, e.value.options)
-                    if (e.value.delete != null)  h(HttpVerb.DELETE,  e.value.delete)
-                    if (e.value.trace != null)   h(HttpVerb.TRACE,   e.value.trace)
-                    if (e.value.head != null)    h(HttpVerb.HEAD,    e.value.head)
+                    handlePathItem(
+                        e.key,
+                        e.value,
+                        messages,
+                        endpointsToSkip,
+                        skipped,
+                        actionCluster,
+                        schemaHolder,
+                        options,
+                        errorEndpoints
+                    )
                 }
 
         ActionBuilderUtil.verifySkipped(skipped,endpointsToSkip)
         ActionBuilderUtil.printActionNumberInfo("RESTful API", actionCluster.size, skipped.size, errorEndpoints.size)
 
         return messages
+    }
+
+    private fun handlePathItem(
+        pathKey: String,
+        pathItem: PathItem,
+        messages: MutableList<String>,
+        endpointsToSkip: List<Endpoint>,
+        skipped: MutableList<Endpoint>,
+        actionCluster: MutableMap<String, Action>,
+        schemaHolder: RestSchema,
+        options: Options,
+        errorEndpoints: MutableList<String>
+    ) {
+        val swagger = schemaHolder.main.schemaParsed
+        val basePath = getBasePathFromURL(swagger)
+
+        /*
+           In V2 there that a "host" and "basePath".
+           In V3, this was replaced by a "servers" list of URLs.
+           The "paths" are then appended to such URLs, which works
+           like a "host+basePath"
+         */
+        val restPath = RestPath(if (basePath == "/") pathKey else (basePath + pathKey))
+
+        //filtering is based on raw path declaration, without base
+        //TODO might want to support both cases in the future
+        val rawPath = RestPath(pathKey)
+
+        if (pathItem.`$ref` != null) {
+            val pi = SchemaUtils.getReferencePathItem(schemaHolder,schemaHolder.main,pathItem.`$ref`,messages)
+                ?: return
+            handlePathItem(pathKey, pi, messages,endpointsToSkip,skipped,actionCluster,schemaHolder,options,errorEndpoints)
+            return
+        }
+
+        if (pathItem.parameters != null && pathItem.parameters.isNotEmpty()) {
+            /*
+              TODO this is for parameters that apply to all endpoints for given path
+             */
+            messages.add("Currently cannot handle 'path-scope' parameters in $pathKey")
+        }
+
+        if (!pathItem.description.isNullOrBlank()) {
+            //TODO should we do something with it for doParseDescription?
+        }
+
+        val h = { verb: HttpVerb, operation: Operation ->
+            if (endpointsToSkip.any { it.verb == verb && it.path.isEquivalent(rawPath) }) {
+                skipped.add(Endpoint(verb, restPath))
+            } else {
+                handleOperation(
+                    actionCluster,
+                    verb,
+                    restPath,
+                    operation,
+                    schemaHolder,
+                    schemaHolder.main,
+                    options,
+                    errorEndpoints,
+                    messages
+                )
+            }
+        }
+
+        if (pathItem.get != null) h(HttpVerb.GET, pathItem.get)
+        if (pathItem.post != null) h(HttpVerb.POST, pathItem.post)
+        if (pathItem.put != null) h(HttpVerb.PUT, pathItem.put)
+        if (pathItem.patch != null) h(HttpVerb.PATCH, pathItem.patch)
+        if (pathItem.options != null) h(HttpVerb.OPTIONS, pathItem.options)
+        if (pathItem.delete != null) h(HttpVerb.DELETE, pathItem.delete)
+        if (pathItem.trace != null) h(HttpVerb.TRACE, pathItem.trace)
+        if (pathItem.head != null) h(HttpVerb.HEAD, pathItem.head)
     }
 
     /**
@@ -252,10 +291,20 @@ object RestActionBuilderV3 {
         """.trimIndent()
 
         //FIXME here we are swallowing all error messages in schema
-        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+        //FIXME duplicated code
+        val swagger = OpenAPIParser().readContents(schema,null,null)
+        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
+        val schemaHolder = RestSchema(currentSchema)
 
         schemas.forEach { (t, u) ->
-            val gene = getGene(t, swagger.components.schemas[t]!!,swagger, ArrayDeque(), t, options, messages = mutableListOf())
+            val gene = getGene(t,
+                swagger.openAPI.components.schemas[t]!!,
+                schemaHolder,
+                currentSchema,
+                ArrayDeque(),
+                t,
+                options,
+                messages = mutableListOf())
             dtoCache[u] = gene
         }
 
@@ -295,8 +344,20 @@ object RestActionBuilderV3 {
         """.trimIndent()
 
         //FIXME here we are swallowing all error messages in schema
-        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
-        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque(), referenceTypeName, options, mutableListOf())
+        //FIXME duplicated code
+        val swagger = OpenAPIParser().readContents(schema,null,null)
+        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
+        val schemaHolder = RestSchema(currentSchema)
+        val gene = createObjectGene(
+            name,
+            currentSchema.schemaParsed.components.schemas[name]!!,
+            schemaHolder,
+            currentSchema,
+            ArrayDeque(),
+            referenceTypeName,
+            options,
+            listOf(),
+            mutableListOf())
         dtoCache[dtoSchema] = gene
         return gene.copy()
     }
@@ -331,9 +392,15 @@ object RestActionBuilderV3 {
         """.trimIndent()
 
         //FIXME here we are swallowing all error messages in schema
-        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+        //FIXME duplicated code
+        val swagger = OpenAPIParser().readContents(schema,null,null)
+        val currentSchema = SchemaOpenAPI(schema,swagger.openAPI, SchemaLocation.MEMORY)
+        val schemaHolder = RestSchema(currentSchema)
+
         unidentified.forEach {s->
-            val gene = getGene(names[s.first], swagger.components.schemas[names[s.first]]!!,swagger, ArrayDeque(), referenceTypeNames[s.first], options, messages = mutableListOf())
+            val gene = getGene(names[s.first],
+                swagger.openAPI.components.schemas[names[s.first]]!!,schemaHolder, currentSchema,
+                ArrayDeque(), referenceTypeNames[s.first], options, messages = mutableListOf())
             if (!dtoCache.containsKey(s.second))
                 dtoCache[s.second] = gene
         }
@@ -342,12 +409,17 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun resolveResponse(swagger: OpenAPI, responseOrRef: ApiResponse): ApiResponse {
-        responseOrRef.`$ref`?.let { ref ->
-            val refKey = extractReferenceName(ref)
-            return swagger.components.responses[refKey] ?: responseOrRef
-        }
-        return responseOrRef
+    private fun resolveResponse(
+        schema: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        responseOrRef: ApiResponse,
+        messages: MutableList<String>
+    ): ApiResponse? {
+
+        val sref = responseOrRef.`$ref`
+            ?: return responseOrRef
+
+        return SchemaUtils.getReferenceResponse(schema,currentSchema,sref, messages)
     }
 
     private fun handleOperation(
@@ -355,19 +427,20 @@ object RestActionBuilderV3 {
         verb: HttpVerb,
         restPath: RestPath,
         operation: Operation,
-        swagger: OpenAPI,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
         options: Options,
         errorEndpoints: MutableList<String>,
         messages: MutableList<String>
     ) {
 
         try{
-            val params = extractParams(verb, restPath, operation, swagger, options, messages)
+            val params = extractParams(verb, restPath, operation, schemaHolder,currentSchema, options, messages)
             repairParams(params, restPath, messages)
 
             val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.asSequence()
-                ?.map { resolveResponse(swagger, it) }
+                ?.mapNotNull { resolveResponse(schemaHolder,currentSchema, it,messages) }
                 ?.filter { it.content != null && it.content.isNotEmpty() }
                 //each response can have different media-types
                 ?.flatMap { it.content.keys }
@@ -391,7 +464,7 @@ object RestActionBuilderV3 {
                         val link = if (ref.isNullOrBlank()) {
                             it.third
                         } else {
-                            getReferenceLink(swagger, ref, messages)
+                            SchemaUtils.getReferenceLink(schemaHolder,currentSchema, ref, messages)
                         }
                         if (link == null) {
                             null
@@ -443,60 +516,69 @@ object RestActionBuilderV3 {
         }
     }
 
-    private fun getReferenceLink(swagger: OpenAPI, reference: String, messages: MutableList<String>) : Link?{
-        val name = extractReferenceName(reference)
-        val link =  swagger.components.links[name]
-        if(link == null){
-            messages.add("Cannot find reference to link: $reference")
-        }
-        return link
-    }
 
     private fun extractParams(
             verb: HttpVerb,
             restPath: RestPath,
             operation: Operation,
-            swagger: OpenAPI,
+            schemaHolder: RestSchema,
+            currentSchema: SchemaOpenAPI,
             options: Options,
             messages: MutableList<String>
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
 
-        removeDuplicatedParams(swagger,operation,messages)
+        removeDuplicatedParams(schemaHolder,currentSchema,operation,messages)
                 .forEach { p ->
 
                     if(p.`$ref` != null){
-                        val param = getLocalParameter(swagger, p.`$ref`, messages)
+                        val param = SchemaUtils.getReferenceParameter(schemaHolder,currentSchema, p.`$ref`, messages)
                         if(param == null){
                             messages.add("Failed to handle ${p.`$ref`} in $verb:$restPath")
                         } else {
-                            handleParam(param, swagger, params, options, messages)
+                            handleParam(param, schemaHolder, currentSchema, params, options, messages)
                         }
                     } else {
-                        handleParam(p, swagger, params, options, messages)
+                        handleParam(p, schemaHolder,currentSchema, params, options, messages)
                     }
                 }
 
-        handleBodyPayload(operation, verb, restPath, swagger, params, options, messages)
+        handleBodyPayload(operation, verb, restPath, schemaHolder, currentSchema, params, options, messages)
 
         return params
     }
 
-    private fun exampleObjects(example: Any?, examples: Map<String, Example>?) : List<Any>{
+    private fun exampleObjects(
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        example: Any?,
+        examples: Map<String, Example>?,
+        messages: MutableList<String>
+    ) : List<Any>{
 
         val data = mutableListOf<Any>()
         if(example != null){
             data.add(example)
         }
         if(!examples.isNullOrEmpty()){
-            examples.values.forEach { data.add(it.value) }
+            examples.values.forEach {
+                val exm = if(it.`$ref` != null){
+                    SchemaUtils.getReferenceExample(schemaHolder, currentSchema, it.`$ref`, messages)
+                } else {
+                    it
+                }
+                if(exm != null) {
+                    data.add(exm.value)
+                }
+            }
         }
         return data
     }
 
     private fun handleParam(p: Parameter,
-                            swagger: OpenAPI,
+                            schemaHolder: RestSchema,
+                            currentSchema: SchemaOpenAPI,
                             params: MutableList<Param>,
                             options: Options,
                             messages: MutableList<String>
@@ -508,12 +590,17 @@ object RestActionBuilderV3 {
             return
         }
 
-        val examples = if(options.probUseExamples > 0) exampleObjects(p.example, p.examples) else listOf()
+        val examples = if(options.probUseExamples > 0) {
+            exampleObjects(schemaHolder, currentSchema, p.example, p.examples, messages)
+        } else {
+            listOf()
+        }
 
         var gene = getGene(
             name,
             p.schema,
-            swagger,
+            schemaHolder,
+            currentSchema,
             referenceClassDef = null,
             options = options,
             isInPath = p.`in` == "path",
@@ -573,21 +660,12 @@ object RestActionBuilderV3 {
         }
     }
 
-
-    private fun resolveRequestBody(swagger: OpenAPI, reference: String, messages: MutableList<String>): RequestBody? {
-        val classDef = extractReferenceName(reference)
-        val body =  swagger.components.requestBodies[classDef]
-        if(body == null){
-            messages.add("Cannot find reference to request body: $reference")
-        }
-        return body
-    }
-
     private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
             restPath: RestPath,
-            swagger: OpenAPI,
+            schemaHolder: RestSchema,
+            currentSchema: SchemaOpenAPI,
             params: MutableList<Param>,
             options: Options,
             messages: MutableList<String>
@@ -615,7 +693,7 @@ object RestActionBuilderV3 {
 
         // Handle dereferencing if requestBody is referenced
         val resolvedBody = if (body.`$ref` != null) {
-            resolveRequestBody(swagger, body.`$ref`, messages) ?: return
+            SchemaUtils.getReferenceRequestBody(schemaHolder,currentSchema, body.`$ref`, messages) ?: return
         } else {
             body
         }
@@ -632,7 +710,8 @@ object RestActionBuilderV3 {
                 false
             } else {
                 val reference = it.value.schema.`$ref`
-                reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
+                reference.isNullOrBlank()
+                        || SchemaUtils.getReferenceSchema(schemaHolder,currentSchema, reference,messages) != null
             }
         } ?: emptyMap()
 
@@ -651,7 +730,13 @@ object RestActionBuilderV3 {
             This should refactored to enable possibility of different BodyParams
         */
         val obj: MediaType = bodies.values.first()
-        var gene = getGene("body", obj.schema, swagger, referenceClassDef = null, options = options, messages = messages)
+        val examples = if(options.probUseExamples > 0) {
+            exampleObjects(schemaHolder, currentSchema, obj.example, obj.examples, messages)
+        } else {
+            listOf()
+        }
+
+        var gene = getGene("body", obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
@@ -680,7 +765,8 @@ object RestActionBuilderV3 {
     private fun getGene(
             name: String,
             schema: Schema<*>,
-            swagger: OpenAPI,
+            schemaHolder: RestSchema,
+            currentSchema: SchemaOpenAPI,
             history: Deque<String> = ArrayDeque(),
             referenceClassDef: String?,
             options: Options,
@@ -690,7 +776,7 @@ object RestActionBuilderV3 {
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
-            return createObjectFromReference(name, schema.`$ref`, swagger, history, options, messages)
+            return createObjectFromReference(name, schema.`$ref`, schemaHolder,currentSchema, history, options, examples, messages)
         }
 
 
@@ -825,7 +911,7 @@ object RestActionBuilderV3 {
                     } else {
                         schema.items
                     }
-                    val template = getGene(name + "_item", arrayType, swagger, history, referenceClassDef = null, options = options, messages = messages)
+                    val template = getGene(name + "_item", arrayType, schemaHolder,currentSchema, history, referenceClassDef = null, options = options, messages = messages)
 
                     //Could still have an empty []
 //                    if (template is CycleObjectGene) {
@@ -838,7 +924,7 @@ object RestActionBuilderV3 {
             }
 
             "object" -> {
-                return createObjectGene(name, schema, swagger, history, referenceClassDef, options, messages)
+                return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
             }
             //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             //FIXME is this even a standard type???
@@ -850,13 +936,13 @@ object RestActionBuilderV3 {
                 name == "body": This could happen when parsing a body-payload as formData
                 referenceClassDef != null : this could happen when parsing a reference of a constraint (eg, anyOf) of the additionalProperties
             */
-            return createObjectGene(name, schema, swagger, history, referenceClassDef, options, messages)
+            return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
         }
 
         if (type == null && format == null) {
             return createGeneWithUnderSpecificTypeAndSchemaConstraints(
-                schema, name, swagger, history, referenceClassDef,
-                options, null, isInPath, messages)
+                schema, name, schemaHolder,currentSchema, history, referenceClassDef,
+                options, null, isInPath, examples, messages)
         //createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling) //StringGene(name)
         }
 
@@ -868,16 +954,18 @@ object RestActionBuilderV3 {
      */
     private fun createObjectGene(name: String,
                                  schema: Schema<*>,
-                                 swagger: OpenAPI,
+                                 schemaHolder: RestSchema,
+                                 currentSchema: SchemaOpenAPI,
                                  history: Deque<String>,
                                  referenceTypeName: String?,
                                  options: Options,
+                                 examples: List<Any>,
                                  messages: MutableList<String>
     ): Gene {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
-                    getGene(it.key, it.value, swagger, history, referenceClassDef = null, options = options, messages = messages),
+                    getGene(it.key, it.value, schemaHolder,currentSchema, history, referenceClassDef = null, options = options, messages = messages),
                     schema.required?.contains(it.key)
             )
         } ?: listOf()
@@ -948,10 +1036,29 @@ object RestActionBuilderV3 {
                support additionalProperties with schema
             */
             if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference("valueTemplate", additional.`$ref`, swagger, history, options = options, messages = messages)
-                additionalFieldTemplate= PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
+                val valueTemplate = createObjectFromReference(
+                    "valueTemplate",
+                    additional.`$ref`,
+                    schemaHolder,
+                    currentSchema,
+                    history,
+                    options = options,
+                    examples = examples,
+                    messages = messages)
+                additionalFieldTemplate= PairGene(
+                    "template",
+                    StringGene("keyTemplate"),
+                    valueTemplate.copy())
             }else if(!additional.type.isNullOrBlank() || additional.types?.isNotEmpty() == true){
-                val valueTemplate = getGene("valueTemplate", additional, swagger, history, null, options = options, messages = messages)
+                val valueTemplate = getGene(
+                    "valueTemplate",
+                    additional,
+                    schemaHolder,
+                    currentSchema,
+                    history,
+                    null,
+                    options = options,
+                    messages = messages)
                 additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
 
@@ -979,10 +1086,12 @@ object RestActionBuilderV3 {
             schema,
             fields,
             additionalFieldTemplate,
-            swagger,
+            schemaHolder,
+            currentSchema,
             history,
             referenceTypeName,
             options,
+            examples,
             messages
         )
 
@@ -1001,10 +1110,12 @@ object RestActionBuilderV3 {
         schema: Schema<*>,
         fields: List<Gene>,
         additionalFieldTemplate: PairGene<StringGene, Gene>?,
-        swagger: OpenAPI,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
         history: Deque<String>,
         referenceTypeName: String?,
         options: Options,
+        examples: List<Any>,
         messages: MutableList<String>
     ) : Gene{
         /*
@@ -1013,31 +1124,31 @@ object RestActionBuilderV3 {
          */
 
         if (!options.enableConstraintHandling)
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         val allOf = schema.allOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
-            getGene(name, s, swagger, history, null, options, messages = messages)
+            getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         val anyOf = schema.anyOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
-            getGene(name, s, swagger, history, null, options, messages = messages)
+            getGene(name, s, schemaHolder,currentSchema, history, null, options, messages = messages, examples = examples)
         }
 
         if (!allOf.isNullOrEmpty() && !anyOf.isNullOrEmpty()){
             messages.add("Cannot handle allOf and oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         val oneOf = schema.oneOf?.map { s->
             //createObjectGene(name, s, swagger, history, null, enableConstraintHandling)
-            getGene(name, s, swagger, history, null, options = options, messages = messages)
+            getGene(name, s, schemaHolder,currentSchema, history, null, options = options, messages = messages)
         }
 
         if (!oneOf.isNullOrEmpty() && (!allOf.isNullOrEmpty() || !anyOf.isNullOrEmpty())){
             messages.add("cannot handle oneOf and allOf/oneOf at same time for a schema with name $name")
-            return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         if (!allOf.isNullOrEmpty()){
@@ -1047,14 +1158,14 @@ object RestActionBuilderV3 {
                     else -> null
                 }
             }.flatten()
-            return assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)
+            return assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         if (!oneOf.isNullOrEmpty()){
             val choices = if (fields.isEmpty())
                 oneOf
             else
-                listOf(assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)).plus(oneOf)
+                listOf(assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)).plus(oneOf)
 
             return ChoiceGene(name, choices)
         }
@@ -1069,7 +1180,7 @@ object RestActionBuilderV3 {
             /*
                 currently, we handle anyOf as oneOf plus all combined one
              */
-            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, messages = messages)) else anyOf)
+            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)) else anyOf)
 //            /*
 //                handle all combinations of anyOf
 //                comment it out for the moment
@@ -1095,7 +1206,7 @@ object RestActionBuilderV3 {
 //            })
         }
 
-        return assembleObjectGene(name, schema, fields, additionalFieldTemplate, referenceTypeName, messages = messages)
+        return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
 
         //TODO not
     }
@@ -1105,10 +1216,12 @@ object RestActionBuilderV3 {
      */
     private fun assembleObjectGene(
         name: String,
+        options: Options,
         schema: Schema<*>,
         fields: List<Gene>,
         additionalFieldTemplate: PairGene<StringGene, Gene>?,
         referenceTypeName: String?,
+        otherExampleValues: List<Any>,
         messages: MutableList<String>
     ) : Gene{
         if (fields.isEmpty()) {
@@ -1117,27 +1230,92 @@ object RestActionBuilderV3 {
 
             messages.add("No fields for object definition: $name")
 
-            if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+            return if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
                 //default is true
-                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+                TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
             } else {
                 /*
-                    If we get here, it is really something wrong with the schema...
-                 */
-                return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
+                            If we get here, it is really something wrong with the schema...
+                         */
+                FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
             }
         }
 
-
-        if (additionalFieldTemplate!=null){
-            return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
+        val mainGene = if (additionalFieldTemplate!=null){
+            ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null, false, additionalFieldTemplate, mutableListOf())
+        } else {
+            ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
         }
+
+        val defaultValue = if(options.probUseDefault > 0) schema.default else null
+        val exampleValue = if(options.probUseExamples > 0) schema.example else null
+        val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
+
+        val examples = mutableListOf<ObjectGene>()
+        if(exampleValue != null){
+            duplicateObjectWithExampleFields(name,mainGene, exampleValue)?.let {
+                examples.add(it)
+            }
+        }
+        if(multiExampleValues != null ){
+            examples.addAll(multiExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+        }
+        examples.addAll(otherExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+
+        val exampleGene = if(examples.isNotEmpty()){
+            ChoiceGene(EXAMPLES_NAME, examples)
+        } else null
+        val defaultGene = if(defaultValue != null){
+            duplicateObjectWithExampleFields("default", mainGene, defaultValue)
+        } else null
 
         /*
             add refClass with title of SchemaObject
             Man: shall we pop history here?
          */
-        return ObjectGene(name, fields, if(schema is ObjectSchema) referenceTypeName?:schema.title else null)
+       return createGeneWithExampleAndDefault(exampleGene,defaultGene,mainGene,options,name)
+    }
+
+    private fun duplicateObjectWithExampleFields(name: String, mainGene: ObjectGene, exampleValue: Any): ObjectGene? {
+
+        if(exampleValue !is ObjectNode){
+            LoggingUtil.uniqueWarn(log, "When building object example, required an ObjectNode, but found a ${exampleValue.javaClass}")
+            return null
+        }
+
+        val modified = mainGene.fields.map { f ->
+            if(exampleValue.has(f.name)){
+                val e = exampleValue.get(f.name)
+                if(e.isTextual){
+                    EnumGene<String>(f.name, listOf(asRawString(e.textValue())), 0, false)
+                } else if(e.isObject) {
+                    val nested = f.getWrappedGene(ObjectGene::class.java)
+                    if(nested == null){
+                        LoggingUtil.uniqueWarn(log, "When building object example, cannot handle nested object due to gene type: ${f.javaClass}")
+                        f.copy()
+                    } else {
+                        duplicateObjectWithExampleFields(f.name, nested, e)
+                            ?: f.copy()
+                    }
+                } else {
+                    EnumGene<String>(f.name, listOf(""+e.toString()), 0, true)
+                }
+            } else {
+                /*
+                    TODO: if a parameter is optional, and was not specified in the example,
+                    should it be rather skipped? maybe, maybe not... unsure
+                 */
+                f.copy()
+            }
+        }
+        return ObjectGene(
+            name,
+            modified,
+            mainGene.refType,
+            mainGene.isFixed,
+            mainGene.template?.copy() as PairGene<StringGene,Gene>?,
+            mainGene.additionalFields?.map { it.copy() as PairGene<StringGene,Gene>}?.toMutableList()
+            )
     }
 
     /**
@@ -1169,19 +1347,21 @@ object RestActionBuilderV3 {
     private fun createGeneWithUnderSpecificTypeAndSchemaConstraints(
         schema: Schema<*>,
         name: String,
-        swagger: OpenAPI,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
         history: Deque<String>,
         referenceTypeName: String?,
         options: Options,
         collectionTemplate: Gene?,
         isInPath: Boolean,
+        examples: List<Any>,
         messages: MutableList<String>
     ) : Gene{
 
         val mightObject = schema.properties?.isNotEmpty() == true || referenceTypeName != null || containsAllAnyOneOfConstraints(schema)
         if (mightObject){
             try {
-                return createObjectGene(name, schema, swagger, history, referenceTypeName, options, messages = messages)
+                return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceTypeName, options, examples,  messages)
             }catch (e: Exception){
                 LoggingUtil.uniqueWarn(log, "fail to create ObjectGene for a schema whose `type` and `format` are under specified with error msg: ${e.message?:"no msg"}")
             }
@@ -1331,7 +1511,7 @@ object RestActionBuilderV3 {
             - example/examples can be defined at same level of "schema" object, ie, in a Parameter Object.
               "example" behave the same, whereas "examples" is different (here inside "schema" as an array of values,
               whereas there in a Parameter Object as an array of object definitions).
-            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexcepted and counter
+            - note that the use of "example" inside a Schema Object is deprecated, and can lead to quite a few unexpected and counter
               intuitive behavior. should be avoided.
             - technically there can be "x-example" as well (but that is mainly for older versions of the OpenAPI that
                 did not support example/examples keywords as widely as now?)
@@ -1396,28 +1576,38 @@ object RestActionBuilderV3 {
             }
         } else null
 
-        if(exampleGene==null && defaultGene==null){
+        return createGeneWithExampleAndDefault(exampleGene, defaultGene, mainGene, options, name)
+    }
+
+    private fun createGeneWithExampleAndDefault(
+        exampleGene: Gene?,
+        defaultGene: Gene?,
+        mainGene: Gene,
+        options: Options,
+        name: String
+    ): Gene {
+        if (exampleGene == null && defaultGene == null) {
             //no special handling
             return mainGene
         }
 
-        if(exampleGene!=null && defaultGene!=null){
+        if (exampleGene != null && defaultGene != null) {
             val pd = options.probUseDefault
             val pe = options.probUseExamples
             val pm = 1 - pd - pe
-            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene),0, listOf(pd, pe, pm))
+            return ChoiceGene(name, listOf(defaultGene, exampleGene, mainGene), 0, listOf(pd, pe, pm))
         }
 
-        if(exampleGene!=null){
+        if (exampleGene != null) {
             val pe = options.probUseExamples
             val pm = 1 - pe
-            return ChoiceGene(name, listOf(exampleGene, mainGene),0, listOf(pe, pm))
+            return ChoiceGene(name, listOf(exampleGene, mainGene), 0, listOf(pe, pm))
         }
 
-        if(defaultGene!=null){
+        if (defaultGene != null) {
             val pd = options.probUseDefault
             val pm = 1 - pd
-            return ChoiceGene(name, listOf(defaultGene, mainGene),0, listOf(pd, pm))
+            return ChoiceGene(name, listOf(defaultGene, mainGene), 0, listOf(pd, pm))
         }
 
         throw IllegalStateException("BUG: logic error, this code should never be reached")
@@ -1467,9 +1657,11 @@ object RestActionBuilderV3 {
 
     private fun createObjectFromReference(name: String,
                                           reference: String,
-                                          swagger: OpenAPI,
+                                          schemaHolder: RestSchema,
+                                          currentSchema: SchemaOpenAPI,
                                           history: Deque<String> = ArrayDeque(),
                                           options: Options,
+                                          examples: List<Any>,
                                           messages: MutableList<String>
     ): Gene {
 
@@ -1507,12 +1699,13 @@ object RestActionBuilderV3 {
         }
 
         try {
+            //FIXME should not usi URI. see SchemaUtils
             URI(reference)
         } catch (e: URISyntaxException) {
             LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
         }
 
-        val schema = getLocalObjectSchema(swagger, reference)
+        val schema = SchemaUtils.getReferenceSchema(schemaHolder,currentSchema, reference,messages)
 
         if (schema == null) {
             //token after last /
@@ -1525,7 +1718,7 @@ object RestActionBuilderV3 {
 
         history.push(reference)
 
-        val gene = getGene(name, schema, swagger, history, getClassDef(reference), options, messages = messages)
+        val gene = getGene(name, schema, schemaHolder, currentSchema, history, getClassDef(reference), options,  examples = examples, messages = messages)
 
         if(isRoot) {
             GeneUtils.preventCycles(gene)
@@ -1540,35 +1733,13 @@ object RestActionBuilderV3 {
 
     private fun getClassDef(reference: String) = reference.substring(reference.lastIndexOf("/") + 1)
 
-    private fun getLocalParameter(swagger: OpenAPI, reference: String, messages: MutableList<String>) : Parameter?{
-        val name = extractReferenceName(reference)
 
-        val p = swagger.components.parameters[name]
-        if(p==null){
-            messages.add("Cannot find parameter reference: $reference")
-        }
-        return p
-    }
-
-    private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
-
-        val classDef = extractReferenceName(reference)
-
-        return swagger.components.schemas[classDef]
-    }
-
-    private fun extractReferenceName(reference: String): String {
-        try {
-            URI(reference)
-        } catch (e: URISyntaxException) {
-            LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
-        }
-
-        //token after last /
-        return reference.substring(reference.lastIndexOf("/") + 1)
-    }
-
-    private fun removeDuplicatedParams(swagger: OpenAPI, operation: Operation, messages: MutableList<String>): List<Parameter> {
+    private fun removeDuplicatedParams(
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        operation: Operation,
+        messages: MutableList<String>
+    ): List<Parameter> {
 
         /*
             Duplicates are not allowed, based on combination of "name" and "location".
@@ -1586,7 +1757,7 @@ object RestActionBuilderV3 {
        operation.parameters.forEach {
 
             val p = if(it.`$ref` != null)
-                getLocalParameter(swagger, it.`$ref`, messages = messages)
+                SchemaUtils.getReferenceParameter(schemaHolder,currentSchema, it.`$ref`, messages = messages)
            else
                it
            if(p != null) {
@@ -1613,35 +1784,37 @@ object RestActionBuilderV3 {
                              modelCluster: MutableMap<String, ObjectGene>,
                             options: Options
     ) {
-        modelCluster.clear()
-
-        /*
-            needs to check whether there exist some side-effects
-            if do not clean those, some testDeterminism might fail due to inconsistent warning log.
-         */
-        refCache.clear()
-        dtoCache.clear()
-
-        if (swagger.components?.schemas != null) {
-            swagger.components.schemas
-                    .forEach {
-                        val model = createObjectFromReference(it.key,
-                                it.component1(),
-                                swagger,
-                                options = options,
-                                messages = mutableListOf()
-                        )
-                        when (model) {
-                            //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                            is ObjectGene -> modelCluster[it.component1()] = model
-                            //is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
-                            //Andrea: this was wrong, as generating invalid genes where writing expectations.
-                            // this is a tmp fix
-                            is FixedMapGene<*, *> -> modelCluster[it.component1()] = ObjectGene(it.component1(), listOf())
-                        }
-
-                    }
-        }
+//        modelCluster.clear()
+//
+//        /*
+//            needs to check whether there exist some side-effects
+//            if do not clean those, some testDeterminism might fail due to inconsistent warning log.
+//         */
+//        refCache.clear()
+//        dtoCache.clear()
+//
+//        if (swagger.components?.schemas != null) {
+//            swagger.components.schemas
+//                    .forEach {
+//                        val model = createObjectFromReference(it.key,
+//                                it.component1(),
+//                                schemaHolder,
+//                                currentSchema,
+//                                options = options,
+//                                examples = listOf(),
+//                                messages = mutableListOf()
+//                        )
+//                        when (model) {
+//                            //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+//                            is ObjectGene -> modelCluster[it.component1()] = model
+//                            //is MapGene<*, *> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+//                            //Andrea: this was wrong, as generating invalid genes where writing expectations.
+//                            // this is a tmp fix
+//                            is FixedMapGene<*, *> -> modelCluster[it.component1()] = ObjectGene(it.component1(), listOf())
+//                        }
+//
+//                    }
+//        }
     }
 
     fun getBasePathFromURL(swagger: OpenAPI): String {

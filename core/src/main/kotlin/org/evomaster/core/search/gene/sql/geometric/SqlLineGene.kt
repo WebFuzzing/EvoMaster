@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.geometric
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.numeric.FloatGene
@@ -57,11 +56,11 @@ class SqlLineGene(
                 && this.q.containsSameValueAs(other.q)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlLineGene -> {
-                p.bindValueBasedOn(gene.p) &&
-                        q.bindValueBasedOn(gene.q)
+                p.setValueBasedOn(gene.p) &&
+                        q.setValueBasedOn(gene.q)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PointGene with ${gene::class.java.simpleName}")

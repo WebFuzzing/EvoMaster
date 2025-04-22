@@ -80,7 +80,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
             Solution<RestIndividual> solution = initAndRun(args);
             assertTrue(solution.getIndividuals().size() >= 1);
-            SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em, new PartialOracles());
+            SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
             assertTrue(splits.splitOutcome.size() >= 1);
         };
 

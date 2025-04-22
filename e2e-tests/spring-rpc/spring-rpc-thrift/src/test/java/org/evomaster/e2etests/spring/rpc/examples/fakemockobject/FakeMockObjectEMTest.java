@@ -43,12 +43,21 @@ public class FakeMockObjectEMTest extends SpringRPCTestBase {
                     args.add("--enableBasicAssertions");
                     args.add("true");
 
+
+
+//                    setOption(args, "saveScheduleTaskInvocationAsSeparatedFile", "true");
+                    setOption(args, "enableCustomizedMethodForScheduleTaskHandling", "true");
+                    setOption(args, "probOfSamplingScheduleTask", "0.5");
+
+
                     Solution<RPCIndividual> solution = initAndRun(args);
 
                     assertRPCEndpointResult(solution, FakeMockObjectService.Iface.class.getName()+":getFooFromExternalService", RPCCallResultCategory.HANDLED.name());
                     assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":getFooFromExternalService", "EX:::");
                     assertRPCEndpointResult(solution, FakeMockObjectService.Iface.class.getName()+":getBarFromDatabase", RPCCallResultCategory.HANDLED.name());
                     assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":getBarFromDatabase", "DB:::");
+                    assertContentInResponseForEndpoint(solution, FakeMockObjectService.Iface.class.getName()+":isExecutedToday", "true");
+
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 

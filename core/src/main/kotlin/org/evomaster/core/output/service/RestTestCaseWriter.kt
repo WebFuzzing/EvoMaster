@@ -6,6 +6,7 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
@@ -14,7 +15,6 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
@@ -59,14 +59,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
-
-//        if (shouldCheckExpectations()) {
-//            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
-//            //TODO: -> also check expectation generation before adding declarations
-//        }
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
 
         if (hasChainedLocations(ind.individual)) {
             assert(ind.individual is RestIndividual)
@@ -84,8 +80,16 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             ind.evaluatedMainActions().asSequence()
                 .map { it.action }
                 .filterIsInstance(RestCallAction::class.java)
-                .filter { it.usePreviousLocationId != null }
-                .map { it.usePreviousLocationId }
+                /*
+                    FIXME postLocationId() is not guaranteed to be unique...
+                    in fitness function it works because we handle it by taking last definition,
+                    but, here, if we refactor to declare it on its first use, we might end up with
+                    variable name clashes, unless we change the id to consider the action index, somehow
+                 */
+                .filter { it.saveCreatedResourceLocation }
+                .map { it.postLocationId() }
+//                .filter { it.usePreviousLocationId != null }
+//                .map { it.usePreviousLocationId }
                 .distinct()
                 .forEach { id ->
                     val name = locationVar(id!!)
@@ -512,6 +516,25 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
 
+        //TODO move up when adding test comments to other problem types as well
+        //faults
+        val faults = ea.map { it.result }
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+        if(faults.isNotEmpty()){
+            if(faults.size == 1){
+                lines.addBlockCommentLine("Found 1 potential fault of type-code ${faults.first().category.code}")
+            } else {
+                val codes = faults.asSequence().map { it.category.code }.toSet().toList().sorted()
+                val codeInfo = if (codes.size == 1) {
+                    " of type-code ${codes[0]}"
+                } else {
+                    ". Type-codes: ${codes.joinToString(", ")}"
+                }
+                lines.addBlockCommentLine("Found ${faults.size} potential faults$codeInfo")
+            }
+        }
+
         //examples
         val examples = getAllUsedExamples(ind.individual as RestIndividual)
             .toSet().sorted()
@@ -571,7 +594,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
-            .filterIsInstance<EnumGene<*>>()
             .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
             .filter { it.staticCheckIfImpactPhenotype() }
             .map { it.getValueAsRawString() }

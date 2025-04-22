@@ -51,6 +51,14 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         rc.resetSUT()
 
+        /*
+            Cookie or token requests should be made before altering the database.
+            Otherwise, user-related tables could be modified in the database,
+            which prevents the retrieval of token or cookie values.
+        */
+
+        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
+        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         /*
             there might some dbaction between rest actions.
@@ -71,9 +79,6 @@ class ResourceRestFitness : AbstractRestFitness() {
         )
 
         doMongoDbCalls(individual.seeInitializingActions().filterIsInstance<MongoDbAction>(), actionResults)
-
-        val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
-        val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()

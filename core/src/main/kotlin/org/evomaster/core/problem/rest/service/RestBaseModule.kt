@@ -5,12 +5,13 @@ import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.seeding.service.rest.PirToRest
 
-open class RestBaseModule : AbstractModule() {
+open class RestBaseModule : EnterpriseModule() {
 
     override fun configure() {
 

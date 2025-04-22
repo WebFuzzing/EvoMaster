@@ -13,9 +13,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestResponseFeeder
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -25,6 +22,7 @@ import org.evomaster.core.search.gene.numeric.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.uri.UriGene
@@ -33,7 +31,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -981,7 +978,7 @@ class StringGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
 
         Lazy.assert { isLocallyValid() }
         val current = value
@@ -1004,10 +1001,10 @@ class StringGene(
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 //return false
@@ -1015,9 +1012,22 @@ class StringGene(
                 if (gene is SqlForeignKeyGene){
                     LoggingUtil.uniqueWarn(
                         log,
-                        "attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
+                        "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
                     )
                     value = "${gene.uniqueIdOfPrimaryKey}"
+                } else if(gene is SqlAutoIncrementGene){
+                    /*
+                        This happens in tiltaksgjennomforing-api, where a SqlAutoIncrementGene is not marked
+                        as a Primary Key.
+                        Might be an issue in current limited handling of primary keys.
+                        Or are there legitimate cases for this?
+                        TODO will need to investigate
+                     */
+                    LoggingUtil.uniqueWarn(
+                        log,
+                        "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}."
+                    )
+                    //do nothing
                 } else{
                     value = gene.getValueAsRawString()
                 }
@@ -1066,18 +1076,10 @@ class StringGene(
     }
 
 
-    override fun setFromStringValue(value: String): Boolean {
-
-        val previousSpecialization = selectedSpecialization
-        val previousValue = value
+    override fun setValueBasedOn(value: String): Boolean {
 
         this.value = value
         selectedSpecialization = -1
-        if(!isLocallyValid() || !checkForGloballyValid()){
-            this.value = previousValue
-            this.selectedSpecialization = previousSpecialization
-            return false
-        }
 
         return true
     }

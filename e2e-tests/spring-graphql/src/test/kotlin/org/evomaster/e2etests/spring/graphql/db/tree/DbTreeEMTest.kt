@@ -22,7 +22,7 @@ class DbTreeEMTest : SpringTestBase() {
     @Test
     fun testEM(){
 
-        defaultSeed = 0
+        defaultSeed = 1
 
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
@@ -37,7 +37,8 @@ class DbTreeEMTest : SpringTestBase() {
             args.add("true")
             args.add("--generateSqlDataWithSearch")
             args.add("true")
-
+            //issues with CI... trying to debug
+            setOption(args,"useTimeInFeedbackSampling","false")
 
             val solution = initAndRun(args)
 

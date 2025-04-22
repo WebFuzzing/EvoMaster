@@ -16,7 +16,7 @@ class WmAuth0Rest {
 
         try {
             //issue with default 443 on GA
-            val domain = "www.doesnotexistfoo.org:6789"
+            val domain = "www.doesnotexistfoo.test:6789"
             val audience = String.format("https://%s/api/v2/", domain)
             val authClient = AuthAPI(domain, "foo", "123")
 

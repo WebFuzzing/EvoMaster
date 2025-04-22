@@ -108,7 +108,7 @@ class DoubleGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene) : Boolean{
+    override fun setValueBasedOn(gene: Gene) : Boolean{
         when(gene){
             is DoubleGene -> value = gene.value
             is FloatGene -> value = gene.value.toDouble()
@@ -129,10 +129,10 @@ class DoubleGene(name: String,
                 value = gene.uniqueId.toDouble()
             }
             is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
+                return this.setValueBasedOn(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.setValueBasedOn(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(
@@ -174,13 +174,14 @@ class DoubleGene(name: String,
     /**
      * Set Double Gene from string value
      */
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun setValueBasedOn(value: String) : Boolean{
+
         try{
             this.value = value.toDouble()
-            return true
         }catch (e: NumberFormatException){
             return false
         }
+        return true
     }
 
     override fun getZero(): Double = 0.0

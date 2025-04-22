@@ -80,4 +80,14 @@ class ConfigUtilTest{
         assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd == null && it.loginEndpointAuth.payloadRaw != null})
         assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd != null && it.loginEndpointAuth.payloadRaw == null})
     }
+
+
+    @Test
+    fun testIssue1159(){
+
+        val path = "${basePath}/issue1159.yaml"
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            val config = ConfigUtil.readFromFile(path)
+        }
+    }
 }

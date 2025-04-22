@@ -2,10 +2,29 @@
 
 Under development in `master` branch.
 
+### New Features
+- Generated test suite files have now a license disclaimer stating these generated files are not subject to LGPL.
+- Support for object in example/examples in OpenAPI schemas.
+- In REST APIs, if OpenAPI schema has $ref entries pointing to external schema files, those will be automatically downloaded and processed.
+
+### Addressed GitHub Issues
+- #1171: IllegalStateException: only support Map with String key in EvoMaster
+- #1159: EvoMaster crashed when reading em.yaml file 
+
+
+# Version: 3.4.0
+
+### New Features
+- Now EvoMaster is released also on Docker Hub, with id `webfuzzing/evomaster`. 
+  However, this is only for black-box mode. For white-box, it is still recommended to use an OS installer or the uber-jar file from release page.
+- For improving readability, generated tests now have summary comments (e.g., as JavaDoc for Java/Kotlin outputs).
 
 ### Bug Fixes
 - Fixed missing java.util.Arrays in generated files, leading to compilation errors in some cases involving SQL database resets. 
 
+### Addressed GitHub Issues
+- #1150: java.util.NoSuchElementException: Key org.evomaster.core.search.gene.optional.OptionalGene@5dc8227c is missing in the map
+- #301: convert to Docker
 
 # Version: 3.3.0
 

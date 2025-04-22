@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -52,13 +51,13 @@ class CustomMutationRateGene<out T>(
     }
 
 
-    override fun setFromStringValue(value: String) : Boolean{
-        return gene.setFromStringValue(value)
+    override fun setValueBasedOn(value: String) : Boolean{
+        return gene.setValueBasedOn(value)
     }
 
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    override fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T: K{
-        if(this.javaClass == klass){
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
             return this as T
         }
         return gene.getWrappedGene(klass)
@@ -187,7 +186,7 @@ class CustomMutationRateGene<out T>(
         return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
     }
 }

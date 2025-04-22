@@ -124,51 +124,62 @@ public class SqlNameContext {
 
     private List<String> getTableNamesInFrom() {
 
-        FromItem fromItem = getFromItem();
-
         List<String> names = new ArrayList<>();
+        if (hasFromItem()) {
+            FromItem fromItem = getFromItem();
 
-        FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
-            @Override
-            public void visit(Table table) {
-                names.add(table.getName().toLowerCase());
-            }
-        };
+            FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
+                @Override
+                public void visit(Table table) {
+                    names.add(table.getName().toLowerCase());
+                }
+            };
 
-        fromItem.accept(visitor);
-
+            fromItem.accept(visitor);
+        }
         return names;
     }
 
-    private FromItem getFromItem() {
-
-        FromItem fromItem = null;
+    private boolean hasFromItem() {
         if(statement instanceof Select) {
             Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
-            fromItem =  plainSelect.getFromItem();
+            if (select instanceof PlainSelect) {
+                PlainSelect plainSelect = (PlainSelect) select;
+                FromItem fromItem =  plainSelect.getFromItem();
+                return fromItem != null;
+            }
         }
+        return false;
+   }
 
-        if(fromItem == null) {
-            throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
-        } else {
-            return fromItem;
+    private FromItem getFromItem() {
+        if (!hasFromItem()) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a FROM clause");
         }
+        if (!(statement instanceof Select)) {
+            throw new IllegalStateException("Cannot get FromItem from statement without a SELECT clause");
+        }
+        Select select = (Select)statement;
+        PlainSelect plainSelect = select.getPlainSelect();
+        FromItem fromItem =  plainSelect.getFromItem();
+        return fromItem;
     }
 
 
     private void computeAliases() {
 
         if (statement instanceof Select) {
-            FromItem fromItem = getFromItem();
-            fromItem.accept(new AliasVisitor(tableAliases));
+            if (hasFromItem()) {
+                FromItem fromItem = getFromItem();
+                fromItem.accept(new AliasVisitor(tableAliases));
 
-            Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
+                Select select = (Select)statement;
+                PlainSelect plainSelect = select.getPlainSelect();
 
-            List<Join> joins = plainSelect.getJoins();
-            if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                List<Join> joins = plainSelect.getJoins();
+                if (joins != null) {
+                    joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+                }
             }
         } else if(statement instanceof Delete){
             //no alias required?

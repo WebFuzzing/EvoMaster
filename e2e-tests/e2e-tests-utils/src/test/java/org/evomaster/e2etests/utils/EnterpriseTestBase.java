@@ -410,6 +410,7 @@ public abstract class EnterpriseTestBase {
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
         return getArgsWithCompilation(iterations, outputFolderName, testClassName, createTests, "NONE", "FALSE");
     }
+
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
 
         return new ArrayList<>(Arrays.asList(

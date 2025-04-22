@@ -3,7 +3,7 @@ package org.evomaster.core.output.naming
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.action.Action
+import java.util.Collections.singletonList
 
 open class NumberedTestCaseNamingStrategy(
     solution: Solution<*>
@@ -13,27 +13,28 @@ open class NumberedTestCaseNamingStrategy(
         return generateNames(solution.individuals)
     }
 
+    override fun getSortedTestCases(comparator: Comparator<EvaluatedIndividual<*>>): List<TestCase> {
+        return getSortedTestCases(singletonList(comparator))
+    }
+
     override fun getSortedTestCases(comparators: List<Comparator<EvaluatedIndividual<*>>>): List<TestCase> {
         val inds = solution.individuals
+
         comparators.asReversed().forEach {
             inds.sortWith(it)
         }
+
         return generateNames(inds)
     }
 
     // numbered strategy will not expand the name unless it is using the namingHelper
-    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolver: ((Action) -> List<String>)?): String {
+    override fun expandName(individual: EvaluatedIndividual<*>, nameTokens: MutableList<String>, ambiguitySolvers: List<AmbiguitySolver>): String {
         return ""
     }
 
     override fun resolveAmbiguities(duplicatedIndividuals: Set<EvaluatedIndividual<*>>): Map<EvaluatedIndividual<*>, String> {
         // do nothing, plain numbered strategy will never have duplicate names
         return emptyMap()
-    }
-
-    // kicking off with an empty mutableListOf for each test case to accumulate their own name tokens
-    private fun getName(counter: Int, individual: EvaluatedIndividual<*>): String {
-        return "test_${counter}${expandName(individual, mutableListOf())}"
     }
 
     private fun concatName(counter: Int, expandedName: String): String {

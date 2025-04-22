@@ -91,9 +91,13 @@ class SMTConditionVisitor(
         return when {
             operand.contains(".") -> { // Handle column references with aliases
                 val parts = operand.split(".")
-                val tableName = tableAliases[parts[0]] ?: defaultTableName
-                val columnName = parts[parts.lastIndex]
-                getColumnReference(tableName, columnName)
+                if (tableAliases.containsKey(parts[0])) {
+                    val tableName = tableAliases[parts[0]] ?: defaultTableName
+                    val columnName = parts[parts.lastIndex]
+                    getColumnReference(tableName, columnName)
+                } else {
+                    operand
+                }
             }
             isAColumn(operand) -> { // Handle direct column references
                 getColumnReference(defaultTableName, operand)
@@ -145,7 +149,11 @@ class SMTConditionVisitor(
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
             }
-        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        return if (conditions.size == 1) {
+            conditions[0]
+        } else {
+            AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        }
     }
 
     private fun asLiteral(expression: SqlCondition?): String {

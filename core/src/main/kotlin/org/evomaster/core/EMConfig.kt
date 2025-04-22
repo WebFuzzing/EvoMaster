@@ -1,9 +1,6 @@
 package org.evomaster.core
 
-import joptsimple.BuiltinHelpFormatter
-import joptsimple.OptionDescriptor
-import joptsimple.OptionParser
-import joptsimple.OptionSet
+import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -15,6 +12,7 @@ import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
+import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -85,6 +83,8 @@ class EMConfig {
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
         private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+
+        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -355,9 +355,16 @@ class EMConfig {
             LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
         }
 
-        val cf = ConfigUtil.readFromFile(configPath)
-        cf.validateAndNormalizeAuth()
-        return cf
+        try {
+            val cf = ConfigUtil.readFromFile(configPath)
+            cf.validateAndNormalizeAuth()
+            return cf
+        }catch (e: Exception){
+            val cause = if(e.cause!=null) "\nCause:${e.cause!!.message}" else ""
+            throw ConfigProblemException("Failed when reading configuration file at $configPath." +
+                    "\nError: ${e.message}" +
+                    "$cause")
+        }
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -572,6 +579,9 @@ class EMConfig {
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
 
+        if (saveScheduleTaskInvocationAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files (ie, saveScheduleTaskInvocationAsSeparatedFile=true)")
+
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
@@ -584,6 +594,21 @@ class EMConfig {
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
+        }
+
+        if(blackBox){
+            if(sutControllerHost != ControllerConstants.DEFAULT_CONTROLLER_HOST){
+                throw ConfigProblemException("Changing 'sutControllerHost' has no meaning in black-box testing, as no controller is used")
+            }
+            if(!overrideOpenAPIUrl.isNullOrBlank()){
+                throw ConfigProblemException("Changing 'overrideOpenAPIUrl' has no meaning in black-box testing, as no controller is used")
+            }
+        }
+        if(dockerLocalhost && !runningInDocker){
+            throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
+        }
+        if(writeWFCReport && !createTests){
+            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
         }
     }
 
@@ -696,8 +721,11 @@ class EMConfig {
             return
         }
 
-        val opt = options.valueOf(m.name)?.toString()
-                ?: throw ConfigProblemException("Value not found for property ${m.name}")
+        val opt = try{
+            options.valueOf(m.name)?.toString()
+        } catch (e: OptionException){
+          throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
+        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
 
         updateValue(opt, m)
     }
@@ -1048,8 +1076,42 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(6.0)
+    @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
+
+
+    @Important(6.1)
+    @Cfg("TCP port of where the SUT EvoMaster Controller Driver is listening on." +
+            " This option is only needed for white-box testing.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
+
+
+    @Important(7.0)
+    @Url
+    @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
+        " This option is only needed for white-box testing.")
+    var overrideOpenAPIUrl = ""
 
     //-------- other options -------------
+
+    @Cfg("Inform EvoMaster process that it is running inside Docker." +
+            " Users should not modify this parameter, as it is set automatically in the Docker image of EvoMaster.")
+    var runningInDocker = false
+
+    /**
+     * TODO this is currently not implemented.
+     * Even if did, there would still be major issues with handling WireMock.
+     * Until we can think of a good solution there, no point in implementing this.
+     */
+    @Experimental
+    @Cfg("Replace references to 'localhost' to point to the actual host machine." +
+            " Only needed when running EvoMaster inside Docker.")
+    var dockerLocalhost = false
+
 
     @FilePath
     @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
@@ -1137,14 +1199,6 @@ class EMConfig {
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
 
-    @Cfg("TCP port of where the SUT REST controller is listening on")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
-
-    @Cfg("Host name or IP address of where the SUT REST controller is listening on")
-    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
-
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)
     var archiveTargetLimit = 10
@@ -1203,6 +1257,11 @@ class EMConfig {
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
     @FilePath
     var statisticsFile = "statistics.csv"
+
+
+    @Experimental
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
+    var writeWFCReport = false
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
@@ -1576,6 +1635,12 @@ class EMConfig {
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.1
+
+
+    @Experimental
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.0
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -2191,9 +2256,18 @@ class EMConfig {
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
     var enableCustomizedMethodForMockObjectHandling = false
 
+
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task.")
+    var enableCustomizedMethodForScheduleTaskHandling = false
+
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Whether to save schedule task invocation as separated files")
+    var saveScheduleTaskInvocationAsSeparatedFile = false
 
     @Experimental
     @Cfg("Specify test resource path where to save mocked responses as separated files")
@@ -2385,11 +2459,16 @@ class EMConfig {
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
+    @Cfg("Specify the hard limit for test case name length")
+    var maxTestCaseNameLength = 80
+
     @Experimental
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
     var nameWithQueryParameters = false
 
+    @Cfg("Specify the test case sorting strategy")
+    var testCaseSortingStrategy = defaultTestCaseSortingStrategy
 
     @Experimental
     @Probability(true)
@@ -2402,9 +2481,8 @@ class EMConfig {
             " instead of OFF.")
     val probabilityOfOnVsOffInAllOptionals = 0.8
 
-    @Experimental
     @Cfg("Add summary comments on each test")
-    var addTestComments = false
+    var addTestComments = true
 
     @Min(1.0)
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +

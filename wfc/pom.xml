@@ -20,6 +20,14 @@
     </properties>
 
     <dependencies>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.5.4</version>
+        </dependency>
+
+
         <!-- test dependencies -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -55,6 +63,40 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.jsonschema2pojo</groupId>
+                <artifactId>jsonschema2pojo-maven-plugin</artifactId>
+                <version>1.2.2</version>
+                <configuration>
+                    <sourceType>yamlschema</sourceType>
+                    <useJodaDates>false</useJodaDates>
+                    <formatDateTimes>true</formatDateTimes>
+                    <formatDates>true</formatDates>
+                    <formatTimes>true</formatTimes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>report.yaml</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/src/main/resources/schemas/report.yaml</sourceDirectory>
+                            <targetPackage>com.webfuzzing.commons.report</targetPackage>
+                        </configuration>
+                    </execution>
+<!--                    <execution>-->
+<!--                        <id></id>-->
+<!--                        <goals>-->
+<!--                            <goal>generate</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <sourceDirectory>${basedir}/src/main/resources/schemas/</sourceDirectory>-->
+<!--                            <targetPackage>com.webfuzzing.commons.</targetPackage>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

@@ -300,13 +300,20 @@ abstract class Gene(
      * Wrapper genes, and only those, will override this method to check their children
      */
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
-    open  fun <T,K> getWrappedGene(klass: Class<K>) : T?  where T : Gene, T : K{
+    open  fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean = false) : T?  where T : Gene, T : K{
 
-        if(this.javaClass == klass){
+        if(matchingClass(klass,strict)){
             return this as T
         }
 
         return null
+    }
+
+    protected fun matchingClass(klass: Class<*>, strict: Boolean) : Boolean{
+        if(strict){
+           return this.javaClass == klass
+        }
+        return klass.isAssignableFrom(this.javaClass)
     }
 
     /**
@@ -730,14 +737,6 @@ abstract class Gene(
     Note: above, null target format means that no characters are escaped.
      */
 
-    /**
-     * copy value based on [other]
-     * in some case, the [other] might not satisfy constraints of [this gene],
-     * then copying will not be performed successfully
-     *
-     * @return whether the value is copied based on [other] successfully
-     */
-    abstract fun copyValueFrom(other: Gene): Boolean
 
     /**
      * If this gene represents a variable, then return its name.
@@ -791,15 +790,7 @@ abstract class Gene(
     open fun possiblySame(gene : Gene) : Boolean = gene.name == name && gene::class == this::class
 
 
-    /**
-     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
-     * If it fails for any reason, return false, without modifying its state.
-     */
-    open fun setFromStringValue(value: String) : Boolean{
-        //TODO in future this should be abstract, to force each gene to handle it.
-        //few implementations can be based on AbstractParser class for Postman
-        throw IllegalStateException("setFromStringValue() is not implemented for gene ${this::class.simpleName}")
-    }
+
 
 
     //========================= handing binding genes ===================================
@@ -831,7 +822,7 @@ abstract class Gene(
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b->
             all.add(b)
-            if(!b.bindValueBasedOn(this))
+            if(!b.setValueBasedOn(this))
                 LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})")
             b.syncBindingGenesBasedOnThis(all)
         }
@@ -1014,18 +1005,82 @@ abstract class Gene(
 
 
     /**
-     * bind value of [this] gene based on [gene].
+     * set the value of this gene based on input [gene].
      * The type of genes can be different.
-     * @return whether the binding performs successfully
+     * However, there is no check if constraints are kept satisfied.
+     * So, this method should not be called directly.
+     * Rather use [setFromDifferentGene], which internally it calls this method,
+     * and then revert in case of constraint violations.
      *
-     * TODO what if this lead to isLocallyValid to be false? can we prevent it?
-     * or just return false here?
+     * @return whether the binding performs successfully.
      *
-     * FIXME: change name, because it is not modifying binding, and just copy over
-     * the values
-     *
+     * TODO unfortunately, Kotlin has major design flows that do not allow package-level and true protected-level
+     * scope, like in Java :(
+     * This is a case in which is much worse than Java.
+     * But it could be simulated with Detekt and a rule like @PackagePrivate
      */
-    abstract fun bindValueBasedOn(gene: Gene) : Boolean
+    @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
+    //TODO remove deprecated once we integrate @PackagePrivate
+    internal abstract fun setValueBasedOn(gene: Gene) : Boolean
+
+
+    /**
+     * copy value based on [other]
+     * in some case, the [other] might not satisfy constraints of [this gene],
+     * then copying will not be performed successfully
+     *
+     * FIXME unclear if side-effects or not
+     *
+     * @return whether the value is copied based on [other] successfully
+     */
+    abstract fun copyValueFrom(other: Gene): Boolean
+
+
+    /**
+     * Update current value of this gene, base on other gene.
+     * This is not [copyValueFrom], as the gene could be different.
+     * FIXME that comment seems wrong
+     * If for any reason the update fails, there is not going to be any side-effects.
+     *
+     * @return if the update was successful
+     */
+    fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true) : Boolean{
+
+        //FIXME current implementation leads to infinite loops. must fix copyValueFrom
+        //return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
+        //TODO update once fixed
+        return setValueBasedOn(gene)
+    }
+
+    /*
+        FIXME: looks like redundancies and inconsistencies between copyValueFrom and setFromDifferentGene.
+        TODO once fixed, update
+     */
+
+    /**
+     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
+     * If it fails for any reason, return false.
+     * This method guarantees the validity of the resulting gene, ie, changes are reverted if any constraints
+     * is violated.
+     */
+    fun setFromStringValue(value: String, undoIfUpdateFails: Boolean = true) : Boolean{
+        return updateValueOnlyIfValid( { setValueBasedOn(value) } , undoIfUpdateFails)
+    }
+
+    /**
+     * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
+     * If it fails for any reason, return false.
+     * WARNING: There is no guarantee that constraints are kept satisfied.
+     * As such, should not call this method directly, but rather use [setFromStringValue]
+     *
+     * TODO @PackagePrivate
+     */
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    internal open fun setValueBasedOn(value: String) : Boolean{
+        //TODO in future this should be abstract, to force each gene to handle it.
+        //few implementations can be based on AbstractParser class for Postman
+        throw IllegalStateException("setValueBasedOn() is not implemented for gene ${this::class.simpleName}")
+    }
 
 
     /**
