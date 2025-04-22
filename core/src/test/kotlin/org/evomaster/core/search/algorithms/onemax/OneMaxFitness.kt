@@ -12,13 +12,15 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
     override fun doCalculateCoverage(
         individual: OneMaxIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     )
             : EvaluatedIndividual<OneMaxIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        (if(allCovered) (0 until individual.n).toSet() else targetsToEvaluate(targets, individual))
+        (if(allTargets) (0 until individual.n).toSet() else targetsToEvaluate(targets, individual))
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
         return EvaluatedIndividual(

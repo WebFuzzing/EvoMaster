@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCExceptionInfo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionCategory
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 
@@ -13,7 +14,7 @@ import org.evomaster.core.search.action.ActionResult
  * define RPC call result with various situations,
  *  eg, success, exception, potential bug, fail (some problems when invoking the call, eg, timeout, network)
  */
-class RPCCallResult : ActionResult {
+class RPCCallResult : EnterpriseActionResult {
 
     companion object {
         const val LAST_STATEMENT_WHEN_POTENTIAL_FAULT = "LAST_STATEMENT_WHEN_POTENTIAL_FAULT"
@@ -42,9 +43,9 @@ class RPCCallResult : ActionResult {
     constructor(sourceLocalId: String, stopping: Boolean = false) : super(sourceLocalId, stopping)
 
     @VisibleForTesting
-    internal constructor(other: ActionResult) : super(other)
+    internal constructor(other: RPCCallResult) : super(other)
 
-    override fun copy(): ActionResult {
+    override fun copy(): RPCCallResult {
         return RPCCallResult(this)
     }
 

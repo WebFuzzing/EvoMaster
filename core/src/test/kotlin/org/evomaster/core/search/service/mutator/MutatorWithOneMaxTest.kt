@@ -9,6 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.onemax.*
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -54,12 +55,16 @@ class MutatorWithOneMaxTest {
         injector.getInstance(OneMaxSampler::class.java).n = n
         config.mutationTargetsSelectionStrategy = strategy
 
-        config.maxActionEvaluations = budget
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = budget
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
         config.saveMutationInfo = true
         config.mutatedGeneFile = "target/MutatorWithOneMaxTest/targets${n}And${improve}ImproveMutationAnd${strategy}First.csv"
         Files.deleteIfExists(Paths.get(config.mutatedGeneFile))
+
+        val epc = injector.getInstance(ExecutionPhaseController::class.java)
+        epc.startSearch()
+
 
         val mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))

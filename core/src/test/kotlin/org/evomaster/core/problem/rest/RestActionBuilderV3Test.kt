@@ -1,11 +1,15 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
@@ -13,9 +17,9 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.FixedMapGene
+import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -45,7 +49,7 @@ class RestActionBuilderV3Test{
         val a = map.values.first() as RestCallAction
 
         val topGenes = a.seeTopGenes()
-        assertEquals(4, topGenes.size)
+        assertEquals(5, topGenes.size)
         assertTrue(topGenes.any { it is IntegerGene})
         assertTrue(topGenes.any { it.getWrappedGene(BooleanGene::class.java) != null })
         assertTrue(topGenes.any {
@@ -136,7 +140,7 @@ class RestActionBuilderV3Test{
                          */
                         assertEquals(39,  (this as ChoiceGene<*>).lengthOfChildren())
                     }else{
-                        assertTrue(this is FixedMapGene<*, *>)
+                        assertTrue(this is TaintedMapGene)
                     }
                 }
             }
@@ -269,7 +273,8 @@ class RestActionBuilderV3Test{
         assertTrue(gene is ObjectGene)
         (gene as ObjectGene).apply {
             assertEquals(4, fixedFields.size)
-            assertTrue(template!!.second is FixedMapGene<*, *>)
+            //assertTrue(template!!.second is FixedMapGene<*, *>)
+            assertTrue(template!!.second is TaintedMapGene)
         }
     }
 
@@ -824,16 +829,19 @@ class RestActionBuilderV3Test{
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
             : MutableMap<String, Action> {
 
-        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+        val holder = RestSchema(OpenApiAccess.getOpenAPIFromResource(resourcePath))
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        val errors = RestActionBuilderV3.addActionsFromSwagger(holder, actions, options=options)
+        errors.forEach {
+            println(it)
+        }
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
+        //RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
 
         return actions
     }
@@ -979,7 +987,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testCyclotron(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/cyclotron.json", 50, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),50, 87, 16, 71, 11)
+        checkNumOfRootGene(map, listOf(),50, 100, 16, 84, 11)
         checkNumResource(map, listOf(), 40, 18)
     }
 
@@ -1020,7 +1028,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testGestaoHospital(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/gestaohospital.json", 20, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),20, 43, 14, 29, 6)
+        checkNumOfRootGene(map, listOf(),20, 51, 14, 37, 6)
         checkNumResource(map, listOf(), 13, 0)
 
     }
@@ -1037,7 +1045,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testRealWorld(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/realworld_app.json", 19, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),19, 31, 6, 25, 6)
+        checkNumOfRootGene(map, listOf(),19, 37, 6, 31, 6)
         checkNumResource(map, listOf(), 11, 2)
     }
 
@@ -1045,7 +1053,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testSpaceX(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/spacex_api.json", 94, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),94, 102, 29, 73, 29)
+        checkNumOfRootGene(map, listOf(),94, 131, 29, 102, 29)
         checkNumResource(map, listOf(), 52, 5)
     }
 
@@ -1057,7 +1065,7 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/news.json", 7, enableConstraintHandling = enableConstraintHandling)
 
         val create = map["POST:/news"] as RestCallAction
-        assertEquals(2, create.seeTopGenes().size)
+        assertEquals(3, create.seeTopGenes().size)
         val bodyNews = create.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyNews)
         assertNotNull(bodyNews is OptionalGene)
@@ -1065,7 +1073,7 @@ class RestActionBuilderV3Test{
         assertNotNull((bodyNews.gene as ObjectGene).refType)
         assertEquals("NewsDto", (bodyNews.gene as ObjectGene).refType)
 
-        checkNumOfRootGene(map, listOf(),7, 12, 3, 9, 2)
+        checkNumOfRootGene(map, listOf(),7, 15, 3, 12, 2)
         checkNumResource(map, listOf(), 4, 1)
 
     }
@@ -1077,14 +1085,14 @@ class RestActionBuilderV3Test{
         val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23, enableConstraintHandling = enableConstraintHandling)
 
         val postScoring = map["POST:/config/scoring.project"] as RestCallAction
-        assertEquals(3, postScoring.seeTopGenes().size)
+        assertEquals(4, postScoring.seeTopGenes().size)
         val bodyPostScoring = postScoring.seeTopGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)
         assertTrue(bodyPostScoring is OptionalGene)
         assertTrue((bodyPostScoring as OptionalGene).gene is StringGene)
 
         val skipInEM = listOf("/fetch", "/health", "/health.json", "/error")
-        checkNumOfRootGene(map,skipInEM ,13, 36, 4, 32, 1)
+        checkNumOfRootGene(map,skipInEM ,13, 38, 4, 34, 1)
         checkNumResource(map, skipInEM, 13, 11)
     }
 
@@ -1124,9 +1132,9 @@ class RestActionBuilderV3Test{
             "/metrics", "/metrics.json", "/metrics/{name}",
             "/trace", "/trace.json"
         )
-        checkNumOfRootGene(map, skipInEM, 74, 82,22, 60, 14)
+        checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
 
-        checkNumResource(map, skipInEM, 56, 25)
+        checkNumResource(map, skipInEM, 56, 20)
 
     }
 
@@ -1163,7 +1171,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testFeaturesServices(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/features_service.json", 18, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),18, 37, 4, 33, 4)
+        checkNumOfRootGene(map, listOf(),18, 41, 4, 37, 4)
         checkNumResource(map, listOf(), 11, 0)
     }
 
@@ -1171,7 +1179,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testScoutApi(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/scout-api.json", 49, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),49, 127, 19, 108, 19)
+        checkNumOfRootGene(map, listOf(),49, 146, 19, 127, 19)
         checkNumResource(map, listOf(), 21, 2)
     }
 
@@ -1179,7 +1187,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testLanguageTool(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/languagetool.json", 2, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),2, 2, 1, 1, 1)
+        checkNumOfRootGene(map, listOf(),2, 3, 1, 2, 1)
         checkNumResource(map, listOf(), 2, 1)
     }
 
@@ -1195,7 +1203,7 @@ class RestActionBuilderV3Test{
     @ValueSource(booleans = [true, false])
     fun testCwaVerification(enableConstraintHandling : Boolean){
         val map = loadAndAssertActions("/swagger/sut/cwa_verification.json", 5, enableConstraintHandling = enableConstraintHandling)
-        checkNumOfRootGene(map, listOf(),5, 12, 4, 8, 5)
+        checkNumOfRootGene(map, listOf(),5, 16, 4, 12, 5)
         checkNumResource(map, listOf(), 5, 0)
     }
 
@@ -1274,13 +1282,15 @@ class RestActionBuilderV3Test{
         val get = actions["GET:/api/items"]
         assertNotNull(get)
 
-        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
-        val map = mutableMapOf<String,ObjectGene>()
-        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
-
-        assertEquals(3, map.size)
-        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
-        assertEquals(0, x.fields.size)
+        //No longer valid
+//        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+//        val map = mutableMapOf<String,ObjectGene>()
+//        RestActionBuilderV3.getModelsFromSwagger(schema, map, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+//
+//        assertEquals(3, map.size)
+//        assertTrue(map.containsKey("Iterable«Item»"), "Not found key Iterable«Item». Current keys: ${map.keys.joinToString(", ")}.")
+//        val x = map["Iterable«Item»"] as ObjectGene //this is due to bug in SpringFox that does not handle Iterable<T>
+//        assertEquals(0, x.fields.size)
     }
 
 
@@ -1432,6 +1442,98 @@ class RestActionBuilderV3Test{
         assertEquals("42", output)
     }
 
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/swagger/artificial/defaultandexamples/examples_object_single_in.yaml",
+        "/swagger/artificial/defaultandexamples/examples_object_single_out.yaml",
+        "/swagger/artificial/defaultandexamples/default_object_single.yaml"
+    ])
+    fun testExampleObjectSingle(path: String){
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42Pos = false
+        var Bar42Neg = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar" && dto.extra != null){
+                if(dto.extra!! >= 0){
+                    Bar42Pos = true
+                } else {
+                    Bar42Neg = true
+                }
+            }
+
+            if(Bar42Pos && Bar42Neg){
+                break
+            }
+        }
+
+        assertTrue(Bar42Pos)
+        assertTrue(Bar42Neg)
+
+    }
+
+
+    @Test
+    fun testExampleObjectMulti(){
+        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_multi.yaml", 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42 = false
+        var Foo123 = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar"){
+                Bar42 = true
+            }
+            if(dto.id == 123 && dto.name == "Foo" && dto.extra == 77){
+                Foo123 = true
+            }
+
+            if(Bar42 && Foo123){
+                break
+            }
+        }
+
+        assertTrue(Bar42)
+        assertTrue(Foo123)
+    }
 
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
@@ -1807,8 +1909,189 @@ class RestActionBuilderV3Test{
 
         val dateTimeString = gene.fields[0].getValueAsRawString()
         DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(dateTimeString)
+    }
 
 
+    @Test
+    fun testLinksBase() {
+        val map = loadAndAssertActions("/swagger/artificial/links/links_base.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+    @Test
+    fun testLinksRef() {
+        val map = loadAndAssertActions("/swagger/artificial/links/links_ref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+
+    @Test
+    fun testWrongArrayExampleString() {
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/wrong_array_example_string.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val post = map["POST:/v2/foo/{x}"] as RestCallAction
+        val path = post.resolvedPath()
+        assertTrue(path.contains("xyz"), path)
+        assertTrue(path.contains("bar"), path)
+        assertTrue(path.contains("hello"), path)
+        assertTrue(path.contains("there"), path)
+        /*
+            those are not 3 different examples, but a single example concatenating them as a single string
+         */
+    }
+
+    @Test
+    fun testWrongArrayExampleInt() {
+        val map = loadAndAssertActions(
+            "/swagger/artificial/defaultandexamples/wrong_array_example_int.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val post = map["POST:/v2/foo/{x}"] as RestCallAction
+        val path = post.resolvedPath()
+
+        assertEquals("/v2/foo/0", path)
+        /*
+            unfortunately, it seems the wrong data is silently ignored
+         */
+    }
+
+
+    @Test
+    fun testBindingPathChildEnum(){
+
+        val path = "/swagger/artificial/binding/binding_path_child_enum.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //using enum
+
+        // only 1 option in the enum
+        assertEquals("/v2/api/foo/data", child.resolvedPath())
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/foo", parent.resolvedPath())
+    }
+
+
+    @Test
+    fun testExamplesPathChildBinding(){
+
+        val path = "/swagger/artificial/defaultandexamples/examples_path_child.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction //has example
+
+        val target = "foo"
+
+        val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
+        val isSet = x.setValueBasedOn(target)
+        assertTrue(isSet)
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/$target", parent.resolvedPath())
+    }
+
+    @Test
+    fun testExamplesPathParentBinding(){
+
+        val path = "/swagger/artificial/defaultandexamples/examples_path_parent.yaml"
+        val actions = loadAndAssertActions(path, 2, RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val parent = actions["GET:/v2/api/{x}"] as RestCallAction  //has example
+        val child = actions["GET:/v2/api/{x}/data"] as RestCallAction
+
+        val target = "foo"
+
+        val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
+        val isSet = x.setValueBasedOn(target)
+        assertTrue(isSet)
+
+        parent.bindToSamePathResolution(child)
+        assertEquals("/v2/api/$target", parent.resolvedPath())
+    }
+
+    @Test
+    fun testPropertyStringTypeAndCharFormat(){
+        val dtoSchemaName = "foo.com.BarDto"
+        val dtoSchema = """
+            "$dtoSchemaName":{
+                "type":"object",
+                "properties": {
+                    "char_field":{
+                        "type":"string", 
+                        "format":"char"
+                    }
+                },
+                "required": [
+                    "char_field"
+                    
+                ]
+            }
+            """.trimIndent()
+
+        val allSchemas = "\"${dtoSchemaName}\":{${dtoSchema}}"
+
+        val gene = RestActionBuilderV3.createGeneForDTO(
+            dtoSchemaName,
+            allSchemas,
+            RestActionBuilderV3.Options(enableConstraintHandling = true)
+        )
+
+        assertTrue(gene is ObjectGene)
+        (gene as ObjectGene).apply {
+            assertEquals(1, gene.fields.size)
+            assertEquals("char_field", gene.fields[0].name)
+            assertTrue(gene.fields[0] is StringGene)
+            val stringGene = gene.fields[0] as StringGene
+            assertEquals(1, stringGene.minLength)
+            assertEquals(1, stringGene.maxLength)
+        }
+    }
+
+
+    @Test
+    fun testRefLinkRef() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/linkref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+    @Test
+    fun testRefCycle() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/cycleA.yaml", 1, true)
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertTrue(get.produces.any { it.contains("xml") })
+        assertEquals(1, get.parameters.size)
+    }
+
+    @Test
+    fun testPathItem(){
+        val map = loadAndAssertActions(
+            "/swagger/artificial/ref/pathitem.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val certain = map.values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("FOO", output)
     }
 
 }

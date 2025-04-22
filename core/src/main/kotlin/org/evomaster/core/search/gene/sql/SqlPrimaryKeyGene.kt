@@ -39,8 +39,8 @@ class SqlPrimaryKeyGene(name: String,
         private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun getForeignKey(): SqlForeignKeyGene? {
@@ -112,7 +112,7 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }

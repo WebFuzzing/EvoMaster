@@ -41,9 +41,9 @@ class ImpactMutationWeightControlTest {
         mwc = injector.getInstance(MutationWeightControl::class.java)
         ags = injector.getInstance(ArchiveImpactSelector::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
-        config.maxActionEvaluations = 10
+        config.maxEvaluations = 10
         config.weightBasedMutationRate = true
     }
 

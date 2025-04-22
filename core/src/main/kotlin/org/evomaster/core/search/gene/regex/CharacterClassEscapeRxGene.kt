@@ -36,7 +36,7 @@ class CharacterClassEscapeRxGene(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return value.matches(Regex("\\$type"))
     }
 
@@ -113,7 +113,7 @@ class CharacterClassEscapeRxGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
             return true

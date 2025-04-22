@@ -32,6 +32,15 @@ public class TaintInputName {
 
 
     /**
+     * Unique identified to specify a map has been tainted by EvoMaster.
+     * This identifier will be used as a key-name for a field contained a tainted string identifying the map.
+     * If at any point in time we operate on a map, and such map has this key, then we know we need to handle
+     * it with taint analysis.
+     */
+    public static final String TAINTED_MAP_EM_LABEL_IDENTIFIER = "EM_tainted_map";
+
+
+    /**
      * Check if a given string value is a tainted value
      */
     public static boolean isTaintInput(String value){

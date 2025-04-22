@@ -21,17 +21,18 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.internal.db.MongoHandler;
-import org.evomaster.client.java.sql.SchemaExtractor;
+import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -90,7 +91,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * If using a SQL Database, gather info about its schema
      */
-    private DbSchemaDto schemaDto;
+    private DbInfoDto schemaDto;
 
     /**
      * For each action in a test, keep track of the extra heuristics, if any
@@ -102,6 +103,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     private final List<String> accessedTables = new CopyOnWriteArrayList<>();
 
+
+    /**
+     * record sql insertions which have been executed successfully for initializing data in database
+     */
+    private final List<InsertionDto> successfulInitSqlInsertions = new CopyOnWriteArrayList<>();
 
     /**
      * a map of table to fk target tables
@@ -140,6 +146,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private ObjectMapper objectMapper;
 
     private int actionIndex = -1;
+
+    /**
+     * possible quotation marks used in SQL commands
+     */
+    private final List<String> possibleQuotationMarksInDb = Arrays.asList("\"","'","`");
 
     /**
      * Start the controller as a RESTful server.
@@ -264,17 +275,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return actionIndex;
     }
 
-    /**
-     * Calculate heuristics based on intercepted SQL commands
-     *
-     * @param sql command as a string
-     */
-    @Deprecated
-    public final void handleSql(String sql) {
-        Objects.requireNonNull(sql);
 
-        sqlHandler.handle(sql);
-    }
 
     public final void enableComputeSqlHeuristicsOrExtractExecution(
             boolean enableSqlHeuristics,
@@ -332,16 +333,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         mongoHandler.reset();
     }
 
-    public final List<ExtraHeuristicsDto> getExtraHeuristics() {
+    /**
+     *
+     * @param queryFromDatabase specifies whether to compute extra heuristics by retrieving data from database.
+     *                          if true, computing such heuristics will query all data in the related databases.
+     * @return a list of dto representing computed extra heuristic
+     */
+    public final List<ExtraHeuristicsDto> getExtraHeuristics(boolean queryFromDatabase) {
 
         if (extras.size() == actionIndex) {
-            extras.add(computeExtraHeuristics());
+            extras.add(computeExtraHeuristics(queryFromDatabase));
         }
 
         return new ArrayList<>(extras);
     }
 
-    public final ExtraHeuristicsDto computeExtraHeuristics() {
+    public final ExtraHeuristicsDto computeExtraHeuristics(boolean queryFromDatabase) {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
@@ -349,7 +356,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
-                computeSQLHeuristics(dto, additionalInfoList);
+                computeSQLHeuristics(dto, additionalInfoList, queryFromDatabase);
             }
             if (isMongoHeuristicsComputationAllowed()) {
                 computeMongoHeuristics(dto, additionalInfoList);
@@ -366,7 +373,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return mongoHandler.isCalculateHeuristics() || mongoHandler.isExtractMongoExecution();
     }
 
-    private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList) {
+    private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
         /*
         TODO refactor, once we move SQL analysis into Core
         */
@@ -375,23 +382,25 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             last.getSqlInfoData().stream().forEach(it -> {
 //                    String sql = it.getCommand();
                 try {
-                    sqlHandler.handle(new SqlExecutionLogDto(it.getCommand(), it.getExecutionTime()));
+                    final SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(it.getSqlCommand(), it.hasThrownSqlException(), it.getExecutionTime());
+                    sqlHandler.handle(sqlExecutionLogDto);
                 } catch (Exception e) {
-                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getCommand());
+                    SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getSqlCommand());
                     assert false; //we should try to handle all cases in our tests
                 }
             });
         }
 
         if (sqlHandler.isCalculateHeuristics()) {
-            sqlHandler.getEvaluatedSqlCommands().stream()
+            sqlHandler.getSqlDistances(successfulInitSqlInsertions, queryFromDatabase).stream()
                     .map(p ->
                             new ExtraHeuristicEntryDto(
                                     ExtraHeuristicEntryDto.Type.SQL,
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.sqlCommand,
                                     p.sqlDistanceWithMetrics.sqlDistance,
-                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows
+                                    p.sqlDistanceWithMetrics.numberOfEvaluatedRows,
+                                    p.sqlDistanceWithMetrics.sqlDistanceEvaluationFailure
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -403,7 +412,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             //accessedTables.addAll(executionDto.queriedData.keySet());
-            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+//            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
@@ -429,7 +438,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                                     ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
                                     p.mongoCommand.toString(),
                                     p.mongoDistanceWithMetrics.mongoDistance,
-                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments
+                                    p.mongoDistanceWithMetrics.numberOfEvaluatedDocuments,
+                                    false
                             ))
                     .forEach(h -> dto.heuristics.add(h));
         }
@@ -498,7 +508,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
                     }else
                         DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
@@ -510,12 +520,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    private boolean isSameTable(String tableA, String tableB) {
+        if (tableA.equalsIgnoreCase(tableB)) return true;
+        for (String qm : possibleQuotationMarksInDb){
+            if (wrapWithQuotationMarks(tableA, qm).equalsIgnoreCase(tableB)) return true;
+            if (wrapWithQuotationMarks(tableB, qm).equalsIgnoreCase(tableA)) return true;
+        }
+        return false;
+    }
+
+    private String wrapWithQuotationMarks(String wrap, String mark) {
+        return String.format("%s%s%s", mark, wrap, mark);
+    }
+
+
     private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
         if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
             tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                tableInitSqlMap.keySet().stream().filter(t-> isSameTable(t, a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
@@ -543,19 +567,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private int tableFkCompartor(String tableA, String tableB){
-        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+        return Integer.compare(getFkDepth(tableA, new HashSet<>()), getFkDepth(tableB, new HashSet<>()));
     }
 
     private int getFkDepth(String tableName, Set<String> checked){
-        if(!fkMap.containsKey(tableName)) return -1;
+        List<String> keys = fkMap.keySet().stream().filter(s-> s.equalsIgnoreCase(tableName)).collect(Collectors.toList());
+        if(keys.isEmpty()) return -1;
         checked.add(tableName);
-        List<String> fks = fkMap.get(tableName);
+        List<String> fks = keys.stream().map(s -> fkMap.get(s)).flatMap(List::stream).collect(Collectors.toList());
         if (fks.isEmpty()) {
             return 0;
         }
         int sum = fks.size();
         for (String fk: fks){
-            if (!checked.contains(fk)){
+            if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
                 sum += getFkDepth(fk, checked);
             }
         }
@@ -568,6 +593,14 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public void addTableToInserted(List<String> tables){
         accessedTables.addAll(tables);
+    }
+
+    /**
+     * collect info about init sql insertion which has been executed succesfully
+     * @param insertionDto a dto for sql insertion
+     */
+    public void addSuccessfulInitSqlInsertion(InsertionDto insertionDto){
+        successfulInitSqlInsertions.add(insertionDto);
     }
 
     private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
@@ -647,7 +680,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * @return a DTO with the schema information
      * @see SutHandler#getDbSpecifications
      */
-    public final DbSchemaDto getSqlDatabaseSchema() {
+    public final DbInfoDto getSqlDatabaseSchema() {
         if (schemaDto != null) {
             return schemaDto;
         }
@@ -657,7 +690,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         try {
-            schemaDto = SchemaExtractor.extract(getConnectionIfExist());
+            schemaDto = DbInfoExtractor.extract(getConnectionIfExist());
             Objects.requireNonNull(schemaDto);
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
@@ -670,7 +703,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 fkMap.putIfAbsent(t.name, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
                     t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                        fkMap.get(t.name).add(f.targetTable.toUpperCase(Locale.ENGLISH));
                     });
                 }
             });
@@ -777,7 +810,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *      key is a name of the seeded test case,
      *      value is a list of RCPActionDto for the test case
      */
-    public Map<String, List<RPCActionDto>> handleSeededTests(boolean isSUTRunning){
+    public Map<String, RPCTestDto> handleSeededTests(boolean isSUTRunning){
         List<SeededRPCTestDto> seedRPCTests;
 
         try {
@@ -797,7 +830,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new IllegalStateException("EM driver RPC: the specified problem is not RPC");
         RPCType rpcType = ((RPCProblem) rpcp).getType();
 
-        return RPCEndpointsBuilder.buildSeededTest(rpcInterfaceSchema, seedRPCTests, rpcType);
+        return RPCEndpointsBuilder.buildSeededTestWithRPCFunctions(rpcInterfaceSchema, seedRPCTests, rpcType);
 
 //        try{
 //            if (isSUTRunning){
@@ -867,7 +900,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             if (dto != null && dto.rpcTests != null && !dto.rpcTests.isEmpty()){
                 dto.rpcTests.forEach(s->
-                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+//                        customizeRPCTestOutput(s.externalServiceDtos, s.sqlInsertions, s.actions)
+                        customizeRPCTestOutput(s)
                 );
             }
         }catch (Exception e){
@@ -887,6 +921,9 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         //clean all accessed table in a test
         accessedTables.clear();
 
+        //clean collected info for successful init sql insertion
+        successfulInitSqlInsertions.clear();
+
         newTestSpecificHandler();
 
         // set executingAction state false for newTest
@@ -900,16 +937,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * @param dto the DTO with the information about the action (eg its index in the test)
      */
-    public final void newAction(ActionDto dto) {
+    public final void newAction(ActionDto dto, boolean queryFromDatabase) {
 
         if (dto.index > extras.size()) {
-            extras.add(computeExtraHeuristics());
+            extras.add(computeExtraHeuristics(queryFromDatabase));
         }
         this.actionIndex = dto.index;
 
         resetExtraHeuristics();
 
         newActionSpecificHandler(dto);
+    }
+
+
+    public final void newScheduleAction(ScheduleTaskInvocationDto dto, boolean queryFromDatabase) {
+
+        if (dto.index > extras.size()) {
+            extras.add(computeExtraHeuristics(queryFromDatabase));
+        }
+        this.actionIndex = dto.index;
+
+        resetExtraHeuristics();
     }
 
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
@@ -920,6 +968,41 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (dto.responseVariable != null && dto.doGenerateTestScript && DtoUtils.isJavaOrKotlin(dto.outputFormat)){
             responseDto.testScript = endpointSchema.newInvocationWithJavaOrKotlin(dto.responseVariable, dto.controllerVariable,dto.clientVariable, dto.outputFormat);
+        }
+    }
+    public final void invokeScheduleTasks(List<ScheduleTaskInvocationDto> dtos, ScheduleTaskInvocationsResult responseDto, boolean queryFromDatabase){
+        for (ScheduleTaskInvocationDto dto: dtos){
+            try{
+                newScheduleAction(dto, queryFromDatabase);
+                invokeScheduleTask(dto, responseDto);
+            }catch (Exception e){
+                // now we execute all schedule tasks
+                SimpleLogger.warn(e.getMessage());
+            }
+        }
+        assert dtos.size() == responseDto.results.size();
+    }
+
+
+    private void invokeScheduleTask(ScheduleTaskInvocationDto dto, ScheduleTaskInvocationsResult responseDto){
+        ScheduleTaskInvocationResultDto result = null;
+
+        try{
+            // TODO, we might need to have timeout for `handleCustomizedMethod`
+            result = handleCustomizedMethod(()->customizeScheduleTaskInvocation(dto, true));
+        } catch (Throwable e) {
+            if (result == null){
+                result = new ScheduleTaskInvocationResultDto();
+            }
+            String msg = "ERROR: Fail to invoke schedule task with the customized method: ";
+            if (e.getMessage() != null){
+                msg += e.getMessage();
+            }
+            result.status = ExecutionStatusDto.FAILED;
+            result.errorMsg = msg;
+            throw new RuntimeException(msg);
+        } finally {
+            responseDto.results.add(result);
         }
     }
 
@@ -1042,7 +1125,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try{
             return call.get();
         }catch (Throwable e){
-            SimpleLogger.error("ERROR: Fail to process mocking with customized method:", e);
+            SimpleLogger.error("ERROR: Fail to process customized method:", e);
         }
         return null;
     }
@@ -1245,9 +1328,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         throw new IllegalStateException("This deprecated method should never be called");
     }
 
-    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
+    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids,
+                                                    boolean fullyCovered,
+                                                    boolean descriptiveIds);
 
-    public abstract List<TargetInfo> getAllCoveredTargetInfos();
 
 
     /**
@@ -1292,6 +1376,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
     public abstract void setExecutingAction(boolean executingAction);
+
+
+    /**
+     * specify whether the SUT is booting (ie starting up), or not.
+     * this is needed because we don't want to handle targets covered at startup during
+     * the fitness evaluations
+     * @param isBooting
+     */
+    public abstract void bootingSut(boolean isBooting);
+
 
     public abstract BootTimeInfoDto getBootTimeInfoDto();
 
@@ -1470,7 +1564,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     @Override
-    public boolean customizeRPCTestOutput(List<MockRPCExternalServiceDto> externalServiceDtos, List<String> sqlInsertions, List<EvaluatedRPCActionDto> actions) {
+    public boolean customizeRPCTestOutput(RPCTestWithResultsDto rpcTest) {
         return false;
     }
 
@@ -1481,6 +1575,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     @Override
     public boolean customizeMockingDatabase(List<MockDatabaseDto> databaseDtos, boolean enabled) {
+        return false;
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto customizeScheduleTaskInvocation(ScheduleTaskInvocationDto invocationDto, boolean invoked) {
+        return null;
+    }
+
+    @Override
+    public boolean isScheduleTaskCompleted(ScheduleTaskInvocationResultDto invocationInfo) {
         return false;
     }
 
@@ -1582,6 +1686,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             throw new RuntimeException("Fail to handle the given mock object for database with the info:", e);
         }
         return customizeMockingDatabase(mockDbObject, enabled);
+    }
+
+    @Override
+    public ScheduleTaskInvocationResultDto invokeScheduleTaskWithCustomizedHandling(String scheduleTaskDtos, boolean enabled) {
+        ScheduleTaskInvocationDto taskDto = null;
+        ScheduleTaskInvocationResultDto resultDto = null;
+        try{
+            taskDto = objectMapper.readValue(scheduleTaskDtos, new TypeReference<ScheduleTaskInvocationDto>(){});
+            resultDto = customizeScheduleTaskInvocation(taskDto, enabled);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Fail to handle the given schedule task with the info:", e);
+        } catch (Exception e){
+            throw new RuntimeException("Fail to invoke schedule task with the info:", e);
+        }
+
+        return resultDto;
     }
 
     /**

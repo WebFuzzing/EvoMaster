@@ -8,7 +8,7 @@ import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.evomaster.core.search.Individual.GeneFilter.ALL
+import org.evomaster.core.search.action.ActionFilter
 
 class DecDataTypeEMTest : RestTestBase() {
 
@@ -42,6 +42,6 @@ class DecDataTypeEMTest : RestTestBase() {
     }
 
     private fun areAllValidGene(inds : MutableList<EvaluatedIndividual<RestIndividual>>): Boolean{
-        return inds.all { e-> e.individual.seeGenes(ALL).all { g-> g.flatView().all { ig-> ig.isLocallyValid() } } }
+        return inds.all { e-> e.individual.seeTopGenes(ActionFilter.ALL).all { g-> g.flatView().all { ig-> ig.isLocallyValid() } } }
     }
 }

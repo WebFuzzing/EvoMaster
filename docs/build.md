@@ -23,4 +23,4 @@ _Docker_ installed and running on your machine.
 
 Note: we have also started initial support for other languages, e.g., JavaScript and C#.
 To build everything, you can use the script `buildAll.sh`.
-However, besides the JDK, you will need other tools as well installed on your machine (e.g., NodeJS and DotNet Core). 
+However, besides the JDK, you will need other tools as well installed on your machine (e.g., NodeJS and DotNet Core).

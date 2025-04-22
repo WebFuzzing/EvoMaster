@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
@@ -14,13 +15,19 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
 /**
- * Service class used to do security testing after the search phase
+ * Service class used to do security testing after the search phase.
+ *
+ * This class can add new test cases to the archive that, by construction, do reveal a security fault.
+ * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * called in the fitness function, and not directly here.
  */
 class SecurityRest {
 
@@ -41,7 +48,13 @@ class SecurityRest {
     private lateinit var randomness: Randomness
 
     @Inject
-    private lateinit var fitness: RestFitness
+    private lateinit var fitness: FitnessFunction<RestIndividual>
+
+    @Inject
+    private lateinit var idMapper: IdMapper
+
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -76,8 +89,11 @@ class SecurityRest {
     fun applySecurityPhase(): Solution<RestIndividual> {
 
         // extract individuals from the archive
-        val archivedSolution: Solution<RestIndividual> = this.archive.extractSolution()
-        individualsInSolution = archivedSolution.individuals
+        individualsInSolution = this.archive.extractSolution().individuals
+
+        expandWithForbidden()
+        //recompute due to possible new tests we might need
+        individualsInSolution = this.archive.extractSolution().individuals
 
 
         // we can see what is available from the schema, and then check if already existing a test for it in archive
@@ -89,6 +105,122 @@ class SecurityRest {
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
     }
+
+
+    /**
+     * During the search, we do not explicitly try different users in the same test case.
+     * as such, getting tests with 403 might be tricky.
+     * but having such tests might be necessary for some types of oracles we designed
+     */
+    private fun expandWithForbidden() {
+
+        actionDefinitions.forEach { op ->
+
+            val forbidden = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                status = 403
+            )
+            if(forbidden.isNotEmpty()){
+                //we already have it, so nothing to do
+                return@forEach
+            }
+
+            val unauthorized = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                status = 401
+            )
+            if(unauthorized.isEmpty()){
+                //there is no 401, so does not seem auth is applied to this endpoint.
+                //note: getting 401 during search should be simple, as we do send requests without
+                // auth, given a certain probability
+                return@forEach
+            }
+
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+
+            if (candidates.isNotEmpty()){
+                handleCandidatesFor403(op.verb, op.path, candidates)
+            }
+        }
+    }
+
+    private fun handleCandidatesFor403(verb: HttpVerb, path: RestPath, candidates: List<EvaluatedIndividual<RestIndividual>>){
+
+        /*
+            we have no idea of the access policy for each user.
+            for example, an admin will not get any 403.
+            so, we need to check each possible user for which we got a 2xx
+         */
+        candidates.mapNotNull {
+            //first make copy and slice off all after the 2xx
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
+                it,
+                verb,
+                path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (index < 0) {
+                //can this ever happen?
+                log.warn("Failed to identify authenticated GET action with 2xx")
+                null
+            } else {
+                val copy = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(it.individual, index)
+                copy
+            }
+        }
+            // then, just take 1 test per user
+            .distinctBy { it.seeMainExecutableActions().last().auth.name }
+            .forEach { ind ->
+                //finally, evaluate all of those with a different auth
+                val lastCall = ind.seeMainExecutableActions().last()
+                val otherUsers = authSettings.getAllOthers(lastCall.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                //try each of them
+                otherUsers.forEach { otherAuth ->
+                    val copy = ind.copy() as RestIndividual
+
+                    if(lastCall.verb == HttpVerb.PUT){
+                        /*
+                            a PUT might create the resource, so need to duplicate before changing auth. ie
+                            from
+                            PUT /x FOO
+                            to
+                            PUT /x FOO
+                            PUT /x BAR
+                         */
+                        val repeat = lastCall.copy() as RestCallAction
+                        copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
+                        copy.resetLocalIdRecursively()
+                        copy.doInitializeLocalId()
+                    }
+                    copy.seeMainExecutableActions().last().auth = otherAuth
+                    org.evomaster.core.Lazy.assert {copy.verifyValidity(); true}
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                        val res = ei.evaluatedMainActions().last().result as RestCallResult
+                        if(res.getStatusCode() == 403){
+                            //we are done
+                            return
+                        }
+                    }
+                }
+            }
+
+    }
+
 
     private fun addForAccessControl() {
 
@@ -113,281 +245,494 @@ class SecurityRest {
     private fun accessControlBasedOnRESTGuidelines() {
 
         // quite a few rules here that can be defined
-        handleForbiddenDeleteButOkPutOrPatch()
+        handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
+        handleForbiddenOperationButOKOthers(HttpVerb.PUT)
+        handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
 
-        //TODO other rules
-        //eg, ok PUT but not DELETE or PATCH
-        //eg, ok PATCH but not DELETE or PUT
+        // getting 404 instead of 403
+        handleExistenceLeakage()
 
-        // eg 401/403 info leakage
+        //authenticated, but wrongly getting 401 (eg instead of 403)
+        handleNotRecognizedAuthenticated()
+
+        //TODO other rules. See FaultCategory
         //etc.
     }
 
 
     /**
-     * Here we are considering this case:
-     * - authenticated user A creates a resource X (status 2xx) | or possibly via SQL insertions
-     * - authenticated user B gets 403 on DELETE X
-     * - authenticated user B gets 200 on PUT/PATCH on X
+     * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
+     * In theory, a bug. But, could be false positive if A is misconfigured.
+     * How to check it?
+     * See if on any other endpoint Y we get a 2xx with A.
+     * But, maybe Y does not need authentication...
+     * so, check if there is any test case for which on Y we get a 401 or 403.
+     * if yes, then X is buggy, as should had rather returned 403 for A.
      */
-    private fun handleForbiddenDeleteButOkPutOrPatch() {
+    private fun handleNotRecognizedAuthenticated() {
 
-        /*
-            what needs to be done here:
-            - check if at least 2 users. if not, nothing to do
-            - from schema, check all DELETE operations
-            - from archive, search if there is any test with a DELETE returning a 403
-            - do that for every different endpoint. There are 2 options:
-            -- (1) there is such call,  then
-            ---     make a copy of the individual
-            ----    do a "slice" and remove all calls after the DELETE call (if any)
-            -- (2) there is not. need to create it based on successful create resources with authenticated user
-            ---    search for create resource for endpoint of DELETE
-            ---    do slice and remove calls after create resource endpoint call
-            ---    add a DELETE with different user (verify get a 403)
-            ---    make sure that DELETE is bound on some resource path as the create operation
-            - append new REST Call action (see mutator classes) for PATCH/PUT with different auth, based
-              on action copies from action definitions. should be on same endpoint.
-            - need to resolve path element parameters to point to same resolved endpoint as DELETE
-            - as PUT/PATCH requires payloads and possible valid query parameters, search from archive an
-              existing action that returns 2xx, and copy it to use as starting point
-            - execute new test case with fitness function
-            - create new testing targets based on status code of new actions
-            - add to archive (if needed)
-         */
+        mainloop@ for(action in actionDefinitions){
 
-        // Check if at least 2 users. if not, nothing to do
-        if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
-            // nothing to test if there are not at least 2 users
-            LoggingUtil.getInfoLogger().debug(
-                "Security test handleForbiddenDeleteButOkPutOrPatch requires at least 2 authenticated users"
-            )
-            return
-        }
-
-        // From schema, check all DELETE operations, in order to do that
-        // obtain DELETE operations in the SUT according to the swagger
-        val deleteOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.DELETE)
-
-        // for each endpoint for which there is a DELETE operation
-        deleteOperations.forEach { delete ->
-
-            // from archive, search if there is any test with a DELETE returning a 403
-            val existing403 = RestIndividualSelectorUtils.findIndividuals(
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
-                HttpVerb.DELETE,
-                delete.path,
-                403,
+                action.verb,
+                action.path,
+                status = 401,
                 authenticated = true
-            )
-            // individual to choose for test, this is the individual we are going to manipulate
-            val individualToChooseForTest: RestIndividual
-
-            // if there is such an individual
-            if (existing403.isNotEmpty()) {
-
-                // current individual in the list of existing 403. Since the list is not empty,\
-                // we can just get the first item
-                // TODO add test for existing 403
-                val currentIndividualWith403 = existing403[0]
-
-                val deleteActionIndex = RestIndividualSelectorUtils.getIndexOfAction(
-                    currentIndividualWith403,
-                    HttpVerb.DELETE,
-                    delete.path,
-                    403
+            ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                it,
+                action.verb,
+                action.path,
+                status = 401,
+                authenticated = true
                 )
+            }.distinctBy { it.seeMainExecutableActions().last().auth.name }
 
-                // slice the individual in a way that delete all calls after the DELETE request
-                individualToChooseForTest = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
-                    currentIndividualWith403.individual,
-                    deleteActionIndex
-                )
-
-            } else {
-                // there is not. need to create it based on successful create resources with authenticated user
-                // but, first let's check if we can have any successfully delete action
-
-                /*
-                    We have a DELETE path in form for example
-                    /users/{id}
-                    and want to get a _resolved_ creation action (either PUT or POST) for it.
-                    The new DELETE we are going to create must point to the same resolved action.
-                    But DELETE could have query parameters and possibly body payloads... all with
-                    constraints that must be satisfied.
-                    So we cannot easily just create it from scratch.
-                    Need to re-use an existing one, if any.
-                */
-                var deleteIndividuals = RestIndividualSelectorUtils.findIndividuals(
-                    individualsInSolution,
-                    HttpVerb.DELETE,
-                    delete.path,
-                    statusGroup = StatusGroup.G_2xx,
-                )
-                if(deleteIndividuals.isEmpty()){
-                    /*
-                        This needs a bit of explanation.
-                        We want to get a DELETE that works, with failed constraint validation on
-                        query parameters or body payloads.
-                        Ideally, a 2xx would do.
-                        But what if we could not create any because they all fail to point to an existing
-                        resource? if 404, could still be fine, as then we link it to creation operation
-                     */
-                    deleteIndividuals = RestIndividualSelectorUtils.findIndividuals(
-                        individualsInSolution,
-                        HttpVerb.DELETE,
-                        delete.path,
-                        status = 404
-                    )
-                }
-                if(deleteIndividuals.isEmpty()){
-                    //no point trying to create a DELETE action directly, if none was evolved at all...
-                    //as likely would fail as well here
-                    return@forEach
-                }
-
-                //start from base test in which resource is created
-                val (creationIndividual, creationEndpoint) = RestIndividualSelectorUtils.findIndividualWithEndpointCreationForResource(
-                    individualsInSolution,
-                    delete.path,
-                    true
-                ) ?: return@forEach
-
-                // find the index of the creation action
-                val actionIndexForCreation = creationIndividual.individual.getActionIndex(
-                    creationEndpoint.verb,
-                    creationEndpoint.path
-                )
-                val creationAction = creationIndividual.individual.seeMainExecutableActions()[actionIndexForCreation]
-                assert(creationAction.auth !is NoAuth)
-
-                //we don't need anything after the creation action
-                val sliced = RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(
-                    creationIndividual.individual,
-                    actionIndexForCreation
-                )
-
-                val deleteInd = deleteIndividuals.first().individual
-                val deleteActionIndex = deleteInd.getActionIndex(HttpVerb.DELETE, delete.path)
-                val deleteAction = deleteInd.seeMainExecutableActions()[deleteActionIndex].copy() as RestCallAction
-                assert(deleteAction.verb == HttpVerb.DELETE && deleteAction.path.isEquivalent(delete.path))
-                deleteAction.resetLocalId()
-                deleteAction.auth = authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
-
-                //TODO bind to same path as creation action
-                /*
-                    for now let's bind just to a PUT.
-                    We need to create "links" when dealing with POST creating new ids
-                    TODO this would be part anyway of ongoing refactoring of BB testing
-                 */
-                if(creationEndpoint.path.isEquivalent(delete.path)){
-                    deleteAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(),null)
-                } else {
-                    //TODO. eg POST on ancestor path
-                    return@forEach
-                }
-
-                sliced.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(deleteAction), sqlActions = listOf()))
-
-                individualToChooseForTest = sliced
+            if(suspicious.isEmpty()){
+                continue
             }
 
-            // After having a set of requests in which the last one is a 403 DELETE call with another user, add a PUT
-            // or PATCH with same user as 403 DELETE
+            for(target in suspicious) {
 
-            //at this point, the individual we are building should end with a 403 DELETE
-            val lastAction = individualToChooseForTest.seeMainExecutableActions().last()
-            assert(lastAction.verb == HttpVerb.DELETE)
-            // but, for checking 403, we need to evaluate it.
-            // so, we ll do this check at the end
-            val lastActionIndex = individualToChooseForTest.seeMainExecutableActions().size - 1
+                val user = target.seeMainExecutableActions().last().auth.name
 
-            val put = RestIndividualSelectorUtils.findAction(
-                individualsInSolution,
-                HttpVerb.PUT,
-                delete.path,
-                statusGroup = StatusGroup.G_2xx
-            )?.copy() as RestCallAction?
+                val ok = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user
+                ).map { RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    it,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticatedWith = user)
+                }.distinctBy { it.seeMainExecutableActions().last().getName() }
 
+                if(ok.isEmpty()){
+                    continue
+                }
 
-            val patch = RestIndividualSelectorUtils.findAction(
-                individualsInSolution,
-                HttpVerb.PATCH,
-                delete.path,
-                statusGroup = StatusGroup.G_2xx
-            )?.copy() as RestCallAction?
+                /*
+                    so, the given suspicious user that got 401 can get a 2xx on an endpoint.
+                    has anyone got a 401 or 403 on this endpoint?
+                    actually, could even be same user, eg when trying to access resource of
+                    another user could get a 403
+                */
+                for(success in ok){
+                    val last = success.seeMainExecutableActions().last()
+                    val with401or403 = RestIndividualSelectorUtils.findIndividuals(
+                        individualsInSolution,
+                        verb = last.verb,
+                        path = last.path,
+                        statusCodes = listOf(401,403),
+                        authenticated = true
+                    ).map {
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                            it,
+                            verb = last.verb,
+                            path = last.path,
+                            statusCodes = listOf(401,403),
+                            authenticated = true
+                        )
+                    }
+                    if(with401or403.isEmpty()){
+                        continue
+                    }
+                    // if reach here, we got a bug
+                    val auth = with401or403.minBy { it.size() }
 
-            listOf(put, patch).forEach {
-                if(it != null){
-                    it.resetLocalId()
-                    it.auth = lastAction.auth
+                    val final = RestIndividualBuilder.merge(auth,success,target)
+                    final.modifySampleType(SampleType.SECURITY)
+                    final.ensureFlattenedStructure()
 
-                    val finalIndividual = individualToChooseForTest.copy() as RestIndividual
-                    finalIndividual.addResourceCall(restCalls = RestResourceCalls(actions = mutableListOf(it), sqlActions = listOf()))
-                    finalIndividual.modifySampleType(SampleType.SECURITY)
-
-                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
-                    if(evaluatedIndividual == null){
-                        log.warn("Failed to evaluate constructed individual in security testing phase")
-                        return@forEach
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleNotRecognizedAuthenticated")
+                        continue
                     }
 
-                    //first, let's verify indeed second last action if a 403 DELETE. otherwise, it is a problem
-                    val ema = evaluatedIndividual.evaluatedMainActions()
-                    val secondLast = ema[ema.size-2]
-                    if(!(secondLast.action is RestCallAction && secondLast.action.verb == HttpVerb.DELETE
-                            && secondLast.result is RestCallResult && secondLast.result.getStatusCode() == 403)){
-                        log.warn("Issue with constructing evaluated individual. Expected a 403 DELETE, but got: $secondLast")
-                        return@forEach
-                    }
-
-                    //now we can finally ask, is there a problem with last call?
-
-                    //TODO new testing targets
-                    /*
-                        FIXME: if we do it only here, then we would lose this info if the test case is re-evaluated
-                        for any reason... eg, in minimizer
-                        need to think of a good, general solution...
-
-                        TODO let's do it directly in the fitness function, with new security test oracle
-                     */
-
-                    // add the evaluated individual to the archive
-                    archive.addIfNeeded(evaluatedIndividual)
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
                 }
             }
         }
     }
 
 
-
     /**
-     * Information leakage
-     * accessing endpoint with id with not authorized should return 403, even if not exists.
+     * Accessing a protected GET endpoint with id with not authorized should return 403, even if not exists.
      * otherwise, if returning 404, we can find out that the resource does not exist.
      */
-    fun handleNotAuthorizedResourceExistenceLeakage() {
+    private fun handleExistenceLeakage(){
 
-        //TODO
+        val getOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.GET)
 
-        // There has to be at least two authenticated users
-        if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
-            // nothing to test if there are not at least 2 users
-            LoggingUtil.getInfoLogger().debug(
-                "Security test handleNotAuthorizedInAnyCase requires at least 2 authenticated users"
+        getOperations.forEach { get ->
+
+            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 403
+                )
+            if(inds403.isEmpty()){
+                return@forEach
+            }
+
+            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                HttpVerb.GET,
+                get.path,
+                status = 404
             )
+            if(inds404.isEmpty()){
+                return@forEach
+            }
+
+            //found the bug.
+            val forbidden = inds403.minBy { it.individual.size() }
+            val notfound = inds404.maxBy { it.individual.size() }
+
+            //needs slicing to minimize the newly generated test
+            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
+                forbidden,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
+
+            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
+                notfound,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            // slice the individual in a way that delete all calls after the chosen verb request
+            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
+
+            val final = RestIndividualBuilder.merge(first, second)
+
+            final.modifySampleType(SampleType.SECURITY)
+            final.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(final)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleExistenceLeakage")
+                return@forEach
+            }
+
+            //verify if newly constructed individual still find the bug
+            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                403
+            )
+            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
+                evaluatedIndividual,
+                HttpVerb.GET,
+                get.path,
+                404
+            )
+            //fitness function should have detected the fault
+            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+
+            if(check403 < 0 || check404 < 0 || faults.none { it.category == FaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
+                //if this happens, it is a bug in the merge... or flakiness
+                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
+                return@forEach
+            }
+
+            val added = archive.addIfNeeded(evaluatedIndividual)
+            //if we arrive here, should always be added, because we are creating a new testing target
+            assert(added)
+        }
+    }
+
+
+    /**
+     * Given a target verb like DELETE,
+     * here we are considering this case:
+     * - authenticated user A creates a resource X (status 2xx) | or possibly via SQL insertions
+     * - authenticated user B gets 403 on DELETE X
+     * - authenticated user B gets 200 on PUT/PATCH on X
+     */
+    private fun handleForbiddenOperationButOKOthers(targetVerb: HttpVerb) {
+
+        /*
+    what needs to be done here:
+    - check if at least 2 users. if not, nothing to do
+    - from schema, check all DELETE operations
+    - from archive, search if there is any test with a DELETE returning a 403
+    - do that for every different endpoint. There are 2 options:
+    -- (1) there is such call,  then
+    ---     make a copy of the individual
+    ----    do a "slice" and remove all calls after the DELETE call (if any)
+    -- (2) there is not. need to create it based on successful create resources with authenticated user
+    ---    search for create resource for endpoint of DELETE
+    ---    do slice and remove calls after create resource endpoint call
+    ---    add a DELETE with different user (verify get a 403)
+    ---    make sure that DELETE is bound on some resource path as the create operation
+    - append new REST Call action (see mutator classes) for PATCH/PUT with different auth, based
+      on action copies from action definitions. should be on same endpoint.
+    - need to resolve path element parameters to point to same resolved endpoint as DELETE
+    - as PUT/PATCH requires payloads and possible valid query parameters, search from archive an
+      existing action that returns 2xx, and copy it to use as starting point
+    - execute new test case with fitness function
+    - create new testing targets based on status code of new actions
+    - add to archive (if needed)
+ */
+
+        // Check if at least 2 users. if not, nothing to do
+        if (!checkForAtLeastNumberOfAuthenticatedUsers(2)) {
             return
         }
 
-        // get all endpoints each user has access to (this can be a function since we need this often)
+        // From schema, check all operations for target verb X, in order to do that
+        // obtain all X operations in the SUT according to the Swagger
+        val verbOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, targetVerb)
 
-        // among endpoints userA has access, those endpoints should give 2xx as response
+        verbOperations.forEach { call ->
 
-        // find an endpoint userA does not have access but another user has access, this should give 403
+            val individualWith403LastCall = findOrCreateTestFor403(call.path, targetVerb)
+                ?: return@forEach
 
-        // try with an endpoint that does not exist, this should give 403 as well, not 404.
+            // After having a set of requests in which the last one is a 403 DELETE (for example) call with another user,
+            // add a PUT or PATCH (for example) with same user as 403 DELETE
+            addWronglySuccessOperation(individualWith403LastCall, targetVerb)
+        }
+    }
 
 
+
+    private fun addWronglySuccessOperation(
+        individualWith403LastCall: RestIndividual,
+        verb: HttpVerb
+    ) {
+        //at this point, the individual we are building should end with a 403 call.
+        //however, recall that, as the fitness function is not executed yet,
+        //we cannot be sure of returned status code
+        val lastAction = individualWith403LastCall.seeMainExecutableActions().last()
+        assert(lastAction.verb == verb)
+
+        val actions = HttpVerb.otherWriteOperationsOnSameResourcePath(verb)
+            .mapNotNull {
+                RestIndividualSelectorUtils.findAction(
+                    individualsInSolution,
+                    it,
+                    lastAction.path,
+                    statusGroup = StatusGroup.G_2xx
+                )?.copy() as RestCallAction?
+            }
+
+
+        actions.forEach {
+            it.resetLocalIdRecursively()
+            //make sure using same auth
+            it.auth = lastAction.auth
+            it.usePreviousLocationId = lastAction.usePreviousLocationId
+            it.bindBasedOn(lastAction.path, lastAction.parameters.filterIsInstance<PathParam>(), null)
+
+            //create new individual where this action on same path and auth that led to 403 is added
+            val finalIndividual = individualWith403LastCall.copy() as RestIndividual
+            finalIndividual.addResourceCall(
+                restCalls = RestResourceCalls(
+                    actions = mutableListOf(it),
+                    sqlActions = listOf()
+                )
+            )
+
+            finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                it.saveCreatedResourceLocation = true
+            }
+            finalIndividual.fixResourceForwardLinks()
+
+            finalIndividual.modifySampleType(SampleType.SECURITY)
+            finalIndividual.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in security testing phase")
+                return@forEach
+            }
+            //at this point, we have a new evaluated individual.
+            //if there was any security issue, that should had been detected in fitness function!!!
+            //not here.
+            //this is because otherwise phases like minimization would be broken.
+
+            //anyway, let's verify indeed second last action if a 403 target verb. otherwise, it is a problem
+            val ema = evaluatedIndividual.evaluatedMainActions()
+
+            val n = evaluatedIndividual.individual.seeMainExecutableActions().size
+            if(ema.size != n){
+                log.warn("Failed to build security test. Premature stopping of HTTP call sequence")
+                return@forEach
+            }
+
+            val secondLast = ema[ema.size - 2]
+            val secondLastAction = secondLast.action
+            val secondLastResult = secondLast.result
+            if(secondLastAction !is RestCallAction || secondLastResult !is RestCallResult) {
+                //shouldn't really ever happen...
+                //TODO should refactor code to enforce generics in subclasses
+                log.warn("Wrong type: non-REST action/result")
+                return@forEach
+            }
+            if (secondLastAction.verb != verb ||  secondLastResult.getStatusCode() != 403) {
+                log.warn("Issue with constructing evaluated individual. Expected a 403 $verb," +
+                        " but got: ${secondLastResult.getStatusCode()} ${secondLastAction.verb}")
+                return@forEach
+            }
+
+            /*
+                FIXME: isn't this wrong??? ie, should be done in fitness function
+             */
+            val scenarioId = idMapper.handleLocalTarget("security:forbidden$verb:${lastAction.path}")
+            evaluatedIndividual.fitness.updateTarget(scenarioId, 1.0)
+
+            // add the evaluated individual to the archive
+            val added = archive.addIfNeeded(evaluatedIndividual)
+            //if we arrive here, should always be added, because we are creating a new testing target
+            assert(added)
+        }
+    }
+
+    /**
+     * @return a test where last action is for given path and verb returning 403.
+     * null if failed.
+     */
+    private fun findOrCreateTestFor403(
+        path: RestPath,
+        verb: HttpVerb,
+    ): RestIndividual? {
+        // from archive, search if there is any test with given verb returning a 403
+        val existing403 = RestIndividualSelectorUtils.findIndividuals(
+            individualsInSolution,
+            verb,
+            path,
+            403,
+            authenticated = true
+        )
+
+        // if there is such an individual
+        if (existing403.isNotEmpty()) {
+
+            // current individual in the list of existing 403. Since the list is not empty,
+            // we can just get the first item
+            val currentIndividualWith403 = existing403[0]
+
+            val actionIndex = RestIndividualSelectorUtils.getIndexOfAction(
+                currentIndividualWith403,
+                verb,
+                path,
+                403
+            )
+
+            // slice the individual in a way that delete all calls after the chosen verb request
+            return RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                currentIndividualWith403.individual,
+                actionIndex
+            )
+        }
+
+        // there is not. need to create it based on successful create resources with authenticated user
+        // but, first let's check if we can have any successfully delete action
+
+        /*
+            We have a "verb" (eg, a DELETE) path in form for example
+            /users/{id}
+            and want to get a _resolved_ creation action (either PUT or POST) for it.
+            The new "verb" we are going to create must point to the same resolved action.
+            But "verb" could have query parameters and possibly body payloads... all with
+            constraints that must be satisfied.
+            So we cannot easily just create it from scratch.
+            Need to re-use an existing one, if any.
+        */
+        var successIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            individualsInSolution,
+            verb,
+            path,
+            statusGroup = StatusGroup.G_2xx,
+        )
+
+        if (successIndividuals.isEmpty()) {
+            /*
+                This needs a bit of explanation.
+                We want to get an action that works, without failed constraint validation on
+                query parameters or body payloads.
+                Ideally, a 2xx would do.
+                But what if we could not create any because they all fail to point to an existing
+                resource? if 404, could still be fine, as then we link it to creation operation
+             */
+            successIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                verb,
+                path,
+                status = 404
+            )
+        }
+        if (successIndividuals.isEmpty()) {
+            //no point trying to create a successful action directly, if none was evolved at all...
+            //as likely would fail as well here
+            return null
+        }
+
+        //start from base test in which resource is created
+        val (creationIndividual, creationEndpoint) = RestIndividualSelectorUtils
+            .findIndividualWithEndpointCreationForResource(
+                individualsInSolution,
+                path,
+                true
+            ) ?: return null
+
+        // find the index of the creation action
+        val actionIndexForCreation = creationIndividual.individual.getActionIndex(
+            creationEndpoint.verb,
+            creationEndpoint.path
+        )
+        val creationAction = creationIndividual.individual.seeMainExecutableActions()[actionIndexForCreation]
+        assert(creationAction.auth !is NoAuth)
+
+        //we don't need anything after the creation action
+        val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+            creationIndividual.individual,
+            actionIndexForCreation
+        )
+
+        // from a success target operation individual,
+        // create a new target action on same path,
+        // but then change auth
+        val targetInd = successIndividuals.first().individual
+        val targetActionIndex = targetInd.getActionIndex(verb, path)
+        val targetAction = targetInd.seeMainExecutableActions()[targetActionIndex].copy() as RestCallAction
+        assert(targetAction.verb == verb && targetAction.path.isEquivalent(path))
+        targetAction.resetLocalIdRecursively()
+        targetAction.auth =
+            authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
+
+        //    Bind the creation operation and new target action based on their path
+        linkAndBindActions(creationAction, targetAction)
+
+        //finally, add the target action to the test including the creation of the resource
+        sliced.addResourceCall(
+            restCalls = RestResourceCalls(
+                actions = mutableListOf(targetAction),
+                sqlActions = listOf()
+            )
+        )
+
+        return sliced
+    }
+
+    private fun linkAndBindActions(
+        creationAction: RestCallAction,
+        targetAction: RestCallAction
+    ) {
+        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        if (creationAction.path.isEquivalent(targetAction.path)) {
+            targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
+        }
     }
 
 
@@ -407,17 +752,11 @@ class SecurityRest {
 
     }
 
-    /**
-     *
-     */
     private fun checkForAtLeastNumberOfAuthenticatedUsers(numberOfUsers: Int): Boolean {
 
-        // check the number of authenticated users
         if (authSettings.size(HttpWsAuthenticationInfo::class.java) < numberOfUsers) {
-
-            LoggingUtil.getInfoLogger().debug(
-                "Security test for this method requires at least $numberOfUsers authenticated users"
-            )
+            LoggingUtil.getInfoLogger()
+                .debug("Security test for this method requires at least $numberOfUsers authenticated users")
             return false
         }
 

@@ -1,0 +1,16 @@
+openapi: 3.0.0
+info:
+  version: "1.0"
+  title: open-api
+paths:
+  "/api/x":
+    "get":
+      parameters:
+        - in: query
+          name: foo
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "ok"

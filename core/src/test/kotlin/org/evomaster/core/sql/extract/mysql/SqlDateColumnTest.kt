@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.mysql
 
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
@@ -17,7 +17,7 @@ class SqlDateColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testExtraction() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))
@@ -31,7 +31,7 @@ class SqlDateColumnTest : ExtractTestBaseMySQL() {
 
     @Test
     fun testInsertion() {
-        val schema = SchemaExtractor.extract(connection)
+        val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("logins", setOf("userId", "lastLogin"))

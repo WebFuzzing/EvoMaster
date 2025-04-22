@@ -158,7 +158,7 @@ class SqlMultidimensionalArrayGene<T>(
      * Check that the nested arraygenes equal the number of dimensions, check that each
      * dimension length is preserved.
      */
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         return if (this.children.size != 1) {
             false
         } else {
@@ -271,7 +271,7 @@ class SqlMultidimensionalArrayGene<T>(
      * A multidimensional array gene can only bind to other multidimensional array genes
      * with the same template and number of dimensions.
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene !is SqlMultidimensionalArrayGene<*>) {
             LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
             return false

@@ -19,7 +19,7 @@ class GraphQLIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize,0)
 ) : ApiWsIndividual(
     sampleType = sampleType,
     children = allActions,
@@ -39,18 +39,6 @@ class GraphQLIndividual(
                 dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
         )
 
-    }
-
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
-        return when (filter) {
-            GeneFilter.ALL -> seeAllActions().flatMap(Action::seeTopGenes)
-            GeneFilter.NO_SQL -> seeActions(ActionFilter.NO_SQL).flatMap(Action::seeTopGenes)
-            GeneFilter.ONLY_SQL -> seeSqlDbActions().flatMap(SqlAction::seeTopGenes)
-            GeneFilter.ONLY_MONGO -> seeMongoDbActions().flatMap(MongoDbAction::seeTopGenes)
-            GeneFilter.ONLY_DB -> seeActions(ActionFilter.ONLY_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.NO_DB -> seeActions(ActionFilter.NO_DB).flatMap { it.seeTopGenes() }
-            GeneFilter.ONLY_EXTERNAL_SERVICE -> seeExternalServiceActions().flatMap(ApiExternalServiceAction::seeTopGenes)
-        }
     }
 
 

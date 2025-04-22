@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -33,8 +34,10 @@ class MioAlgorithmOnOneMaxTest {
         val sampler = injector.getInstance(OneMaxSampler::class.java)
 
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = 30000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.maxEvaluations = 30000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+        val epc = injector.getInstance(ExecutionPhaseController::class.java)
+        epc.startSearch()
 
         val n = 20
         sampler.n = n

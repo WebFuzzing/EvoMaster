@@ -5,11 +5,15 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
+import org.evomaster.core.search.service.ExecutionPhaseController
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -49,6 +53,10 @@ class RemoteControllerImplementation() : RemoteController{
     @Inject
     private var stc: SearchTimeController? = null
 
+    //TODO clean/refactor like stc
+    @Inject
+    private var epc: ExecutionPhaseController? = null
+
     private var client: Client = ClientBuilder.newClient()
 
     constructor(config: EMConfig) : this(){
@@ -71,7 +79,7 @@ class RemoteControllerImplementation() : RemoteController{
     private fun initialize() {
         host = config.sutControllerHost
         port = config.sutControllerPort
-        computeSqlHeuristics = config.heuristicsForSQL && config.isMIO()
+        computeSqlHeuristics = config.heuristicsForSQL && config.isUsingAdvancedTechniques()
         extractSqlExecutionInfo = config.extractSqlExecutionInfo
     }
 
@@ -312,31 +320,35 @@ class RemoteControllerImplementation() : RemoteController{
         return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
-
-        if(allCovered && ids.isNotEmpty()){
-            throw IllegalArgumentException("Cannot specify allCovered and specific ids at same time")
-        }
+    override fun getTestResults(
+        ids: Set<Int>,
+        ignoreKillSwitch: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean
+    ): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
-        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
+        if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.doStartTimer()
+
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.TEST_RESULTS)
                     .queryParam("ids", queryParam)
                     .queryParam("killSwitch", !ignoreKillSwitch && config.killSwitch)
-                    .queryParam("allCovered", allCovered)
+                    .queryParam("fullyCovered", fullyCovered)
+                    .queryParam("descriptiveIds", descriptiveIds)
+                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         }
-        if(!allCovered) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
+        if(epc?.isInSearch() == true) stc?.averageOverheadMsTestResultsSubset?.addElapsedTime()
 
         stc?.apply {
             val len = try{ Integer.parseInt(response.getHeaderString("content-length"))}
                         catch (e: Exception) {-1}
             if(len >= 0) {
-                if(allCovered) {
+                if(ids.isEmpty()) {
                     averageByteOverheadTestResultsAll.addValue(len)
                 } else {
                     averageByteOverheadTestResultsSubset.addValue(len)
@@ -364,6 +376,7 @@ class RemoteControllerImplementation() : RemoteController{
         val response = makeHttpCall {
             getWebTarget()
                     .path(ControllerConstants.NEW_ACTION)
+                    .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
                     .request()
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
@@ -426,6 +439,29 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         return true
+    }
+
+
+    override fun invokeScheduleTasksAndGetResults(invocationDto: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
+
+        log.trace("Going to execute schedule tasks. size={}",invocationDto.tasks.size)
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
+                // shall we set `killSwitch` as true?
+                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                .request()
+                .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ScheduleTaskInvocationsResult>>() {})
+
+        if (!checkResponse(response, dto, "Failed to invoke schedule tasks")) {
+            return null
+        }
+
+        return dto?.data
     }
 
     private fun handleFailedResponse(response: Response, endpoint: String, textWarning: String) : Boolean{

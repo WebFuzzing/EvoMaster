@@ -22,6 +22,7 @@ class DatabaseExecution(
         val failedWhere: Map<String, Set<String>>,
         val deletedData: List<String>,
         val numberOfSqlCommands: Int,
+        val sqlParseFailureCount: Int,
         val executionInfo: List<SqlExecutionInfo>
 ) {
 
@@ -72,6 +73,7 @@ class DatabaseExecution(
                     cloneData(dealWithQuotes(dto?.failedWhere)),
                     dealWithQuotes(dto?.deletedData?.toList()) ?: listOf(),
                     dto?.numberOfSqlCommands ?: 0,
+                    dto?.sqlParseFailureCount ?: 0,
                     cloneSqlExecutionInfo(dto?.sqlExecutionLogDtoList)
             )
         }
@@ -119,7 +121,7 @@ class DatabaseExecution(
                 return listOf()
             }
 
-            return data.map { SqlExecutionInfo(it.command, it.executionTime) }
+            return data.map { SqlExecutionInfo(it.sqlCommand, it.threwSqlExeception, it.executionTime) }
         }
 
         private fun cloneData(data: Map<String, Set<String>>?): Map<String, Set<String>> {

@@ -75,7 +75,7 @@ class TupleGeneTest {
             )
         )
 
-        assertTrue(originalGene.bindValueBasedOn(gene))
+        assertTrue(originalGene.setValueBasedOn(gene))
 
         originalGene.elements.apply {
             assertTrue(this[0] is StringGene)

@@ -3,7 +3,7 @@ package org.evomaster.core.solver
 import net.sf.jsqlparser.JSQLParserException
 import net.sf.jsqlparser.parser.CCJSqlParserUtil
 import net.sf.jsqlparser.statement.Statement
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
@@ -149,15 +149,6 @@ class SmtLibGeneratorTest {
         )
     }
 
-    val satConstraints = arrayOf(
-        CheckSatSMTNode(),
-        GetValueSMTNode("products1"),
-        GetValueSMTNode("products2"),
-        GetValueSMTNode("users1"),
-        GetValueSMTNode("users2")
-    )
-
-
     companion object {
         private lateinit var generator: SmtLibGenerator
         private lateinit var connection: Connection
@@ -176,7 +167,7 @@ class SmtLibGeneratorTest {
                     "ALTER TABLE users ADD UNIQUE (document);\n" +
                     "CREATE TABLE products(price int not null, min_price int not null, stock int not null, user_id bigint not null);\n" +
                     "ALTER TABLE products add constraint userIdKey foreign key (user_id) REFERENCES users;\n")
-            val schemaDto = SchemaExtractor.extract(connection)
+            val schemaDto = DbInfoExtractor.extract(connection)
 
             generator = SmtLibGenerator(schemaDto, 2)
         }
@@ -222,9 +213,18 @@ class SmtLibGeneratorTest {
                 )
             )
         )
+
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
+
+
 
         assertEquals(expected, response)
     }
@@ -261,6 +261,13 @@ class SmtLibGeneratorTest {
                 )
             )
         )
+
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
@@ -334,10 +341,20 @@ class SmtLibGeneratorTest {
             )
         )
 
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("products1"),
+            GetValueSMTNode("products2"),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+
         for (constraint in satConstraints) {
             expected.addNode(constraint)
         }
 
         assertEquals(expected, response)
     }
+
+    // TODO: Add a test with timestamp
 }

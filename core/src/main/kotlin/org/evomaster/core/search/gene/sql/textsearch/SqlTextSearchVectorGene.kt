@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -34,8 +33,8 @@ class SqlTextSearchVectorGene(
         const val TO_TSVECTOR = "to_tsvector"
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = SqlTextSearchVectorGene(
@@ -82,10 +81,10 @@ class SqlTextSearchVectorGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTextSearchVectorGene -> {
-                textLexeme.bindValueBasedOn(gene.textLexeme)
+                textLexeme.setValueBasedOn(gene.textLexeme)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -60,8 +59,8 @@ class SqlLogSeqNumberGene(
 
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene {
@@ -113,10 +112,10 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlLogSeqNumberGene) {
-            this.leftPart.bindValueBasedOn(gene.leftPart)
-            this.rightPart.bindValueBasedOn(gene.rightPart)
+            this.leftPart.setValueBasedOn(gene.leftPart)
+            this.rightPart.setValueBasedOn(gene.rightPart)
         }
         LoggingUtil.uniqueWarn(
                 log,

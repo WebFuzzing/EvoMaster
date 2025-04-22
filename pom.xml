@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>3.0.1-SNAPSHOT</version>
+    <version>3.4.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -29,6 +29,7 @@
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
+        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
@@ -62,7 +63,7 @@
                 https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
             -->
             <properties>
-                <addOpens>  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
+                <addOpens> --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
             </properties>
         </profile>
         <profile>
@@ -271,6 +272,13 @@
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-test-utils-py</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-dependencies</artifactId>
+                <version>${project.version}</version>
+                <type>pom</type>
+                <scope>test</scope>
             </dependency>
 
 
@@ -523,11 +531,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-toml</artifactId>
                 <version>${jackson.version}</version>
@@ -540,11 +543,6 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -697,7 +695,11 @@
                 <artifactId>swagger-parser</artifactId>
                 <version>${swagger.parser-v3.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.atlassian.oai</groupId>
+                <artifactId>swagger-request-validator-core</artifactId>
+                <version>2.42.0</version>
+            </dependency>
 
             <!-- databases -->
             <dependency>
@@ -822,6 +824,12 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
+                <version>${junit.jupiter.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
                 <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -1023,6 +1031,40 @@
                 <version>${mockserver.client.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <dependency>
+                <!--  To deal with RFC3339 dateTime -->
+                <groupId>com.ethlo.time</groupId>
+                <artifactId>itu</artifactId>
+                <version>1.10.2</version>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.59</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.7</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>1.2.83</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.20</version>
+            </dependency>
+
+
+
         </dependencies>
     </dependencyManagement>
 
@@ -1061,6 +1103,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.3.1</version>
                     <configuration>
+                        <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
@@ -1075,7 +1118,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <!--  Commented out, as no longer using CircleCI-->
                         <!--  <useSystemClassLoader>false</useSystemClassLoader>-->

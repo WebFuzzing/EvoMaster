@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.optional
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
@@ -50,8 +49,8 @@ class OptionalGene(name: String,
     }
 
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
 
@@ -80,6 +79,14 @@ class OptionalGene(name: String,
                 ok
             }, false
         )
+    }
+
+    override fun setValueBasedOn(value: String) : Boolean{
+        val modified = gene.setValueBasedOn(value)
+        if(modified){
+            isActive = true
+        }
+        return modified
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -149,10 +156,13 @@ class OptionalGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is OptionalGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(this).bindValueBasedOn(ParamUtil.getValueGene(gene))
+        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
     }
 
-
+    override fun isChildUsed(child: Gene) : Boolean {
+        verifyChild(child)
+        return isActive
+    }
 }

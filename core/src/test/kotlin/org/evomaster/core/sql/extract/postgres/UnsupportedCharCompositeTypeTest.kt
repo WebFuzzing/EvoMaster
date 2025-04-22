@@ -1,6 +1,6 @@
 package org.evomaster.core.sql.extract.postgres
 
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -13,7 +13,7 @@ class UnsupportedCharCompositeTypeTest : ExtractTestBasePostgres() {
 
     @Test
     fun testFailureToExtractSchema() {
-        assertThrows<UnsupportedOperationException> { SchemaExtractor.extract(connection) }
+        assertThrows<UnsupportedOperationException> { DbInfoExtractor.extract(connection) }
 
     }
 

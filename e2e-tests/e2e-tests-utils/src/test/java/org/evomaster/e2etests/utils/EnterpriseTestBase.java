@@ -61,20 +61,29 @@ public abstract class EnterpriseTestBase {
 
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
 
+    /**
+     * Dirty hack, but could not find any clean way to do disable it for black-box test modules :(
+     * unfortunately, as static, cannot be overridden
+     */
+    public static boolean shouldApplyInstrumentation = true;
+
+
     @BeforeAll
     public static void initInstrumentation(){
+       if(shouldApplyInstrumentation) {
         /*
             Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
             being not instrumented when tests start (as controllers might load them)
          */
-        InstrumentedSutStarter.loadAgent();
+           InstrumentedSutStarter.loadAgent();
 
         /*
             avoid boot-time info across e2e tests
          */
-        ObjectiveRecorder.reset(true);
+           ObjectiveRecorder.reset(true);
 
-        UnitsInfoRecorder.reset();
+           UnitsInfoRecorder.reset();
+       }
     }
 
     @AfterAll
@@ -102,13 +111,14 @@ public abstract class EnterpriseTestBase {
 
         StaticCounter.Companion.reset();
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            boolean reset = remoteController.resetSUT();
-            assertTrue(reset);
-        });
+        if(remoteController != null) {
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                boolean reset = remoteController.resetSUT();
+                assertTrue(reset);
+            });
+        }
 
         SimpleLogger.setThreshold(SimpleLogger.Level.DEBUG);
-
     }
 
     @AfterEach
@@ -144,8 +154,8 @@ public abstract class EnterpriseTestBase {
                 "--showProgress", "false",
                 "--avoidNonDeterministicLogs", "true",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + iterations,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--useTimeInFeedbackSampling" , "false",
                 "--createConfigPathIfMissing", "false"
         ));
@@ -229,9 +239,18 @@ public abstract class EnterpriseTestBase {
     protected void runTestHandlingFlakyAndCompilation(
             String label,
             int iterations,
+            int timeoutMinutes,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, iterations, lambda);
+        runTestHandlingFlakyAndCompilation(label, "org.bar."+label, null,  iterations, true, lambda, timeoutMinutes);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String label,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(label, iterations, 3, lambda);
     }
 
 
@@ -391,6 +410,7 @@ public abstract class EnterpriseTestBase {
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
         return getArgsWithCompilation(iterations, outputFolderName, testClassName, createTests, "NONE", "FALSE");
     }
+
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
 
         return new ArrayList<>(Arrays.asList(
@@ -398,8 +418,8 @@ public abstract class EnterpriseTestBase {
                 "--seed", "" + defaultSeed,
                 "--useTimeInFeedbackSampling" , "false",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "" + iterations,
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--maxEvaluations", "" + iterations,
+                "--stoppingCriterion", "ACTION_EVALUATIONS",
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 //FIXME: should avoid deprecated option, but then need TODO update how class files are deleted from FS

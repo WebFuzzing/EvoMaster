@@ -1,9 +1,17 @@
 package org.evomaster.client.java.controller.api.dto.database.schema;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class TableDto {
+
+    /**
+     * The schema this table belongs to.
+     *  Note that databases like MySQL make no distinction between catalog and schema.
+     */
+    public String schema;
+
+
+    public String catalog;
 
     /**
      * The name of the table
@@ -38,5 +46,6 @@ public class TableDto {
      * All constraints that are not directly supported
      */
     public List<TableCheckExpressionDto> tableCheckExpressions = new ArrayList<>();
+
 
 }

@@ -13,7 +13,9 @@ class ConstantFitness : FitnessFunction<ConstantIndividual>() {
     override fun doCalculateCoverage(
         individual: ConstantIndividual,
         targets: Set<Int>,
-        allCovered: Boolean
+        allTargets: Boolean,
+        fullyCovered: Boolean,
+        descriptiveIds: Boolean,
     ): EvaluatedIndividual<ConstantIndividual>? {
 
         val target = 123

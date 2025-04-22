@@ -2,10 +2,11 @@ package org.evomaster.client.java.sql;
 
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.sql.internal.ParserUtils;
+import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.*;
@@ -60,9 +61,11 @@ public class SqlScriptRunner {
 
 
     /**
-     * Runs an SQL script (read in using the Reader parameter)
+     * Runs an SQL script (read in using the Reader parameter).
      *
-     * @param reader - the source of the script
+     * @param connection the database connection to use for executing the script
+     * @param reader the source of the script
+     * @throws NullPointerException if the reader is null
      */
     public static void runScript(Connection connection, Reader reader) {
         Objects.requireNonNull(reader);
@@ -162,17 +165,17 @@ public class SqlScriptRunner {
 
     /**
      * Execute the different SQL insertions.
-     * Those can refer to each other via foreign keys, even in the case
-     * of auto-generated ids
+     * These can refer to each other via foreign keys, even in the case
+     * of auto-generated IDs.
      *
      * @param conn a JDBC connection to the database
      * @param insertions the SQL insertions to execute
      * @param previous the results of previously executed SQL insertions
-     *
-     * @return a map from InsertionDto id to id of auto-generated primary
-     * keys in the database (if any was generated).
-     * If an InsertionDto has no id, we will not keep track of any auto-generated
+     * @return a map from InsertionDto ID to ID of auto-generated primary
+     * keys in the database (if any were generated).
+     * If an InsertionDto has no ID, we will not keep track of any auto-generated
      * value for it.
+     * @throws SQLException if a database access error occurs
      */
     public static InsertionResultsDto execInsert(Connection conn, List<InsertionDto> insertions, InsertionResultsDto... previous) throws SQLException {
 
@@ -312,11 +315,13 @@ public class SqlScriptRunner {
     }
 
     /**
+     * Executes the given SQL insertion command.
+     *
      * @param conn a JDBC connection to the database
      * @param command the SQL insertion to execute
-     *
-     * @return a single id for the new row, if any was automatically generated, {@code null} otherwise.
-     *         In other words, return the value of auto-generated primary key, if any was created.
+     * @return a single ID for the new row, if any was automatically generated, {@code null} otherwise.
+     *         In other words, returns the value of the auto-generated primary key, if any was created.
+     * @throws SQLException if a database access error occurs
      */
     public static Long execInsert(Connection conn, String command) throws SQLException {
 
@@ -326,7 +331,7 @@ public class SqlScriptRunner {
         String insert = "INSERT ";
 
         command = command.trim();
-        if (!command.toUpperCase().startsWith(insert)) {
+        if (!command.toUpperCase(Locale.ENGLISH).startsWith(insert)) {
             throw new IllegalArgumentException("SQL command is not an INSERT\n" + command);
         }
 
@@ -412,16 +417,21 @@ public class SqlScriptRunner {
     }
 
     /**
-     * extract a map from table name to a list of SQL INSERT commands for initializing data into the table
+     * extract a map from table name to a list of SQL INSERT or Update commands for initializing data into the table
      * @param commands a list of SQL commands to be extracted
      * @return the map from table name (key) to a list of SQL INSERT commands (values) on the table
      */
     public static  Map<String, List<String>> extractSqlTableMap(List<String> commands){
         Map<String, List<String>> tableSqlMap = new HashMap<>();
         for (String command: commands){
-            if (ParserUtils.isInsert(command)){
-                Insert stmt = (Insert) ParserUtils.asStatement(command);
-                Table table = stmt.getTable();
+            if (SqlParserUtils.isInsert(command) || SqlParserUtils.isUpdate(command)){
+                net.sf.jsqlparser.statement.Statement stmt = SqlParserUtils.parseSqlCommand(command);
+                Table table = null;
+                if (stmt instanceof Insert){
+                    table = ((Insert) stmt).getTable();
+                }else if (stmt instanceof Update){
+                    table = ((Update) stmt).getTable();
+                }
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
                 String end = "";
                 if (!command.replaceAll(" ","").replaceAll("\r","").replaceAll("\n","").endsWith(";"))
@@ -456,9 +466,9 @@ public class SqlScriptRunner {
     }
 
     private static boolean shouldExecuteInsert(String command, List<String> tablesToInsert){
-        if (!ParserUtils.isInsert(command)) return true;
+        if (!SqlParserUtils.isInsert(command)) return true;
         if (tablesToInsert == null || tablesToInsert.isEmpty()) return false;
-        Insert stmt = (Insert) ParserUtils.asStatement(command);
+        Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
         Table table = stmt.getTable();
         return table!= null && tablesToInsert.stream().anyMatch(t-> t.equalsIgnoreCase(table.getName()));
     }

@@ -3,7 +3,7 @@ package org.evomaster.core.output
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.search.EvaluatedDbAction
+import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene

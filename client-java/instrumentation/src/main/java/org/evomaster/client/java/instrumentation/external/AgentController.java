@@ -72,9 +72,6 @@ public class AgentController {
                     case TARGETS_INFO:
                         handleTargetInfos();
                         break;
-                    case ALL_COVERED_TARGETS_INFO:
-                        handleAllCoveredTargetsInfo();
-                        break;
                     case ACTION_INDEX:
                         handleActionIndex();
                         sendCommand(Command.ACK);
@@ -99,6 +96,10 @@ public class AgentController {
                         break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
+                        sendCommand(Command.ACK);
+                        break;
+                    case BOOTING_SUT:
+                        handleBootingSut();
                         sendCommand(Command.ACK);
                         break;
                     case BOOT_TIME_INFO:
@@ -189,6 +190,15 @@ public class AgentController {
         }
     }
 
+    private static void handleBootingSut() {
+        try {
+            Object msg = in.readObject();
+            Boolean bootingSut = (Boolean) msg;
+            InstrumentationController.setBootingSut(bootingSut);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-action: "+e.getMessage());
+        }
+    }
 
     private static void handleAdditionalInfo(){
         try {
@@ -216,23 +226,17 @@ public class AgentController {
         }
     }
 
-    private static void handleAllCoveredTargetsInfo(){
-        try {
-            sendObject(InstrumentationController.getAllCoveredTargetInfos());
-        }catch (Exception e) {
-            SimpleLogger.error("Failure in handling all covered info extraction: "+e.getMessage());
-        }
-    }
 
     private static void handleTargetInfos() {
 
         try {
             Object msg = in.readObject();
-            Collection<Integer> ids = (Collection<Integer>) msg;
-            sendObject(InstrumentationController.getTargetInfos(ids));
+            TargetInfoRequestDto dto = (TargetInfoRequestDto) msg;
+
+            sendObject(InstrumentationController.getTargetInfos(dto.ids, dto.fullyCovered, dto.descriptiveIds));
 
         } catch (Exception e) {
-            SimpleLogger.error("Failure in handling ids: "+e.getMessage());
+            SimpleLogger.error("Failure in handling ids", e);
         }
     }
 

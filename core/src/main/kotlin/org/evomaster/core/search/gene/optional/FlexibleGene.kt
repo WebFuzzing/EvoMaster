@@ -75,8 +75,9 @@ class FlexibleGene(name: String,
         addChild(geneToUpdate)
     }
 
-    override fun <T> getWrappedGene(klass: Class<T>) : T?  where T : Gene{
-        if(this.javaClass == klass){
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
             return this as T
         }
         return gene.getWrappedGene(klass)
@@ -86,8 +87,8 @@ class FlexibleGene(name: String,
         return FlexibleGene(name, gene.copy(), valueClasses, replaceable)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return gene.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -162,7 +163,7 @@ class FlexibleGene(name: String,
         return false
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

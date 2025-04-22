@@ -1,10 +1,10 @@
 package org.evomaster.core.search.gene.sql.time
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -19,7 +19,7 @@ class SqlTimeIntervalGene(
     val days: IntegerGene = IntegerGene(name = "days", min = 0),
     val time: TimeGene = TimeGene(
                 "hoursMinutesAndSeconds",
-                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT
+                format = FormatForDatesAndTimes.ISO_LOCAL
         )
 ) : CompositeFixedGene(name, mutableListOf(days, time)) {
 
@@ -33,8 +33,8 @@ class SqlTimeIntervalGene(
             time.copy() as TimeGene
     )
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -86,11 +86,11 @@ class SqlTimeIntervalGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlTimeIntervalGene -> {
-                days.bindValueBasedOn(gene.days) &&
-                        time.bindValueBasedOn(gene.time)
+                days.setValueBasedOn(gene.days) &&
+                        time.setValueBasedOn(gene.time)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")

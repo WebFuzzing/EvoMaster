@@ -4,7 +4,7 @@ import com.google.inject.Module
 import com.netflix.governator.lifecycle.LifecycleManager
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.database.operations.*
-import org.evomaster.client.java.sql.SchemaExtractor
+import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
@@ -108,7 +108,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         var sqlBuilder : SqlInsertBuilder? = null
         if (doesInvolveDatabase){
-            val schemaDto = SchemaExtractor.extract(connection)
+            val schemaDto = DbInfoExtractor.extract(connection)
             sqlBuilder = SqlInsertBuilder(schemaDto, getDatabaseExecutor())
         }
 

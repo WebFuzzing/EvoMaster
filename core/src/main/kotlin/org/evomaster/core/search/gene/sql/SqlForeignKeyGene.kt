@@ -44,7 +44,7 @@ class SqlForeignKeyGene(
         }
     }
 
-    override fun isLocallyValid() : Boolean{
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //FIXME: update once this gene is refactored
         //eg. can have multi-column FK, and values are not necessarily numeric
         return true
@@ -225,7 +225,7 @@ class SqlForeignKeyGene(
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }

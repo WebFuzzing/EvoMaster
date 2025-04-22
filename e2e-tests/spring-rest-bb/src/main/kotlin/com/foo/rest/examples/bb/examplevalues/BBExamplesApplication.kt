@@ -66,6 +66,4 @@ open class BBExamplesApplication {
 
         return ResponseEntity.status(400).build()
     }
-
-    //TODO examples in objects?
 }

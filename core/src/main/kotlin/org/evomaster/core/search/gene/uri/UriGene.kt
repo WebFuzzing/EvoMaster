@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.optional.ChoiceGene
@@ -50,8 +49,8 @@ class UriGene(name: String,
        return UriGene(name, gene.copy() as ChoiceGene<Gene>)
     }
 
-    override fun isLocallyValid(): Boolean {
-        return gene.isLocallyValid()
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
+        return true
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -84,8 +83,8 @@ class UriGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return gene.bindValueBasedOn(gene)
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return gene.setValueBasedOn(gene)
     }
 
     override fun customShouldApplyShallowMutation(

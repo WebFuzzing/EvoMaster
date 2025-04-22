@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.evomaster.core.search.EvaluatedMongoDbAction
+import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 

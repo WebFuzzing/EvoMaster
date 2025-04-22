@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
 
 
@@ -16,6 +19,97 @@ class RestIndividualBuilder {
 
     @Inject
     private lateinit var randomness: Randomness
+
+
+    companion object{
+
+        fun sliceAllCallsInIndividualAfterAction(
+            evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
+            verb: HttpVerb? = null,
+            path: RestPath? = null,
+            status: Int? = null,
+            statusGroup: StatusGroup? = null,
+            statusCodes: List<Int>? = null,
+            authenticated: Boolean? = null,
+            authenticatedWith: String? = null
+        ) : RestIndividual{
+
+            val index = RestIndividualSelectorUtils.findIndexOfAction(
+                evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
+
+            return sliceAllCallsInIndividualAfterAction(evaluatedIndividual.individual, index)
+        }
+
+
+        /**
+         * Create a copy of [restIndividual], where all main actions after index are removed
+         */
+        fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
+
+            // we need to check that the index is within the range
+            if (actionIndex < 0 || actionIndex > restIndividual.size() -1) {
+                throw IllegalArgumentException("Action index has to be between 0 and ${restIndividual.size()}")
+            }
+
+            val ind = restIndividual.copy() as RestIndividual
+
+            val n = ind.seeMainExecutableActions().size
+
+            /*
+                We start from last, going backward.
+                So, actionIndex stays the same
+             */
+            for(i in n-1 downTo actionIndex+1){
+                ind.removeMainExecutableAction(i)
+            }
+
+            ind.fixGeneBindingsIfNeeded()
+            ind.fixResourceForwardLinks()
+
+            return ind
+        }
+
+
+        fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
+            return merge(merge(first, second), third)
+        }
+
+        /**
+         * Create a new individual, based on [first] followed by [second].
+         * Initialization actions are properly taken care of.
+         */
+        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+            val before = first.seeAllActions().size + second.seeAllActions().size
+
+            val base = first.copy() as RestIndividual
+            base.ensureFlattenedStructure()
+            val other = second.copy() as RestIndividual
+            other.ensureFlattenedStructure()
+
+            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+
+            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+            }
+
+            /*
+                TODO are links properly handled in such a merge???
+                would need assertions here, as well as test cases
+             */
+
+            val after = base.seeAllActions().size
+            //merge shouldn't lose any actions
+            assert(before == after) { "$after!=$before" }
+
+            base.resetLocalIdRecursively()
+            base.doInitializeLocalId()
+
+            base.verifyValidity()
+
+            return base
+        }
+    }
 
 
     /**
@@ -37,6 +131,9 @@ class RestIndividualBuilder {
         }
 
         val res = template.copy() as RestCallAction
+
+        res.resetLocalIdRecursively()
+
         if(res.isInitialized()){
             res.seeTopGenes().forEach { it.randomize(randomness, false) }
         } else {
@@ -127,9 +224,29 @@ class RestIndividualBuilder {
                      " ${test.joinToString(" , ") { it.getName() }}")
          }
 
-        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: (if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null)
-                ?: return false
+        val postTemplate = chooseClosestAncestor(target, listOf(HttpVerb.POST))
+        val putTemplate = if(target.verb != HttpVerb.PUT) findTemplate(target.path, HttpVerb.PUT) else null
+
+        if(postTemplate == null && putTemplate == null) {
+            return false
+        }
+        val template : RestCallAction = if(putTemplate == null){
+            postTemplate!!
+        } else if(postTemplate == null){
+            putTemplate
+        } else {
+           if(randomness.nextBoolean(0.8)){
+               //prefer POST if both are available
+               postTemplate
+           } else {
+               putTemplate
+           }
+        }
+
+        if(test.filter { it.path == template.path && it.verb == template.verb}.isNotEmpty()){
+            //we already have a resource creation for this path
+            return false
+        }
 
         val create = createBoundActionFor(template, target)
 
@@ -162,45 +279,11 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        if (!create.path.isEquivalent(target.path)) {
-            /*
-                eg
-                POST /x
-                GET  /x/{id}
-             */
-            create.saveLocation = true
-            target.usePreviousLocationId = create.postLocationId()
-        } else {
-            /*
-                eg
-                POST /x
-                POST /x/{id}/y
-                GET  /x/{id}/y
-                not going to save the position of last POST, as same as target
-
-                however, might also be in the case of:
-                PUT /x/{id}
-                GET /x/{id}
-             */
-            create.saveLocation = false
-
-            // the target (eg GET) needs to use the location of first POST, or more correctly
-            // the same location used for the last POST (in case there is a deeper chain)
-            target.usePreviousLocationId = create.usePreviousLocationId
-        }
+        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }
 
-
-    /**
-     * Create a copy of [restIndividual], where all main actions after index are removed
-     */
-    fun sliceAllCallsInIndividualAfterAction(restIndividual: RestIndividual, actionIndex: Int) : RestIndividual {
-
-        //TODO move code here
-        return RestIndividualSelectorUtils.sliceAllCallsInIndividualAfterAction(restIndividual, actionIndex)
-    }
 
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
@@ -211,6 +294,7 @@ class RestIndividualBuilder {
             .map { it.path }
             .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
+
 
 
 }

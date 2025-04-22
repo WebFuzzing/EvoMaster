@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -39,8 +38,8 @@ class SqlJSONPathGene(
         private val log: Logger = LoggerFactory.getLogger(SqlJSONPathGene::class.java)
     }
 
-    override fun isLocallyValid() : Boolean{
-        return getViewOfChildren().all { it.isLocallyValid() }
+    override fun checkForLocallyValidIgnoringChildren() : Boolean{
+        return true
     }
 
     override fun copyContent(): Gene = SqlJSONPathGene(
@@ -120,9 +119,9 @@ class SqlJSONPathGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when (gene) {
-            is SqlJSONPathGene -> pathExpression.bindValueBasedOn(gene.pathExpression)
+            is SqlJSONPathGene -> pathExpression.setValueBasedOn(gene.pathExpression)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
                 false

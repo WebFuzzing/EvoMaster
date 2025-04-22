@@ -5,17 +5,17 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Main
 import org.evomaster.core.output.*
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
-import org.evomaster.core.output.service.TestWriterUtils.Companion.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
+import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -82,9 +82,10 @@ class TestSuiteWriter {
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-
+    fun writeTests(testSuiteCode: TestSuiteCode){
+        saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
+    }
 
     fun writeTests(
         solution: Solution<*>,
@@ -93,9 +94,9 @@ class TestSuiteWriter {
         snapshotTimestamp: String = ""
     ) {
 
-        val name = TestSuiteFileName(solution.getFileName())
+        val name = solution.getFileName()
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
-        saveToDisk(content, getTestSuitePath(name, config))
+        saveToDisk(content.code, getTestSuitePath(name, config))
     }
 
     /**
@@ -120,12 +121,11 @@ class TestSuiteWriter {
         timestamp: String = "",
         controllerName: String?,
         controllerInput: String?
-    ): String {
+    ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
-
-        activePartialOracles = partialOracles.activeOracles(solution.individuals)
+        val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -143,24 +143,20 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-            if (solution.individuals.any { it.individual is RPCIndividual }) {
-                var counter = 0
-                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
-            } else
-                testSuiteOrganizer.sortTests(solution, config.customNaming)
+                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
         } catch (ex: Exception) {
-            var counter = 0
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"
                         + "Exception: ${ex.localizedMessage} \n"
                         + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
             )
-            solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            // fallback to numbered naming strategy upon failure
+            NumberedTestCaseNamingStrategy(solution).getTestCases()
         }
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
-        for (test in tests) {
-            lines.addEmpty(2)
+
+        val tc = tests.mapNotNull { test ->
 
             // catch writing problems on an individual test case basis
             val testLines = try {
@@ -177,7 +173,16 @@ class TestSuiteWriter {
                 assert(false) // in our tests, this should not happen... but should not crash in production
                 Lines(config.outputFormat)
             }
-            lines.add(testLines)
+
+            if(testLines.isEmpty()){
+                null
+            } else {
+                lines.addEmpty(2)
+                val start = lines.nextLineNumber()
+                lines.add(testLines)
+                val end = lines.nextLineNumber() - 1
+                TestCaseCode(test.name,test.test,testLines.toString(), start, end)
+            }
         }
 
         if (!config.outputFormat.isJavaScript()) {
@@ -189,7 +194,12 @@ class TestSuiteWriter {
         // additional handling on generated tests
         testCaseWriter.additionalTestHandling(tests)
 
-        return lines.toString()
+        return TestSuiteCode(
+            solution.getFileName().name,
+            solution.getFileRelativePath(config.outputFormat),
+            lines.toString(),
+            tc
+        )
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -354,6 +364,19 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
+        if(format.isPython()){
+            lines.add("#!/usr/bin/env python")
+            lines.addEmpty(1)
+        }
+
+        lines.addMultiLineComment(listOf(
+            "LICENSE DISCLAIMER",
+            "This file has been generated by EvoMaster.",
+            "The content of this file is not subject to the license of EvoMaster itself, i.e., LGPL.",
+            "This generated software (i.e., the test suite in this file) can be freely used, modified, ",
+            "and distributed as you see fit without any restrictions."
+        ))
+
         if (name.hasPackage() && format.isJavaOrKotlin()) {
             addStatement("package ${name.getPackage()}", lines)
             lines.addEmpty(2)
@@ -378,6 +401,7 @@ class TestSuiteWriter {
         if (format.isJava()) {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
+            addImport("java.util.Arrays", lines)
         }
 
         if (format.isJavaOrKotlin()) {
@@ -419,8 +443,6 @@ class TestSuiteWriter {
                 addImport(MongoInsertionDto::class.qualifiedName!!, lines)
             }
 
-
-            // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
             if (config.enableBasicAssertions) {
 
                 if(useHamcrest()) {
@@ -437,16 +459,6 @@ class TestSuiteWriter {
                 addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
                 addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
-            }
-
-            if (config.expectationsActive) {
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
-                addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-
-                if (useRestAssured()) {
-                    addImport("io.restassured.path.json.JsonPath", lines)
-                }
-                addImport("java.util.Arrays", lines)
             }
 
             if (config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -489,7 +501,23 @@ class TestSuiteWriter {
             lines.add("import unittest")
             lines.add("import requests")
             if (config.testTimeout > 0) {
-                lines.add("import timeout_decorator")
+                //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
+                lines.add("import os")
+                lines.add("if os.name == 'nt':")
+                lines.indented {
+                    lines.add("class timeout_decorator:")
+                    lines.indented {
+                        lines.add("@staticmethod")
+                        lines.add("def timeout(*args, **kwargs):")
+                        lines.indented {
+                            lines.add("return lambda f: f # return a no-op decorator")
+                        }
+                    }
+                }
+                lines.add("else:")
+                lines.indented {
+                    lines.add("import timeout_decorator")
+                }
             }
             lines.add("from $pythonUtilsFilenameNoExtension import *")
             val pythonUtils = PyLoader::class.java.getResource("/$pythonUtilsFilename").readText()
@@ -625,25 +653,25 @@ class TestSuiteWriter {
 
         testCaseWriter.addExtraStaticVariables(lines)
 
-        if (config.expectationsActive) {
-            if (config.outputFormat.isJavaOrKotlin()) {
-                //TODO JS and C#
-                if (activePartialOracles.any { it.value }) {
-                    lines.add(
-                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
-                                "individual test cases"
-                    )
-                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                    lines.add("*/")
-                    if (config.outputFormat.isJava()) {
-                        lines.add("private static boolean $expectationsMasterSwitch = false;")
-                    } else if (config.outputFormat.isKotlin()) {
-                        lines.add("private val $expectationsMasterSwitch = false")
-                    }
-                }
-                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
-            }
-        }
+//        if (config.expectationsActive) {
+//            if (config.outputFormat.isJavaOrKotlin()) {
+//                //TODO JS and C#
+//                if (activePartialOracles.any { it.value }) {
+//                    lines.add(
+//                        "/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+//                                "individual test cases"
+//                    )
+//                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+//                    lines.add("*/")
+//                    if (config.outputFormat.isJava()) {
+//                        lines.add("private static boolean $expectationsMasterSwitch = false;")
+//                    } else if (config.outputFormat.isKotlin()) {
+//                        lines.add("private val $expectationsMasterSwitch = false")
+//                    }
+//                }
+//                partialOracles?.variableDeclaration(lines, config.outputFormat, activePartialOracles)
+//            }
+//        }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
     }

@@ -13,7 +13,7 @@ class SkipRest {
 
     @GetMapping(path = ["/skip"])
     fun skipExternalService(): ResponseEntity<String> {
-        val url = URL("http://darpa.int:8080/api/foo")
+        val url = URL("http://darpa.test:8080/api/foo")
         val connection = url.openConnection()
 
         return try {

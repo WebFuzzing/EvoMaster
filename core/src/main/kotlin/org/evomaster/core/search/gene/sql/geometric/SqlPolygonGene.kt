@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -64,7 +63,7 @@ class SqlPolygonGene(
      * againts each other O(n^2)
      * Source: https://stackoverflow.com/questions/4876065/is-there-an-easy-and-fast-way-of-checking-if-a-polygon-is-self-intersecting
      */
-    override fun isLocallyValid(): Boolean {
+    override fun checkForLocallyValidIgnoringChildren(): Boolean {
         if (!onlyNonIntersectingPolygons)
             return true
         val pointList = points.getViewOfChildren() as List<SqlPointGene>
@@ -192,10 +191,10 @@ class SqlPolygonGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlPolygonGene -> {
-                points.bindValueBasedOn(gene.points)
+                points.setValueBasedOn(gene.points)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

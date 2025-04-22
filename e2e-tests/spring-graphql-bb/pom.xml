@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.4.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -136,7 +136,11 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!--  Otherwise tests using mvn will not work  -->
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                </configuration>
             </plugin>
         </plugins>
     </build>

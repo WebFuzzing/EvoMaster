@@ -2,6 +2,8 @@ package org.evomaster.core.problem.external.service
 
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.remote.service.RemoteController
 
 class DummyController: RemoteController {
@@ -33,7 +35,9 @@ class DummyController: RemoteController {
         TODO("Not yet implemented")
     }
 
-    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean, allCovered: Boolean): TestResultsDto? {
+    override fun getTestResults(ids: Set<Int>, ignoreKillSwitch: Boolean,
+                                fullyCovered: Boolean,
+                                descriptiveIds: Boolean,): TestResultsDto? {
         TODO("Not yet implemented")
     }
 
@@ -70,6 +74,10 @@ class DummyController: RemoteController {
     }
 
     override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
+        TODO("Not yet implemented")
+    }
+
+    override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
         TODO("Not yet implemented")
     }
 

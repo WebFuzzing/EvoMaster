@@ -31,6 +31,8 @@ class  GroupsOfChildren<T>(
 
         const val EXTERNAL_SERVICES = "EXTERNAL_SERVICES"
 
+        const val INITIALIZATION_SCHEDULE_TASK = "INITIALIZATION_SCHEDULE_TASK"
+
         const val RESOURCE_SQL = "RESOURCE_SQL"
     }
 
@@ -133,6 +135,7 @@ class  GroupsOfChildren<T>(
     }
 
     fun sizeOfGroup(id: String) = groupMap[id]?.size() ?: throw IllegalArgumentException("No group $id")
+
     fun getAllInGroup(id: String) : List<T>{
         val g = groupMap[id] ?: throw IllegalArgumentException("Invalid group id $id")
         if(!g.isNotEmpty()){

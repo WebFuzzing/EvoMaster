@@ -5,7 +5,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
-import org.evomaster.core.output.service.TestWriterUtils.Companion.getWireMockVariableName
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -57,6 +59,18 @@ abstract class TestCaseWriter {
         textToFile.toFile().appendText(text)
     }
 
+
+    private fun addTestComments(lines: Lines, test: TestCase){
+
+        lines.startCommentBlock()
+        //maybe here we could have general messages... if needed
+
+        addTestCommentBlock(lines, test)
+        lines.endCommentBlock()
+    }
+
+    protected abstract fun addTestCommentBlock(lines: Lines, test: TestCase)
+
     fun convertToCompilableTestCode(
             test: TestCase,
             baseUrlOfSut: String,
@@ -67,10 +81,14 @@ abstract class TestCaseWriter {
 
         val lines = Lines(config.outputFormat)
 
-        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
-            && test.test.getClusters().size != 0
-        ) {
-            clusterComment(lines, test)
+//        if (config.testSuiteSplitType == EMConfig.TestSuiteSplitType.FAULTS
+//            && test.test.getClusters().size != 0
+//        ) {
+//            clusterComment(lines, test)
+//        }
+
+        if(config.addTestComments) {
+            addTestComments(lines, test)
         }
 
         if (format.isJUnit()) {
@@ -108,7 +126,7 @@ abstract class TestCaseWriter {
             val insertionVars = mutableListOf<Pair<String, String>>()
             // FIXME: HostnameResolutionActions can be a separately, for now it's under
             //  handleFieldDeclarations.
-            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
+            handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
         }
 
@@ -185,7 +203,8 @@ abstract class TestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     )
 
     /**
@@ -214,7 +233,24 @@ abstract class TestCaseWriter {
      * @param testSuitePath is the path where to save the test suite, such info might be used to save files used in the test
      * @param baseUrlOfSut is the base url of sut
      */
-    protected abstract fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+    protected fun addActionLines(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String){
+
+        if(result is EnterpriseActionResult){
+            result.getFaults().sortedBy { it.category.code }
+                .forEach {
+                    val cat = it.category
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                }
+        }
+
+        addActionLinesPerType(action, index, testCaseName, lines, result, testSuitePath, baseUrlOfSut)
+    }
+
+    /**
+     * Shouldn't be called directly, as called by addActionLines
+     */
+    protected abstract fun addActionLinesPerType(action: Action, index: Int, testCaseName: String, lines: Lines, result: ActionResult, testSuitePath: Path?, baseUrlOfSut: String)
+
 
     protected abstract fun shouldFailIfExceptionNotThrown(result: ActionResult): Boolean
 
@@ -303,11 +339,7 @@ abstract class TestCaseWriter {
     }
 
 
-    protected fun capitalizeFirstChar(name: String): String {
-        return name[0].uppercaseChar() + name.substring(1)
-    }
-
-
+    @Deprecated("dont' use")
     protected fun clusterComment(lines: Lines, test: TestCase) {
         if (test.test.clusterAssignments.size > 0) {
             lines.startCommentBlock()
@@ -325,4 +357,6 @@ abstract class TestCaseWriter {
     open fun additionalTestHandling(tests: List<TestCase>) {
         // do nothing
     }
+
+
 }

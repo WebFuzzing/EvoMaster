@@ -3,6 +3,7 @@ package org.evomaster.core
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -166,11 +167,21 @@ internal class EMConfigTest{
 
         val wrong = "foobar"
         options = parser.parse("--$name", wrong, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
-        assertThrows(Exception::class.java, {config.updateProperties(options)})
+        //assertThrows(Exception::class.java, {
+        config.updateProperties(options)
+        //})
 
         val noProtocol = "localhost:8080"
         options = parser.parse("--$name", noProtocol, "--blackBox","true","--outputFormat","JAVA_JUNIT_4")
-        assertThrows(Exception::class.java, {config.updateProperties(options)})
+        //assertThrows(Exception::class.java, {
+        config.updateProperties(options)
+        //})
+
+        /*
+            note: we no longer treat bbSwaggerUrl as only a URL, but also as a possible path.
+            but this (ie PATH existence) is not checked here yet.
+            TODO could have a OR constraint between URL and PATH
+         */
     }
 
 
@@ -571,8 +582,84 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        var options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
+        val options = parser.parse("--outputFormat", "PYTHON_UNITTEST")
         assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
+
+    @Test
+    fun testSetNumberedAsNamingStrategyIsNumbered() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+        val options = parser.parse("--namingStrategy", "NUMBERED")
+
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
+    }
+
+    @Test
+    fun testNoNamingStrategyDefaultsToNumbered() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.updateProperties(parser.parse())
+
+        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesValidForActionStrategy() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "true")
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
+        assertTrue(config.nameWithQueryParameters)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesFalseTurnsFeatureOff() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "false")
+        config.updateProperties(options)
+
+        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
+        assertFalse(config.nameWithQueryParameters)
+    }
+
+    @Test
+    fun testQueryParamsInTestCaseNamesIsOffByDefault() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.updateProperties(parser.parse())
+
+        assertFalse(config.nameWithQueryParameters)
+    }
+
+    @Test
+    fun testMaxCharsLengthIs80ByDefault() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        config.updateProperties(parser.parse())
+
+        assertEquals(config.maxTestCaseNameLength, 80)
+    }
+
+    @Test
+    fun testMaxCharsLengthCanBeChangedByParam() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val options = parser.parse("--maxTestCaseNameLength", "30")
+        config.updateProperties(options)
+
+        assertEquals(config.maxTestCaseNameLength, 30)
     }
 
 }

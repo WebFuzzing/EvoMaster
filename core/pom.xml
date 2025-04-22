@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>3.0.1-SNAPSHOT</version>
+        <version>3.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-core</artifactId>
@@ -49,6 +49,17 @@
             <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
+
+
+        <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>commons</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+
+
+
+
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
@@ -143,6 +154,10 @@
             <groupId>io.swagger.parser.v3</groupId>
             <artifactId>swagger-parser</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.atlassian.oai</groupId>
+            <artifactId>swagger-request-validator-core</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>javax.el</groupId>
@@ -175,6 +190,10 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-toml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -317,6 +336,10 @@
                                     <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                                     <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                                 </manifest>
+                                <manifestEntries>
+                                    <!-- needs to be kept in sync with JdkIssue -->
+                                    <Add-Opens>java.base/java.net java.base/java.util</Add-Opens>
+                                </manifestEntries>
                             </archive>
                             <finalName>evomaster</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
