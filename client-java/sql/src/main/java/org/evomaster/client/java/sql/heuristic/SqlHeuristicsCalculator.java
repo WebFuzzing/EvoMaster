@@ -12,7 +12,6 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
@@ -233,7 +232,7 @@ public class SqlHeuristicsCalculator {
 
 
     SqlHeuristicResult calculateHeuristicQuery(Statement query) {
-        columnReferenceResolver.enterSelectContext((Select) query);
+        columnReferenceResolver.enterStatementeContext((Select) query);
         final SqlHeuristicResult heuristicResult;
         if (SqlParserUtils.isUnion(query)) {
             List<Select> subqueries = SqlParserUtils.getUnionSubqueries(query);

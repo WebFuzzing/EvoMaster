@@ -371,4 +371,43 @@ class TablesAndColumnsFinderTest {
         assertTrue(finder.getColumnReferences().get(groupsTableReference).contains(new ColumnReference(groupsTableReference, "voting_duration")));
         assertTrue(finder.getColumnReferences().get(groupsTableReference).contains(new ColumnReference(groupsTableReference, "id")));
     }
+
+    @Test
+    void findsTablesAndColumnsInUpdateStatement() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "UPDATE Users SET age = 30 WHERE name = 'John'";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        Set<String> tables = finder.getTables(statement);
+
+        assertTrue(tables.contains("Users"));
+
+        SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
+
+        assertEquals(1, finder.getColumnReferences().keySet().size());
+        assertTrue(finder.getColumnReferences().keySet().contains(usersTableReference));
+
+        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
+        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new ColumnReference(usersTableReference, "age")));
+        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new ColumnReference(usersTableReference, "name")));
+    }
+
+    @Test
+    void findsTablesAndColumnsInDeleteStatement() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "DELETE FROM Users WHERE age > 18";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        Set<String> tables = finder.getTables(statement);
+
+        assertTrue(tables.contains("Users"));
+
+        SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
+
+        assertEquals(1, finder.getColumnReferences().keySet().size());
+        assertTrue(finder.getColumnReferences().keySet().contains(usersTableReference));
+
+        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
+        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new ColumnReference(usersTableReference, "age")));
+    }
 }

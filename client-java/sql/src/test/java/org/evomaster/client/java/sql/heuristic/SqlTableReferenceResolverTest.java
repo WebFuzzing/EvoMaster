@@ -1,8 +1,12 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
+import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.update.Update;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -325,4 +329,128 @@ class SqlTableReferenceResolverTest {
         assertEquals(0, resolver.getContextDepth());
     }
 
+    @Test
+    public void resolvesAliasInDeleteStatement() throws Exception {
+        String sql = "DELETE FROM Employees e WHERE e.department_id = 1";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(delete);
+
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInUpdateStatement() throws Exception {
+        String sql = "UPDATE Employees e SET e.salary = e.salary * 1.1 WHERE e.department_id = 1";
+        Update update = (Update) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(update);
+
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInDeleteWithJoin() throws Exception {
+        String sql = "DELETE e FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE d.name = 'HR'";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(delete);
+
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInUpdateWithJoin() throws Exception {
+        String sql = "UPDATE Employees e JOIN Departments d ON e.department_id = d.id SET e.salary = e.salary * 1.1 WHERE d.name = 'Engineering'";
+        Update update = (Update) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(update);
+
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInDeleteWithWithClause() throws Exception {
+        String sql = "WITH dept_to_delete AS (SELECT id FROM Departments WHERE name = 'HR') " +
+                "DELETE FROM Employees e WHERE e.department_id IN (SELECT id FROM dept_to_delete)";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(delete);
+
+        // Verify the alias in the WITH clause
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("dept_to_delete"));
+        SqlTableReference withTableReference = resolver.resolveTableReference("dept_to_delete");
+        assertTrue(withTableReference instanceof SqlDerivedTableReference);
+        assertEquals("SELECT id FROM Departments WHERE name = 'HR'",
+                ((SqlDerivedTableReference) withTableReference).getSelect().getPlainSelect().toString());
+
+        // Verify the alias in the DELETE statement
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInMultiTableDelete() throws Exception {
+        String sql = "DELETE e, d FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE d.name = 'HR'";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(delete);
+
+        // Verify the aliases for both tables
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
+
+    @Test
+    public void resolvesAliasInSelectWithInSubquery() throws Exception {
+        String sql = "SELECT e.first_name FROM Employees e WHERE e.department_id IN (SELECT d.id FROM Departments d WHERE d.name = 'HR')";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        TableReferenceResolver resolver = new TableReferenceResolver();
+        resolver.enterAliasContext(select);
+
+        // Verify alias in the main query
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+
+        // Access the subquery in the IN expression
+        InExpression inExpression = (InExpression) ((PlainSelect) select).getWhere();
+        Select subquery = (Select) inExpression.getRightExpression();
+        resolver.enterAliasContext(subquery);
+
+        // Verify alias in the subquery
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
+        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+
+        resolver.exitAliasContext();
+        resolver.exitAliasContext();
+        assertEquals(0, resolver.getContextDepth());
+    }
 }

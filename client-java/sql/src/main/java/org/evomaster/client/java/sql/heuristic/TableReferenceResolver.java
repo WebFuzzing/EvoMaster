@@ -1,7 +1,10 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.update.Update;
 
 import java.util.*;
 
@@ -17,29 +20,85 @@ public class TableReferenceResolver {
 
     /**
      * This method is called when entering a new alias context.
-     * It processes the given Select statement to collect table aliases.
+     * It processes the given SQL statement to collect table aliases.
      *
-     * @param statement the Select statement to process
+     * @param statement the SQL statement to process
      */
-    public void enterAliasContext(Select statement) {
-        processSelect(statement);
+    public void enterAliasContext(Statement statement) {
+        Objects.requireNonNull(statement, "statement cannot be null");
+
+        createNewAliasContext();
+        if (statement instanceof Update) {
+            processUpdate((Update) statement);
+        } else if (statement instanceof Delete) {
+            processDelete((Delete) statement);
+        } else if (statement instanceof Select) {
+            processSelect((Select) statement);
+        } else {
+            throw new IllegalArgumentException("Unsupported SQL statement type: " + statement.getClass().getName());
+        }
     }
 
     public TableReferenceResolver() {
         super();
     }
 
+    private void processJoins(List<Join> joins) {
+        Objects.requireNonNull(joins, "joins cannot be null");
+
+        for (Join join : joins) {
+            processFromItem(join.getRightItem());
+        }
+    }
+
+    private void processUpdate(Update update) {
+        Objects.requireNonNull(update, "update cannot be null");
+
+        if (update.getWithItemsList() != null) {
+            processWithItemsList(update.getWithItemsList());
+        }
+        processFromItem(update.getTable());
+        if (update.getStartJoins() != null) {
+            processJoins(update.getStartJoins());
+        }
+        if (update.getFromItem() != null) {
+            processFromItem(update.getFromItem());
+        }
+        if (update.getJoins() != null) {
+            processJoins(update.getJoins());
+        }
+    }
+
+    private void processDelete(Delete delete) {
+        Objects.requireNonNull(delete, "delete cannot be null");
+
+        if (delete.getWithItemsList() != null) {
+            processWithItemsList(delete.getWithItemsList());
+        }
+        processFromItem(delete.getTable());
+        if (delete.getJoins() != null) {
+            processJoins(delete.getJoins());
+        }
+    }
+
     private void processSelect(Select select) {
-        createNewAliasContext();
+        Objects.requireNonNull(select, "select cannot be null");
 
         if (select.getWithItemsList() != null) {
-            final List<WithItem> withItemsList = select.getWithItemsList();
-            processWithItemsList(withItemsList);
+            processWithItemsList(select.getWithItemsList());
         }
 
         if (select instanceof PlainSelect) {
             processPlainSelect((PlainSelect) select);
+        } else if (select instanceof ParenthesedSelect) {
+            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
+            if (parenthesedSelect.getAlias() != null) {
+                stackOfTableAliases.peek().put(parenthesedSelect.getAlias().getName(), new SqlDerivedTableReference(parenthesedSelect));
+            }
+            Select innerSelect = parenthesedSelect.getSelect();
+            processSelect(innerSelect);
         }
+
     }
 
     private void createNewAliasContext() {
@@ -60,8 +119,12 @@ public class TableReferenceResolver {
 
 
     private void processPlainSelect(PlainSelect select) {
+        Objects.requireNonNull(select, "select cannot be null");
+
         PlainSelect plainSelect = select;
-        processFromItem(plainSelect.getFromItem());
+        if (plainSelect.getFromItem()!=null) {
+            processFromItem(plainSelect.getFromItem());
+        }
         if (plainSelect.getJoins() != null) {
             for (Join join : plainSelect.getJoins()) {
                 processFromItem(join.getRightItem());
@@ -70,6 +133,8 @@ public class TableReferenceResolver {
     }
 
     private void processFromItem(FromItem fromItem) {
+        Objects.requireNonNull(fromItem, "fromItem cannot be null");
+
         if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {

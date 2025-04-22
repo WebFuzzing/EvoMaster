@@ -1,9 +1,13 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Alias;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 
@@ -12,7 +16,7 @@ import java.util.*;
 public class ColumnReferenceResolver {
 
     private final TableReferenceResolver tableReferenceResolver = new TableReferenceResolver();
-    private final Deque<Select> selectStack = new ArrayDeque<>();
+    private final Deque<Statement> statementStack = new ArrayDeque<>();
 
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
@@ -25,13 +29,13 @@ public class ColumnReferenceResolver {
         this.schema = schema;
     }
 
-    public void enterSelectContext(Select select) {
-        tableReferenceResolver.enterAliasContext(select);
-        selectStack.push(select);
+    public void enterStatementeContext(Statement statement) {
+        tableReferenceResolver.enterAliasContext(statement);
+        statementStack.push(statement);
     }
 
     public void exitCurrentSelectContext() {
-        selectStack.pop();
+        statementStack.pop();
         tableReferenceResolver.exitAliasContext();
     }
 
@@ -55,13 +59,24 @@ public class ColumnReferenceResolver {
 
     public ColumnReference resolveColumnReference(Column column) {
         final String sourceColumnName = column.getColumnName();
-        final Select currentSelect = selectStack.peek();
-        if (currentSelect == null) {
+        final Statement currentStatement = statementStack.peek();
+        if (currentStatement == null) {
             throw new IllegalStateException("No current select context");
         }
 
-        if (currentSelect instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) currentSelect;
+        if (currentStatement instanceof Delete) {
+            Delete delete = (Delete) currentStatement;
+            if (delete.getTable() != null) {
+                return findBaseTableColumnReference(delete.getTable(), column);
+            }
+
+        } else if (currentStatement instanceof Update) {
+            Update update = (Update) currentStatement;
+            if (update.getTable() != null) {
+                return findBaseTableColumnReference(update.getTable(), column);
+            }
+        } else if (currentStatement instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect) currentStatement;
             for (SelectItem<?> selectItem : plainSelect.getSelectItems()) {
                 if (selectItem.getExpression() instanceof Column && selectItem.getAlias() != null
                         && selectItem.getAlias().getName().equalsIgnoreCase(sourceColumnName)) {
@@ -73,9 +88,10 @@ public class ColumnReferenceResolver {
                     return createColumnReference(column, fromOrJoinItem, sourceColumnName);
                 }
             }
-        } else {
-            if (findBaseTableColumnReference(currentSelect, column) != null) {
-                return new ColumnReference(new SqlDerivedTableReference(currentSelect), sourceColumnName);
+        } else if (currentStatement instanceof Select) {
+            Select select = (Select) currentStatement;
+            if (findBaseTableColumnReference(select, column) != null) {
+                return new ColumnReference(new SqlDerivedTableReference(select), sourceColumnName);
             }
         }
         // column was not found

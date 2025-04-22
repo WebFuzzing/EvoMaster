@@ -436,7 +436,7 @@ public class SqlHeuristicsCalculatorTest {
         incomeColumn.setTable(subqueryTable);
         incomeColumn.setColumnName("income");
 
-        columnReferenceResolver.enterSelectContext(select);
+        columnReferenceResolver.enterStatementeContext(select);
 
         ColumnReference nameColumnReference = columnReferenceResolver.resolveColumnReference(nameColumn);
         Select nameColumnView = ((SqlDerivedTableReference) nameColumnReference.getTableReference()).getSelect();

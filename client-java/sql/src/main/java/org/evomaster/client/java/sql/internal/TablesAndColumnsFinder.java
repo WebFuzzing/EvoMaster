@@ -1,7 +1,10 @@
 package org.evomaster.client.java.sql.internal;
 
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.update.Update;
+import net.sf.jsqlparser.statement.update.UpdateSet;
 import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.heuristic.*;
@@ -22,8 +25,27 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     @Override
     public void visit(PlainSelect plainSelect) {
-        this.columnReferenceResolver.enterSelectContext(plainSelect);
+        this.columnReferenceResolver.enterStatementeContext(plainSelect);
         super.visit(plainSelect);
+        this.columnReferenceResolver.exitCurrentSelectContext();
+    }
+
+
+    @Override
+    public void visit(Update update) {
+        this.columnReferenceResolver.enterStatementeContext(update);
+        super.visit(update);
+        for (UpdateSet updateSet: update.getUpdateSets()) {
+            updateSet.getColumns().accept(this);
+            updateSet.getValues().accept(this);
+        }
+        this.columnReferenceResolver.exitCurrentSelectContext();
+    }
+
+    @Override
+    public void visit(Delete delete) {
+        this.columnReferenceResolver.enterStatementeContext(delete);
+        super.visit(delete);
         this.columnReferenceResolver.exitCurrentSelectContext();
     }
 

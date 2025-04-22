@@ -119,7 +119,7 @@ class SqlExpressionEvaluatorTest {
         ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
         TaintHandler taintHandler = null;
 
-        columnReferenceResolver.enterSelectContext(select);
+        columnReferenceResolver.enterStatementeContext(select);
         SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentSelectContext();
@@ -135,7 +135,7 @@ class SqlExpressionEvaluatorTest {
         TaintHandler taintHandler = null;
         ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
 
-        columnReferenceResolver.enterSelectContext(select);
+        columnReferenceResolver.enterStatementeContext(select);
         SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentSelectContext();

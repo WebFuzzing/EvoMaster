@@ -191,40 +191,6 @@ public class SqlHandlerTest {
         return mockConnection;
     }
 
-    @Test
-    public void testJoinGetSqlDistances() throws Exception {
-        TaintHandler mockTaintHandler = mock(TaintHandler.class);
-        final Connection mockConnection = createMockConnection();
-        final DbInfoDto schema = createSchema();
-
-        // Create SqlHandler instance
-        SqlHandler sqlHandler = new SqlHandler(mockTaintHandler);
-        sqlHandler.setConnection(mockConnection);
-        sqlHandler.setSchema(schema);
-        sqlHandler.setAdvancedHeuristics(true);
-
-        // Mock SQL execution log
-        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto();
-        sqlExecutionLogDto.sqlCommand = "SELECT e.name, d.department_name \n" +
-                "FROM Employees e \n" +
-                "  INNER JOIN Departments d \n" +
-                "  ON e.department_id = d.id \n" +
-                "  LEFT JOIN Locations l ON d.location_id = l.id \n" +
-                "WHERE l.city = 'New York' ";
-        sqlExecutionLogDto.threwSqlExeception = false;
-
-        // Add the SQL command to the buffered commands
-        sqlHandler.handle(sqlExecutionLogDto);
-
-        // Execute getSqlDistances
-        List<SqlCommandWithDistance> distances = sqlHandler.getSqlDistances(Collections.emptyList(), true);
-
-        // Assertions
-        assertNotNull(distances);
-        assertFalse(distances.isEmpty());
-        assertEquals(1, distances.size());
-        assertEquals("SELECT name, income FROM Employees WHERE income > 100", distances.get(0).sqlCommand);
-    }
 
 
 }

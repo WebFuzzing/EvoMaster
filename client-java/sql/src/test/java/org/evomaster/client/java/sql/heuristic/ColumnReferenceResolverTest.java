@@ -1,8 +1,11 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
@@ -52,7 +55,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnWithExplicitTable() throws Exception {
         String sql = "SELECT e.first_name FROM employees e";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -70,7 +73,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnWithoutExplicitTable() throws Exception {
         String sql = "SELECT first_name FROM employees";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -87,7 +90,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInJoin() throws Exception {
         String sql = "SELECT e.first_name, d.department_name FROM employees e JOIN departments d ON e.department_id = d.id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column columnE = new Column();
         columnE.setColumnName("first_name");
@@ -114,7 +117,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInSubquery() throws Exception {
         String sql = "SELECT e.first_name FROM (SELECT * FROM employees) e";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -134,7 +137,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInNestedSubquery() throws Exception {
         String sql = "SELECT subquery1.first_name FROM (SELECT first_name FROM (SELECT * FROM employees) subquery2) subquery1";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -152,7 +155,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInWithClause() throws Exception {
         String sql = "WITH subquery AS (SELECT id, first_name FROM employees) SELECT subquery.first_name FROM subquery";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -170,7 +173,7 @@ class ColumnReferenceResolverTest {
     void testResolveAmbiguousColumnInJoin() throws Exception {
         String sql = "SELECT id FROM employees e JOIN departments d ON e.department_id = d.id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("id");
@@ -186,7 +189,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInUnion() throws Exception {
         String sql = "SELECT id FROM employees UNION SELECT id FROM departments";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("id");
@@ -202,7 +205,7 @@ class ColumnReferenceResolverTest {
         String sql = "SELECT e.first_name, subquery.department_name FROM employees e " +
                 "JOIN (SELECT id, department_name FROM departments) subquery ON e.department_id = subquery.id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column columnE = new Column();
         columnE.setColumnName("first_name");
@@ -229,7 +232,7 @@ class ColumnReferenceResolverTest {
     void testResolveAmbiguousColumnInRightJoin() throws Exception {
         String sql = "SELECT department_name FROM employees e JOIN departments d ON e.department_id = d.id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("department_name");
@@ -245,7 +248,7 @@ class ColumnReferenceResolverTest {
     void testResolveMissingColumn() throws Exception {
         String sql = "SELECT department_address FROM departments";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("department_address");
@@ -259,7 +262,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnFromSubquery() throws Exception {
         String sql = "SELECT first_name FROM (SELECT first_name FROM employees)";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -283,7 +286,7 @@ class ColumnReferenceResolverTest {
                 ") e " +
                 "INNER JOIN departments d ON e.department_id = d.department_id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         // Resolve employee_id from subquery e
         Column columnEmployeeId = new Column();
@@ -312,7 +315,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnInSubqueryWithNoAlias() throws Exception {
         String sql = "SELECT first_name FROM (SELECT * FROM employees)";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -330,7 +333,7 @@ class ColumnReferenceResolverTest {
     void resolveColumnAliasInSubqueryWithWhereClause() throws Exception {
         String sql = "SELECT name, income FROM (SELECT first_name AS name, salary AS income FROM Employees) AS subquery WHERE income > 100";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         // Resolve alias 'name' from subquery
         Column columnName = new Column();
@@ -364,7 +367,7 @@ class ColumnReferenceResolverTest {
     void testResolveAllTableColumns() throws Exception {
         String sql = "SELECT first_name  FROM (SELECT employees.* FROM employees) AS e";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -382,7 +385,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnWithAlias() throws Exception {
         String sql = "SELECT e.first_name AS fname FROM employees e";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("fname");
@@ -399,7 +402,7 @@ class ColumnReferenceResolverTest {
     void testResolveColumnAliasInSubquery() throws Exception {
         String sql = "SELECT subquery.fname FROM (SELECT first_name AS fname FROM employees) subquery";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("fname");
@@ -418,7 +421,7 @@ class ColumnReferenceResolverTest {
         String sql = "SELECT e.fname, d.department_name FROM (SELECT first_name AS fname FROM employees) e " +
                 "JOIN departments d ON e.department_id = d.id";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         // Resolve alias fname from subquery e
         Column columnE = new Column();
@@ -447,7 +450,7 @@ class ColumnReferenceResolverTest {
     void testColumnInParenthesizedSelect() throws Exception {
         String sql = "SELECT first_name FROM ((SELECT first_name FROM employees))";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -465,7 +468,7 @@ class ColumnReferenceResolverTest {
     void testColumnInNestedParenthesizedSelect() throws Exception {
         String sql = "SELECT first_name FROM (((SELECT first_name FROM employees)))";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("first_name");
@@ -483,7 +486,7 @@ class ColumnReferenceResolverTest {
     void testColumnInSetOperationListWithAlias() throws Exception {
         String sql = "SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments";
         Select select = (Select) CCJSqlParserUtil.parse(sql);
-        resolver.enterSelectContext(select);
+        resolver.enterStatementeContext(select);
 
         Column column = new Column();
         column.setColumnName("emp_id");
@@ -492,9 +495,91 @@ class ColumnReferenceResolverTest {
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("emp_id", reference.getColumnName());
-        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString())
-        ;
+        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
 
         resolver.exitCurrentSelectContext();
     }
+
+    @Test
+    void testResolveColumnInDeleteStatement() throws Exception {
+        String sql = "DELETE FROM employees WHERE department_id = 1";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(delete);
+
+        Column column = new Column();
+        column.setColumnName("department_id");
+
+        ColumnReference reference = resolver.resolveColumnReference(column);
+        assertNotNull(reference);
+        assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
+        assertEquals("department_id", reference.getColumnName());
+
+        resolver.exitCurrentSelectContext();
+    }
+
+    @Test
+    void testResolveColumnInUpdateStatement() throws Exception {
+        String sql = "UPDATE employees SET salary = 50000 WHERE department_id = 1";
+        Update update = (Update) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(update);
+
+        // Resolve column in SET clause
+        Column setColumn = new Column();
+        setColumn.setColumnName("salary");
+
+        ColumnReference setReference = resolver.resolveColumnReference(setColumn);
+        assertNotNull(setReference);
+        assertEquals("employees", ((SqlBaseTableReference) setReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("salary", setReference.getColumnName());
+
+        // Resolve column in WHERE clause
+        Column whereColumn = new Column();
+        whereColumn.setColumnName("department_id");
+
+        ColumnReference whereReference = resolver.resolveColumnReference(whereColumn);
+        assertNotNull(whereReference);
+        assertEquals("employees", ((SqlBaseTableReference) whereReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("department_id", whereReference.getColumnName());
+
+        resolver.exitCurrentSelectContext();
+    }
+
+    @Test
+    void testResolveColumnInDeleteWithSubquery() throws Exception {
+        String sql = "DELETE FROM employees WHERE department_id IN (SELECT d.id AS dept_id FROM departments d WHERE d.department_name = 'HR')";
+        Delete delete = (Delete) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(delete);
+
+        // Resolve column in the main DELETE statement
+        Column column = new Column();
+        column.setColumnName("department_id");
+
+        ColumnReference reference = resolver.resolveColumnReference(column);
+        assertNotNull(reference);
+        assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
+        assertEquals("department_id", reference.getColumnName());
+
+        // Resolve alias 'dept_id' in the subquery
+        Column subqueryColumn = new Column();
+        subqueryColumn.setColumnName("dept_id");
+        subqueryColumn.setTable(new net.sf.jsqlparser.schema.Table("d"));
+
+        assertNull(resolver.resolveColumnReference(subqueryColumn));
+
+        // access the subquery in the delete statement and resolve the column reference
+        InExpression inExpression = (InExpression) delete.getWhere();
+        Select subquery = (Select) inExpression.getRightExpression();
+        resolver.enterStatementeContext(subquery);
+
+        ColumnReference subqueryReference = resolver.resolveColumnReference(subqueryColumn);
+
+        assertEquals("(SELECT d.id AS dept_id FROM departments d WHERE d.department_name = 'HR')", ((SqlDerivedTableReference) subqueryReference.getTableReference()).getSelect().toString());
+        assertEquals("dept_id", subqueryReference.getColumnName());
+
+        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentSelectContext();
+    }
+
+
+
 }
