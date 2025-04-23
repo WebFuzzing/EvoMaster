@@ -938,6 +938,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.actionIndex = dto.index;
 
         resetExtraHeuristics();
+
+        newScheduleActionSpecificHandler(dto);
     }
 
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
@@ -1192,6 +1194,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void newActionSpecificHandler(ActionDto dto);
 
+    public abstract void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto);
 
     /**
      * Check if bytecode instrumentation is on.
