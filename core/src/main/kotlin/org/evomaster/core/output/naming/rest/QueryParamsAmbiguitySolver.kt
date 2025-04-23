@@ -8,7 +8,7 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.string.StringGene
 
-class QueryParamsAmbiguitySolver(private val nameWithQueryParameters: Boolean) : AmbiguitySolver {
+class QueryParamsAmbiguitySolver() : AmbiguitySolver {
 
     private val with = "with"
     private val param = "Param"
@@ -30,10 +30,8 @@ class QueryParamsAmbiguitySolver(private val nameWithQueryParameters: Boolean) :
 
         if (canAddNameTokens(withTokens, remainingNameChars)) {
             result.addAll(withTokens)
-            if (nameWithQueryParameters) {
-                val localCharsBudget = remainingNameChars - withTokens.sumOf { it.length }
-                addQueryParameterNames(queryParams, result, localCharsBudget)
-            }
+            val localCharsBudget = remainingNameChars - withTokens.sumOf { it.length }
+            addQueryParameterNames(queryParams, result, localCharsBudget)
         }
         return result
     }

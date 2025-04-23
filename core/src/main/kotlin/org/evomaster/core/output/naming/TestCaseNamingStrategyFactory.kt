@@ -13,11 +13,10 @@ import org.slf4j.LoggerFactory
 class TestCaseNamingStrategyFactory(
     private val namingStrategy: NamingStrategy,
     private val languageConventionFormatter: LanguageConventionFormatter,
-    private val nameWithQueryParameters: Boolean,
     private val maxTestCaseNameLength: Int
 ) {
 
-    constructor(config: EMConfig): this(config.namingStrategy, LanguageConventionFormatter(config.outputFormat), config.nameWithQueryParameters, config.maxTestCaseNameLength)
+    constructor(config: EMConfig): this(config.namingStrategy, LanguageConventionFormatter(config.outputFormat), config.maxTestCaseNameLength)
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(TestCaseNamingStrategyFactory::class.java)
@@ -34,7 +33,7 @@ class TestCaseNamingStrategyFactory(
     private fun actionBasedNamingStrategy(solution: Solution<*>): NumberedTestCaseNamingStrategy {
         val individuals = solution.individuals
         return when {
-            individuals.any { it.individual is RestIndividual } -> return RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, nameWithQueryParameters, maxTestCaseNameLength)
+            individuals.any { it.individual is RestIndividual } -> return RestActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is GraphQLIndividual } -> return GraphQLActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is RPCIndividual } -> return RPCActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength)
             individuals.any { it.individual is WebIndividual } -> {

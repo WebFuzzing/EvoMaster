@@ -604,41 +604,7 @@ internal class EMConfigTest{
 
         config.updateProperties(parser.parse())
 
-        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
-    }
-
-    @Test
-    fun testQueryParamsInTestCaseNamesValidForActionStrategy() {
-        val parser = EMConfig.getOptionParser()
-        val config = EMConfig()
-
-        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "true")
-        config.updateProperties(options)
-
         assertEquals(NamingStrategy.ACTION, config.namingStrategy)
-        assertTrue(config.nameWithQueryParameters)
-    }
-
-    @Test
-    fun testQueryParamsInTestCaseNamesFalseTurnsFeatureOff() {
-        val parser = EMConfig.getOptionParser()
-        val config = EMConfig()
-
-        val options = parser.parse("--namingStrategy", "ACTION", "--nameWithQueryParameters", "false")
-        config.updateProperties(options)
-
-        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
-        assertFalse(config.nameWithQueryParameters)
-    }
-
-    @Test
-    fun testQueryParamsInTestCaseNamesIsOffByDefault() {
-        val parser = EMConfig.getOptionParser()
-        val config = EMConfig()
-
-        config.updateProperties(parser.parse())
-
-        assertFalse(config.nameWithQueryParameters)
     }
 
     @Test

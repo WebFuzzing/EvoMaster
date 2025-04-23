@@ -20,8 +20,6 @@ class TestCaseDisambiguationTest {
 
     companion object {
         val javaFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
-        const val NO_QUERY_PARAMS_IN_NAME = false
-        const val QUERY_PARAMS_IN_NAME = true
         const val MAX_NAME_LENGTH = 80
     }
 
@@ -31,7 +29,7 @@ class TestCaseDisambiguationTest {
         val funniestPathIndividual = getEvaluatedIndividualWith(getRestCallAction("/my/funniest/path"))
         val solution = Solution(mutableListOf(funnyPathIndividual, funniestPathIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -46,7 +44,7 @@ class TestCaseDisambiguationTest {
         val syntaxLanguagesIndividual = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val solution = Solution(mutableListOf(languagesIndividual, statisticsLanguagesIndividual, syntaxLanguagesIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(3, testCases.size)
@@ -62,7 +60,7 @@ class TestCaseDisambiguationTest {
         val syntaxLanguagesIndividual2 = getEvaluatedIndividualWith(getRestCallAction("/syntax/languages"))
         val solution = Solution(mutableListOf(languagesIndividual, syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(3, testCases.size)
@@ -83,7 +81,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(configurationFeatureIndividual, productFeatureIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -99,7 +97,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -116,7 +114,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -133,7 +131,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(languagesIndividual, syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(3, testCases.size)
@@ -149,7 +147,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -165,7 +163,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -181,7 +179,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -199,7 +197,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -215,7 +213,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -231,7 +229,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, emptyStringIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -248,7 +246,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, queryParamsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -264,7 +262,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -280,7 +278,7 @@ class TestCaseDisambiguationTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, emptyQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)

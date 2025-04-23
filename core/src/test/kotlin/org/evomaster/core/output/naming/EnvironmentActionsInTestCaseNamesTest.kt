@@ -16,7 +16,6 @@ class EnvironmentActionsInTestCaseNamesTest {
 
     companion object {
         val javaFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
-        const val NO_QUERY_PARAMS_IN_NAME = false
         const val MAX_NAME_LENGTH = 80
     }
 
@@ -31,7 +30,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         inds.add(getEvaluatedIndividualWith(restAction, true))
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(9, testCases.size)
@@ -47,7 +46,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(9, testCases.size)
@@ -63,7 +62,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(10, testCases.size)
@@ -80,7 +79,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(10, testCases.size)
@@ -99,7 +98,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(10, testCases.size)
@@ -116,7 +115,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(12, testCases.size)
@@ -133,7 +132,7 @@ class EnvironmentActionsInTestCaseNamesTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(12, testCases.size)

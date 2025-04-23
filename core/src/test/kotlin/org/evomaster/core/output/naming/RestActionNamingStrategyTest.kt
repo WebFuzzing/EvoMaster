@@ -24,7 +24,6 @@ open class RestActionNamingStrategyTest {
     companion object {
         val pythonFormatter = LanguageConventionFormatter(OutputFormat.PYTHON_UNITTEST)
         val javaFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
-        const val NO_QUERY_PARAMS_IN_NAME = false
         const val MAX_NAME_LENGTH = 80
     }
 
@@ -34,7 +33,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -47,7 +46,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -63,7 +62,7 @@ open class RestActionNamingStrategyTest {
         val itemsIndividual = getEvaluatedIndividualWith(itemsAction)
         val solution = Solution(mutableListOf(rootIndividual, itemsIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(2, testCases.size)
@@ -77,7 +76,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -90,7 +89,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "<tag/>", MediaType.TEXT_XML_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -103,7 +102,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "[]", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -116,7 +115,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "[1]", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -129,7 +128,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "[1,2,3]", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -142,7 +141,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "{}", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -155,7 +154,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "{\"key\": \"value\"}", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -168,7 +167,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 200, "\"myItem\"", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -181,7 +180,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 401, "[]", MediaType.APPLICATION_JSON_TYPE)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -194,7 +193,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")), 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -208,7 +207,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, faults, 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -221,7 +220,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -234,7 +233,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, withMongo = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -247,7 +246,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, 201, withWireMock = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -260,7 +259,7 @@ open class RestActionNamingStrategyTest {
         val eIndividual = getEvaluatedIndividualWith(restAction, withSql = true, withWireMock = true)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, MAX_NAME_LENGTH)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
@@ -276,7 +275,7 @@ open class RestActionNamingStrategyTest {
         }
         val solution = Solution(Collections.unmodifiableList(inds), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, NO_QUERY_PARAMS_IN_NAME, 20)
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, 20)
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(10, testCases.size)

@@ -15,7 +15,6 @@ import org.evomaster.core.search.action.EvaluatedAction
 open class RestActionTestCaseNamingStrategy(
     solution: Solution<*>,
     languageConventionFormatter: LanguageConventionFormatter,
-    private val nameWithQueryParameters: Boolean,
     maxTestCaseNameLength: Int,
 ) : ActionTestCaseNamingStrategy(solution, languageConventionFormatter, maxTestCaseNameLength) {
 
@@ -67,7 +66,7 @@ open class RestActionTestCaseNamingStrategy(
 
         val queryParamsDisambiguatedIndividuals = getQueryParamsDisambiguationIndividuals(workingCopy)
         queryParamsDisambiguatedIndividuals.forEach {
-            val queryParamsAmbiguitySolver = QueryParamsAmbiguitySolver(nameWithQueryParameters)
+            val queryParamsAmbiguitySolver = QueryParamsAmbiguitySolver()
             if (ambiguitySolversPerIndividual.containsKey(it)) {
                 ambiguitySolversPerIndividual[it]?.add(queryParamsAmbiguitySolver)
             } else {
