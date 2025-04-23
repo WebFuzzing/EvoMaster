@@ -17,7 +17,9 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -88,15 +90,15 @@ class TestSuiteWriter {
     private var activePartialOracles = mutableMapOf<String, Boolean>()
 
 
-    fun writeDtos(solutionFilename: String) {
-        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
-        getSchemaComponents()
-            .filterKeys { it != null }
-            .filterValues { it?.properties != null }
-            .map {
-                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
-            }
-    }
+//    fun writeDtos(solutionFilename: StringString) {
+//        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+//        getSchemaComponents()
+//            .filterKeys { it != null }
+//            .filterValues { it?.properties != null }
+//            .map {
+//                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
+//            }
+//    }
 
     private fun getSchemaComponents(): Map<String?, Schema<*>?> {
         val restSampler = sampler as RestSampler
@@ -104,6 +106,45 @@ class TestSuiteWriter {
         val schema = openAPI.schemaParsed
         val components = schema.components
         return components.schemas ?: emptyMap()
+    }
+
+    fun writeDtos(solution: Solution<*>) {
+        val solutionFilename = solution.getFileName()
+        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+
+        val individuals = solution.individuals
+        if (individuals.any { it.individual is RestIndividual }) {
+            individuals.forEach { ind ->
+                ind.evaluatedMainActions().forEach { action ->
+                    val call = action as RestCallAction
+                    val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+                    if (bodyParam != null && bodyParam.isJson()) {
+                        val json =
+                            bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+                    }
+                }
+            }
+        }
+
+//        individuals.forEach { ind ->
+//            ind.evaluatedMainActions().forEach { evaluatedAction ->
+//                val call = evaluatedAction.action as HttpWsAction
+//            }
+//        }
+
+//        ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
+//        val call = evaluatedAction.action as HttpWsAction
+//        action as RestCallAction
+//        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+//        if (bodyParam.isJson()) {
+//        val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+
+        getSchemaComponents()
+            .filterKeys { it != null }
+            .filterValues { it?.properties != null }
+            .map {
+                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
+            }
     }
 
 

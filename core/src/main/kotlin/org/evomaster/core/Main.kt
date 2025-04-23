@@ -727,7 +727,8 @@ class Main {
             if (config.problemType == EMConfig.ProblemType.REST) {
 
                 if (config.dtoForRequestPayload && config.outputFormat.isJavaOrKotlin()) {
-                    writer.writeDtos(solution.getFileName())
+//                    writer.writeDtos(solution.getFileName())
+                    writer.writeDtos(solution)
                 }
 
                 val splitResult = TestSuiteSplitter.split(solution, config)
