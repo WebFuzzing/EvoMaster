@@ -40,6 +40,10 @@ class TestCaseNamingStrategyFactory(
                 log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
                 return NamingHelperNumberedTestCaseNamingStrategy(solution)
             }
+            individuals.isEmpty() -> {
+                log.warn("No individuals present in the solution. Defaulting to Numbered strategy.")
+                return NumberedTestCaseNamingStrategy(solution)
+            }
             else -> throw IllegalStateException("Unrecognized test individuals with no action based naming strategy set.")
         }
     }
