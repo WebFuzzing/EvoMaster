@@ -1131,10 +1131,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                             && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
                     }
                     if (prematureStoppedAction.isNotEmpty()){
-                        log.warn("Premature stopping of HTTP call sequence")
+                        log.debug("Premature stopping of HTTP call sequence")
                         return
                     }
-                    throw IllegalStateException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
+                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
                 }
                 it.auth !is NoAuth && ar.getStatusCode() == 401
             }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
