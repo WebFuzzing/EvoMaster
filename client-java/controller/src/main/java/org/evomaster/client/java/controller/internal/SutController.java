@@ -458,6 +458,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        /*
+            extract SQL database schema and constraints
+            such info will be used in re-adding init data after smart db cleaner
+         */
+        extractSqlDbSchemaAndConstraints();
         registerOrExecuteInitSqlCommandsIfNeeded(false);
     }
 
@@ -685,6 +690,29 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return schemaDto;
         }
 
+        DbInfoDto schema = extractSqlDbSchemaAndConstraints();
+        if (schema == null) return null;
+
+        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
+        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
+        if( extra != null && !extra.isEmpty()) {
+            schemaDto.extraConstraintDtos = new ArrayList<>();
+            schemaDto.extraConstraintDtos.addAll(extra);
+        }
+
+        return schemaDto;
+    }
+
+    /**
+     * @return extracted Sql Database Schema. Note that null is returned only if the schema has been extracted or the extraction fails with the given db connection.
+     */
+    public final DbInfoDto extractSqlDbSchemaAndConstraints(){
+
+        if (schemaDto != null) {
+            SimpleLogger.info("Sql Database Schema and Constraints have been extracted and built.");
+            return null;
+        }
+
         if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
             return null;
         }
@@ -707,13 +735,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     });
                 }
             });
-        }
-
-        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
-        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
-        if( extra != null && !extra.isEmpty()) {
-            schemaDto.extraConstraintDtos = new ArrayList<>();
-            schemaDto.extraConstraintDtos.addAll(extra);
         }
 
         return schemaDto;
