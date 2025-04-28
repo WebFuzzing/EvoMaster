@@ -607,7 +607,7 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
-                EMConfig.Algorithm.STANDARD_GA ->
+                EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
 

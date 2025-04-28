@@ -1124,8 +1124,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA, StandardGA, MonotonicGA, SteadyStateGA,
-        DEFAULT, SMARTS, RW
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
