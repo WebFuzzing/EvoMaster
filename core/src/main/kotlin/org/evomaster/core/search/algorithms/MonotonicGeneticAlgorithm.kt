@@ -20,12 +20,6 @@ import kotlin.math.max
  */
 class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Individual {
 
-    /** The current evolving population. */
-    private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
-
-    /**
-     * Identifies this algorithm as MonotonicGA in the EvoMaster configuration.
-     */
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.MonotonicGA
     }
@@ -69,8 +63,13 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
             }
 
             // Apply mutation
-            mutate(o1)
-            mutate(o2)
+            if (randomness.nextBoolean(config.fixedRateMutation)) {
+                mutate(o1)
+            }
+
+            if (randomness.nextBoolean(config.fixedRateMutation)) {
+                mutate(o2)
+            }
 
             // Monotonic replacement rule:
             // Keep offspring only if they're better than the parents

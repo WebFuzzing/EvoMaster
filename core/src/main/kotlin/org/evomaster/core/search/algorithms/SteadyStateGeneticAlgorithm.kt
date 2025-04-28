@@ -18,12 +18,6 @@ import kotlin.math.max
  */
 class SteadyStateGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Individual {
 
-    /** Local population maintained by the algorithm (different from full generational replacement). */
-    private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
-
-    /**
-     * Identifies this algorithm as SteadyStateGA in the EvoMaster configuration.
-     */
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.SteadyStateGA
     }
@@ -39,25 +33,25 @@ class SteadyStateGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : I
      */
     override fun searchOnce() {
         // Select two parents from the population
-        val p1 = selection()
-        val p2 = selection()
+        val p1 = tournamentSelection()
+        val p2 = tournamentSelection()
 
-        val o1: WtsEvalIndividual<T>
-        val o2: WtsEvalIndividual<T>
+        val o1 = p1.copy()
+        val o2 = p2.copy()
 
-        // Apply crossover (if enabled), otherwise pass parents as-is
+        // Perform crossover with a given probability
         if (randomness.nextBoolean(config.xoverProbability)) {
-            val offsprings = xover(p1, p2)
-            o1 = offsprings.first
-            o2 = offsprings.second
-        } else {
-            o1 = p1
-            o2 = p2
+            xover(o1, o2)
         }
 
         // Apply mutation to each offspring
-        mutate(o1)
-        mutate(o2)
+        if (randomness.nextBoolean(config.fixedRateMutation)) {
+            mutate(o1)
+        }
+
+        if (randomness.nextBoolean(config.fixedRateMutation)) {
+            mutate(o2)
+        }
 
         // Only replace parents with offspring if the offspring are better
         if (max(o1.calculateCombinedFitness(), o2.calculateCombinedFitness()) >
@@ -69,36 +63,5 @@ class SteadyStateGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : I
             population.add(o1)
             population.add(o2)
         }
-    }
-
-    /**
-     * Performs crossover by copying and swapping suite elements between two individuals
-     * up to a randomly chosen split point.
-     *
-     * @param x The first parent.
-     * @param y The second parent.
-     * @return A pair of offspring produced via crossover.
-     */
-    private fun xover(
-        x: WtsEvalIndividual<T>,
-        y: WtsEvalIndividual<T>
-    ): Pair<WtsEvalIndividual<T>, WtsEvalIndividual<T>> {
-        val nx = x.suite.size
-        val ny = y.suite.size
-
-        val splitPoint = randomness.nextInt(Math.min(nx, ny))
-
-        // Create deep copies of parents to avoid modifying originals
-        val offspring1 = x.copy()
-        val offspring2 = y.copy()
-
-        // Swap up to the split point
-        (0..splitPoint).forEach {
-            val temp = offspring1.suite[it]
-            offspring1.suite[it] = offspring2.suite[it]
-            offspring2.suite[it] = temp
-        }
-
-        return Pair(offspring1, offspring2)
     }
 }

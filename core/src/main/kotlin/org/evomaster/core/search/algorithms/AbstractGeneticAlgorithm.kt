@@ -22,7 +22,7 @@ import org.evomaster.core.search.service.SearchAlgorithm
 abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     /** The current population of evaluated individuals (test suites). */
-    private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+    protected val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.

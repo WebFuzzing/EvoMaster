@@ -25,12 +25,6 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
  */
 open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
-    /** Current working population of evaluated individuals. */
-    private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
-
-    /**
-     * Identifies this algorithm as Standard Genetic Algorithm in the EvoMaster configuration.
-     */
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.StandardGA
     }

@@ -22,6 +22,7 @@ class StandardGeneticAlgorithmTest {
         .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
         .build().createInjector()
 
+    // To verify if the Standard GA can find the optimal solution for the OneMax problem
     @Test
     fun testStandardGeneticAlgorithm() {
         TestUtils.handleFlaky {
