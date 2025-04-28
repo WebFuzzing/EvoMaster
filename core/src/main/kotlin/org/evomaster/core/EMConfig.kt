@@ -2472,6 +2472,10 @@ class EMConfig {
             " instead of OFF.")
     val probabilityOfOnVsOffInAllOptionals = 0.8
 
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
+
     @Cfg("Add summary comments on each test")
     var addTestComments = true
 

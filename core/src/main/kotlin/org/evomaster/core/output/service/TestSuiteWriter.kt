@@ -389,8 +389,10 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.Test", lines)
             addImport("org.junit.jupiter.api.Timeout", lines)
             addImport("org.junit.jupiter.api.Assertions.*", lines, true)
-            addImport("org.junit.jupiter.api.MethodOrderer", lines)
-            addImport("org.junit.jupiter.api.TestMethodOrder", lines)
+            if (config.useTestMethodOrder) {
+                addImport("org.junit.jupiter.api.MethodOrderer", lines)
+                addImport("org.junit.jupiter.api.TestMethodOrder", lines)
+            }
         }
         if (format.isJUnit4()) {
             addImport("org.junit.AfterClass", lines)
@@ -993,7 +995,7 @@ class TestSuiteWriter {
 
         val format = config.outputFormat
 
-        if (format.isKotlin() && format.isJUnit5()) {
+        if (format.isKotlin() && format.isJUnit5() && config.useTestMethodOrder) {
             lines.add("@TestMethodOrder(MethodOrderer.MethodName::class)")
         }
 
