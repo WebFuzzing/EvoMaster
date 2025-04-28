@@ -3,161 +3,90 @@ package org.evomaster.core.search.algorithms
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
-import org.evomaster.core.search.service.SearchAlgorithm
 
 /**
- * An implementation of the Standard Genetic algorithm,
+ * An implementation of the Standard Genetic Algorithm (Standard GA).
+ *
+ * This algorithm evolves a population of individuals using tournament selection,
+ * crossover, and mutation, guided by fitness. It is one of the core metaheuristics
+ * supported in EvoMaster.
+ *
+ * Each iteration (via [searchOnce]) forms a new population by:
+ * 1. Selecting parent individuals using tournament selection,
+ * 2. Optionally applying crossover with a probability defined by [config.xoverProbability],
+ * 3. Optionally applying mutation to each offspring with a probability defined by [config.fixedRateMutation],
+ * 4. Adding the offspring to the next generation.
+ *
+ * The process continues until the configured population size is reached or the time budget ends.
+ *
+ * Note:
+ * - This implementation assumes that crossover and mutation are implemented by the superclass.
+ * - The actual fitness evaluation is managed externally via the [WtsEvalIndividual] wrapper.
  */
-open class StandardGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
+open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
-
+    /** Current working population of evaluated individuals. */
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
+    /**
+     * Identifies this algorithm as Standard Genetic Algorithm in the EvoMaster configuration.
+     */
     override fun getType(): EMConfig.Algorithm {
-        return EMConfig.Algorithm.WTS
+        return EMConfig.Algorithm.StandardGA
     }
 
-    override fun setupBeforeSearch() {
-        population.clear()
-
-        initPopulation()
-    }
-
-    protected fun formTheNextPopulation(population: MutableList<WtsEvalIndividual<T>>, enableElitism: Boolean = true): MutableList<WtsEvalIndividual<T>> {
-
-        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
-
-        if (enableElitism && population.isNotEmpty()) {
-            var sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
-
-            var elites = sortedPopulation.take(config.elitesCount)
-
-            nextPop.addAll(elites)
-        }
-
-        return nextPop
-    }
-
+    /**
+     * Performs a single generation of the genetic algorithm (one evolutionary step).
+     *
+     * Forms the next generation by:
+     * - Selecting pairs of parents using tournament selection,
+     * - Applying crossover (if enabled),
+     * - Applying mutation to offspring (if enabled),
+     * - Adding new offspring to the next population.
+     *
+     * Terminates early if the time budget is exceeded.
+     */
     override fun searchOnce() {
-
         val n = config.populationSize
 
-        val nextPop = formTheNextPopulation(population, enableElitism = true)
+        // Generate the base of the next population (e.g., elitism or re-selection of fit individuals)
+        val nextPop = formTheNextPopulation(population)
 
         while (nextPop.size < n) {
+            val sizeBefore = nextPop.size
 
-            val x = selection()
-            val y = selection()
-            //x and y are copied
+            // Select two parents
+            val x = tournamentSelection()
+            val y = tournamentSelection()
 
+            // Crossover with configured probability
             if (randomness.nextBoolean(config.xoverProbability)) {
                 xover(x, y)
             }
-            mutate(x)
-            mutate(y)
 
+            // Mutate each offspring with configured mutation rate
+            if (randomness.nextBoolean(config.fixedRateMutation)) {
+                mutate(x)
+            }
+            if (randomness.nextBoolean(config.fixedRateMutation)) {
+                mutate(y)
+            }
+
+            // Add both offspring to the next population
             nextPop.add(x)
             nextPop.add(y)
 
+            // Sanity check: we expect exactly 2 new individuals
+            assert(nextPop.size == sizeBefore + 2)
+
+            // Stop early if time budget is exhausted
             if (!time.shouldContinueSearch()) {
                 break
             }
         }
 
+        // Replace current population with the new one
         population.clear()
         population.addAll(nextPop)
-    }
-
-    protected fun mutate(wts: WtsEvalIndividual<T>) {
-
-        val op = randomness.choose(listOf("del", "add", "mod"))
-        val n = wts.suite.size
-        when (op) {
-            "del" -> if (n > 1) {
-                val i = randomness.nextInt(n)
-                wts.suite.removeAt(i)
-            }
-
-            "add" -> if (n < config.maxSearchSuiteSize) {
-                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
-                    archive.addIfNeeded(this)
-                    wts.suite.add(this)
-                }
-            }
-
-            "mod" -> {
-                val i = randomness.nextInt(n)
-                val ind = wts.suite[i]
-
-                getMutatator().mutateAndSave(ind, archive)
-                    ?.let { wts.suite[i] = it }
-            }
-        }
-    }
-
-    protected fun selection(): WtsEvalIndividual<T> {
-
-        val x = randomness.choose(population)
-        val y = randomness.choose(population)
-
-        val dif = x.calculateCombinedFitness() - y.calculateCombinedFitness()
-        val delta = 0.001
-
-        return when {
-            dif > delta -> x.copy()
-            dif < -delta -> y.copy()
-            else -> when {
-                x.size() <= y.size() -> x.copy()
-                else -> y.copy()
-            }
-        }
-    }
-
-
-    private fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
-
-        val nx = x.suite.size
-        val ny = y.suite.size
-
-        val splitPoint = randomness.nextInt(Math.min(nx, ny))
-
-        (0..splitPoint).forEach {
-            val k = x.suite[it]
-            x.suite[it] = y.suite[it]
-            y.suite[it] = k
-        }
-    }
-
-    protected fun initPopulation() {
-
-        val n = config.populationSize
-
-        for (i in 1..n) {
-            population.add(sampleSuite())
-
-            if (!time.shouldContinueSearch()) {
-                break
-            }
-        }
-    }
-
-    private fun sampleSuite(): WtsEvalIndividual<T> {
-
-        val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
-
-        val wts = WtsEvalIndividual<T>(mutableListOf())
-
-        for (i in 1..n) {
-            ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
-                archive.addIfNeeded(this)
-                wts.suite.add(this)
-            }
-
-            if (!time.shouldContinueSearch()) {
-                break
-            }
-        }
-
-        return wts
     }
 }

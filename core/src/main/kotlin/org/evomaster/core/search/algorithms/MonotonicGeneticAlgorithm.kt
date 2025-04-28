@@ -57,20 +57,15 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
         val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
         while (nextPop.size < n) {
-            val p1 = selection()
-            val p2 = selection()
+            val p1 = tournamentSelection()
+            val p2 = tournamentSelection()
 
-            val o1: WtsEvalIndividual<T>
-            val o2: WtsEvalIndividual<T>
+            val o1 = p1.copy()
+            val o2 = p2.copy()
 
             // Perform crossover with a given probability
             if (randomness.nextBoolean(config.xoverProbability)) {
-                val offsprings = xover(p1, p2)
-                o1 = offsprings.first
-                o2 = offsprings.second
-            } else {
-                o1 = p1
-                o2 = p2
+                xover(o1, o2)
             }
 
             // Apply mutation
@@ -97,37 +92,5 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
         // Replace the current population with the newly formed one
         population.clear()
         population.addAll(nextPop)
-    }
-
-    /**
-     * Crossover operator for two individuals.
-     * Creates two offspring by swapping elements up to a random split point.
-     * The original parents are not modified.
-     *
-     * @param x The first parent.
-     * @param y The second parent.
-     * @return A pair of new offspring individuals.
-     */
-    private fun xover(
-        x: WtsEvalIndividual<T>,
-        y: WtsEvalIndividual<T>
-    ): Pair<WtsEvalIndividual<T>, WtsEvalIndividual<T>> {
-        val nx = x.suite.size
-        val ny = y.suite.size
-
-        val splitPoint = randomness.nextInt(Math.min(nx, ny))
-
-        // Clone the parents before modifying them
-        val offspring1 = x.copy()
-        val offspring2 = y.copy()
-
-        // Swap up to the split point
-        (0..splitPoint).forEach {
-            val temp = offspring1.suite[it]
-            offspring1.suite[it] = offspring2.suite[it]
-            offspring2.suite[it] = temp
-        }
-
-        return Pair(offspring1, offspring2)
     }
 }

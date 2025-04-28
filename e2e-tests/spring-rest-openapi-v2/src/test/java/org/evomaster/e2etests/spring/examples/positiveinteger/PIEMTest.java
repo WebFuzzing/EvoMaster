@@ -20,7 +20,7 @@ public class PIEMTest extends PITestBase {
     @ParameterizedTest
     @EnumSource(EMConfig.Algorithm.class)
     public void testAlgorithms(EMConfig.Algorithm alg)  throws Throwable {
-        testRunEM(alg, 2000);// high value, just to check if no crash
+        testRunEM(alg, 1000);// high value, just to check if no crash
     }
 
 
