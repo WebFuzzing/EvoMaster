@@ -638,6 +638,7 @@ internal class EMConfigTest{
 
         config.updateProperties(parser.parse())
 
+        assertTrue(config.nameWithQueryParameters)
     }
 
     @Test
