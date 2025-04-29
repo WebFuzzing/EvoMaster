@@ -36,7 +36,7 @@ class LanguageModelConnector {
     @Inject
     private lateinit var config: EMConfig
 
-    private var prompts: MutableMap<String, String> = mutableMapOf()
+    private var prompts: MutableMap<String, PromptDto> = mutableMapOf()
 
     private val objectMapper = ObjectMapper()
 
@@ -65,13 +65,58 @@ class LanguageModelConnector {
         prompts.clear()
         workerPool.shutdown()
     }
+
+    /**
+     * TODO: Description
+     */
+    fun queryAsync(prompt: String): String {
+        validatePrompt(prompt)
+
+        val id = getId()
+
+        prompts[id] = PromptDto(id, prompt)
+
+        val task = Runnable {
+            makeQuery(prompt)
+        }
+
+        workerPool.submit(task)
+
+        return id
+    }
+
+    /**
+     * TODO: Description
+     */
+    fun queryStructuredAsync(prompt: String): String {
+        validatePrompt(prompt)
+
+        val id = getId()
+
+        return id
+    }
+
     /**
      * To query the large language server with a simple prompt.
      */
     fun query(prompt: String): String? {
-        if (prompt.isBlank()) {
-            throw IllegalArgumentException("Prompt cannot be empty")
-        }
+        validatePrompt(prompt)
+
+        return makeQuery(prompt)
+    }
+
+    /**
+     * To query the large language model server with a structured output schema.
+     * TODO: Could be useful in some cases.
+     */
+    fun queryStructured(prompt: String): String? {
+        validatePrompt(prompt)
+
+        return makeQueryStructured(prompt)
+    }
+
+    private fun makeQuery(prompt: String): String? {
+        validatePrompt(prompt)
 
         val languageModelServerURL = getLanguageModelServerURL()
 
@@ -90,48 +135,12 @@ class LanguageModelConnector {
         return response
     }
 
-    /**
-     *
-     */
-    fun queryAsync(prompt: String): String {
-        if (prompt.isBlank()) {
-            throw IllegalArgumentException("Prompt cannot be empty")
-        }
 
-        val id = getId()
-
-        prompts[id] = prompt
-
-        return id
-    }
-
-
-
-    fun queryStructuredAsync(prompt: String): String {
-        if (prompt.isBlank()) {
-            throw IllegalArgumentException("Prompt cannot be empty")
-        }
-
-        val id = getId()
-
-        prompts[id] = prompt
-
-        return id
-    }
-
-
-    /**
-     * To query the large language model server with a structured output schema.
-     * TODO: Could be useful in some cases.
-     */
-    fun queryStructured(prompt: String): String? {
-        if (prompt.isBlank()) {
-            throw IllegalArgumentException("Prompt cannot be empty")
-        }
+    private fun makeQueryStructured(prompt: String): String? {
+        validatePrompt(prompt)
 
         TODO("Can be used to extract structured output.")
     }
-
 
     /**
      * Private method to make the call to the large language model server.
@@ -176,7 +185,6 @@ class LanguageModelConnector {
         }
     }
 
-
     /**
      * Private method, returns the large language model server URL from
      * EMConfig, otherwise returns the possible default local URL.
@@ -219,4 +227,9 @@ class LanguageModelConnector {
         return UUID.randomUUID().toString()
     }
 
+    private fun validatePrompt(prompt: String) {
+        if (prompt.isBlank()) {
+            throw IllegalArgumentException("Prompt cannot be empty")
+        }
+    }
 }
