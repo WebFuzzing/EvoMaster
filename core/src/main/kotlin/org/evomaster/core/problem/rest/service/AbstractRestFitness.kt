@@ -1121,12 +1121,24 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+
         val notRecognized = individual.seeMainExecutableActions()
-            .filter { it.auth !is NoAuth
-                    && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
-                .getStatusCode() == 401
-            }
-            .filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+            .filter {
+                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+                if(ar == null){
+                    // this can be happened in the POST/DELETE template
+                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
+                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
+                    }
+                    if (prematureStoppedAction.isNotEmpty()){
+                        log.debug("Premature stopping of HTTP call sequence")
+                        return
+                    }
+                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
+                }
+                it.auth !is NoAuth && ar.getStatusCode() == 401
+            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+
         if(notRecognized.isEmpty()){
             return
         }
