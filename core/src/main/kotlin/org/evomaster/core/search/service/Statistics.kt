@@ -268,6 +268,7 @@ class Statistics : SearchListener {
              */
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
             add(Pair("potentialFaultCategories", "" + solution.distinctDetectedFaultTypes().toList().sorted().joinToString("|")))
+            add(Pair("potentialFaultsSummary", solution.detectedFaultsSummary()))
 
             // RPC statistics of sut and seeded tests
             add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))

@@ -287,7 +287,7 @@ class SqlMultidimensionalArrayGeneTest {
 
         val targetArray = sampleThreeDimensionalArrayOfIntegerGenes(1, 5, 1)
 
-        assertEquals(true, targetArray.bindValueBasedOn(sourceArray))
+        assertEquals(true, targetArray.setValueBasedOn(sourceArray))
 
         assertEquals(2, targetArray.getDimensionSize(0))
         assertEquals(3, targetArray.getDimensionSize(1))
@@ -300,7 +300,7 @@ class SqlMultidimensionalArrayGeneTest {
     fun testFailedBindValuesBasedOn() {
         val sourceArray = sampleThreeDimensionalArrayOfIntegerGenes(2, 3, 1)
         val targetArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3)
-        assertFalse( targetArray.bindValueBasedOn(sourceArray))
+        assertFalse( targetArray.setValueBasedOn(sourceArray))
     }
 
     @Test
@@ -315,7 +315,7 @@ class SqlMultidimensionalArrayGeneTest {
                 template = StringGene("element"),
                 numberOfDimensions = 3
         )
-        assertFalse( targetArray.bindValueBasedOn(sourceArray))
+        assertFalse( targetArray.setValueBasedOn(sourceArray))
     }
 
     @Test

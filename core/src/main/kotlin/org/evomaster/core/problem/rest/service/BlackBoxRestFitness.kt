@@ -63,11 +63,7 @@ class BlackBoxRestFitness : RestFitness() {
             }
         }
 
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RestCallAction>(), actionResults, listOf())
-
-        if (config.useResponseDataPool) {
-            recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
-        }
+        analyzeResponseData(fv,individual,actionResults, listOf())
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

@@ -969,12 +969,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(
-            fv,
-            individual.seeAllActions().filterIsInstance<RestCallAction>(),
-            actionResults,
-            dto.additionalInfoList
-        )
 
         val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
         if(wmStarted){
@@ -1017,6 +1011,25 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
+        analyzeResponseData(fv,individual,actionResults,dto.additionalInfoList)
+
+        return dto
+    }
+
+
+    protected fun analyzeResponseData(
+        fv: FitnessValue,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        additionalInfoList: List<AdditionalInfoDto>
+    ) {
+        handleResponseTargets(
+            fv,
+            individual.seeAllActions().filterIsInstance<RestCallAction>(),
+            actionResults,
+            additionalInfoList
+        )
+
         if (config.useResponseDataPool) {
             recordResponseData(individual, actionResults.filterIsInstance<RestCallResult>())
         }
@@ -1031,7 +1044,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeHttpSemantics(individual, actionResults, fv)
         }
 
-        return dto
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
@@ -1109,12 +1121,24 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+
         val notRecognized = individual.seeMainExecutableActions()
-            .filter { it.auth !is NoAuth
-                    && (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
-                .getStatusCode() == 401
-            }
-            .filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+            .filter {
+                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+                if(ar == null){
+                    // this can be happened in the POST/DELETE template
+                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
+                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
+                    }
+                    if (prematureStoppedAction.isNotEmpty()){
+                        log.debug("Premature stopping of HTTP call sequence")
+                        return
+                    }
+                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
+                }
+                it.auth !is NoAuth && ar.getStatusCode() == 401
+            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+
         if(notRecognized.isEmpty()){
             return
         }

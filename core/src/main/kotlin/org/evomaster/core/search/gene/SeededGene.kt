@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.graphql.schema.ofType
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -129,18 +128,18 @@ class SeededGene<T>(
     override fun possiblySame(gene : Gene) : Boolean =
             super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // only allow bind value for gene
         if (gene is SeededGene<*> && isEmploySeededMutable){
             employSeeded = gene.employSeeded
             if (!employSeeded)
-                return ParamUtil.getValueGene(this.gene).bindValueBasedOn(ParamUtil.getValueGene(gene.gene as Gene))
+                return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene.gene as Gene))
             else
-                return seeded.bindValueBasedOn(gene.seeded)
+                return seeded.setValueBasedOn(gene.seeded)
         }
 
         if (gene !is SeededGene<*> && !employSeeded){
-            return ParamUtil.getValueGene(this.gene).bindValueBasedOn(ParamUtil.getValueGene(gene))
+            return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene))
         }
 
         return false

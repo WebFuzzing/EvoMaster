@@ -1995,7 +1995,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.setValueBasedOn(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2014,7 +2014,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.setValueBasedOn(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2077,4 +2077,21 @@ class RestActionBuilderV3Test{
         assertTrue(get.produces.any { it.contains("xml") })
         assertEquals(1, get.parameters.size)
     }
+
+    @Test
+    fun testPathItem(){
+        val map = loadAndAssertActions(
+            "/swagger/artificial/ref/pathitem.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val certain = map.values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("FOO", output)
+    }
+
 }

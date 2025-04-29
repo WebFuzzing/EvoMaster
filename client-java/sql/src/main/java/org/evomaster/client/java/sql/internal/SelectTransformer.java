@@ -86,6 +86,10 @@ public class SelectTransformer {
                             (item instanceof SelectItem<?>) &&
                             item.getExpression() instanceof Function);
 
+        if (plainSelect.getSelectItems().isEmpty()) {
+            plainSelect.getSelectItems().add(new SelectItem<>(new AllColumns()));
+        }
+
         return stmt.toString();
     }
 
