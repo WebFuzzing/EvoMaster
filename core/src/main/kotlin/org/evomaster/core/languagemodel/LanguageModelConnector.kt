@@ -8,7 +8,13 @@ import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
+import java.util.UUID
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
+import kotlin.math.min
 
 /**
  * A utility service designed to handle large language model server
@@ -30,9 +36,35 @@ class LanguageModelConnector {
     @Inject
     private lateinit var config: EMConfig
 
+    private var prompts: MutableMap<String, String> = mutableMapOf()
+
     private val objectMapper = ObjectMapper()
 
+    private var actualFixedThreadPool = 0
 
+    private lateinit var workerPool: ExecutorService
+
+    @PostConstruct
+    fun init() {
+        // TODO: Check if Language model connector needs to be enabled
+        actualFixedThreadPool = min(
+            config.externalRequestHarvesterNumberOfThreads,
+            Runtime.getRuntime().availableProcessors()
+        )
+        workerPool = Executors.newFixedThreadPool(
+            actualFixedThreadPool
+        )
+    }
+
+    @PreDestroy
+    private fun preDestroy() {
+        shutdown()
+    }
+
+    private fun shutdown() {
+        prompts.clear()
+        workerPool.shutdown()
+    }
     /**
      * To query the large language server with a simple prompt.
      */
@@ -56,6 +88,35 @@ class LanguageModelConnector {
         val response = call(languageModelServerURL, requestBody)
 
         return response
+    }
+
+    /**
+     *
+     */
+    fun queryAsync(prompt: String): String {
+        if (prompt.isBlank()) {
+            throw IllegalArgumentException("Prompt cannot be empty")
+        }
+
+        val id = getId()
+
+        prompts[id] = prompt
+
+        return id
+    }
+
+
+
+    fun queryStructuredAsync(prompt: String): String {
+        if (prompt.isBlank()) {
+            throw IllegalArgumentException("Prompt cannot be empty")
+        }
+
+        val id = getId()
+
+        prompts[id] = prompt
+
+        return id
     }
 
 
@@ -153,4 +214,9 @@ class LanguageModelConnector {
 
         return languageModelName
     }
+
+    private fun getId(): String {
+        return UUID.randomUUID().toString()
+    }
+
 }
