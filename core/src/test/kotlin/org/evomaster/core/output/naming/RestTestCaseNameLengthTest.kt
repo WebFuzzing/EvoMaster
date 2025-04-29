@@ -18,6 +18,7 @@ class RestTestCaseNameLengthTest {
 
     companion object {
         val javaFormatter = LanguageConventionFormatter(OutputFormat.JAVA_JUNIT_4)
+        const val QUERY_PARAMS_IN_NAME = true
     }
 
     @Test
@@ -26,7 +27,7 @@ class RestTestCaseNameLengthTest {
 
         val solution = Solution(mutableListOf(simpleIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val testCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 10).getTestCases()
+        val testCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 10).getTestCases()
 
         assertEquals(1, testCases.size)
         assertEquals("test_0", testCases[0].name)
@@ -38,8 +39,8 @@ class RestTestCaseNameLengthTest {
 
         val solution = Solution(mutableListOf(simpleIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 35).getTestCases()
-        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 30).getTestCases()
+        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 35).getTestCases()
+        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 30).getTestCases()
 
         assertEquals(1, longTestCases.size)
         assertEquals(1, shortTestCases.size)
@@ -56,8 +57,8 @@ class RestTestCaseNameLengthTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividualWithQP), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 80).getTestCases()
-        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 30).getTestCases()
+        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 80).getTestCases()
+        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 30).getTestCases()
 
         assertEquals(2, longTestCases.size)
         assertEquals(2, shortTestCases.size)
@@ -76,10 +77,10 @@ class RestTestCaseNameLengthTest {
 
         val solution = Solution(mutableListOf(syntaxLanguagesIndividual, syntaxLanguagesIndividual2), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val fullNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, 100).getTestCases()
-        val noParamsNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, 50).getTestCases()
-        val onlyBooleanNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, 65).getTestCases()
-        val booleanAndIntegerNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, 85).getTestCases()
+        val fullNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 100).getTestCases()
+        val noParamsNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 50).getTestCases()
+        val onlyBooleanNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 65).getTestCases()
+        val booleanAndIntegerNames = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 85).getTestCases()
 
         assertEquals(2, fullNames.size)
         assertEquals(2, noParamsNames.size)
@@ -102,8 +103,8 @@ class RestTestCaseNameLengthTest {
 
         val solution = Solution(mutableListOf(simpleIndividual, negativeQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
-        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 80).getTestCases()
-        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, 40).getTestCases()
+        val longTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 80).getTestCases()
+        val shortTestCases = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, 40).getTestCases()
 
         assertEquals(2, longTestCases.size)
         assertEquals(2, shortTestCases.size)

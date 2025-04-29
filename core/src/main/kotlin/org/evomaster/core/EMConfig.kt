@@ -2458,8 +2458,16 @@ class EMConfig {
     @Cfg("Specify the hard limit for test case name length")
     var maxTestCaseNameLength = 80
 
+    @Cfg("Specify if true boolean query parameters are included in the test case name." +
+            " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
+    var nameWithQueryParameters = true
+
     @Cfg("Specify the test case sorting strategy")
     var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
 
     @Experimental
     @Probability(true)
@@ -2471,10 +2479,6 @@ class EMConfig {
     @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
             " instead of OFF.")
     val probabilityOfOnVsOffInAllOptionals = 0.8
-
-    @Experimental
-    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
-    var useTestMethodOrder = false
 
     @Cfg("Add summary comments on each test")
     var addTestComments = true
