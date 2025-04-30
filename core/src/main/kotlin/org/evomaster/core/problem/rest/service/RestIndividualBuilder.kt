@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.PostCreateResourceUtils
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -286,7 +286,7 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
+        CreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }

@@ -5,7 +5,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 
 
 /**
- * POST operations can create new resources.
+ * POST/PUT operations can create new resources.
  * What are the ids of these newly created resources?
  * Typically, 2 options:
  * 1) returned in a HTTP Location header
@@ -16,7 +16,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
  * Once a test is executed, the needed info to make such a decision will be
  * stored in [RestCallResult.HEURISTICS_FOR_CHAINED_LOCATION]
  */
-object PostCreateResourceUtils {
+object CreateResourceUtils {
 
     /**
      * Given two actions in sequence, [before] and [after], setup a creation link.
@@ -71,7 +71,7 @@ object PostCreateResourceUtils {
      * This is not necessarily simple, as path resolution might depend on dynamic info
      * coming from previous actions (e.g., a POST create)
      */
-    fun resolveToSamePath(a: RestCallAction, b: RestCallAction) : Boolean {
+    fun doesResolveToSamePath(a: RestCallAction, b: RestCallAction) : Boolean {
 
         if(a.usePreviousLocationId == null && b.usePreviousLocationId == null) {
             return a.resolvedOnlyPath() == b.resolvedOnlyPath()

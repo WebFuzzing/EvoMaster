@@ -4,7 +4,7 @@ import org.apache.http.HttpStatus
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.builder.PostCreateResourceUtils
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.search.action.ActionResult
 
@@ -138,7 +138,7 @@ object RestSecurityOracle {
 
         // first check that they all refer to the same endpoint
         val conditionForEndpointEquivalence =
-            PostCreateResourceUtils.resolveToSamePath(lastAction, secondLastAction)
+            CreateResourceUtils.doesResolveToSamePath(lastAction, secondLastAction)
 
         if (!conditionForEndpointEquivalence) {
             return false
