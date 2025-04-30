@@ -83,4 +83,7 @@ internal class BrowserControllerDockerTest{
         browser.goBack()
         assertEquals(aPage, browser.getCurrentUrl())
     }
+
+    //TODO @IVa add test for Select
+
 }

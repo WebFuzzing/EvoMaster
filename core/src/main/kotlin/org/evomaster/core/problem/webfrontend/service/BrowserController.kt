@@ -86,6 +86,10 @@ class BrowserController {
         SeleniumEMUtils.clickAndWaitPageLoad(driver, cssSelector)
     }
 
+    fun selectAndWaitPageLoad(cssSelector: String, values: List<String>){
+        //TODO
+    }
+
     fun goBack(){
         driver.navigate().back()
         SeleniumEMUtils.waitForPageToLoad(driver,2)

@@ -140,6 +140,13 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                         browserController.clickAndWaitPageLoad(it.cssSelector)
                         //TODO better wait
                     }
+                    UserActionType.SELECT_SINGLE, UserActionType.SELECT_MULTI -> {
+                        //TODO
+                        /*
+                            not just clicking, but deciding which options to select.
+                            this is based on values in the genes
+                         */
+                    }
                     else -> {
                         log.error("Not handled action type ${it.userActionType}")
                     }

@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.webfrontend
 
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.openqa.selenium.By
@@ -7,6 +8,7 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.Select
 import java.net.URI
 import java.net.URISyntaxException
+import kotlin.math.min
 
 object BrowserActionBuilder {
 
@@ -91,7 +93,20 @@ object BrowserActionBuilder {
 
         //TODO genes for inputs
 
-        return others.map { WebAction(mutableListOf(it)) }
+        return others.map {
+            when(it.userActionType) {
+                UserActionType.CLICK -> WebAction(mutableListOf(it))
+                UserActionType.SELECT_SINGLE -> {
+                    val selection = IntegerGene(it.cssSelector, min=0, max=it.inputs.size)
+                    WebAction(mutableListOf(it), singleSelection = mutableMapOf(it.cssSelector to selection))
+                }
+                //TODO multi
+                else -> {
+                    //TODO log warn
+                    WebAction(mutableListOf(it))
+                }
+            }
+        }
     }
 
 }
