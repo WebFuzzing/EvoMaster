@@ -1,9 +1,16 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.FitnessFunction

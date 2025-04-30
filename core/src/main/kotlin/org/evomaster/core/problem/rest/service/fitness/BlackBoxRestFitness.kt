@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.fitness
 
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult

@@ -33,8 +33,8 @@ import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual

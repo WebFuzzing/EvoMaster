@@ -1,8 +1,10 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
+import org.evomaster.core.problem.rest.service.ResourceManageService
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene

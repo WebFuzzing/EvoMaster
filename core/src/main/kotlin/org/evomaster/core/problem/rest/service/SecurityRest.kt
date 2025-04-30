@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive

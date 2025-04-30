@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.sampler
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil

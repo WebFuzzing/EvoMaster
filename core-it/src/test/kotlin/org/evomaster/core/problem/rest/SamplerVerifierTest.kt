@@ -11,8 +11,8 @@ import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
-import org.evomaster.core.problem.rest.service.ResourceRestModule
-import org.evomaster.core.problem.rest.service.ResourceSampler
+import org.evomaster.core.problem.rest.service.module.ResourceRestModule
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene

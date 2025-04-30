@@ -2,7 +2,10 @@ package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
+import org.evomaster.core.problem.rest.service.module.RestModule
+import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.search.service.mutator.StandardMutator
 
 

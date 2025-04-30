@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.sampler
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -10,6 +10,10 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
+import org.evomaster.core.problem.rest.service.ResourceManageService
+import org.evomaster.core.problem.rest.service.ResourceSampleMethodController
+import org.evomaster.core.problem.rest.service.ResourceSamplingMethod
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness

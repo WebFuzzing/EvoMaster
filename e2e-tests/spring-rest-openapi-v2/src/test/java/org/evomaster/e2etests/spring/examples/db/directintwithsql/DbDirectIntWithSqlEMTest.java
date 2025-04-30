@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestCallAction;
 import org.evomaster.core.problem.rest.data.RestCallResult;
 import org.evomaster.core.problem.rest.data.RestIndividual;
-import org.evomaster.core.problem.rest.service.ResourceSampler;
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.action.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;

@@ -5,8 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.SecurityRest
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive

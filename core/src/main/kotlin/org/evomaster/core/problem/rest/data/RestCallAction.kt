@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.evomaster.core.problem.rest.link.RestLink
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder

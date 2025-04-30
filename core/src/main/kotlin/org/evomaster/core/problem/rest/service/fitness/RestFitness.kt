@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.fitness
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction

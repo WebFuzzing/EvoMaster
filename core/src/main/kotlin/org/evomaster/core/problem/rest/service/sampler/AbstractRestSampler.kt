@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.sampler
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -27,6 +27,7 @@ import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene

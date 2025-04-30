@@ -22,6 +22,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler

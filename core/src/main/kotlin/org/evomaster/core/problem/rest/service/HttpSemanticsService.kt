@@ -7,6 +7,8 @@ import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive

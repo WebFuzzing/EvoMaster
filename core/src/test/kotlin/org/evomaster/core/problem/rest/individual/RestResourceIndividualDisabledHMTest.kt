@@ -10,6 +10,11 @@ import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
+import org.evomaster.core.problem.rest.service.module.ResourceRestModule
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil

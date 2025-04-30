@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.problem.rest.service.fitness
 
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.FaultCategory
@@ -33,7 +33,9 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
-import org.evomaster.core.problem.rest.service.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException

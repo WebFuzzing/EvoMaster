@@ -24,6 +24,9 @@ import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
+import org.evomaster.core.problem.rest.service.module.ResourceRestModule
+import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.webfrontend.WebIndividual

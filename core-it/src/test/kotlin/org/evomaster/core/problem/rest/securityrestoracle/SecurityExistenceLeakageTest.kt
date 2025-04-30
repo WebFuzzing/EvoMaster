@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
