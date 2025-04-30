@@ -1,13 +1,22 @@
 package org.evomaster.core.problem.webfrontend
 
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.openqa.selenium.WebElement
+import org.openqa.selenium.support.ui.Select
 import java.net.URI
 import java.net.URISyntaxException
-import java.net.URL
 
 object BrowserActionBuilder {
 
 
+    /**
+     * FIXME this might require refactoring
+     * checking on HTML as string might (or might not???) lose dynamic info added to the page.
+     * TODO need to verify this.
+     * Might be better to pass in a Selenium Document.
+     * We need to verify before making the refactoring
+     */
     fun computePossibleUserInteractions(html: String) : List<WebUserInteraction>{
 
 
@@ -22,10 +31,30 @@ object BrowserActionBuilder {
 
         //TODO all cases
 
+        handleALinks(document, list)
+        handleDropDowns(document, list)
+
+        return list
+    }
+
+    private fun handleDropDowns(document: Document, list: MutableList<WebUserInteraction>) {
+
+        document.getElementsByTag("select")
+            .forEach {
+                //TODO
+               // val type =
+               // list.add(WebUserInteraction(it.cssSelector(), UserActionType.SELECT))
+            }
+    }
+
+    private fun handleALinks(
+        document: Document,
+        list: MutableList<WebUserInteraction>
+    ) {
         document.getElementsByTag("a")
             .forEach {
                 val href = it.attr("href")
-                val canClick = if(!href.isNullOrBlank()) {
+                val canClick = if (!href.isNullOrBlank()) {
                     val uri = try {
                         URI(href)
                     } catch (e: URISyntaxException) {
@@ -38,12 +67,10 @@ object BrowserActionBuilder {
                     val onclick = it.attr("onclick")
                     !onclick.isNullOrBlank()
                 }
-                if(canClick){
+                if (canClick) {
                     list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
                 }
             }
-
-        return list
     }
 
 
