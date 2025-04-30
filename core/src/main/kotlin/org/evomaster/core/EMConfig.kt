@@ -82,7 +82,7 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
 
         private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
 
@@ -2458,13 +2458,16 @@ class EMConfig {
     @Cfg("Specify the hard limit for test case name length")
     var maxTestCaseNameLength = 80
 
-    @Experimental
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
-    var nameWithQueryParameters = false
+    var nameWithQueryParameters = true
 
     @Cfg("Specify the test case sorting strategy")
     var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
 
     @Experimental
     @Probability(true)
