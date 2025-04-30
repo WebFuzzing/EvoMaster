@@ -37,6 +37,12 @@ class WmHttpsOkHttp3EMTest : SpringTestBase() {
                 args.add("USER")
                 args.add("--externalServiceIP")
                 args.add("127.0.0.82")
+                // TODO: Experimental flag useTestMethodOrder is being used in this case to force tests to be executed
+                // in alphabetical order. Without test ordering, test_0 is being executed last instead of first.
+                // As such WireMock handling makes initialization in each test work differently and a 400 is returned
+                // when a 500 is expected.
+                args.add("--useTestMethodOrder")
+                args.add("true")
 
                 val solution = initAndRun(args)
 
