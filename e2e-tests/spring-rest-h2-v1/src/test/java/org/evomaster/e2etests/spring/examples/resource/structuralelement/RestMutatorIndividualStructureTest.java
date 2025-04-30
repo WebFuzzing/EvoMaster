@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.structuralelement;
 
 import com.google.inject.Injector;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.problem.rest.service.ResourceRestMutator;
 import org.evomaster.core.problem.rest.service.ResourceSampler;
 import org.evomaster.core.problem.rest.service.ResourceRestFitness;

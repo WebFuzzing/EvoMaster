@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
@@ -6,6 +6,8 @@ import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.link.BackwardLinkReference
+import org.evomaster.core.problem.rest.link.RestLink
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.service.AbstractRestSampler

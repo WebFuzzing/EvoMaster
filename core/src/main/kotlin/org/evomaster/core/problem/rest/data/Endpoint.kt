@@ -1,10 +1,9 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.config.ConfigProblemException
-import java.util.stream.Stream
 
 
 /**

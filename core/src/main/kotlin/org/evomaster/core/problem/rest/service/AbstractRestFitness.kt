@@ -20,6 +20,15 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
+import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -1103,9 +1112,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeSecurityProperties(
-            individual: RestIndividual,
-            actionResults: List<ActionResult>,
-            fv: FitnessValue
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
     ){
         //TODO the other cases
 
@@ -1163,7 +1172,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             .map { it.path }
             .toSet()
 
-        val faultyPaths = getPaths.filter {RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
         if(faultyPaths.isEmpty()){
             return
         }

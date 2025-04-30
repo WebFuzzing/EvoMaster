@@ -1,13 +1,10 @@
 package org.evomaster.e2etests.spring.openapi.v3.minimize
 
 import com.foo.rest.examples.spring.openapi.v3.minimize.MinimizeController
-import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
-import java.nio.file.Paths
 
 /**
  * Created by arcuri82 on 03-Mar-20.

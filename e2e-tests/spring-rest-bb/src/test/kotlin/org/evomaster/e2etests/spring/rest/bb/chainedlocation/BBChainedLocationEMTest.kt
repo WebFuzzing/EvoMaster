@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.rest.bb.chainedlocation
 
 import com.foo.rest.examples.bb.chainedlocation.BBChainedLocationController
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll

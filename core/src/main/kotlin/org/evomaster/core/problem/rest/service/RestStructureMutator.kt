@@ -5,7 +5,9 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual

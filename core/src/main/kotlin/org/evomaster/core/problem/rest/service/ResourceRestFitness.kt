@@ -9,9 +9,9 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.httpws.auth.AuthUtils
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.action.ActionResult

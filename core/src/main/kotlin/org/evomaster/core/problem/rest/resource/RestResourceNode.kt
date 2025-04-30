@@ -7,6 +7,11 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.rest.builder.PostCreateResourceUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
@@ -29,10 +34,10 @@ import org.slf4j.LoggerFactory
  * @property employNLP specified whether to employ natural language parser
  */
 open class RestResourceNode(
-        val path : RestPath,
-        val actions: MutableList<RestCallAction> = mutableListOf(),
-        val initMode : InitMode,
-        val employNLP : Boolean
+    val path : RestPath,
+    val actions: MutableList<RestCallAction> = mutableListOf(),
+    val initMode : InitMode,
+    val employNLP : Boolean
 ) {
 
     companion object {
@@ -302,7 +307,7 @@ open class RestResourceNode(
     }
 
 
-    private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
+    private fun nextCreationPoints(path: RestPath, postCreationChain: PostCreationChain){
         val posts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)?.map { it.copy() as RestCallAction }
         if(!posts.isNullOrEmpty()){
             val newPosts = posts.filter { !postCreationChain.hasAction(it) }
@@ -463,7 +468,7 @@ open class RestResourceNode(
     }
 
 
-    private fun handleHeadLocation(actions: List<RestCallAction>) : RestCallAction{
+    private fun handleHeadLocation(actions: List<RestCallAction>) : RestCallAction {
 
         if (actions.size == 1) return actions.first()
 
@@ -486,7 +491,7 @@ open class RestResourceNode(
         val results = mutableListOf<RestCallAction>()
         var status = ResourceStatus.NOT_NEEDED
         val first = ats.first()
-        var lastPost:RestCallAction? = null
+        var lastPost: RestCallAction? = null
         if (first == HttpVerb.POST){
             val post = getPostChain()
             if (post == null)
@@ -542,7 +547,7 @@ open class RestResourceNode(
     }
 
 
-    private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
+    private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction {
         val action = (getActionByHttpVerb(verb)
                 ?:throw IllegalStateException("cannot get $verb action in the resource $path"))
                 .copy() as RestCallAction

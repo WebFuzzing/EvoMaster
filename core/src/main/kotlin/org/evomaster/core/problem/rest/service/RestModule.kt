@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.mutator.StandardMutator

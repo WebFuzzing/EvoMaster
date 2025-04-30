@@ -4,7 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.StructureMutator

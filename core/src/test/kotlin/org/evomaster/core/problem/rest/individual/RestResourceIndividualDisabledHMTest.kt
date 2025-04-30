@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.individual
 import com.google.inject.*
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.ResourceStatus
@@ -15,7 +15,6 @@ import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -99,7 +98,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         }
     }
 
-    private fun sampleRestIndividual(dbSize : Int, resourceSize: Int): RestIndividual{
+    private fun sampleRestIndividual(dbSize : Int, resourceSize: Int): RestIndividual {
         val sqlActions = mutableListOf<SqlAction>()
         val resoureCalls = mutableListOf<RestResourceCalls>()
         do {

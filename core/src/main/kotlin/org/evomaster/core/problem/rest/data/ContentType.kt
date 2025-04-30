@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 /**
  * Created by arcuri82 on 24-Oct-19.
@@ -14,7 +14,7 @@ enum class ContentType(
 
     companion object {
 
-        fun from(s : String) : ContentType{
+        fun from(s : String) : ContentType {
             return if(s.trim().endsWith("json", true)){
                 JSON
             } else if(s.trim().endsWith("x-www-form-urlencoded", true)){

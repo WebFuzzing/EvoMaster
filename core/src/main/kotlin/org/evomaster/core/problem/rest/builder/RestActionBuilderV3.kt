@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.builder
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
@@ -23,6 +23,11 @@ import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.data.Endpoint
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.link.RestLink
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
@@ -267,7 +272,8 @@ object RestActionBuilderV3 {
      */
     fun createGeneForDTO(dtoSchemaName: String,
                          allSchemas: String,
-                         options: Options) : Gene{
+                         options: Options
+    ) : Gene{
         if(!allSchemas.startsWith("\"$dtoSchemaName\"")){
             throw IllegalArgumentException("Invalid name $dtoSchemaName for schema $allSchemas")
         }
@@ -321,7 +327,8 @@ object RestActionBuilderV3 {
     fun createGeneForDTO(name: String,
                          dtoSchema: String,
                          referenceTypeName: String?,
-                         options: Options) : Gene{
+                         options: Options
+    ) : Gene{
 
         if(! dtoSchema.startsWith("\"$name\"")){
             throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
@@ -518,13 +525,13 @@ object RestActionBuilderV3 {
 
 
     private fun extractParams(
-            verb: HttpVerb,
-            restPath: RestPath,
-            operation: Operation,
-            schemaHolder: RestSchema,
-            currentSchema: SchemaOpenAPI,
-            options: Options,
-            messages: MutableList<String>
+        verb: HttpVerb,
+        restPath: RestPath,
+        operation: Operation,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        options: Options,
+        messages: MutableList<String>
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -661,14 +668,14 @@ object RestActionBuilderV3 {
     }
 
     private fun handleBodyPayload(
-            operation: Operation,
-            verb: HttpVerb,
-            restPath: RestPath,
-            schemaHolder: RestSchema,
-            currentSchema: SchemaOpenAPI,
-            params: MutableList<Param>,
-            options: Options,
-            messages: MutableList<String>
+        operation: Operation,
+        verb: HttpVerb,
+        restPath: RestPath,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        params: MutableList<Param>,
+        options: Options,
+        messages: MutableList<String>
     ) {
 
         // Return early if requestBody is missing
@@ -763,16 +770,16 @@ object RestActionBuilderV3 {
     }
 
     private fun getGene(
-            name: String,
-            schema: Schema<*>,
-            schemaHolder: RestSchema,
-            currentSchema: SchemaOpenAPI,
-            history: Deque<String> = ArrayDeque(),
-            referenceClassDef: String?,
-            options: Options,
-            isInPath: Boolean = false,
-            examples: List<Any> = listOf(),
-            messages: MutableList<String>
+        name: String,
+        schema: Schema<*>,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        history: Deque<String> = ArrayDeque(),
+        referenceClassDef: String?,
+        options: Options,
+        isInPath: Boolean = false,
+        examples: List<Any> = listOf(),
+        messages: MutableList<String>
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -905,7 +912,8 @@ object RestActionBuilderV3 {
                 if (schema is ArraySchema || schema is JsonSchema) {
 
                     val arrayType: Schema<*> = if (schema.items == null) {
-                        LoggingUtil.uniqueWarn(log, "Array type '$name' is missing mandatory field 'items' to define its type." +
+                        LoggingUtil.uniqueWarn(
+                            log, "Array type '$name' is missing mandatory field 'items' to define its type." +
                                 " Defaulting to 'string'")
                         Schema<Any>().also { it.type = "string" }
                     } else {
@@ -1535,7 +1543,7 @@ object RestActionBuilderV3 {
         }
         if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
             //possibly bug in parser, but it was reading strings values double-quoted in this case
-            examples.addAll(multiExampleValues.map { asRawString(it)})
+            examples.addAll(multiExampleValues.map { asRawString(it) })
         }
         examples.addAll( exampleObjects.map { asRawString(it) })
 

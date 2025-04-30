@@ -30,8 +30,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
@@ -248,10 +248,10 @@ abstract class RestIndividualTestBase {
     }
 
     open fun extraMutatedIndividualCheck(
-            evaluated: Int,
-            copyOfImpact: ImpactsOfIndividual?,
-            original: EvaluatedIndividual<RestIndividual>,
-            mutated: EvaluatedIndividual<RestIndividual>){}
+        evaluated: Int,
+        copyOfImpact: ImpactsOfIndividual?,
+        original: EvaluatedIndividual<RestIndividual>,
+        mutated: EvaluatedIndividual<RestIndividual>){}
 
 
     fun registerTable(tableName: String, columns: List<Pair<String, Boolean>>, columnTypes: List<ColumnDataType>){

@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
@@ -10,7 +10,6 @@ import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification

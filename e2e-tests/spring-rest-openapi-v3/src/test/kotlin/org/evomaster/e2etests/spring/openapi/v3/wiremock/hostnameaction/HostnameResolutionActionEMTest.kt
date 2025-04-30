@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.openapi.v3.wiremock.hostnameaction
 import com.foo.rest.examples.spring.openapi.v3.wiremock.hostnameaction.HostnameResolutionActionController
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.service.ResourceRestFitness
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase

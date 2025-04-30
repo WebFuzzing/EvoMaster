@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import io.swagger.models.HttpMethod
 

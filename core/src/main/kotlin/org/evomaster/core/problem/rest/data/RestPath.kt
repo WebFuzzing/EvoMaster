@@ -1,7 +1,8 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -355,7 +356,7 @@ class RestPath(path: String) {
      */
     fun dynamicResolutionOnlyPathData(
         params: List<Param>,
-        variables: Map<String,RestLinkParameter>
+        variables: Map<String, RestLinkParameter>
     ) : List<Pair<String,Boolean>>{
 
         val data = mutableListOf<Pair<String,Boolean>>()

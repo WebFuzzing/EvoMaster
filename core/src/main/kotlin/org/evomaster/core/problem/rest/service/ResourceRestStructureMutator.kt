@@ -5,8 +5,8 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.api.service.ApiWsStructureMutator
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls

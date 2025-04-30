@@ -1,5 +1,9 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.oracle
 
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.search.action.ActionResult
 
 object HttpSemanticsOracle {
@@ -60,8 +64,8 @@ object HttpSemanticsOracle {
         val index: Int = -1
     )
 
-    fun hasNonWorkingDelete( individual: RestIndividual,
-                             actionResults: List<ActionResult>
+    fun hasNonWorkingDelete(individual: RestIndividual,
+                            actionResults: List<ActionResult>
     ) : NonWorkingDeleteResult {
 
         if(individual.size() < 3){

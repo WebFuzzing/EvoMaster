@@ -10,6 +10,9 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.PostCreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 

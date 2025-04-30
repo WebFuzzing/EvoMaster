@@ -1,14 +1,12 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.oracle
 
 import com.atlassian.oai.validator.OpenApiInteractionValidator
 import com.atlassian.oai.validator.model.Request
 import com.atlassian.oai.validator.model.SimpleResponse
 import com.atlassian.oai.validator.report.ValidationReport
-import com.atlassian.oai.validator.whitelist.StatusType
-import com.atlassian.oai.validator.whitelist.ValidationErrorsWhitelist
-import com.atlassian.oai.validator.whitelist.rule.WhitelistRules.*
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.schema.RestSchema
-import org.evomaster.core.problem.rest.schema.SchemaLocationType
 import org.slf4j.LoggerFactory
 
 

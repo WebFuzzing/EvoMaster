@@ -1,6 +1,10 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
@@ -37,7 +41,7 @@ class RestResponseFeederTest{
         payload: String
     ) : EvaluatedAction {
 
-        val action = RestCallAction("42",verb,RestPath(path), mutableListOf())
+        val action = RestCallAction("42",verb, RestPath(path), mutableListOf())
         action.setLocalId("foo")
 
         val response = RestCallResult(action.getLocalId(), false)

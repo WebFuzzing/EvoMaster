@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.individual
 
 import com.google.inject.*
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual

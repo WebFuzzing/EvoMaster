@@ -1,4 +1,7 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.builder
+
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 
 
 /**

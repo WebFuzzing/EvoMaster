@@ -1,7 +1,9 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.builder
 
 
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
@@ -180,10 +182,10 @@ object RestIndividualSelectorUtils {
      *
      * @return null if none found
      */
-    fun findIndividualWithEndpointCreationForResource( individuals: List<EvaluatedIndividual<RestIndividual>>,
-                                                       resourcePath: RestPath,
-                                                       mustBeAuthenticated: Boolean
-    ) : Pair<EvaluatedIndividual<RestIndividual>,Endpoint>?{
+    fun findIndividualWithEndpointCreationForResource(individuals: List<EvaluatedIndividual<RestIndividual>>,
+                                                      resourcePath: RestPath,
+                                                      mustBeAuthenticated: Boolean
+    ) : Pair<EvaluatedIndividual<RestIndividual>, Endpoint>?{
 
         val existingPuts  = findIndividuals(
             individuals,

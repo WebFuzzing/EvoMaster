@@ -3,7 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.RestResponseFeeder
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.Gene

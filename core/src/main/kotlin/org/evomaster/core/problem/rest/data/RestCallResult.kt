@@ -1,11 +1,10 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.data
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
 

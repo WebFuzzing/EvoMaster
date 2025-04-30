@@ -6,7 +6,7 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
-import org.evomaster.core.problem.rest.ContentType
+import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 

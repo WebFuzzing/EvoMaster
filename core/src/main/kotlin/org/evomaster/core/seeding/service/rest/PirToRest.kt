@@ -2,8 +2,8 @@ package org.evomaster.core.seeding.service.rest
 
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
@@ -44,7 +44,8 @@ class PirToRest: PirToIndividual(){
      */
     fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
 
-        val v = try{HttpVerb.valueOf(verb.uppercase())}
+        val v = try{
+            HttpVerb.valueOf(verb.uppercase())}
         catch (e: IllegalArgumentException){
             log.warn("Unrecognized http verb: $verb")
             return null

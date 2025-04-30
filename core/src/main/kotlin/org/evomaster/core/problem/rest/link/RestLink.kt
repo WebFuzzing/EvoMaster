@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.link
 
 import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory

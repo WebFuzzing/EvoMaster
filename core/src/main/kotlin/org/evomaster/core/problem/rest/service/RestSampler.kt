@@ -3,9 +3,12 @@ package org.evomaster.core.problem.rest.service
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger

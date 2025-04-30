@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.link
 
 /**
  * When there is a link from A (the source) to B, this latter needs to have info about such link.

@@ -5,8 +5,9 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
-import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.action.ActionFilter

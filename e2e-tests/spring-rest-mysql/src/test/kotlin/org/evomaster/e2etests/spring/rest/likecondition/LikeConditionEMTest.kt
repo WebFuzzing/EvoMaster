@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.rest.likecondition
 
 import com.foo.spring.rest.mysql.likecondition.LikeConditionController
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.*
