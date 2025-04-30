@@ -104,7 +104,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
         val urlBeforeExecutingAction = browserController.getCurrentUrl()
-        val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
+        val possibilities = BrowserActionBuilder.createPossibleActions(browserController.getDriver())
 
         var blocking = false
 

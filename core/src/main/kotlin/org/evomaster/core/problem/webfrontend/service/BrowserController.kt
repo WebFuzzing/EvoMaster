@@ -67,7 +67,7 @@ class BrowserController {
     }
 
     fun computePossibleUserInteractions() : List<WebUserInteraction>{
-        return BrowserActionBuilder.computePossibleUserInteractions(getCurrentPageSource())
+        return BrowserActionBuilder.computePossibleUserInteractions(driver)
     }
 
     fun getCurrentPageSource(): String {
@@ -76,6 +76,10 @@ class BrowserController {
 
     fun getCurrentUrl(): String{
         return driver.currentUrl
+    }
+
+    fun getDriver(): RemoteWebDriver{
+        return driver
     }
 
     fun clickAndWaitPageLoad(cssSelector: String){

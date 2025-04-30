@@ -2,7 +2,8 @@ package org.evomaster.core.problem.webfrontend
 
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.openqa.selenium.WebElement
+import org.openqa.selenium.By
+import org.openqa.selenium.remote.RemoteWebDriver
 import org.openqa.selenium.support.ui.Select
 import java.net.URI
 import java.net.URISyntaxException
@@ -11,17 +12,12 @@ object BrowserActionBuilder {
 
 
     /**
-     * FIXME this might require refactoring
-     * checking on HTML as string might (or might not???) lose dynamic info added to the page.
-     * TODO need to verify this.
-     * Might be better to pass in a Selenium Document.
-     * We need to verify before making the refactoring
      */
-    fun computePossibleUserInteractions(html: String) : List<WebUserInteraction>{
+    fun computePossibleUserInteractions(driver: RemoteWebDriver) : List<WebUserInteraction>{
 
 
         val document = try{
-            Jsoup.parse(html)
+            Jsoup.parse(driver.pageSource)
         }catch (e: Exception){
             //TODO double-check
             return listOf()
@@ -31,24 +27,36 @@ object BrowserActionBuilder {
 
         //TODO all cases
 
-        handleALinks(document, list)
-        handleDropDowns(document, list)
+        handleALinks(document, driver, list)
+        handleDropDowns(document, driver, list)
 
         return list
     }
 
-    private fun handleDropDowns(document: Document, list: MutableList<WebUserInteraction>) {
+    private fun handleDropDowns(
+        document: Document,
+        driver: RemoteWebDriver,
+        list: MutableList<WebUserInteraction>
+    ) {
 
         document.getElementsByTag("select")
-            .forEach {
-                //TODO
-               // val type =
-               // list.add(WebUserInteraction(it.cssSelector(), UserActionType.SELECT))
+            .forEach { jsoup ->
+                val dropdown = Select(driver.findElement(By.cssSelector(jsoup.cssSelector())))
+                val type = if(dropdown.isMultiple) {
+                    UserActionType.SELECT_MULTI
+                }  else {
+                    UserActionType.SELECT_SINGLE
+                }
+                val options = dropdown.options
+                    .filter{it.isEnabled}
+                    .map{it.text}
+                list.add(WebUserInteraction(jsoup.cssSelector(), type, options))
             }
     }
 
     private fun handleALinks(
         document: Document,
+        driver: RemoteWebDriver,
         list: MutableList<WebUserInteraction>
     ) {
         document.getElementsByTag("a")
@@ -74,9 +82,9 @@ object BrowserActionBuilder {
     }
 
 
-    fun createPossibleActions(html: String) : List<WebAction>{
+    fun createPossibleActions(driver: RemoteWebDriver) : List<WebAction>{
 
-        val interactions = computePossibleUserInteractions(html)
+        val interactions = computePossibleUserInteractions(driver)
 
         val inputs = interactions.filter { it.userActionType == UserActionType.FILL_TEXT }
         val others = interactions.filter { it.userActionType != UserActionType.FILL_TEXT }
