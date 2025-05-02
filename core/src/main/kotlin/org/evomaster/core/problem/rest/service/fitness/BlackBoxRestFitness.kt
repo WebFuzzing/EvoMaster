@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service.fitness
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -63,8 +64,27 @@ class BlackBoxRestFitness : RestFitness() {
 
         analyzeResponseData(fv,individual,actionResults, listOf())
 
+        handleCleanUpActions(individual,actionResults,chainState,cookies,tokens,fv)
+
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
+
+    private fun handleCleanUpActions(
+        individual: RestIndividual,
+        actionResults: MutableList<ActionResult>,
+        chainState: MutableMap<String, String>,
+        cookies: Map<String, List<NewCookie>>,
+        tokens: Map<String, String>,
+        fv: FitnessValue
+    ){
+        //this is always going to be updated at each fitness evaluation
+        individual.cleanUpActions.clear()
+
+
+
+        //TODO
+    }
+
 
     override fun getlocation5xx(status: Int, additionalInfoList: List<AdditionalInfoDto>, indexOfAction: Int, result: HttpWsCallResult, name: String): String? {
         /*

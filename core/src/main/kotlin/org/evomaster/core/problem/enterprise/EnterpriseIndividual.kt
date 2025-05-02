@@ -51,7 +51,16 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0),
+    /**
+     * An optional list of clean-up actions, needed to avoid side-effects in the SUT.
+     * In white-box testing, this is not needed, as we do have direct access to databases.
+     * However, it is a major problem in black-box testing.
+     * These actions are NOT part of the children, and their genes (if any) are not going to be
+     * mutated.
+     * The handling of these actions is going to be custom-made.
+     */
+    val cleanUpActions : MutableList<out Action> = mutableListOf()
 ) : Individual(
     trackOperator,
     index,
