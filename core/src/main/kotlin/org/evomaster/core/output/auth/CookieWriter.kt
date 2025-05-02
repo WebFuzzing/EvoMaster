@@ -113,28 +113,33 @@ object CookieWriter {
             callPost(lines, k, format, baseUrlOfSut)
         }
 
-        when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
-            format.isJavaScript() -> lines.add(".set(\"content-type\", \"${k.contentType.defaultValue}\")")
-            format.isPython() -> {
-                lines.add("headers = {}")
-                lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
-            }
-        }
-
-        when (k.contentType) {
-            ContentType.X_WWW_FORM_URLENCODED -> {
-                val send = testCaseWriter.sendBodyCommand()
-                when {
-                    format.isPython() -> lines.add("body = \"${k.payload}\"")
-                    else -> lines.add(".$send(\"${k.payload}\")")
+        val contentType = k.contentType
+        if(contentType != null) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
+                format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
+                format.isPython() -> {
+                    lines.add("headers = {}")
+                    lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
                 }
             }
-            ContentType.JSON -> {
-                testCaseWriter.printSendJsonBody(k.payload, lines)
-            }
-            else -> {
-                throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+
+            when (contentType) {
+                ContentType.X_WWW_FORM_URLENCODED -> {
+                    val send = testCaseWriter.sendBodyCommand()
+                    when {
+                        format.isPython() -> lines.add("body = \"${k.payload}\"")
+                        else -> lines.add(".$send(\"${k.payload}\")")
+                    }
+                }
+
+                ContentType.JSON -> {
+                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                }
+
+                else -> {
+                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                }
             }
         }
 

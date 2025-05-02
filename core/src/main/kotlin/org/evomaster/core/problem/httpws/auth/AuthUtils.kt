@@ -8,6 +8,7 @@ import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.rest.data.ContentType
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.Individual
 import org.slf4j.Logger
@@ -116,14 +117,40 @@ object AuthUtils {
         val mediaType = when (x.contentType) {
             ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
             ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
+            null -> null
+        }
+
+        val bodyEntity = if(mediaType != null) {
+            Entity.entity(x.payload, mediaType)
+        } else {
+            null
+        }
+
+        val builder =  client.target(x.getUrl(baseUrl)).request()
+
+        //TODO duplicated code, should put in a utility
+        val invocation = when (x.verb) {
+            HttpVerb.GET -> builder.buildGet()
+//            HttpVerb.DELETE -> builder.buildDelete()
+            /*
+                As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
+                https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
+
+                Note: due to bug in Jersey, can handle DELETE but not GET :(
+                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
+             */
+//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
+            HttpVerb.POST -> builder.buildPost(bodyEntity)
+            HttpVerb.PUT -> builder.buildPut(bodyEntity)
+            HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
+            HttpVerb.OPTIONS -> builder.build("OPTIONS")
+            HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
 
         val response = try {
-            client.target(x.getUrl(baseUrl))
-                .request()
-                //TODO could consider other cases besides POST
-                .buildPost(Entity.entity(x.payload, mediaType))
-                .invoke()
+            invocation.invoke()
         } catch (e: Exception) {
             log.warn("Failed to login for ${x.name}: $e")
             return null

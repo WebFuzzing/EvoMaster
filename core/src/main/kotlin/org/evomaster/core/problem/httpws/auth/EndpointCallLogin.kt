@@ -30,11 +30,9 @@ class EndpointCallLogin(
     val externalEndpointURL: String?,
 
     /**
-     * The raw payload to send, as a string
-     *
-     * TODO should this be nullable? eg, what about case of login based on GET with query params?
+     * The raw payload to send, as a string, if any
      */
-    val payload: String,
+    val payload: String?,
 
     /**
      * The verb used to connect to the login endpoint.
@@ -46,7 +44,7 @@ class EndpointCallLogin(
      * Specify the format in which the payload is sent to the login endpoint.
      * A common example is "application/json"
      */
-    val contentType: ContentType,
+    val contentType: ContentType?,
 
     val token: TokenHandling? = null
 ) {
@@ -74,8 +72,8 @@ class EndpointCallLogin(
                 throw IllegalArgumentException("'externalEndpointURL' is not a valid URL: ${e.message}")
             }
         }
-        if (payload.isEmpty()) {
-            throw IllegalArgumentException("Empty payload")
+        if( (payload != null && contentType==null) || (payload==null && contentType!=null)) {
+            throw IllegalArgumentException("Payload and contentType must be both specified, or none specified")
         }
     }
 
@@ -84,12 +82,10 @@ class EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
             externalEndpointURL = dto.externalEndpointURL,
-            payload = dto.payloadRaw ?: computePayload(
-                dto.payloadUserPwd ?: throw IllegalArgumentException("Must specify a payload for auth info"),
-                ContentType.from(dto.contentType)
-            ),
+            payload = dto.payloadRaw ?:
+                dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
             verb = HttpVerb.valueOf(dto.verb.toString()),
-            contentType = ContentType.from(dto.contentType),
+            contentType = dto.contentType?.let { ContentType.from(it)},
             token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)
         )
 
