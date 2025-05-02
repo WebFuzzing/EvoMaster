@@ -34,6 +34,8 @@ class EndpointCallLogin(
      */
     val payload: String?,
 
+    val headers: List<AuthenticationHeader>,
+
     /**
      * The verb used to connect to the login endpoint.
      * Most of the time, this will be a POST.
@@ -84,6 +86,7 @@ class EndpointCallLogin(
             externalEndpointURL = dto.externalEndpointURL,
             payload = dto.payloadRaw ?:
                 dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
+            headers = dto.headers?.map { AuthenticationHeader(it.name, it.value) } ?: emptyList(),
             verb = HttpVerb.valueOf(dto.verb.toString()),
             contentType = dto.contentType?.let { ContentType.from(it)},
             token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)

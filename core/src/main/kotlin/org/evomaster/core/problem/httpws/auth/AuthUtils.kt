@@ -128,6 +128,8 @@ object AuthUtils {
 
         val builder =  client.target(x.getUrl(baseUrl)).request()
 
+        x.headers.forEach { builder.header(it.name, it.value) }
+
         //TODO duplicated code, should put in a utility
         val invocation = when (x.verb) {
             HttpVerb.GET -> builder.buildGet()
