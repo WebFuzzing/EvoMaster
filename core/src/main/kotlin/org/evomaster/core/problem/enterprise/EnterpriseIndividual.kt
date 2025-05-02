@@ -60,7 +60,7 @@ abstract class EnterpriseIndividual(
      * mutated.
      * The handling of these actions is going to be custom-made.
      */
-    val cleanUpActions : MutableList<out Action> = mutableListOf()
+    val cleanUpActions : MutableList<Action> = mutableListOf()
 ) : Individual(
     trackOperator,
     index,

@@ -30,7 +30,7 @@ abstract class ApiWsIndividual (
     children: MutableList<out ActionComponent>,
     childTypeVerifier: EnterpriseChildTypeVerifier,
     groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0, 0, 0, 0),
-    cleanUpActions : MutableList<out Action> = mutableListOf()
+    cleanUpActions : MutableList<Action> = mutableListOf()
 ): EnterpriseIndividual(sampleType, trackOperator, index, children, childTypeVerifier, groups,cleanUpActions){
 
 

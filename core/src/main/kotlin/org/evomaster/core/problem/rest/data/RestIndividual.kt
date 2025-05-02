@@ -48,7 +48,7 @@ class RestIndividual(
     allActions,
     childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
     groups,
-    cleanUpActions
+    cleanUpActions.toMutableList()
 ) {
 
     /*

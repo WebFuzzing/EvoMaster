@@ -122,7 +122,7 @@ class BlackBoxRestFitness : RestFitness() {
             if(existing.isNotEmpty()){
                 continue
             }
-            individual.cleanUpActions.add(delete) //FIXME
+            individual.cleanUpActions.add(delete)
         }
 
         for(delete in individual.cleanUpActions){
