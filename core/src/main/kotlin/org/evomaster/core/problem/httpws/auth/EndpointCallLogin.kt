@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
 import org.evomaster.client.java.controller.api.dto.auth.PayloadUsernamePasswordDto
 import org.evomaster.client.java.controller.api.dto.auth.TokenHandlingDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.ContentType
+import org.evomaster.core.problem.rest.data.HttpVerb
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLEncoder

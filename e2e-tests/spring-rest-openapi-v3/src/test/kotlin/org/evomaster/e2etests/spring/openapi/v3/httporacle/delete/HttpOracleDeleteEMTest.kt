@@ -1,18 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.httporacle.delete
 
 import com.foo.rest.examples.spring.openapi.v3.httporacle.delete.HttpOracleDeleteController
-import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.ExistenceLeakageController
-import com.foo.rest.examples.spring.openapi.v3.security.forbiddendelete.SecurityForbiddenDeleteController
-import com.foo.rest.examples.spring.openapi.v3.security.notrecognized.NotRecognizedController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HttpOracleDeleteEMTest : SpringTestBase(){

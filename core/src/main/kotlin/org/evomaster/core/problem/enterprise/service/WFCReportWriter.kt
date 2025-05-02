@@ -6,9 +6,8 @@ import com.webfuzzing.commons.report.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestCaseCode
 import org.evomaster.core.output.TestSuiteCode
-import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics

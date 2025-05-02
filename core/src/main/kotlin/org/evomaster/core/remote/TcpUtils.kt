@@ -1,6 +1,5 @@
 package org.evomaster.core.remote
 
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException

@@ -6,8 +6,8 @@ import org.evomaster.core.output.naming.LanguageConventionFormatter
 import org.evomaster.core.output.naming.rest.RestNamingUtils.addBodyShape
 import org.evomaster.core.output.naming.rest.RestNamingUtils.getPath
 import org.evomaster.core.output.naming.rest.RestNamingUtils.isGetCall
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.EvaluatedAction

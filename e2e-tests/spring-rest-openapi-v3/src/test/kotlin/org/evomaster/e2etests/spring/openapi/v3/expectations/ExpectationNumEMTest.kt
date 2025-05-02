@@ -4,7 +4,7 @@ import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationNumTestCo
 import org.evomaster.client.java.instrumentation.shared.ClassName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.*

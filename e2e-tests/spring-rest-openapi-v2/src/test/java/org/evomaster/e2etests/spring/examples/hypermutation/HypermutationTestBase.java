@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.examples.hypermutation;
 
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;

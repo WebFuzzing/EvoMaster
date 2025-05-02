@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.rest.postgres.base
 
 
 import com.foo.spring.rest.postgres.base.BaseController
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.postgres.SpringRestPostgresTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll

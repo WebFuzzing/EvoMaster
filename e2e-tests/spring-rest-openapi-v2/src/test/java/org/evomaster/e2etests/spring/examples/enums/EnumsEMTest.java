@@ -1,9 +1,8 @@
 package org.evomaster.e2etests.spring.examples.enums;
 
 import com.foo.rest.examples.spring.enums.EnumsController;
-import org.evomaster.core.Main;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.service.Statistics;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
