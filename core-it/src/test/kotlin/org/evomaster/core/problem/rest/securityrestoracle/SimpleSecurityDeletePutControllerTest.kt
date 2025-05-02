@@ -2,9 +2,9 @@ package org.evomaster.core.problem.rest.securityrestoracle
 
 import bar.examples.it.spring.simplesecuritydeleteput.SimpleSecurityDeletePutController
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.RestSecurityOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertTrue

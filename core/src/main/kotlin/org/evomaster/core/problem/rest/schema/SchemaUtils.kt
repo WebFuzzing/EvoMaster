@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.schema
 
 
-import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.examples.Example
 import io.swagger.v3.oas.models.links.Link
@@ -9,11 +8,8 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.RestActionBuilderV3
 import java.net.URI
 import java.net.URISyntaxException
-import java.nio.file.Paths
 
 /**
  * https://swagger.io/docs/specification/v3_0/using-ref/

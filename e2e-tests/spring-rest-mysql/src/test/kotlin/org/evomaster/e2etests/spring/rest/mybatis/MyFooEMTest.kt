@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.rest.mybatis
 
 import com.foo.spring.rest.mysql.mybatis.MyFooController
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll

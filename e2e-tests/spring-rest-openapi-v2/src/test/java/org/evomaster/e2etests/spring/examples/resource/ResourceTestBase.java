@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource;
 
 import com.foo.rest.examples.spring.resource.ResourceRestController;
-import org.evomaster.core.problem.rest.*;
+import org.evomaster.core.problem.rest.data.*;
 import org.evomaster.core.search.action.ActionResult;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;

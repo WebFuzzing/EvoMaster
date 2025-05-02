@@ -2,8 +2,8 @@ package org.evomaster.core.search.structuralelement.resourcecall
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.Action
@@ -11,7 +11,6 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 object ResourceNodeCluster{

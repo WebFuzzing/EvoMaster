@@ -4,11 +4,10 @@ import com.google.inject.AbstractModule
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Main
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.test.utils.py.PyLoader
 import org.junit.jupiter.api.Assertions.assertFalse

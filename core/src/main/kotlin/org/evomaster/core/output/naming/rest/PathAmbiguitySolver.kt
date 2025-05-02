@@ -2,8 +2,8 @@ package org.evomaster.core.output.naming.rest
 
 import org.evomaster.core.output.naming.AmbiguitySolver
 import org.evomaster.core.output.naming.rest.RestNamingUtils.getPath
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.action.Action
 
 class PathAmbiguitySolver : AmbiguitySolver {

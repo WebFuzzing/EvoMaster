@@ -16,12 +16,13 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.sql.extract.h2.ExtractTestBaseH2
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.Endpoint
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSampler

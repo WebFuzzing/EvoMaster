@@ -4,9 +4,9 @@ import bar.examples.it.spring.nonworkingdelete.NonWorkingDeleteApplication
 import bar.examples.it.spring.nonworkingdelete.NonWorkingDeleteController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.HttpSemanticsOracle
+import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach

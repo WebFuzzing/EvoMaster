@@ -3,6 +3,13 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
@@ -32,7 +39,7 @@ class RestIndividualBuilder {
             statusCodes: List<Int>? = null,
             authenticated: Boolean? = null,
             authenticatedWith: String? = null
-        ) : RestIndividual{
+        ) : RestIndividual {
 
             val index = RestIndividualSelectorUtils.findIndexOfAction(
                 evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
@@ -279,7 +286,7 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
+        CreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }

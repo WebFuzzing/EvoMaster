@@ -9,7 +9,11 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult

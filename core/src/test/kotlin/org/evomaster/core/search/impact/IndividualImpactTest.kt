@@ -2,7 +2,7 @@ package org.evomaster.core.search.impact
 
 import org.evomaster.core.TestUtils
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.sql.SqlAction
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 class IndividualImpactTest {
 
 
-    private fun generateFkIndividual() : RestIndividual{
+    private fun generateFkIndividual() : RestIndividual {
         val twoDbActions = TestUtils.generateTwoFakeDbActions(1001L, 1002L, 12345L, 10L, "Foo", "Bar", 0, 42)
 
 

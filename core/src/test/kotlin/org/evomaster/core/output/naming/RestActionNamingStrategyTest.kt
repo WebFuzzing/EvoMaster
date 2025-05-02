@@ -8,7 +8,8 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndi
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.enterprise.DetectedFault
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals

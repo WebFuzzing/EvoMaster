@@ -2,10 +2,10 @@ package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene

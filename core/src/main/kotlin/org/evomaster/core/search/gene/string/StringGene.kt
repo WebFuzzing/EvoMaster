@@ -12,7 +12,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
