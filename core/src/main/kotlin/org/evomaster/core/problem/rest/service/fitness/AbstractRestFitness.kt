@@ -574,7 +574,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             createInvocation(a, chainState, cookies, tokens).invoke()
         } catch (e: ProcessingException) {
 
-            log.debug("There has been an issue in the evaluation of a test: {}", e)
+            log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
 
             /*
                 this could have happened for example if call ends up in an infinite redirection loop.

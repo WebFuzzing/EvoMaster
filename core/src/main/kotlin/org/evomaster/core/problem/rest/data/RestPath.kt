@@ -249,8 +249,9 @@ class RestPath(path: String) {
      * @return whether this is direct or possible ancestor of [other]
      *
      * this is to handle the case eg.
-     * /root/{rootName}/bar/{barName} might be the potential
-     * ancestor of /root/{rootName}/foo/{fooName}/bar/{barName}
+     * /root/{rootName}/bar/{barName}
+     * might be the potential ancestor of
+     * /root/{rootName}/foo/{fooName}/bar/{barName}
      *
      */
     fun isDirectOrPossibleAncestorOf(other: RestPath): Boolean {

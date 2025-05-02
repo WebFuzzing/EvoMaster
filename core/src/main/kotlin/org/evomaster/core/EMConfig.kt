@@ -2391,6 +2391,13 @@ class EMConfig {
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
+    @Experimental
+    @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
+            " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
+            " However, this is done heuristically." +
+            " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
+    var blackBoxCleanUp = false
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds

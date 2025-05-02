@@ -3,6 +3,10 @@ package org.evomaster.core.problem.rest.service.fitness
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
+import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.action.ActionResult
@@ -64,7 +68,9 @@ class BlackBoxRestFitness : RestFitness() {
 
         analyzeResponseData(fv,individual,actionResults, listOf())
 
-        handleCleanUpActions(individual,actionResults,chainState,cookies,tokens,fv)
+        if(config.blackBoxCleanUp) {
+            handleCleanUpActions(individual, actionResults, chainState, cookies, tokens, fv)
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
@@ -80,9 +86,48 @@ class BlackBoxRestFitness : RestFitness() {
         //this is always going to be updated at each fitness evaluation
         individual.cleanUpActions.clear()
 
+        val toHandle = RestIndividualSelectorUtils.findActionsInIndividual(
+            individual,
+            actionResults,
+            verb = HttpVerb.POST,
+            statusGroup = StatusGroup.G_2xx
+        ).plus(RestIndividualSelectorUtils.findActionsInIndividual(
+            individual,
+            actionResults,
+            verb = HttpVerb.PUT,
+            statusGroup = StatusGroup.G_2xx
+        ))
 
+        if(toHandle.isEmpty()){
+            return
+        }
 
-        //TODO
+        val mainActions = individual.seeMainExecutableActions()
+
+        for(create in toHandle){
+
+            val template = builder.findDeleteFor(create.action as RestCallAction)
+                ?: continue
+
+            val delete = builder.createBoundActionOnPreviousCreate(template, create.action)
+
+            //check if already there an existing DELETE on same resource
+            val index = mainActions.indexOf(create.action)
+            assert(index >= 0)
+            val existing = mainActions.filterIndexed { i, a ->
+                i > index && a.verb == HttpVerb.DELETE
+                        && a.path.isEquivalent(delete.path)
+                        && CreateResourceUtils.doesResolveToSamePath(a,delete)
+            }
+            if(existing.isNotEmpty()){
+                continue
+            }
+            individual.cleanUpActions.add(delete) //FIXME
+        }
+
+        for(delete in individual.cleanUpActions){
+            handleRestCall(delete as RestCallAction, mainActions, actionResults, chainState, cookies, tokens, fv)
+        }
     }
 
 
