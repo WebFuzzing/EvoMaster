@@ -14,7 +14,7 @@ class LoginTokenHeaderRest {
 
     private val SECRET = "a complex secret..."
 
-    @PostMapping(path = ["/login"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(path = ["/login"])
     fun login(@RequestHeader("Authorization") authorization: String?) : ResponseEntity<AuthDto>{
 
         if(authorization == "foo 123"){

@@ -110,7 +110,11 @@ object CookieWriter {
     ) {
 
         if(format.isJavaScript()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
+        }
+
+        if(format.isPython()) {
+            lines.add("headers = {}")
         }
 
         val contentType = k.contentType
@@ -119,7 +123,6 @@ object CookieWriter {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
                 format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
                 format.isPython() -> {
-                    lines.add("headers = {}")
                     lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
                 }
             }
@@ -143,6 +146,16 @@ object CookieWriter {
             }
         }
 
+        for(header in k.headers) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
+                format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
+                format.isPython() -> {
+                    lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
+                }
+            }
+        }
+
         if (format.isJavaScript()){
             // disable redirections
             lines.add(".redirects(0)")
@@ -153,15 +166,13 @@ object CookieWriter {
             needed in used libraries for Python and JS
          */
         if(format.isJavaOrKotlin()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-
-        //TODO should check specified verb
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
             lines.indent(2)
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
                 lines.add("headers=headers, data=body, allow_redirects=False)")
@@ -170,13 +181,14 @@ object CookieWriter {
         }
     }
 
-    private fun callPost(
+    private fun callEndpoint(
         lines: Lines,
         k: EndpointCallLogin,
         format: OutputFormat,
         baseUrlOfSut: String
     ) {
-        lines.add(".post(")
+        val verb = k.verb.name.lowercase()
+        lines.add(".$verb(")
         if (k.externalEndpointURL != null) {
             lines.append("\"${k.externalEndpointURL}\"")
         } else {

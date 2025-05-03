@@ -131,24 +131,19 @@ object AuthUtils {
         x.headers.forEach { builder.header(it.name, it.value) }
 
         //TODO duplicated code, should put in a utility
-        val invocation = when (x.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
-            /*
-                As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
-                https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
-             */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
-            HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
-            HttpVerb.POST -> builder.buildPost(bodyEntity)
-            HttpVerb.PUT -> builder.buildPut(bodyEntity)
-            HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
-            HttpVerb.OPTIONS -> builder.build("OPTIONS")
-            HttpVerb.HEAD -> builder.build("HEAD")
-            HttpVerb.TRACE -> builder.build("TRACE")
+        val invocation = if(bodyEntity != null) {
+            when (x.verb) {
+                HttpVerb.GET -> builder.buildGet()
+                HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
+                HttpVerb.POST -> builder.buildPost(bodyEntity)
+                HttpVerb.PUT -> builder.buildPut(bodyEntity)
+                HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
+                HttpVerb.OPTIONS -> builder.build("OPTIONS")
+                HttpVerb.HEAD -> builder.build("HEAD")
+                HttpVerb.TRACE -> builder.build("TRACE")
+            }
+        } else {
+            builder.build(x.verb.toString())
         }
 
         val response = try {
