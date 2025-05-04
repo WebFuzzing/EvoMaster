@@ -690,8 +690,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return schemaDto;
         }
 
-        DbInfoDto schema = extractSqlDbSchemaAndConstraints();
-        if (schema == null) return null;
+        boolean success = extractSqlDbSchemaAndConstraints();
+        if (!success) return null;
 
         UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
         List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
@@ -704,17 +704,18 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     /**
-     * @return extracted Sql Database Schema. Note that null is returned only if the schema has been extracted or the extraction fails with the given db connection.
+     * @return if the extraction of SQL schema and constraints with the given DbSpecification has been proceeded successfully
+     * Note that such extraction is only performed once. if the extraction has been performed, it returns false.
      */
-    public final DbInfoDto extractSqlDbSchemaAndConstraints(){
+    public final boolean extractSqlDbSchemaAndConstraints(){
 
         if (schemaDto != null) {
             SimpleLogger.info("Sql Database Schema and Constraints have been extracted and built.");
-            return null;
+            return false;
         }
 
         if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
-            return null;
+            return false;
         }
 
         try {
@@ -723,7 +724,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
-            return null;
+            return false;
         }
 
         if (fkMap.isEmpty()){
@@ -737,7 +738,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             });
         }
 
-        return schemaDto;
+        return false;
     }
 
     /**
