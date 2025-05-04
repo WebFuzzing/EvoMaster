@@ -177,5 +177,5 @@ docs/.DS_Store
 /e2e-tests/spring-rest-h2-v2/target/
 
 
-# Exclude Target directories
+# Exclude Target directories recursively
 **/target/*
