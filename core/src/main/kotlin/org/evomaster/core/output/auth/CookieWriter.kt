@@ -110,31 +110,49 @@ object CookieWriter {
     ) {
 
         if(format.isJavaScript()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-        when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
-            format.isJavaScript() -> lines.add(".set(\"content-type\", \"${k.contentType.defaultValue}\")")
-            format.isPython() -> {
-                lines.add("headers = {}")
-                lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
-            }
+        if(format.isPython()) {
+            lines.add("headers = {}")
         }
 
-        when (k.contentType) {
-            ContentType.X_WWW_FORM_URLENCODED -> {
-                val send = testCaseWriter.sendBodyCommand()
-                when {
-                    format.isPython() -> lines.add("body = \"${k.payload}\"")
-                    else -> lines.add(".$send(\"${k.payload}\")")
+        val contentType = k.contentType
+        if(contentType != null) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
+                format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
+                format.isPython() -> {
+                    lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
                 }
             }
-            ContentType.JSON -> {
-                testCaseWriter.printSendJsonBody(k.payload, lines)
+
+            when (contentType) {
+                ContentType.X_WWW_FORM_URLENCODED -> {
+                    val send = testCaseWriter.sendBodyCommand()
+                    when {
+                        format.isPython() -> lines.add("body = \"${k.payload}\"")
+                        else -> lines.add(".$send(\"${k.payload}\")")
+                    }
+                }
+
+                ContentType.JSON -> {
+                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                }
+
+                else -> {
+                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                }
             }
-            else -> {
-                throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+        }
+
+        for(header in k.headers) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
+                format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
+                format.isPython() -> {
+                    lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
+                }
             }
         }
 
@@ -148,15 +166,13 @@ object CookieWriter {
             needed in used libraries for Python and JS
          */
         if(format.isJavaOrKotlin()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-
-        //TODO should check specified verb
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
             lines.indent(2)
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
                 lines.add("headers=headers, data=body, allow_redirects=False)")
@@ -165,13 +181,14 @@ object CookieWriter {
         }
     }
 
-    private fun callPost(
+    private fun callEndpoint(
         lines: Lines,
         k: EndpointCallLogin,
         format: OutputFormat,
         baseUrlOfSut: String
     ) {
-        lines.add(".post(")
+        val verb = k.verb.name.lowercase()
+        lines.add(".$verb(")
         if (k.externalEndpointURL != null) {
             lines.append("\"${k.externalEndpointURL}\"")
         } else {

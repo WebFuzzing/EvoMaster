@@ -66,6 +66,23 @@ There are several pieces of information that would be the same for both users:
 * `contentType`: specify how the payload will be sent (e.g., JSON in this case).
 * `expectCookies`: tell _EvoMaster_ that from the login endpoint we expect to get a cookie for the authentication.
 
+Note that, at times, username/password information might be passed via header (e.g., with `Basic`), instead of with a body payload.
+This is supported with the array `headers`, in which each header can be specified with a `name` and `value`. 
+For example:
+
+```
+auth:
+  - name: test
+    loginEndpointAuth:
+      endpoint: /api/login
+      verb: POST
+      headers:
+        - name: Authorization
+          value: "Basic dGVzdDp0ZXN0Cg=="
+```
+
+
+
 If instead of cookies we have a token to be extracted from the JSON response of the login endpoint, we can use something like:
 
 ```

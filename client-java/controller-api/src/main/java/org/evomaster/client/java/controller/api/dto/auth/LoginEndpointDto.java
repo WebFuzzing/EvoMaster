@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto.auth;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Authentication based on making a request to a login endpoint.
  * A token or cookie is then extracted from the response, and used in following HTTP calls
@@ -29,6 +32,12 @@ public class LoginEndpointDto {
      * It will be automatically formatted in a proper payload based on content type.
      */
     public PayloadUsernamePasswordDto payloadUserPwd;
+
+    /**
+     * HTTP headers needed when calling the login endpoint.
+     * Username/password could be passed by headers instead of by the body payload.
+     */
+    public List<HeaderDto> headers = new ArrayList<>();
 
     /**
      * The verb used to connect to the login endpoint.
