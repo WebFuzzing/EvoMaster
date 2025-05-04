@@ -738,7 +738,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             });
         }
 
-        return false;
+        return true;
     }
 
     /**
