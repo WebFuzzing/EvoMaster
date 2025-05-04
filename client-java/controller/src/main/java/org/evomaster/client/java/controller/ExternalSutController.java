@@ -457,7 +457,7 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto) {
+    public final void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto) {
         if (isInstrumentationActivated()) {
 
             List<String> inputVariables = new ArrayList<>();

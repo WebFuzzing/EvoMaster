@@ -75,7 +75,7 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto) {
+    public final void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto) {
         List<String> inputVariables = new ArrayList<>();
         if (dto.requestParams != null && (!dto.requestParams.isEmpty())){
             inputVariables.addAll(dto.requestParams.stream().map(e-> e.stringValue).collect(Collectors.toList()));
