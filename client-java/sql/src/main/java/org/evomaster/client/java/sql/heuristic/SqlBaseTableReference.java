@@ -1,10 +1,17 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import java.util.Objects;
+
+/**
+ * Represents a reference to a base table in SQL.
+ * Base tables are physical tables in the database.
+ */
 public class SqlBaseTableReference extends SqlTableReference {
 
     private final String name;
 
     public SqlBaseTableReference(String name) {
+        Objects.requireNonNull(name);
         this.name = name;
     }
 

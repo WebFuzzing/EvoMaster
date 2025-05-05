@@ -3,6 +3,7 @@ package org.evomaster.client.java.sql.heuristic;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
@@ -14,34 +15,47 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ColumnReferenceResolverTest {
+class TableColumnResolverTest {
 
     private DbInfoDto schema;
-    private ColumnReferenceResolver resolver;
+    private TableColumnResolver resolver;
 
     @BeforeEach
     void setUp() {
 
         schema = new DbInfoDto();
         TableDto employeesTable = createTableDto("employees");
-        employeesTable.columns.add(createColumnDto("id"));
-        employeesTable.columns.add(createColumnDto("first_name"));
-        employeesTable.columns.add(createColumnDto("department_id"));
-        employeesTable.columns.add(createColumnDto("salary"));
+        employeesTable.columns.add(createColumnDto("employees", "id"));
+        employeesTable.columns.add(createColumnDto("employees", "first_name"));
+        employeesTable.columns.add(createColumnDto("employees", "department_id"));
+        employeesTable.columns.add(createColumnDto("employees", "salary"));
 
         TableDto departmentsTable = createTableDto("departments");
-        departmentsTable.columns.add(createColumnDto("id"));
-        departmentsTable.columns.add(createColumnDto("department_name"));
+        departmentsTable.columns.add(createColumnDto("departments", "id"));
+        departmentsTable.columns.add(createColumnDto("departments", "department_name"));
+
+        TableDto ordersTable = createTableDto("orders");
+        ordersTable.columns.add(createColumnDto("orders", "order_id"));
+        ordersTable.columns.add(createColumnDto("orders", "order_date"));
+        ordersTable.columns.add(createColumnDto("orders", "customer_id"));
+
+        TableDto customersTable = createTableDto("customers");
+        customersTable.columns.add(createColumnDto("customers", "customer_id"));
+        customersTable.columns.add(createColumnDto("customers", "customer_name"));
+
 
         schema.tables.add(employeesTable);
         schema.tables.add(departmentsTable);
+        schema.tables.add(ordersTable);
+        schema.tables.add(customersTable);
 
-        resolver = new ColumnReferenceResolver(schema);
+        resolver = new TableColumnResolver(schema);
     }
 
-    private static ColumnDto createColumnDto(String columnName) {
+    private static ColumnDto createColumnDto(String tableName, String columnName) {
         ColumnDto column = new ColumnDto();
         column.name = columnName;
+        column.table = tableName;
         return column;
     }
 
@@ -59,14 +73,14 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("first_name");
-        column.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        column.setTable(new Table("e"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -78,12 +92,12 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("first_name");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -94,23 +108,23 @@ class ColumnReferenceResolverTest {
 
         Column columnE = new Column();
         columnE.setColumnName("first_name");
-        columnE.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        columnE.setTable(new Table("e"));
 
-        ColumnReference referenceE = resolver.resolveColumnReference(columnE);
+        SqlColumnReference referenceE = resolver.resolve(columnE);
         assertNotNull(referenceE);
         assertEquals("employees", ((SqlBaseTableReference) referenceE.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnD = new Column();
         columnD.setColumnName("department_name");
-        columnD.setTable(new net.sf.jsqlparser.schema.Table("d"));
+        columnD.setTable(new Table("d"));
 
-        ColumnReference referenceD = resolver.resolveColumnReference(columnD);
+        SqlColumnReference referenceD = resolver.resolve(columnD);
         assertNotNull(referenceD);
         assertEquals("departments", ((SqlBaseTableReference) referenceD.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceD.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -121,15 +135,15 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("first_name");
-        column.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        column.setTable(new Table("e"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("(SELECT * FROM employees) e", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
 
@@ -141,14 +155,14 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("first_name");
-        column.setTable(new net.sf.jsqlparser.schema.Table("subquery1"));
+        column.setTable(new Table("subquery1"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -159,14 +173,14 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("first_name");
-        column.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+        column.setTable(new Table("subquery"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -178,11 +192,11 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("id");
 
-        ColumnReference columnReference = resolver.resolveColumnReference(column);
-        assertEquals("id", columnReference.getColumnName());
-        assertEquals("employees", ((SqlBaseTableReference) columnReference.getTableReference()).getFullyQualifiedName());
+        SqlColumnReference sqlColumnReference = resolver.resolve(column);
+        assertEquals("id", sqlColumnReference.getColumnName());
+        assertEquals("employees", ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getFullyQualifiedName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -194,10 +208,10 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("id");
 
-        ColumnReference columnReference = resolver.resolveColumnReference(column);
-        assertEquals("id", columnReference.getColumnName());
-        assertEquals("SELECT id FROM employees UNION SELECT id FROM departments", ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect().toString());
-        resolver.exitCurrentSelectContext();
+        SqlColumnReference sqlColumnReference = resolver.resolve(column);
+        assertEquals("id", sqlColumnReference.getColumnName());
+        assertEquals("SELECT id FROM employees UNION SELECT id FROM departments", ((SqlDerivedTableReference) sqlColumnReference.getTableReference()).getSelect().toString());
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -209,23 +223,23 @@ class ColumnReferenceResolverTest {
 
         Column columnE = new Column();
         columnE.setColumnName("first_name");
-        columnE.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        columnE.setTable(new Table("e"));
 
-        ColumnReference referenceE = resolver.resolveColumnReference(columnE);
+        SqlColumnReference referenceE = resolver.resolve(columnE);
         assertNotNull(referenceE);
         assertEquals("employees", ((SqlBaseTableReference) referenceE.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnSubquery = new Column();
         columnSubquery.setColumnName("department_name");
-        columnSubquery.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+        columnSubquery.setTable(new Table("subquery"));
 
-        ColumnReference referenceSubquery = resolver.resolveColumnReference(columnSubquery);
+        SqlColumnReference referenceSubquery = resolver.resolve(columnSubquery);
         assertNotNull(referenceSubquery);
         assertTrue(referenceSubquery.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("department_name", referenceSubquery.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -237,11 +251,11 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("department_name");
 
-        ColumnReference columnReference = resolver.resolveColumnReference(column);
-        assertEquals("department_name", columnReference.getColumnName());
-        assertEquals("departments", ((SqlBaseTableReference) columnReference.getTableReference()).getFullyQualifiedName());
+        SqlColumnReference sqlColumnReference = resolver.resolve(column);
+        assertEquals("department_name", sqlColumnReference.getColumnName());
+        assertEquals("departments", ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getFullyQualifiedName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -253,9 +267,9 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("department_address");
 
-        assertEquals(null, resolver.resolveColumnReference(column));
+        assertEquals(null, resolver.resolve(column));
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -267,13 +281,13 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("first_name");
 
-        ColumnReference columnReference = resolver.resolveColumnReference(column);
-        assertNotNull(columnReference);
-        assertTrue(columnReference.getTableReference() instanceof SqlDerivedTableReference);
-        assertEquals("first_name", columnReference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect().toString());
+        SqlColumnReference sqlColumnReference = resolver.resolve(column);
+        assertNotNull(sqlColumnReference);
+        assertTrue(sqlColumnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertEquals("first_name", sqlColumnReference.getColumnName());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference) sqlColumnReference.getTableReference()).getSelect().toString());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -292,7 +306,7 @@ class ColumnReferenceResolverTest {
         Column columnEmployeeId = new Column();
         columnEmployeeId.setColumnName("employee_id");
 
-        ColumnReference referenceEmployeeId = resolver.resolveColumnReference(columnEmployeeId);
+        SqlColumnReference referenceEmployeeId = resolver.resolve(columnEmployeeId);
         assertNotNull(referenceEmployeeId);
         assertTrue(referenceEmployeeId.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("employee_id", referenceEmployeeId.getColumnName());
@@ -303,12 +317,12 @@ class ColumnReferenceResolverTest {
         Column columnDepartmentName = new Column();
         columnDepartmentName.setColumnName("department_name");
 
-        ColumnReference referenceDepartmentName = resolver.resolveColumnReference(columnDepartmentName);
+        SqlColumnReference referenceDepartmentName = resolver.resolve(columnDepartmentName);
         assertNotNull(referenceDepartmentName);
         assertEquals("departments", ((SqlBaseTableReference) referenceDepartmentName.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceDepartmentName.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -320,13 +334,13 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("first_name");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
         assertEquals("(SELECT * FROM employees)", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -338,9 +352,9 @@ class ColumnReferenceResolverTest {
         // Resolve alias 'name' from subquery
         Column columnName = new Column();
         columnName.setColumnName("name");
-        columnName.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+        columnName.setTable(new Table("subquery"));
 
-        ColumnReference referenceName = resolver.resolveColumnReference(columnName);
+        SqlColumnReference referenceName = resolver.resolve(columnName);
         assertNotNull(referenceName);
         assertTrue(referenceName.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("name", referenceName.getColumnName());
@@ -349,18 +363,18 @@ class ColumnReferenceResolverTest {
         // Resolve alias 'income' from subquery
         Column columnIncome = new Column();
         columnIncome.setColumnName("income");
-        columnIncome.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+        columnIncome.setTable(new Table("subquery"));
 
-        ColumnReference referenceIncome = resolver.resolveColumnReference(columnIncome);
+        SqlColumnReference referenceIncome = resolver.resolve(columnIncome);
         assertNotNull(referenceIncome);
         assertTrue(referenceIncome.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("income", referenceIncome.getColumnName());
         assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect().toString());
 
         Select view = ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect();
-        ColumnReference baseTableColumnReference = resolver.findBaseTableColumnReference(view, columnIncome);
+        SqlColumnReference baseTableSqlColumnReference = resolver.findBaseTableColumnReference(view, columnIncome.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -371,14 +385,14 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("first_name");
-        column.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        column.setTable(new Table("e"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("(SELECT employees.* FROM employees) AS e", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -390,12 +404,12 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("fname");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("first_name", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -406,14 +420,14 @@ class ColumnReferenceResolverTest {
 
         Column column = new Column();
         column.setColumnName("fname");
-        column.setTable(new net.sf.jsqlparser.schema.Table("subquery"));
+        column.setTable(new Table("subquery"));
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("fname", reference.getColumnName());
         assertEquals("(SELECT first_name AS fname FROM employees) subquery", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -426,9 +440,9 @@ class ColumnReferenceResolverTest {
         // Resolve alias fname from subquery e
         Column columnE = new Column();
         columnE.setColumnName("fname");
-        columnE.setTable(new net.sf.jsqlparser.schema.Table("e"));
+        columnE.setTable(new Table("e"));
 
-        ColumnReference referenceE = resolver.resolveColumnReference(columnE);
+        SqlColumnReference referenceE = resolver.resolve(columnE);
         assertNotNull(referenceE);
         assertTrue(referenceE.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("fname", referenceE.getColumnName());
@@ -436,14 +450,14 @@ class ColumnReferenceResolverTest {
         // Resolve department_name from table d
         Column columnD = new Column();
         columnD.setColumnName("department_name");
-        columnD.setTable(new net.sf.jsqlparser.schema.Table("d"));
+        columnD.setTable(new Table("d"));
 
-        ColumnReference referenceD = resolver.resolveColumnReference(columnD);
+        SqlColumnReference referenceD = resolver.resolve(columnD);
         assertNotNull(referenceD);
         assertEquals("departments", ((SqlBaseTableReference) referenceD.getTableReference()).getFullyQualifiedName());
         assertEquals("department_name", referenceD.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -455,13 +469,13 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("first_name");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -473,13 +487,13 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("first_name");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
-        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
+        assertEquals("(SELECT first_name FROM employees)", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -491,13 +505,13 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("emp_id");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("emp_id", reference.getColumnName());
-        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", ((SqlDerivedTableReference)reference.getTableReference()).getSelect().toString());
+        assertEquals("SELECT id AS emp_id FROM employees UNION SELECT id AS dept_id FROM departments", ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -509,12 +523,12 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("department_id");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("department_id", reference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -527,7 +541,7 @@ class ColumnReferenceResolverTest {
         Column setColumn = new Column();
         setColumn.setColumnName("salary");
 
-        ColumnReference setReference = resolver.resolveColumnReference(setColumn);
+        SqlColumnReference setReference = resolver.resolve(setColumn);
         assertNotNull(setReference);
         assertEquals("employees", ((SqlBaseTableReference) setReference.getTableReference()).getFullyQualifiedName());
         assertEquals("salary", setReference.getColumnName());
@@ -536,12 +550,12 @@ class ColumnReferenceResolverTest {
         Column whereColumn = new Column();
         whereColumn.setColumnName("department_id");
 
-        ColumnReference whereReference = resolver.resolveColumnReference(whereColumn);
+        SqlColumnReference whereReference = resolver.resolve(whereColumn);
         assertNotNull(whereReference);
         assertEquals("employees", ((SqlBaseTableReference) whereReference.getTableReference()).getFullyQualifiedName());
         assertEquals("department_id", whereReference.getColumnName());
 
-        resolver.exitCurrentSelectContext();
+        resolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -554,32 +568,147 @@ class ColumnReferenceResolverTest {
         Column column = new Column();
         column.setColumnName("department_id");
 
-        ColumnReference reference = resolver.resolveColumnReference(column);
+        SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
         assertEquals("employees", ((SqlBaseTableReference) reference.getTableReference()).getFullyQualifiedName());
         assertEquals("department_id", reference.getColumnName());
 
         // Resolve alias 'dept_id' in the subquery
-        Column subqueryColumn = new Column();
-        subqueryColumn.setColumnName("dept_id");
-        subqueryColumn.setTable(new net.sf.jsqlparser.schema.Table("d"));
+        Column d_dept_id_column = new Column();
+        d_dept_id_column.setColumnName("dept_id");
+        d_dept_id_column.setTable(new Table("d"));
 
-        assertNull(resolver.resolveColumnReference(subqueryColumn));
+        assertNull(resolver.resolve(d_dept_id_column));
 
         // access the subquery in the delete statement and resolve the column reference
         InExpression inExpression = (InExpression) delete.getWhere();
         Select subquery = (Select) inExpression.getRightExpression();
         resolver.enterStatementeContext(subquery);
 
-        ColumnReference subqueryReference = resolver.resolveColumnReference(subqueryColumn);
+        // again, accessing d.dept_id in the subquery is incorrect
+        assertNull(resolver.resolve(d_dept_id_column));
 
-        assertEquals("(SELECT d.id AS dept_id FROM departments d WHERE d.department_name = 'HR')", ((SqlDerivedTableReference) subqueryReference.getTableReference()).getSelect().toString());
-        assertEquals("dept_id", subqueryReference.getColumnName());
+        // but accessing d.id should be correct
+        Column d_id_column = new Column();
+        d_id_column.setColumnName("id");
+        d_id_column.setTable(new Table("d"));
 
-        resolver.exitCurrentSelectContext();
-        resolver.exitCurrentSelectContext();
+        SqlColumnReference subqueryReference = resolver.resolve(d_id_column);
+
+        assertNotNull(subqueryReference);
+        assertEquals("departments", ((SqlBaseTableReference) subqueryReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("id", subqueryReference.getColumnName());
+
+        resolver.exitCurrentStatementContext();
+        resolver.exitCurrentStatementContext();
     }
 
+    @Test
+    void testResolveColumnsInInnerJoin() throws Exception {
+        String sql = "SELECT orders.order_id, customers.customer_name, orders.order_date " +
+                "FROM orders " +
+                "INNER JOIN customers ON orders.customer_id = customers.customer_id";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
 
+        // Resolve Orders.OrderID
+        Column orderIdColumn = new Column();
+        orderIdColumn.setColumnName("order_id");
+        orderIdColumn.setTable(new Table("orders"));
 
+        SqlColumnReference orderIdReference = resolver.resolve(orderIdColumn);
+        assertNotNull(orderIdReference);
+        assertEquals("orders", ((SqlBaseTableReference) orderIdReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("order_id", orderIdReference.getColumnName());
+
+        // Resolve Customers.CustomerName
+        Column customerNameColumn = new Column();
+        customerNameColumn.setColumnName("customer_name");
+        customerNameColumn.setTable(new Table("customers"));
+
+        SqlColumnReference customerNameReference = resolver.resolve(customerNameColumn);
+        assertNotNull(customerNameReference);
+        assertEquals("customers", ((SqlBaseTableReference) customerNameReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("customer_name", customerNameReference.getColumnName());
+
+        // Resolve Orders.OrderDate
+        Column orderDateColumn = new Column();
+        orderDateColumn.setColumnName("order_date");
+        orderDateColumn.setTable(new Table("orders"));
+
+        SqlColumnReference orderDateReference = resolver.resolve(orderDateColumn);
+        assertNotNull(orderDateReference);
+        assertEquals("orders", ((SqlBaseTableReference) orderDateReference.getTableReference()).getFullyQualifiedName());
+        assertEquals("order_date", orderDateReference.getColumnName());
+
+        // Resolve Customer.CustomerId
+        Column customerIdColumn = new Column();
+        customerIdColumn.setColumnName("customer_id");
+        customerIdColumn.setTable(new Table("customers"));
+
+        SqlColumnReference customerIdReference = resolver.resolve(customerIdColumn);
+        assertNotNull(customerIdReference);
+        assertEquals("customer_id", customerIdReference.getColumnName());
+        assertEquals("customers", ((SqlBaseTableReference) customerIdReference.getTableReference()).getFullyQualifiedName());
+
+        resolver.exitCurrentStatementContext();
+    }
+
+    @Test
+    void testResolveColumnNameCaseSensitivity() throws Exception {
+        String sql = "SELECT e.first_name AS fname FROM employees e";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+
+        // Case-sensitive resolver
+        TableColumnResolver caseSensitiveResolver = new TableColumnResolver(schema, true);
+        caseSensitiveResolver.enterStatementeContext(select);
+
+        Column columnCaseSensitive = new Column();
+        columnCaseSensitive.setColumnName("fname");
+
+        assertNotNull(caseSensitiveResolver.resolve(columnCaseSensitive)); // Should resolve
+        columnCaseSensitive.setColumnName("FNAME");
+        assertNull(caseSensitiveResolver.resolve(columnCaseSensitive)); // Should not resolve
+
+        caseSensitiveResolver.exitCurrentStatementContext();
+
+        // Case-insensitive resolver
+        TableColumnResolver caseInsensitiveResolver = new TableColumnResolver(schema, false);
+        caseInsensitiveResolver.enterStatementeContext(select);
+
+        Column columnCaseInsensitive = new Column();
+        columnCaseInsensitive.setColumnName("fname");
+
+        assertNotNull(caseInsensitiveResolver.resolve(columnCaseInsensitive)); // Should resolve
+        columnCaseInsensitive.setColumnName("FNAME");
+        assertNotNull(caseInsensitiveResolver.resolve(columnCaseInsensitive)); // Should also resolve
+
+        caseInsensitiveResolver.exitCurrentStatementContext();
+    }
+
+    @Test
+    void testResolveColumnInSubqueryWithAlias() throws Exception {
+        String sql = "SELECT sub.dept_id " +
+                "FROM ( " +
+                "    SELECT d.id AS dept_id " +
+                "    FROM departments d " +
+                "    WHERE d.department_name = 'HR' " +
+                ") sub";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        // Resolve alias 'dept_id' from subquery
+        Column column = new Column();
+        column.setColumnName("dept_id");
+        column.setTable(new Table("sub"));
+
+        SqlColumnReference reference = resolver.resolve(column);
+        assertNotNull(reference);
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
+        assertEquals("dept_id", reference.getColumnName());
+        assertEquals("(SELECT d.id AS dept_id FROM departments d WHERE d.department_name = 'HR') sub",
+                ((SqlDerivedTableReference) reference.getTableReference()).getSelect().toString());
+
+        resolver.exitCurrentStatementContext();
+    }
 }

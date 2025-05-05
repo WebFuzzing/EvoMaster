@@ -14,9 +14,17 @@ import java.util.*;
  * method enterAliasContext should be called. Every time the context is exited,
  * the method exitAliasContext should be called.
  */
-public class TableReferenceResolver {
+class TableAliasResolver {
 
-    private final Deque<Map<String, SqlTableReference>> stackOfTableAliases = new ArrayDeque<>();
+    /**
+     * Indicates whether table name comparisons are case-sensitive.
+     */
+    private final boolean isCaseSensitive;
+
+    /**
+     * A stack of maps to store table aliases in different contexts.
+     */
+    private final Deque<TreeMap<String, SqlTableReference>> stackOfTableAliases = new ArrayDeque<>();
 
     /**
      * This method is called when entering a new alias context.
@@ -24,7 +32,7 @@ public class TableReferenceResolver {
      *
      * @param statement the SQL statement to process
      */
-    public void enterAliasContext(Statement statement) {
+    public void enterTableAliasContext(Statement statement) {
         Objects.requireNonNull(statement, "statement cannot be null");
 
         createNewAliasContext();
@@ -39,8 +47,13 @@ public class TableReferenceResolver {
         }
     }
 
-    public TableReferenceResolver() {
+    public TableAliasResolver(boolean isCaseSensitive) {
         super();
+        this.isCaseSensitive = isCaseSensitive;
+    }
+
+    public TableAliasResolver() {
+        this(false);
     }
 
     private void processJoins(List<Join> joins) {
@@ -102,7 +115,7 @@ public class TableReferenceResolver {
     }
 
     private void createNewAliasContext() {
-        stackOfTableAliases.push(new HashMap<>());
+        stackOfTableAliases.push(new TreeMap<>(isCaseSensitive ? null : String.CASE_INSENSITIVE_ORDER));
     }
 
     private void processWithItemsList(List<WithItem> withItemsList) {
@@ -122,7 +135,7 @@ public class TableReferenceResolver {
         Objects.requireNonNull(select, "select cannot be null");
 
         PlainSelect plainSelect = select;
-        if (plainSelect.getFromItem()!=null) {
+        if (plainSelect.getFromItem() != null) {
             processFromItem(plainSelect.getFromItem());
         }
         if (plainSelect.getJoins() != null) {
@@ -172,7 +185,7 @@ public class TableReferenceResolver {
     /**
      * Removes all the aliases declared in the current alias context.
      */
-    public void exitAliasContext() {
+    public void exitTableAliasContext() {
         stackOfTableAliases.pop();
     }
 

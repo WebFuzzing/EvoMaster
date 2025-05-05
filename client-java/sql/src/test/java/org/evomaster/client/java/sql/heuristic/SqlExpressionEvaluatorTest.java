@@ -116,13 +116,13 @@ class SqlExpressionEvaluatorTest {
         Select select = (Select) parsedSqlCommand;
 
 
-        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
         TaintHandler taintHandler = null;
 
         columnReferenceResolver.enterStatementeContext(select);
         SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
-        columnReferenceResolver.exitCurrentSelectContext();
+        columnReferenceResolver.exitCurrentStatementContext();
 
         Truthness truthness = evaluator.getEvaluatedTruthness();
         assertTrue(truthness.isTrue());
@@ -133,12 +133,12 @@ class SqlExpressionEvaluatorTest {
         Select select = (Select) parsedSqlCommand;
 
         TaintHandler taintHandler = null;
-        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
 
         columnReferenceResolver.enterStatementeContext(select);
         SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
         select.getPlainSelect().getWhere().accept(evaluator);
-        columnReferenceResolver.exitCurrentSelectContext();
+        columnReferenceResolver.exitCurrentStatementContext();
 
         Truthness truthness = evaluator.getEvaluatedTruthness();
         assertFalse(truthness.isTrue());

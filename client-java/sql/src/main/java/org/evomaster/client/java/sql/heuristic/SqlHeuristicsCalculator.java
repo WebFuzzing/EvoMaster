@@ -30,9 +30,9 @@ public class SqlHeuristicsCalculator {
 
     private final QueryResultSet queryResultSet;
     private final TaintHandler taintHandler;
-    private final ColumnReferenceResolver columnReferenceResolver;
+    private final TableColumnResolver columnReferenceResolver;
 
-    SqlHeuristicsCalculator(ColumnReferenceResolver columnReferenceResolver, TaintHandler taintHandler, QueryResult[] data) {
+    SqlHeuristicsCalculator(TableColumnResolver columnReferenceResolver, TaintHandler taintHandler, QueryResult[] data) {
         final boolean isCaseSensitive = false;
         this.columnReferenceResolver = columnReferenceResolver;
         this.queryResultSet = new QueryResultSet(isCaseSensitive);
@@ -48,7 +48,7 @@ public class SqlHeuristicsCalculator {
                                                          QueryResult... data) {
 
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        ColumnReferenceResolver columnResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnResolver = new TableColumnResolver(schema);
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnResolver, taintHandler, data);
         Truthness t = calculator.calculateHeuristicQuery(parsedSqlCommand).getTruthness();
         double distanceToTrue = 1 - t.getOfTrue();
@@ -258,7 +258,7 @@ public class SqlHeuristicsCalculator {
                 heuristicResult = new SqlHeuristicResult(truthness, conditionResult.getQueryResult());
             }
         }
-        columnReferenceResolver.exitCurrentSelectContext();
+        columnReferenceResolver.exitCurrentStatementContext();
         return heuristicResult;
     }
 

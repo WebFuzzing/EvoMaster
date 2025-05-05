@@ -7,7 +7,6 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.conditional.XorExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
@@ -39,10 +38,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     private final Stack<Truthness> computedTruthnesses = new Stack<>();
     private final Stack<Object> concreteValues = new Stack<>();
     private final TaintHandler taintHandler;
-    private final ColumnReferenceResolver columnReferenceResolver;
+    private final TableColumnResolver tableColumnResolver;
 
-    public SqlExpressionEvaluator(ColumnReferenceResolver columnReferenceResolver, TaintHandler taintHandler, DataRow dataRow) {
-        this.columnReferenceResolver = columnReferenceResolver;
+    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver, TaintHandler taintHandler, DataRow dataRow) {
+        this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.dataRow = dataRow;
     }
@@ -624,20 +623,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else if (column.getColumnName().equalsIgnoreCase("false")) {
             concreteValues.push(Boolean.FALSE);
         } else {
-            ColumnReference columnReference = columnReferenceResolver.resolveColumnReference(column);
+            SqlColumnReference sqlColumnReference = tableColumnResolver.resolve(column);
             final String baseTableName;
             final String columnName;
-            if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
-                baseTableName = ((SqlBaseTableReference) columnReference.getTableReference()).getName();
-                columnName = columnReference.getColumnName();
+            if (sqlColumnReference.getTableReference() instanceof SqlBaseTableReference) {
+                baseTableName = ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getName();
+                columnName = sqlColumnReference.getColumnName();
 
-            } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
-                Select select = ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect();
-                ColumnReference resolvedColumnReference = this.columnReferenceResolver.findBaseTableColumnReference(select, column);
-                baseTableName = ((SqlBaseTableReference) resolvedColumnReference.getTableReference()).getName();
-                columnName = resolvedColumnReference.getColumnName();
+            } else if (sqlColumnReference.getTableReference() instanceof SqlDerivedTableReference) {
+                Select select = ((SqlDerivedTableReference) sqlColumnReference.getTableReference()).getSelect();
+                SqlColumnReference resolvedSqlColumnReference = this.tableColumnResolver.findBaseTableColumnReference(select, column.getColumnName());
+                baseTableName = ((SqlBaseTableReference) resolvedSqlColumnReference.getTableReference()).getName();
+                columnName = resolvedSqlColumnReference.getColumnName();
             } else {
-                throw new IllegalStateException("Unexpected table reference type: " + columnReference.getTableReference().getClass().getName());
+                throw new IllegalStateException("Unexpected table reference type: " + sqlColumnReference.getTableReference().getClass().getName());
             }
             Object value = dataRow.getValueByName(columnName, baseTableName);
             concreteValues.push(value);

@@ -365,7 +365,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult[] arrayOfQueryResultSet = {employees};
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
 
@@ -391,7 +391,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult[] arrayOfQueryResultSet = {employees};
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
 
@@ -418,7 +418,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult[] arrayOfQueryResultSet = {employees};
         Select select = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        ColumnReferenceResolver columnReferenceResolver = new ColumnReferenceResolver(schema);
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(select);
 
@@ -438,18 +438,18 @@ public class SqlHeuristicsCalculatorTest {
 
         columnReferenceResolver.enterStatementeContext(select);
 
-        ColumnReference nameColumnReference = columnReferenceResolver.resolveColumnReference(nameColumn);
-        Select nameColumnView = ((SqlDerivedTableReference) nameColumnReference.getTableReference()).getSelect();
-        ColumnReference nameColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(nameColumnView, nameColumn);
+        SqlColumnReference nameSqlColumnReference = columnReferenceResolver.resolve(nameColumn);
+        Select nameColumnView = ((SqlDerivedTableReference) nameSqlColumnReference.getTableReference()).getSelect();
+        SqlColumnReference nameColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(nameColumnView, nameColumn.getColumnName());
 
-        ColumnReference incomeColumnReference = columnReferenceResolver.resolveColumnReference(incomeColumn);
-        Select incomeColumnView = ((SqlDerivedTableReference) incomeColumnReference.getTableReference()).getSelect();
-        ColumnReference incomeColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(incomeColumnView, incomeColumn);
+        SqlColumnReference incomeSqlColumnReference = columnReferenceResolver.resolve(incomeColumn);
+        Select incomeColumnView = ((SqlDerivedTableReference) incomeSqlColumnReference.getTableReference()).getSelect();
+        SqlColumnReference incomeColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(incomeColumnView, incomeColumn.getColumnName());
 
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName(nameColumnBaseTableReference.getColumnName()));
         assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName(incomeColumnBaseTableReference.getColumnName()));
 
-        columnReferenceResolver.exitCurrentSelectContext();
+        columnReferenceResolver.exitCurrentStatementContext();
     }
 
     @Test
