@@ -129,7 +129,7 @@ class BlackBoxRestFitness : RestFitness() {
             }
             individual.addCleanUpAction(delete)
 
-            FIXME chainState seems broken as based on static path, so can have only one???
+            //FIXME chainState seems broken as based on static path, so can have only one. Need refactoring
 
             //make sure location is saved in the chain
             handleSaveLocation(create.action,create.result as RestCallResult,chainState)

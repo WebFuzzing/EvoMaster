@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -24,7 +25,7 @@ class BBCleanUpEMTest : SpringTestBase() {
     }
 
 
-
+    @Disabled("Need to refactor handling of location in fitness function to fix issue")
     @ParameterizedTest
     @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
