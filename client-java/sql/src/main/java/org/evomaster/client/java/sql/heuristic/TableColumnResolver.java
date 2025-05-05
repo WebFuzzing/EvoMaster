@@ -13,6 +13,10 @@ import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Resolves table names and columns in a SQL query.
+ * The name
+ */
 public class TableColumnResolver {
 
     /**
@@ -27,28 +31,17 @@ public class TableColumnResolver {
     private final Deque<Statement> statementStack = new ArrayDeque<>();
 
     /**
-     * Indicates whether it should be considered the case sensitiviness of the table/column names
-     */
-
-    private final boolean isCaseSensitive;
-    /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
      * But, here, what we need is very simple (just checking for names).
      */
     private final DbInfoDto schema;
 
 
-    public TableColumnResolver(DbInfoDto schema, boolean isCaseSensitive) {
+    public TableColumnResolver(DbInfoDto schema) {
         Objects.requireNonNull(schema);
         this.schema = schema;
-        this.isCaseSensitive = isCaseSensitive;
-        this.tableAliasResolver = new TableAliasResolver(isCaseSensitive);
+        this.tableAliasResolver = new TableAliasResolver();
     }
-
-    public TableColumnResolver(DbInfoDto schema) {
-        this(schema, false);
-    }
-
 
     public void enterStatementeContext(Statement statement) {
         tableAliasResolver.enterTableAliasContext(statement);
@@ -63,7 +56,7 @@ public class TableColumnResolver {
 
     /**
      * Check if two names are equal.
-     * Depending on the case sensitivity setting, it can be case-sensitive or case-insensitive.
+     * Comparisons are case-insensitive.
      *
      * @param l a non-null name
      * @param r a (potentially null) name
@@ -71,11 +64,7 @@ public class TableColumnResolver {
      */
     private boolean equalNames(String l, String r) {
         Objects.requireNonNull(l);
-        if (isCaseSensitive) {
-            return l.equals(r);
-        } else {
-            return l.equalsIgnoreCase(r);
-        }
+        return l.equalsIgnoreCase(r);
     }
 
     private boolean isBaseTable(String tableName) {

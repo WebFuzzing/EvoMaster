@@ -39,9 +39,8 @@ public class SqlHeuristicsCalculator {
     }
 
     public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResult... data) {
-        final boolean isCaseSensitive = false;
         this.tableColumnResolver = new TableColumnResolver(schema);
-        this.queryResultSet = new QueryResultSet(isCaseSensitive);
+        this.queryResultSet = new QueryResultSet();
         this.taintHandler = taintHandler;
         for (QueryResult queryResult : data) {
             queryResultSet.addQueryResult(queryResult);

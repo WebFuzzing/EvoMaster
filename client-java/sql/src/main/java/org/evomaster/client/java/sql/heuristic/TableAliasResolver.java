@@ -13,13 +13,12 @@ import java.util.*;
  * Every time a new SQL alias context (e.g. subselect) is entered, the
  * method enterAliasContext should be called. Every time the context is exited,
  * the method exitAliasContext should be called.
+ *
+ * Alias resolution is case-insensitive.
  */
 class TableAliasResolver {
 
-    /**
-     * Indicates whether table name comparisons are case-sensitive.
-     */
-    private final boolean isCaseSensitive;
+
 
     /**
      * A stack of maps to store table aliases in different contexts.
@@ -47,13 +46,8 @@ class TableAliasResolver {
         }
     }
 
-    public TableAliasResolver(boolean isCaseSensitive) {
-        super();
-        this.isCaseSensitive = isCaseSensitive;
-    }
-
     public TableAliasResolver() {
-        this(false);
+        super();
     }
 
     private void processJoins(List<Join> joins) {
@@ -106,7 +100,8 @@ class TableAliasResolver {
         } else if (select instanceof ParenthesedSelect) {
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
             if (parenthesedSelect.getAlias() != null) {
-                stackOfTableAliases.peek().put(parenthesedSelect.getAlias().getName(), new SqlDerivedTableReference(parenthesedSelect));
+                final String lowerCaseAliasName = parenthesedSelect.getAlias().getName();
+                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlDerivedTableReference(parenthesedSelect));
             }
             Select innerSelect = parenthesedSelect.getSelect();
             processSelect(innerSelect);
@@ -115,7 +110,7 @@ class TableAliasResolver {
     }
 
     private void createNewAliasContext() {
-        stackOfTableAliases.push(new TreeMap<>(isCaseSensitive ? null : String.CASE_INSENSITIVE_ORDER));
+        stackOfTableAliases.push(new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
     }
 
     private void processWithItemsList(List<WithItem> withItemsList) {
@@ -123,9 +118,10 @@ class TableAliasResolver {
             if (withItem.getAlias() != null) {
 
                 final String aliasName = withItem.getAlias().getName();
+                final String lowerCaseAliasName = aliasName.toLowerCase();
                 final Select subquery = withItem.getSelect();
                 final SqlTableReference derivedSqlTableReference = new SqlDerivedTableReference(subquery);
-                stackOfTableAliases.peek().put(aliasName, derivedSqlTableReference);
+                stackOfTableAliases.peek().put(lowerCaseAliasName, derivedSqlTableReference);
             }
         }
     }
@@ -151,12 +147,14 @@ class TableAliasResolver {
         if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {
-                stackOfTableAliases.peek().put(table.getAlias().getName(), new SqlBaseTableReference(table.getFullyQualifiedName()));
+                final String lowerCaseAliasName = table.getAlias().getName().toLowerCase();
+                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlBaseTableReference(table.getFullyQualifiedName()));
             }
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
             if (subSelect.getAlias() != null) {
-                stackOfTableAliases.peek().put(subSelect.getAlias().getName(), new SqlDerivedTableReference(subSelect));
+                final String lowerCaseAliasName = subSelect.getAlias().getName().toLowerCase();
+                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlDerivedTableReference(subSelect));
             }
         }
     }
@@ -205,10 +203,13 @@ class TableAliasResolver {
      * @return true if the alias is declared in the current context, false otherwise.
      */
     public boolean isAliasDeclaredInCurrentContext(String alias) {
+        Objects.requireNonNull(alias, "alias cannot be null");
+
         if (stackOfTableAliases.isEmpty()) {
             throw new IllegalArgumentException("Alias stack is empty. Cannot resolve alias: " + alias);
         }
-        return stackOfTableAliases.peek().containsKey(alias);
+        final String lowerCaseAliasName = alias.toLowerCase();
+        return stackOfTableAliases.peek().containsKey(lowerCaseAliasName);
     }
 
     /**
@@ -218,8 +219,10 @@ class TableAliasResolver {
      * @return
      */
     public boolean isAliasDeclaredInAnyContext(String alias) {
+        Objects.requireNonNull(alias, "alias cannot be null");
+        final String lowerCaseAliasName = alias.toLowerCase();
         for (Map<String, SqlTableReference> context : stackOfTableAliases) {
-            if (context.containsKey(alias)) {
+            if (context.containsKey(lowerCaseAliasName)) {
                 return true;
             }
         }

@@ -655,38 +655,6 @@ class TableColumnResolverTest {
     }
 
     @Test
-    void testResolveColumnNameCaseSensitivity() throws Exception {
-        String sql = "SELECT e.first_name AS fname FROM employees e";
-        Select select = (Select) CCJSqlParserUtil.parse(sql);
-
-        // Case-sensitive resolver
-        TableColumnResolver caseSensitiveResolver = new TableColumnResolver(schema, true);
-        caseSensitiveResolver.enterStatementeContext(select);
-
-        Column columnCaseSensitive = new Column();
-        columnCaseSensitive.setColumnName("fname");
-
-        assertNotNull(caseSensitiveResolver.resolve(columnCaseSensitive)); // Should resolve
-        columnCaseSensitive.setColumnName("FNAME");
-        assertNull(caseSensitiveResolver.resolve(columnCaseSensitive)); // Should not resolve
-
-        caseSensitiveResolver.exitCurrentStatementContext();
-
-        // Case-insensitive resolver
-        TableColumnResolver caseInsensitiveResolver = new TableColumnResolver(schema, false);
-        caseInsensitiveResolver.enterStatementeContext(select);
-
-        Column columnCaseInsensitive = new Column();
-        columnCaseInsensitive.setColumnName("fname");
-
-        assertNotNull(caseInsensitiveResolver.resolve(columnCaseInsensitive)); // Should resolve
-        columnCaseInsensitive.setColumnName("FNAME");
-        assertNotNull(caseInsensitiveResolver.resolve(columnCaseInsensitive)); // Should also resolve
-
-        caseInsensitiveResolver.exitCurrentStatementContext();
-    }
-
-    @Test
     void testResolveColumnInSubqueryWithAlias() throws Exception {
         String sql = "SELECT sub.dept_id " +
                 "FROM ( " +

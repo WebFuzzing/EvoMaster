@@ -470,20 +470,4 @@ class TableAliasResolverTest {
         assertEquals(0, resolver.getContextDepth());
     }
 
-    @Test
-    public void resolvesAliasCaseSensitivity() throws Exception {
-        String sql = "SELECT * FROM Employees e";
-        Select select = (Select) CCJSqlParserUtil.parse(sql);
-        boolean isCaseSensitive = true;
-        TableAliasResolver resolver = new TableAliasResolver(isCaseSensitive);
-        resolver.enterTableAliasContext(select);
-
-        // Check case-sensitive alias resolution
-        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertFalse(resolver.isAliasDeclaredInCurrentContext("E")); // Case-sensitive check
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-
-        resolver.exitTableAliasContext();
-        assertEquals(0, resolver.getContextDepth());
-    }
 }
