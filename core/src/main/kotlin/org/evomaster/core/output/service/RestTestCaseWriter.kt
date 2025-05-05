@@ -240,11 +240,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-//    private fun shouldCheckExpectations() =
-//    //for now Expectations are only supported on the JVM
-//        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
-
-
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
