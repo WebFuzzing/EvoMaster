@@ -48,21 +48,21 @@ public class Z3SolverTypesRest {
         }
     }
 
-//    @GetMapping("/products-2/{id}")
-//    public ResponseEntity<Void> getIdNamePrice(@PathVariable("id") Long id) {
-//        try {
-//            Query query = em.createNativeQuery("SELECT * FROM products WHERE id = $id" + id);
-//            List<?> data = query.getResultList();
-//
-//            if (data.isEmpty()) {
-//                return ResponseEntity.status(400).build();
-//            } else {
-//                return ResponseEntity.status(200).build();
-//            }
-//        } catch (Exception e) {
-//            return ResponseEntity.status(400).build();
-//        }
-//    }
+    @GetMapping("/products-2/{id}")
+    public ResponseEntity<Void> getIdNamePrice(@PathVariable("id") Long id) {
+        try {
+            Query query = em.createNativeQuery("SELECT * FROM products WHERE id = $id" + id);
+            List<?> data = query.getResultList();
+
+            if (data.isEmpty()) {
+                return ResponseEntity.status(400).build();
+            } else {
+                return ResponseEntity.status(200).build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(400).build();
+        }
+    }
 
     @GetMapping("/products-3")
     public ResponseEntity<Void> getProductsWithName() {
