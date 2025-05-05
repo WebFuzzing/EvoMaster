@@ -29,8 +29,11 @@ public class QueryResultSet {
      */
     private QueryResult queryResultForVirtualTable;
 
+    /**
+     * Creates a QueryResult set with default case sensitivity (case-insensitive).
+     */
     public QueryResultSet() {
-        this(true);
+        this(false);
     }
 
     /**

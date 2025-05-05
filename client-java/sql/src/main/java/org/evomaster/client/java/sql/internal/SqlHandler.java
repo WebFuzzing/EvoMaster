@@ -243,7 +243,7 @@ public class SqlHandler {
         if (this.advancedHeuristics) {
             // advanced
             columns =  extractColumnsInvolvedInStatement(parsedStatement);
-            dist = computeCompleteSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase, columns);
+            dist = computeCompleteSqlDistance(sqlCommand, successfulInitSqlInsertions, queryFromDatabase, columns);
         } else {
             columns = extractColumnsInvolvedInWhere(parsedStatement);
             dist = computePartialSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase);
@@ -257,7 +257,6 @@ public class SqlHandler {
     }
 
     private SqlDistanceWithMetrics computeCompleteSqlDistance(String sqlCommand,
-                                                              Statement parsedStatement,
                                                               List<InsertionDto> successfulInitSqlInsertions,
                                                               boolean queryFromDatabase,
                                                               Map<SqlTableId, Set<SqlColumnId>> columns) {
@@ -276,11 +275,12 @@ public class SqlHandler {
         }
 
         // compute the SQL heuristics using the fetched data
-        SqlDistanceWithMetrics sqlDistanceWithMetrics = SqlHeuristicsCalculator.computeDistance(
-                sqlCommand,
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
                 schema,
                 taintHandler,
                 queryResults.toArray(new QueryResult[]{}));
+
+        SqlDistanceWithMetrics sqlDistanceWithMetrics = sqlHeuristicsCalculator.computeDistance(sqlCommand);
 
         return sqlDistanceWithMetrics;
     }
@@ -398,7 +398,7 @@ public class SqlHandler {
         return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
     }
 
-    private String createSelectForSingleTable(SqlTableId tableId, Set<SqlColumnId> columnIds) {
+    private static String createSelectForSingleTable(SqlTableId tableId, Set<SqlColumnId> columnIds) {
 
         StringBuilder buffer = new StringBuilder();
         buffer.append("SELECT ");

@@ -10,6 +10,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.VariableDescriptor;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
@@ -31,9 +32,12 @@ public class SqlHeuristicsCalculatorTest {
     public void testSelectFromTableWithRows() {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT name FROM Person";
+
         QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Person");
         queryResult.addRow(new DataRow("name", "John", "Person"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, queryResult);
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, queryResult);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -42,7 +46,8 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 1 AS example_column WHERE 1 = 0";
         QueryResult virtualTableContents = new QueryResult(Collections.singletonList("example_column"), null);
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, virtualTableContents);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, virtualTableContents);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
 
         double hquery = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(SqlHeuristicsCalculator.C, 1d)).getOfTrue();
         double expectedDistance = 1 - hquery;
@@ -57,7 +62,8 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT 1 AS example_column";
         QueryResult virtualTableContents = new QueryResult(Collections.singletonList("example_column"), null);
         virtualTableContents.addRow(new DataRow("example_column", 1, null));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, virtualTableContents);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, virtualTableContents);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -68,7 +74,8 @@ public class SqlHeuristicsCalculatorTest {
 
         String sqlCommand = "SELECT name FROM Person";
         QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Person");
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, queryResult);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, queryResult);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -82,7 +89,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
 
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -95,7 +103,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -107,7 +116,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTables = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTables);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTables);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -119,7 +129,9 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -132,7 +144,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -145,7 +158,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -157,7 +171,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -170,7 +185,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -180,7 +196,8 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         double expectedDistance = 1 - SqlHeuristicsCalculator.C;
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
     }
@@ -193,7 +210,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, leftTable, rightTable);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0, distanceWithMetrics.sqlDistance);
     }
 
@@ -223,7 +241,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -245,7 +264,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult projects = new QueryResult(Arrays.asList("project_id", "project_name"), "projects");
         projects.addRow(Arrays.asList("project_id", "project_name"), "projects", Arrays.asList(1, "ProjectX"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments, projects);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments, projects);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -261,7 +281,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Collections.singletonList("name"), "Departments");
         departments.addRow(Collections.singletonList("name"), "Departments", Collections.singletonList("Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -279,7 +300,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -333,7 +355,8 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -350,7 +373,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -365,8 +389,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult[] arrayOfQueryResultSet = {employees};
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -391,8 +414,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult[] arrayOfQueryResultSet = {employees};
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -415,11 +437,13 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult employees = new QueryResult(Arrays.asList("first_name", "salary"), "Employees");
         employees.addRow(new DataRow("Employees", Arrays.asList("first_name", "salary"), Arrays.asList("John", 10000)));
 
-        QueryResult[] arrayOfQueryResultSet = {employees};
         Select select = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(columnReferenceResolver, null, arrayOfQueryResultSet);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(employees);
+        TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(tableColumnResolver, null, queryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(select);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -436,20 +460,20 @@ public class SqlHeuristicsCalculatorTest {
         incomeColumn.setTable(subqueryTable);
         incomeColumn.setColumnName("income");
 
-        columnReferenceResolver.enterStatementeContext(select);
+        tableColumnResolver.enterStatementeContext(select);
 
-        SqlColumnReference nameSqlColumnReference = columnReferenceResolver.resolve(nameColumn);
+        SqlColumnReference nameSqlColumnReference = tableColumnResolver.resolve(nameColumn);
         Select nameColumnView = ((SqlDerivedTableReference) nameSqlColumnReference.getTableReference()).getSelect();
-        SqlColumnReference nameColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(nameColumnView, nameColumn.getColumnName());
+        SqlColumnReference nameColumnBaseTableReference = tableColumnResolver.findBaseTableColumnReference(nameColumnView, nameColumn.getColumnName());
 
-        SqlColumnReference incomeSqlColumnReference = columnReferenceResolver.resolve(incomeColumn);
+        SqlColumnReference incomeSqlColumnReference = tableColumnResolver.resolve(incomeColumn);
         Select incomeColumnView = ((SqlDerivedTableReference) incomeSqlColumnReference.getTableReference()).getSelect();
-        SqlColumnReference incomeColumnBaseTableReference = columnReferenceResolver.findBaseTableColumnReference(incomeColumnView, incomeColumn.getColumnName());
+        SqlColumnReference incomeColumnBaseTableReference = tableColumnResolver.findBaseTableColumnReference(incomeColumnView, incomeColumn.getColumnName());
 
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName(nameColumnBaseTableReference.getColumnName()));
         assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName(incomeColumnBaseTableReference.getColumnName()));
 
-        columnReferenceResolver.exitCurrentStatementContext();
+        tableColumnResolver.exitCurrentStatementContext();
     }
 
     @Test
@@ -466,7 +490,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
@@ -484,7 +509,8 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlDistanceWithMetrics distanceWithMetrics = SqlHeuristicsCalculator.computeDistance(sqlCommand, schema, null, employees, departments);
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
