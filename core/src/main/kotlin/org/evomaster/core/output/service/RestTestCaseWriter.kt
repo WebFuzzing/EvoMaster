@@ -183,10 +183,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
         handleLinkInfo(call, res, responseVariableName, lines)
-
-//        if (shouldCheckExpectations() && !res.failedCall()) {
-//            handleExpectationSpecificLines(call, lines, res, responseVariableName)
-//        }
     }
 
     private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
