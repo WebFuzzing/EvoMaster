@@ -260,7 +260,7 @@ abstract class StructuralElement (
 
         val start = group.startIndex
         val end = group.endIndex
-        for(j in end..start){
+        for(j in end downTo  start){
             killChildByIndex(j)
         }
 

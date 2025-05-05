@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -84,8 +85,10 @@ class BlackBoxRestFitness : RestFitness() {
         tokens: Map<String, String>,
         fv: FitnessValue
     ){
+        val size = individual.size()
         //this is always going to be updated at each fitness evaluation
         individual.removeAllCleanUp()
+        assert(individual.size() == size) // no side effects on main actions
 
         val toHandle = RestIndividualSelectorUtils.findActionsInIndividual(
             individual,
@@ -125,6 +128,11 @@ class BlackBoxRestFitness : RestFitness() {
                 continue
             }
             individual.addCleanUpAction(delete)
+
+            FIXME chainState seems broken as based on static path, so can have only one???
+
+            //make sure location is saved in the chain
+            handleSaveLocation(create.action,create.result as RestCallResult,chainState)
         }
         individual.initializeCleanUpActions()
         val cleanup = individual.seeCleanUpActions()

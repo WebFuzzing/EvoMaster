@@ -713,8 +713,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if (!handleSaveLocation(a, response, rcr, chainState)) return false
-
         if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
             val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
 
@@ -726,6 +724,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
                 rcr.addFault(DetectedFault(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
             }
+        }
+
+        if (!handleSaveLocation(a, rcr, chainState)){
+            return false
         }
 
         return true
@@ -898,15 +900,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
-    private fun handleSaveLocation(
+    protected fun handleSaveLocation(
         a: RestCallAction,
-        response: Response,
         rcr: RestCallResult,
         chainState: MutableMap<String, String>
     ): Boolean {
         if (a.saveCreatedResourceLocation) {
 
-            if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
+            val status = rcr.getStatusCode()
+
+            if (!StatusGroup.G_2xx.isInGroup(status)) {
                 /*
                     If this failed, and following actions require the "location" header
                     of this call, there is no point whatsoever to continue evaluating
@@ -917,7 +920,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
             val name = locationName(a.postLocationId())
-            var location = response.getHeaderString("location")
+            var location = rcr.getLocation()
 
             if (location == null) {
                 /*
