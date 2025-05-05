@@ -139,16 +139,15 @@ public class SqlHandler {
         // all SQL statements added to bufferedSqlCommands can be parsed
         bufferedSqlCommands.add(sqlExecutionLogDto);
 
-        ColumnTableAnalyzer columnTableAnalyzer = new ColumnTableAnalyzer(this.schema, booleanConstantNames);
         if (isSelect(sqlCommand)) {
-            mergeNewData(queriedData, columnTableAnalyzer.getSelectReadDataFields(sqlCommand));
+            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlCommand));
         } else if (isDelete(sqlCommand)) {
-            deletedData.add(columnTableAnalyzer.getDeletedTable(sqlCommand));
+            deletedData.add(ColumnTableAnalyzer.getDeletedTable(sqlCommand));
         } else if (isInsert(sqlCommand)) {
-            final Map.Entry<SqlTableId, Set<SqlColumnId>> insertedDataFields = columnTableAnalyzer.getInsertedDataFields(sqlCommand);
+            final Map.Entry<SqlTableId, Set<SqlColumnId>> insertedDataFields = ColumnTableAnalyzer.getInsertedDataFields(sqlCommand);
             mergeNewData(insertedData, Collections.singletonMap(insertedDataFields.getKey(), insertedDataFields.getValue()));
         } else if (isUpdate(sqlCommand)) {
-            final Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = columnTableAnalyzer.getUpdatedDataFields(sqlCommand);
+            final Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand);
             mergeNewData(updatedData, Collections.singletonMap(updatedDataFields.getKey(), updatedDataFields.getValue()));
         }
 
