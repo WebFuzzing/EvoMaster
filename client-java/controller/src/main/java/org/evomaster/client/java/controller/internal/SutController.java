@@ -458,6 +458,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        /*
+            extract SQL database schema and constraints
+            such info will be used in re-adding init data after smart db cleaner
+         */
+        extractSqlDbSchemaAndConstraints();
         registerOrExecuteInitSqlCommandsIfNeeded(false);
     }
 
@@ -685,8 +690,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return schemaDto;
         }
 
+        boolean success = extractSqlDbSchemaAndConstraints();
+        if (!success) return null;
+
+        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
+        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
+        if( extra != null && !extra.isEmpty()) {
+            schemaDto.extraConstraintDtos = new ArrayList<>();
+            schemaDto.extraConstraintDtos.addAll(extra);
+        }
+
+        return schemaDto;
+    }
+
+    /**
+     * @return if the extraction of SQL schema and constraints with the given DbSpecification has been proceeded successfully
+     * Note that such extraction is only performed once. if the extraction has been performed, it returns false.
+     */
+    public final boolean extractSqlDbSchemaAndConstraints(){
+
+        if (schemaDto != null) {
+            SimpleLogger.info("Sql Database Schema and Constraints have been extracted and built.");
+            return false;
+        }
+
         if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
-            return null;
+            return false;
         }
 
         try {
@@ -695,7 +724,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
-            return null;
+            return false;
         }
 
         if (fkMap.isEmpty()){
@@ -709,14 +738,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             });
         }
 
-        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
-        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
-        if( extra != null && !extra.isEmpty()) {
-            schemaDto.extraConstraintDtos = new ArrayList<>();
-            schemaDto.extraConstraintDtos.addAll(extra);
-        }
-
-        return schemaDto;
+        return true;
     }
 
     /**
