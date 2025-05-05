@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.StructuralElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.core.NewCookie
@@ -84,7 +85,7 @@ class BlackBoxRestFitness : RestFitness() {
         fv: FitnessValue
     ){
         //this is always going to be updated at each fitness evaluation
-        individual.cleanUpActions.clear()
+        individual.removeAllCleanUp()
 
         val toHandle = RestIndividualSelectorUtils.findActionsInIndividual(
             individual,
@@ -110,6 +111,7 @@ class BlackBoxRestFitness : RestFitness() {
                 ?: continue
 
             val delete = builder.createBoundActionOnPreviousCreate(template, create.action)
+            delete.isCleanUp = true
 
             //check if already there an existing DELETE on same resource
             val index = mainActions.indexOf(create.action)
@@ -122,11 +124,15 @@ class BlackBoxRestFitness : RestFitness() {
             if(existing.isNotEmpty()){
                 continue
             }
-            individual.cleanUpActions.add(delete)
+            individual.addCleanUpAction(delete)
         }
+        individual.initializeCleanUpActions()
+        val cleanup = individual.seeCleanUpActions()
 
-        for(delete in individual.cleanUpActions){
-            handleRestCall(delete as RestCallAction, mainActions, actionResults, chainState, cookies, tokens, fv)
+        val all = mainActions.plus(cleanup) as List<RestCallAction>
+
+        for(delete in cleanup){
+            handleRestCall(delete as RestCallAction, all, actionResults, chainState, cookies, tokens, fv)
         }
     }
 

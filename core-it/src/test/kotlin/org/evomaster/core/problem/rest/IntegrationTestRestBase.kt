@@ -24,23 +24,25 @@ abstract class IntegrationTestRestBase : RestTestBase() {
         recreateInjectorForWhite()
     }
 
-    fun recreateInjectorForWhite(){
+    protected fun recreateInjectorForWhite(extraArgs: List<String> = listOf()) {
         val args = listOf(
             "--sutControllerPort", "" + controllerPort,
             "--createConfigPathIfMissing", "false",
             "--seed", "42"
-        )
+        ).plus(extraArgs)
+
         injector = init(args)
     }
 
-    fun recreateInjectorForBlack(){
+    protected fun recreateInjectorForBlack(extraArgs: List<String> = listOf()){
         val args = listOf(
             "--blackBox", "true",
             "--bbTargetUrl", baseUrlOfSut,
             "--bbSwaggerUrl","$baseUrlOfSut/v3/api-docs",
             "--createConfigPathIfMissing", "false",
             "--seed", "42"
-        )
+        ).plus(extraArgs)
+
         injector = init(args)
     }
 
