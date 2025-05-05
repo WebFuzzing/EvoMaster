@@ -10,10 +10,10 @@ import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecut
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
 import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
+import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -238,24 +238,100 @@ public class SqlHandler {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
         }
 
-        Map<SqlTableId, Set<SqlColumnId>> columns = extractColumnsInvolvedInWhere(parsedStatement);
+        SqlDistanceWithMetrics dist;
+        final Map<SqlTableId, Set<SqlColumnId>> columns;
+        if (this.advancedHeuristics) {
+            // advanced
+            columns =  extractColumnsInvolvedInStatement(parsedStatement);
+            dist = computeCompleteSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase, columns);
+        } else {
+            columns = extractColumnsInvolvedInWhere(parsedStatement);
+            dist = computePartialSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase);
+        }
+        if (dist.sqlDistance > 0) {
+            mergeNewData(failedWhere, columns);
+        }
+
+        return dist;
+
+    }
+
+    private SqlDistanceWithMetrics computeCompleteSqlDistance(String sqlCommand,
+                                                              Statement parsedStatement,
+                                                              List<InsertionDto> successfulInitSqlInsertions,
+                                                              boolean queryFromDatabase,
+                                                              Map<SqlTableId, Set<SqlColumnId>> columns) {
+
+        if (!isSelect(sqlCommand) && !isDelete(sqlCommand) && !isUpdate(sqlCommand)) {
+            throw new IllegalArgumentException("Cannot compute distance for sql command: " + sqlCommand);
+        }
+
+        // fetch data for computing distances
+        final List<QueryResult> queryResults;
+        try {
+            queryResults = getQueryResultsForComputingSqlDistance(columns);
+        } catch (SQLException e) {
+            SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + sqlCommand);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+        }
+
+        // compute the SQL heuristics using the fetched data
+        SqlDistanceWithMetrics sqlDistanceWithMetrics = SqlHeuristicsCalculator.computeDistance(
+                sqlCommand,
+                schema,
+                taintHandler,
+                queryResults.toArray(new QueryResult[]{}));
+
+        return sqlDistanceWithMetrics;
+    }
+
+    private Map<SqlTableId, Set<SqlColumnId>> extractColumnsInvolvedInStatement(Statement statement) {
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, booleanConstantNames);
+        statement.accept(finder);
+
+        final Map<SqlBaseTableReference, Set<SqlColumnReference>> columnsInWhere = finder.getColumnReferences();
+
+        Map<SqlTableId, Set<SqlColumnId>> columns = new HashMap<>();
+        for (SqlBaseTableReference sqlBaseTableReference : columnsInWhere.keySet()) {
+            SqlTableId tableId = new SqlTableId(sqlBaseTableReference.getFullyQualifiedName());
+            Set<SqlColumnId> columnIds = columnsInWhere.get(sqlBaseTableReference).stream()
+                    .map(SqlColumnReference::getColumnName)
+                    .map(SqlColumnId::new)
+                    .collect(Collectors.toSet());
+            columns.put(tableId, columnIds);
+        }
+        return columns;
+    }
+
+    private List<QueryResult> getQueryResultsForComputingSqlDistance(final Map<SqlTableId, Set<SqlColumnId>> columnsInWhere) throws SQLException {
+        List<QueryResult> queryResults = new ArrayList<>();
+        for (SqlTableId tableId : columnsInWhere.keySet()) {
+            Set<SqlColumnId> columnIds = columnsInWhere.get(tableId);
+            String select = createSelectForSingleTable(tableId, columnIds);
+            QueryResult queryResult = SqlScriptRunner.execCommand(connection, select);
+            queryResults.add(queryResult);
+        }
+        return queryResults;
+    }
+
+    private SqlDistanceWithMetrics computePartialSqlDistance(
+            String sqlCommand,
+            Statement parsedStatement,
+            List<InsertionDto> successfulInitSqlInsertions,
+            boolean queryFromDatabase) {
+
+        final Map<SqlTableId, Set<SqlColumnId>> columns = extractColumnsInvolvedInWhere(parsedStatement);
 
         /*
             even if columns.isEmpty(), we need to check if any data was present
          */
-
-        SqlDistanceWithMetrics dist;
+        final SqlDistanceWithMetrics dist;
         if (columns.isEmpty() || queryFromDatabase) {
             dist = getDistanceForWhere(sqlCommand, columns);
         } else {
             // !columns.isEmpty() && !queryFromDatabase
             dist = getDistanceForWhereBasedOnInsertion(sqlCommand, columns, successfulInitSqlInsertions);
         }
-
-        if (dist.sqlDistance > 0) {
-            mergeNewData(failedWhere, columns);
-        }
-
         return dist;
     }
 
@@ -263,7 +339,7 @@ public class SqlHandler {
     private SqlDistanceWithMetrics getDistanceForWhereBasedOnInsertion(String sqlCommand, Map<SqlTableId, Set<SqlColumnId>> columns, List<InsertionDto> insertionDtos) {
         QueryResult[] data = QueryResultTransformer.convertInsertionDtosToQueryResults(insertionDtos, columns, schema);
         assert data != null;
-        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, advancedHeuristics, data);
+        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
     }
 
 
@@ -271,28 +347,55 @@ public class SqlHandler {
         if (!isSelect(sqlCommand) && !isDelete(sqlCommand) && !isUpdate(sqlCommand)) {
             throw new IllegalArgumentException("Cannot compute distance for sql command: " + sqlCommand);
         }
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, booleanConstantNames);
-        Statement statement = SqlParserUtils.parseSqlCommand(sqlCommand);
-        statement.accept(finder);
+        String select;
 
-        final Map<SqlBaseTableReference, Set<SqlColumnReference>> columnsInWhere = finder.getColumnReferences();
-        List<QueryResult> queryResults = new ArrayList<>();
-        for (SqlBaseTableReference sqlBaseTableReference : columnsInWhere.keySet()) {
-            SqlTableId tableId = new SqlTableId(sqlBaseTableReference.getFullyQualifiedName());
-            Set<SqlColumnId> columnIds = columnsInWhere.get(sqlBaseTableReference).stream()
-                    .map(SqlColumnReference::getColumnName)
-                    .map(SqlColumnId::new)
-                    .collect(Collectors.toSet());
-            String select = createSelectForSingleTable(tableId, columnIds);
-            try {
-                QueryResult queryResult = SqlScriptRunner.execCommand(connection, select);
-                queryResults.add(queryResult);
-            } catch (SQLException e) {
-                SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + select);
-                return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+        /*
+           TODO:
+           this might be likely unnecessary... we are only interested in the variables used
+           in the WHERE. Furthermore, this would not support DELETE/INSERT/UPDATE.
+           So, we just need to create a new SELECT based on that.
+           But SELECT could be complex with many JOINs... whereas DIP would be simple(r)?
+
+           TODO: we need a general solution
+         */
+        if (isSelect(sqlCommand)) {
+            select = SelectTransformer.addFieldsToSelect(sqlCommand);
+            select = SelectTransformer.removeConstraints(select);
+            select = SelectTransformer.removeOperations(select);
+        } else {
+            if (columns.size() > 1) {
+                SimpleLogger.uniqueWarn("Cannot analyze: " + sqlCommand);
             }
+            final SqlTableId tableName;
+            final Set<SqlColumnId> columnNames;
+            if (columns.isEmpty()) {
+                if (isUpdate(sqlCommand)) {
+                    Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand);
+                    tableName = updatedDataFields.getKey();
+                    columnNames = Collections.singleton(new SqlColumnId("*"));
+                } else if (isDelete(sqlCommand)) {
+                    tableName = ColumnTableAnalyzer.getDeletedTable(sqlCommand);
+                    columnNames = Collections.singleton(new SqlColumnId("*"));
+                } else {
+                    throw new IllegalStateException("SQL command should only be SELECT, UPDATE or DELETE");
+                }
+            } else {
+                Map.Entry<SqlTableId, Set<SqlColumnId>> tableToColumns = columns.entrySet().iterator().next();
+                tableName = tableToColumns.getKey();
+                columnNames = tableToColumns.getValue();
+            }
+            select = createSelectForSingleTable(tableName, columnNames);
         }
-        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, advancedHeuristics, queryResults.toArray(new QueryResult[0]));
+
+        QueryResult data;
+        try {
+            data = SqlScriptRunner.execCommand(connection, select);
+        } catch (SQLException e) {
+            SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + select);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+        }
+
+        return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
     }
 
     private String createSelectForSingleTable(SqlTableId tableId, Set<SqlColumnId> columnIds) {
@@ -313,7 +416,7 @@ public class SqlHandler {
      * Check the fields involved in the WHERE clause (if any).
      * Return a map from table name to column names of the involved fields.
      */
-    public Map<SqlTableId, Set<SqlColumnId>> extractColumnsInvolvedInWhere(Statement statement) {
+    Map<SqlTableId, Set<SqlColumnId>> extractColumnsInvolvedInWhere(Statement statement) {
 
         /*
            TODO
