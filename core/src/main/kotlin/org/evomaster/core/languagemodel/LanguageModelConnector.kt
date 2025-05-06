@@ -112,7 +112,7 @@ class LanguageModelConnector {
 
         val response = call(languageModelServerURL, requestBody)
 
-        if (id.isNullOrBlank()) {
+        if (!id.isNullOrBlank()) {
             if (prompts.contains(id)) {
                 val existingPrompt = prompts[id]
 

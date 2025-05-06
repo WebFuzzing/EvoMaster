@@ -7,4 +7,8 @@ class PromptDto (
 ) {
 
     var answer: String? = null
+
+    fun hasAnswer(): Boolean {
+        return this.answer != null
+    }
 }
