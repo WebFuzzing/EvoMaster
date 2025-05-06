@@ -2374,13 +2374,22 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    @Cfg("Large-language model URL")
+    @Experimental
+    @Cfg("Enable language model connector")
+    var languageModelConnector = false
+
+    @Cfg("Large-language model external service URL")
     @Experimental
     var languageModelServerURL: String? = null
 
-    @Cfg("Large-language model name string from Ollama")
+    @Cfg("Large-language model name as listed in Ollama")
     @Experimental
     var languageModelName: String? = null
+
+    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    @Experimental
+    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
