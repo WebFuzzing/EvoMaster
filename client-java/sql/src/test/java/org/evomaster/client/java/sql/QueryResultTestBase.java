@@ -213,5 +213,26 @@ public abstract class QueryResultTestBase {
     }
 
 
+    @Test
+    public void testColumnAlias() throws Exception {
+        // set up the database
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
+                "    first_name VARCHAR(255) NOT NULL,\n" +
+                "    last_name VARCHAR(255) NOT NULL\n" +
+                ");");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (first_name, last_name)\n" +
+                "VALUES ('John','Doe');\n");
+
+        // create the queryResult
+        QueryResult queryResult = SqlScriptRunner.execCommand(getConnection(), "SELECT first_name AS forename,last_name AS surname FROM example_table");
+
+        // check the results
+        assertEquals(1, queryResult.seeRows().size());
+        DataRow row = queryResult.seeRows().get(0);
+        Object actual_first_name = row.getValueByName("forename", "example_table");
+        Object actual_last_name = row.getValueByName("surname", "example_table");
+        assertEquals("John", actual_first_name);
+        assertEquals("Doe", actual_last_name);
+    }
 
 }

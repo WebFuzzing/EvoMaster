@@ -7,5 +7,6 @@ import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 
 abstract class HttpWsAction(
     override var auth: HttpWsAuthenticationInfo = HttpWsNoAuth(),
+    isCleanUp : Boolean,
     parameters: MutableList<Param>
-) : ApiWsAction(auth, parameters)
+) : ApiWsAction(auth, isCleanUp, parameters)
