@@ -661,6 +661,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         rcr.setStatusCode(response.status)
+        rcr.setLocation(response.location?.toString())
         rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
