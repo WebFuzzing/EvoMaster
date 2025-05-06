@@ -6,5 +6,5 @@ class PromptDto (
     val prompt: String
 ) {
 
-    val answer: String? = null
+    var answer: String? = null
 }

@@ -86,17 +86,6 @@ class LanguageModelConnector {
     }
 
     /**
-     * TODO: Description
-     */
-    fun queryStructuredAsync(prompt: String): String {
-        validatePrompt(prompt)
-
-        val id = getId()
-
-        return id
-    }
-
-    /**
      * To query the large language server with a simple prompt.
      */
     fun query(prompt: String): String? {
@@ -105,17 +94,8 @@ class LanguageModelConnector {
         return makeQuery(prompt)
     }
 
-    /**
-     * To query the large language model server with a structured output schema.
-     * TODO: Could be useful in some cases.
-     */
-    fun queryStructured(prompt: String): String? {
-        validatePrompt(prompt)
 
-        return makeQueryStructured(prompt)
-    }
-
-    private fun makeQuery(prompt: String): String? {
+    private fun makeQuery(prompt: String, id: String? = null): String? {
         validatePrompt(prompt)
 
         val languageModelServerURL = getLanguageModelServerURL()
@@ -132,14 +112,17 @@ class LanguageModelConnector {
 
         val response = call(languageModelServerURL, requestBody)
 
+        if (id.isNullOrBlank()) {
+            if (prompts.contains(id)) {
+                val existingPrompt = prompts[id]
+
+                if (existingPrompt != null) {
+                    existingPrompt?.answer = response
+                }
+            }
+        }
+
         return response
-    }
-
-
-    private fun makeQueryStructured(prompt: String): String? {
-        validatePrompt(prompt)
-
-        TODO("Can be used to extract structured output.")
     }
 
     /**
