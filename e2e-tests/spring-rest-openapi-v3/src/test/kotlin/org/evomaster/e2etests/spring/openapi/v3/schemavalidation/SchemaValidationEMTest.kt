@@ -1,10 +1,9 @@
 package org.evomaster.e2etests.spring.openapi.v3.schemavalidation
 
-import com.foo.rest.examples.spring.openapi.v3.schemavalidation.SchemaValidationApplication
 import com.foo.rest.examples.spring.openapi.v3.schemavalidation.SchemaValidationController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.evomaster.notinstrumented.Constants
 import org.junit.jupiter.api.Assertions.assertEquals

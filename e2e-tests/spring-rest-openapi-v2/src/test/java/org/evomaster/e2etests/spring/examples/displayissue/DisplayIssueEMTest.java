@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.displayissue;
 
 import com.foo.rest.examples.spring.bodytypes.BodyTypesController;
 
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 

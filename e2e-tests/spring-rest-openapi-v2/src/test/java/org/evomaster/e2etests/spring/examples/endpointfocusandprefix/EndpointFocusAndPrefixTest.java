@@ -5,9 +5,9 @@ import com.foo.rest.examples.spring.endpointfocusandprefix.EndpointFocusAndPrefi
 import org.evomaster.ci.utils.JUnitExtra;
 import org.evomaster.core.config.ConfigProblemException;
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth;
-import org.evomaster.core.problem.rest.HttpVerb;
+import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.schema.OpenApiAccess;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 

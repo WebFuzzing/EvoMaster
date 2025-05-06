@@ -2,8 +2,7 @@ package org.evomaster.core.problem.rest
 
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.service.Sampler
 import java.net.URL

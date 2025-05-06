@@ -2,8 +2,8 @@ package org.evomaster.core.search.structuralelement.action
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.ObjectGene
@@ -25,7 +25,7 @@ object RestActionCluster{
 
 
 class RestPostCallStructureTest : StructuralElementBaseTest(){
-    override fun getStructuralElement(): RestCallAction{
+    override fun getStructuralElement(): RestCallAction {
         return RestActionCluster.getRestCallAction("POST:/v3/api/rfoo")?:throw IllegalStateException("cannot get the expected the action")
     }
 
@@ -53,7 +53,7 @@ class RestPostCallStructureTest : StructuralElementBaseTest(){
 }
 
 class RestGetCallStructureTest : StructuralElementBaseTest(){
-    override fun getStructuralElement(): RestCallAction{
+    override fun getStructuralElement(): RestCallAction {
         return RestActionCluster.getRestCallAction("GET:/v3/api/rfoo/{rfooId}")?:throw IllegalStateException("cannot get the expected the action")
     }
 

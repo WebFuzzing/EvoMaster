@@ -2,10 +2,10 @@ package org.evomaster.core.problem.rest.links
 
 import bar.examples.it.spring.links.LinksApplication
 import bar.examples.it.spring.links.LinksController
-import bar.examples.it.spring.pathstatus.PathStatusController
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.link.BackwardLinkReference
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 

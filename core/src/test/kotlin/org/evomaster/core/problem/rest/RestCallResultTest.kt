@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType

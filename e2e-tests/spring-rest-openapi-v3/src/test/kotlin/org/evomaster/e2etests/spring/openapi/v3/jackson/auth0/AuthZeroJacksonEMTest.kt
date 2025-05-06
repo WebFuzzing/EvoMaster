@@ -1,14 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.jackson.auth0
 
 import com.foo.rest.examples.spring.openapi.v3.jackson.auth0.AuthZeroJacksonController
-import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class AuthZeroJacksonEMTest: SpringTestBase() {
