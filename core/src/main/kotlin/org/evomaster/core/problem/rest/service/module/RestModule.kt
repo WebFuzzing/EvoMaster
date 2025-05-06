@@ -5,7 +5,6 @@ import org.evomaster.core.languagemodel.LanguageModelConnector
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.security.classifiers.llm.LanguageModelConnector
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness
