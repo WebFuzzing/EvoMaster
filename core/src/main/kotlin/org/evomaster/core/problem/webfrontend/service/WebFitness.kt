@@ -104,7 +104,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
         val urlBeforeExecutingAction = browserController.getCurrentUrl()
-        val possibilities = BrowserActionBuilder.createPossibleActions(pageBeforeExecutingAction)
+        val possibilities = BrowserActionBuilder.createPossibleActions(browserController.getDriver())
 
         var blocking = false
 
@@ -139,6 +139,13 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                         //TODO in try/catch... what to do in catch?
                         browserController.clickAndWaitPageLoad(it.cssSelector)
                         //TODO better wait
+                    }
+                    UserActionType.SELECT_SINGLE, UserActionType.SELECT_MULTI -> {
+                        //TODO
+                        /*
+                            not just clicking, but deciding which options to select.
+                            this is based on values in the genes
+                         */
                     }
                     else -> {
                         log.error("Not handled action type ${it.userActionType}")
