@@ -6,7 +6,7 @@ import org.evomaster.core.search.StructuralElement
 
 abstract class GuiAction(
     children: List<StructuralElement>
-): MainAction(children) {
+): MainAction(false,children) {
 
 
     /**

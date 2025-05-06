@@ -39,10 +39,16 @@ class RestIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize, 0)
-): ApiWsIndividual(sampleType, trackOperator, index, allActions,
+    cleanupSize: Int = 0,
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize, 0, cleanupSize),
+): ApiWsIndividual(
+    sampleType,
+    trackOperator,
+    index,
+    allActions,
     childTypeVerifier = EnterpriseChildTypeVerifier(RestCallAction::class.java,RestResourceCalls::class.java),
-    groups) {
+    groups
+) {
 
     /*
         Note when instantiating this class... input actions might or might have not been initialized.
@@ -98,7 +104,8 @@ class RestIndividual(
                 mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
                 sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
                 mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
-                dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
+                dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS),
+                cleanupSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.CLEANUP),
         )
     }
 

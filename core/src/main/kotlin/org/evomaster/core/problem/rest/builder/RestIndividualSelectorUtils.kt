@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.ActionResult
 
 
 /**
@@ -92,18 +93,62 @@ object RestIndividualSelectorUtils {
         authenticated: Boolean = false
     ): EvaluatedAction? {
 
+        val actions = findEvaluatedActions(individualsInSolution,verb,path,status,statusGroup,authenticated)
+
+        return if(actions.isEmpty()) {
+            null
+        } else {
+            actions[0]
+        }
+    }
+
+    fun findActionsInIndividual(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): List<EvaluatedAction> {
+
         if(status != null && statusGroup!= null){
             throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
 
-        individualsInSolution.forEach {ind ->
-            ind.evaluatedMainActions().forEach { a ->
-                if(checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, null, authenticated)){
-                    return a
+        return individual.seeMainExecutableActions()
+            .mapNotNull { a ->
+                val res = actionResults.find { r ->  r.sourceLocalId == a.getLocalId() }
+                if(res == null){
+                    //recall, test execution might had been stopped
+                    null
+                } else {
+                    EvaluatedAction(a,res)
                 }
             }
+            .filter { a ->
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, null, authenticated)
+            }
+    }
+
+    fun findEvaluatedActions(
+        individualsInSolution: List<EvaluatedIndividual<RestIndividual>>,
+        verb: HttpVerb? = null,
+        path: RestPath? = null,
+        status: Int? = null,
+        statusGroup: StatusGroup? = null,
+        authenticated: Boolean = false
+    ): List<EvaluatedAction> {
+
+        if(status != null && statusGroup!= null){
+            throw IllegalArgumentException("Shouldn't specify both status and status group")
         }
-        return null
+
+        return individualsInSolution.flatMap {ind ->
+            ind.evaluatedMainActions().filter { a ->
+                checkIfActionSatisfiesConditions(a, verb, path, status, statusGroup, null, authenticated)
+            }
+        }
     }
 
 
@@ -266,5 +311,4 @@ object RestIndividualSelectorUtils {
         }
         return -1
     }
-
 }
