@@ -25,6 +25,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
+        const val LOCATION = "LOCATION"
     }
 
     /**
@@ -47,6 +48,14 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getStatusCode(): Int? = getResultValue(STATUS_CODE)?.toInt()
+
+    fun setLocation(location: String?) {
+        if (location != null) {
+            addResultValue(LOCATION, location)
+        }
+    }
+
+    fun getLocation(): String? = getResultValue(LOCATION)
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 

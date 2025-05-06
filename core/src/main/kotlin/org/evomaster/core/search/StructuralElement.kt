@@ -248,6 +248,26 @@ abstract class StructuralElement (
         groups?.clear()
     }
 
+    fun killAllInGroup(groupId: String){
+        val group = groups?.getGroup(groupId)
+            ?: throw IllegalArgumentException("Group $groupId does not exist")
+
+        val before = group.size()
+        if(before == 0){
+            //nothing to kill
+            return
+        }
+
+        val start = group.startIndex
+        val end = group.endIndex
+        for(j in end downTo  start){
+            killChildByIndex(j)
+        }
+
+        val after = group.size()
+        assert(after == 0) { "Delete on group didn't work, still $after children left"}
+    }
+
     open fun killChildren(predicate: (StructuralElement) -> Boolean){
         val toRemove = children.filter(predicate)
         for(child in toRemove){

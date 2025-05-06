@@ -31,6 +31,7 @@ class RestCallAction(
     val path: RestPath,
     parameters: MutableList<Param>,
     auth: HttpWsAuthenticationInfo = HttpWsNoAuth(),
+    isCleanUp : Boolean = false,
     /**
      * If true, it means that it will
      * instruct to save the "location" header of the HTTP response for future
@@ -63,7 +64,7 @@ class RestCallAction(
     val operationId: String? = null,
     val links: List<RestLink> = listOf(),
     var backwardLinkReference: BackwardLinkReference? = null
-) : HttpWsAction(auth, parameters) {
+) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
         /**
@@ -111,7 +112,7 @@ class RestCallAction(
     override fun copyContent(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
-            id, verb, path, p, auth, saveCreatedResourceLocation, usePreviousLocationId,
+            id, verb, path, p, auth, isCleanUp, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
             backwardLinkReference?.copy())
         //note: immutable objects (eg String) do not need to be copied
