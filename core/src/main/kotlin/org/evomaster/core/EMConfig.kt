@@ -2378,6 +2378,7 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
+
     @Experimental
     @Cfg("Apply vulnerability hunter as part of security testing.")
     var vulnerabilityAnalyser = false

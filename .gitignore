@@ -174,3 +174,8 @@ Migrations/
 /e2e-tests/spring-rest-multidb/target/
 docs/.DS_Store
 .DS_Store
+/e2e-tests/spring-rest-h2-v2/target/
+
+
+# Exclude Target directories recursively
+**/target/*
