@@ -72,10 +72,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 2_000,
                 (args) -> {
 
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("true");
+                    setOption(args,"heuristicsForSQL","true");
+                    setOption(args,"generateSqlDataWithSearch","true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

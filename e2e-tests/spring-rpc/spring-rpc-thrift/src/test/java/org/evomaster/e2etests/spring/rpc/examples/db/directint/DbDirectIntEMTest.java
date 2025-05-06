@@ -48,12 +48,9 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
                 7_000,
                 (args) -> {
 
-                    args.add("--secondaryObjectiveStrategy");
-                    args.add("" + strategy);
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
+                    setOption(args,"secondaryObjectiveStrategy",strategy.toString());
+                    setOption(args,"heuristicsForSQL","true");
+                    setOption(args,"generateSqlDataWithSearch","false");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 

@@ -19,10 +19,8 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
                 "org.bar.db.JavaTypesEM",
                 3_000,
                 (args) -> {
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

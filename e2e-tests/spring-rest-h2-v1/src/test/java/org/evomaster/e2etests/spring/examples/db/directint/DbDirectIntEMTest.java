@@ -36,14 +36,10 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                 outputTestName,
                 7_000,
                 (args) -> {
-                    args.add("--secondaryObjectiveStrategy");
-                    args.add("" + strategy);
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--probOfSmartSampling");
-                    args.add("0.0"); // on this example, it has huge negative impact
+                    setOption(args, "secondaryObjectiveStrategy",strategy.toString());
+                    setOption(args,"heuristicsForSQL","true");
+                    setOption(args,"generateSqlDataWithSearch","false");
+                    setOption(args,"probOfSmartSampling","0.0"); // on this example, it has huge negative impact
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
