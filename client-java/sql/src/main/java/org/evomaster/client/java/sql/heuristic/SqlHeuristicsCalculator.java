@@ -2,9 +2,11 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
@@ -51,13 +53,18 @@ public class SqlHeuristicsCalculator {
         Objects.requireNonNull(sqlCommand, "sqlCommand cannot be null");
 
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        if (!(parsedSqlCommand instanceof Update)
+                && !(parsedSqlCommand instanceof Delete)
+                && !(parsedSqlCommand instanceof Select)) {
+            throw new IllegalArgumentException("Cannot compute heuristics for SQL command of type " + parsedSqlCommand.getClass().getName());
+        }
         Truthness t = this.calculateHeuristicQuery(parsedSqlCommand).getTruthness();
         double distanceToTrue = 1 - t.getOfTrue();
         return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
     }
 
     private SqlHeuristicResult calculateHeuristicRowSet(FromItem fromItem) {
-        return calculateHeuristicRowSet (fromItem, null);
+        return calculateHeuristicRowSet(fromItem, null);
     }
 
     private SqlHeuristicResult calculateHeuristicRowSet(FromItem fromItem, List<Join> joins) {
@@ -171,7 +178,8 @@ public class SqlHeuristicsCalculator {
         return new SqlHeuristicResult(rightRowSetResult.getTruthness(), queryResult);
     }
 
-    private QueryResult createRightJoin(QueryResult leftQueryResult, QueryResult rightQueryResult, Collection<Expression> onExpressions) {
+    private QueryResult createRightJoin(QueryResult leftQueryResult, QueryResult
+            rightQueryResult, Collection<Expression> onExpressions) {
         final QueryResult queryResult = QueryResultUtils.createEmptyCartesianProduct(leftQueryResult, rightQueryResult);
         for (DataRow rightRow : rightQueryResult.seeRows()) {
             boolean foundMatch = false;
@@ -210,7 +218,8 @@ public class SqlHeuristicsCalculator {
         return new SqlHeuristicResult(leftRowSetResult.getTruthness(), queryResult);
     }
 
-    private QueryResult createLeftJoin(QueryResult leftQueryResult, QueryResult rightQueryResult, Collection<Expression> onExpressions) {
+    private QueryResult createLeftJoin(QueryResult leftQueryResult, QueryResult
+            rightQueryResult, Collection<Expression> onExpressions) {
         final QueryResult queryResult = QueryResultUtils.createEmptyCartesianProduct(leftQueryResult, rightQueryResult);
         for (DataRow leftRow : leftQueryResult.seeRows()) {
             boolean foundMatch = false;

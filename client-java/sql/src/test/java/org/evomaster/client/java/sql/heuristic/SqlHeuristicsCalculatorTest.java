@@ -20,11 +20,9 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+import static org.junit.jupiter.api.Assertions.*;
 
 import net.sf.jsqlparser.schema.Column;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SqlHeuristicsCalculatorTest {
 
@@ -510,6 +508,66 @@ public class SqlHeuristicsCalculatorTest {
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+
+    @Test
+    public void testDelete() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "DELETE FROM departments WHERE department_id=2";
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testUpdate() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "UPDATE departments SET department_name='Telemarketing' WHERE department_name='Marketing'";
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
+        assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testFailOnInsert() {
+        DbInfoDto schema = buildSchema();
+
+        final String sqlCommand = "INSERT INTO departments (department_id,department_name) VALUES (3,'Telemarketing')";
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+
+        assertThrows(IllegalArgumentException.class, () -> calculator.computeDistance(sqlCommand));
+    }
+
+    @Test
+    public void testDeleteNoWhere() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "DELETE FROM departments";
+
+        QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
+        departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
         SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }

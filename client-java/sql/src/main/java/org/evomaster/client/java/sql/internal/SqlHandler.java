@@ -66,7 +66,7 @@ public class SqlHandler {
 
     private volatile boolean extractSqlExecution;
 
-    private volatile boolean advancedHeuristics;
+    private volatile boolean completeSqlHeuristics;
 
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
@@ -240,7 +240,7 @@ public class SqlHandler {
 
         SqlDistanceWithMetrics dist;
         final Map<SqlTableId, Set<SqlColumnId>> columns;
-        if (this.advancedHeuristics) {
+        if (this.completeSqlHeuristics) {
             // advanced
             columns =  extractColumnsInvolvedInStatement(parsedStatement);
             dist = computeCompleteSqlDistance(sqlCommand, successfulInitSqlInsertions, queryFromDatabase, columns);
@@ -305,9 +305,17 @@ public class SqlHandler {
 
     private List<QueryResult> getQueryResultsForComputingSqlDistance(final Map<SqlTableId, Set<SqlColumnId>> columnsInWhere) throws SQLException {
         List<QueryResult> queryResults = new ArrayList<>();
-        for (SqlTableId tableId : columnsInWhere.keySet()) {
-            Set<SqlColumnId> columnIds = columnsInWhere.get(tableId);
-            String select = createSelectForSingleTable(tableId, columnIds);
+        // we sort the table and column identifiers to improve testeability (i.e. allow mocking)
+        for (SqlTableId tableId : columnsInWhere.keySet().stream().sorted().collect(Collectors.toList())) {
+            List<SqlColumnId> columnIds = columnsInWhere.get(tableId).stream().sorted().collect(Collectors.toList());
+            final String select;
+            if (columnIds.isEmpty()) {
+                // the table is required but no specific column was required.
+                // Therefore, we need to fetch all columns for DELETE and UPDATE.
+                select = createSelectForSingleTable(tableId, Collections.singletonList(new SqlColumnId("*")));
+            } else {
+                select = createSelectForSingleTable(tableId, columnIds);
+            }
             QueryResult queryResult = SqlScriptRunner.execCommand(connection, select);
             queryResults.add(queryResult);
         }
@@ -367,22 +375,22 @@ public class SqlHandler {
                 SimpleLogger.uniqueWarn("Cannot analyze: " + sqlCommand);
             }
             final SqlTableId tableName;
-            final Set<SqlColumnId> columnNames;
+            final List<SqlColumnId> columnNames;
             if (columns.isEmpty()) {
                 if (isUpdate(sqlCommand)) {
                     Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand);
                     tableName = updatedDataFields.getKey();
-                    columnNames = Collections.singleton(new SqlColumnId("*"));
+                    columnNames = Collections.singletonList(new SqlColumnId("*"));
                 } else if (isDelete(sqlCommand)) {
                     tableName = ColumnTableAnalyzer.getDeletedTable(sqlCommand);
-                    columnNames = Collections.singleton(new SqlColumnId("*"));
+                    columnNames = Collections.singletonList(new SqlColumnId("*"));
                 } else {
                     throw new IllegalStateException("SQL command should only be SELECT, UPDATE or DELETE");
                 }
             } else {
                 Map.Entry<SqlTableId, Set<SqlColumnId>> tableToColumns = columns.entrySet().iterator().next();
                 tableName = tableToColumns.getKey();
-                columnNames = tableToColumns.getValue();
+                columnNames = tableToColumns.getValue().stream().sorted().collect(Collectors.toList());
             }
             select = createSelectForSingleTable(tableName, columnNames);
         }
@@ -398,7 +406,7 @@ public class SqlHandler {
         return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
     }
 
-    private static String createSelectForSingleTable(SqlTableId tableId, Set<SqlColumnId> columnIds) {
+    private static String createSelectForSingleTable(SqlTableId tableId, List<SqlColumnId> columnIds) {
 
         StringBuilder buffer = new StringBuilder();
         buffer.append("SELECT ");
@@ -536,11 +544,11 @@ public class SqlHandler {
         this.extractSqlExecution = extractSqlExecution;
     }
 
-    public boolean isAdvancedHeuristics() {
-        return advancedHeuristics;
+    public boolean isCompleteSqlHeuristics() {
+        return completeSqlHeuristics;
     }
 
-    public void setAdvancedHeuristics(boolean advancedHeuristics) {
-        this.advancedHeuristics = advancedHeuristics;
+    public void setCompleteSqlHeuristics(boolean completeSqlHeuristics) {
+        this.completeSqlHeuristics = completeSqlHeuristics;
     }
 }

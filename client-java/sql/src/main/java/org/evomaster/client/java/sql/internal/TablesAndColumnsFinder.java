@@ -79,6 +79,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     @Override
     public void visit(Column tableColumn) {
         super.visit(tableColumn);
+        //TODO check for booleanConstantNames
         if (tableColumn.getColumnName().equals("true") || tableColumn.getColumnName().equals("false")) {
             return; // Skip boolean literals
         }

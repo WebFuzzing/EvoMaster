@@ -105,6 +105,16 @@ public class SqlParserUtils {
             Select select = (Select) parsedStatement;
             PlainSelect plainSelect = select.getPlainSelect();
             return plainSelect.getJoins();
+        } else if (parsedStatement instanceof Delete){
+            Delete delete = (Delete) parsedStatement;
+            return delete.getJoins();
+        } else if (parsedStatement instanceof Update){
+            Update update = (Update) parsedStatement;
+            if (update.getStartJoins()!=null) {
+                return update.getStartJoins();
+            } else {
+                return update.getJoins();
+            }
         } else {
             throw new IllegalArgumentException("Cannot get Joins From: " + parsedStatement.toString());
         }
