@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.util
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.Endpoint
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.remote.SutProblemException
 
 

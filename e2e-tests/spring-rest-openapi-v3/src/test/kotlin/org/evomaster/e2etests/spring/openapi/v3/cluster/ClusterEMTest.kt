@@ -4,8 +4,8 @@ import com.foo.rest.examples.spring.openapi.v3.cluster.ClusterTestController
 import io.restassured.RestAssured.given
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Main
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue

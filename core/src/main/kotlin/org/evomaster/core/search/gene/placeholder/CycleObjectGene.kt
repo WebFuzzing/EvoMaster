@@ -48,7 +48,7 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
         return other is CycleObjectGene
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

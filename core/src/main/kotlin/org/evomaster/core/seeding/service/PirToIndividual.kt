@@ -1,7 +1,6 @@
 package org.evomaster.core.seeding.service
 
 import com.google.inject.Inject
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.search.service.Randomness
 
 /**

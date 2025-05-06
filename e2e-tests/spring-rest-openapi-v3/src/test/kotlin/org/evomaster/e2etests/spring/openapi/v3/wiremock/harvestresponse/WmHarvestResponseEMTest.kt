@@ -4,7 +4,7 @@ import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarves
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_FOUND
 import com.foo.rest.examples.spring.openapi.v3.wiremock.harvestresponse.WmHarvestResponseRest.Companion.HARVEST_NOT_FOUND
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll

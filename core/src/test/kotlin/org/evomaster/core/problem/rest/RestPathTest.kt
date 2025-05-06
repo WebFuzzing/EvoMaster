@@ -1,6 +1,9 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.collection.ArrayGene

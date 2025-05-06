@@ -3,8 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.clustering.metrics.LevenshteinDistance
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.RestResponseFeeder
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.gene.Gene
@@ -93,6 +92,7 @@ class DataPool() {
         val applied = gene.setFromStringValue(x)
         return applied
     }
+
     fun addValue(key: String, data: String){
 
         val queue = pool.getOrPut(normalize(key)) { ArrayDeque() }

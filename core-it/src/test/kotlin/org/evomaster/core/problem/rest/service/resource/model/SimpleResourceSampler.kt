@@ -2,11 +2,11 @@ package org.evomaster.core.problem.rest.service.resource.model
 
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.Endpoint
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.sql.SqlInsertBuilder
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.service.ResourceSampler
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import javax.annotation.PostConstruct
 
 class SimpleResourceSampler : ResourceSampler() {

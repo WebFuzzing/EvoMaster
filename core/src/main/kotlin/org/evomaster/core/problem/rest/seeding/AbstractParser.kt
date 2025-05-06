@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.codec.binary.Base64
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -30,8 +30,8 @@ import java.util.regex.Pattern
  */
 @Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 abstract class AbstractParser(
-        protected val defaultRestCallActions: List<RestCallAction>,
-        protected val swagger: OpenAPI
+    protected val defaultRestCallActions: List<RestCallAction>,
+    protected val swagger: OpenAPI
 ) : Parser {
 
     companion object {

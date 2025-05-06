@@ -2,14 +2,13 @@ package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.naming.TestCaseNamingStrategy
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual

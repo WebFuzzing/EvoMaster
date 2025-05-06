@@ -1,14 +1,14 @@
 package org.evomaster.e2etests.spring.examples.resource.hypermutation;
 
 import com.google.inject.Injector;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.resource.RestResourceNode;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
-import org.evomaster.core.problem.rest.service.ResourceRestMutator;
-import org.evomaster.core.problem.rest.service.ResourceRestFitness;
-import org.evomaster.core.problem.rest.service.ResourceRestStructureMutator;
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator;
+import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness;
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator;
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
