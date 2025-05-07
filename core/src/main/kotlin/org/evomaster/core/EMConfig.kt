@@ -2374,8 +2374,8 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
+    @Experimental
     var security = false
 
     @Experimental
