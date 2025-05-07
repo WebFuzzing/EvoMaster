@@ -1,8 +1,8 @@
 package org.evomaster.e2etests.spring.h2.z3solver;
 
 import com.foo.spring.rest.h2.z3solver.Z3SolverController;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

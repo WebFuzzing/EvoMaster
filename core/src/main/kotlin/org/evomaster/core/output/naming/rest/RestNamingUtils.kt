@@ -3,9 +3,9 @@ package org.evomaster.core.output.naming.rest
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.action.EvaluatedAction
 import javax.ws.rs.core.MediaType
 

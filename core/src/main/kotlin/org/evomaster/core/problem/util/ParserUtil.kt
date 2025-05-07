@@ -4,8 +4,8 @@ import edu.stanford.nlp.ling.CoreAnnotations
 import edu.stanford.nlp.ling.CoreLabel
 import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern
 import edu.stanford.nlp.pipeline.StanfordCoreNLP
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam

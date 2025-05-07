@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -82,10 +81,10 @@ class SqlMultiRangeGene<T>(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is SqlMultiRangeGene<*> -> {
-                rangeGenes.bindValueBasedOn(gene.rangeGenes)
+                rangeGenes.setValueBasedOn(gene.rangeGenes)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}")

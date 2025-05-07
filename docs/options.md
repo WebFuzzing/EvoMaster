@@ -159,7 +159,8 @@ There are 3 types of options:
 |`minimizeTimeout`| __Int__. Maximum number of minutes that will be dedicated to the minimization phase. A negative number mean no timeout is considered. A value of 0 means minimization will be skipped, even if minimize=true. *Default value*: `5`.|
 |`minimumSizeControl`| __Int__. Specify minimum size when bloatControlForSecondaryObjective. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`mutatedGeneFile`| __String__. Specify a path to save mutation details which is useful for debugging mutation. *DEBUG option*. *Default value*: `mutatedGeneInfo.csv`.|
-|`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED, ACTION`. *Default value*: `NUMBERED`.|
+|`nameWithQueryParameters`| __Boolean__. Specify if true boolean query parameters are included in the test case name. Used for test case naming disambiguation. Only valid for Action based naming strategy. *Default value*: `true`.|
+|`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED, ACTION`. *Default value*: `ACTION`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *DEBUG option*. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
 |`populationSize`| __Int__. Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
 |`probOfApplySQLActionToCreateResources`| __Double__. Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
@@ -228,6 +229,7 @@ There are 3 types of options:
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`blackBoxCleanUp`| __Boolean__. In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test. For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT. However, this is done heuristically. There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt. *Default value*: `false`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
@@ -257,7 +259,6 @@ There are 3 types of options:
 |`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING, DPC_DECREASING`. *Default value*: `SPECIFIED`.|
 |`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. Note that a negative number presents no limit per test suite. *Default value*: `-1`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
-|`nameWithQueryParameters`| __Boolean__. Specify if true boolean query parameters are included in the test case name. Used for test case naming disambiguation. Only valid for Action based naming strategy. *Default value*: `false`.|
 |`prematureStopStrategy`| __Enum__. Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY), or at least one new target is fully covered (NEW). *Valid values*: `ANY, NEW`. *Default value*: `NEW`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfHarvestingResponsesFromActualExternalServices`| __Double__. a probability of harvesting actual responses from external services as seeds. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
@@ -281,6 +282,7 @@ There are 3 types of options:
 |`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
+|`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|

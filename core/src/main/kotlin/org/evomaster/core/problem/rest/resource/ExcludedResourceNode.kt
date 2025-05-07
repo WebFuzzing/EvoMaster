@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.resource
 
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.service.Randomness
 
 /**

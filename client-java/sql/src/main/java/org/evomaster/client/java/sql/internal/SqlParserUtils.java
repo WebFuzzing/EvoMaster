@@ -3,16 +3,17 @@ package org.evomaster.client.java.sql.internal;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
-import net.sf.jsqlparser.statement.select.FromItem;
-import net.sf.jsqlparser.statement.select.Join;
-import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class SqlParserUtils {
 
@@ -40,7 +41,7 @@ public class SqlParserUtils {
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix){
-        return input!= null && input.trim().toLowerCase().startsWith(prefix);
+        return input!= null && input.trim().toLowerCase(Locale.ENGLISH).startsWith(prefix);
     }
 
     private static boolean isASequence(String input) {
@@ -144,6 +145,17 @@ public class SqlParserUtils {
     }
 
     /**
+     * Checks if the given FromItem is a Subquery.
+     *
+     * @param fromItem the FromItem to check
+     * @return true if the FromItem is a Subquery, false otherwise
+     */
+    public static boolean isSubquery(FromItem fromItem) {
+        return fromItem instanceof ParenthesedSelect;
+    }
+
+
+    /**
      * Retrieves the fully qualified name of a table from the provided {@link FromItem}.
      * <p>
      * This method checks if the given {@code fromItem} is an instance of {@link Table}.
@@ -163,5 +175,71 @@ public class SqlParserUtils {
         } else {
             throw new IllegalArgumentException("From item " + fromItem + " is not a table");
         }
+    }
+
+    public static Table getTable(FromItem fromItem) {
+        if (fromItem instanceof Table) {
+            return (Table) fromItem;
+        } else {
+            throw new IllegalArgumentException("From item " + fromItem + " is not a table");
+        }
+    }
+
+    /**
+     * Retrieves the {@link PlainSelect} object from a {@link FromItem} that represents a subquery.
+     *
+     * @param fromItem
+     * @return
+     */
+    public static PlainSelect getSubquery(FromItem fromItem) {
+        if (fromItem instanceof ParenthesedSelect) {
+            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
+            return parenthesedSelect.getPlainSelect();
+        } else {
+            throw new IllegalArgumentException("From item " + fromItem + " is not a subquery");
+        }
+    }
+
+    /**
+     * Checks if the given {@link Statement} is a UNION statement.
+     *
+     * @param statement
+     * @return
+     */
+    public static boolean isUnion(Statement statement) {
+        if (statement instanceof Select) {
+            Select select = (Select) statement;
+            return select instanceof SetOperationList;
+        }
+        return false;
+    }
+
+    public static List<Select> getUnionSubqueries(Statement query) {
+        if (!isUnion(query)) {
+            throw new IllegalArgumentException("The provided query is not a UNION statement");
+        }
+        SetOperationList unionQuery = (SetOperationList) query;
+        return unionQuery.getSelects();
+    }
+
+    /**
+     * Retrieves the "FROM" and "JOIN" items from a given SQL SELECT statement.
+     *
+     * @param select the SQL SELECT statement
+     * @return a list of FromItem objects representing the "FROM" and "JOIN" items
+     */
+    public static List<FromItem> getFromAndJoinItems(Select select) {
+        final FromItem fromItem = SqlParserUtils.getFrom(select);
+        final List<Join> joins = SqlParserUtils.getJoins(select);
+        List<FromItem> fromAndJoinItems = new ArrayList<>();
+        if (fromItem !=null) {
+            fromAndJoinItems.add(fromItem);
+        }
+        if (joins!=null) {
+            for (Join join : joins) {
+                fromAndJoinItems.add(join.getRightItem());
+            }
+        }
+        return fromAndJoinItems;
     }
 }

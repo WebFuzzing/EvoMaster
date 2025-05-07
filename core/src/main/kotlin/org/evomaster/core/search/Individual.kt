@@ -163,14 +163,12 @@ abstract class Individual(
 
         groupsView()?.verifyGroups()
 
-        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
-            throw IllegalStateException("Initializing actions break SQL constraints")
-        }
+        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
             a.seeTopGenes().forEach { g ->
                 if(!g.isGloballyValid()){
-                    throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
+                    throw IllegalStateException("Global validity failure: invalid gene named '${g.name}' in action ${a.getName()}")
                 }
             }
         }
@@ -183,8 +181,6 @@ abstract class Individual(
     override fun copyContent(): Individual {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
-
-    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL, ONLY_MONGO, ONLY_EXTERNAL_SERVICE, NO_DB, ONLY_DB, ONLY_SCHEDULE_TASK }
 
     /**
      * Return a view of all the top Genes in this chromosome/individual.

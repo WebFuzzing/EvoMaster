@@ -20,7 +20,7 @@ class GraphQLAction(
     val methodType: GQMethodType,
     parameters: MutableList<Param>,
     auth: HttpWsAuthenticationInfo = HttpWsNoAuth()
-        ) : HttpWsAction(auth, parameters) {
+        ) : HttpWsAction(auth, false, parameters) {
 
     override fun getName(): String {
         //TODO what if have same name but different inputs? need to add input list as well

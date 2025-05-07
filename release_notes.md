@@ -3,7 +3,10 @@
 Under development in `master` branch.
 
 ### New Features
+- Generated test suite files have now a license disclaimer stating these generated files are not subject to LGPL.
 - Support for object in example/examples in OpenAPI schemas.
+- In REST APIs, if OpenAPI schema has $ref entries pointing to external schema files, those will be automatically downloaded and processed.
+- Now generated tests have meaningful names, instead of being just numbers  like _test01()_.
 
 ### Addressed GitHub Issues
 - #1171: IllegalStateException: only support Map with String key in EvoMaster

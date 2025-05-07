@@ -2,19 +2,13 @@ package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.SplitResult
-import org.evomaster.core.output.clustering.metrics.DistanceMetric
-import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
-import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.output.service.PartialOracles
-import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQlCallResult
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.search.*
 import com.google.gson.*
-import org.evomaster.core.problem.api.ApiWsIndividual
 
 /**
  * Created by arcuri82 on 11-Nov-19.
@@ -81,19 +75,16 @@ object TestSuiteSplitter {
               config: EMConfig
     ): SplitResult {
 
-        // TODO splitting support for other problem types
-        val sol = if (config.problemType == EMConfig.ProblemType.GRAPHQL) {
-            solution as Solution<GraphQLIndividual>
-        } else {
-            solution as Solution<RestIndividual>
-        }
-
         val splitResult = SplitResult()
 
-        when (config.testSuiteSplitType) {
-            EMConfig.TestSuiteSplitType.NONE -> splitResult.splitOutcome = listOf(sol)
+        splitResult.splitOutcome = when (config.testSuiteSplitType) {
+            EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
             EMConfig.TestSuiteSplitType.FAULTS -> {
-                splitResult.splitOutcome = splitByFault(sol, config)
+                if(config.problemType == EMConfig.ProblemType.RPC){
+                    splitRPCByException(solution as Solution<RPCIndividual>).splitOutcome
+                } else {
+                    splitByFault(solution, config)
+                }
 //                if(config.executiveSummary) {
 //                    val faults = splitResult.splitOutcome.find { it.termination == Termination.FAULTS }
 //                    if (faults != null && faults.individuals.size > 1) {
@@ -104,6 +95,15 @@ object TestSuiteSplitter {
 //                }
             }
         }
+
+        splitResult.splitOutcome = splitResult.splitOutcome
+            .filter { it.individuals.isNotEmpty() }
+            .flatMap {
+                splitSolutionByLimitSize(
+                    it,
+                    config.maxTestsPerTestSuite
+                )
+            }
 
         // no test should be lost, or duplicated, after the split
         assert(solution.individuals.size == splitResult.splitOutcome.sumOf { it.individuals.size })
@@ -130,8 +130,12 @@ object TestSuiteSplitter {
     /**
      * @return split test suite based on specified maximum number [limit]
      */
-    fun splitSolutionByLimitSize(solution: Solution<ApiWsIndividual>, limit: Int): List<Solution<ApiWsIndividual>> {
-        if (limit < 0) return listOf(solution)
+    fun <T:Individual> splitSolutionByLimitSize(solution: Solution<T>, limit: Int): List<Solution<T>> {
+
+        if (limit < 0 || solution.individuals.size <= limit){
+            return listOf(solution)
+        }
+
         val group = solution.individuals.groupBy {
             solution.individuals.indexOf(it) / limit
         }

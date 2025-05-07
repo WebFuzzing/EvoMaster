@@ -773,6 +773,7 @@ class SqlActionGeneBuilder {
     ): RegexGene {
         return when(databaseType) {
              DatabaseType.POSTGRES,
+             DatabaseType.MYSQL,
              DatabaseType.H2 -> buildPostgresSimilarToRegexGene(geneName, similarToPattern)
             //TODO: support other database SIMILAR_TO check expressions
             else -> throw UnsupportedOperationException(

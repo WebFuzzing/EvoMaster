@@ -1,6 +1,5 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.EvaluatedIndividual
 
 

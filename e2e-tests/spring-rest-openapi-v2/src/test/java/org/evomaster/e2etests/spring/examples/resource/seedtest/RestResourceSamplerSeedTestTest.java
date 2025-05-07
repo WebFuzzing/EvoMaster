@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.seedtest;
 
 import com.google.inject.Injector;
-import org.evomaster.core.problem.rest.service.ResourceSampler;
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
 

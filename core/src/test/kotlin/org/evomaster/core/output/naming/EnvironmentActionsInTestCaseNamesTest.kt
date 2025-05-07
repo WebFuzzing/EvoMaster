@@ -5,7 +5,7 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndividualWith
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.*

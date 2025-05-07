@@ -82,7 +82,7 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
 
         private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
 
@@ -2391,6 +2391,13 @@ class EMConfig {
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
+    @Experimental
+    @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
+            " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
+            " However, this is done heuristically." +
+            " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
+    var blackBoxCleanUp = false
+
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
@@ -2458,13 +2465,16 @@ class EMConfig {
     @Cfg("Specify the hard limit for test case name length")
     var maxTestCaseNameLength = 80
 
-    @Experimental
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
-    var nameWithQueryParameters = false
+    var nameWithQueryParameters = true
 
     @Cfg("Specify the test case sorting strategy")
     var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
 
     @Experimental
     @Probability(true)

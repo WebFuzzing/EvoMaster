@@ -1,0 +1,9 @@
+auth:
+  - name: FOO
+    fixedHeaders:
+      - name: Authorization
+        value: FOO
+  - name: BAR
+    fixedHeaders:
+      - name: Authorization
+        value: BAR

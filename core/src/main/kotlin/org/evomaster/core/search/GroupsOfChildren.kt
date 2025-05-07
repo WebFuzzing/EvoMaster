@@ -34,6 +34,13 @@ class  GroupsOfChildren<T>(
         const val INITIALIZATION_SCHEDULE_TASK = "INITIALIZATION_SCHEDULE_TASK"
 
         const val RESOURCE_SQL = "RESOURCE_SQL"
+
+        /**
+         * An optional group of clean-up actions, needed to avoid side-effects in the SUT.
+         * In white-box testing, this is not needed, as we do have direct access to databases.
+         * However, it is a major problem in black-box testing.
+         */
+        const val CLEANUP = "CLEANUP"
     }
 
     private val groupMap = groups.associateBy { it.id }
@@ -135,6 +142,7 @@ class  GroupsOfChildren<T>(
     }
 
     fun sizeOfGroup(id: String) = groupMap[id]?.size() ?: throw IllegalArgumentException("No group $id")
+
     fun getAllInGroup(id: String) : List<T>{
         val g = groupMap[id] ?: throw IllegalArgumentException("Invalid group id $id")
         if(!g.isNotEmpty()){

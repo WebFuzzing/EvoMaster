@@ -27,6 +27,16 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
+* S. Seran, M. Zhang, O. Duman, A. Arcuri.
+  *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.
+   ACM Transactions on Software Engineering and Methodology (TOSEM).
+   [[PDF](publications/2025_tosem_wm.pdf)][[Scripts](exp/2025_tosem_wm.py)]
+
+* A. Arcuri, P. Garrett, J.P. Galeotti, M . Zhang.
+  *Widening The Adoption of Web API Fuzzing: Docker, GitHub Action and Python Support for EvoMaster*.
+  ACM International Conference on the Foundations of Software Engineering (FSE), Demo Track.
+  [[PDF](publications/2025_fse_tool.pdf)]
+
 * G. Fraser, A. Arcuri.
   *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
   IEEE Transactions on Software Engineering (TSE).

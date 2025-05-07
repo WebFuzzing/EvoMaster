@@ -26,6 +26,10 @@ public class DataRow {
 
     private final static String NULL_VALUE = "NULL";
 
+    public DataRow(String tableName, List<String> columnNames, List<Object> values) {
+        this(columnNames.stream().map(c -> new VariableDescriptor(c, null, tableName)).collect(Collectors.toList()),
+                values);
+    }
 
     public DataRow(String columnName, Object value, String tableName) {
         this(Arrays.asList(new VariableDescriptor(columnName, null, tableName)), Arrays.asList(value));
@@ -52,17 +56,17 @@ public class DataRow {
         return variableDescriptors;
     }
 
-    public List<Object> seeValues(){
+    public List<Object> seeValues() {
         return values;
     }
 
     public Object getValue(int index) {
-        Object value =  values.get(index);
-        if(value instanceof Clob){
+        Object value = values.get(index);
+        if (value instanceof Clob) {
             Clob clob = (Clob) value;
             try {
                 return clob.getSubString(1, (int) clob.length());
-            } catch (Exception e){
+            } catch (Exception e) {
                 SimpleLogger.error("Failed to retrieve CLOB data");
                 return null;
             }
@@ -80,10 +84,10 @@ public class DataRow {
         String t = (table == null ? null : table.trim());
 
         //true/false are reserved keywords
-        if(n.equalsIgnoreCase("true")){
+        if (n.equalsIgnoreCase("true")) {
             return true;
         }
-        if(n.equalsIgnoreCase("false")){
+        if (n.equalsIgnoreCase("false")) {
             return false;
         }
 
@@ -101,7 +105,7 @@ public class DataRow {
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if (n.equalsIgnoreCase(desc.getColumnName()) &&
+            if ((n.equalsIgnoreCase(desc.getColumnName()) || n.equalsIgnoreCase(desc.getAlias())) &&
                     (t == null || t.isEmpty()
                             || t.equalsIgnoreCase(desc.getTableName())
                             /*
@@ -112,7 +116,7 @@ public class DataRow {
                              */
                             || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)
                     )
-                    ) {
+            ) {
                 return getValue(i);
             }
         }
@@ -121,13 +125,13 @@ public class DataRow {
     }
 
     public String getAsLine() {
-        return values.stream().map(obj -> (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.joining(","));
+        return values.stream().map(obj -> (obj != null) ? obj.toString() : NULL_VALUE).collect(Collectors.joining(","));
     }
 
-    public DataRowDto toDto(){
+    public DataRowDto toDto() {
 
         DataRowDto dto = new DataRowDto();
-        dto.columnData = values.stream().map(obj -> (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.toList());
+        dto.columnData = values.stream().map(obj -> (obj != null) ? obj.toString() : NULL_VALUE).collect(Collectors.toList());
 
         return dto;
     }
