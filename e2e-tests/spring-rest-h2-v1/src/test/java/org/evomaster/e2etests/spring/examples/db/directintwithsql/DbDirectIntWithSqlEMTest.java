@@ -19,6 +19,8 @@ import org.evomaster.core.search.gene.numeric.IntegerGene;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.ci.utils.CIUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Collections;
 import java.util.List;
@@ -62,18 +64,20 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         find it, is to write such data directly with SQL commands.
      */
 
-    @Test
-    public void testRunEM() throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM(boolean heuristicsForSQLAdvanced) throws Throwable {
 
 
         runTestHandlingFlakyAndCompilation(
                 "DbDirectWithSqlEM",
-                "org.bar.db.DirectWithSqlEM",
+                "org.bar.db.DirectWithSqlEM"+ (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
                 2_000,
                 (args) -> {
 
                     setOption(args,"heuristicsForSQL","true");
                     setOption(args,"generateSqlDataWithSearch","true");
+                    setOption(args,"heuristicsForSQLAdvanced",heuristicsForSQLAdvanced ? "true" : "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
