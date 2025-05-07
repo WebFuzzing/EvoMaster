@@ -2378,7 +2378,6 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-
     @Experimental
     @Cfg("Apply vulnerability hunter as part of security testing.")
     var vulnerabilityAnalyser = false
@@ -2401,13 +2400,22 @@ class EMConfig {
     @Experimental
     var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
 
-    @Cfg("Large-language model URL")
+    @Cfg("Enable language model connector")
+    @Experimental
+    var languageModelConnector = false
+
+    @Cfg("Large-language model external service URL")
     @Experimental
     var languageModelServerURL: String? = null
 
-    @Cfg("Large-language model name string from Ollama")
+    @Cfg("Large-language model name as listed in Ollama")
     @Experimental
     var languageModelName: String? = null
+
+    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    @Experimental
+    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
@@ -2425,6 +2433,13 @@ class EMConfig {
 
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
+
+    @Experimental
+    @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
+            " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
+            " However, this is done heuristically." +
+            " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
+    var blackBoxCleanUp = false
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {

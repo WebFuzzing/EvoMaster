@@ -21,11 +21,28 @@ abstract class IntegrationTestRestBase : RestTestBase() {
 
     @BeforeEach
     fun initInjector(){
+        recreateInjectorForWhite()
+    }
+
+    protected fun recreateInjectorForWhite(extraArgs: List<String> = listOf()) {
         val args = listOf(
             "--sutControllerPort", "" + controllerPort,
             "--createConfigPathIfMissing", "false",
             "--seed", "42"
-        )
+        ).plus(extraArgs)
+
+        injector = init(args)
+    }
+
+    protected fun recreateInjectorForBlack(extraArgs: List<String> = listOf()){
+        val args = listOf(
+            "--blackBox", "true",
+            "--bbTargetUrl", baseUrlOfSut,
+            "--bbSwaggerUrl","$baseUrlOfSut/v3/api-docs",
+            "--createConfigPathIfMissing", "false",
+            "--seed", "42"
+        ).plus(extraArgs)
+
         injector = init(args)
     }
 
@@ -38,14 +55,12 @@ abstract class IntegrationTestRestBase : RestTestBase() {
     fun getEMConfig() = injector.getInstance(EMConfig::class.java)
 
     /**
-     * Modified by Onur to be able to create an individual with a given sample type.
+     * Create and evaluate an individual
      */
-    fun createIndividual(actions: List<RestCallAction>, sampleT : SampleType = SampleType.SEEDED): EvaluatedIndividual<RestIndividual> {
-
-//        val searchGlobalState = injector.getInstance(SearchGlobalState::class.java)
-
-//        val ind = RestIndividual(actions.toMutableList(), SampleType.SEEDED)
-//        ind.doGlobalInitialize(searchGlobalState)
+    fun createIndividual(
+        actions: List<RestCallAction>,
+        sampleT : SampleType = SampleType.SEEDED
+    ): EvaluatedIndividual<RestIndividual> {
 
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         /*

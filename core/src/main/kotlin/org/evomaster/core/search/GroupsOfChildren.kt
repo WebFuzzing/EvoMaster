@@ -34,6 +34,13 @@ class  GroupsOfChildren<T>(
         const val INITIALIZATION_SCHEDULE_TASK = "INITIALIZATION_SCHEDULE_TASK"
 
         const val RESOURCE_SQL = "RESOURCE_SQL"
+
+        /**
+         * An optional group of clean-up actions, needed to avoid side-effects in the SUT.
+         * In white-box testing, this is not needed, as we do have direct access to databases.
+         * However, it is a major problem in black-box testing.
+         */
+        const val CLEANUP = "CLEANUP"
     }
 
     private val groupMap = groups.associateBy { it.id }

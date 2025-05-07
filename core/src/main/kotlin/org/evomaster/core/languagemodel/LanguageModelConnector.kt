@@ -3,12 +3,12 @@ package org.evomaster.core.languagemodel
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -46,30 +46,38 @@ class LanguageModelConnector {
 
     @PostConstruct
     fun init() {
-        // TODO: Check if Language model connector needs to be enabled
-        actualFixedThreadPool = min(
-            config.externalRequestHarvesterNumberOfThreads,
-            Runtime.getRuntime().availableProcessors()
-        )
-        workerPool = Executors.newFixedThreadPool(
-            actualFixedThreadPool
-        )
+        if (config.languageModelConnector) {
+            actualFixedThreadPool = min(
+                config.languageModelConnectorNumberOfThreads,
+                Runtime.getRuntime().availableProcessors()
+            )
+            workerPool = Executors.newFixedThreadPool(
+                actualFixedThreadPool
+            )
+        }
     }
 
     @PreDestroy
     private fun preDestroy() {
-        shutdown()
+        if (config.languageModelConnector) {
+            shutdown()
+        }
     }
 
     private fun shutdown() {
-        prompts.clear()
+        Lazy.assert { config.languageModelConnector }
         workerPool.shutdown()
+        prompts.clear()
     }
 
     /**
-     * TODO: Description
+     * To query the large language server asynchronously with a simple prompt.
      */
-    fun queryAsync(prompt: String): String {
+    fun queryAsync(prompt: String) {
+        if (!config.languageModelConnector) {
+            return
+        }
+
         validatePrompt(prompt)
 
         val id = getId()
@@ -81,14 +89,17 @@ class LanguageModelConnector {
         }
 
         workerPool.submit(task)
-
-        return id
     }
 
     /**
      * To query the large language server with a simple prompt.
+     * @return answer string from the language model server
      */
     fun query(prompt: String): String? {
+        if (!config.languageModelConnector) {
+            return null
+        }
+
         validatePrompt(prompt)
 
         return makeQuery(prompt)
@@ -112,7 +123,7 @@ class LanguageModelConnector {
 
         val response = call(languageModelServerURL, requestBody)
 
-        if (id.isNullOrBlank()) {
+        if (!id.isNullOrBlank()) {
             if (prompts.contains(id)) {
                 val existingPrompt = prompts[id]
 

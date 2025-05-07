@@ -26,8 +26,10 @@ import org.evomaster.core.sql.SqlAction
      }
 
      override fun invoke(t: Class<*>): Boolean {
-         //TODO use mainType
-         return ( EnterpriseActionGroup::class.java.isAssignableFrom(t)
+         return (
+                 //TODO due to reified generics, doesn't seem possible to check mainType in EnterpriseActionGroup
+                 EnterpriseActionGroup::class.java.isAssignableFrom(t)
+                 || mainType.isAssignableFrom(t)
                  || isInitializingAction(t)
                  || (secondaryType != null && secondaryType.isAssignableFrom(t)))
      }

@@ -35,13 +35,13 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public static final char MINUS = '-';
     public static final char PLUS = '+';
     private final DataRow dataRow;
-    private final SqlNameContext sqlNameContext;
     private final Stack<Truthness> computedTruthnesses = new Stack<>();
     private final Stack<Object> concreteValues = new Stack<>();
     private final TaintHandler taintHandler;
+    private final TableColumnResolver tableColumnResolver;
 
-    public SqlExpressionEvaluator(SqlNameContext sqlNameContext, TaintHandler taintHandler, DataRow dataRow) {
-        this.sqlNameContext = sqlNameContext;
+    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver, TaintHandler taintHandler, DataRow dataRow) {
+        this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.dataRow = dataRow;
     }
@@ -618,10 +618,29 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Column column) {
-        String name = column.getColumnName();
-        String table = sqlNameContext.getTableName(column);
-        Object value = dataRow.getValueByName(name, table);
-        concreteValues.push(value);
+        if (column.getColumnName().equalsIgnoreCase("true")) {
+            concreteValues.push(Boolean.TRUE);
+        } else if (column.getColumnName().equalsIgnoreCase("false")) {
+            concreteValues.push(Boolean.FALSE);
+        } else {
+            SqlColumnReference sqlColumnReference = tableColumnResolver.resolve(column);
+            final String baseTableName;
+            final String columnName;
+            if (sqlColumnReference.getTableReference() instanceof SqlBaseTableReference) {
+                baseTableName = ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getName();
+                columnName = sqlColumnReference.getColumnName();
+
+            } else if (sqlColumnReference.getTableReference() instanceof SqlDerivedTableReference) {
+                Select select = ((SqlDerivedTableReference) sqlColumnReference.getTableReference()).getSelect();
+                SqlColumnReference resolvedSqlColumnReference = this.tableColumnResolver.findBaseTableColumnReference(select, column.getColumnName());
+                baseTableName = ((SqlBaseTableReference) resolvedSqlColumnReference.getTableReference()).getName();
+                columnName = resolvedSqlColumnReference.getColumnName();
+            } else {
+                throw new IllegalStateException("Unexpected table reference type: " + sqlColumnReference.getTableReference().getClass().getName());
+            }
+            Object value = dataRow.getValueByName(columnName, baseTableName);
+            concreteValues.push(value);
+        }
     }
 
     @Override
