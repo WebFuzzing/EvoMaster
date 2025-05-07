@@ -19,30 +19,29 @@ import java.util.stream.Collectors;
 public class QueryResultTransformer {
 
 
-
     /**
      * @param insertionDtos specifies InsertionDto which indicates data we have been inserted into database or mocked
      * @param columns       specifies WHERE clause using a map from table name to involved column names
      * @param schemaDto     specifies info about schema that is used to parse printable value specified in InsertionDto to Object value
-     * @return  extracted an array of QueryResult.
+     * @return extracted an array of QueryResult.
      */
-    public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<String, Set<String>> columns, DbInfoDto schemaDto){
+    public static QueryResult[] convertInsertionDtosToQueryResults(List<InsertionDto> insertionDtos, Map<SqlTableId, Set<SqlColumnId>> columns, DbInfoDto schemaDto) {
 
-        Map<String, List<QueryResult>> maps = new HashMap<>();
-        for (String key : columns.keySet()){
+        Map<SqlTableId, List<QueryResult>> maps = new HashMap<>();
+        for (SqlTableId tableId : columns.keySet()) {
             List<QueryResult> kresults = new ArrayList<>();
-            insertionDtos.stream().filter(d-> d.targetTable.equalsIgnoreCase(key)).forEach(insertionDto -> {
-                QueryResult qr = convertInsertionDtoToQueryResult(insertionDto, key, columns.get(key), schemaDto, kresults);
+            insertionDtos.stream().filter(d -> d.targetTable.equalsIgnoreCase(tableId.getTableId())).forEach(insertionDto -> {
+                QueryResult qr = convertInsertionDtoToQueryResult(insertionDto, tableId, columns.get(tableId), schemaDto, kresults);
                 if (qr != null && (!qr.isEmpty()))
                     kresults.add(qr);
             });
-            if(!kresults.isEmpty()){
-                maps.put(key, kresults);
+            if (!kresults.isEmpty()) {
+                maps.put(tableId, kresults);
             }
         }
 
         // sort maps based on its key, ie, table name
-        List<List<QueryResult>> qrPerTable =  cartesianProduct(maps.keySet().stream().sorted().map(maps::get).collect(Collectors.toList()));
+        List<List<QueryResult>> qrPerTable = cartesianProduct(maps.keySet().stream().sorted().map(maps::get).collect(Collectors.toList()));
         if (qrPerTable == null)
             return null;
 
@@ -53,9 +52,9 @@ public class QueryResultTransformer {
     }
 
 
-    private static QueryResult mergeQueryResultsByCartesianProductDataRows(List<QueryResult> queryResults){
+    private static QueryResult mergeQueryResultsByCartesianProductDataRows(List<QueryResult> queryResults) {
         Objects.requireNonNull(queryResults);
-        for (QueryResult qr: queryResults)
+        for (QueryResult qr : queryResults)
             Objects.requireNonNull(qr);
 
         if (queryResults.isEmpty()) return null;
@@ -74,10 +73,10 @@ public class QueryResultTransformer {
         QueryResult merged = new QueryResult(variableDescriptors);
 
         List<List<DataRow>> results = cartesianProduct(datarowList);
-        if (results != null && (!results.isEmpty())){
-            for (List<DataRow> r : results){
+        if (results != null && (!results.isEmpty())) {
+            for (List<DataRow> r : results) {
                 List<Object> mergedValues = new ArrayList<>();
-                r.forEach(d-> mergedValues.addAll(d.seeValues()));
+                r.forEach(d -> mergedValues.addAll(d.seeValues()));
                 DataRow mdatarow = new DataRow(variableDescriptors, mergedValues);
                 merged.addRow(mdatarow);
             }
@@ -89,34 +88,35 @@ public class QueryResultTransformer {
     /**
      * implement Cartesian Product
      * e.g.,  (a,b) * (c,d) = (a,c), (a,d), (b,c), (b,d)
+     *
      * @param values specified a list of sets for n-fold Cartesian Product
+     * @param <T>    type of values
      * @return results of Cartesian Product of the given sets
-     * @param <T> type of values
      */
-    public static <T> List<List<T>> cartesianProduct(List<List<T>> values){
+    public static <T> List<List<T>> cartesianProduct(List<List<T>> values) {
         if (values.isEmpty()) return Collections.emptyList();
         values.forEach(Objects::requireNonNull);
 
-        int[] counts = values.stream().mapToInt(s-> s.size() -1).toArray();
-        int[] indexes = values.stream().mapToInt(s-> s.isEmpty()?-1:0).toArray();
+        int[] counts = values.stream().mapToInt(s -> s.size() - 1).toArray();
+        int[] indexes = values.stream().mapToInt(s -> s.isEmpty() ? -1 : 0).toArray();
         List<List<T>> results = new ArrayList<>();
         boolean isLast = false;
-        while (!isLast){
+        while (!isLast) {
             if (Arrays.equals(counts, indexes))
                 isLast = true;
 
             List<T> row = new ArrayList<>();
-            for (int i = 0; i < counts.length ; i++){
+            for (int i = 0; i < counts.length; i++) {
                 if (indexes[i] >= 0)
                     row.add(values.get(i).get(indexes[i]));
             }
             results.add(row);
 
-            for (int j = indexes.length-1; !isLast && j >=0 ; j--){
-                if (indexes[j] >=0 && indexes[j] < counts[j]){
+            for (int j = indexes.length - 1; !isLast && j >= 0; j--) {
+                if (indexes[j] >= 0 && indexes[j] < counts[j]) {
                     indexes[j] = indexes[j] + 1;
-                    for (int t = j+1; t < indexes.length ; t++){
-                        if(indexes[t] != -1)
+                    for (int t = j + 1; t < indexes.length; t++) {
+                        if (indexes[t] != -1)
                             indexes[t] = 0;
                     }
                     break;
@@ -128,19 +128,19 @@ public class QueryResultTransformer {
     }
 
 
-    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults){
+    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, SqlTableId tableId, Set<SqlColumnId> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults) {
         List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNames(insertionDto, relatedColumns);
-        if (!relatedColumnNames.isEmpty()){
+        if (!relatedColumnNames.isEmpty()) {
             QueryResult found = null;
             if (!existingQueryResults.isEmpty())
-                found = existingQueryResults.stream().filter(e-> e.sameVariableNames(relatedColumnNames, tableName)).findAny().orElse(null);
+                found = existingQueryResults.stream().filter(e -> e.sameVariableNames(relatedColumnNames, tableId.getTableId())).findAny().orElse(null);
 
             QueryResult qr = found;
             if (found == null)
-                qr = new QueryResult(relatedColumnNames, tableName);
+                qr = new QueryResult(relatedColumnNames, tableId.getTableId());
 
-            Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t-> t.name.equalsIgnoreCase(tableName)).findFirst();
-            if (foundTableSchema.isPresent()){
+            Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableId.getTableId())).findFirst();
+            if (foundTableSchema.isPresent()) {
                 TableDto tableDto = foundTableSchema.get();
 
                 List<String> printableValue = SqlDatabaseDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
@@ -148,17 +148,17 @@ public class QueryResultTransformer {
 
                 List<Object> values = new ArrayList<>();
 
-                for (int i = 0; i < printableValue.size(); i++){
+                for (int i = 0; i < printableValue.size(); i++) {
                     ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
                     if (columnDto == null)
-                        throw new IllegalArgumentException("Cannot find column schema of "+ relatedColumnNames.get(i) + " in Table "+ tableName);
+                        throw new IllegalArgumentException("Cannot find column schema of " + relatedColumnNames.get(i) + " in Table " + tableId);
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));
                 }
 
-                qr.addRow(relatedColumnNames, tableName, values);
+                qr.addRow(relatedColumnNames, tableId.getTableId(), values);
 
-            }else {
-                throw new IllegalArgumentException("Cannot find table schema of "+ tableName);
+            } else {
+                throw new IllegalArgumentException("Cannot find table schema of " + tableId);
             }
 
             if (found != null) return null;
@@ -169,7 +169,7 @@ public class QueryResultTransformer {
     }
 
 
-    private static Object getColumnValueBasedOnPrintableValue(String printableValue, ColumnDto dto){
+    private static Object getColumnValueBasedOnPrintableValue(String printableValue, ColumnDto dto) {
         /*
             might later make org.evomaster.core.sql.schema.ColumnDataType shared with driver side
          */
@@ -183,14 +183,14 @@ public class QueryResultTransformer {
             return Integer.valueOf(printableValue);
 
 
-        if (dto.type.equalsIgnoreCase("INT2") || dto.type.equalsIgnoreCase("SMALLINT") )
+        if (dto.type.equalsIgnoreCase("INT2") || dto.type.equalsIgnoreCase("SMALLINT"))
             return Short.valueOf(printableValue);
 
 
-        if (dto.type.equalsIgnoreCase("TINYINT") )
+        if (dto.type.equalsIgnoreCase("TINYINT"))
             return Byte.valueOf(printableValue);
 
-        if(dto.type.equalsIgnoreCase("INT8") || dto.type.equalsIgnoreCase("BIGINT") || dto.type.equalsIgnoreCase("BIGSERIAL"))
+        if (dto.type.equalsIgnoreCase("INT8") || dto.type.equalsIgnoreCase("BIGINT") || dto.type.equalsIgnoreCase("BIGSERIAL"))
             return Long.valueOf(printableValue);
 
 
@@ -206,13 +206,13 @@ public class QueryResultTransformer {
         )
             return Double.valueOf(printableValue);
 
-        if(dto.type.equalsIgnoreCase("TIMESTAMP")
+        if (dto.type.equalsIgnoreCase("TIMESTAMP")
                 || dto.type.equalsIgnoreCase("TIMESTAMPZ")
                 || dto.type.equalsIgnoreCase("TIMETZ")
                 || dto.type.equalsIgnoreCase("DATE")
                 || dto.type.equalsIgnoreCase("DATETIME")
                 || dto.type.equalsIgnoreCase("TIME")
-        ){
+        ) {
             Instant instant = ColumnTypeParser.getAsInstant(printableValue);
             if (instant != null) return instant;
         }
@@ -233,7 +233,7 @@ public class QueryResultTransformer {
                 || dto.type.equalsIgnoreCase("MEDIUMBLOB")
                 || dto.type.equalsIgnoreCase("TINYBLOB")
         )
-                return String.valueOf(printableValue);
+            return String.valueOf(printableValue);
 
         return printableValue;
 

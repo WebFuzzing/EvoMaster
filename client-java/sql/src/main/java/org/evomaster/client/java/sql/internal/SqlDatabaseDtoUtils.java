@@ -17,8 +17,8 @@ public class SqlDatabaseDtoUtils {
      * @param filter specifies which column should be returned, null means all columns should be returned
      * @return name of columns based on specified filter
      */
-    public static List<String> extractColumnNames(InsertionDto dto, Set<String> filter){
-        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f))).map(i-> i.variableName).collect(Collectors.toList());
+    public static List<String> extractColumnNames(InsertionDto dto, Set<SqlColumnId> filter){
+        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.variableName).collect(Collectors.toList());
     }
 
     /**
@@ -26,8 +26,8 @@ public class SqlDatabaseDtoUtils {
      * @param filter specifies which column should be returned, null means all columns should be returned
      * @return printable value of columns based on specified filter
      */
-    public static List<String> extractColumnPrintableValues(InsertionDto dto, Set<String> filter){
-        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f))).map(i-> i.printableValue).collect(Collectors.toList());
+    public static List<String> extractColumnPrintableValues(InsertionDto dto, Set<SqlColumnId> filter){
+        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.printableValue).collect(Collectors.toList());
     }
 
 

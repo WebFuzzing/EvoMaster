@@ -2,8 +2,7 @@ package org.evomaster.core.problem.httpws.auth
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.action.Action
 
 /**

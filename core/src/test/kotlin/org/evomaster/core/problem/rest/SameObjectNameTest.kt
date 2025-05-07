@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.ObjectGene

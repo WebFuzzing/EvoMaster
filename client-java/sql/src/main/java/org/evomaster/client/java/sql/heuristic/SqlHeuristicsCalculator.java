@@ -12,7 +12,6 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
-import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 
@@ -30,37 +29,35 @@ public class SqlHeuristicsCalculator {
     public static Truthness FALSE_TRUTHNESS_BETTER = new Truthness(C_BETTER, 1);
 
     private final QueryResultSet queryResultSet;
-    private final SqlNameContext sqlNameContext;
     private final TaintHandler taintHandler;
+    private final TableColumnResolver tableColumnResolver;
 
-    SqlHeuristicsCalculator(SqlNameContext sqlNameContext, TaintHandler taintHandler, QueryResult[] data) {
-        final boolean isCaseSensitive = false;
-        this.sqlNameContext = sqlNameContext;
-        this.queryResultSet = new QueryResultSet(isCaseSensitive);
+    SqlHeuristicsCalculator(TableColumnResolver tableColumnResolver, TaintHandler taintHandler, QueryResultSet queryResultSet) {
+        this.tableColumnResolver = tableColumnResolver;
+        this.taintHandler = taintHandler;
+        this.queryResultSet = queryResultSet;
+    }
+
+    public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResult... data) {
+        this.tableColumnResolver = new TableColumnResolver(schema);
+        this.queryResultSet = new QueryResultSet();
         this.taintHandler = taintHandler;
         for (QueryResult queryResult : data) {
             queryResultSet.addQueryResult(queryResult);
         }
     }
 
-    public static SqlDistanceWithMetrics computeDistance(String sqlCommand,
-                                                         DbInfoDto schema,
-                                                         TaintHandler taintHandler,
-                                                         QueryResult... data) {
+    public SqlDistanceWithMetrics computeDistance(String sqlCommand) {
+        Objects.requireNonNull(sqlCommand, "sqlCommand cannot be null");
 
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        SqlNameContext sqlNameContext = new SqlNameContext(parsedSqlCommand);
-        if (schema != null) {
-            sqlNameContext.setSchema(schema);
-        }
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(sqlNameContext, taintHandler, data);
-        Truthness t = calculator.calculateHeuristicQuery(parsedSqlCommand).getTruthness();
+        Truthness t = this.calculateHeuristicQuery(parsedSqlCommand).getTruthness();
         double distanceToTrue = 1 - t.getOfTrue();
         return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
     }
 
     private SqlHeuristicResult calculateHeuristicRowSet(FromItem fromItem) {
-        return calculateHeuristicRowSet(fromItem, null);
+        return calculateHeuristicRowSet (fromItem, null);
     }
 
     private SqlHeuristicResult calculateHeuristicRowSet(FromItem fromItem, List<Join> joins) {
@@ -89,7 +86,7 @@ public class SqlHeuristicsCalculator {
 
         if (joins != null && !joins.isEmpty()) {
             SqlHeuristicResult joinResult = calculateHeuristicRowSet(fromItem);
-            for (Join join: joins) {
+            for (Join join : joins) {
                 if (join.isInnerJoin()) {
                     joinResult = calculateHeuristicInnerJoin(joinResult, join);
                 } else if (join.isLeft()) {
@@ -236,9 +233,11 @@ public class SqlHeuristicsCalculator {
 
 
     SqlHeuristicResult calculateHeuristicQuery(Statement query) {
+        tableColumnResolver.enterStatementeContext(query);
+        final SqlHeuristicResult heuristicResult;
         if (SqlParserUtils.isUnion(query)) {
             List<Select> subqueries = SqlParserUtils.getUnionSubqueries(query);
-            return calculateHeuristicUnion(subqueries);
+            heuristicResult = calculateHeuristicUnion(subqueries);
         } else {
             final FromItem fromItem = getFrom(query);
             final List<Join> joins = getJoins(query);
@@ -248,7 +247,7 @@ public class SqlHeuristicsCalculator {
                 /**
                  * Handle case of SELECT/FROM without WHERE clause
                  */
-                return calculateHeuristicRowSet(fromItem, joins);
+                heuristicResult = calculateHeuristicRowSet(fromItem, joins);
             } else {
                 /**
                  * Handle caseof SELECT/FROM with WHERE clause
@@ -257,9 +256,11 @@ public class SqlHeuristicsCalculator {
                 QueryResult rowSet = rowSetResult.getQueryResult();
                 SqlHeuristicResult conditionResult = calculateHeuristicCondition(whereClause, rowSet);
                 Truthness truthness = TruthnessUtils.buildAndAggregationTruthness(rowSetResult.getTruthness(), conditionResult.getTruthness());
-                return new SqlHeuristicResult(truthness, conditionResult.getQueryResult());
+                heuristicResult = new SqlHeuristicResult(truthness, conditionResult.getQueryResult());
             }
         }
+        tableColumnResolver.exitCurrentStatementContext();
+        return heuristicResult;
     }
 
     private SqlHeuristicResult calculateHeuristicUnion(List<Select> subqueries) {
@@ -327,7 +328,7 @@ public class SqlHeuristicsCalculator {
     private Truthness evaluateAllConditions(Collection<Expression> conditions, DataRow row) {
         List<Truthness> truthnesses = new ArrayList<>();
         for (Expression condition : conditions) {
-            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(sqlNameContext, taintHandler, row);
+            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this.tableColumnResolver, taintHandler, row);
             condition.accept(expressionEvaluator);
             truthnesses.add(expressionEvaluator.getEvaluatedTruthness());
         }

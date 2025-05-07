@@ -15,7 +15,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -55,7 +55,6 @@ class TestSuiteWriter {
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
@@ -389,6 +388,10 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.Test", lines)
             addImport("org.junit.jupiter.api.Timeout", lines)
             addImport("org.junit.jupiter.api.Assertions.*", lines, true)
+            if (config.useTestMethodOrder) {
+                addImport("org.junit.jupiter.api.MethodOrderer", lines)
+                addImport("org.junit.jupiter.api.TestMethodOrder", lines)
+            }
         }
         if (format.isJUnit4()) {
             addImport("org.junit.AfterClass", lines)
@@ -990,6 +993,10 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val format = config.outputFormat
+
+        if (format.isKotlin() && format.isJUnit5() && config.useTestMethodOrder) {
+            lines.add("@TestMethodOrder(MethodOrderer.MethodName::class)")
+        }
 
         when {
             format.isJava() -> lines.append("public ")

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene

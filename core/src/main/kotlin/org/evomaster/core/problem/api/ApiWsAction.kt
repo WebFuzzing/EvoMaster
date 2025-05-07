@@ -12,11 +12,12 @@ abstract class ApiWsAction(
      * auth info
      */
     open val auth: AuthenticationInfo,
+    isCleanUp : Boolean,
     /**
      * a list of param could be manipulated by evomaster
      */
     parameters: List<Param>
-) : MainAction(parameters){
+) : MainAction(isCleanUp,parameters){
 
     val parameters : List<Param>
         get() { return children as List<Param>}

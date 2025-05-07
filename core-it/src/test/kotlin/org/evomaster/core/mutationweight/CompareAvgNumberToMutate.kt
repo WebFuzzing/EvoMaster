@@ -6,8 +6,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.apache.commons.math3.stat.inference.MannWhitneyUTest
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.Individual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema

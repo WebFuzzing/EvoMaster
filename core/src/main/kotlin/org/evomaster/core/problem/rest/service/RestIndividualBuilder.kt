@@ -3,9 +3,17 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
+import javax.ws.rs.POST
 
 
 /**
@@ -32,7 +40,7 @@ class RestIndividualBuilder {
             statusCodes: List<Int>? = null,
             authenticated: Boolean? = null,
             authenticatedWith: String? = null
-        ) : RestIndividual{
+        ) : RestIndividual {
 
             val index = RestIndividualSelectorUtils.findIndexOfAction(
                 evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
@@ -144,6 +152,45 @@ class RestIndividualBuilder {
 
         return res
     }
+
+
+    /**
+     *  Based on given [template], create new action that is bound to a previous operation.
+     *  For example:
+     *  template: DELETE /users/{id}
+     *  previous: POST   /users
+     *  would lead to return something like:
+     *            DELETE /users/42
+     */
+    fun createBoundActionOnPreviousCreate(template: RestCallAction, previous: RestCallAction): RestCallAction {
+
+        if(previous.verb != HttpVerb.POST && previous.verb != HttpVerb.PUT) {
+            throw IllegalArgumentException("'previous' is not a create operation: ${previous.verb}")
+        }
+
+        if (!previous.path.isSameOrAncestorOf(template.path)) {
+            throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
+                    "${previous.path} vs ${template.path}")
+        }
+
+        val res = template.copy() as RestCallAction
+
+        res.resetLocalIdRecursively()
+
+        if(res.isInitialized()){
+            res.seeTopGenes().forEach { it.randomize(randomness, false) }
+        } else {
+            res.doInitialize(randomness)
+        }
+        res.auth = previous.auth
+        if(res.path.isEquivalent(previous.path)) {
+            res.bindToSamePathResolution(previous)
+        }
+        CreateResourceUtils.linkDynamicCreateResource(previous, res)
+
+        return res
+    }
+
 
     /**
      * Make sure that what returned is different from the target.
@@ -279,7 +326,7 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
+        CreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }
@@ -296,5 +343,99 @@ class RestIndividualBuilder {
     }
 
 
+    fun findDeleteFor(action: RestCallAction) : RestCallAction?{
+        if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.POST){
+            return null
+        }
 
+        /*
+            Determining which DELETE would apply to the action is based on URI path.
+            This is done heuristically, cannot be 100% sure.
+            Algorithm is based on these examples seen in practice:
+
+            – POST /data
+              PUT   /data/{id}
+              DELETE /data/{id}
+
+            – POST /data/{id}
+              PUT   /data/{id}
+              DELETE /data/{id}
+
+            – POST  /data/{id}/sub
+              PUT    /data/{id}/sub/{x}
+              DELETE    /data/{id}/sub/{x}
+
+            – PUT /data/{x}/{y}
+            – DELETE /data/{x}/{y}
+
+            – POST /data/{x}
+            – DELETE /data/{x}/foo
+
+            – PUT /foo
+            – DELETE /foo (based on auth)
+
+            – POST /foo
+            – PUT    /foo
+            – DELETE /foo
+            – DELETE /foo/{id}
+
+            – POST /data/{id}/foo
+            – DELETE /data/{id}/foo
+            – POST /data
+            – DELETE /data/{id}
+
+            – POST /data/{x}/{y}
+            – PUT   /data/{x}/{y}/{id}
+            – DELETE /data/{x}/{y}/{id}
+
+            – POST /data
+            – PUT   /data
+            – DELETE /data/{id0}/{id1}/{x}
+
+            – PUT /data
+            – DELETE /data/delete/{id}
+
+         */
+
+        val deletes = sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.verb == HttpVerb.DELETE }
+
+        val samePath = deletes.find { it.path == action.path }
+
+        val directDescendant = deletes.find { it.path.isDirectChildOf(action.path)}
+
+        if(samePath != null){
+
+            if(action.verb == HttpVerb.PUT){
+                return samePath
+            }
+            assert(action.verb == HttpVerb.POST)
+
+            /*
+                If we deal with a POST on a collection, and there is a parametric DELETE child,
+                we go for that instead of DELETE on collection
+             */
+            if(directDescendant != null && directDescendant.path.isLastElementAParameter()
+                && !action.path.isLastElementAParameter()){
+                return directDescendant
+            }
+            return samePath
+        }
+
+        if(directDescendant != null){
+            return directDescendant
+        }
+
+        /*
+            If nothing worked, check if we are in one of these weird cases:
+            – POST /data
+            – PUT   /data
+            – DELETE /data/{id0}/{id1}/{x}
+
+            – PUT /data
+            – DELETE /data/delete/{id}
+         */
+        return deletes.find { action.path.isSameOrAncestorOf(it.path) }
+    }
 }

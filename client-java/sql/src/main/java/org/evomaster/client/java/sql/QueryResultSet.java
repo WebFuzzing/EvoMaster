@@ -1,15 +1,15 @@
 package org.evomaster.client.java.sql;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
  * Represents a collection of query results mapped to table names,
  * with support for both named and virtual tables.
- *
- * This class allows case-sensitive or case-insensitive handling of table names
+ * <p>
+ * This class only allows a case-insensitive handling of table names
  * and provides mechanisms to add, retrieve, and manage query results.
- *
  */
 public class QueryResultSet {
 
@@ -20,36 +20,25 @@ public class QueryResultSet {
     private final Map<String, QueryResult> queryResults;
 
     /**
-     * Indicates whether table name comparisons are case-sensitive.
-     */
-    private final boolean isCaseSensitive;
-
-    /**
      * Stores the query result for a virtual table, if any.
      */
     private QueryResult queryResultForVirtualTable;
 
+    /**
+     * Creates a QueryResult set with default case sensitivity (case-insensitive).
+     */
     public QueryResultSet() {
-        this(true);
+        queryResults = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
-    /**
-     * Creates a new {@code QueryResultSet}.
-     *
-     * @param isCaseSensitive whether table name comparisons should be case-sensitive
-     */
-    public QueryResultSet(boolean isCaseSensitive) {
-        queryResults = new TreeMap<>(isCaseSensitive ? null : String.CASE_INSENSITIVE_ORDER);
-        this.isCaseSensitive = isCaseSensitive;
-    }
-
-    /**
-     * Returns whether table name comparisons are case-sensitive.
-     *
-     * @return {@code true} if comparisons are case-sensitive, {@code false} otherwise
-     */
-    public boolean isCaseSensitive() {
-        return isCaseSensitive;
+    private static boolean hasMultipleTableNames(QueryResult queryResult) {
+        long distinctTableCount = queryResult.seeVariableDescriptors()
+                .stream()
+                .map(VariableDescriptor::getTableName)
+                .filter(Objects::nonNull)
+                .distinct()
+                .count();
+        return distinctTableCount > 1;
     }
 
     /**
@@ -64,6 +53,12 @@ public class QueryResultSet {
      * @throws IllegalArgumentException if the table name already exists in the set
      */
     public void addQueryResult(QueryResult queryResult) {
+        // check that are variable descriptors are from the same table
+        if (hasMultipleTableNames(queryResult)) {
+            throw new IllegalArgumentException("Cannot add a query result with multiple table names");
+        }
+
+        // get the table name from the first variable descriptor (all are equal)
         String tableName = queryResult.seeVariableDescriptors()
                 .stream()
                 .findFirst()
@@ -78,10 +73,13 @@ public class QueryResultSet {
     }
 
     private void handleNamedTable(String tableName, QueryResult queryResult) {
-        if (queryResults.containsKey(tableName)) {
+        Objects.requireNonNull(tableName);
+
+        final String lowerCaseTableName = tableName.toLowerCase();
+        if (queryResults.containsKey(lowerCaseTableName)) {
             throw new IllegalArgumentException("Duplicate table in QueryResultSet: " + tableName);
         }
-        queryResults.put(tableName, queryResult);
+        queryResults.put(lowerCaseTableName, queryResult);
     }
 
     private void handleVirtualTable(QueryResult queryResult) {
@@ -98,7 +96,7 @@ public class QueryResultSet {
      * @return the query result for the table, or {@code null} if no result exists
      */
     public QueryResult getQueryResultForNamedTable(String tableName) {
-        return queryResults.get(tableName);
+        return queryResults.get(tableName != null ? tableName.toLowerCase() : null);
     }
 
     /**

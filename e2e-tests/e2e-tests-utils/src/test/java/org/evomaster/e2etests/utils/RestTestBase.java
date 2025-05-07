@@ -4,10 +4,10 @@ import kotlin.Unit;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
 import org.evomaster.core.StaticCounter;
+import org.evomaster.core.problem.rest.data.*;
 import org.evomaster.core.search.action.Action;
 import org.evomaster.core.search.action.ActionResult;
 import org.evomaster.core.logging.TestLoggingUtil;
-import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.search.*;
 
 import java.text.MessageFormat;
