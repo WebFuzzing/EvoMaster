@@ -27,7 +27,7 @@ public class ExistingDataWithSqlScriptControllerEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ExistingDataWithSqlScriptControllerEMTest",
                 "org.bar.db.ExistingDataWithSqlScriptControllerEMTest" + (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
-                50,
+                100,
                 (args) -> {
 
                     setOption(args, "heuristicsForSQL", "true");
