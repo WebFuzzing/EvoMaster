@@ -536,24 +536,33 @@ abstract class Individual(
 
 
     /**
-     * handle local ids of children (ie ActionComponent) to add
+     * handle local ids of children or descendant to add.
+     * These elements might not be mounted yet inside the individual when this method is called
      */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>) {
-        children.forEach { child ->
-            if (child is ActionComponent) {
-                if (child is Action && !child.hasLocalId())
+    fun handleLocalIdsForAddition(elements: Collection<StructuralElement>) {
+        elements.forEach { child ->
+
+            if (child is Action) {
+                if (!child.hasLocalId()) {
                     setLocalIdsForChildren(listOf(child), true)
-
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree ->
-                    if (!tree.hasLocalId()) {
-                        setLocalIdsForChildren(listOf(tree), false)
-
+                }
+            } else if (child is ActionTree){
+                child.flatView().forEach { a ->
+                    if (a is Action) {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), true)
+                        }
+                    } else {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), false)
+                        }
                         // local id can be assigned for flatten of the tree
                         // only if the tree itself and none of its flatten do not have local id
-                        if (tree.flatten().none { it.hasLocalId() })
-                            setLocalIdsForChildren(child.flatten(), true)
-                    } else if (!tree.flatten().all { it.hasLocalId() }) {
-                        throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        if (a.flatten().none { it.hasLocalId() }) {
+                            setLocalIdsForChildren(a.flatten(), true)
+                        } else if (!a.flatten().all { it.hasLocalId() }) {
+                            throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        }
                     }
                 }
             } else if (child is Gene) {
@@ -563,8 +572,9 @@ abstract class Individual(
                     throw IllegalStateException("local ids of Gene to add are partially assigned")
             } else if (child is Param){
                 setLocalIdForStructuralElement(child.genes.flatMap { it.flatView() })
-            }else
+            } else {
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+            }
         }
     }
 
