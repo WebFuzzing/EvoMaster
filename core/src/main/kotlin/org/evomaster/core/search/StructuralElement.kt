@@ -131,7 +131,9 @@ abstract class StructuralElement (
     /**
      * Optional operations done after a child is added
      */
-    protected open fun afterChildrenSetup(){}
+    protected open fun afterChildrenSetup(){
+        children.forEach(StructuralElement::afterChildrenSetup)
+    }
 
     open fun getViewOfChildren() : List<StructuralElement> = children
 

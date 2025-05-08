@@ -357,7 +357,8 @@ class RestCallAction(
     }
 
     override fun afterChildrenSetup(){
-        if(weakReference != null){
+        super.afterChildrenSetup()
+        if(isMounted() && weakReference != null){
             usePreviousLocationId = weakReference!!.creationLocationId()
             weakReference = null
         }
