@@ -98,11 +98,23 @@ class RestCallAction(
      * @return a string representing an id to use when setting "saveLocation".
      *  following REST call can use such id to refer to the dynamically generated resource.
      */
-    fun postLocationId() : String {
-        if(!CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)){
+    fun creationLocationId() : String {
+        if(!isPotentialActionForCreation()){
             throw IllegalStateException("Location Ids are meaningful only for POST operations")
         }
-        return  path.lastElement()
+        //return  path.lastElement()
+        /*
+            previous was problematic, as ids were not unique. it wasn't an issue for chains, but it
+            became major issue for cleanups.
+            but, using local ids has its own issues (only defined once mounted into an individual).
+            TODO will need to check for side-effects, might require some more refactoring
+         */
+        if(!hasLocalId()){
+            throw IllegalStateException("Location ID must be present when computing a creationLocationId")
+        }
+        val k = getLocalId()
+        // TODO could skip k if non-ambiguous. otherwise, counter could start from 0 (ie need a map for k values)
+        return  path.lastElement() +"_" + k
     }
 
     fun isPotentialActionForCreation() = CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)
@@ -317,6 +329,6 @@ class RestCallAction(
 
     fun saveAndLinkLocationTo(other: RestCallAction){
         this.saveCreatedResourceLocation = true
-        other.usePreviousLocationId = this.postLocationId()
+        other.usePreviousLocationId = this.creationLocationId()
     }
 }

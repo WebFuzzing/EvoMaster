@@ -34,9 +34,11 @@ abstract class StructuralElement (
     */
 
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
-   @ProcessMonitorExcludeField
+
+    @ProcessMonitorExcludeField
     protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
-   @ProcessMonitorExcludeField
+
+    @ProcessMonitorExcludeField
     private var groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
@@ -47,7 +49,13 @@ abstract class StructuralElement (
     }
 
     /**
-     * a unique id is used to identify this structural element in the context of an individual
+     * a unique id is used to identify this structural element in the context of an individual.
+     * Once an id is set, it cannot be changed.
+     * It can be "unset", but not modified directly into a different valid value.
+     *
+     * As the id is local to an individual, it cannot be set before an element is added to the individual.
+     * This can create problems if you need to use these ids in constructed actions before they are added into
+     * an individual.
      */
     private var localId : String = NONE_LOCAL_ID
 

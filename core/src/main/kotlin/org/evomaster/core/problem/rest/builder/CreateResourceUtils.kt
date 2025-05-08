@@ -44,7 +44,7 @@ object CreateResourceUtils {
                 GET  /x/{id}
              */
             before.saveCreatedResourceLocation = true
-            after.usePreviousLocationId = before.postLocationId()
+            after.usePreviousLocationId = before.creationLocationId()
         } else {
             /*
                 eg
