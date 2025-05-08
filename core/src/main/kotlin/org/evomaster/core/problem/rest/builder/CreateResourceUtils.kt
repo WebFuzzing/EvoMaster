@@ -43,8 +43,7 @@ object CreateResourceUtils {
                 POST /x
                 GET  /x/{id}
              */
-            before.saveCreatedResourceLocation = true
-            after.usePreviousLocationId = before.creationLocationId()
+            before.saveAndLinkLocationTo(after)
         } else {
             /*
                 eg

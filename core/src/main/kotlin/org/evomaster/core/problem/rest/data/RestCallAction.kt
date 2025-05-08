@@ -63,7 +63,15 @@ class RestCallAction(
      */
     val operationId: String? = null,
     val links: List<RestLink> = listOf(),
-    var backwardLinkReference: BackwardLinkReference? = null
+    var backwardLinkReference: BackwardLinkReference? = null,
+    /**
+     * Weak, temporarily reference to another action.
+     * This will be removed, and replaced with local ids, as soon as the action
+     * is mounted inside an individual.
+     *
+     * TODO check if it could be used to handle issue in BackwardLinkReference
+     */
+    private var weakReference: RestCallAction? = null
 ) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
@@ -109,6 +117,9 @@ class RestCallAction(
             but, using local ids has its own issues (only defined once mounted into an individual).
             TODO will need to check for side-effects, might require some more refactoring
          */
+        if(weakReference != null){
+            throw IllegalStateException("'weakReference' has not been handled yet   ")
+        }
         if(!hasLocalId()){
             throw IllegalStateException("Location ID must be present when computing a creationLocationId")
         }
@@ -122,11 +133,18 @@ class RestCallAction(
     fun isLocationChained() = saveCreatedResourceLocation || usePreviousLocationId?.isNotBlank() ?: false
 
     override fun copyContent(): Action {
+
+        if(weakReference != null) {
+            throw IllegalStateException("'weakReference' must handled before trying to make a copy")
+        }
+
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
             id, verb, path, p, auth, isCleanUp, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
-            backwardLinkReference?.copy())
+            backwardLinkReference?.copy(),
+            null // we never copy a weakReference
+        )
         //note: immutable objects (eg String) do not need to be copied
     }
 
@@ -274,6 +292,7 @@ class RestCallAction(
     fun resetProperties(){
         saveCreatedResourceLocation = false
         usePreviousLocationId = null
+        weakReference = null
         resetLocalId()
         seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
         clearRefs()
@@ -329,6 +348,18 @@ class RestCallAction(
 
     fun saveAndLinkLocationTo(other: RestCallAction){
         this.saveCreatedResourceLocation = true
-        other.usePreviousLocationId = this.creationLocationId()
+
+        if(isMounted()) {
+            other.usePreviousLocationId = this.creationLocationId()
+        } else {
+            other.weakReference = this
+        }
+    }
+
+    override fun afterChildrenSetup(){
+        if(weakReference != null){
+            usePreviousLocationId = weakReference!!.creationLocationId()
+            weakReference = null
+        }
     }
 }

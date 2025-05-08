@@ -95,4 +95,8 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
         return listOf(this)
     }
 
+    /**
+     * Check if this action is mounted inside an individual
+     */
+    fun isMounted(): Boolean = getRoot() is Individual
 }
