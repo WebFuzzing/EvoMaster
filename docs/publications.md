@@ -14,9 +14,6 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
   
-* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
-  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
-  [[arXiv](https://arxiv.org/abs/2208.03988)]
 
 * O. Sahin, M. Zhang, A. Arcuri.
   *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
@@ -26,6 +23,11 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Peer-Reviewed Publications
 
 ### 2025
+
+* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
+  Science of Computer Programming (SCP).
+  _(to appear)_ [[arXiv](https://arxiv.org/abs/2208.03988)]
 
 * S. Seran, M. Zhang, O. Duman, A. Arcuri.
   *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.
