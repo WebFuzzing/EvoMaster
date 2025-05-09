@@ -92,8 +92,14 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val additionalInfoForScheduleTask = dto.additionalInfoList.subList(0, scheduleTasksResults.size)
         // TODO man might need to handle additional targets for schedule task later
 
-        val additionalInfoForMainTask= dto.additionalInfoList.subList(scheduleTasksResults.size, dto.additionalInfoList.size)
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, additionalInfoForMainTask)
+        if (rpcActionResults.isNotEmpty()){
+            val startingIndexForMainAction = scheduleTasksResults.size
+            if (startingIndexForMainAction > dto.additionalInfoList.size)
+                throw IllegalStateException("missing ${rpcActionResults.size} additionalInfo for RPC Actions, starting Index: $startingIndexForMainAction, and total: ${dto.additionalInfoList.size}")
+            val additionalInfoForMainTask= dto.additionalInfoList.subList(scheduleTasksResults.size, dto.additionalInfoList.size)
+            handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, additionalInfoForMainTask)
+        }
+
 
         if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { (scheduleTasksResults.size + rpcActionResults.size) == dto.additionalInfoList.size }
@@ -133,11 +139,12 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 //        }
 //    }
 
+    /**
+     * @return if all tasks have been successfully executed
+     */
     private fun executeScheduleTasks(firstIndex : Int, tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
         searchTimeController.waitForRateLimiter()
 
-        val taskResults = tasks.map { ScheduleTaskActionResult(it.getLocalId()) }
-        actionResults.addAll(taskResults)
         val taskDtos = tasks.mapIndexed { index, scheduleTaskAction -> rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction).apply {
             this.index = firstIndex + index
         }
@@ -147,16 +154,24 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val response = rc.invokeScheduleTasksAndGetResults(command)
 
         if (response != null){
-            if (taskResults.size == response.results.size){
-                taskResults.forEachIndexed { index, taskResult ->
-                    val resultDto = response.results[index]
-                    taskResult.setResultBasedOnDto(resultDto)
+            if (response.results.size > tasks.size)
+                throw IllegalStateException("Received more responses (ie, ${response.results.size}) than tasks (ie, ${tasks.size})")
+
+            response.results.forEachIndexed { index, resultDto ->
+                val taskResult = ScheduleTaskActionResult(tasks[index].getLocalId())
+                taskResult.setResultBasedOnDto(resultDto)
+                taskResult.stopping = resultDto.status == ExecutionStatusDto.FAILED
+                actionResults.add(taskResult)
+                if (taskResult.stopping){
+                    log.warn("fail to execute the task at $index (in total ${tasks.size}), and the task name is ${tasks[index].taskName}")
+                    return false
                 }
             }
+        }else{
+            log.warn("no response when executing schedule tasks")
         }
-        val ok = (response != null && response.results.none { it.status == ExecutionStatusDto.FAILED })
-        taskResults.last().stopping = !ok
-        return ok
+
+        return response != null && response.results.size == tasks.size
     }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
