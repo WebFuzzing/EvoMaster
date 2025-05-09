@@ -143,6 +143,12 @@ abstract class Individual(
             .filter { time > it.searchPercentageActive }
             .forEach { it.forbidSelection() }
 
+        seeAllActions().forEach {
+            val resolved = it.resolveTempData()
+            if(!resolved){
+                throw IllegalStateException("Failed to resolve temp data in ${it.getName()}")
+            }
+        }
 
         computeTransitiveBindingGenes()
     }

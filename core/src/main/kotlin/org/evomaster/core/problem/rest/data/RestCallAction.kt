@@ -351,6 +351,7 @@ class RestCallAction(
 
         if(isMounted()) {
             other.usePreviousLocationId = this.creationLocationId()
+            other.weakReference = null
         } else {
             other.weakReference = this
         }
@@ -358,10 +359,19 @@ class RestCallAction(
 
     override fun afterChildrenSetup(){
         super.afterChildrenSetup()
-        if(weakReference != null && weakReference!!.isMounted()){
+        resolveTempData()
+    }
+
+    override fun resolveTempData() : Boolean{
+        if(weakReference == null){
+            return true // nothing to do
+        }
+        if(weakReference!!.isMounted()) {
             usePreviousLocationId = weakReference!!.creationLocationId()
             weakReference = null
+            return true
         }
+        return false
     }
 
     override fun isGloballyValid(): Boolean {
@@ -370,7 +380,12 @@ class RestCallAction(
             return false
         }
 
-        if(usePreviousLocationId != null && this.getPreviousMainActions().none{it.getLocalId() == usePreviousLocationId}) {
+        if(usePreviousLocationId != null
+            && this.getPreviousMainActions().filterIsInstance<RestCallAction>()
+                .none{it.isPotentialActionForCreation() && it.creationLocationId() == usePreviousLocationId}) {
+            return false
+        }
+        if(weakReference != null) {
             return false
         }
         //TODO check backward links
