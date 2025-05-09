@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.security
 
-class VulnerabilityMarker (
+class ParamMapping (
     val name: String,
     val description: String,
 ) {
