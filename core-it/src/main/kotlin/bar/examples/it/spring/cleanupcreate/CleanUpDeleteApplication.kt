@@ -18,7 +18,7 @@ open class CleanUpDeleteApplication {
             SpringApplication.run(CleanUpDeleteApplication::class.java, *args)
         }
 
-        private val data = mutableMapOf<Int, String>()
+        private val data = mutableMapOf<String, String>()
 
         fun reset(){
             data.clear()
@@ -30,7 +30,7 @@ open class CleanUpDeleteApplication {
 
     @PutMapping(path = ["/{id}"])
     open fun put(
-        @PathVariable("id") id: Int
+        @PathVariable("id") id: String
     ): ResponseEntity<Any> {
 
         data[id] = "Data for $id"
@@ -38,7 +38,7 @@ open class CleanUpDeleteApplication {
     }
 
     @DeleteMapping(path = ["/{id}"])
-    open fun delete(@PathVariable("id") id: Int): ResponseEntity<String> {
+    open fun delete(@PathVariable("id") id: String): ResponseEntity<String> {
 
         if(!data.containsKey(id)){
             return ResponseEntity.status(404).build()

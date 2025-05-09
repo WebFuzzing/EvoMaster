@@ -136,6 +136,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
             val ind = sampleRestIndividual(dbSize, resourceSize)
             assertEquals(dbSize + resourceSize, ind.getViewOfChildren().size)
+            ind.doInitializeLocalId()
 
             val call = sampleResourceCall()
 

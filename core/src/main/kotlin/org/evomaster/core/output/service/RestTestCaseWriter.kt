@@ -91,7 +91,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     variable name clashes, unless we change the id to consider the action index, somehow
                  */
                 .filter { it.saveCreatedResourceLocation }
-                .map { it.postLocationId() }
+                .map { it.creationLocationId() }
 //                .filter { it.usePreviousLocationId != null }
 //                .map { it.usePreviousLocationId }
                 .distinct()
@@ -406,7 +406,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //using what present in the "location" HTTP header
 
-                val location = locationVar(call.postLocationId())
+                val location = locationVar(call.creationLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -463,7 +463,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
                 }
 
-                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
+                lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }

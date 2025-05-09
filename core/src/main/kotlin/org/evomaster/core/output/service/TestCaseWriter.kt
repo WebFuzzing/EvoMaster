@@ -129,6 +129,7 @@ abstract class TestCaseWriter {
             //  handleFieldDeclarations.
             handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, insertionVars, test.name,testSuitePath)
         }
 
 

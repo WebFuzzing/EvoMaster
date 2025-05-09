@@ -63,7 +63,6 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
-import javax.ws.rs.core.Response
 
 
 abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
@@ -920,7 +919,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 return false
             }
 
-            val name = locationName(a.postLocationId())
+            val name = locationName(a.creationLocationId())
             var location = rcr.getLocation()
 
             if (location == null) {

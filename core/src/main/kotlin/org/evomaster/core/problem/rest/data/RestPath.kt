@@ -462,7 +462,7 @@ class RestPath(path: String) {
     }
 
     fun getElements(): List<Map<String, Boolean>> {
-        return elements.map { it.tokens.map { t -> Pair(t.name, t.isParameter) }.toMap() }
+        return elements.map { it.tokens.associate { t -> Pair(t.name, t.isParameter) } }
     }
 
     /**
@@ -477,9 +477,7 @@ class RestPath(path: String) {
      * /foo/bar/{id}
      */
     fun matches(resolvedPath: String): Boolean {
-        if (resolvedPath.matches(Regex(getRegexToMatch())))
-            return true
-        return false
+        return resolvedPath.matches(Regex(getRegexToMatch()))
     }
 
     /**
