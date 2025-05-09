@@ -1,4 +1,6 @@
-package org.evomaster.core.problem.security
+package org.evomaster.core.problem.security.data
+
+import org.evomaster.core.problem.security.VulnerabilityClass
 
 class ParamMapping (
     val name: String,

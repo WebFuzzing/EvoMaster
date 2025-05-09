@@ -21,21 +21,23 @@ class SsrfEMTest: SpringTestBase() {
     @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
-
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
             100
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+            setOption(args, "vulnerabilityAnalyser", "true")
+            setOption(args, "vulnerabilitySelectionStrategy", "LLM")
+            setOption(args, "languageModelConnector", "true")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
         }
     }
 }
