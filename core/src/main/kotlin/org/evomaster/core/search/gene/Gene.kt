@@ -50,7 +50,7 @@ import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 abstract class Gene(
         /**
          * The name for this gene, mainly needed for debugging.
-         * One actual use is for binding, e.g., paremeters in HTTP requests
+         * One actual use is for binding, e.g., parameters in HTTP requests
          */
         var name: String,
         /**
@@ -78,6 +78,17 @@ abstract class Gene(
     }
 
     /**
+     * Description about the gene.
+     */
+    var description: String? = null
+        set(value) {
+            if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
+                field = value
+            }
+        }
+
+
+    /**
      * Whether this gene has been initialized, and can be used.
      * Note that gene can have validity constraints, and those might not be satisfied
      * when the constructor of a gene is called to create a new instance.
@@ -93,7 +104,7 @@ abstract class Gene(
      * The type can be different, eg strings vs numbers, but still consistent.
      *
      * WARNING: genes are mutable, but here we check for references. this implies
-     * NO gene can overridde hashcode.
+     * NO gene can override hashcode.
      *
      * If A is bound to B, then as well B is bound to A.
      * If [this] is A, then binding genes will contain only B, and the binding genes of B
@@ -129,7 +140,6 @@ abstract class Gene(
         if(! initialized)
             throw IllegalStateException("Trying to use a gene that is not initialized")
     }
-
 
     /**
      * Return all direct children of this gene.
@@ -250,6 +260,7 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
+        copy.description = description
         //this was incorrect, as subchildren might had different init state compared to this
         //copy.flatView().forEach{it.initialized = initialized}
         return copy
@@ -269,7 +280,7 @@ abstract class Gene(
                 a gene can refer to other genes outside of its tree.
                 when we make a copy we need to make sure that we refer to the new gene in the copied
                 individual, not the original individual.
-                so, this is applied only  when the root is an individual, otherswise skipped, because
+                so, this is applied only  when the root is an individual, otherwise skipped, because
                 would not be able to find those genes anyway
              */
             val postBinding = (original as Gene).bindingGenes.map { b ->
@@ -531,7 +542,7 @@ abstract class Gene(
      *   can be mutated, the choice is based with different strategies
      *
      *   @param randomness the source of non-determinism
-     *   @param apc adatpive parameter control singleton
+     *   @param apc adaptive parameter control singleton
      *   @param mwc mutation weight control
      *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate.
      *          In hypermutation, several genes could be mutated at same time.
@@ -1084,7 +1095,7 @@ abstract class Gene(
 
 
     /**
-     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) isLocallyValid is true
+     * here `valid` means that 1) [updateValue] performs correctly, i.e., returns true AND 2) isLocallyValid is true
      *
      * @param updateValue lambda performs update of value of the gene
      * @param undoIfUpdateFails represents whether it needs to undo the value update if [undoIfUpdateFails] returns false
