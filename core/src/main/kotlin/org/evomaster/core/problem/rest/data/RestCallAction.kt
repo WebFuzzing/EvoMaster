@@ -363,4 +363,18 @@ class RestCallAction(
             weakReference = null
         }
     }
+
+    override fun isGloballyValid(): Boolean {
+
+        if(!super.isGloballyValid()){
+            return false
+        }
+
+        if(usePreviousLocationId != null && this.getPreviousMainActions().none{it.getLocalId() == usePreviousLocationId}) {
+            return false
+        }
+        //TODO check backward links
+
+        return true
+    }
 }

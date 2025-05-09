@@ -99,4 +99,6 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * Check if this action is mounted inside an individual
      */
     fun isMounted(): Boolean = getRoot() is Individual
+
+    open fun isGloballyValid(): Boolean  = isMounted()
 }

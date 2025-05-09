@@ -166,6 +166,9 @@ abstract class Individual(
         SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
+            if(!a.isGloballyValid()){
+                throw IllegalStateException("Action ${a.getName()} does not satisfy global validity constraints")
+            }
             a.seeTopGenes().forEach { g ->
                 if(!g.isGloballyValid()){
                     throw IllegalStateException("Global validity failure: invalid gene named '${g.name}' in action ${a.getName()}")
