@@ -1652,9 +1652,14 @@ object RestActionBuilderV3 {
         isInPath: Boolean
     ): StringGene {
 
-        //This didn't seem correct, as would prevent empty inputs, which are not necessarily invalid
-        //val defaultMin = if(isInPath) 1 else 0
-        val defaultMin = 0
+        /*
+            This is bit tricky, as would prevent empty inputs, which are not necessarily invalid.
+            In OpenAPI, path variables are always require.
+            Sending an empty  /users/ for a /users/{id} might or might not work, and could lead to a 405...
+            maybe we skip it, and treat it for a robustness testing
+         */
+        val defaultMin = if(isInPath) 1 else 0
+        //val defaultMin = 0
 
         return StringGene(
             name,

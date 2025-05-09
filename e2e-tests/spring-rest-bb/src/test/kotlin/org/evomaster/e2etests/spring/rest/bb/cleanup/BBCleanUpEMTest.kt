@@ -50,6 +50,9 @@ class BBCleanUpEMTest : SpringTestBase() {
 
             assertEquals(0, BBCleanUpApplication.data.size)
         }
+
+        //even after executing generated tests, should be empty
+        assertEquals(0, BBCleanUpApplication.data.size)
     }
 
 
