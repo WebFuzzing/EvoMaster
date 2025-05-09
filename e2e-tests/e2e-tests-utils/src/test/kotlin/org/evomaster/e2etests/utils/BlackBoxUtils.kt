@@ -36,6 +36,11 @@ object BlackBoxUtils {
 
     private fun mvn() = if (isWindows()) "mvn.cmd" else "mvn"
 
+    // new installers on Mac have python3 but not python !?!
+    private fun python() = "python3"
+
+    private fun pip() = "pip3"
+
     private fun runNpmInstall() {
         val command = listOf(npm(), "ci")
 
@@ -43,10 +48,10 @@ object BlackBoxUtils {
     }
 
     private fun installPythonRequirements() {
-        val upgradePipCommand = listOf("python", "-m", "pip", "install", "--upgrade", "pip", "--user")
-        executeInstallShellCommand(upgradePipCommand, PY_BASE_PATH, "pip")
+        val upgradePipCommand = listOf(python(), "-m", "pip", "install", "--upgrade", "pip", "--user")
+        executeInstallShellCommand(upgradePipCommand, PY_BASE_PATH, pip())
 
-        val installRequirementsCommand = listOf("pip", "install", "-r", "./requirements.txt", "--user")
+        val installRequirementsCommand = listOf(pip(), "install", "-r", "./requirements.txt", "--user")
         executeInstallShellCommand(installRequirementsCommand, PY_BASE_PATH, "requirements")
     }
 
@@ -100,7 +105,7 @@ object BlackBoxUtils {
     fun runPythonTests(folderRelativePath: String) {
         installPythonRequirements()
 
-        val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
+        val command = listOf(python(), "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
         runTestsCommand(command, PY_BASE_PATH, "Python")
     }
 
