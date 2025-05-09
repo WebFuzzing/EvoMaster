@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class CleanUpDeleteTest: IntegrationTestRestBase() {
@@ -52,5 +53,32 @@ class CleanUpDeleteTest: IntegrationTestRestBase() {
         //delete should had been automatically added
         assertEquals(0, CleanUpDeleteApplication.numberExistingData())
 
+    }
+
+    @Test
+    fun testEmpty(){
+
+        assertEquals(0, CleanUpDeleteApplication.numberExistingData())
+
+        val pirTest = getPirToRest()
+
+        val fail = pirTest.fromVerbPath("put", "/api/resources")
+        assertNull(fail)
+
+        val put = pirTest.fromVerbPath("put", "/api/resources/")!!
+        val delete = pirTest.fromVerbPath("delete", "/api/resources/")!!  //explicit delete
+        val x = createIndividual(listOf(put,delete), SampleType.RANDOM)
+        val resPut = x.evaluatedMainActions()[0].result as RestCallResult
+        val resDel = x.evaluatedMainActions()[1].result as RestCallResult
+        assertEquals(200, resPut.getStatusCode())
+        assertEquals(204, resDel.getStatusCode())
+
+        assertEquals(0, CleanUpDeleteApplication.numberExistingData())
+
+        val y = createIndividual(listOf(put), SampleType.RANDOM)
+        val resPutY = y.evaluatedMainActions()[0].result as RestCallResult
+        assertEquals(200, resPutY.getStatusCode())
+
+        assertEquals(0, CleanUpDeleteApplication.numberExistingData())
     }
 }

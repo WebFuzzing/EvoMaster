@@ -25,7 +25,7 @@ class BBCleanUpEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("Need to refactor handling of location in fitness function to fix issue")
+    //@Disabled("Need to refactor handling of location in fitness function to fix issue")
     @ParameterizedTest
     @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {

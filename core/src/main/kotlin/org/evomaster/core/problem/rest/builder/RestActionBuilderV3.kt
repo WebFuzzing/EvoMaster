@@ -1629,7 +1629,7 @@ object RestActionBuilderV3 {
     }
 
     /**
-     * Buils a StringGene that represents a char value.
+     * Build a StringGene that represents a char value.
      * Char values are modelled as string of fixed size 1.
      */
     private fun buildStringGeneForChar(
@@ -1652,7 +1652,9 @@ object RestActionBuilderV3 {
         isInPath: Boolean
     ): StringGene {
 
-        val defaultMin = if(isInPath) 1 else 0
+        //This didn't seem correct, as would prevent empty inputs, which are not necessarily invalid
+        //val defaultMin = if(isInPath) 1 else 0
+        val defaultMin = 0
 
         return StringGene(
             name,
