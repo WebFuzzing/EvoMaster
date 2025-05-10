@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -65,6 +66,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
 
 
         return RestIndividual(mutableListOf(call1, call2), SampleType.RANDOM, dbInitialization = mutableListOf(action0, action1))
+            .apply { doInitializeLocalId(); resolveAllTempData() }
 
     }
 

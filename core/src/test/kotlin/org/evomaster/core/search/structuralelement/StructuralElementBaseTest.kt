@@ -23,7 +23,7 @@ abstract class StructuralElementBaseTest {
     }
 
     @Test
-    fun testCopy(){
+    open fun testCopy(){
         val template = getStructuralElementAndIdentifyAsRoot()
         val copy = template.copy()
         assertCopy(template, copy)
