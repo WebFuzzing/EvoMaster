@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMuta
 import org.evomaster.core.problem.util.BindingBuilder;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.search.service.SearchGlobalState;
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         args.add("0.0");
 
         Injector injector = init(args);
+        SearchGlobalState globalState = injector.getInstance(SearchGlobalState.class);
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
@@ -53,7 +55,7 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
         assertEquals(2, calls.size());
 
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
-        twoCalls.doInitializeLocalId();
+        twoCalls.doGlobalInitialize(globalState);
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet(), null);
         assertEquals(4, mutator.genesToMutation(twoCalls, twoCallsEval, Collections.emptySet()).stream().filter(s-> !BindingBuilder.INSTANCE.isExtraTaintParam(s.getName())).count());
 
