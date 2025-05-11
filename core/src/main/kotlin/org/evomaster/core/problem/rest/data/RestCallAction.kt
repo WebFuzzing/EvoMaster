@@ -63,7 +63,15 @@ class RestCallAction(
      */
     val operationId: String? = null,
     val links: List<RestLink> = listOf(),
-    var backwardLinkReference: BackwardLinkReference? = null
+    var backwardLinkReference: BackwardLinkReference? = null,
+    /**
+     * Weak, temporarily reference to another action.
+     * This will be removed, and replaced with local ids, as soon as the action
+     * is mounted inside an individual.
+     *
+     * TODO check if it could be used to handle issue in BackwardLinkReference
+     */
+    private var weakReference: RestCallAction? = null
 ) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
@@ -98,11 +106,26 @@ class RestCallAction(
      * @return a string representing an id to use when setting "saveLocation".
      *  following REST call can use such id to refer to the dynamically generated resource.
      */
-    fun postLocationId() : String {
-        if(!CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)){
+    fun creationLocationId() : String {
+        if(!isPotentialActionForCreation()){
             throw IllegalStateException("Location Ids are meaningful only for POST operations")
         }
-        return  path.lastElement()
+        //return  path.lastElement()
+        /*
+            previous was problematic, as ids were not unique. it wasn't an issue for chains, but it
+            became major issue for cleanups.
+            but, using local ids has its own issues (only defined once mounted into an individual).
+            TODO will need to check for side-effects, might require some more refactoring
+         */
+        if(weakReference != null){
+            throw IllegalStateException("'weakReference' has not been handled yet   ")
+        }
+        if(!hasLocalId()){
+            throw IllegalStateException("Location ID must be present when computing a creationLocationId")
+        }
+        val k = getLocalId()
+        // TODO could skip k if non-ambiguous. otherwise, counter could start from 0 (ie need a map for k values)
+        return  path.lastElement() +"_" + k
     }
 
     fun isPotentialActionForCreation() = CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)
@@ -110,11 +133,18 @@ class RestCallAction(
     fun isLocationChained() = saveCreatedResourceLocation || usePreviousLocationId?.isNotBlank() ?: false
 
     override fun copyContent(): Action {
+
+        if(weakReference != null) {
+            throw IllegalStateException("'weakReference' must handled before trying to make a copy")
+        }
+
         val p = parameters.asSequence().map(Param::copy).toMutableList()
         return RestCallAction(
             id, verb, path, p, auth, isCleanUp, saveCreatedResourceLocation, usePreviousLocationId,
             produces, responseRefs, skipOracleChecks, operationId, links,
-            backwardLinkReference?.copy())
+            backwardLinkReference?.copy(),
+            null // we never copy a weakReference
+        )
         //note: immutable objects (eg String) do not need to be copied
     }
 
@@ -262,6 +292,7 @@ class RestCallAction(
     fun resetProperties(){
         saveCreatedResourceLocation = false
         usePreviousLocationId = null
+        weakReference = null
         resetLocalId()
         seeTopGenes().flatMap { it.flatView() }.forEach { it.resetLocalId() }
         clearRefs()
@@ -317,6 +348,65 @@ class RestCallAction(
 
     fun saveAndLinkLocationTo(other: RestCallAction){
         this.saveCreatedResourceLocation = true
-        other.usePreviousLocationId = this.postLocationId()
+
+        if(isMounted()) {
+            other.usePreviousLocationId = this.creationLocationId()
+            other.weakReference = null
+        } else {
+            other.weakReference = this
+        }
+    }
+
+    override fun afterChildrenSetup(){
+        super.afterChildrenSetup()
+        resolveTempData()
+    }
+
+    override fun resolveTempData() : Boolean{
+        if(weakReference == null){
+            return true // nothing to do
+        }
+        if(weakReference!!.isMounted()) {
+            usePreviousLocationId = weakReference!!.creationLocationId()
+            weakReference = null
+            return true
+        }
+        return false
+    }
+
+    /**
+     * This is needed for example when we need to add a set of actions from one individual to another individual.
+     * The local ids of the former would need to be reset, to avoid id clashes when mounted in the other
+     * individual
+     */
+    fun revertToWeakReference(){
+        if(usePreviousLocationId != null){
+            val ref = getPreviousMainActions().filterIsInstance<RestCallAction>()
+                .find {
+                    it.isPotentialActionForCreation()
+                    && it.creationLocationId() == usePreviousLocationId!!
+                } ?: throw IllegalStateException("No previous action with location id ${usePreviousLocationId!!}")
+            weakReference = ref
+            usePreviousLocationId = null
+        }
+    }
+
+    override fun isGloballyValid(): Boolean {
+
+        if(!super.isGloballyValid()){
+            return false
+        }
+
+        if(usePreviousLocationId != null
+            && this.getPreviousMainActions().filterIsInstance<RestCallAction>()
+                .none{it.isPotentialActionForCreation() && it.creationLocationId() == usePreviousLocationId}) {
+            return false
+        }
+        if(weakReference != null) {
+            return false
+        }
+        //TODO check backward links
+
+        return true
     }
 }

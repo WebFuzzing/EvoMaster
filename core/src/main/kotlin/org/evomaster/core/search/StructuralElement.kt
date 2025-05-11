@@ -34,9 +34,11 @@ abstract class StructuralElement (
     */
 
     protected open val children : MutableList<out StructuralElement> = mutableListOf(),
-   @ProcessMonitorExcludeField
+
+    @ProcessMonitorExcludeField
     protected val childTypeVerifier: (Class<*>) -> Boolean = {_ -> true},
-   @ProcessMonitorExcludeField
+
+    @ProcessMonitorExcludeField
     private var groups : GroupsOfChildren<StructuralElement>? = null
 ) {
 
@@ -47,7 +49,13 @@ abstract class StructuralElement (
     }
 
     /**
-     * a unique id is used to identify this structural element in the context of an individual
+     * a unique id is used to identify this structural element in the context of an individual.
+     * Once an id is set, it cannot be changed.
+     * It can be "unset", but not modified directly into a different valid value.
+     *
+     * As the id is local to an individual, it cannot be set before an element is added to the individual.
+     * This can create problems if you need to use these ids in constructed actions before they are added into
+     * an individual.
      */
     private var localId : String = NONE_LOCAL_ID
 
@@ -120,6 +128,12 @@ abstract class StructuralElement (
             (this.getRoot() as Individual).handleLocalIdsForAddition(c)
     }
 
+    /**
+     * Optional operations done after a child is added
+     */
+    protected open fun afterChildrenSetup(){
+        children.forEach(StructuralElement::afterChildrenSetup)
+    }
 
     open fun getViewOfChildren() : List<StructuralElement> = children
 
@@ -160,6 +174,7 @@ abstract class StructuralElement (
         val end = groups!!.endIndexForGroupInsertionInclusive(groupId)
         addChild(end, child) //appending at the end of the group
         groups!!.addedToGroup(groupId, child)
+        afterChildrenSetup()
     }
 
     fun addChildToGroup(position: Int, child: StructuralElement, groupId: String){
@@ -175,6 +190,7 @@ abstract class StructuralElement (
         preChildrenSetup(listOf(child))
         addChild(position,child)
         groups!!.addedToGroup(groupId, child)
+        afterChildrenSetup()
     }
 
     fun addChildrenToGroup(children : List<StructuralElement>, groupId: String){
@@ -198,6 +214,7 @@ abstract class StructuralElement (
         preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(child)
+        afterChildrenSetup()
     }
 
     open fun addChild(position: Int, child: StructuralElement){
@@ -206,6 +223,7 @@ abstract class StructuralElement (
         preChildrenSetup(listOf(child))
         child.parent = this
         (children as MutableList<StructuralElement>).add(position, child)
+        afterChildrenSetup()
     }
 
     /**
@@ -223,6 +241,7 @@ abstract class StructuralElement (
         preChildrenSetup(list)
         list.forEach { it.parent = this }
         (children as MutableList<StructuralElement>).addAll(position, list)
+        afterChildrenSetup()
     }
 
 
