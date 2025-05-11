@@ -374,6 +374,23 @@ class RestCallAction(
         return false
     }
 
+    /**
+     * This is needed for example when we need to add a set of actions from one individual to another individual.
+     * The local ids of the former would need to be reset, to avoid id clashes when mounted in the other
+     * individual
+     */
+    fun revertToWeakReference(){
+        if(usePreviousLocationId != null){
+            val ref = getPreviousMainActions().filterIsInstance<RestCallAction>()
+                .find {
+                    it.isPotentialActionForCreation()
+                    && it.creationLocationId() == usePreviousLocationId!!
+                } ?: throw IllegalStateException("No previous action with location id ${usePreviousLocationId!!}")
+            weakReference = ref
+            usePreviousLocationId = null
+        }
+    }
+
     override fun isGloballyValid(): Boolean {
 
         if(!super.isGloballyValid()){

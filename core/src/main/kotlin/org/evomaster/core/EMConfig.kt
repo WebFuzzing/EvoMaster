@@ -84,7 +84,7 @@ class EMConfig {
 
         private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
 
-        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
+        private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
         fun validateOptions(args: Array<String>): OptionParser {
 
