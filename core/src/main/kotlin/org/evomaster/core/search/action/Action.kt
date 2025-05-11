@@ -95,4 +95,16 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
         return listOf(this)
     }
 
+    /**
+     * Check if this action is mounted inside an individual
+     */
+    fun isMounted(): Boolean = getRoot() is Individual
+
+    open fun isGloballyValid(): Boolean  = isMounted()
+
+    /**
+     * At times, we might need to have temporary data, that can only be finalized
+     * once an action is mounted inside an initialized individual
+     */
+    open fun resolveTempData() : Boolean = true
 }

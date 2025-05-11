@@ -12,6 +12,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 object ResourceNodeCluster{
     val cluster = ResourceCluster()
@@ -32,6 +33,14 @@ class RestResourceCallPostGetStructureTest : StructuralElementBaseTest(){
         val foo = "/v3/api/rfoo/{rfooId}"
         val fooNode = ResourceNodeCluster.cluster.getResourceNode(foo)
         return fooNode?.sampleRestResourceCalls("POST-GET", ResourceNodeCluster.randomness, 10)?: throw IllegalStateException("cannot sample resource call with the template")
+    }
+
+    @Test
+    override fun testCopy() {
+        /*
+            due to weakReference, we cannot copy bound actions unless they are mounted in an individual
+         */
+        assertThrows<Exception> {super.testCopy()}
     }
 
     override fun getExpectedChildrenSize(): Int = 3
