@@ -25,7 +25,7 @@ class BBCleanUpEMTest : SpringTestBase() {
     }
 
 
-    @Disabled("Need to refactor handling of location in fitness function to fix issue")
+    //@Disabled("Need to refactor handling of location in fitness function to fix issue")
     @ParameterizedTest
     @EnumSource
     fun testBlackBoxOutput(outputFormat: OutputFormat) {
@@ -50,6 +50,9 @@ class BBCleanUpEMTest : SpringTestBase() {
 
             assertEquals(0, BBCleanUpApplication.data.size)
         }
+
+        //even after executing generated tests, should be empty
+        assertEquals(0, BBCleanUpApplication.data.size)
     }
 
 
