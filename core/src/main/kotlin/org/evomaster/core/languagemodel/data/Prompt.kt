@@ -1,6 +1,6 @@
-package org.evomaster.core.languagemodel
+package org.evomaster.core.languagemodel.data
 
-class PromptDto (
+class Prompt (
     val id: String,
 
     val prompt: String

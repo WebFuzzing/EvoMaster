@@ -1,9 +1,9 @@
-package org.evomaster.core.languagemodel
+package org.evomaster.core.languagemodel.data
 
 /**
  * DTO to represent the Ollama request schema.
  */
-class OllamaRequestDto (
+class OllamaRequest (
     val model: String,
 
     /**
