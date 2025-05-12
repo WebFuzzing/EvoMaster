@@ -9,6 +9,17 @@ import org.junit.jupiter.api.Test;
 public class EMTestUtilsTest {
 
     @Test
+    public void testEmptyPath(){
+
+        String template = "http://localhost:12345/a/42";
+        String location = "/a/";
+
+        String res = EMTestUtils.resolveLocation(location, template);
+        assertEquals("http://localhost:12345/a/", res);
+    }
+
+
+    @Test
     public void testResolveLocation_direct() {
 
         String template = "http://localhost:12345/a/{id}";
