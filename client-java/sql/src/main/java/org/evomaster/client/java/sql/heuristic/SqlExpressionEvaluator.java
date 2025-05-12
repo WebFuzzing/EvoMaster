@@ -18,6 +18,8 @@ import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
+import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
+import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.*;
 
 
@@ -395,7 +397,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Function function) {
-        throw new UnsupportedOperationException("Function not supported");
+        super.visit(function);
+        String functionName = function.getName();
+        if (!FunctionFinder.getInstance().containsFunction(functionName)) {
+            throw new UnsupportedOperationException("Function "  + functionName + " needs to be implemented");
+        }
+        SqlFunction sqlFunction = FunctionFinder.getInstance().getFunction(functionName);
+        List<Object> concreteParameters = new ArrayList<>();
+        for (int i = 0; i <function.getParameters().size(); i++) {
+            Object concreteParameter = popAsSingleValue();
+            concreteParameters.add(concreteParameter);
+        }
+        Collections.reverse(concreteParameters);
+        Object functionResult = sqlFunction.evaluate(concreteParameters.toArray(new Object[]{}));
+        this.evaluationStack.push(functionResult);
     }
 
     @Override
