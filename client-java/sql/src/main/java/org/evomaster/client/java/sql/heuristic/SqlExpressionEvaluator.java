@@ -40,6 +40,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public static final char MINUS = '-';
     public static final char PLUS = '+';
 
+    private final SqlHeuristicsCalculator parent;
     private final TableColumnResolver tableColumnResolver;
     private final TaintHandler taintHandler;
     private final QueryResultSet queryResultSet;
@@ -47,14 +48,28 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     private final Stack<Object> evaluationStack = new Stack<>();
 
-    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver,
+    public SqlExpressionEvaluator(SqlHeuristicsCalculator parent,
+                                  TableColumnResolver tableColumnResolver,
                                   TaintHandler taintHandler,
                                   QueryResultSet queryResultSet,
                                   DataRow currentDataRow) {
+        this.parent = parent;
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.queryResultSet = queryResultSet;
         this.currentDataRow = currentDataRow;
+    }
+
+
+    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver,
+                                  TaintHandler taintHandler,
+                                  QueryResultSet queryResultSet,
+                                  DataRow currentDataRow) {
+        this(null, tableColumnResolver, taintHandler, queryResultSet, currentDataRow);
+    }
+
+    public DataRow getCurrentDataRow() {
+        return currentDataRow;
     }
 
     private Object popAsSingleValue() {
@@ -400,11 +415,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         super.visit(function);
         String functionName = function.getName();
         if (!FunctionFinder.getInstance().containsFunction(functionName)) {
-            throw new UnsupportedOperationException("Function "  + functionName + " needs to be implemented");
+            throw new UnsupportedOperationException("Function " + functionName + " needs to be implemented");
         }
         SqlFunction sqlFunction = FunctionFinder.getInstance().getFunction(functionName);
         List<Object> concreteParameters = new ArrayList<>();
-        for (int i = 0; i <function.getParameters().size(); i++) {
+        for (int i = 0; i < function.getParameters().size(); i++) {
             Object concreteParameter = popAsSingleValue();
             concreteParameters.add(concreteParameter);
         }
@@ -746,13 +761,46 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                     .count() > 1) {
 
                 // Use table name as table alias
-                value = currentDataRow.getValueByName(columnName, baseTableName, column.getTable().getFullyQualifiedName());
+                final String aliasTableName = column.getTable().getFullyQualifiedName();
+                value = currentDataRow.getValueByName(columnName, baseTableName, aliasTableName);
             } else {
-                value = currentDataRow.getValueByName(columnName, baseTableName);
+                value = getValueByName(columnName, baseTableName);
             }
-
         }
         return value;
+    }
+
+    DataRow getDataRow(int contextIndex) {
+        if (contextIndex == 0)
+            return this.currentDataRow;
+        else {
+            if (this.getParent() != null && this.getParent().getParent() != null) {
+                return this.getParent().getParent().getDataRow(contextIndex - 1);
+            } else {
+                return null;
+            }
+        }
+    }
+
+
+    public SqlHeuristicsCalculator getParent() {
+        return parent;
+    }
+
+    private Object getValueByName(String columnName, String baseTableName) {
+        int i = 0;
+
+        DataRow dataRow = getDataRow(i);
+        while (dataRow != null) {
+            try {
+                return dataRow.getValueByName(columnName, baseTableName);
+            } catch (IllegalArgumentException e) {
+                // value not found in context
+            }
+            i++;
+            dataRow = getDataRow(i);
+        }
+        throw new IllegalArgumentException(String.format("Column '%s' not found in table '%s'", columnName, baseTableName));
     }
 
     @Override
@@ -774,6 +822,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Select select = (Select) rightExpression;
 
         SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
+                this,
                 this.tableColumnResolver,
                 this.taintHandler,
                 this.queryResultSet);
@@ -1197,6 +1246,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Select select) {
         SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
+                this,
                 this.tableColumnResolver,
                 this.taintHandler,
                 this.queryResultSet);

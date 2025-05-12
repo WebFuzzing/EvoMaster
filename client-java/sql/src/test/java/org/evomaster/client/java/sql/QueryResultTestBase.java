@@ -282,4 +282,34 @@ public abstract class QueryResultTestBase {
 
     }
 
+    @Test
+    public void testSubqueryReference() throws Exception {
+        // set up the database
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE departments (\n" +
+                "    id INT PRIMARY KEY,\n" +
+                "    name VARCHAR(100) NOT NULL\n" +
+                ");\n");
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE employees (\n" +
+                "    employee_id INT PRIMARY KEY,\n" +
+                "    name VARCHAR(100) NOT NULL,\n" +
+                "    department_id INT,\n" +
+                "    FOREIGN KEY (department_id) REFERENCES departments(id)\n" +
+                ");\n");
+
+
+        // create the queryResult
+        QueryResult queryResult = SqlScriptRunner.execCommand(getConnection(), "SELECT 1 \n" +
+                "FROM employees e \n" +
+                "WHERE EXISTS (\n" +
+                "    SELECT 1 \n" +
+                "    FROM departments \n" +
+                "    WHERE department_id = employee_id\n" +
+                ");\n");
+
+
+        assertEquals(true, queryResult.seeRows().isEmpty());
+    }
+
+
 }

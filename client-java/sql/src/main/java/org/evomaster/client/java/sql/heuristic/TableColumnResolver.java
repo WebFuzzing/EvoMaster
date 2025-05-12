@@ -107,7 +107,15 @@ public class TableColumnResolver {
     }
 
     public SqlColumnReference resolve(Column column) {
-        final Statement currentStatement = statementStack.peek();
+        return resolveInContext(column, statementStack.size() - 1);
+    }
+
+    private SqlColumnReference resolveInContext(Column column, int contextIndex) {
+        if (contextIndex < 0) {
+            // column reference was not found
+            return null;
+        }
+        final Statement currentStatement = getStatement(contextIndex);
         final SqlColumnId columnId = new SqlColumnId(column.getColumnName());
         if (currentStatement == null) {
             throw new IllegalStateException("No current select context");
@@ -129,17 +137,32 @@ public class TableColumnResolver {
                     throw new IllegalArgumentException("Unknown table reference type: " + sqlTableReference.getClass().getName());
                 }
             }
-            // no column was found
-            return null;
+            return resolveInContext(column, contextIndex - 1);
         } else {
-            return resolve(column.getColumnName());
+            return resolveInContext(column.getColumnName(), contextIndex);
         }
     }
 
-    private SqlColumnReference resolve(String columnName) {
-        Objects.requireNonNull(columnName);
+    private Statement getStatement(int contextIndex) {
+        if (contextIndex >= 0) {
+            Iterator<Statement> iterator = statementStack.iterator();
+            for (int i = statementStack.size() - (contextIndex + 1); i > 0; i--) {
+                iterator.next();
+            }
+            return iterator.next();
+        } else {
+            return null;
+        }
+    }
 
-        final Statement currentStatement = statementStack.peek();
+    private SqlColumnReference resolveInContext(String columnName, int contextLevel) {
+        Objects.requireNonNull(columnName);
+        if (contextLevel < 0) {
+            // column reference was not found
+            return null;
+        }
+
+        final Statement currentStatement = getStatement(contextLevel);
         if (currentStatement == null) {
             throw new IllegalStateException("No current select context");
         }
@@ -175,8 +198,8 @@ public class TableColumnResolver {
                 return new SqlColumnReference(new SqlDerivedTableReference(select), columnName);
             }
         }
-        // column was not found
-        return null;
+        // search column in previous context
+        return resolveInContext(columnName, contextLevel - 1);
     }
 
     private boolean isColumnAlias(PlainSelect plainSelect, String columnName) {

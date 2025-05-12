@@ -10,6 +10,7 @@ import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.SqlTableId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -695,6 +696,35 @@ class TableColumnResolverTest {
         assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
         assertEquals("first_name", reference.getColumnName());
 
+        resolver.exitCurrentStatementContext();
+    }
+
+    @Test
+    void testResolveOuterColumn() throws Exception {
+        String sql = "SELECT 1 FROM employees WHERE EXISTS (SELECT 1 FROM departments WHERE first_name = department_name)";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("first_name");
+
+        SqlColumnReference outerReference = resolver.resolve(column);
+        assertNotNull(outerReference);
+        assertTrue(outerReference.getTableReference() instanceof SqlBaseTableReference);
+        assertEquals("first_name", outerReference.getColumnName());
+        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) outerReference.getTableReference()).getTableId());
+
+        String innerSql = "SELECT 1 FROM departments WHERE first_name = department_name";
+        Select innerSelect = (Select) SqlParserUtils.parseSqlCommand(innerSql);
+        resolver.enterStatementeContext(innerSelect);
+
+        SqlColumnReference innerReference = resolver.resolve(column);
+        assertNotNull(innerReference);
+        assertTrue(innerReference.getTableReference() instanceof SqlBaseTableReference);
+        assertEquals("first_name", innerReference.getColumnName());
+        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) innerReference.getTableReference()).getTableId());
+
+        resolver.exitCurrentStatementContext();
         resolver.exitCurrentStatementContext();
     }
 

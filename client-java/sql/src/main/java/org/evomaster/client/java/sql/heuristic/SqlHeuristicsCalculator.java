@@ -30,23 +30,38 @@ public class SqlHeuristicsCalculator {
     public static Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
     public static Truthness FALSE_TRUTHNESS_BETTER = new Truthness(C_BETTER, 1);
 
+    private static QueryResultSet buildQueryResultSet(QueryResult... data) {
+        QueryResultSet queryResultSet = new QueryResultSet();
+        for (QueryResult queryResult : data) {
+            queryResultSet.addQueryResult(queryResult);
+        }
+        return queryResultSet;
+    }
+
+    private final SqlExpressionEvaluator parent;
     private final QueryResultSet queryResultSet;
     private final TaintHandler taintHandler;
     private final TableColumnResolver tableColumnResolver;
 
-    SqlHeuristicsCalculator(TableColumnResolver tableColumnResolver, TaintHandler taintHandler, QueryResultSet queryResultSet) {
+    SqlHeuristicsCalculator(SqlExpressionEvaluator parent,
+                            TableColumnResolver tableColumnResolver,
+                            TaintHandler taintHandler,
+                            QueryResultSet queryResultSet) {
+        this.parent = parent;
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.queryResultSet = queryResultSet;
     }
 
+    SqlHeuristicsCalculator(TableColumnResolver tableColumnResolver,
+                            TaintHandler taintHandler,
+                            QueryResultSet queryResultSet) {
+        this(null, tableColumnResolver, taintHandler, queryResultSet);
+    }
+
+
     public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResult... data) {
-        this.tableColumnResolver = new TableColumnResolver(schema);
-        this.queryResultSet = new QueryResultSet();
-        this.taintHandler = taintHandler;
-        for (QueryResult queryResult : data) {
-            queryResultSet.addQueryResult(queryResult);
-        }
+        this(new TableColumnResolver(schema), taintHandler, buildQueryResultSet(data));
     }
 
     public static boolean isValidSqlCommandForSqlHeuristicsCalculation(String sqlCommand) {
@@ -58,6 +73,10 @@ public class SqlHeuristicsCalculator {
         return (statement instanceof Update)
                 || (statement instanceof Delete)
                 || (statement instanceof Select);
+    }
+
+    public SqlExpressionEvaluator getParent() {
+        return parent;
     }
 
     public SqlDistanceWithMetrics computeDistance(String sqlCommand) {
@@ -428,7 +447,7 @@ public class SqlHeuristicsCalculator {
                 String aliasName = selectItem.getAlias() != null ? selectItem.getAlias().getName() : columnName;
                 String tableName;
                 if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
-                    tableName = ((SqlBaseTableReference)columnReference.getTableReference()).getName();
+                    tableName = ((SqlBaseTableReference) columnReference.getTableReference()).getName();
                 } else {
                     tableName = null;
                 }
@@ -450,7 +469,11 @@ public class SqlHeuristicsCalculator {
             List<Object> filteredValues = new ArrayList<>();
             for (SelectItem<?> selectItem : selectItems) {
                 Expression expression = selectItem.getExpression();
-                SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this.tableColumnResolver, this.taintHandler, this.queryResultSet, null);
+                SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this,
+                        this.tableColumnResolver,
+                        this.taintHandler,
+                        this.queryResultSet,
+                        null);
                 expression.accept(sqlExpressionEvaluator);
                 Object value = sqlExpressionEvaluator.getEvaluatedValue();
                 filteredValues.add(value);
@@ -471,7 +494,11 @@ public class SqlHeuristicsCalculator {
                         filteredValues.addAll(row.seeValues());
                     } else {
                         Expression expression = selectItem.getExpression();
-                        SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this.tableColumnResolver, this.taintHandler, this.queryResultSet, row);
+                        SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this,
+                                this.tableColumnResolver,
+                                this.taintHandler,
+                                this.queryResultSet,
+                                row);
                         expression.accept(sqlExpressionEvaluator);
                         Object value = sqlExpressionEvaluator.getEvaluatedValue();
                         filteredValues.add(value);
@@ -556,7 +583,8 @@ public class SqlHeuristicsCalculator {
 
         List<Truthness> truthnesses = new ArrayList<>();
         for (Expression condition : conditions) {
-            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this.tableColumnResolver,
+            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this,
+                    this.tableColumnResolver,
                     this.taintHandler,
                     this.queryResultSet,
                     row

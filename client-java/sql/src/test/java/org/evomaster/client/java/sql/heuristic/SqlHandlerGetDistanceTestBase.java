@@ -491,13 +491,6 @@ public abstract class SqlHandlerGetDistanceTestBase {
     }
 
     @Test
-    public void testGroupBy() throws SQLException {
-        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO customers VALUES (1, 'john', 24)");
-        final double sqlDistance = computeSqlDistance("SELECT COUNT(*) FROM customers WHERE name = 'joh' GROUP BY age");
-        // TODO Check expected distance
-    }
-
-    @Test
     public void testDateWithDateKeyword() throws SQLException {
         SqlScriptRunner.execCommand(getConnection(), "INSERT INTO employees VALUES (1, 'john', null, '2024-01-01 00:00:01')");
         final double sqlDistance = computeSqlDistance("SELECT * FROM employees WHERE hired = DATE '2024-01-01'");

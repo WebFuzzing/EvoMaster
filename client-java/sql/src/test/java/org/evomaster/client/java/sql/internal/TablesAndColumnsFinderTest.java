@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -22,76 +23,32 @@ class TablesAndColumnsFinderTest {
     private static DbInfoDto createSchema() {
         DbInfoDto schema = new DbInfoDto();
 
-        ColumnDto userNameColumn = new ColumnDto();
-        userNameColumn.name = "name";
-        userNameColumn.table = "Users";
-
-        ColumnDto ageColumn = new ColumnDto();
-        ageColumn.name = "age";
-        ageColumn.table = "Users";
-
         TableDto usersTable = new TableDto();
         usersTable.name = "Users";
-        usersTable.columns.add(userNameColumn);
-        usersTable.columns.add(ageColumn);
-
-        ColumnDto employeesNameColumn = new ColumnDto();
-        employeesNameColumn.name = "name";
-        employeesNameColumn.table = "Employees";
-
-        ColumnDto departmentIdColumn = new ColumnDto();
-        departmentIdColumn.name = "department_id";
-        departmentIdColumn.table = "Employees";
+        usersTable.columns.add(createColumnDto("name", "Users"));
+        usersTable.columns.add(createColumnDto("age", "Users"));
 
         TableDto employeesTable = new TableDto();
         employeesTable.name = "Employees";
-        employeesTable.columns.add(employeesNameColumn);
-        employeesTable.columns.add(departmentIdColumn);
-
-        ColumnDto departmentNameColumn = new ColumnDto();
-        departmentNameColumn.name = "department_name";
-        departmentNameColumn.table = "Departments";
-
-        ColumnDto departmentsIdColumn = new ColumnDto();
-        departmentsIdColumn.name = "id";
-        departmentsIdColumn.table = "Departments";
+        employeesTable.columns.add(createColumnDto("name", "Employees"));
+        employeesTable.columns.add(createColumnDto("department_id", "Employees"));
 
         TableDto departmentsTable = new TableDto();
         departmentsTable.name = "Departments";
-        departmentsTable.columns.add(departmentsIdColumn);
-        departmentsTable.columns.add(departmentNameColumn);
-
-        ColumnDto expiredColumn = new ColumnDto();
-        expiredColumn.name = "expired";
-        expiredColumn.table = "voting";
-
-        ColumnDto createdAtColumn = new ColumnDto();
-        createdAtColumn.name = "created_at";
-        createdAtColumn.table = "voting";
-
-        ColumnDto groupIdColumn = new ColumnDto();
-        groupIdColumn.name = "group_id";
-        groupIdColumn.table = "voting";
+        departmentsTable.columns.add(createColumnDto("id", "Departments"));
+        departmentsTable.columns.add(createColumnDto("department_name", "Departments"));
 
 
         TableDto votingTable = new TableDto();
         votingTable.name = "voting";
-        votingTable.columns.add(expiredColumn);
-        votingTable.columns.add(createdAtColumn);
-        votingTable.columns.add(groupIdColumn);
-
-        ColumnDto groupsIdColumn = new ColumnDto();
-        groupsIdColumn.name = "id";
-        groupsIdColumn.table = "groups";
-
-        ColumnDto votingDurationColumn = new ColumnDto();
-        votingDurationColumn.name = "voting_duration";
-        votingDurationColumn.table = "groups";
+        votingTable.columns.add(createColumnDto("expired", "voting"));
+        votingTable.columns.add(createColumnDto("created_at", "voting"));
+        votingTable.columns.add(createColumnDto("group_id", "voting"));
 
         TableDto groupsTable = new TableDto();
         groupsTable.name = "groups";
-        groupsTable.columns.add(groupsIdColumn);
-        groupsTable.columns.add(votingDurationColumn);
+        groupsTable.columns.add(createColumnDto("id", "groups"));
+        groupsTable.columns.add(createColumnDto("voting_duration", "groups"));
 
         schema.tables.add(usersTable);
         schema.tables.add(employeesTable);
@@ -99,6 +56,13 @@ class TablesAndColumnsFinderTest {
         schema.tables.add(votingTable);
         schema.tables.add(groupsTable);
         return schema;
+    }
+
+    private static @NotNull ColumnDto createColumnDto(String columName, String tableName) {
+        ColumnDto employeesNameColumn = new ColumnDto();
+        employeesNameColumn.name = columName;
+        employeesNameColumn.table = tableName;
+        return employeesNameColumn;
     }
 
     @Test
@@ -505,4 +469,79 @@ class TablesAndColumnsFinderTest {
 
 
     }
+
+    @Test
+    void findsOuterColumnWithTable() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT * FROM employees WHERE EXISTS (SELECT id FROM departments WHERE employees.department_id = departments.id)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        statement.accept(finder);
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+
+        final SqlBaseTableReference employees = new SqlBaseTableReference("employees");
+        final SqlBaseTableReference departments = new SqlBaseTableReference("departments");
+
+        assertTrue(finder.getBaseTableReferences().contains(employees));
+        assertTrue(finder.getBaseTableReferences().contains(departments));
+
+        assertEquals(2, finder.getColumnReferences(employees).size());
+        assertTrue( finder.getColumnReferences(employees).contains(new SqlColumnReference(employees, "name")));
+        assertTrue( finder.getColumnReferences(employees).contains(new SqlColumnReference(employees, "department_id")));
+
+        assertEquals(1, finder.getColumnReferences(departments).size());
+        assertTrue( finder.getColumnReferences(departments).contains(new SqlColumnReference(departments, "id")));
+    }
+
+    @Test
+    void findsOuterColumnWithAlias() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT 1 FROM employees e WHERE EXISTS (SELECT id FROM departments d WHERE e.department_id = d.id)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        statement.accept(finder);
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+
+        final SqlBaseTableReference employees = new SqlBaseTableReference("employees");
+        final SqlBaseTableReference departments = new SqlBaseTableReference("departments");
+
+        assertTrue(finder.getBaseTableReferences().contains(employees));
+        assertTrue(finder.getBaseTableReferences().contains(departments));
+
+        assertEquals(1, finder.getColumnReferences(employees).size());
+        assertTrue( finder.getColumnReferences(employees).contains(new SqlColumnReference(employees, "department_id")));
+
+        assertEquals(1, finder.getColumnReferences(departments).size());
+        assertTrue( finder.getColumnReferences(departments).contains(new SqlColumnReference(departments, "id")));
+
+    }
+
+    @Test
+    void findsOuterColumn() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT 1 FROM employees WHERE EXISTS (SELECT id FROM departments WHERE department_id = id)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        statement.accept(finder);
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+
+        final SqlBaseTableReference employees = new SqlBaseTableReference("employees");
+        final SqlBaseTableReference departments = new SqlBaseTableReference("departments");
+
+        assertTrue(finder.getBaseTableReferences().contains(employees));
+        assertTrue(finder.getBaseTableReferences().contains(departments));
+
+        assertEquals(1, finder.getColumnReferences(employees).size());
+        assertTrue( finder.getColumnReferences(employees).contains(new SqlColumnReference(employees, "department_id")));
+
+        assertEquals(1, finder.getColumnReferences(departments).size());
+        assertTrue( finder.getColumnReferences(departments).contains(new SqlColumnReference(departments, "id")));
+    }
+
 }
