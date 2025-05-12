@@ -84,7 +84,7 @@ public class SqlHeuristicsCalculator {
         return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
     }
 
-    private SqlHeuristicResult calculateHeuristic(Update update) {
+    SqlHeuristicResult calculateHeuristic(Update update) {
         tableColumnResolver.enterStatementeContext(update);
         final FromItem fromItem = getFrom(update);
         final List<Join> joins = getJoins(update);
@@ -95,7 +95,7 @@ public class SqlHeuristicsCalculator {
         return heuristicResult;
     }
 
-    private SqlHeuristicResult calculateHeuristic(Delete delete) {
+    SqlHeuristicResult calculateHeuristic(Delete delete) {
         tableColumnResolver.enterStatementeContext(delete);
         final FromItem fromItem = getFrom(delete);
         final List<Join> joins = getJoins(delete);
@@ -414,25 +414,33 @@ public class SqlHeuristicsCalculator {
         boolean hasAnyColumn = false;
         List<VariableDescriptor> filteredVariableDescriptors = new ArrayList<>();
         for (SelectItem<?> selectItem : selectItems) {
-            if (selectItem.getAlias() != null) {
-                VariableDescriptor variableDescriptor = new VariableDescriptor(selectItem.getAlias().getName());
-                filteredVariableDescriptors.add(variableDescriptor);
-            } else if (selectItem.getExpression() instanceof AllTableColumns) {
+            if (selectItem.getExpression() instanceof AllTableColumns) {
                 hasAnyColumn = true;
+                // TODO Create all table column variable descriptors
+
             } else if (selectItem.getExpression() instanceof AllColumns) {
                 hasAnyColumn = true;
+                filteredVariableDescriptors.addAll(queryResult.seeVariableDescriptors());
             } else if (selectItem.getExpression() instanceof Column) {
                 Column column = (Column) selectItem.getExpression();
-                SqlColumnReference columnRefence = this.tableColumnResolver.resolveToBaseTableColumnReference(column);
-                String columnName = columnRefence.getColumnName();
-                String tableName = ((SqlBaseTableReference)columnRefence.getTableReference()).getName();
-                String aliasName = selectItem.getAlias() != null ? selectItem.getAlias().getName() : columnRefence.getColumnName();
+                SqlColumnReference columnReference = this.tableColumnResolver.resolve(column);
+                String columnName = columnReference.getColumnName();
+                String aliasName = selectItem.getAlias() != null ? selectItem.getAlias().getName() : columnName;
+                String tableName;
+                if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
+                    tableName = ((SqlBaseTableReference)columnReference.getTableReference()).getName();
+                } else {
+                    tableName = null;
+                }
                 VariableDescriptor variableDescriptor = new VariableDescriptor(columnName, aliasName, tableName);
                 filteredVariableDescriptors.add(variableDescriptor);
                 hasAnyColumn = true;
             } else {
-                // create default unnamed column
-                VariableDescriptor variableDescriptor = new VariableDescriptor(null);
+                // create unnamed column
+                String columnName = selectItem.getAlias() != null
+                        ? selectItem.getAlias().getName()
+                        : null;
+                VariableDescriptor variableDescriptor = new VariableDescriptor(columnName);
                 filteredVariableDescriptors.add(variableDescriptor);
             }
         }
@@ -454,9 +462,13 @@ public class SqlHeuristicsCalculator {
                 List<Object> filteredValues = new ArrayList<>();
                 for (SelectItem<?> selectItem : selectItems) {
                     if (selectItem.getExpression() instanceof AllTableColumns) {
-
+                        AllTableColumns allTableColumns = (AllTableColumns) selectItem.getExpression();
+                        SqlTableReference tableReference = this.tableColumnResolver.resolve(allTableColumns.getTable());
+                        if (tableReference instanceof SqlBaseTableReference) {
+                            SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
+                        }
                     } else if (selectItem.getExpression() instanceof AllColumns) {
-
+                        filteredValues.addAll(row.seeValues());
                     } else {
                         Expression expression = selectItem.getExpression();
                         SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this.tableColumnResolver, this.taintHandler, this.queryResultSet, row);
@@ -564,7 +576,12 @@ public class SqlHeuristicsCalculator {
                 throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + fromItem);
             }
             String tableName = SqlParserUtils.getTableName(fromItem);
-            tableData = queryResultSet.getQueryResultForNamedTable(tableName);
+
+            if (fromItem.getAlias() != null) {
+                tableData = QueryResultUtils.addAliasToQueryResult(queryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
+            } else {
+                tableData = queryResultSet.getQueryResultForNamedTable(tableName);
+            }
         }
         return tableData;
     }

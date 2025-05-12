@@ -27,6 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.evomaster.client.java.sql.DataRow.equalsIgnoreCaseWithNull;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
@@ -714,11 +715,27 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         if (BooleanLiteralsHelper.isBooleanLiteral(column.getColumnName())) {
             value = BooleanLiteralsHelper.isTrueLiteral(column.getColumnName());
         } else {
-            SqlColumnReference sqlColumnReference = tableColumnResolver.resolveToBaseTableColumnReference(column);
-            SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlColumnReference.getTableReference();
-            final String baseTableName = sqlBaseTableReference.getName();
+            SqlColumnReference sqlColumnReference = tableColumnResolver.resolve(column);
+            final String baseTableName;
+            if (sqlColumnReference.getTableReference() instanceof SqlBaseTableReference) {
+                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlColumnReference.getTableReference();
+                baseTableName = sqlBaseTableReference.getName();
+            } else {
+                baseTableName = null;
+            }
             final String columnName = sqlColumnReference.getColumnName();
-            value = currentDataRow.getValueByName(columnName, baseTableName);
+            // check if baseTableName/columnName is repeated in current data row
+            if (this.currentDataRow.getVariableDescriptors().stream()
+                    .filter(vd -> equalsIgnoreCaseWithNull(vd.getTableName(), baseTableName)
+                            && equalsIgnoreCaseWithNull(vd.getColumnName(), columnName))
+                    .count() > 1) {
+
+                // Use table name as table alias
+                value = currentDataRow.getValueByName(columnName, baseTableName, column.getTable().getFullyQualifiedName());
+            } else {
+                value = currentDataRow.getValueByName(columnName, baseTableName);
+            }
+
         }
         return value;
     }

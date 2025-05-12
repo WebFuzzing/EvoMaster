@@ -106,24 +106,7 @@ public class TableColumnResolver {
         return statementStack.peek();
     }
 
-    public SqlColumnReference resolveToBaseTableColumnReference(Column column) {
-        SqlColumnReference columnReference = this.resolve(column);
-        if (columnReference==null) {
-            // column was not found
-            return null;
-        }
-        if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
-            return columnReference;
-        } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
-            Select select = ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect();
-            SqlColumnReference baseTableColumnReference = this.findBaseTableColumnReference(select, column.getColumnName());
-            return baseTableColumnReference;
-        } else {
-            throw new IllegalStateException("Unexpected table reference type: " + columnReference.getTableReference().getClass().getName());
-        }
-    }
-
-    SqlColumnReference resolve(Column column) {
+    public SqlColumnReference resolve(Column column) {
         final Statement currentStatement = statementStack.peek();
         final SqlColumnId columnId = new SqlColumnId(column.getColumnName());
         if (currentStatement == null) {

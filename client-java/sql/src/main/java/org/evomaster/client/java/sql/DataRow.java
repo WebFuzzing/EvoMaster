@@ -79,13 +79,19 @@ public class DataRow {
         return getValueByName(name, null);
     }
 
+    public static boolean equalsIgnoreCaseWithNull(String l, String r) {
+        if (l == null)
+            return r == null;
+        else
+            return l.equalsIgnoreCase(r);
+    }
+
     public Object getValueByName(String name, String table) {
-        Objects.requireNonNull(name);
-        String n = name.trim();
+        String n = (name == null ? null : name.trim());
         String t = (table == null ? null : table.trim());
 
         //true/false are reserved keywords
-        if (BooleanLiteralsHelper.isBooleanLiteral(n)) {
+        if (n != null && BooleanLiteralsHelper.isBooleanLiteral(n)) {
             return BooleanLiteralsHelper.isTrueLiteral(n);
         }
 
@@ -93,7 +99,7 @@ public class DataRow {
         if (t == null || t.isEmpty()) {
             for (int i = 0; i < variableDescriptors.size(); i++) {
                 VariableDescriptor desc = variableDescriptors.get(i);
-                if (n.equalsIgnoreCase(desc.getAlias())) {
+                if (equalsIgnoreCaseWithNull(n, desc.getAliasColumnName())) {
                     return getValue(i);
                 }
             }
@@ -102,16 +108,16 @@ public class DataRow {
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if ((n.equalsIgnoreCase(desc.getColumnName()) || n.equalsIgnoreCase(desc.getAlias())) &&
+            if ((equalsIgnoreCaseWithNull(n, desc.getColumnName()) || equalsIgnoreCaseWithNull(n, desc.getAliasColumnName())) &&
                     (t == null || t.isEmpty()
-                            || t.equalsIgnoreCase(desc.getTableName())
+                            || equalsIgnoreCaseWithNull(t, desc.getTableName())
                             /*
                                 TODO: this does not cover all possible cases, as in theory
                                 there can be many unnamed tables (eg results of sub-selects)
                                 with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
-                            || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)
+                            || equalsIgnoreCaseWithNull(t, SqlNameContext.UNNAMED_TABLE)
                     )
             ) {
                 return getValue(i);
@@ -131,5 +137,18 @@ public class DataRow {
         dto.columnData = values.stream().map(obj -> (obj != null) ? obj.toString() : NULL_VALUE).collect(Collectors.toList());
 
         return dto;
+    }
+
+    public Object getValueByName(String columnName, String baseTableName, String aliasTableName) {
+        Objects.requireNonNull(aliasTableName);
+
+        for (int i = 0; i < this.variableDescriptors.size(); i++) {
+            VariableDescriptor desc = variableDescriptors.get(i);
+            if ((equalsIgnoreCaseWithNull(columnName, desc.getColumnName()) || equalsIgnoreCaseWithNull(columnName, desc.getAliasColumnName()))
+                    && (equalsIgnoreCaseWithNull(baseTableName, desc.getTableName()) && equalsIgnoreCaseWithNull(aliasTableName, desc.getAliasTableName())))
+                return values.get(i);
+        }
+
+        throw new IllegalArgumentException("No variable called '" + columnName + "' for table '" + baseTableName + "/" + aliasTableName + "'");
     }
 }

@@ -680,4 +680,22 @@ class TableColumnResolverTest {
 
         resolver.exitCurrentStatementContext();
     }
+
+    @Test
+    void testResolveColumnInNestedSubqueryNoAlliases() throws Exception {
+        String sql = "SELECT * FROM (SELECT first_name FROM (SELECT * FROM employees))";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("first_name");
+
+        SqlColumnReference reference = resolver.resolve(column);
+        assertNotNull(reference);
+        assertTrue(reference.getTableReference() instanceof SqlDerivedTableReference);
+        assertEquals("first_name", reference.getColumnName());
+
+        resolver.exitCurrentStatementContext();
+    }
+
 }

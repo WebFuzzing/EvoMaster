@@ -17,7 +17,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     private final DbInfoDto schema;
 
-    private final TableColumnResolver columnReferenceResolver;
+    private final TableColumnResolver tableColumnResolver;
 
     private final Map<SqlBaseTableReference, Set<SqlColumnReference>> columnReferences = new LinkedHashMap<>();
 
@@ -27,35 +27,35 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     public TablesAndColumnsFinder(DbInfoDto schema) {
         super();
-        this.columnReferenceResolver = new TableColumnResolver(schema);
+        this.tableColumnResolver = new TableColumnResolver(schema);
         this.schema = schema;
         this.init(true);
     }
 
     @Override
     public void visit(PlainSelect plainSelect) {
-        this.columnReferenceResolver.enterStatementeContext(plainSelect);
+        this.tableColumnResolver.enterStatementeContext(plainSelect);
         super.visit(plainSelect);
-        this.columnReferenceResolver.exitCurrentStatementContext();
+        this.tableColumnResolver.exitCurrentStatementContext();
     }
 
 
     @Override
     public void visit(Update update) {
-        this.columnReferenceResolver.enterStatementeContext(update);
+        this.tableColumnResolver.enterStatementeContext(update);
         super.visit(update);
         for (UpdateSet updateSet : update.getUpdateSets()) {
             updateSet.getColumns().accept(this);
             updateSet.getValues().accept(this);
         }
-        this.columnReferenceResolver.exitCurrentStatementContext();
+        this.tableColumnResolver.exitCurrentStatementContext();
     }
 
     @Override
     public void visit(Delete delete) {
-        this.columnReferenceResolver.enterStatementeContext(delete);
+        this.tableColumnResolver.enterStatementeContext(delete);
         super.visit(delete);
-        this.columnReferenceResolver.exitCurrentStatementContext();
+        this.tableColumnResolver.exitCurrentStatementContext();
     }
 
     public Set<SqlBaseTableReference> getBaseTableReferences() {
@@ -76,12 +76,14 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         if (BooleanLiteralsHelper.isBooleanLiteral(tableColumn.getColumnName())) {
             return; // Skip boolean literals
         }
-        final SqlColumnReference columnReference = this.columnReferenceResolver.resolveToBaseTableColumnReference(tableColumn);
+        final SqlColumnReference columnReference = this.tableColumnResolver.resolve(tableColumn);
         if (columnReference == null) {
             throw new IllegalStateException("Column reference could not be resolved for: " + tableColumn);
         }
-        final SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
-        addColumnReference(baseTableReference, columnReference);
+        if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
+            final SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
+            addColumnReference(baseTableReference, columnReference);
+        }
     }
 
     private void addColumnReference(SqlBaseTableReference baseTableReference, SqlColumnReference columnReference) {
@@ -93,8 +95,8 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     @Override
     public void visit(AllColumns allColumns) {
-        Statement statement = columnReferenceResolver.getCurrentStatement();
-        Set<SqlColumnReference> selectedColumns = this.columnReferenceResolver.getColumns((Select) statement);
+        Statement statement = tableColumnResolver.getCurrentStatement();
+        Set<SqlColumnReference> selectedColumns = this.tableColumnResolver.getColumns((Select) statement);
         for (SqlColumnReference columnReference : selectedColumns) {
             if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
                 SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
@@ -117,7 +119,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     @Override
     public void visit(AllTableColumns allTableColumns) {
         super.visit(allTableColumns);
-        SqlTableReference tableReference = columnReferenceResolver.resolve(allTableColumns.getTable());
+        SqlTableReference tableReference = tableColumnResolver.resolve(allTableColumns.getTable());
         if (tableReference instanceof SqlDerivedTableReference) {
             /*
              * If the table is a derived table, the columns
@@ -146,7 +148,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
         String tableWholeName = extractTableName(tableName);
         if (!otherItemNames.contains(tableWholeName.toLowerCase())) {
-            SqlTableReference tableReference = columnReferenceResolver.resolve(tableName);
+            SqlTableReference tableReference = tableColumnResolver.resolve(tableName);
             if (tableReference instanceof SqlBaseTableReference) {
                 SqlBaseTableReference baseTableReference = (SqlBaseTableReference)tableReference;
                 baseTableReferences.add(baseTableReference);

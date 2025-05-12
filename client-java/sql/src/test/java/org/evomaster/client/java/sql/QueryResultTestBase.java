@@ -277,8 +277,9 @@ public abstract class QueryResultTestBase {
         // check the results
         assertEquals(1, queryResult.seeRows().size());
         DataRow row = queryResult.seeRows().get(0);
-        Object actual_first_name = row.getValueByName("first_name", "subquery");
-        assertEquals("John", actual_first_name);
+            Object actual_first_name = row.getValue(2);
+            assertEquals("John", actual_first_name);
+
     }
 
 }
