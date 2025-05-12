@@ -259,6 +259,7 @@ class SecurityRest {
         //authenticated, but wrongly getting 401 (eg instead of 403)
         handleNotRecognizedAuthenticated()
 
+        handleForbiddenAuthentication()
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -600,6 +601,14 @@ class SecurityRest {
             //if we arrive here, should always be added, because we are creating a new testing target
             assert(added)
         }
+    }
+
+
+    /**
+     * Check if there is a test case with a 403 and another one with a 200 without authentication
+     */
+    private fun handleForbiddenAuthentication(){
+        //TODO have to check in here
     }
 
     /**
