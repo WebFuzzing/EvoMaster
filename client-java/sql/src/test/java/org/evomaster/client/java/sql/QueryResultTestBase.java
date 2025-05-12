@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.sql.Connection;
@@ -233,6 +234,51 @@ public abstract class QueryResultTestBase {
         Object actual_last_name = row.getValueByName("surname", "example_table");
         assertEquals("John", actual_first_name);
         assertEquals("Doe", actual_last_name);
+    }
+
+
+    @Test
+    public void testSubqueryNoAlias() throws Exception {
+        Assumptions.assumeFalse(getDbType() == DatabaseType.MYSQL);
+        Assumptions.assumeFalse(getDbType() == DatabaseType.POSTGRES);
+
+        // set up the database
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
+                "    first_name VARCHAR(255) NOT NULL,\n" +
+                "    last_name VARCHAR(255) NOT NULL\n" +
+                ");");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (first_name, last_name)\n" +
+                "VALUES ('John','Doe');\n");
+
+        // create the queryResult
+        QueryResult queryResult = SqlScriptRunner.execCommand(getConnection(), "SELECT first_name FROM (SELECT first_name FROM example_table)");
+
+        // check the results
+        assertEquals(1, queryResult.seeRows().size());
+        DataRow row = queryResult.seeRows().get(0);
+        Object actual_first_name = row.getValueByName("first_name", null);
+        assertEquals("John", actual_first_name);
+    }
+
+
+    @Test
+    public void testSubqueryAlias() throws Exception {
+        // set up the database
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
+                "    first_name VARCHAR(255) NOT NULL,\n" +
+                "    last_name VARCHAR(255) NOT NULL\n" +
+                ");");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (first_name, last_name)\n" +
+                "VALUES ('John','Doe');\n");
+
+        // create the queryResult
+        QueryResult queryResult = SqlScriptRunner.execCommand(getConnection(), "SELECT 24, 12, first_name FROM (SELECT first_name FROM example_table) subquery");
+
+        // check the results
+        assertEquals(1, queryResult.seeRows().size());
+        DataRow row = queryResult.seeRows().get(0);
+        Object actual_first_name = row.getValueByName("first_name", "subquery");
+        assertEquals("John", actual_first_name);
     }
 
 }

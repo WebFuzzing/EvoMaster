@@ -105,19 +105,19 @@ class TablesAndColumnsFinderTest {
     void findsTablesAndColumnsInSimpleSelectQuery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT name, age FROM Users WHERE age>18";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
 
         final SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
 
     }
 
@@ -131,23 +131,23 @@ class TablesAndColumnsFinderTest {
         DbInfoDto schema = createSchema();
 
         String sql = "SELECT e.name, u.age FROM Employees e JOIN Users u ON e.name = u.name";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(employeesTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(employeesTableReference).size());
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
 
     }
 
@@ -155,25 +155,25 @@ class TablesAndColumnsFinderTest {
     void findsTablesAndColumnsInSubquery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT name FROM (SELECT name, age FROM Users WHERE age > 30) AS subquery";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
     void findsTablesAndColumnsInUnionQuery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT name FROM Users UNION SELECT name FROM Employees";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
@@ -181,51 +181,51 @@ class TablesAndColumnsFinderTest {
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
         SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(employeesTableReference));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
 
-        assertEquals(1, finder.getColumnReferences().get(employeesTableReference).size());
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
     }
 
     @Test
     void handlesQueryWithoutTables() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT 1";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
-        assertTrue(finder.getColumnReferences().isEmpty());
+        assertTrue(finder.getBaseTableReferences().isEmpty());
     }
 
     @Test
     void findsTablesAndColumnsInNestedSubqueries() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT name FROM (SELECT name FROM (SELECT name, age FROM Users WHERE age > 30) AS innerSubquery) AS outerSubquery";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
     void findsTablesAndColumnsInUnionWithAliases() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT u.name FROM Users u UNION SELECT e.name FROM Employees e";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
@@ -233,22 +233,22 @@ class TablesAndColumnsFinderTest {
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
         SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(employeesTableReference));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
 
-        assertEquals(1, finder.getColumnReferences().get(employeesTableReference).size());
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
     }
 
     @Test
     void findsTablesAndColumnsInJoinWithSubqueries() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT e.name, u.age FROM (SELECT name FROM Employees) e JOIN (SELECT age FROM Users) u ON e.name = u.age";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
@@ -256,15 +256,15 @@ class TablesAndColumnsFinderTest {
         SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(employeesTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(employeesTableReference).size());
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertEquals(1, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
 
-        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
@@ -272,78 +272,78 @@ class TablesAndColumnsFinderTest {
         DbInfoDto schema = createSchema();
         String sql = "SELECT e.name, d.department_name FROM (SELECT name, department_id FROM Employees) e " +
                 "JOIN (SELECT id, department_name FROM Departments) d ON e.department_id = d.id";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
-
 
         SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
         SqlBaseTableReference departmentsTableReference = new SqlBaseTableReference("Departments");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(employeesTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(departmentsTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(employeesTableReference).size());
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+        assertTrue(finder.containsColumnReferences(departmentsTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(departmentsTableReference).size());
-        assertTrue(finder.getColumnReferences().get(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "id")));
-        assertTrue(finder.getColumnReferences().get(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "department_name")));
+        assertEquals(2, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
+
+        assertEquals(2, finder.getColumnReferences(departmentsTableReference).size());
+        assertTrue(finder.getColumnReferences(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "id")));
+        assertTrue(finder.getColumnReferences(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "department_name")));
     }
 
     @Test
     void findsTablesAndColumnsInCountQuery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT COUNT(*) AS n FROM Users f WHERE f.age > 18";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
     }
 
     @Test
     void testCountWithoutWhere() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT COUNT(f.age) AS n FROM Users f";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
     void findsTablesAndColumnsInGroupByQuery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT COUNT(name), age FROM Users u GROUP BY age";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
@@ -354,7 +354,7 @@ class TablesAndColumnsFinderTest {
                 "AND '2021-04-28T16:02:27.426+0200' >= v.created_at + g.voting_duration * INTERVAL '1 hour' " +
                 "AND v.group_id = g.id";
 
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
@@ -362,107 +362,147 @@ class TablesAndColumnsFinderTest {
         SqlBaseTableReference votingTableReference = new SqlBaseTableReference("voting");
         SqlBaseTableReference groupsTableReference = new SqlBaseTableReference("groups");
 
-        assertEquals(2, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(votingTableReference));
-        assertTrue(finder.getColumnReferences().containsKey(groupsTableReference));
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(votingTableReference));
+        assertTrue(finder.containsColumnReferences(groupsTableReference));
 
-        assertEquals(3, finder.getColumnReferences().get(votingTableReference).size());
-        assertTrue(finder.getColumnReferences().get(votingTableReference).contains(new SqlColumnReference(votingTableReference, "expired")));
-        assertTrue(finder.getColumnReferences().get(votingTableReference).contains(new SqlColumnReference(votingTableReference, "created_at")));
-        assertTrue(finder.getColumnReferences().get(votingTableReference).contains(new SqlColumnReference(votingTableReference, "group_id")));
+        assertEquals(3, finder.getColumnReferences(votingTableReference).size());
+        assertTrue(finder.getColumnReferences(votingTableReference).contains(new SqlColumnReference(votingTableReference, "expired")));
+        assertTrue(finder.getColumnReferences(votingTableReference).contains(new SqlColumnReference(votingTableReference, "created_at")));
+        assertTrue(finder.getColumnReferences(votingTableReference).contains(new SqlColumnReference(votingTableReference, "group_id")));
 
-        assertEquals(2, finder.getColumnReferences().get(groupsTableReference).size());
-        assertTrue(finder.getColumnReferences().get(groupsTableReference).contains(new SqlColumnReference(groupsTableReference, "voting_duration")));
-        assertTrue(finder.getColumnReferences().get(groupsTableReference).contains(new SqlColumnReference(groupsTableReference, "id")));
+        assertEquals(2, finder.getColumnReferences(groupsTableReference).size());
+        assertTrue(finder.getColumnReferences(groupsTableReference).contains(new SqlColumnReference(groupsTableReference, "voting_duration")));
+        assertTrue(finder.getColumnReferences(groupsTableReference).contains(new SqlColumnReference(groupsTableReference, "id")));
     }
 
     @Test
     void findsTablesAndColumnsInUpdateStatement() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "UPDATE Users SET age = 30 WHERE name = 'John'";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
     }
 
     @Test
     void findsTablesAndColumnsInDeleteStatement() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "DELETE FROM Users WHERE age > 18";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
 
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(1, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
     void findsTablesInDelete() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "DELETE FROM Users";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
 
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(usersTableReference));
 
-        assertTrue(finder.getColumnReferences().get(usersTableReference).isEmpty());
     }
 
     @Test
     void findsTablesAndColumnsInSelectAllQuery() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT * FROM Users";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
     }
 
     @Test
     void findsTablesAndColumnsInSelectAllFromDerivedTable() throws JSQLParserException {
         DbInfoDto schema = createSchema();
         String sql = "SELECT v.* FROM (SELECT name, age FROM Users WHERE age > 18) v";
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, createBooleanConstantNames());
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         Statement statement = CCJSqlParserUtil.parse(sql);
         statement.accept(finder);
 
         SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
 
-        assertEquals(1, finder.getColumnReferences().keySet().size());
-        assertTrue(finder.getColumnReferences().containsKey(usersTableReference));
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
 
-        assertEquals(2, finder.getColumnReferences().get(usersTableReference).size());
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
-        assertTrue(finder.getColumnReferences().get(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+    }
+
+    @Test
+    void findsTwoColumns() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT * FROM Users WHERE name = 'joh' AND age IS NULL";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        statement.accept(finder);
+
+        SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(usersTableReference));
+
+        assertEquals(2, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "name")));
+    }
+
+    @Test
+    void findsDeleteJoinNoOnClause() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "DELETE FROM users JOIN departments WHERE age = 25";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+
+        statement.accept(finder);
+
+        SqlBaseTableReference usersTableReference = new SqlBaseTableReference("Users");
+        SqlBaseTableReference departmentsTableReference = new SqlBaseTableReference("Departments");
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(usersTableReference));
+        assertTrue(finder.getBaseTableReferences().contains(departmentsTableReference));
+
+        assertEquals(1, finder.getColumnReferences(usersTableReference).size());
+        assertTrue(finder.getColumnReferences(usersTableReference).contains(new SqlColumnReference(usersTableReference, "age")));
+
+
     }
 }

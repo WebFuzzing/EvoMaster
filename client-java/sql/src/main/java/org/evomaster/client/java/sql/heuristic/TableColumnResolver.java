@@ -8,7 +8,9 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.sql.internal.SqlColumnId;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
+import org.evomaster.client.java.sql.internal.SqlTableId;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -75,23 +77,23 @@ public class TableColumnResolver {
                 .count() > 0;
     }
 
-    private Set<SqlColumnReference> getColumns(String baseTableFullyQualifiedName) {
-        Objects.requireNonNull(baseTableFullyQualifiedName);
+    private Set<SqlColumnReference> getColumns(SqlTableId baseTableId) {
+        Objects.requireNonNull(baseTableId);
 
         return this.schema.tables.stream()
-                .filter(t -> equalNames(t.name, baseTableFullyQualifiedName))
+                .filter(t -> new SqlTableId(t.name).equals(baseTableId))
                 .flatMap(t -> t.columns.stream())
                 .map(c -> new SqlColumnReference(new SqlBaseTableReference(c.table), c.name))
                 .collect(Collectors.toSet());
     }
 
-    private boolean hasColumn(String baseTableFullyQualifiedName, String columnName) {
-        Objects.requireNonNull(baseTableFullyQualifiedName);
+    private boolean hasColumn(SqlTableId sqlTableId, SqlColumnId sqlColumnId) {
+        Objects.requireNonNull(sqlTableId);
 
         return this.schema.tables.stream()
-                .filter(t -> equalNames(t.name, baseTableFullyQualifiedName))
+                .filter(t -> new SqlTableId(t.name).equals(sqlTableId))
                 .flatMap(t -> t.columns.stream())
-                .filter(c -> equalNames(c.name, columnName))
+                .filter(c -> new SqlColumnId(c.name).equals(sqlColumnId))
                 .count() > 0;
     }
 
@@ -104,8 +106,26 @@ public class TableColumnResolver {
         return statementStack.peek();
     }
 
-    public SqlColumnReference resolve(Column column) {
+    public SqlColumnReference resolveToBaseTableColumnReference(Column column) {
+        SqlColumnReference columnReference = this.resolve(column);
+        if (columnReference==null) {
+            // column was not found
+            return null;
+        }
+        if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
+            return columnReference;
+        } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
+            Select select = ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect();
+            SqlColumnReference baseTableColumnReference = this.findBaseTableColumnReference(select, column.getColumnName());
+            return baseTableColumnReference;
+        } else {
+            throw new IllegalStateException("Unexpected table reference type: " + columnReference.getTableReference().getClass().getName());
+        }
+    }
+
+    SqlColumnReference resolve(Column column) {
         final Statement currentStatement = statementStack.peek();
+        final SqlColumnId columnId = new SqlColumnId(column.getColumnName());
         if (currentStatement == null) {
             throw new IllegalStateException("No current select context");
         }
@@ -114,7 +134,7 @@ public class TableColumnResolver {
             if (sqlTableReference != null) {
                 if (sqlTableReference instanceof SqlBaseTableReference) {
                     final SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-                    if (hasColumn(sqlBaseTableReference.getFullyQualifiedName(), column.getColumnName())) {
+                    if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                         return new SqlColumnReference(sqlBaseTableReference, column.getColumnName());
                     }
                 } else if (sqlTableReference instanceof SqlDerivedTableReference) {
@@ -293,7 +313,7 @@ public class TableColumnResolver {
             }
             if (sqlTableReference instanceof SqlBaseTableReference) {
                 SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-                return getColumns(sqlBaseTableReference.getFullyQualifiedName());
+                return getColumns(sqlBaseTableReference.getTableId());
             } else if (sqlTableReference instanceof SqlDerivedTableReference) {
                 SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
                 return getColumns(sqlDerivedTableReference.getSelect());
@@ -344,7 +364,8 @@ public class TableColumnResolver {
             }
             if (sqlTableReference instanceof SqlBaseTableReference) {
                 SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-                if (hasColumn(sqlBaseTableReference.getFullyQualifiedName(), columnName)) {
+                SqlColumnId columnId = new SqlColumnId(columnName);
+                if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
             } else if (sqlTableReference instanceof SqlDerivedTableReference) {

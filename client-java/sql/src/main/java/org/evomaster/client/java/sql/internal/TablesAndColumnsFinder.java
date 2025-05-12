@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.internal;
 
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
@@ -10,11 +11,7 @@ import net.sf.jsqlparser.util.TablesNamesFinder;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.heuristic.*;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class TablesAndColumnsFinder extends TablesNamesFinder {
 
@@ -22,16 +19,16 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     private final TableColumnResolver columnReferenceResolver;
 
-    private final Set<String> booleanConstantNames;
-
     private final Map<SqlBaseTableReference, Set<SqlColumnReference>> columnReferences = new LinkedHashMap<>();
 
+    private final Set<SqlBaseTableReference> baseTableReferences = new LinkedHashSet<>();
 
-    public TablesAndColumnsFinder(DbInfoDto schema, Set<String> booleanConstantNames) {
+    private Set<String> otherItemNames = new HashSet<>();
+
+    public TablesAndColumnsFinder(DbInfoDto schema) {
         super();
         this.columnReferenceResolver = new TableColumnResolver(schema);
         this.schema = schema;
-        this.booleanConstantNames = booleanConstantNames;
         this.init(true);
     }
 
@@ -51,11 +48,6 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             updateSet.getColumns().accept(this);
             updateSet.getValues().accept(this);
         }
-        String tableName = update.getTable().getFullyQualifiedName();
-        SqlBaseTableReference sqlBaseTableReference = new SqlBaseTableReference(tableName);
-        if (!this.columnReferences.containsKey(sqlBaseTableReference)) {
-            this.columnReferences.put(sqlBaseTableReference, new LinkedHashSet<>());
-        }
         this.columnReferenceResolver.exitCurrentStatementContext();
     }
 
@@ -63,45 +55,39 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     public void visit(Delete delete) {
         this.columnReferenceResolver.enterStatementeContext(delete);
         super.visit(delete);
-        String tableName = delete.getTable().getFullyQualifiedName();
-        SqlBaseTableReference sqlBaseTableReference = new SqlBaseTableReference(tableName);
-        if (!this.columnReferences.containsKey(sqlBaseTableReference)) {
-            this.columnReferences.put(sqlBaseTableReference, new LinkedHashSet<>());
-        }
         this.columnReferenceResolver.exitCurrentStatementContext();
     }
 
-    public Map<SqlBaseTableReference, Set<SqlColumnReference>> getColumnReferences() {
-        return columnReferences;
+    public Set<SqlBaseTableReference> getBaseTableReferences() {
+        return baseTableReferences;
     }
 
+    public Set<SqlColumnReference> getColumnReferences(SqlBaseTableReference baseTableReference) {
+        Objects.requireNonNull(baseTableReference);
+        if (!this.columnReferences.containsKey(baseTableReference)) {
+            throw new IllegalStateException("No column references found for table: " + baseTableReference);
+        }
+        return columnReferences.get(baseTableReference);
+    }
 
     @Override
     public void visit(Column tableColumn) {
         super.visit(tableColumn);
-        //TODO check for booleanConstantNames
-        if (tableColumn.getColumnName().equals("true") || tableColumn.getColumnName().equals("false")) {
+        if (BooleanLiteralsHelper.isBooleanLiteral(tableColumn.getColumnName())) {
             return; // Skip boolean literals
         }
-        final SqlColumnReference sqlColumnReference = this.columnReferenceResolver.resolve(tableColumn);
-        if (sqlColumnReference == null) {
+        final SqlColumnReference columnReference = this.columnReferenceResolver.resolveToBaseTableColumnReference(tableColumn);
+        if (columnReference == null) {
             throw new IllegalStateException("Column reference could not be resolved for: " + tableColumn);
         }
-        final SqlTableReference sqlTableReference = sqlColumnReference.getTableReference();
-        final SqlBaseTableReference sqlBaseTableReference;
-        final SqlColumnReference baseTableSqlColumnReference;
-        if (sqlTableReference instanceof SqlBaseTableReference) {
-            sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-            baseTableSqlColumnReference = sqlColumnReference;
-        } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-            SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-            baseTableSqlColumnReference = this.columnReferenceResolver.findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), tableColumn.getColumnName());
-            sqlBaseTableReference = (SqlBaseTableReference) baseTableSqlColumnReference.getTableReference();
-        } else {
-            throw new IllegalStateException("Unexpected table reference type: " + sqlTableReference.getClass().getName());
-        }
-        Set<SqlColumnReference> sqlColumnReferencesSet = columnReferences.computeIfAbsent(sqlBaseTableReference, k -> new LinkedHashSet<>());
-        sqlColumnReferencesSet.add(baseTableSqlColumnReference);
+        final SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
+        addColumnReference(baseTableReference, columnReference);
+    }
+
+    private void addColumnReference(SqlBaseTableReference baseTableReference, SqlColumnReference columnReference) {
+        Set<SqlColumnReference> sqlColumnReferencesSet = columnReferences.computeIfAbsent(baseTableReference, k -> new LinkedHashSet<>());
+        sqlColumnReferencesSet.add(columnReference);
+        baseTableReferences.add(baseTableReference);
     }
 
 
@@ -109,12 +95,11 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     public void visit(AllColumns allColumns) {
         Statement statement = columnReferenceResolver.getCurrentStatement();
         Set<SqlColumnReference> selectedColumns = this.columnReferenceResolver.getColumns((Select) statement);
-        for (SqlColumnReference sqlColumnReference : selectedColumns) {
-            if (sqlColumnReference.getTableReference() instanceof SqlBaseTableReference) {
-                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlColumnReference.getTableReference();
-                Set<SqlColumnReference> sqlColumnReferencesSet = columnReferences.computeIfAbsent(sqlBaseTableReference, k -> new LinkedHashSet<>());
-                sqlColumnReferencesSet.add(sqlColumnReference);
-            } else if (sqlColumnReference.getTableReference() instanceof SqlDerivedTableReference) {
+        for (SqlColumnReference columnReference : selectedColumns) {
+            if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
+                SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
+                addColumnReference(baseTableReference, columnReference);
+            } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
                 /*
                  * If the table is a derived table, the columns
                  * that are used are collected when processing the
@@ -123,7 +108,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
                  * column references map.
                  */
             } else {
-                throw new IllegalStateException("Unexpected table reference type: " + sqlColumnReference.getTableReference().getClass().getName());
+                throw new IllegalStateException("Unexpected table reference type: " + columnReference.getTableReference().getClass().getName());
             }
         }
         super.visit(allColumns);
@@ -132,8 +117,8 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     @Override
     public void visit(AllTableColumns allTableColumns) {
         super.visit(allTableColumns);
-        SqlTableReference sqlTableReference = columnReferenceResolver.resolve(allTableColumns.getTable());
-        if (sqlTableReference instanceof SqlDerivedTableReference) {
+        SqlTableReference tableReference = columnReferenceResolver.resolve(allTableColumns.getTable());
+        if (tableReference instanceof SqlDerivedTableReference) {
             /*
              * If the table is a derived table, the columns
              * that are used are collected when processing the
@@ -141,20 +126,41 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
              * we do not need to add them to the collected
              * column references map.
              */
-        } else if (sqlTableReference instanceof SqlBaseTableReference) {
-            SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-            Set<SqlColumnReference> sqlColumnReferencesSet = columnReferences.computeIfAbsent(sqlBaseTableReference, k -> new LinkedHashSet<>());
+        } else if (tableReference instanceof SqlBaseTableReference) {
+            SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
 
-            LinkedHashSet<SqlColumnReference> v = this.schema.tables.stream()
-                    .filter(t -> t.name.equalsIgnoreCase(sqlBaseTableReference.getFullyQualifiedName()))
+            this.schema.tables.stream()
+                    .filter(t -> new SqlTableId(t.name).equals(baseTableReference.getTableId()))
                     .flatMap(t -> t.columns.stream())
-                    .map(c -> new SqlColumnReference(sqlBaseTableReference, c.name))
-                    .collect(Collectors.toCollection(LinkedHashSet::new));
+                    .map(c -> new SqlColumnReference(baseTableReference, c.name))
+                    .forEach(c -> addColumnReference(baseTableReference, c));
 
-            sqlColumnReferencesSet.addAll(v);
         } else {
-            throw new IllegalStateException("Unexpected table reference type: " + sqlTableReference.getClass().getName());
+            throw new IllegalStateException("Unexpected table reference type: " + tableReference.getClass().getName());
         }
     }
 
+    @Override
+    public void visit(Table tableName) {
+        super.visit(tableName);
+
+        String tableWholeName = extractTableName(tableName);
+        if (!otherItemNames.contains(tableWholeName.toLowerCase())) {
+            SqlTableReference tableReference = columnReferenceResolver.resolve(tableName);
+            if (tableReference instanceof SqlBaseTableReference) {
+                SqlBaseTableReference baseTableReference = (SqlBaseTableReference)tableReference;
+                baseTableReferences.add(baseTableReference);
+            }
+        }
+    }
+
+    @Override
+    public void visit(WithItem withItem) {
+        otherItemNames.add(withItem.getAlias().getName().toLowerCase());
+        super.visit(withItem);
+    }
+
+    public boolean containsColumnReferences(SqlBaseTableReference baseTableReference) {
+        return columnReferences.containsKey(baseTableReference);
+    }
 }

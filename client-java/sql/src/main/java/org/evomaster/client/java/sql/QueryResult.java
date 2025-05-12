@@ -26,8 +26,6 @@ public class QueryResult {
         variableDescriptors.addAll(variableDescriptorList);
     }
 
-
-
     /**
      * WARNING: Constructor only needed for testing
      *
@@ -113,12 +111,20 @@ public class QueryResult {
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor a = variableDescriptors.get(i);
             String b = columnNames.get(i);
-            if (!a.getColumnName().equalsIgnoreCase(b) && a.getTableName().equalsIgnoreCase(tableName)) {
+            if (!equalsIgnoreCase(a.getColumnName(),b) && equalsIgnoreCase(a.getTableName(),tableName)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    private static boolean equalsIgnoreCase(String a, String b){
+        if (a==null) {
+            return b==null;
+        } else {
+            return a.equalsIgnoreCase(b);
+        }
     }
 
     public boolean sameVariableNames(DataRow row) {

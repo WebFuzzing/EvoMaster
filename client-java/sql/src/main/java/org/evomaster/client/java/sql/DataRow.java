@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
+import org.evomaster.client.java.sql.heuristic.BooleanLiteralsHelper;
 import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -84,13 +85,9 @@ public class DataRow {
         String t = (table == null ? null : table.trim());
 
         //true/false are reserved keywords
-        if (n.equalsIgnoreCase("true")) {
-            return true;
+        if (BooleanLiteralsHelper.isBooleanLiteral(n)) {
+            return BooleanLiteralsHelper.isTrueLiteral(n);
         }
-        if (n.equalsIgnoreCase("false")) {
-            return false;
-        }
-
 
         //first check aliases, but only if no specify table
         if (t == null || t.isEmpty()) {

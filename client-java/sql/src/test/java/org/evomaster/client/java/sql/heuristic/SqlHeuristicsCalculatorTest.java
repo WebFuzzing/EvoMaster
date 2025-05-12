@@ -51,6 +51,7 @@ public class SqlHeuristicsCalculatorTest {
         double expectedDistance = 1 - hquery;
 
         assertEquals(expectedDistance, distanceWithMetrics.sqlDistance);
+
     }
 
 
@@ -272,12 +273,12 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT name FROM Employees " +
                 "UNION " +
-                "SELECT name FROM Departments ";
+                "SELECT department_name AS name FROM Departments ";
         QueryResult employees = new QueryResult(Collections.singletonList("name"), "Employees");
         employees.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList("John"));
 
-        QueryResult departments = new QueryResult(Collections.singletonList("name"), "Departments");
-        departments.addRow(Collections.singletonList("name"), "Departments", Collections.singletonList("Sales"));
+        QueryResult departments = new QueryResult(Collections.singletonList("department_name"), "Departments");
+        departments.addRow(Collections.singletonList("department_name"), "Departments", Collections.singletonList("Sales"));
 
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
         SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
@@ -385,7 +386,7 @@ public class SqlHeuristicsCalculatorTest {
         employees.addRow(new DataRow("name", "John", "Employees"));
 
         QueryResult[] arrayOfQueryResultSet = {employees};
-        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        Select parsedSqlCommand = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
@@ -404,13 +405,13 @@ public class SqlHeuristicsCalculatorTest {
                 "    WHERE income > 100";
 
         List<VariableDescriptor> variableDescriptors = new ArrayList<>();
-        variableDescriptors.add(new VariableDescriptor("first_name", "name", "Employees"));
-        variableDescriptors.add(new VariableDescriptor("salary", "income", "Employees"));
+        variableDescriptors.add(new VariableDescriptor("first_name", null, "employees"));
+        variableDescriptors.add(new VariableDescriptor("salary", null, "employees"));
         QueryResult employees = new QueryResult(variableDescriptors);
         employees.addRow(new DataRow(variableDescriptors, Arrays.asList("John", 10000)));
 
         QueryResult[] arrayOfQueryResultSet = {employees};
-        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        Select parsedSqlCommand = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
         SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
         SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery(parsedSqlCommand);
@@ -432,8 +433,8 @@ public class SqlHeuristicsCalculatorTest {
                 ") AS subquery\n" +
                 "WHERE income > 100";
 
-        QueryResult employees = new QueryResult(Arrays.asList("first_name", "salary"), "Employees");
-        employees.addRow(new DataRow("Employees", Arrays.asList("first_name", "salary"), Arrays.asList("John", 10000)));
+        QueryResult employees = new QueryResult(Arrays.asList("first_name", "salary"), "employees");
+        employees.addRow(new DataRow("employees", Arrays.asList("first_name", "salary"), Arrays.asList("John", 10000)));
 
         Select select = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
@@ -572,4 +573,63 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
     }
 
+    @Test
+    public void testSelectNoFromNoWhere() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT 24";
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery((Select)SqlParserUtils.parseSqlCommand(sqlCommand));
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeRows().size());
+    }
+
+    @Test
+    public void testUnionSelectNoFromNoWhere() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT 24 UNION SELECT 42";
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery((Select)SqlParserUtils.parseSqlCommand(sqlCommand));
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(2, queryResult.seeRows().size());
+    }
+
+    @Test
+    public void testSelectFromTableWithRowsNoWhere() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person";
+
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age","salary"), "Person");
+        queryResult.addRow(new DataRow("Person" , Arrays.asList("name","age","salary"), Arrays.asList("John", 30, 50000)));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, queryResult);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery((Select)SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
+        assertEquals(1, row.getVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", "person"),
+                row.getVariableDescriptors().iterator().next());
+        assertEquals("John", row.getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectFromTableWithRowsNoWhereUsingAlias() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name AS person_name FROM Person";
+
+        QueryResult queryResult = new QueryResult(Arrays.asList("name","age","salary"), "Person");
+        queryResult.addRow(new DataRow("Person" , Arrays.asList("name","age","salary"), Arrays.asList("John", 30, 50000)));
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, queryResult);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristicQuery((Select)SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
+        assertEquals(1, row.getVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("person_name", null, null),
+                row.getVariableDescriptors().iterator().next());
+        assertEquals("John", row.getValueByName("person_name"));
+    }
 }

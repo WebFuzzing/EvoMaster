@@ -21,6 +21,7 @@ public class SqlParserUtils {
      * We only use the selects that refer to objects in the database that are meaningful for testing purposes,
      * when code access to a sequence for example when getting the next id for a new object in the table,
      * then we don't want to use that select as a target.
+     *
      * @param sqlCommand
      * @return
      */
@@ -40,23 +41,23 @@ public class SqlParserUtils {
         return startsWithIgnoreCase(sqlCommand, "insert");
     }
 
-    private static boolean startsWithIgnoreCase(String input, String prefix){
-        return input!= null && input.trim().toLowerCase(Locale.ENGLISH).startsWith(prefix);
+    private static boolean startsWithIgnoreCase(String input, String prefix) {
+        return input != null && input.trim().toLowerCase(Locale.ENGLISH).startsWith(prefix);
     }
 
     private static boolean isASequence(String input) {
-        return input!= null && input.trim().toLowerCase().matches(".*(currval|nextval).*");
+        return input != null && input.trim().toLowerCase().matches(".*(currval|nextval).*");
     }
 
     /**
      * check if the sql is `Select 1`
      * detected by proxyprint as
-     *      ERROR - FAILED TO COMPUTE HEURISTICS FOR SQL: SELECT 1
-     *
+     * ERROR - FAILED TO COMPUTE HEURISTICS FOR SQL: SELECT 1
+     * <p>
      * https://stackoverflow.com/questions/3668506/efficient-sql-test-query-or-validation-query-that-will-work-across-all-or-most
      */
     public static boolean isSelectOne(String sqlCommand) {
-        return sqlCommand!= null && sqlCommand.trim().toLowerCase().matches("select\\s+-?\\d+\\s*;?");
+        return sqlCommand != null && sqlCommand.trim().toLowerCase().matches("select\\s+-?\\d+\\s*;?");
     }
 
 
@@ -65,9 +66,9 @@ public class SqlParserUtils {
             Select select = (Select) parsedStatement;
             PlainSelect plainSelect = select.getPlainSelect();
             return plainSelect.getWhere();
-        } else if(parsedStatement instanceof Delete){
+        } else if (parsedStatement instanceof Delete) {
             return ((Delete) parsedStatement).getWhere();
-        } else if(parsedStatement instanceof Update){
+        } else if (parsedStatement instanceof Update) {
             return ((Update) parsedStatement).getWhere();
         } else {
             throw new IllegalArgumentException("Cannot handle statement: " + parsedStatement.toString());
@@ -81,42 +82,39 @@ public class SqlParserUtils {
      * @param parsedStatement The parsed SQL statement as a {@link Statement} object.
      *                        This is typically obtained using JSQLParser's `CCJSqlParserUtil.parse`.
      * @return The {@link FromItem} representing the "FROM" clause or the main table for the statement.
-     *         - For a SELECT statement, returns the main {@link FromItem} in the "FROM" clause.
-     *         - For a DELETE statement, returns the table being deleted from.
-     *         - For an UPDATE statement, returns the table being updated.
+     * - For a SELECT statement, returns the main {@link FromItem} in the "FROM" clause.
+     * - For a DELETE statement, returns the table being deleted from.
+     * - For an UPDATE statement, returns the table being updated.
      * @throws IllegalArgumentException If the provided statement type is not SELECT, DELETE, or UPDATE.
      */
     public static FromItem getFrom(Statement parsedStatement) {
-        if (parsedStatement instanceof Select) {
-            Select select = (Select) parsedStatement;
-            PlainSelect plainSelect = select.getPlainSelect();
+        if (parsedStatement instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect) parsedStatement;
             return plainSelect.getFromItem();
-        } else if(parsedStatement instanceof Delete){
+        } else if (parsedStatement instanceof Delete) {
             return ((Delete) parsedStatement).getTable();
-        } else if(parsedStatement instanceof Update){
+        } else if (parsedStatement instanceof Update) {
             return ((Update) parsedStatement).getTable();
-        } else {
-            throw new IllegalArgumentException("Cannot handle statement: " + parsedStatement.toString());
         }
+        throw new IllegalArgumentException("Cannot get FROM in statement: " + parsedStatement.toString());
     }
 
     public static List<Join> getJoins(Statement parsedStatement) {
-        if (parsedStatement instanceof Select) {
-            Select select = (Select) parsedStatement;
-            PlainSelect plainSelect = select.getPlainSelect();
+        if (parsedStatement instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect) parsedStatement;
             return plainSelect.getJoins();
-        } else if (parsedStatement instanceof Delete){
+        } else if (parsedStatement instanceof Delete) {
             Delete delete = (Delete) parsedStatement;
             return delete.getJoins();
-        } else if (parsedStatement instanceof Update){
+        } else if (parsedStatement instanceof Update) {
             Update update = (Update) parsedStatement;
-            if (update.getStartJoins()!=null) {
+            if (update.getStartJoins() != null) {
                 return update.getStartJoins();
             } else {
                 return update.getJoins();
             }
         } else {
-            throw new IllegalArgumentException("Cannot get Joins From: " + parsedStatement.toString());
+            throw new IllegalArgumentException("Cannot get JOIN in statement " + parsedStatement.toString());
         }
     }
 
@@ -135,7 +133,7 @@ public class SqlParserUtils {
         }
     }
 
-    public static boolean canParseSqlStatement(String sqlCommand){
+    public static boolean canParseSqlStatement(String sqlCommand) {
         try {
             CCJSqlParserUtil.parse(sqlCommand);
             return true;
@@ -242,10 +240,10 @@ public class SqlParserUtils {
         final FromItem fromItem = SqlParserUtils.getFrom(select);
         final List<Join> joins = SqlParserUtils.getJoins(select);
         List<FromItem> fromAndJoinItems = new ArrayList<>();
-        if (fromItem !=null) {
+        if (fromItem != null) {
             fromAndJoinItems.add(fromItem);
         }
-        if (joins!=null) {
+        if (joins != null) {
             for (Join join : joins) {
                 fromAndJoinItems.add(join.getRightItem());
             }

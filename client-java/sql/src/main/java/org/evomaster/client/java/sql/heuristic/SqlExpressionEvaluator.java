@@ -16,6 +16,8 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils;
 import org.evomaster.client.java.sql.DataRow;
+import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.internal.*;
 
 
@@ -25,7 +27,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.evomaster.client.java.sql.heuristic.ConversionHelper.convertToInstant;
+import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 
@@ -34,24 +36,64 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public static final char BITWISE_NOT = '~';
     public static final char MINUS = '-';
     public static final char PLUS = '+';
-    private final DataRow dataRow;
-    private final Stack<Truthness> computedTruthnesses = new Stack<>();
-    private final Stack<Object> concreteValues = new Stack<>();
-    private final TaintHandler taintHandler;
-    private final TableColumnResolver tableColumnResolver;
 
-    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver, TaintHandler taintHandler, DataRow dataRow) {
+    private final TableColumnResolver tableColumnResolver;
+    private final TaintHandler taintHandler;
+    private final QueryResultSet queryResultSet;
+    private final DataRow currentDataRow;
+
+    private final Stack<Object> evaluationStack = new Stack<>();
+
+    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver,
+                                  TaintHandler taintHandler,
+                                  QueryResultSet queryResultSet,
+                                  DataRow currentDataRow) {
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
-        this.dataRow = dataRow;
+        this.queryResultSet = queryResultSet;
+        this.currentDataRow = currentDataRow;
+    }
+
+    private Object popAsSingleValue() {
+        Object value = evaluationStack.pop();
+        if (value instanceof List<?>) {
+            return ((List<?>) value).get(0);
+        } else if (value instanceof QueryResult) {
+            QueryResult queryResult = (QueryResult) value;
+            return queryResult.seeRows().get(0).getValue(0);
+        } else {
+            return value;
+        }
+    }
+
+    private List<Object> popAsListOfValues() {
+        Object rightValues = evaluationStack.pop();
+        List<Object> rightValuesList;
+        if (rightValues instanceof QueryResult) {
+            QueryResult queryResult = (QueryResult) rightValues;
+            rightValuesList = queryResult.seeRows().stream()
+                    .map(row -> row.getValue(0))
+                    .collect(Collectors.toList());
+
+        } else {
+            rightValuesList = (List<Object>) rightValues;
+        }
+        return rightValuesList;
     }
 
 
     public Truthness getEvaluatedTruthness() {
-        if (computedTruthnesses.isEmpty()) {
+        if (evaluationStack.isEmpty()) {
             throw new IllegalStateException("no Truthness was computed");
         }
-        return computedTruthnesses.peek();
+        return convertToTruthness(evaluationStack.peek());
+    }
+
+    public Object getEvaluatedValue() {
+        if (evaluationStack.isEmpty()) {
+            throw new IllegalStateException("no value was computed");
+        }
+        return evaluationStack.peek();
     }
 
     private enum ComparisonOperatorType {
@@ -90,11 +132,59 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     }
 
     private void visitComparisonOperator(ComparisonOperator comparisonOperator) {
-        final Object concreteRightValue = concreteValues.pop();
-        final Object concreteLeftValue = concreteValues.pop();
         final ComparisonOperatorType comparisonOperatorType = toComparisonOperatorType(comparisonOperator);
-        final Truthness truthness = evaluateTruthnessForComparisonOperator(concreteLeftValue, concreteRightValue, comparisonOperatorType);
-        computedTruthnesses.push(truthness);
+        final Object concreteLeftValue;
+        final Truthness truthness;
+        if (evaluationStack.peek() instanceof EvaluatedAnyComparisonExpression) {
+            EvaluatedAnyComparisonExpression evaluatedAnyComparisonExpression = (EvaluatedAnyComparisonExpression) evaluationStack.pop();
+            concreteLeftValue = popAsSingleValue();
+            List<Object> rightValues = evaluatedAnyComparisonExpression.getValues();
+            switch (evaluatedAnyComparisonExpression.getAnyType()) {
+                case ALL: {
+                    truthness = all(concreteLeftValue, rightValues, comparisonOperatorType);
+                    break;
+                }
+                case SOME:
+                case ANY:
+                default: {
+                    truthness = any(concreteLeftValue, rightValues, comparisonOperatorType);
+                    break;
+                }
+            }
+        } else {
+            final Object concreteRightValue = popAsSingleValue();
+            concreteLeftValue = popAsSingleValue();
+            truthness = evaluateTruthnessForComparisonOperator(concreteLeftValue, concreteRightValue, comparisonOperatorType);
+        }
+        evaluationStack.push(truthness);
+    }
+
+    private Truthness any(Object concreteLeftValue, List<Object> concreteRightValues, ComparisonOperatorType comparisonOperatorType) {
+        final Truthness truthness;
+        if (concreteRightValues.isEmpty()) {
+            truthness = FALSE_TRUTHNESS;
+        } else {
+            Truthness[] truthnesses = concreteRightValues.stream()
+                    .map(rightValue -> evaluateTruthnessForComparisonOperator(concreteLeftValue, rightValue, comparisonOperatorType))
+                    .collect(Collectors.toList())
+                    .toArray(new Truthness[]{});
+            truthness = buildOrAggregationTruthness(truthnesses);
+        }
+        return truthness;
+    }
+
+    private Truthness all(Object concreteLeftValue, List<Object> conocreteRightValues, ComparisonOperatorType comparisonOperatorType) {
+        final Truthness truthness;
+        if (conocreteRightValues.isEmpty()) {
+            truthness = TRUE_TRUTHNESS;
+        } else {
+            Truthness[] truthnesses = conocreteRightValues.stream()
+                    .map(rightValue -> evaluateTruthnessForComparisonOperator(concreteLeftValue, rightValue, comparisonOperatorType))
+                    .collect(Collectors.toList())
+                    .toArray(new Truthness[]{});
+            truthness = buildAndAggregationTruthness(truthnesses);
+        }
+        return truthness;
     }
 
     @Override
@@ -106,17 +196,17 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     private Truthness evaluateTruthnessForComparisonOperator(Object concreteLeftValue, Object concreteRightValue, ComparisonOperatorType comparisonOperatorType) {
         final Truthness truthness;
         if (concreteLeftValue == null && concreteRightValue == null) {
-            truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS;
+            truthness = FALSE_TRUTHNESS;
         } else if (concreteLeftValue == null || concreteRightValue == null) {
-            truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS_BETTER;
+            truthness = FALSE_TRUTHNESS_BETTER;
         } else {
             final Truthness truthnessOfExpression;
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
                 truthnessOfExpression = calculateTruthnessForNumberComparison((Number) concreteLeftValue, (Number) concreteRightValue, comparisonOperatorType);
             } else if (concreteRightValue instanceof String && concreteLeftValue instanceof String) {
                 truthnessOfExpression = calculateTruthnessForStringComparison((String) concreteLeftValue, (String) concreteRightValue, comparisonOperatorType);
-            } else if (concreteLeftValue instanceof Boolean && concreteRightValue instanceof Boolean) {
-                truthnessOfExpression = calculateTruthnessForBooleanComparison((Boolean) concreteLeftValue, (Boolean) concreteRightValue, comparisonOperatorType);
+            } else if (concreteLeftValue instanceof Boolean || concreteRightValue instanceof Boolean) {
+                truthnessOfExpression = calculateTruthnessForBooleanComparison(convertToBoolean(concreteLeftValue), convertToBoolean(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof java.util.Date || concreteRightValue instanceof java.util.Date) {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetDateTime || concreteRightValue instanceof OffsetDateTime) {
@@ -131,7 +221,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (truthnessOfExpression.isTrue()) {
                 truthness = truthnessOfExpression;
             } else {
-                truthness = buildScaledTruthness(SqlHeuristicsCalculator.C_BETTER, truthnessOfExpression.getOfTrue());
+                truthness = buildScaledTruthness(C_BETTER, truthnessOfExpression.getOfTrue());
             }
         }
         return truthness;
@@ -270,36 +360,36 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(BitwiseRightShift bitwiseRightShift) {
         super.visit(bitwiseRightShift);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
             final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
             final int result = leftValueAsInt >> rightValueAsInt;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
     @Override
     public void visit(BitwiseLeftShift bitwiseLeftShift) {
         super.visit(bitwiseLeftShift);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
             final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
             final int result = leftValueAsInt << rightValueAsInt;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
     @Override
     public void visit(NullValue nullValue) {
-        concreteValues.push(null);
+        evaluationStack.push(null);
     }
 
     @Override
@@ -310,9 +400,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(SignedExpression signedExpression) {
         super.visit(signedExpression);
-        Object expressionValue = concreteValues.pop();
+        Object expressionValue = popAsSingleValue();
         if (expressionValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final Number numberWithoutSign = (Number) expressionValue;
             final Number result;
@@ -333,7 +423,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                     throw new IllegalArgumentException("Unsupported sign: " + signedExpression.getSign());
                 }
             }
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
@@ -350,38 +440,38 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(DoubleValue doubleValue) {
         double concreteValue = doubleValue.getValue();
-        concreteValues.push(concreteValue);
+        evaluationStack.push(concreteValue);
     }
 
     @Override
     public void visit(LongValue longValue) {
         long concreteValue = longValue.getValue();
-        concreteValues.push(concreteValue);
+        evaluationStack.push(concreteValue);
     }
 
     @Override
     public void visit(HexValue hexValue) {
         String hexString = hexValue.getValue();
         int intValue = Integer.parseInt(hexString.substring(2), 16);
-        concreteValues.push(intValue);
+        evaluationStack.push(intValue);
     }
 
     @Override
     public void visit(DateValue dateValue) {
         final java.sql.Date value = dateValue.getValue();
-        concreteValues.push(value);
+        evaluationStack.push(value);
     }
 
     @Override
     public void visit(TimeValue timeValue) {
         final java.sql.Time value = timeValue.getValue();
-        concreteValues.push(value);
+        evaluationStack.push(value);
     }
 
     @Override
     public void visit(TimestampValue timestampValue) {
         final Timestamp value = timestampValue.getValue();
-        concreteValues.push(value);
+        evaluationStack.push(value);
     }
 
     @Override
@@ -408,56 +498,57 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         this.visitArithmeticBinaryExpression(subtraction);
     }
 
+
     @Override
     public void visit(AndExpression andExpression) {
         super.visit(andExpression);
-        Truthness rightTruthnessValue = computedTruthnesses.pop();
-        Truthness leftTruthnessValue = computedTruthnesses.pop();
+        Truthness rightTruthnessValue = convertToTruthness(popAsSingleValue());
+        Truthness leftTruthnessValue = convertToTruthness(popAsSingleValue());
         Truthness andTruthness = buildAndAggregationTruthness(leftTruthnessValue, rightTruthnessValue);
-        computedTruthnesses.push(andTruthness);
+        evaluationStack.push(andTruthness);
     }
 
     @Override
     public void visit(OrExpression orExpression) {
         super.visit(orExpression);
-        Truthness rightTruthnessValue = computedTruthnesses.pop();
-        Truthness leftTruthnessValue = computedTruthnesses.pop();
+        Truthness rightTruthnessValue = convertToTruthness(popAsSingleValue());
+        Truthness leftTruthnessValue = convertToTruthness(popAsSingleValue());
         Truthness orTruthness = buildOrAggregationTruthness(leftTruthnessValue, rightTruthnessValue);
-        computedTruthnesses.push(orTruthness);
+        evaluationStack.push(orTruthness);
     }
 
     @Override
     public void visit(XorExpression xorExpression) {
         super.visit(xorExpression);
-        Truthness rightTruthnessValue = computedTruthnesses.pop();
-        Truthness leftTruthnessValue = computedTruthnesses.pop();
+        Truthness rightTruthnessValue = convertToTruthness(popAsSingleValue());
+        Truthness leftTruthnessValue = convertToTruthness(popAsSingleValue());
 
         Truthness xorTruthness = buildXorAggregationTruthness(leftTruthnessValue, rightTruthnessValue);
-        computedTruthnesses.push(xorTruthness);
+        evaluationStack.push(xorTruthness);
     }
 
     @Override
     public void visit(Between between) {
         super.visit(between);
-        Object endRangeValue = this.concreteValues.pop();
-        Object startRangeValue = this.concreteValues.pop();
-        Object leftExpressionValue = this.concreteValues.pop();
+        Object endRangeValue = this.popAsSingleValue();
+        Object startRangeValue = this.popAsSingleValue();
+        Object leftExpressionValue = this.popAsSingleValue();
 
         if (leftExpressionValue == null || startRangeValue == null || endRangeValue == null) {
-            this.computedTruthnesses.push(FALSE_TRUTHNESS_BETTER);
+            this.evaluationStack.push(FALSE_TRUTHNESS_BETTER);
         } else {
             Truthness startCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, startRangeValue, ComparisonOperatorType.GREATER_THAN_EQUALS);
             Truthness endCondition = evaluateTruthnessForComparisonOperator(leftExpressionValue, endRangeValue, ComparisonOperatorType.MINOR_THAN_EQUALS);
             Truthness betweenCondition = buildAndAggregationTruthness(startCondition, endCondition);
-            this.computedTruthnesses.push(betweenCondition);
+            this.evaluationStack.push(betweenCondition);
         }
     }
 
     @Override
     public void visit(OverlapsCondition overlapsCondition) {
         super.visit(overlapsCondition);
-        List<Object> rightRange = (List<Object>) concreteValues.pop();
-        List<Object> leftRange = (List<Object>) concreteValues.pop();
+        List<Object> rightRange = (List<Object>) evaluationStack.pop();
+        List<Object> leftRange = (List<Object>) evaluationStack.pop();
         Object leftStart = leftRange.get(0);
         Object leftEnd = leftRange.get(1);
         Object rightStart = rightRange.get(0);
@@ -465,7 +556,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Truthness rangeStart = evaluateTruthnessForComparisonOperator(leftStart, rightEnd, ComparisonOperatorType.MINOR_THAN_EQUALS);
         Truthness rangeEnd = evaluateTruthnessForComparisonOperator(rightStart, leftEnd, ComparisonOperatorType.MINOR_THAN_EQUALS);
         Truthness overlaps = buildAndAggregationTruthness(rangeStart, rangeEnd);
-        computedTruthnesses.push(overlaps);
+        evaluationStack.push(overlaps);
     }
 
     @Override
@@ -483,25 +574,21 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(InExpression inExpression) {
         super.visit(inExpression);
-        Object rightValues = concreteValues.pop();
-        Object leftValue = concreteValues.pop();
+        List<Object> concreteRightValues = popAsListOfValues();
+        Object concreteLeftValue = evaluationStack.pop();
         final Truthness truthness;
-        if (leftValue == null || rightValues == null) {
+        if (concreteLeftValue == null || concreteRightValues == null) {
             truthness = FALSE_TRUTHNESS_BETTER;
         } else {
-            final List<Object> rightValuesList = (List<Object>) rightValues;
-            final Truthness[] truthnesses = rightValuesList.stream()
-                    .map(rightValue -> evaluateTruthnessForComparisonOperator(leftValue, rightValue, ComparisonOperatorType.EQUALS_TO))
-                    .toArray(Truthness[]::new);
-            final Truthness inTruthness = buildOrAggregationTruthness(truthnesses);
             if (inExpression.isNot()) {
-                truthness = inTruthness.invert();
+                truthness = all(concreteLeftValue, concreteRightValues, ComparisonOperatorType.NOT_EQUALS_TO);
             } else {
-                truthness = inTruthness;
+                truthness = any(concreteLeftValue, concreteRightValues, ComparisonOperatorType.EQUALS_TO);
             }
         }
-        computedTruthnesses.push(truthness);
+        evaluationStack.push(truthness);
     }
+
 
     @Override
     public void visit(FullTextSearch fullTextSearch) {
@@ -511,14 +598,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(IsNullExpression isNullExpression) {
         super.visit(isNullExpression);
-        final Object concreteLeftValue = concreteValues.pop();
+        final Object concreteLeftValue = popAsSingleValue();
         final Truthness truthness;
         if (isNullExpression.isNot()) {
             truthness = getTruthnessToIsNull(concreteLeftValue).invert();
         } else {
             truthness = getTruthnessToIsNull(concreteLeftValue);
         }
-        computedTruthnesses.push(truthness);
+        evaluationStack.push(truthness);
     }
 
     public static Truthness getTruthnessToIsNull(Object concreteValue) {
@@ -534,25 +621,25 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(IsBooleanExpression isBooleanExpression) {
         super.visit(isBooleanExpression);
-        final Object leftConcreteValue = concreteValues.pop();
+        final Object leftConcreteValue = popAsSingleValue();
         boolean rightBooleanValue = isBooleanExpression.isNot() ?
                 !isBooleanExpression.isTrue() :
                 isBooleanExpression.isTrue();
 
-        final Truthness truthness = getTruthnessForIsBooleanExpression(leftConcreteValue, rightBooleanValue);
-        computedTruthnesses.push(truthness);
+        final Truthness truthness = getTruthnessForIsBooleanExpression(convertToBoolean(leftConcreteValue), rightBooleanValue);
+        evaluationStack.push(truthness);
     }
 
     private static Truthness getTruthnessForIsBooleanExpression(Object leftConcreteValue, boolean rightBooleanValue) {
         final Truthness truthness;
         if (leftConcreteValue == null) {
-            truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS_BETTER;
+            truthness = FALSE_TRUTHNESS_BETTER;
         } else {
             final boolean leftBoolean = (Boolean) leftConcreteValue;
             if (leftBoolean == rightBooleanValue) {
-                truthness = SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+                truthness = TRUE_TRUTHNESS;
             } else {
-                truthness = SqlHeuristicsCalculator.FALSE_TRUTHNESS;
+                truthness = FALSE_TRUTHNESS;
             }
         }
         return truthness;
@@ -561,10 +648,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(LikeExpression likeExpression) {
         super.visit(likeExpression);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            computedTruthnesses.push(FALSE_TRUTHNESS_BETTER);
+            evaluationStack.push(FALSE_TRUTHNESS_BETTER);
         } else {
             final String string = String.valueOf(leftConcreteValue);
             final String likePattern = String.valueOf(rightConcreteValue);
@@ -574,7 +661,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (likeExpression.isNot()) {
                 truthness = truthness.invert();
             }
-            computedTruthnesses.push(truthness);
+            evaluationStack.push(truthness);
         }
     }
 
@@ -618,29 +705,22 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Column column) {
-        if (column.getColumnName().equalsIgnoreCase("true")) {
-            concreteValues.push(Boolean.TRUE);
-        } else if (column.getColumnName().equalsIgnoreCase("false")) {
-            concreteValues.push(Boolean.FALSE);
-        } else {
-            SqlColumnReference sqlColumnReference = tableColumnResolver.resolve(column);
-            final String baseTableName;
-            final String columnName;
-            if (sqlColumnReference.getTableReference() instanceof SqlBaseTableReference) {
-                baseTableName = ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getName();
-                columnName = sqlColumnReference.getColumnName();
+        final Object value = getValueForColumn(column);
+        evaluationStack.push(value);
+    }
 
-            } else if (sqlColumnReference.getTableReference() instanceof SqlDerivedTableReference) {
-                Select select = ((SqlDerivedTableReference) sqlColumnReference.getTableReference()).getSelect();
-                SqlColumnReference resolvedSqlColumnReference = this.tableColumnResolver.findBaseTableColumnReference(select, column.getColumnName());
-                baseTableName = ((SqlBaseTableReference) resolvedSqlColumnReference.getTableReference()).getName();
-                columnName = resolvedSqlColumnReference.getColumnName();
-            } else {
-                throw new IllegalStateException("Unexpected table reference type: " + sqlColumnReference.getTableReference().getClass().getName());
-            }
-            Object value = dataRow.getValueByName(columnName, baseTableName);
-            concreteValues.push(value);
+    private Object getValueForColumn(Column column) {
+        final Object value;
+        if (BooleanLiteralsHelper.isBooleanLiteral(column.getColumnName())) {
+            value = BooleanLiteralsHelper.isTrueLiteral(column.getColumnName());
+        } else {
+            SqlColumnReference sqlColumnReference = tableColumnResolver.resolveToBaseTableColumnReference(column);
+            SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlColumnReference.getTableReference();
+            final String baseTableName = sqlBaseTableReference.getName();
+            final String columnName = sqlColumnReference.getColumnName();
+            value = currentDataRow.getValueByName(columnName, baseTableName);
         }
+        return value;
     }
 
     @Override
@@ -655,7 +735,23 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(ExistsExpression existsExpression) {
-        throw new UnsupportedOperationException("visit(ExistsExpression) not supported");
+        Expression rightExpression = existsExpression.getRightExpression();
+        if (!(rightExpression instanceof Select)) {
+            throw new IllegalArgumentException("Expected a Select expression, but got: " + rightExpression.getClass().getName());
+        }
+        Select select = (Select) rightExpression;
+
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
+                this.tableColumnResolver,
+                this.taintHandler,
+                this.queryResultSet);
+
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristicQuery(select);
+        if (existsExpression.isNot()) {
+            evaluationStack.push(heuristicResult.getTruthness().invert());
+        } else {
+            evaluationStack.push(heuristicResult.getTruthness());
+        }
     }
 
     @Override
@@ -663,21 +759,41 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         throw new UnsupportedOperationException("visit(MemberOfExpression) not supported");
     }
 
+    private static class EvaluatedAnyComparisonExpression {
+        private final List<Object> values;
+        private final AnyType anyType;
+
+        public EvaluatedAnyComparisonExpression(List<Object> values, AnyType anyType) {
+            this.values = values;
+            this.anyType = anyType;
+        }
+
+        public List<Object> getValues() {
+            return values;
+        }
+
+        public AnyType getAnyType() {
+            return anyType;
+        }
+    }
+
     @Override
     public void visit(AnyComparisonExpression anyComparisonExpression) {
-        throw new UnsupportedOperationException("visit(AnyComparisonExpression) not supported");
+        anyComparisonExpression.getSelect().accept(this);
+        List<Object> values = popAsListOfValues();
+        evaluationStack.push(new EvaluatedAnyComparisonExpression(values, anyComparisonExpression.getAnyType()));
     }
 
     @Override
     public void visit(Concat concat) {
         super.visit(concat);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             String result = String.valueOf(leftConcreteValue) + String.valueOf(rightConcreteValue);
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
@@ -690,45 +806,45 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(BitwiseAnd bitwiseAnd) {
         super.visit(bitwiseAnd);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
             final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
             final int result = leftValueAsInt & rightValueAsInt;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
     @Override
     public void visit(BitwiseOr bitwiseOr) {
         super.visit(bitwiseOr);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
             final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
             final int result = leftValueAsInt | rightValueAsInt;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
     @Override
     public void visit(BitwiseXor bitwiseXor) {
         super.visit(bitwiseXor);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final int leftValueAsInt = ((Number) leftConcreteValue).intValue();
             final int rightValueAsInt = ((Number) rightConcreteValue).intValue();
             final int result = leftValueAsInt ^ rightValueAsInt;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
@@ -740,15 +856,15 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Modulo modulo) {
         super.visit(modulo);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final double leftValueAsDouble = ((Number) leftConcreteValue).doubleValue();
             final double rightValueAsDouble = ((Number) rightConcreteValue).doubleValue();
             final double result = leftValueAsDouble % rightValueAsDouble;
-            concreteValues.push(result);
+            evaluationStack.push(result);
         }
     }
 
@@ -775,10 +891,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(RegExpMatchOperator regExpMatchOperator) {
         super.visit(regExpMatchOperator);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            computedTruthnesses.push(FALSE_TRUTHNESS);
+            evaluationStack.push(FALSE_TRUTHNESS);
         } else {
             RegExpMatchOperatorType operatorType = regExpMatchOperator.getOperatorType();
             String string = leftConcreteValue.toString();
@@ -819,7 +935,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (negate) {
                 truthness = truthness.invert();
             }
-            computedTruthnesses.push(truthness);
+            evaluationStack.push(truthness);
         }
     }
 
@@ -856,11 +972,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(ExpressionList<?> expressionList) {
         super.visit(expressionList);
-        List<Object> list = Stream.generate(concreteValues::pop)
+        List<Object> list = Stream.generate(evaluationStack::pop)
                 .limit(expressionList.size())
                 .collect(Collectors.toList());
         Collections.reverse(list);
-        concreteValues.push(list);
+        evaluationStack.push(list);
     }
 
     @Override
@@ -887,15 +1003,15 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
         String dateTimeAsString = dateTimeLiteralExpression.getValue();
         String dateTimeWithoutEnclosingQuotes = SqlStringUtils.removeEnclosingQuotes(dateTimeAsString);
-        concreteValues.push(dateTimeWithoutEnclosingQuotes);
+        evaluationStack.push(dateTimeWithoutEnclosingQuotes);
     }
 
     @Override
     public void visit(NotExpression notExpression) {
         super.visit(notExpression);
-        Truthness truthness = computedTruthnesses.pop();
+        Truthness truthness = convertToTruthness(popAsSingleValue());
         Truthness notTruthness = truthness.invert();
-        computedTruthnesses.push(notTruthness);
+        evaluationStack.push(notTruthness);
     }
 
     @Override
@@ -911,10 +1027,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(SimilarToExpression similarToExpression) {
         super.visit(similarToExpression);
-        Object rightConcreteValue = concreteValues.pop();
-        Object leftConcreteValue = concreteValues.pop();
+        Object rightConcreteValue = popAsSingleValue();
+        Object leftConcreteValue = popAsSingleValue();
         if (leftConcreteValue == null || rightConcreteValue == null) {
-            computedTruthnesses.push(FALSE_TRUTHNESS);
+            evaluationStack.push(FALSE_TRUTHNESS);
         } else {
             String string = leftConcreteValue.toString();
             String similarToPattern = rightConcreteValue.toString();
@@ -924,7 +1040,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             if (similarToExpression.isNot()) {
                 truthness = truthness.invert();
             }
-            computedTruthnesses.push(truthness);
+            evaluationStack.push(truthness);
         }
     }
 
@@ -934,26 +1050,26 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
         Number sqlStopIndex;
         if (arrayExpression.getStopIndexExpression() != null) {
-            sqlStopIndex = (Number) concreteValues.pop();
+            sqlStopIndex = (Number) popAsSingleValue();
         } else {
             sqlStopIndex = null;
         }
 
         Number sqlStartIndex;
         if (arrayExpression.getStartIndexExpression() != null) {
-            sqlStartIndex = (Number) concreteValues.pop();
+            sqlStartIndex = (Number) popAsSingleValue();
         } else {
             sqlStartIndex = 1;
         }
 
         final Number sqlIndex;
         if (arrayExpression.getIndexExpression() != null) {
-            sqlIndex = (Number) concreteValues.pop();
+            sqlIndex = (Number) popAsSingleValue();
         } else {
             sqlIndex = null;
         }
 
-        final Object[] objectArray = (Object[]) concreteValues.pop();
+        final Object[] objectArray = (Object[]) evaluationStack.pop();
 
         if (sqlStopIndex == null) {
             sqlStopIndex = objectArray.length;
@@ -964,11 +1080,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         Object[] subArray = Arrays.copyOfRange(objectArray, startIndex, stopIndex + 1);
 
         if (sqlIndex == null) {
-            concreteValues.push(subArray);
+            evaluationStack.push(subArray);
         } else {
             final int index = toJavaIndex(sqlIndex);
             final Object item = subArray[index];
-            concreteValues.push(item);
+            evaluationStack.push(item);
         }
     }
 
@@ -979,11 +1095,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(ArrayConstructor arrayConstructor) {
         super.visit(arrayConstructor);
-        List<Object> list = Stream.generate(concreteValues::pop)
+        List<Object> list = Stream.generate(evaluationStack::pop)
                 .limit(arrayConstructor.getExpressions().size())
                 .collect(Collectors.toList());
         Collections.reverse(list);
-        concreteValues.push(list.toArray());
+        evaluationStack.push(list.toArray());
     }
 
     @Override
@@ -1048,7 +1164,12 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Select select) {
-        throw new UnsupportedOperationException("visit(Select) not supported");
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
+                this.tableColumnResolver,
+                this.taintHandler,
+                this.queryResultSet);
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristicQuery(select);
+        evaluationStack.push(heuristicResult.getQueryResult());
     }
 
     @Override
@@ -1079,7 +1200,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(StringValue stringValue) {
         String concreteValue = stringValue.getValue();
-        concreteValues.push(concreteValue);
+        evaluationStack.push(concreteValue);
     }
 
     @Override
@@ -1111,22 +1232,22 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     }
 
     private void visitArithmeticBinaryExpression(BinaryExpression binaryExpression) {
-        final Object concreteRightValue = concreteValues.pop();
-        final Object concreteLeftValue = concreteValues.pop();
+        final Object concreteRightValue = popAsSingleValue();
+        final Object concreteLeftValue = popAsSingleValue();
         if (concreteLeftValue == null || concreteRightValue == null) {
-            concreteValues.push(null);
+            evaluationStack.push(null);
         } else {
             final ArithmeticOperationType arithmeticOperationType = toArithmeticOperationType(binaryExpression);
             if (concreteLeftValue instanceof Number && concreteRightValue instanceof Number) {
                 final Number leftNumber = (Number) concreteLeftValue;
                 final Number rightNumber = (Number) concreteRightValue;
                 final double resultAsDouble = computeNumberArithmeticOperation(leftNumber, rightNumber, arithmeticOperationType);
-                concreteValues.push(resultAsDouble);
+                evaluationStack.push(resultAsDouble);
             } else if (concreteLeftValue instanceof java.sql.Date && concreteRightValue instanceof java.sql.Date) {
                 final java.sql.Date leftDate = (java.sql.Date) concreteLeftValue;
                 final java.sql.Date rightDate = (java.sql.Date) concreteRightValue;
                 final java.sql.Date resultDate = computeDateArithmeticOperation(leftDate, rightDate, arithmeticOperationType);
-                concreteValues.push(resultDate);
+                evaluationStack.push(resultDate);
             }
         }
     }

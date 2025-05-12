@@ -5,12 +5,17 @@ import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
+import org.evomaster.client.java.sql.heuristic.BooleanLiteralsHelper;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
 import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
 import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator;
@@ -29,10 +34,6 @@ import static org.evomaster.client.java.sql.internal.SqlParserUtils.*;
  * Class used to act upon SQL commands executed by the SUT
  */
 public class SqlHandler {
-
-    private final static Set<String> booleanConstantNames = Collections.unmodifiableSet(
-            new LinkedHashSet<>(Arrays.asList("t", "true", "f", "false", "yes", "y", "no", "n", "on", "off", "unknown"))
-    );
 
     private final TaintHandler taintHandler;
 
@@ -139,6 +140,30 @@ public class SqlHandler {
         // all SQL statements added to bufferedSqlCommands can be parsed
         bufferedSqlCommands.add(sqlExecutionLogDto);
 
+        if (this.completeSqlHeuristics) {
+            mergeNewDataForCompleteSqlHeuristics(sqlCommand);
+        } else {
+            mergeNewDataForPartialSqlHeuristics(sqlCommand);
+        }
+
+    }
+
+    private void mergeNewDataForCompleteSqlHeuristics(String sqlCommand) {
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        Map<SqlTableId, Set<SqlColumnId>> columns = extractColumnsInvolvedInStatement(parsedSqlCommand);
+        if (parsedSqlCommand instanceof Select) {
+            mergeNewData(queriedData, columns);
+        } else if (parsedSqlCommand instanceof Delete) {
+            deletedData.addAll(columns.keySet());
+        } else if (parsedSqlCommand instanceof Insert) {
+            mergeNewData(insertedData, columns);
+        } else if (parsedSqlCommand instanceof Update) {
+            mergeNewData(updatedData, columns);
+        }
+    }
+
+
+    private void mergeNewDataForPartialSqlHeuristics(String sqlCommand) {
         if (isSelect(sqlCommand)) {
             mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sqlCommand));
         } else if (isDelete(sqlCommand)) {
@@ -150,7 +175,6 @@ public class SqlHandler {
             final Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = ColumnTableAnalyzer.getUpdatedDataFields(sqlCommand);
             mergeNewData(updatedData, Collections.singletonMap(updatedDataFields.getKey(), updatedDataFields.getValue()));
         }
-
     }
 
     public SqlExecutionsDto getExecutionDto() {
@@ -204,15 +228,11 @@ public class SqlHandler {
             bufferedSqlCommands.forEach(sqlExecutionLogDto -> {
                 String sqlCommand = sqlExecutionLogDto.sqlCommand;
 
-                if (sqlExecutionLogDto.threwSqlExeception != true
-                        && isValidSqlCommandForDistanceEvaluation(sqlCommand)) {
+                if (sqlExecutionLogDto.threwSqlExeception == false
+                        && (this.completeSqlHeuristics
+                        ? SqlHeuristicsCalculator.isValidSqlCommandForSqlHeuristicsCalculation(sqlCommand)
+                        : isValidSqlCommandForDistanceEvaluation(sqlCommand))) {
 
-                    /*
-                     * All SQL commands that were saved to bufferedSqlCommands
-                     * were previously parsed with SqlParserUtils.canParseSqlStatement().
-                     * Therefore, we can assume that they can be successfully
-                     * parsed again.
-                     */
                     Statement parsedStatement = SqlParserUtils.parseSqlCommand(sqlCommand);
                     SqlDistanceWithMetrics sqlDistance = computeDistance(sqlCommand,
                             parsedStatement,
@@ -242,8 +262,8 @@ public class SqlHandler {
         final Map<SqlTableId, Set<SqlColumnId>> columns;
         if (this.completeSqlHeuristics) {
             // advanced
-            columns =  extractColumnsInvolvedInStatement(parsedStatement);
-            dist = computeCompleteSqlDistance(sqlCommand, successfulInitSqlInsertions, queryFromDatabase, columns);
+            columns = extractColumnsInvolvedInStatement(parsedStatement);
+            dist = computeCompleteSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase, columns);
         } else {
             columns = extractColumnsInvolvedInWhere(parsedStatement);
             dist = computePartialSqlDistance(sqlCommand, parsedStatement, successfulInitSqlInsertions, queryFromDatabase);
@@ -257,11 +277,12 @@ public class SqlHandler {
     }
 
     private SqlDistanceWithMetrics computeCompleteSqlDistance(String sqlCommand,
+                                                              Statement parsedStatement,
                                                               List<InsertionDto> successfulInitSqlInsertions,
                                                               boolean queryFromDatabase,
                                                               Map<SqlTableId, Set<SqlColumnId>> columns) {
 
-        if (!isSelect(sqlCommand) && !isDelete(sqlCommand) && !isUpdate(sqlCommand)) {
+        if (!SqlHeuristicsCalculator.isValidSqlCommandForSqlHeuristicsCalculation(parsedStatement)) {
             throw new IllegalArgumentException("Cannot compute distance for sql command: " + sqlCommand);
         }
 
@@ -286,19 +307,21 @@ public class SqlHandler {
     }
 
     private Map<SqlTableId, Set<SqlColumnId>> extractColumnsInvolvedInStatement(Statement statement) {
-        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema, booleanConstantNames);
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
         statement.accept(finder);
 
-        final Map<SqlBaseTableReference, Set<SqlColumnReference>> columnsInWhere = finder.getColumnReferences();
-
         Map<SqlTableId, Set<SqlColumnId>> columns = new HashMap<>();
-        for (SqlBaseTableReference sqlBaseTableReference : columnsInWhere.keySet()) {
-            SqlTableId tableId = new SqlTableId(sqlBaseTableReference.getFullyQualifiedName());
-            Set<SqlColumnId> columnIds = columnsInWhere.get(sqlBaseTableReference).stream()
-                    .map(SqlColumnReference::getColumnName)
-                    .map(SqlColumnId::new)
-                    .collect(Collectors.toSet());
-            columns.put(tableId, columnIds);
+        for (SqlBaseTableReference baseTableReference : finder.getBaseTableReferences()) {
+            SqlTableId tableId = baseTableReference.getTableId();
+            if (finder.containsColumnReferences(baseTableReference)) {
+                Set<SqlColumnId> columnIds = finder.getColumnReferences(baseTableReference).stream()
+                        .map(SqlColumnReference::getColumnName)
+                        .map(SqlColumnId::new)
+                        .collect(Collectors.toSet());
+                columns.put(tableId, columnIds);
+            } else {
+                columns.put(tableId, new LinkedHashSet<>());
+            }
         }
         return columns;
     }
@@ -474,7 +497,7 @@ public class SqlHandler {
 
                      */
 
-                    if (booleanConstantNames.contains(columnName)) {
+                    if (BooleanLiteralsHelper.isBooleanLiteral(columnName)) {
                         //case in which a boolean constant is wrongly treated as a column name.
                         //TODO not sure what we can really do here without modifying the parser
                     } else {
