@@ -9,6 +9,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
@@ -222,9 +223,7 @@ class SecurityRest {
                     }
                 }
             }
-
     }
-
 
     private fun addForAccessControl() {
 
@@ -608,7 +607,64 @@ class SecurityRest {
      * Check if there is a test case with a 403 and another one with a 200 without authentication
      */
     private fun handleForbiddenAuthentication(){
-        //TODO have to check in here
+        actionDefinitions.forEach { op ->
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (candidates.isEmpty()) {
+                return@forEach
+            }
+
+            candidates.map {
+                it.individual.copy()
+            }.forEach { ind ->
+
+                //add get request without any auth
+                val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
+
+                if(copyLast.verb != HttpVerb.GET)
+                    return@forEach
+
+                val copyNoAuthLast = copyLast.copy() as RestCallAction
+
+                copyLast.resetLocalIdRecursively()
+                copyNoAuthLast.resetLocalIdRecursively()
+
+                val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                otherUsers.forEach{ other ->
+                    val finalIndividual = ind.copy() as RestIndividual
+
+                    copyLast.auth =  other
+                    copyNoAuthLast.auth = HttpWsNoAuth()
+
+                    finalIndividual.addResourceCall(
+                        restCalls = RestResourceCalls(
+                            actions = mutableListOf(copyLast, copyNoAuthLast),
+                            sqlActions = listOf()
+                        )
+                    )
+                    finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                        it.saveCreatedResourceLocation = true
+                    }
+                    finalIndividual.fixResourceForwardLinks()
+
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
+                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                    }
+                }
+
+            }
+        }
     }
 
     /**
