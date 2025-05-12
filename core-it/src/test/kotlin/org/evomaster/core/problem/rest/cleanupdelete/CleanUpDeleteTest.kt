@@ -55,6 +55,8 @@ class CleanUpDeleteTest: IntegrationTestRestBase() {
 
     }
 
+    @Disabled("Tricky. In the end, we made not possible to send empty path elements. " +
+            "See discussion in action builder.")
     @Test
     fun testEmpty(){
 
