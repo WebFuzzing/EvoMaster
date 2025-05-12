@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
+import org.evomaster.core.languagemodel.data.OllamaRequest
+import org.evomaster.core.languagemodel.data.OllamaResponse
+import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.logging.LoggingUtil
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
@@ -36,7 +39,7 @@ class LanguageModelConnector {
     @Inject
     private lateinit var config: EMConfig
 
-    private var prompts: MutableMap<String, PromptDto> = mutableMapOf()
+    private var prompts: MutableMap<String, Prompt> = mutableMapOf()
 
     private val objectMapper = ObjectMapper()
 
@@ -82,7 +85,7 @@ class LanguageModelConnector {
 
         val id = getId()
 
-        prompts[id] = PromptDto(id, prompt)
+        prompts[id] = Prompt(id, prompt)
 
         val task = Runnable {
             makeQuery(prompt)
@@ -114,7 +117,7 @@ class LanguageModelConnector {
         val languageModelName = getLanguageModelName()
 
         val requestBody = objectMapper.writeValueAsString(
-            OllamaRequestDto(
+            OllamaRequest(
                 prompt = prompt,
                 stream = false,
                 model = languageModelName.toString()
@@ -169,7 +172,7 @@ class LanguageModelConnector {
             // This is designed to use the non-stream outputs.
             // If stream is needed, consider implementing a
             // different method to handle stream outputs.
-            val response = objectMapper.readValue(connection.inputStream, OllamaResponseDto::class.java)
+            val response = objectMapper.readValue(connection.inputStream, OllamaResponse::class.java)
 
             return response.response
         } catch (e: Exception) {

@@ -1,9 +1,9 @@
-package org.evomaster.core.languagemodel
+package org.evomaster.core.languagemodel.data
 
 /**
  * DTO to represent the Ollama response schema.
  */
-class OllamaResponseDto {
+class OllamaResponse {
 
     /**
      * Used model name

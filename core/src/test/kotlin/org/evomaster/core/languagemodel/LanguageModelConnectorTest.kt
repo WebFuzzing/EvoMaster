@@ -29,7 +29,11 @@ class LanguageModelConnectorTest {
             .withModules(BaseModule())
             .build().createInjector()
 
+
+
         config = injector.getInstance(EMConfig::class.java)
+        config.languageModelConnector = true
+
         languageModelConnector = injector.getInstance(LanguageModelConnector::class.java)
 
         // If languageModelName or languageModelURL set to empty, an exception
