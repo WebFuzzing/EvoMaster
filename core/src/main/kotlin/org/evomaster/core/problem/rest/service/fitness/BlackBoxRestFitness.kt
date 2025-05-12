@@ -129,8 +129,6 @@ class BlackBoxRestFitness : RestFitness() {
             }
             individual.addCleanUpAction(delete)
 
-            //FIXME chainState seems broken as based on static path, so can have only one. Need refactoring
-
             //make sure location is saved in the chain
             handleSaveLocation(create.action,create.result as RestCallResult,chainState)
         }
@@ -141,6 +139,8 @@ class BlackBoxRestFitness : RestFitness() {
 
         for(delete in cleanup){
             handleRestCall(delete as RestCallAction, all, actionResults, chainState, cookies, tokens, fv)
+            val res = actionResults.first { it.sourceLocalId == delete.getLocalId() } as RestCallResult
+            assert(StatusGroup.G_2xx.isInGroup(res.getStatusCode())){"Wrong status: ${res.getStatusCode()}"}
         }
     }
 

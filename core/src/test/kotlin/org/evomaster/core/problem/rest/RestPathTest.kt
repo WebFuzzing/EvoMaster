@@ -303,6 +303,18 @@ internal class RestPathTest{
     }
 
     @Test
+    fun testMatchEmptyElement(){
+
+        assertFalse(RestPath("/x/").matches("/x"))
+        assertFalse(RestPath("/x").matches("/x/"))
+
+        assertTrue(RestPath("/x").matches("/x"))
+        assertTrue(RestPath("/x/").matches("/x/"))
+
+        assertTrue(RestPath("/x/{id}").matches("/x/"))
+    }
+
+    @Test
     fun testMatchResolvedPath(){
         val path = RestPath("/x/{y}/z")
 

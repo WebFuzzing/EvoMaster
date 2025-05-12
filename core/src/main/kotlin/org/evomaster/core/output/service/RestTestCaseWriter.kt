@@ -455,12 +455,13 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
-                //TODO JS
                 //TODO code here should use same algorithm as in res.getResourceId()
                 //TODO this is quite limited, would need proper refactoring
                 val extract = when {
                     format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
-                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                    format.isJavaScript() -> "$resVarName.body.${res.getResourceIdName()}"
+                    format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                    else -> throw IllegalStateException("Unhandled format: $format")
                 }
 
                 lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
