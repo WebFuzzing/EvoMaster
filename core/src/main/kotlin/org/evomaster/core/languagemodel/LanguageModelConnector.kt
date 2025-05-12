@@ -73,9 +73,9 @@ class LanguageModelConnector {
     /**
      * To query the large language server asynchronously with a simple prompt.
      */
-    fun queryAsync(prompt: String) {
+    fun queryAsync(prompt: String) : String? {
         if (!config.languageModelConnector) {
-            return
+            return null
         }
 
         validatePrompt(prompt)
@@ -89,6 +89,8 @@ class LanguageModelConnector {
         }
 
         workerPool.submit(task)
+
+        return id
     }
 
     /**

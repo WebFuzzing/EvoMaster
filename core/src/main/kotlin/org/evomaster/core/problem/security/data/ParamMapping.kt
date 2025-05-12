@@ -4,12 +4,11 @@ import org.evomaster.core.problem.security.VulnerabilityClass
 
 class ParamMapping (
     val name: String,
-    val description: String,
+    val description: String?,
 ) {
 
-    val vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
+    var promptId : String? = null
 
-    fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
-        this.vulnerabilityClasses.add(vulnerabilityClass)
-    }
+    var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
+
 }

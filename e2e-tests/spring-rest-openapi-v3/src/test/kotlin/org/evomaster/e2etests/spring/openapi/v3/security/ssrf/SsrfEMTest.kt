@@ -18,7 +18,7 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Work in progress")
+//    @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
