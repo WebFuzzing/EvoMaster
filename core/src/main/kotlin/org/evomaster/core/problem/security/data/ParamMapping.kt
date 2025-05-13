@@ -11,4 +11,8 @@ class ParamMapping (
 
     var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
 
+    fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
+        vulnerabilityClasses.add(vulnerabilityClass)
+    }
+
 }

@@ -8,7 +8,6 @@ import org.evomaster.core.languagemodel.data.OllamaRequest
 import org.evomaster.core.languagemodel.data.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.logging.LoggingUtil
-import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -27,13 +26,10 @@ import kotlin.math.min
  */
 class LanguageModelConnector {
 
-    companion object {
-        private val log = LoggerFactory.getLogger(LanguageModelConnector::class.java)
-    }
 
     @PostConstruct
     fun initialise() {
-        log.debug("Initializing {}", LanguageModelConnector::class.simpleName)
+        LoggingUtil.getInfoLogger().debug("Initializing {}", LanguageModelConnector::class.simpleName)
     }
 
     @Inject
@@ -105,6 +101,8 @@ class LanguageModelConnector {
             return null
         }
 
+        LoggingUtil.getInfoLogger().info("Querying for prompt {}", prompt)
+
         validatePrompt(prompt)
 
         return makeQuery(prompt)
@@ -127,6 +125,8 @@ class LanguageModelConnector {
         )
 
         val response = call(languageModelServerURL, requestBody)
+
+        LoggingUtil.getInfoLogger().info("Answer for prompt {} is {}", prompt, response)
 
         if (!id.isNullOrBlank()) {
             if (prompts.contains(id)) {
@@ -167,7 +167,7 @@ class LanguageModelConnector {
             writer.close()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.Companion.uniqueWarn(log, "Failed to connect to language model server")
+                LoggingUtil.getInfoLogger().warn("Failed to connect to language model server")
                 return null
             }
 
@@ -178,7 +178,7 @@ class LanguageModelConnector {
 
             return response.response
         } catch (e: Exception) {
-            LoggingUtil.Companion.uniqueWarn(log, "Failed to connect to language model server: ${e.message}")
+            LoggingUtil.getInfoLogger().warn("Failed to connect to language model server: ${e.message}")
 
             return null
         }
