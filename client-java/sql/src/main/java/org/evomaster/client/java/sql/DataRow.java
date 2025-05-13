@@ -9,6 +9,8 @@ import java.sql.Clob;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
+
 /**
  * A row of data in the table results of a Select query.
  * Must include information on its columns.
@@ -79,13 +81,6 @@ public class DataRow {
         return getValueByName(name, null);
     }
 
-    public static boolean equalsIgnoreCaseWithNull(String l, String r) {
-        if (l == null)
-            return r == null;
-        else
-            return l.equalsIgnoreCase(r);
-    }
-
     public Object getValueByName(String name, String table) {
         String n = (name == null ? null : name.trim());
         String t = (table == null ? null : table.trim());
@@ -109,7 +104,7 @@ public class DataRow {
         if (t == null || t.isEmpty()) {
             for (int i = 0; i < variableDescriptors.size(); i++) {
                 VariableDescriptor desc = variableDescriptors.get(i);
-                if (equalsIgnoreCaseWithNull(n, desc.getAliasColumnName())) {
+                if (nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) {
                     return getValue(i);
                 }
             }
@@ -118,16 +113,16 @@ public class DataRow {
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if ((equalsIgnoreCaseWithNull(n, desc.getColumnName()) || equalsIgnoreCaseWithNull(n, desc.getAliasColumnName())) &&
+            if ((nullSafeEqualsIgnoreCase(n, desc.getColumnName()) || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) &&
                     (t == null || t.isEmpty()
-                            || equalsIgnoreCaseWithNull(t, desc.getTableName())
+                            || nullSafeEqualsIgnoreCase(t, desc.getTableName())
                             /*
                                 TODO: this does not cover all possible cases, as in theory
                                 there can be many unnamed tables (eg results of sub-selects)
                                 with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
-                            || equalsIgnoreCaseWithNull(t, SqlNameContext.UNNAMED_TABLE)
+                            || nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)
                     )
             ) {
                 return getValue(i);
@@ -154,8 +149,8 @@ public class DataRow {
 
         for (int i = 0; i < this.variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if ((equalsIgnoreCaseWithNull(columnName, desc.getColumnName()) || equalsIgnoreCaseWithNull(columnName, desc.getAliasColumnName()))
-                    && (equalsIgnoreCaseWithNull(baseTableName, desc.getTableName()) && equalsIgnoreCaseWithNull(aliasTableName, desc.getAliasTableName())))
+            if ((nullSafeEqualsIgnoreCase(columnName, desc.getColumnName()) || nullSafeEqualsIgnoreCase(columnName, desc.getAliasColumnName()))
+                    && (nullSafeEqualsIgnoreCase(baseTableName, desc.getTableName()) && nullSafeEqualsIgnoreCase(aliasTableName, desc.getAliasTableName())))
                 return values.get(i);
         }
 

@@ -29,10 +29,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.evomaster.client.java.sql.DataRow.equalsIgnoreCaseWithNull;
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
+import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
 
 public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
@@ -756,8 +756,8 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             final String columnName = sqlColumnReference.getColumnName();
             // check if baseTableName/columnName is repeated in current data row
             if (this.currentDataRow.getVariableDescriptors().stream()
-                    .filter(vd -> equalsIgnoreCaseWithNull(vd.getTableName(), baseTableName)
-                            && equalsIgnoreCaseWithNull(vd.getColumnName(), columnName))
+                    .filter(vd -> nullSafeEqualsIgnoreCase(vd.getTableName(), baseTableName)
+                            && nullSafeEqualsIgnoreCase(vd.getColumnName(), columnName))
                     .count() > 1) {
 
                 // Use table name as table alias
