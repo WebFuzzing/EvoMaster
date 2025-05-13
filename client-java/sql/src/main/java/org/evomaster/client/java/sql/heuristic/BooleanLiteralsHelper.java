@@ -9,14 +9,14 @@ import java.util.stream.Stream;
 public class BooleanLiteralsHelper {
 
     public static final Set<String> BOOLEAN_TRUE_LITERALS = new HashSet<>(
-            Arrays.asList("t", "true", "yes", "y", "on"));
+            Arrays.asList("t", "true", "yes", "on"));
 
     public static final Set<String> BOOLEAN_FALSE_LITERALS = new HashSet<>(
-            Arrays.asList("f", "false", "no", "n", "off"));
+            Arrays.asList("f", "false", "no", "off"));
 
     public static final Set<String> BOOLEAN_LITERALS =
             Stream.concat(Stream.concat(BOOLEAN_FALSE_LITERALS.stream(),
-                            BOOLEAN_TRUE_LITERALS.stream()),
+                                    BOOLEAN_TRUE_LITERALS.stream()),
                             Stream.of("unknown"))
                     .collect(Collectors.toSet());
 
