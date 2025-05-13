@@ -91,8 +91,18 @@ public class DataRow {
         String t = (table == null ? null : table.trim());
 
         //true/false are reserved keywords
-        if (n != null && BooleanLiteralsHelper.isBooleanLiteral(n)) {
-            return BooleanLiteralsHelper.isTrueLiteral(n);
+        /*
+         * There are test cases where some columns are
+         * called "y", therefore, we cannot use
+         * BooleanLiteralHelper.isBooleanLiteral() here
+         * since 'y','n','on','off', 'yes' and 'no'
+         * are also considered boolean literals.
+         */
+        if (n!=null && n.equalsIgnoreCase("true")) {
+            return true;
+        }
+        if (n!= null && n.equalsIgnoreCase("false")) {
+            return false;
         }
 
         //first check aliases, but only if no specify table
