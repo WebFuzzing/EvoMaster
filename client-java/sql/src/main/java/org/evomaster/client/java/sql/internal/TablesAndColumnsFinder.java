@@ -97,7 +97,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     @Override
     public void visit(AllColumns allColumns) {
         Statement statement = tableColumnResolver.getCurrentStatement();
-        Set<SqlColumnReference> selectedColumns = this.getColumns((Select) statement);
+        Set<SqlColumnReference> selectedColumns = this.findColumnReferences((Select) statement);
         for (SqlColumnReference columnReference : selectedColumns) {
             if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
                 SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
@@ -167,7 +167,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         return columnReferences.containsKey(baseTableReference);
     }
 
-    private Set<SqlColumnReference> getColumns(SqlTableId baseTableId) {
+    private Set<SqlColumnReference> findColumnReferences(SqlTableId baseTableId) {
         Objects.requireNonNull(baseTableId);
 
         return this.schema.tables.stream()
@@ -177,11 +177,11 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
                 .collect(Collectors.toSet());
     }
 
-    private Set<SqlColumnReference> getColumns(FromItem fromItem) {
+    private Set<SqlColumnReference> findColumnReferences(FromItem fromItem) {
         if (fromItem instanceof LateralSubSelect) {
             LateralSubSelect lateralSubSelect = (LateralSubSelect) fromItem;
             Select subquery = lateralSubSelect.getSelect();
-            return getColumns(subquery);
+            return findColumnReferences(subquery);
         } else if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             String tableName = table.getFullyQualifiedName();
@@ -191,20 +191,20 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             }
             if (tableReference instanceof SqlBaseTableReference) {
                 SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
-                return getColumns(sqlBaseTableReference.getTableId());
+                return findColumnReferences(sqlBaseTableReference.getTableId());
             } else if (tableReference instanceof SqlDerivedTableReference) {
                 SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) tableReference;
-                return getColumns(sqlDerivedTableReference.getSelect());
+                return findColumnReferences(sqlDerivedTableReference.getSelect());
             } else {
                 throw new IllegalArgumentException("Table " + tableName + " not found in schema");
             }
         } else if (fromItem instanceof ParenthesedFromItem) {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
-            return getColumns(parenthesedFromItem.getFromItem());
+            return findColumnReferences(parenthesedFromItem.getFromItem());
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
             Select subquery = parenthesedSelect.getSelect();
-            return getColumns(subquery);
+            return findColumnReferences(subquery);
         } else if (fromItem instanceof TableFunction) {
             TableFunction tableFunction = (TableFunction) fromItem;
             // Handle table function
@@ -223,13 +223,13 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
      * @param select
      * @return
      */
-    private Set<SqlColumnReference> getColumns(Select select) {
+    private Set<SqlColumnReference> findColumnReferences(Select select) {
         if (select instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) select;
             List<FromItem> fromItemList = SqlParserUtils.getFromAndJoinItems(plainSelect);
             Set<SqlColumnReference> columns = new LinkedHashSet<>();
             for (FromItem fromItem : fromItemList) {
-                Set<SqlColumnReference> fromItemColumns = getColumns(fromItem);
+                Set<SqlColumnReference> fromItemColumns = findColumnReferences(fromItem);
                 columns.addAll(fromItemColumns);
             }
             return columns;
@@ -238,7 +238,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             SetOperationList setOperationList = (SetOperationList) select;
             Set<SqlColumnReference> columns = new LinkedHashSet<>();
             for (Select subquery : setOperationList.getSelects()) {
-                Set<SqlColumnReference> subqueryColumns = getColumns(subquery);
+                Set<SqlColumnReference> subqueryColumns = findColumnReferences(subquery);
                 columns.addAll(subqueryColumns);
             }
             return columns;
@@ -246,12 +246,12 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             // Handle WITH clause
             WithItem withItem = (WithItem) select;
             Select subquery = withItem.getSelect();
-            return getColumns(subquery);
+            return findColumnReferences(subquery);
         } else if (select instanceof ParenthesedSelect) {
             // Handle parenthesized select
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
             Select subquery = parenthesedSelect.getSelect();
-            return getColumns(subquery);
+            return findColumnReferences(subquery);
         } else {
             throw new IllegalArgumentException("Unsupported select type: " + select.getClass());
         }

@@ -40,24 +40,30 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public static final char MINUS = '-';
     public static final char PLUS = '+';
 
-    private final SqlHeuristicsCalculator parent;
+    private final SqlHeuristicsCalculator parentStatementEvaluator;
     private final TableColumnResolver tableColumnResolver;
     private final TaintHandler taintHandler;
     private final QueryResultSet queryResultSet;
-    private final DataRow currentDataRow;
 
     private final Stack<Object> evaluationStack = new Stack<>();
+    private final Deque<DataRow> dataRowStack = new ArrayDeque<>();
 
-    public SqlExpressionEvaluator(SqlHeuristicsCalculator parent,
+    public SqlExpressionEvaluator(SqlHeuristicsCalculator parentStatementEvaluator,
                                   TableColumnResolver tableColumnResolver,
                                   TaintHandler taintHandler,
                                   QueryResultSet queryResultSet,
+                                  Deque<DataRow> dataRowStack,
                                   DataRow currentDataRow) {
-        this.parent = parent;
+        this.parentStatementEvaluator = parentStatementEvaluator;
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.queryResultSet = queryResultSet;
-        this.currentDataRow = currentDataRow;
+        if (dataRowStack != null) {
+            this.dataRowStack.addAll(dataRowStack);
+        }
+        if (currentDataRow != null) {
+            this.dataRowStack.push(currentDataRow);
+        }
     }
 
 
@@ -65,11 +71,24 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                                   TaintHandler taintHandler,
                                   QueryResultSet queryResultSet,
                                   DataRow currentDataRow) {
-        this(null, tableColumnResolver, taintHandler, queryResultSet, currentDataRow);
+        this(null,
+                tableColumnResolver,
+                taintHandler,
+                queryResultSet,
+                new ArrayDeque<>(),
+                currentDataRow);
     }
 
-    public DataRow getCurrentDataRow() {
-        return currentDataRow;
+    public SqlExpressionEvaluator(SqlHeuristicsCalculator parentStatementEvaluator,
+                                  TableColumnResolver tableColumnResolver,
+                                  TaintHandler taintHandler,
+                                  QueryResultSet queryResultSet) {
+        this(parentStatementEvaluator,
+                tableColumnResolver,
+                taintHandler,
+                queryResultSet,
+                null,
+                null);
     }
 
     private Object popAsSingleValue() {
@@ -754,15 +773,15 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 baseTableName = null;
             }
             final String columnName = sqlColumnReference.getColumnName();
-            // check if baseTableName/columnName is repeated in current data row
-            if (this.currentDataRow.getVariableDescriptors().stream()
+            // check if baseTableName/columnName is repeated in the current data row
+            if (this.getCurrentDataRow().getVariableDescriptors().stream()
                     .filter(vd -> nullSafeEqualsIgnoreCase(vd.getTableName(), baseTableName)
                             && nullSafeEqualsIgnoreCase(vd.getColumnName(), columnName))
                     .count() > 1) {
 
-                // Use table name as table alias
+                // Use table name as the table alias
                 final String aliasTableName = column.getTable().getFullyQualifiedName();
-                value = currentDataRow.getValueByName(columnName, baseTableName, aliasTableName);
+                value = getCurrentDataRow().getValueByName(columnName, baseTableName, aliasTableName);
             } else {
                 value = getValueByName(columnName, baseTableName);
             }
@@ -770,35 +789,19 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return value;
     }
 
-    DataRow getDataRow(int contextIndex) {
-        if (contextIndex == 0)
-            return this.currentDataRow;
-        else {
-            if (this.getParent() != null && this.getParent().getParent() != null) {
-                return this.getParent().getParent().getDataRow(contextIndex - 1);
-            } else {
-                return null;
-            }
-        }
-    }
-
-
-    public SqlHeuristicsCalculator getParent() {
-        return parent;
+    DataRow getCurrentDataRow() {
+        return dataRowStack.peek();
     }
 
     private Object getValueByName(String columnName, String baseTableName) {
-        int i = 0;
-
-        DataRow dataRow = getDataRow(i);
-        while (dataRow != null) {
-            try {
+        /*
+         * Traverses the stack of data rows to find the first one that contains the requested column.
+         * The traversal is in LIFO (Last-In-First-Out) order.
+         */
+        for (DataRow dataRow : dataRowStack) {
+            if (dataRow.hasValueByName(columnName, baseTableName)) {
                 return dataRow.getValueByName(columnName, baseTableName);
-            } catch (IllegalArgumentException e) {
-                // value not found in context
             }
-            i++;
-            dataRow = getDataRow(i);
         }
         throw new IllegalArgumentException(String.format("Column '%s' not found in table '%s'", columnName, baseTableName));
     }
@@ -825,9 +828,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 this,
                 this.tableColumnResolver,
                 this.taintHandler,
-                this.queryResultSet);
+                this.queryResultSet,
+                this.dataRowStack);
 
-        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristicQuery(select);
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristic(select);
         if (existsExpression.isNot()) {
             evaluationStack.push(heuristicResult.getTruthness().invert());
         } else {
@@ -1249,8 +1253,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 this,
                 this.tableColumnResolver,
                 this.taintHandler,
-                this.queryResultSet);
-        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristicQuery(select);
+                this.queryResultSet,
+                this.dataRowStack);
+
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristic(select);
         evaluationStack.push(heuristicResult.getQueryResult());
     }
 

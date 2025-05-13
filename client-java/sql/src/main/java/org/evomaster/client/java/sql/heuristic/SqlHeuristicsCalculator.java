@@ -38,25 +38,30 @@ public class SqlHeuristicsCalculator {
         return queryResultSet;
     }
 
-    private final SqlExpressionEvaluator parent;
+    private final SqlExpressionEvaluator parentExpressionEvaluator;
     private final QueryResultSet queryResultSet;
     private final TaintHandler taintHandler;
     private final TableColumnResolver tableColumnResolver;
+    private final Deque<DataRow> stackOfDataRows = new ArrayDeque<>();
 
-    SqlHeuristicsCalculator(SqlExpressionEvaluator parent,
+    SqlHeuristicsCalculator(SqlExpressionEvaluator parentExpressionEvaluator,
                             TableColumnResolver tableColumnResolver,
                             TaintHandler taintHandler,
-                            QueryResultSet queryResultSet) {
-        this.parent = parent;
+                            QueryResultSet queryResultSet,
+                            Deque<DataRow> stackOfDataRows) {
+        this.parentExpressionEvaluator = parentExpressionEvaluator;
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
         this.queryResultSet = queryResultSet;
+        if (stackOfDataRows!=null) {
+            this.stackOfDataRows.addAll(stackOfDataRows);
+        }
     }
 
     SqlHeuristicsCalculator(TableColumnResolver tableColumnResolver,
                             TaintHandler taintHandler,
                             QueryResultSet queryResultSet) {
-        this(null, tableColumnResolver, taintHandler, queryResultSet);
+        this(null, tableColumnResolver, taintHandler, queryResultSet, null);
     }
 
 
@@ -75,8 +80,8 @@ public class SqlHeuristicsCalculator {
                 || (statement instanceof Select);
     }
 
-    public SqlExpressionEvaluator getParent() {
-        return parent;
+    public SqlExpressionEvaluator getParentExpressionEvaluator() {
+        return parentExpressionEvaluator;
     }
 
     public SqlDistanceWithMetrics computeDistance(String sqlCommand) {
@@ -89,7 +94,7 @@ public class SqlHeuristicsCalculator {
         Truthness t;
         if (parsedSqlCommand instanceof Select) {
             Select select = (Select) parsedSqlCommand;
-            t = this.calculateHeuristicQuery(select).getTruthness();
+            t = this.calculateHeuristic(select).getTruthness();
         } else if (parsedSqlCommand instanceof Update) {
             Update update = (Update) parsedSqlCommand;
             t = this.calculateHeuristic(update).getTruthness();
@@ -154,7 +159,7 @@ public class SqlHeuristicsCalculator {
              * Handles the case when FROM is a subquery
              */
             final Select subquery = SqlParserUtils.getSubquery(fromItem);
-            return calculateHeuristicQuery(subquery);
+            return calculateHeuristic(subquery);
         }
 
         if (joins != null && !joins.isEmpty()) {
@@ -377,7 +382,7 @@ public class SqlHeuristicsCalculator {
     }
 
 
-    SqlHeuristicResult calculateHeuristicQuery(Select select) {
+    SqlHeuristicResult calculateHeuristic(Select select) {
         tableColumnResolver.enterStatementeContext(select);
         final SqlHeuristicResult heuristicResult;
         if (select instanceof SetOperationList) {
@@ -387,7 +392,7 @@ public class SqlHeuristicsCalculator {
         } else if (select instanceof ParenthesedSelect) {
             ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
             Select subquery = parenthesedSelect.getSelect();
-            heuristicResult = calculateHeuristicQuery(subquery);
+            heuristicResult = calculateHeuristic(subquery);
         } else if (select instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) select;
             final FromItem fromItem = getFrom(plainSelect);
@@ -472,8 +477,7 @@ public class SqlHeuristicsCalculator {
                 SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this,
                         this.tableColumnResolver,
                         this.taintHandler,
-                        this.queryResultSet,
-                        null);
+                        this.queryResultSet);
                 expression.accept(sqlExpressionEvaluator);
                 Object value = sqlExpressionEvaluator.getEvaluatedValue();
                 filteredValues.add(value);
@@ -494,10 +498,13 @@ public class SqlHeuristicsCalculator {
                         filteredValues.addAll(row.seeValues());
                     } else {
                         Expression expression = selectItem.getExpression();
-                        SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(this,
+
+                        SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(
+                                this,
                                 this.tableColumnResolver,
                                 this.taintHandler,
                                 this.queryResultSet,
+                                this.stackOfDataRows,
                                 row);
                         expression.accept(sqlExpressionEvaluator);
                         Object value = sqlExpressionEvaluator.getEvaluatedValue();
@@ -514,7 +521,7 @@ public class SqlHeuristicsCalculator {
     private SqlHeuristicResult calculateHeuristicUnion(List<Select> subqueries) {
         List<SqlHeuristicResult> subqueryResults = new ArrayList<>();
         for (Select subquery : subqueries) {
-            SqlHeuristicResult subqueryResult = calculateHeuristicQuery(subquery);
+            SqlHeuristicResult subqueryResult = calculateHeuristic(subquery);
             subqueryResults.add(subqueryResult);
         }
         final Truthness[] truthnesses = subqueryResults.stream()
@@ -583,10 +590,12 @@ public class SqlHeuristicsCalculator {
 
         List<Truthness> truthnesses = new ArrayList<>();
         for (Expression condition : conditions) {
+
             SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this,
                     this.tableColumnResolver,
                     this.taintHandler,
                     this.queryResultSet,
+                    this.stackOfDataRows,
                     row
             );
             condition.accept(expressionEvaluator);

@@ -81,6 +81,15 @@ public class DataRow {
         return getValueByName(name, null);
     }
 
+    public boolean hasValueByName(String columnName, String baseTableName) {
+        try {
+            this.getValueByName(columnName, baseTableName);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public Object getValueByName(String name, String table) {
         String n = (name == null ? null : name.trim());
         String t = (table == null ? null : table.trim());
