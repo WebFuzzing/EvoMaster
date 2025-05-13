@@ -150,15 +150,21 @@ public class SqlHandler {
 
     private void mergeNewDataForCompleteSqlHeuristics(String sqlCommand) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        Map<SqlTableId, Set<SqlColumnId>> columns = extractColumnsInvolvedInStatement(parsedSqlCommand);
-        if (parsedSqlCommand instanceof Select) {
-            mergeNewData(queriedData, columns);
-        } else if (parsedSqlCommand instanceof Delete) {
-            deletedData.addAll(columns.keySet());
-        } else if (parsedSqlCommand instanceof Insert) {
-            mergeNewData(insertedData, columns);
-        } else if (parsedSqlCommand instanceof Update) {
-            mergeNewData(updatedData, columns);
+        if (parsedSqlCommand instanceof Select
+                || parsedSqlCommand instanceof Delete
+                || parsedSqlCommand instanceof Insert
+                || parsedSqlCommand instanceof Update) {
+
+            Map<SqlTableId, Set<SqlColumnId>> columns = extractColumnsInvolvedInStatement(parsedSqlCommand);
+            if (parsedSqlCommand instanceof Select) {
+                mergeNewData(queriedData, columns);
+            } else if (parsedSqlCommand instanceof Delete) {
+                deletedData.addAll(columns.keySet());
+            } else if (parsedSqlCommand instanceof Insert) {
+                mergeNewData(insertedData, columns);
+            } else if (parsedSqlCommand instanceof Update) {
+                mergeNewData(updatedData, columns);
+            }
         }
     }
 

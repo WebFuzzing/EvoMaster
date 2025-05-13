@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.sql.*;
 import java.util.Collections;
@@ -194,6 +196,22 @@ public class SqlHandlerTest {
         schema.tables.add(locationsTable);
 
         return schema;
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testCallNextValue(boolean isCompleteSqlHeuristics) {
+
+        String sqlCommand = "CALL next value for hibernate_sequence";
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setCalculateHeuristics(true);
+        sqlHandler.setCompleteSqlHeuristics(isCompleteSqlHeuristics);
+
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto();
+        sqlExecutionLogDto.sqlCommand = sqlCommand;
+        sqlExecutionLogDto.threwSqlExeception = false;
+
+        sqlHandler.handle(sqlExecutionLogDto);
     }
 
     private static @NotNull Connection createMockConnectionForSimpleSelect() throws SQLException {
