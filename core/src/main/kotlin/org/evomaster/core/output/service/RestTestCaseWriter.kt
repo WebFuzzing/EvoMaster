@@ -67,47 +67,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         testName: String
     ) {
         super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
-
-        if (hasChainedLocations(ind.individual)) {
-            assert(ind.individual is RestIndividual)
-            /*
-                If the "location" header of a HTTP response is used in a following
-                call, we need to save it in a variable.
-                We declare all such variables at the beginning of the test.
-
-                TODO: rather declare variable first time we access it?
-                Yes! can use location index for unique name
-                FIXME: refactor
-             */
-            lines.addEmpty()
-
-            ind.evaluatedMainActions().asSequence()
-                .map { it.action }
-                .filterIsInstance(RestCallAction::class.java)
-                /*
-                    FIXME postLocationId() is not guaranteed to be unique...
-                    in fitness function it works because we handle it by taking last definition,
-                    but, here, if we refactor to declare it on its first use, we might end up with
-                    variable name clashes, unless we change the id to consider the action index, somehow
-                 */
-                .filter { it.saveCreatedResourceLocation }
-                .map { it.creationLocationId() }
-//                .filter { it.usePreviousLocationId != null }
-//                .map { it.usePreviousLocationId }
-                .distinct()
-                .forEach { id ->
-                    val name = locationVar(id!!)
-                    when {
-                        format.isJava() -> lines.add("String $name = \"\";")
-                        format.isKotlin() -> lines.add("var $name : String? = \"\"")
-                        format.isJavaScript() -> lines.add("let $name = \"\";")
-                        format.isCsharp() -> lines.add("var $name = \"\";")
-                        format.isPython() -> {} // no need to declare variables
-                        // should never happen
-                        else -> throw IllegalStateException("Unsupported format $format")
-                    }
-                }
-        }
     }
 
     override fun handleActionCalls(
@@ -149,9 +108,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     protected fun locationVar(id: String): String {
+        /*
+            Ids are supposed to be unique, but might have invalid characters for a variable
+         */
         //TODO make sure name is syntactically valid
-        //TODO use counters to make them unique
-        return "location_${id.trim().replace(" ", "_")}"
+
+        return "location_${id.trim().replace(" ", "_").replace(Individual.LOCAL_ID_PREFIX_ACTION,"")}"
     }
 
 
@@ -421,12 +383,17 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 when {
                     format.isJavaOrKotlin() -> {
                         val extract = "$resVarName.extract().header(\"location\")"
-                        lines.add("$location = $extract")
+                        if(format.isJava()){
+                            lines.add("String ")
+                        } else {
+                            lines.add("val ")
+                        }
+                        lines.append("$location = $extract")
                         lines.appendSemicolon()
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        lines.add("$location = $resVarName.header['location'];")
+                        lines.add("const $location = $resVarName.header['location'];")
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
@@ -464,6 +431,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     else -> throw IllegalStateException("Unhandled format: $format")
                 }
 
+                when{
+                    format.isJavaScript() -> lines.add("const ")
+                    format.isJava() -> lines.add("String ")
+                    format.isKotlin() -> lines.add("val ")
+                    format.isPython()  -> { /* nothing to do in Python */}
+                }
                 lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
