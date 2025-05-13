@@ -26,7 +26,6 @@ import kotlin.math.min
  */
 class LanguageModelConnector {
 
-
     @PostConstruct
     fun initialise() {
         LoggingUtil.getInfoLogger().debug("Initializing {}", LanguageModelConnector::class.simpleName)
@@ -108,7 +107,6 @@ class LanguageModelConnector {
         return makeQuery(prompt)
     }
 
-
     private fun makeQuery(prompt: String, id: String? = null): String? {
         validatePrompt(prompt)
 
@@ -167,7 +165,7 @@ class LanguageModelConnector {
             writer.close()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.getInfoLogger().warn("Failed to connect to language model server")
+                LoggingUtil.getInfoLogger().warn("Failed to connect to language model server.")
                 return null
             }
 
@@ -178,7 +176,7 @@ class LanguageModelConnector {
 
             return response.response
         } catch (e: Exception) {
-            LoggingUtil.getInfoLogger().warn("Failed to connect to language model server: ${e.message}")
+            LoggingUtil.getInfoLogger().warn("Failed to connect to language model server: ${e.message}.")
 
             return null
         }
