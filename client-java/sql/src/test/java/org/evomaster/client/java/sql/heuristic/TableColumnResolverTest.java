@@ -373,9 +373,6 @@ class TableColumnResolverTest {
         assertEquals("income", referenceIncome.getColumnName());
         assertEquals("(SELECT first_name AS name, salary AS income FROM Employees) AS subquery", ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect().toString());
 
-        Select view = ((SqlDerivedTableReference) referenceIncome.getTableReference()).getSelect();
-        SqlColumnReference baseTableSqlColumnReference = resolver.findBaseTableColumnReference(view, columnIncome.getColumnName());
-
         resolver.exitCurrentStatementContext();
     }
 

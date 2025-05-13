@@ -30,7 +30,7 @@ public class TableColumnResolver {
      * A stack of the statements being analyzed, the outermost is the bottom
      * of the stack.
      */
-    private final Deque<Statement> statementStack = new ArrayDeque<>();
+    private final Deque<Statement> contextStatementStack = new ArrayDeque<>();
 
     /**
      * WARNING: in general we shouldn't use mutable DTO as internal data structures.
@@ -45,14 +45,24 @@ public class TableColumnResolver {
         this.tableAliasResolver = new TableAliasResolver();
     }
 
+    /**
+     * Creates a context for resolving table names and columns in
+     * the given statement.
+     *
+     * @param statement the new current statement context
+     */
     public void enterStatementeContext(Statement statement) {
         tableAliasResolver.enterTableAliasContext(statement);
-        statementStack.push(statement);
+        contextStatementStack.push(statement);
 
     }
 
+    /**
+     * Exists the current statement context for resolving
+     * table and column names.
+     */
     public void exitCurrentStatementContext() {
-        statementStack.pop();
+        contextStatementStack.pop();
         tableAliasResolver.exitTableAliasContext();
     }
 
@@ -77,16 +87,6 @@ public class TableColumnResolver {
                 .count() > 0;
     }
 
-    private Set<SqlColumnReference> getColumns(SqlTableId baseTableId) {
-        Objects.requireNonNull(baseTableId);
-
-        return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.name).equals(baseTableId))
-                .flatMap(t -> t.columns.stream())
-                .map(c -> new SqlColumnReference(new SqlBaseTableReference(c.table), c.name))
-                .collect(Collectors.toSet());
-    }
-
     private boolean hasColumn(SqlTableId sqlTableId, SqlColumnId sqlColumnId) {
         Objects.requireNonNull(sqlTableId);
 
@@ -103,21 +103,30 @@ public class TableColumnResolver {
      * @return
      */
     public Statement getCurrentStatement() {
-        return statementStack.peek();
+        return contextStatementStack.peek();
     }
 
     public SqlColumnReference resolve(Column column) {
-        return resolveInContext(column, statementStack.size() - 1);
+        /*
+         * The Deque<> iterator traverses the stack of context statements
+         * in a LIFO (Last-In-First-Out) order.
+         */
+        for (Statement contextStatement : contextStatementStack) {
+            SqlColumnReference sqlColumnReference = resolveInContextStatement(column, contextStatement);
+            if (sqlColumnReference!=null) {
+                return sqlColumnReference;
+            }
+        }
+        /*
+         * Column reference was not found in any context
+         */
+        return null;
     }
 
-    private SqlColumnReference resolveInContext(Column column, int contextIndex) {
-        if (contextIndex < 0) {
-            // column reference was not found
-            return null;
-        }
-        final Statement currentStatement = getStatement(contextIndex);
+    private SqlColumnReference resolveInContextStatement(Column column, Statement contextStatement) {
+
         final SqlColumnId columnId = new SqlColumnId(column.getColumnName());
-        if (currentStatement == null) {
+        if (contextStatement == null) {
             throw new IllegalStateException("No current select context");
         }
         if (column.getTable() != null) {
@@ -137,16 +146,22 @@ public class TableColumnResolver {
                     throw new IllegalArgumentException("Unknown table reference type: " + sqlTableReference.getClass().getName());
                 }
             }
-            return resolveInContext(column, contextIndex - 1);
+            // column reference was not found in this context
+            return null;
         } else {
-            return resolveInContext(column.getColumnName(), contextIndex);
+            return resolveInContextStatement(column.getColumnName(), contextStatement);
         }
     }
 
-    private Statement getStatement(int contextIndex) {
+    /**
+     *
+     * @param contextIndex
+     * @return
+     */
+    private Statement getContextStatement(int contextIndex) {
         if (contextIndex >= 0) {
-            Iterator<Statement> iterator = statementStack.iterator();
-            for (int i = statementStack.size() - (contextIndex + 1); i > 0; i--) {
+            Iterator<Statement> iterator = contextStatementStack.iterator();
+            for (int i = contextStatementStack.size() - (contextIndex + 1); i > 0; i--) {
                 iterator.next();
             }
             return iterator.next();
@@ -155,35 +170,26 @@ public class TableColumnResolver {
         }
     }
 
-    private SqlColumnReference resolveInContext(String columnName, int contextLevel) {
+    private SqlColumnReference resolveInContextStatement(String columnName, Statement contextStatement) {
         Objects.requireNonNull(columnName);
-        if (contextLevel < 0) {
-            // column reference was not found
-            return null;
-        }
 
-        final Statement currentStatement = getStatement(contextLevel);
-        if (currentStatement == null) {
-            throw new IllegalStateException("No current select context");
-        }
-
-        if (currentStatement instanceof Delete) {
-            Delete delete = (Delete) currentStatement;
+        if (contextStatement instanceof Delete) {
+            Delete delete = (Delete) contextStatement;
             if (delete.getTable() != null) {
                 return findBaseTableColumnReference(delete.getTable(), columnName);
             } else {
                 //TODO
             }
 
-        } else if (currentStatement instanceof Update) {
-            Update update = (Update) currentStatement;
+        } else if (contextStatement instanceof Update) {
+            Update update = (Update) contextStatement;
             if (update.getTable() != null) {
                 return findBaseTableColumnReference(update.getTable(), columnName);
             } else {
                 // TODO
             }
-        } else if (currentStatement instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) currentStatement;
+        } else if (contextStatement instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect) contextStatement;
             if (isColumnAlias(plainSelect, columnName)) {
                 columnName = getBaseColumn(plainSelect, columnName).getColumnName();
             }
@@ -192,14 +198,14 @@ public class TableColumnResolver {
                     return createColumnReference(fromItem, columnName);
                 }
             }
-        } else if (currentStatement instanceof Select) {
-            Select select = (Select) currentStatement;
+        } else if (contextStatement instanceof Select) {
+            Select select = (Select) contextStatement;
             if (findBaseTableColumnReference(select, columnName) != null) {
                 return new SqlColumnReference(new SqlDerivedTableReference(select), columnName);
             }
         }
-        // search column in previous context
-        return resolveInContext(columnName, contextLevel - 1);
+        // column was not found in this context statement
+        return null;
     }
 
     private boolean isColumnAlias(PlainSelect plainSelect, String columnName) {
@@ -260,91 +266,11 @@ public class TableColumnResolver {
         } else if (isBaseTable(tableName)) {
             return new SqlBaseTableReference(tableName);
         } else {
-            // table was not found
+            // table was not found in any context
             return null;
         }
     }
 
-
-    public Set<SqlColumnReference> getColumns(Select select) {
-        if (select instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) select;
-            List<FromItem> fromItemList = SqlParserUtils.getFromAndJoinItems(plainSelect);
-            Set<SqlColumnReference> columns = new LinkedHashSet<>();
-            for (FromItem fromItem : fromItemList) {
-                Set<SqlColumnReference> fromItemColumns = getColumns(fromItem);
-                columns.addAll(fromItemColumns);
-            }
-            return columns;
-        } else if (select instanceof SetOperationList) {
-            // Handle UNION, INTERSECT, etc.
-            Set<SqlColumnReference> columns = new LinkedHashSet<>();
-            SetOperationList setOperationList = (SetOperationList) select.getSelectBody();
-            for (Select subquery : setOperationList.getSelects()) {
-                Set<SqlColumnReference> subqueryColumns = getColumns(subquery);
-                columns.addAll(subqueryColumns);
-            }
-            return columns;
-        } else if (select instanceof WithItem) {
-            // Handle WITH clause
-            WithItem withItem = (WithItem) select.getSelectBody();
-            Select subquery = withItem.getSelect();
-            return getColumns(subquery);
-        } else if (select instanceof ParenthesedSelect) {
-            // Handle parenthesized select
-            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select.getSelectBody();
-            Select subquery = parenthesedSelect.getSelect();
-            return getColumns(subquery);
-        } else {
-            throw new IllegalArgumentException("Unsupported select type: " + select.getClass());
-        }
-    }
-
-
-    private Set<SqlColumnReference> getColumns(FromItem fromItem) {
-        if (fromItem instanceof LateralSubSelect) {
-            LateralSubSelect lateralSubSelect = (LateralSubSelect) fromItem;
-            Select subquery = lateralSubSelect.getSelectBody();
-            return getColumns(subquery);
-        } else if (fromItem instanceof Table) {
-            Table table = (Table) fromItem;
-            String tableName = table.getFullyQualifiedName();
-            SqlTableReference sqlTableReference;
-            if (tableAliasResolver.isAliasDeclaredInAnyContext(tableName)) {
-                sqlTableReference = tableAliasResolver.resolveTableReference(tableName);
-            } else if (isBaseTable(tableName)) {
-                sqlTableReference = new SqlBaseTableReference(table.getFullyQualifiedName());
-            } else {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
-            }
-            if (sqlTableReference instanceof SqlBaseTableReference) {
-                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-                return getColumns(sqlBaseTableReference.getTableId());
-            } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                return getColumns(sqlDerivedTableReference.getSelect());
-            } else {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
-            }
-        } else if (fromItem instanceof ParenthesedFromItem) {
-            ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
-            return getColumns(parenthesedFromItem.getFromItem());
-        } else if (fromItem instanceof ParenthesedSelect) {
-            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
-            Select subquery = parenthesedSelect.getSelect();
-            return getColumns(subquery);
-        } else if (fromItem instanceof WithItem) {
-            WithItem withItem = (WithItem) fromItem;
-            Select subquery = withItem.getSelect();
-            return getColumns(subquery);
-        } else if (fromItem instanceof TableFunction) {
-            TableFunction tableFunction = (TableFunction) fromItem;
-            // Handle table function
-            throw new UnsupportedOperationException("Implement handling of table functions" + tableFunction);
-        } else {
-            throw new IllegalArgumentException("Unsupported from item type: " + fromItem.getClass());
-        }
-    }
 
     private SqlColumnReference findBaseTableColumnReference(FromItem fromItem, String columnName) {
         Objects.requireNonNull(fromItem);
@@ -472,7 +398,7 @@ public class TableColumnResolver {
     }
 
 
-    public SqlColumnReference findBaseTableColumnReference(Select select, String columnName) {
+    private SqlColumnReference findBaseTableColumnReference(Select select, String columnName) {
         this.tableAliasResolver.enterTableAliasContext(select);
         try {
             if (select instanceof PlainSelect) {
