@@ -1,21 +1,21 @@
 package org.evomaster.core.problem.security.data
 
-import org.evomaster.core.problem.security.ParameterType
 import org.evomaster.core.problem.security.VulnerabilityClass
 
-class ParamMapping (
+class ActionMapping (
     val name: String,
-    val description: String?,
+
 ) {
 
-    var promptId : String? = null
+    var paramMapping: Map<String, ParamMapping> = mutableMapOf()
 
-    var paramType: ParameterType? = null
+    var isVulnerable = false
+
+    var isExploitable = false
 
     var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
 
     fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
         vulnerabilityClasses.add(vulnerabilityClass)
     }
-
 }
