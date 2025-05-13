@@ -19,7 +19,7 @@ that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
 In particular, _EvoMaster_ can fuzz APIs such as REST, GraphQL and RPC.
-Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JS and Java/Kotlin JUnit format) that can be used for _regression testing_.
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JavaScript and Java/Kotlin JUnit format) that can be used for _regression testing_.
 
 _EvoMaster_ is an AI driven tool.
 In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm)

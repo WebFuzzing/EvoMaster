@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.individual
 
 import org.evomaster.core.TestUtils
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

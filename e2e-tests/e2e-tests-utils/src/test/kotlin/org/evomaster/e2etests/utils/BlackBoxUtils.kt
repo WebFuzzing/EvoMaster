@@ -36,19 +36,35 @@ object BlackBoxUtils {
 
     private fun mvn() = if (isWindows()) "mvn.cmd" else "mvn"
 
+
     private fun runNpmInstall() {
         val command = listOf(npm(), "ci")
 
         executeInstallShellCommand(command, JS_BASE_PATH, "NPM")
     }
 
-    private fun installPythonRequirements() {
-        val upgradePipCommand = listOf("python", "-m", "pip", "install", "--upgrade", "pip", "--user")
-        executeInstallShellCommand(upgradePipCommand, PY_BASE_PATH, "pip")
-
-        val installRequirementsCommand = listOf("pip", "install", "-r", "./requirements.txt", "--user")
-        executeInstallShellCommand(installRequirementsCommand, PY_BASE_PATH, "requirements")
+    private fun installPythonRequirements(){
+        /*
+            weird situation... python installations between different OSs and GA can leave
+            to different scripts on the PATH...
+            so we try one, if fails, we try other
+         */
+        try{
+            installPythonRequirements("python", "pip")
+        }catch (e: Exception){
+            installPythonRequirements("python3","pip3")
+        }
     }
+
+    private fun installPythonRequirements(python: String, pip: String) {
+        val upgradePipCommand = listOf(python, "-m", "pip", "install", "--upgrade", "pip", "--user")
+        executeInstallShellCommand(upgradePipCommand, PY_BASE_PATH, "upgrade-$pip")
+
+        val installRequirementsCommand = listOf(pip, "install", "-r", "./requirements.txt", "--user")
+        executeInstallShellCommand(installRequirementsCommand, PY_BASE_PATH, "install-requirements")
+    }
+
+
 
     private fun executeInstallShellCommand(command: List<String>, directory: String, technology: String) {
         val builder = ProcessBuilder(command)
@@ -100,8 +116,13 @@ object BlackBoxUtils {
     fun runPythonTests(folderRelativePath: String) {
         installPythonRequirements()
 
-        val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
-        runTestsCommand(command, PY_BASE_PATH, "Python")
+        try {
+            val command = listOf("python", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
+            runTestsCommand(command, PY_BASE_PATH, "Python")
+        }catch (e: Exception){
+            val command = listOf("python3", "-m", "unittest", "discover", "-s", folderRelativePath, "-p", "*_Test.py")
+            runTestsCommand(command, PY_BASE_PATH, "Python")
+        }
     }
 
     fun runJavaTests(outputFolderName: String) {

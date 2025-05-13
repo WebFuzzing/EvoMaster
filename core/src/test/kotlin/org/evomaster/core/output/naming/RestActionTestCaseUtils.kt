@@ -11,7 +11,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -134,7 +134,7 @@ object RestActionTestCaseUtils {
     fun ensureGeneValue(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, paramName: String, paramValue: String) {
         val restCallAction = evaluatedIndividual.evaluatedMainActions().last().action as RestCallAction
         (restCallAction.parameters.filter { it.name == paramName }).forEach {
-            (it as QueryParam).getGeneForQuery().setFromStringValue(paramValue)
+            (it as QueryParam).getGeneForQuery().setValueBasedOn(paramValue)
         }
     }
 

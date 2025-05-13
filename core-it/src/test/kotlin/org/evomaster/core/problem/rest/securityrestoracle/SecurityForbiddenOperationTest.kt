@@ -8,9 +8,12 @@ import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -70,9 +73,9 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val a = pirTest.fromVerbPath("POST", "/api/resources")!!
         val b = pirTest.fromVerbPath("DELETE", "/api/resources/1234")!!
-        PostCreateResourceUtils.linkDynamicCreateResource(a,b)//FIXME should be in PirToRest
+        CreateResourceUtils.linkDynamicCreateResource(a,b)//FIXME should be in PirToRest
         val c = pirTest.fromVerbPath("PUT", "/api/resources/333")!!
-        PostCreateResourceUtils.linkDynamicCreateResource(a,c)//FIXME should be in PirToRest
+        CreateResourceUtils.linkDynamicCreateResource(a,c)//FIXME should be in PirToRest
 
         val auth = controller.getInfoForAuthentication()
         val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)

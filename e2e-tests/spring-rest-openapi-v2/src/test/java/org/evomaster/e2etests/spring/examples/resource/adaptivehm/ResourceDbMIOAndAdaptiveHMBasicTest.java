@@ -3,16 +3,17 @@ package org.evomaster.e2etests.spring.examples.resource.adaptivehm;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.problem.enterprise.SampleType;
 import org.evomaster.core.problem.rest.resource.RestResourceCalls;
 import org.evomaster.core.problem.rest.service.ResourceManageService;
-import org.evomaster.core.problem.rest.service.ResourceRestMutator;
-import org.evomaster.core.problem.rest.service.ResourceRestFitness;
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator;
+import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness;
 import org.evomaster.core.search.action.ActionFilter;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual;
 import org.evomaster.core.search.service.Archive;
+import org.evomaster.core.search.service.SearchGlobalState;
 import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
 import org.junit.jupiter.api.Test;
 
@@ -38,6 +39,7 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
 
         //test impactinfo
         Injector injector = init(args);
+        SearchGlobalState globalState = injector.getInstance(SearchGlobalState.class);
 
         ResourceManageService rmanger = injector.getInstance(ResourceManageService.class);
         ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
@@ -56,7 +58,9 @@ public class ResourceDbMIOAndAdaptiveHMBasicTest extends ResourceMIOHWTestBase {
 
 
         RestIndividual twoCalls = new RestIndividual(calls, SampleType.SMART_RESOURCE, null, Collections.emptyList(), null, 1);
-        twoCalls.doInitializeLocalId();
+        //twoCalls.doInitializeLocalId();
+        twoCalls.doGlobalInitialize(globalState);
+
         EvaluatedIndividual<RestIndividual> twoCallsEval = ff.calculateCoverage(twoCalls, Collections.emptySet(), null);
 
         ImpactsOfIndividual impactInd = twoCallsEval.getImpactInfo();

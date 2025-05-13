@@ -1,8 +1,7 @@
 package org.evomaster.core.search.mutationweight.individual
 
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.*

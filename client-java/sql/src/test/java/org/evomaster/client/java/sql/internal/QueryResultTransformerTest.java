@@ -63,9 +63,9 @@ public class QueryResultTransformerTest {
                 .dtos();
 
 
-        Map<String, Set<String>> columns = new HashMap<String, Set<String>>() {{
-            put("FooTable", new HashSet<>(Arrays.asList("fooA", "fooC")));
-            put("BarTable", new HashSet<>(Arrays.asList("barB", "barC", "barD", "barE")));
+        Map<SqlTableId, Set<SqlColumnId>> columns = new HashMap<SqlTableId, Set<SqlColumnId>>() {{
+            put(new SqlTableId("FooTable"), new HashSet<>(Arrays.asList(new SqlColumnId("fooA"), new SqlColumnId("fooC"))));
+            put(new SqlTableId("BarTable"), new HashSet<>(Arrays.asList(new SqlColumnId("barB"), new SqlColumnId("barC"), new SqlColumnId("barD"), new SqlColumnId("barE"))));
         }};
 
 

@@ -10,7 +10,7 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getPathParam
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getStringQueryParam
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

@@ -10,8 +10,12 @@ import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
@@ -201,7 +205,7 @@ class SecurityRest {
                          */
                         val repeat = lastCall.copy() as RestCallAction
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                        copy.resetLocalIdRecursively()
+                        copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
                     }
                     copy.seeMainExecutableActions().last().auth = otherAuth
@@ -542,6 +546,12 @@ class SecurityRest {
                     sqlActions = listOf()
                 )
             )
+
+            finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                it.saveCreatedResourceLocation = true
+            }
+            finalIndividual.fixResourceForwardLinks()
+
             finalIndividual.modifySampleType(SampleType.SECURITY)
             finalIndividual.ensureFlattenedStructure()
 
@@ -723,7 +733,7 @@ class SecurityRest {
         creationAction: RestCallAction,
         targetAction: RestCallAction
     ) {
-        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        CreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }

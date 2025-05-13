@@ -6,6 +6,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.tracer.TrackOperator
 
 /**
@@ -28,7 +29,7 @@ abstract class ApiWsIndividual (
      */
     children: MutableList<out ActionComponent>,
     childTypeVerifier: EnterpriseChildTypeVerifier,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0, 0, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children, children.size, 0, 0, 0, 0, 0),
 ): EnterpriseIndividual(sampleType, trackOperator, index, children, childTypeVerifier, groups){
 
 
