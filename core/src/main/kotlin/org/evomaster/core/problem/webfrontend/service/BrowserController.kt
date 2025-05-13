@@ -67,7 +67,7 @@ class BrowserController {
     }
 
     fun computePossibleUserInteractions() : List<WebUserInteraction>{
-        return BrowserActionBuilder.computePossibleUserInteractions(getCurrentPageSource())
+        return BrowserActionBuilder.computePossibleUserInteractions(driver)
     }
 
     fun getCurrentPageSource(): String {
@@ -78,8 +78,16 @@ class BrowserController {
         return driver.currentUrl
     }
 
+    fun getDriver(): RemoteWebDriver{
+        return driver
+    }
+
     fun clickAndWaitPageLoad(cssSelector: String){
         SeleniumEMUtils.clickAndWaitPageLoad(driver, cssSelector)
+    }
+
+    fun selectAndWaitPageLoad(cssSelector: String, values: List<String>){
+        //TODO
     }
 
     fun goBack(){

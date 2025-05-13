@@ -2,7 +2,10 @@ package org.evomaster.core.problem.webfrontend
 
 import org.evomaster.core.problem.gui.GuiAction
 import org.evomaster.core.search.StructuralElement
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.jsoup.Jsoup
 
@@ -15,8 +18,20 @@ class WebAction(
     /**
      * Map from cssLocator (coming from [userInteractions]) for text input to StringGene representing its value
      */
-    val textData : MutableMap<String, StringGene> = mutableMapOf()
-) : GuiAction(textData.values.map { it }) {
+    val textData : MutableMap<String, StringGene> = mutableMapOf(),
+    /**
+     * TODO explanation
+     */
+    val singleSelection: MutableMap<String, IntegerGene> = mutableMapOf(),
+    /**
+     * TODO explanation
+     */
+    val multiSelection: MutableMap<String, ArrayGene<BooleanGene>> = mutableMapOf(),
+) : GuiAction(
+    textData.values.map { it }
+        .plus(singleSelection.values.map { it })
+        .plus(multiSelection.values.map { it })
+) {
 
     init {
         val nFillText = userInteractions.count { it.userActionType == UserActionType.FILL_TEXT }
@@ -28,6 +43,7 @@ class WebAction(
                 throw IllegalArgumentException("Missing info for input: $key")
             }
         }
+        //TODO constraint checks on singleSelection and multiSelection
     }
 
     override fun isDefined() : Boolean {
@@ -65,7 +81,9 @@ class WebAction(
     override fun copyContent(): StructuralElement {
         return WebAction(
             userInteractions.map { it.copy() }.toMutableList(),
-            textData.entries.associate { it.key to it.value.copy() as StringGene }.toMutableMap()
+            textData.entries.associate { it.key to it.value.copy() as StringGene }.toMutableMap(),
+            singleSelection.entries.associate { it.key to it.value.copy() as IntegerGene }.toMutableMap(),
+            multiSelection.entries.associate { it.key to it.value.copy() as ArrayGene<BooleanGene> }.toMutableMap(),
         )
     }
 
@@ -74,6 +92,7 @@ class WebAction(
         userInteractions.addAll(other.userInteractions) //immutable elements
         textData.clear()
         textData.putAll(other.textData.entries.associate { it.key to it.value.copy() as StringGene })
+        //TODO singleSelection multiSelection
     }
 
     fun getIdentifier() : String {

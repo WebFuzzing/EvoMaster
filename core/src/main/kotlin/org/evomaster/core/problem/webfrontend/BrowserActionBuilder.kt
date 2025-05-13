@@ -1,18 +1,25 @@
 package org.evomaster.core.problem.webfrontend
 
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
+import org.openqa.selenium.By
+import org.openqa.selenium.remote.RemoteWebDriver
+import org.openqa.selenium.support.ui.Select
 import java.net.URI
 import java.net.URISyntaxException
-import java.net.URL
+import kotlin.math.min
 
 object BrowserActionBuilder {
 
 
-    fun computePossibleUserInteractions(html: String) : List<WebUserInteraction>{
+    /**
+     */
+    fun computePossibleUserInteractions(driver: RemoteWebDriver) : List<WebUserInteraction>{
 
 
         val document = try{
-            Jsoup.parse(html)
+            Jsoup.parse(driver.pageSource)
         }catch (e: Exception){
             //TODO double-check
             return listOf()
@@ -22,10 +29,42 @@ object BrowserActionBuilder {
 
         //TODO all cases
 
+        handleALinks(document, driver, list)
+        handleDropDowns(document, driver, list)
+
+        return list
+    }
+
+    private fun handleDropDowns(
+        document: Document,
+        driver: RemoteWebDriver,
+        list: MutableList<WebUserInteraction>
+    ) {
+
+        document.getElementsByTag("select")
+            .forEach { jsoup ->
+                val dropdown = Select(driver.findElement(By.cssSelector(jsoup.cssSelector())))
+                val type = if(dropdown.isMultiple) {
+                    UserActionType.SELECT_MULTI
+                }  else {
+                    UserActionType.SELECT_SINGLE
+                }
+                val options = dropdown.options
+                    .filter{it.isEnabled}
+                    .map{it.text}
+                list.add(WebUserInteraction(jsoup.cssSelector(), type, options))
+            }
+    }
+
+    private fun handleALinks(
+        document: Document,
+        driver: RemoteWebDriver,
+        list: MutableList<WebUserInteraction>
+    ) {
         document.getElementsByTag("a")
             .forEach {
                 val href = it.attr("href")
-                val canClick = if(!href.isNullOrBlank()) {
+                val canClick = if (!href.isNullOrBlank()) {
                     val uri = try {
                         URI(href)
                     } catch (e: URISyntaxException) {
@@ -38,25 +77,36 @@ object BrowserActionBuilder {
                     val onclick = it.attr("onclick")
                     !onclick.isNullOrBlank()
                 }
-                if(canClick){
+                if (canClick) {
                     list.add(WebUserInteraction(it.cssSelector(), UserActionType.CLICK))
                 }
             }
-
-        return list
     }
 
 
-    fun createPossibleActions(html: String) : List<WebAction>{
+    fun createPossibleActions(driver: RemoteWebDriver) : List<WebAction>{
 
-        val interactions = computePossibleUserInteractions(html)
+        val interactions = computePossibleUserInteractions(driver)
 
         val inputs = interactions.filter { it.userActionType == UserActionType.FILL_TEXT }
         val others = interactions.filter { it.userActionType != UserActionType.FILL_TEXT }
 
         //TODO genes for inputs
 
-        return others.map { WebAction(mutableListOf(it)) }
+        return others.map {
+            when(it.userActionType) {
+                UserActionType.CLICK -> WebAction(mutableListOf(it))
+                UserActionType.SELECT_SINGLE -> {
+                    val selection = IntegerGene(it.cssSelector, min=0, max=it.inputs.size)
+                    WebAction(mutableListOf(it), singleSelection = mutableMapOf(it.cssSelector to selection))
+                }
+                //TODO multi
+                else -> {
+                    //TODO log warn
+                    WebAction(mutableListOf(it))
+                }
+            }
+        }
     }
 
 }
