@@ -956,6 +956,47 @@ public class SqlHeuristicsCalculatorTest {
 
     }
 
+    @Test
+    public void testLeftJoinWithTable() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT\n" +
+                "  e.*\n" +
+                "FROM employees e\n" +
+                "LEFT JOIN projects p ON e.project_id = p.project_id;\n";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        employees.addRow(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees", Arrays.asList("John Doe", "John", null, 1, 50_000));
+
+        QueryResult projects = new QueryResult(Arrays.asList("project_id", "project_name"), "projects");
+        projects.addRow(Arrays.asList("project_id", "project_name"), "projects", Arrays.asList(1, "ProjectX"));
+
+
+
+        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, projects);
+        SqlHeuristicResult heuristicResult = calculator.calculateHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(5, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", "employees", "e"),
+                queryResult.seeVariableDescriptors().get(0));
+        assertEquals(new VariableDescriptor("first_name", "first_name", "employees", "e"),
+                queryResult.seeVariableDescriptors().get(1));
+        assertEquals(new VariableDescriptor("department_id", "department_id", "employees", "e"),
+                queryResult.seeVariableDescriptors().get(2));
+        assertEquals(new VariableDescriptor("project_id", "project_id", "employees", "e"),
+                queryResult.seeVariableDescriptors().get(3));
+        assertEquals(new VariableDescriptor("salary", "salary", "employees", "e"),
+                queryResult.seeVariableDescriptors().get(4));
+
+        final List<DataRow> dataRows = heuristicResult.getQueryResult().seeRows();
+        assertEquals(1, dataRows.size());
+        assertEquals("John Doe", dataRows.get(0).getValueByName("name"));
+        assertEquals("John", dataRows.get(0).getValueByName("first_name"));
+        assertEquals(null, dataRows.get(0).getValueByName("department_id"));
+        assertEquals(1, dataRows.get(0).getValueByName("project_id"));
+        assertEquals(50_000, dataRows.get(0).getValueByName("salary"));
+
+    }
 
 
 }
