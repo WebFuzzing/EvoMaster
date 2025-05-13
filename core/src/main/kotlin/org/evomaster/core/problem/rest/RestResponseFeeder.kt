@@ -20,11 +20,7 @@ object RestResponseFeeder {
 
     private val stemmer = PorterStemmer()
 
-    /**
-     * Heuristically try to tell if the given string name is representing an id.
-     * Note: we can never be 100% sure, so this is just a heuristic.
-     */
-    fun heuristicIsId(s: String) = s.endsWith("id", true)
+
 
 
     /**
@@ -34,6 +30,11 @@ object RestResponseFeeder {
      * Special case is for POST, in which only ids are handled
      */
     fun handleResponse(source: RestCallAction, res: RestCallResult, pool: DataPool){
+
+        /*
+            FIXME: some duplicate code with IdHeuristics, which is called directly in RestCallResult.
+            TODO: need to re-check how stemmer was used, before doing the refactoring
+         */
 
         val status = res.getStatusCode()
         if(status !in 200..299){
