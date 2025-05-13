@@ -77,9 +77,19 @@ object RestSecurityOracle {
             }
         }
 
+        /**
+         * Check if there is any protected resource (i.e., one that returns 403 or 401 when accessed without proper authorization),
+         * but the same resource is also accessible without any authentication.
+         */
+
         val a403 = actionsWithResults.filter {
             (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                 .getStatusCode() == 403
+        }
+
+        val a401 = actionsWithResults.filter {
+            (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 401
         }
 
         val a200 = actionsWithResults.filter {
@@ -90,7 +100,7 @@ object RestSecurityOracle {
             it.auth is NoAuth
         }
 
-        return a403.isNotEmpty() && a200.isNotEmpty()
+        return (a403.isNotEmpty() || a401.isNotEmpty()) && a200.isNotEmpty()
     }
 
     fun hasExistenceLeakage(

@@ -48,7 +48,7 @@ public enum FaultCategory {
     SECURITY_FORBIDDEN_PUT(803, "Forbidden Replacement But Allowed Modifications", "forbidsReplacementButAllowsModifications"),
     SECURITY_FORBIDDEN_PATCH(804, "Forbidden Updates But Allowed Modifications", "forbidsUpdatesButAllowsModifications"),
     SECURITY_ALLOW_MODIFICATION_BY_ALL(805, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone"),
-    SECURITY_FORGOTTEN_AUTHENTICATION(806, "Forgotten Authentication", "forgottenAuthentication")
+    SECURITY_FORGOTTEN_AUTHENTICATION(806, "A Protected Resource Is Accessible Without Providing Any Authentication", "forgottenAuthentication")
 
     //9xx: undefined
     ;

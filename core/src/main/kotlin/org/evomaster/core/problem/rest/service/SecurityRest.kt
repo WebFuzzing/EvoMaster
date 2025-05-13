@@ -604,7 +604,16 @@ class SecurityRest {
 
 
     /**
-     * Check if there is a test case with a 403 and another one with a 200 without authentication
+     * Check if there is a test case with a 403 and another one with a 200 without authentication.
+     * To check this, a resource must first be created (PUT or POST). While the user who created this
+     * resource can access it (200), the other user cannot (403). However, if a 200 status code is
+     * returned when attempting to access the same resource without sending the authorization header,
+     * it indicates that the authorization has been forgotten.
+     * Example:
+     * POST /resources/ AUTH1 -> 201 (location header: /resources/42/)
+     * GET /resources/42/ AUTH1 -> 200
+     * GET /resources/42/ AUTH2 -> 403
+     * GET /resources/42/ AUTH1 -> 200
      */
     private fun handleForbiddenAuthentication(){
         actionDefinitions.forEach { op ->
@@ -623,7 +632,6 @@ class SecurityRest {
                 it.individual.copy()
             }.forEach { ind ->
 
-                //add get request without any auth
                 val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
 
                 if(copyLast.verb != HttpVerb.GET)
