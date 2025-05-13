@@ -2370,9 +2370,8 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
-    var security = false
+    var security = true
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
@@ -2391,12 +2390,11 @@ class EMConfig {
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
-    @Experimental
     @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
             " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
             " However, this is done heuristically." +
             " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
-    var blackBoxCleanUp = false
+    var blackBoxCleanUp = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2476,11 +2474,10 @@ class EMConfig {
     @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
     var useTestMethodOrder = false
 
-    @Experimental
     @Probability(true)
     @Cfg("When sampling a new individual, probability that ALL optional choices are ON, or ALL are OFF." +
             " The choice between ON and OFF depends on probabilityOfOnVsOffInAllOptionals.")
-    var probabilityAllOptionalsAreOnOrOff = 0.0
+    var probabilityAllOptionalsAreOnOrOff = 0.5
 
     @Experimental
     @Cfg("If all-optionals is activated with probabilityAllOptionalsAreOnOrOff, specifying probability of using ON" +
