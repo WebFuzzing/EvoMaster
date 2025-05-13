@@ -57,6 +57,9 @@ abstract class Individual(
 
     companion object{
         private val log = LoggerFactory.getLogger(Individual::class.java)
+
+        const val LOCAL_ID_PREFIX_ACTION = "ACTION_COMPONENT"
+        const val LOCAL_ID_PREFIX_GENE = "GENE"
     }
 
 
@@ -99,9 +102,16 @@ abstract class Individual(
     /**
      * get local id based on the given counter
      */
-    private fun getLocalId(obj: StructuralElement, counter: Int) : String
-    = "${if (obj is ActionComponent) "ACTION_COMPONENT" else if (obj is Gene) "GENE" else throw IllegalStateException("Only Generate local id for ActionComponent and Gene")}_$counter"
+    private fun getLocalId(obj: StructuralElement, counter: Int) : String {
 
+         val prefix  = when (obj) {
+             is ActionComponent -> LOCAL_ID_PREFIX_ACTION
+             is Gene -> LOCAL_ID_PREFIX_GENE
+             else -> throw IllegalStateException("Only Generate local id for ActionComponent and Gene")
+         }
+
+        return "${prefix}_$counter"
+    }
     /**
      * Make a deep copy of this individual
      */
