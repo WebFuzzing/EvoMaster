@@ -632,6 +632,12 @@ class SecurityRest {
                 it.individual.copy()
             }.forEach { ind ->
 
+                val isCreate = ind.seeMainExecutableActions().filter { (it as RestCallAction).verb == HttpVerb.POST || it.verb == HttpVerb.PUT }.isNotEmpty()
+
+                if (!isCreate){
+                    return@forEach
+                }
+
                 val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
 
                 if(copyLast.verb != HttpVerb.GET)
