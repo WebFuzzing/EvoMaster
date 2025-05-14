@@ -8,25 +8,29 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class JavaTypesEMTest extends JavaTypesTestBase {
 
-    @Test
-    public void testRunEMWithSQL() throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true})
+    public void testRunEMWithSQL(boolean heuristicsForSQLAdvanced) throws Throwable {
 
         handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "true",
-                    "--seed",  "" + defaultSeed++,
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxEvaluations", "3000",
-                    "--stoppingCriterion", "ACTION_EVALUATIONS",
-                    "--heuristicsForSQL", "true",
-                    "--generateSqlDataWithSearch", "true"
-            };
+            List<String> args = new ArrayList<>();
+            setOption(args, "createTests", "true");
+            setOption(args, "seed", "" + defaultSeed++);
+            setOption(args, "sutControllerPort", "" + controllerPort);
+            setOption(args, "maxEvaluations", "3000");
+            setOption(args, "stoppingCriterion", "ACTION_EVALUATIONS");
+            setOption(args, "heuristicsForSQL", "true");
+            setOption(args, "generateSqlDataWithSearch", "true");
+            setOption(args, "heuristicsForSQLAdvanced", heuristicsForSQLAdvanced ? "true" : "false");
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[]{}));
 
             assertTrue(solution.getIndividuals().size() >= 1);
 
