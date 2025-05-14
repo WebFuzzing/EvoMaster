@@ -14,6 +14,7 @@ import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecut
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.heuristic.BooleanLiteralsHelper;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
@@ -293,19 +294,29 @@ public class SqlHandler {
         }
 
         // fetch data for computing distances
-        final List<QueryResult> queryResults;
-        try {
-            queryResults = getQueryResultsForComputingSqlDistance(columns);
-        } catch (SQLException e) {
-            SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + sqlCommand);
-            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+        final QueryResultSet queryResultSet;
+
+        if (queryFromDatabase) {
+            try {
+                List<QueryResult> queryResults = getQueryResultsForComputingSqlDistance(columns);
+                queryResultSet = new QueryResultSet();
+                for (QueryResult queryResult : queryResults) {
+                    queryResultSet.addQueryResult(queryResult);
+                }
+            } catch (SQLException e) {
+                SimpleLogger.uniqueWarn("Failed to execute query for retrieving data for computing SQL heuristics: " + sqlCommand);
+                return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+            }
+        } else {
+            // use the data from the successful insertions
+            queryResultSet = QueryResultTransformer.translateInsertionDtos(successfulInitSqlInsertions, columns, schema);
         }
 
         // compute the SQL heuristics using the fetched data
         SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
                 schema,
                 taintHandler,
-                queryResults.toArray(new QueryResult[]{}));
+                queryResultSet);
 
         SqlDistanceWithMetrics sqlDistanceWithMetrics = sqlHeuristicsCalculator.computeDistance(sqlCommand);
 

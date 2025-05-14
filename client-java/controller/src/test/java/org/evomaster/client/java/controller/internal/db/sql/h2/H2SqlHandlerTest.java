@@ -390,4 +390,28 @@ public class H2SqlHandlerTest extends DatabaseH2TestInit {
         }
     }
 
+
+    @Test
+    public void testCharacterLargeObjectInsertion() throws Exception {
+        // setup
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE documents (\n" +
+                "    id INT PRIMARY KEY,\n" +
+                "    content CLOB\n" +
+                ");");
+
+        String sqlCommand = "INSERT INTO documents (id,content) VALUES (1,'LOB')";
+        SqlScriptRunner.execCommand(connection, sqlCommand);
+
+        DbInfoExtractor dbInfoExtractor = new DbInfoExtractor();
+        DbInfoDto schema = dbInfoExtractor.extract(connection);
+        SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setConnection(connection);
+        sqlHandler.setSchema(schema);
+        sqlHandler.setCompleteSqlHeuristics(true);
+
+        assertTrue(sqlHandler.getSqlDistances(null, true).isEmpty());
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(sqlCommand, false, 10L);
+        sqlHandler.handle(sqlExecutionLogDto);
+
+    }
 }

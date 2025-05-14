@@ -27,6 +27,7 @@ public class FunctionFinder {
         super();
         this.addFunction(new TimeFunction());
         this.addFunction(new UpperFunction());
+        this.addFunction(new StringDecodeFunction());
     }
 
     public SqlFunction getFunction(String functionName) {

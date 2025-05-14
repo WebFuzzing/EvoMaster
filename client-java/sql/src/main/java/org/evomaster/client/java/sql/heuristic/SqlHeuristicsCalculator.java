@@ -69,6 +69,9 @@ public class SqlHeuristicsCalculator {
         this(new TableColumnResolver(schema), taintHandler, buildQueryResultSet(data));
     }
 
+    public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResultSet queryResultSet) {
+        this(new TableColumnResolver(schema), taintHandler, queryResultSet);
+    }
     public static boolean isValidSqlCommandForSqlHeuristicsCalculation(String sqlCommand) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         return isValidSqlCommandForSqlHeuristicsCalculation(parsedSqlCommand);

@@ -7,6 +7,7 @@ import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.conditional.XorExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.create.table.ColDataType;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.AllTableColumns;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
@@ -18,6 +19,7 @@ import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
+import org.evomaster.client.java.sql.SqlDataType;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.*;
@@ -30,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.evomaster.client.java.sql.heuristic.ConversionHelper.*;
+import static org.evomaster.client.java.sql.heuristic.SqlCastHelper.castTo;
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.*;
 import static org.evomaster.client.java.distance.heuristics.TruthnessUtils.*;
 import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
@@ -935,8 +938,25 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(CastExpression castExpression) {
-        throw new UnsupportedOperationException("visit(CastExpression) not supported");
+        super.visit(castExpression);
+        if (castExpression.getColumnDefinitions().size() >= 1) {
+            //cast as ROW
+            throw new UnsupportedOperationException("CAST AS ROW must be implemented");
+        } else {
+            Object value = popAsSingleValue();
+            if (value == null) {
+                evaluationStack.push(null);
+            } else {
+                ColDataType colDataType = castExpression.getColDataType();
+                String dataTypeName = colDataType.getDataType();
+                SqlDataType dataType = SqlDataType.fromString(dataTypeName);
+                final Object castedValue = castTo(dataType, value);
+                evaluationStack.push(castedValue);
+            }
+        }
     }
+
+
 
     @Override
     public void visit(Modulo modulo) {

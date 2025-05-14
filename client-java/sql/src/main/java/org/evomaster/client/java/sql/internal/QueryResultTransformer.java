@@ -1,16 +1,17 @@
 package org.evomaster.client.java.sql.internal;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.VariableDescriptor;
+import org.evomaster.client.java.sql.*;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.sql.SqlDataType.*;
 
 /**
  * This class is used to covert InsertionDto to QueryResult and DataRow
@@ -128,16 +129,25 @@ public class QueryResultTransformer {
     }
 
 
-    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, SqlTableId tableId, Set<SqlColumnId> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults) {
-        List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNames(insertionDto, relatedColumns);
-        if (!relatedColumnNames.isEmpty()) {
-            QueryResult found = null;
-            if (!existingQueryResults.isEmpty())
-                found = existingQueryResults.stream().filter(e -> e.sameVariableNames(relatedColumnNames, tableId.getTableId())).findAny().orElse(null);
+    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto,
+                                                                SqlTableId tableId,
+                                                                Set<SqlColumnId> relatedColumns,
+                                                                DbInfoDto dto,
+                                                                List<QueryResult> existingQueryResults) {
 
-            QueryResult qr = found;
-            if (found == null)
-                qr = new QueryResult(relatedColumnNames, tableId.getTableId());
+        List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNamesUsedInTheInsertion(insertionDto, relatedColumns);
+        if (!relatedColumnNames.isEmpty()) {
+            final QueryResult existingQueryResult;
+            if (!existingQueryResults.isEmpty())
+                existingQueryResult = existingQueryResults.stream().filter(qr -> qr.sameVariableNames(relatedColumnNames, tableId.getTableId())).findAny().orElse(null);
+            else
+                existingQueryResult = null;
+
+            final QueryResult queryResult;
+            if (existingQueryResult == null)
+                queryResult = new QueryResult(relatedColumnNames, tableId.getTableId());
+            else
+                queryResult = existingQueryResult;
 
             Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableId.getTableId())).findFirst();
             if (foundTableSchema.isPresent()) {
@@ -155,15 +165,16 @@ public class QueryResultTransformer {
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));
                 }
 
-                qr.addRow(relatedColumnNames, tableId.getTableId(), values);
+
+                queryResult.addRow(relatedColumnNames, tableId.getTableId(), values);
 
             } else {
                 throw new IllegalArgumentException("Cannot find table schema of " + tableId);
             }
 
-            if (found != null) return null;
+            if (existingQueryResult != null) return null;
 
-            return qr;
+            return queryResult;
         }
         return null;
     }
@@ -174,68 +185,93 @@ public class QueryResultTransformer {
             might later make org.evomaster.core.sql.schema.ColumnDataType shared with driver side
          */
 
-        if (printableValue == null) return null;
+        if (printableValue == null) {
+            return null;
+        }
 
-        if (dto.type.equalsIgnoreCase("BOOL") || dto.type.equalsIgnoreCase("BOOLEAN"))
+        final String dtoDataTypeName = dto.type;
+        SqlDataType dataType = SqlDataType.fromString(dtoDataTypeName);
+        if (isBooleanType(dataType)) {
             return Boolean.valueOf(printableValue);
+        }
 
-        if (dto.type.equalsIgnoreCase("INT") || dto.type.equalsIgnoreCase("INTEGER") || dto.type.equalsIgnoreCase("INT4"))
+        if (isIntegerType(dataType)) {
             return Integer.valueOf(printableValue);
+        }
 
-
-        if (dto.type.equalsIgnoreCase("INT2") || dto.type.equalsIgnoreCase("SMALLINT"))
+        if (isShortType(dataType)) {
             return Short.valueOf(printableValue);
+        }
 
-
-        if (dto.type.equalsIgnoreCase("TINYINT"))
+        if (isByteType(dataType)) {
             return Byte.valueOf(printableValue);
+        }
 
-        if (dto.type.equalsIgnoreCase("INT8") || dto.type.equalsIgnoreCase("BIGINT") || dto.type.equalsIgnoreCase("BIGSERIAL"))
+        if (isLongType(dataType)) {
             return Long.valueOf(printableValue);
+        }
 
-
-        if (dto.type.equalsIgnoreCase("DOUBLE")
-                || dto.type.equalsIgnoreCase("DOUBLE_PRECISION")
-                || dto.type.equalsIgnoreCase("FLOAT")
-                || dto.type.equalsIgnoreCase("REAL")
-                || dto.type.equalsIgnoreCase("FLOAT4")
-                || dto.type.equalsIgnoreCase("FLOAT8")
-                || dto.type.equalsIgnoreCase("DEC")
-                || dto.type.equalsIgnoreCase("DECIMAL")
-                || dto.type.equalsIgnoreCase("NUMERIC")
-        )
+        if (isDoubleType(dataType)) {
             return Double.valueOf(printableValue);
+        }
 
-        if (dto.type.equalsIgnoreCase("TIMESTAMP")
-                || dto.type.equalsIgnoreCase("TIMESTAMPZ")
-                || dto.type.equalsIgnoreCase("TIMETZ")
-                || dto.type.equalsIgnoreCase("DATE")
-                || dto.type.equalsIgnoreCase("DATETIME")
-                || dto.type.equalsIgnoreCase("TIME")
-        ) {
+        if (isDateTimeType(dataType)) {
             Instant instant = ColumnTypeParser.getAsInstant(printableValue);
             if (instant != null) return instant;
         }
 
-
-        if (dto.type.equalsIgnoreCase("CHAR")
-                || dto.type.equalsIgnoreCase("CHARACTER")
-                || dto.type.equalsIgnoreCase("CHARACTER_LARGE_OBJECT")
-                || dto.type.equalsIgnoreCase("TINYTEXT")
-                || dto.type.equalsIgnoreCase("TEXT")
-                || dto.type.equalsIgnoreCase("LONGTEXT")
-                || dto.type.equalsIgnoreCase("VARCHAR")
-                || dto.type.equalsIgnoreCase("CHARACTER_VARYING")
-                || dto.type.equalsIgnoreCase("VARCHAR_IGNORECASE")
-                || dto.type.equalsIgnoreCase("CLOB")
-                || dto.type.equalsIgnoreCase("MEDIUMTEXT")
-                || dto.type.equalsIgnoreCase("LONGBLOB")
-                || dto.type.equalsIgnoreCase("MEDIUMBLOB")
-                || dto.type.equalsIgnoreCase("TINYBLOB")
-        )
+        if (isStringType(dataType)) {
             return String.valueOf(printableValue);
+        }
 
         return printableValue;
 
+    }
+
+    public static QueryResultSet translateInsertionDtos(
+            List<InsertionDto> insertionDtos,
+            Map<SqlTableId, Set<SqlColumnId>> columns,
+            DbInfoDto schema) {
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        for (SqlTableId tableId : columns.keySet()) {
+            TableDto tableDto = schema.tables.stream()
+                    .filter(t -> t.name.equalsIgnoreCase(tableId.getTableId()))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("Cannot find table schema of " + tableId));
+
+            List<VariableDescriptor> variableDescriptors = tableDto.columns.stream()
+                    .map(c -> new VariableDescriptor(c.name, c.name, c.table, c.table))
+                    .collect(Collectors.toList());
+
+            QueryResult queryResult = new QueryResult(variableDescriptors);
+            for (InsertionDto dto : insertionDtos) {
+                if (tableId.getTableId().equalsIgnoreCase(dto.targetTable)) {
+                    List<Object> concreteValues = new ArrayList<>();
+                    for (VariableDescriptor variableDescriptor : variableDescriptors) {
+                        Object concreteValueOrNull = findConcreteValueOrNull(variableDescriptor.getColumnName(), tableDto, dto.data);
+                        concreteValues.add(concreteValueOrNull);
+                    }
+                    DataRow dataRow = new DataRow(variableDescriptors, concreteValues);
+                    queryResult.addRow(dataRow);
+                }
+            }
+            queryResultSet.addQueryResult(queryResult);
+        }
+
+        return queryResultSet;
+    }
+
+    private static Object findConcreteValueOrNull(String columnName, TableDto tableDto, List<InsertionEntryDto> entries) {
+        for (InsertionEntryDto entry : entries) {
+            if (entry.variableName.equalsIgnoreCase(columnName)) {
+                ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, entry.variableName);
+                if (columnDto == null) {
+                    throw new IllegalArgumentException("Cannot find column schema of " + entry.variableName + " in Table " + tableDto.name);
+                }
+                return getColumnValueBasedOnPrintableValue(entry.printableValue, columnDto);
+            }
+        }
+        // return null if not found
+        return null;
     }
 }

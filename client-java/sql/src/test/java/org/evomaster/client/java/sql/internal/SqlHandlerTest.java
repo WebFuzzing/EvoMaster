@@ -3,6 +3,7 @@ package org.evomaster.client.java.sql.internal;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
@@ -17,6 +18,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.List;
 
+import static org.evomaster.client.java.sql.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -164,31 +166,32 @@ public class SqlHandlerTest {
                 "FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE e.income > 100", distances.get(0).sqlCommand);
     }
 
-    private static ColumnDto createColumnDto(String tableName, String columnName) {
+    private static ColumnDto createColumnDto(String tableName, String columnName, String typeName) {
         ColumnDto columnDto = new ColumnDto();
         columnDto.table = tableName;
         columnDto.name = columnName;
+        columnDto.type = typeName;
         return columnDto;
     }
 
     private static @NotNull DbInfoDto createSchema() {
         TableDto employeesTable = new TableDto();
         employeesTable.name = "Employees";
-        employeesTable.columns.add(createColumnDto("employees", "id"));
-        employeesTable.columns.add(createColumnDto("employees", "name"));
-        employeesTable.columns.add(createColumnDto("employees", "income"));
-        employeesTable.columns.add(createColumnDto("employees", "department_id"));
+        employeesTable.columns.add(createColumnDto("employees", "id", "INTEGER"));
+        employeesTable.columns.add(createColumnDto("employees", "name", "VARCHAR"));
+        employeesTable.columns.add(createColumnDto("employees", "income", "INTEGER"));
+        employeesTable.columns.add(createColumnDto("employees", "department_id", "INTEGER"));
 
         TableDto departmentsTable = new TableDto();
         departmentsTable.name = "Departments";
-        departmentsTable.columns.add(createColumnDto("departments", "id"));
-        departmentsTable.columns.add(createColumnDto("departments", "name"));
-        departmentsTable.columns.add(createColumnDto("departments", "location_id"));
+        departmentsTable.columns.add(createColumnDto("departments", "id", "INTEGER"));
+        departmentsTable.columns.add(createColumnDto("departments", "name", "VARCHAR"));
+        departmentsTable.columns.add(createColumnDto("departments", "location_id", "INTEGER"));
 
         TableDto locationsTable = new TableDto();
         locationsTable.name = "Locations";
-        locationsTable.columns.add(createColumnDto("locations", "id"));
-        locationsTable.columns.add(createColumnDto("locations", "city"));
+        locationsTable.columns.add(createColumnDto("locations", "id", "INTEGER"));
+        locationsTable.columns.add(createColumnDto("locations", "city", "VARCHAR"));
 
         DbInfoDto schema = new DbInfoDto();
         schema.tables.add(employeesTable);
@@ -279,5 +282,142 @@ public class SqlHandlerTest {
         return mockConnection;
     }
 
+    @Test
+    public void testGetSqlDistancesNotQueryingFromDatabase() {
+        SqlHandler sqlHandler = new SqlHandler(null);
+
+        Connection mockConnection = mock(Connection.class);
+
+        DbInfoDto schema = createSchema();
+        sqlHandler.setSchema(schema);
+        sqlHandler.setCompleteSqlHeuristics(true);
+        sqlHandler.setConnection(mockConnection);
+
+        // Mock SQL execution log
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto();
+        sqlExecutionLogDto.sqlCommand = "SELECT e.name, d.name " +
+                "FROM Employees e " +
+                "JOIN Departments d " +
+                "ON e.department_id = d.id " +
+                "WHERE e.income > 100";
+        sqlExecutionLogDto.threwSqlExeception = false;
+
+        // Add the SQL command to the buffered commands
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        List<InsertionDto> insertionDtos = sql().insertInto("employees", 1L)
+                .d("id", "1")
+                .d("name", "John")
+                .d("income", "50000")
+                .d("department_id", "2")
+                .and()
+                .insertInto("employees", 2L)
+                .d("id", "2")
+                .d("name", "Jack")
+                .d("income", "40000")
+                .d("department_id", "2")
+                .and()
+                .insertInto("departments", 3L)
+                .d("id", "2")
+                .d("name", "Sales")
+                .d("location_id", null)
+                .dtos();
+
+        final boolean queryFromDatabase = false;
+        List<SqlCommandWithDistance> distances = sqlHandler.getSqlDistances(insertionDtos, queryFromDatabase);
+
+        // Assertions
+        assertNotNull(distances);
+        assertFalse(distances.isEmpty());
+        assertEquals(1, distances.size());
+        assertEquals("SELECT e.name, d.name " +
+                "FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE e.income > 100", distances.get(0).sqlCommand);
+        assertEquals(0, distances.get(0).sqlDistanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testGetSqlDistancesNotQueryFromDatabaseUsingEmptyTables() {
+        SqlHandler sqlHandler = new SqlHandler(null);
+
+        Connection mockConnection = mock(Connection.class);
+
+        DbInfoDto schema = createSchema();
+        sqlHandler.setSchema(schema);
+        sqlHandler.setCompleteSqlHeuristics(true);
+        sqlHandler.setConnection(mockConnection);
+
+        // Mock SQL execution log
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto();
+        sqlExecutionLogDto.sqlCommand = "SELECT e.name, d.name " +
+                "FROM Employees e " +
+                "JOIN Departments d " +
+                "ON e.department_id = d.id " +
+                "WHERE e.income > 100";
+        sqlExecutionLogDto.threwSqlExeception = false;
+
+        // Add the SQL command to the buffered commands
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        List<InsertionDto> insertionDtos = sql().insertInto("employees", 1L)
+                .d("id", "1")
+                .d("name", "John")
+                .d("income", "50000")
+                .d("department_id", "2")
+                .and()
+                .insertInto("employees", 2L)
+                .d("id", "2")
+                .d("name", "Jack")
+                .d("income", "40000")
+                .d("department_id", "2")
+                .dtos();
+
+        final boolean queryFromDatabase = false;
+        List<SqlCommandWithDistance> distances = sqlHandler.getSqlDistances(insertionDtos, queryFromDatabase);
+
+        // Assertions
+        assertNotNull(distances);
+        assertFalse(distances.isEmpty());
+        assertEquals(1, distances.size());
+        assertEquals("SELECT e.name, d.name " +
+                "FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE e.income > 100", distances.get(0).sqlCommand);
+        assertNotEquals(0, distances.get(0).sqlDistanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testGetSqlDistancesNoInsertions() {
+        SqlHandler sqlHandler = new SqlHandler(null);
+
+        Connection mockConnection = mock(Connection.class);
+
+        DbInfoDto schema = createSchema();
+        sqlHandler.setSchema(schema);
+        sqlHandler.setCompleteSqlHeuristics(true);
+        sqlHandler.setConnection(mockConnection);
+
+        // Mock SQL execution log
+        SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto();
+        sqlExecutionLogDto.sqlCommand = "SELECT e.name, d.name " +
+                "FROM Employees e " +
+                "JOIN Departments d " +
+                "ON e.department_id = d.id " +
+                "WHERE e.income > 100";
+        sqlExecutionLogDto.threwSqlExeception = false;
+
+        // Add the SQL command to the buffered commands
+        sqlHandler.handle(sqlExecutionLogDto);
+
+        List<InsertionDto> insertionDtos = Collections.emptyList();
+
+        final boolean queryFromDatabase = false;
+        List<SqlCommandWithDistance> distances = sqlHandler.getSqlDistances(insertionDtos, queryFromDatabase);
+
+        // Assertions
+        assertNotNull(distances);
+        assertFalse(distances.isEmpty());
+        assertEquals(1, distances.size());
+        assertEquals("SELECT e.name, d.name " +
+                "FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE e.income > 100", distances.get(0).sqlCommand);
+        assertNotEquals(0, distances.get(0).sqlDistanceWithMetrics.sqlDistance);
+    }
 
 }
