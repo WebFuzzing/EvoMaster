@@ -71,6 +71,11 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         return columnReferences.get(baseTableReference);
     }
 
+    public boolean hasColumnReferences(SqlBaseTableReference baseTableReference) {
+        Objects.requireNonNull(baseTableReference);
+        return this.columnReferences.containsKey(baseTableReference);
+    }
+
     @Override
     public void visit(Column tableColumn) {
         super.visit(tableColumn);
@@ -79,7 +84,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         }
         final SqlColumnReference columnReference = this.tableColumnResolver.resolve(tableColumn);
         if (columnReference == null) {
-            throw new IllegalStateException("Column reference could not be resolved for: " + tableColumn);
+            return; // skip table columns that cannot be resolved (e.g., ``U'')
         }
         if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
             final SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();

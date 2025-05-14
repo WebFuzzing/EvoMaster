@@ -1233,7 +1233,7 @@ class SqlExpressionEvaluatorTest {
         DataRow row = new DataRow(
                 "Employees",
                 Collections.singletonList("name"),
-                Collections.singletonList("Jack")
+                Collections.singletonList(String.valueOf('\uffff'))
         );
         assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
     }

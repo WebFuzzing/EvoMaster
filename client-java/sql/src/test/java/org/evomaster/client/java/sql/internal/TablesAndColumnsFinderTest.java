@@ -50,11 +50,18 @@ class TablesAndColumnsFinderTest {
         groupsTable.columns.add(createColumnDto("id", "groups"));
         groupsTable.columns.add(createColumnDto("voting_duration", "groups"));
 
+        TableDto dbBaseTable = new TableDto();
+        dbBaseTable.name = "db_base";
+        dbBaseTable.columns.add(createColumnDto("id", "db_base"));
+        dbBaseTable.columns.add(createColumnDto("name", "db_base"));
+
+
         schema.tables.add(usersTable);
         schema.tables.add(employeesTable);
         schema.tables.add(departmentsTable);
         schema.tables.add(votingTable);
         schema.tables.add(groupsTable);
+        schema.tables.add(dbBaseTable);
         return schema;
     }
 
@@ -542,6 +549,20 @@ class TablesAndColumnsFinderTest {
 
         assertEquals(1, finder.getColumnReferences(departments).size());
         assertTrue( finder.getColumnReferences(departments).contains(new SqlColumnReference(departments, "id")));
+    }
+
+    @Test
+    void testInsertionWithUnicode() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "INSERT INTO db_base (id, name) VALUES (NULL, U & 'uow8J\\0080a88rKn4Y')";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(new SqlBaseTableReference("db_base")));
+        assertEquals(false, finder.hasColumnReferences(new SqlBaseTableReference("db_base")));
+
     }
 
 }
