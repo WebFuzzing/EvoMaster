@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller;
 import org.evomaster.client.java.controller.api.dto.ActionDto;
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto;
 import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -451,6 +452,29 @@ public abstract class ExternalSutController extends SutController {
                     dto.externalServiceMapping.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> new ExternalServiceMapping(e.getValue().remoteHostname, e.getValue().localIPAddress, e.getValue().signature, e.getValue().isActive))),
                     dto.localAddressMapping,
                     dto.skippedExternalServices.stream().map(e -> new ExternalService(e.hostname, e.port)).collect(Collectors.toList())
+            ));
+        }
+    }
+
+    @Override
+    public final void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto) {
+        if (isInstrumentationActivated()) {
+
+            List<String> inputVariables = new ArrayList<>();
+            if (dto.requestParams != null && (!dto.requestParams.isEmpty())){
+                inputVariables.addAll(dto.requestParams.stream().map(e-> e.stringValue).collect(Collectors.toList()));
+            } else if (dto.requestParamsAsStrings != null){
+                inputVariables.addAll(dto.requestParamsAsStrings);
+            }
+
+            serverController.setAction(new Action(
+                    dto.index,
+                    dto.taskName,
+                    inputVariables,
+                    // might handle external service later, then add empty collection for the moment.
+                    new HashMap<>(),
+                    new HashMap<>(),
+                    new ArrayList<>()
             ));
         }
     }
