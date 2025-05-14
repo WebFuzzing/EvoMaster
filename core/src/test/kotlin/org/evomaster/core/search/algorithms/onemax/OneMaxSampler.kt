@@ -6,7 +6,12 @@ import org.evomaster.core.search.service.Sampler
 
 class OneMaxSampler : Sampler<OneMaxIndividual>(){
 
-    var n = 3
+    companion object{
+        const val DEFAULT_N = 3
+    }
+
+
+    var n = DEFAULT_N
 
     override fun sampleAtRandom(): OneMaxIndividual {
 
