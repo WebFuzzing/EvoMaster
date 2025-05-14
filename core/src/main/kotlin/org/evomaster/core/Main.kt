@@ -29,6 +29,7 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
+import org.evomaster.core.problem.security.VulnerabilityAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -231,6 +232,7 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
+            solution = phaseVulnerabilityAnalyser(injector, config, solution)
 
 
             val suites = writeTests(injector, solution, controllerInfo)
@@ -402,6 +404,30 @@ class Main {
                 else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    solution
+                }
+            }
+        }
+
+        private fun phaseVulnerabilityAnalyser(
+            injector: Injector,
+            config: EMConfig,
+            solution: Solution<*>,
+        ): Solution<*> {
+            if (!config.vulnerabilityAnalyser) {
+                return solution
+            }
+
+            return when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    LoggingUtil.getInfoLogger().info("Starting to apply Vulnerability Analyser")
+                    val vulnerabilityAnalyser = injector.getInstance(VulnerabilityAnalyser::class.java)
+                    vulnerabilityAnalyser.applyVulnerabilityAnalyser()
+                }
+
+                else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Vulnerability analyser phase currently not handled for problem type: ${config.problemType}")
                     solution
                 }
             }

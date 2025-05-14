@@ -78,6 +78,16 @@ abstract class Gene(
     }
 
     /**
+     * Description about the gene.
+     */
+    var description: String? = null
+        set(value) {
+            if (!value.isNullOrEmpty() && field.isNullOrEmpty()) {
+                field = value
+            }
+        }
+
+    /**
      * Whether this gene has been initialized, and can be used.
      * Note that gene can have validity constraints, and those might not be satisfied
      * when the constructor of a gene is called to create a new instance.
@@ -250,6 +260,7 @@ abstract class Gene(
         if (copy !is Gene)
             throw IllegalStateException("mismatched type: the type should be Gene, but it is ${this::class.java.simpleName}")
         copy.initialized = initialized
+        copy.description = description
         //this was incorrect, as subchildren might had different init state compared to this
         //copy.flatView().forEach{it.initialized = initialized}
         return copy
