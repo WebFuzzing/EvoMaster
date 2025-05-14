@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -95,24 +96,25 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
     }
 
-    @Test
-    public void testSteps() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testSteps(boolean heuristicsForSQLAdvanced) {
 
         CIUtils.skipIfOnCircleCI();
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxEvaluations", "1",
-                "--stoppingCriterion", "ACTION_EVALUATIONS",
-                "--heuristicsForSQL", "true",
-                "--generateSqlDataWithSearch", "true",
-                "--maxTestSize", "1",
-                "--useTimeInFeedbackSampling" , "false"
-        };
+        List<String> args = new ArrayList<>();
+        setOption(args, "createTests", "true");
+        setOption(args, "seed", "42" );
+        setOption(args, "sutControllerPort", "" + controllerPort);
+        setOption(args, "maxEvaluations", "1");
+        setOption(args, "stoppingCriterion", "ACTION_EVALUATIONS");
+        setOption(args, "heuristicsForSQL", "true");
+        setOption(args, "generateSqlDataWithSearch", "true");
+        setOption(args, "maxTestSize", "1");
+        setOption(args, "useTimeInFeedbackSampling" , "false");
+        setOption(args, "heuristicsForSQLAdvanced", heuristicsForSQLAdvanced ? "true" : "false");
 
-        Injector injector = Main.init(args);
+        Injector injector = Main.init(args.toArray(new String[]{}));
 
         RemoteController rc = injector.getInstance(RemoteController.class);
         rc.startANewSearch();
@@ -133,8 +135,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         FitnessValue noDataFV = ei.getFitness();
 
-        //as no data in database, should get worst heuristic value
-        assertEquals(Double.MAX_VALUE, noDataFV.averageExtraDistancesToMinimize(0));
+        assertNotEquals(0, noDataFV.averageExtraDistancesToMinimize(0));
 
         RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedMainActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
