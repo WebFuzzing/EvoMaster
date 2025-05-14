@@ -410,10 +410,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //trying to infer linked ids from HTTP response
 
-                val extraTypeInfo = when {
-                    format.isKotlin() -> "<Object>"
-                    else -> ""
-                }
                 val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
                     locationVar(call.usePreviousLocationId!!)
@@ -422,14 +418,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
-                //TODO code here should use same algorithm as in res.getResourceId()
-                //TODO this is quite limited, would need proper refactoring
-                val extract = when {
-                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
-                    format.isJavaScript() -> "$resVarName.body.${res.getResourceIdName()}"
-                    format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
-                    else -> throw IllegalStateException("Unhandled format: $format")
-                }
+                val idPointer = res.getResourceId()?.pointer ?: "/id"
+
+                val extract = extractValueFromJsonResponse(resVarName, idPointer)
 
                 when{
                     format.isJavaScript() -> lines.add("const ")
@@ -442,31 +433,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
             }
         }
     }
-
-//    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
-//        if (!partialOracles.generatesExpectation(individual)) {
-//            return
-//        }
-//
-//        if (!format.isJavaOrKotlin()) {
-//            //TODO will need to see if going to support JS and C# as well
-//            return
-//        }
-//
-//        lines.addEmpty()
-//        when {
-//            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-//            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-//        }
-//        lines.appendSemicolon()
-//    }
-//
-//    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
-//        lines.addEmpty()
-//        if (partialOracles.generatesExpectation(call, res)) {
-//            partialOracles.addExpectations(call, lines, res, name, format)
-//        }
-//    }
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 
