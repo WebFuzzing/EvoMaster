@@ -53,6 +53,55 @@ object RestSecurityOracle {
         }
     }
 
+    fun hasForgottenAuthentication(
+        path: RestPath,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean{
+
+        verifySampleType(individual)
+
+        val actions = individual.seeMainExecutableActions()
+            .filter {
+                it.verb == HttpVerb.GET && it.path == path
+            }
+
+        val actionsWithResults = actions.filter {
+            //can be null if sequence was stopped
+            actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null
+        }
+
+        if(actions.size != actionsWithResults.size){
+            assert(actionResults.any { it.stopping }) {
+                "Not all actions have results, but sequence was not stopped"
+            }
+        }
+
+        /**
+         * Check if there is any protected resource (i.e., one that returns 403 or 401 when accessed without proper authorization),
+         * but the same resource is also accessible without any authentication.
+         */
+
+        val a403 = actionsWithResults.filter {
+            (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 403
+        }
+
+        val a401 = actionsWithResults.filter {
+            (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 401
+        }
+
+        val a200 = actionsWithResults.filter {
+            (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode() == 200
+        }.filter {
+            // check if the action is not authenticated
+            it.auth is NoAuth
+        }
+
+        return (a403.isNotEmpty() || a401.isNotEmpty()) && a200.isNotEmpty()
+    }
 
     fun hasExistenceLeakage(
         path: RestPath,

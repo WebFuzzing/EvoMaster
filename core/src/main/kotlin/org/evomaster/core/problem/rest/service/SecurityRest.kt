@@ -9,6 +9,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
@@ -222,9 +223,7 @@ class SecurityRest {
                     }
                 }
             }
-
     }
-
 
     private fun addForAccessControl() {
 
@@ -259,6 +258,7 @@ class SecurityRest {
         //authenticated, but wrongly getting 401 (eg instead of 403)
         handleNotRecognizedAuthenticated()
 
+        handleForbiddenAuthentication()
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -599,6 +599,85 @@ class SecurityRest {
             val added = archive.addIfNeeded(evaluatedIndividual)
             //if we arrive here, should always be added, because we are creating a new testing target
             assert(added)
+        }
+    }
+
+
+    /**
+     * Check if there is a test case with a 403 and another one with a 200 without authentication.
+     * To check this, a resource must first be created (PUT or POST). While the user who created this
+     * resource can access it (200), the other user cannot (403). However, if a 200 status code is
+     * returned when attempting to access the same resource without sending the authorization header,
+     * it indicates that the authorization has been forgotten.
+     * Example:
+     * POST /resources/ AUTH1 -> 201 (location header: /resources/42/)
+     * GET /resources/42/ AUTH1 -> 200
+     * GET /resources/42/ AUTH2 -> 403
+     * GET /resources/42/ AUTH1 -> 200
+     */
+    private fun handleForbiddenAuthentication(){
+        actionDefinitions.forEach { op ->
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (candidates.isEmpty()) {
+                return@forEach
+            }
+
+            candidates.map {
+                it.individual.copy()
+            }.forEach { ind ->
+
+                val isCreate = ind.seeMainExecutableActions().filter { (it as RestCallAction).verb == HttpVerb.POST || it.verb == HttpVerb.PUT }.isNotEmpty()
+
+                if (!isCreate){
+                    return@forEach
+                }
+
+                val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
+
+                if(copyLast.verb != HttpVerb.GET)
+                    return@forEach
+
+                val copyNoAuthLast = copyLast.copy() as RestCallAction
+
+                copyLast.resetLocalIdRecursively()
+                copyNoAuthLast.resetLocalIdRecursively()
+
+                val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                otherUsers.forEach{ other ->
+                    val finalIndividual = ind.copy() as RestIndividual
+
+                    copyLast.auth =  other
+                    copyNoAuthLast.auth = HttpWsNoAuth()
+
+                    finalIndividual.addResourceCall(
+                        restCalls = RestResourceCalls(
+                            actions = mutableListOf(copyLast, copyNoAuthLast),
+                            sqlActions = listOf()
+                        )
+                    )
+                    finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                        it.saveCreatedResourceLocation = true
+                    }
+                    finalIndividual.fixResourceForwardLinks()
+
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
+                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                    }
+                }
+
+            }
         }
     }
 
