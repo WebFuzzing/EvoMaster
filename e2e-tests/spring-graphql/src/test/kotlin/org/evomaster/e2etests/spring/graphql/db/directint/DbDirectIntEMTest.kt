@@ -57,7 +57,7 @@ class DbDirectIntEMTest : SpringTestBase() {
 
             setOption(args, "heuristicsForSQL", "true")
             setOption(args, "generateSqlDataWithSearch", "false")
-            setOption(args, "generateSqlDataWithSearch", if (heuristicsForSQLAdvanced) "true" else "false")
+            setOption(args, "heuristicsForSQLAdvanced", if (heuristicsForSQLAdvanced) "true" else "false")
 
             setOption(args, "probOfSmartSampling", "0.0") // on this example, it has huge negative impact
 
