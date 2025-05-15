@@ -834,7 +834,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 this.queryResultSet,
                 this.dataRowStack);
 
-        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristic(select);
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.computeHeuristic(select);
         if (existsExpression.isNot()) {
             evaluationStack.push(heuristicResult.getTruthness().invert());
         } else {
@@ -1276,7 +1276,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 this.queryResultSet,
                 this.dataRowStack);
 
-        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.calculateHeuristic(select);
+        SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.computeHeuristic(select);
         evaluationStack.push(heuristicResult.getQueryResult());
     }
 
