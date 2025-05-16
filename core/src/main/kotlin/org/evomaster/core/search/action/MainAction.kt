@@ -51,8 +51,16 @@ abstract class MainAction(
     }
 
     private fun otherMainActions(before: Boolean) : List<MainAction> {
-        val index = positionAmongMainActions()
         val all = (getRoot() as Individual).seeMainExecutableActions()
+        if(isCleanUp){
+            return if(before) {
+                all
+            } else {
+                listOf()
+            }
+        }
+
+        val index = positionAmongMainActions()
 
         if(before){
             if(index == 0){
