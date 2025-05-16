@@ -7,6 +7,8 @@ import org.evomaster.client.java.sql.VariableDescriptor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class QueryResultUtils {
 
@@ -64,5 +66,17 @@ public class QueryResultUtils {
         final List<Object> listOfNullValues = Collections.nCopies(numberOfColumns, null);
         DataRow nullDataRow = new DataRow(queryResult.seeVariableDescriptors(), listOfNullValues);
         return nullDataRow;
+    }
+
+    public static QueryResult addAliasToQueryResult(QueryResult queryResult, String aliasTableName) {
+        Objects.requireNonNull(aliasTableName);
+        List<VariableDescriptor> variableDescriptorsWithTableAlias = queryResult.seeVariableDescriptors().stream()
+                .map(vd -> new VariableDescriptor(vd.getColumnName(), vd.getAliasColumnName(), vd.getTableName(), aliasTableName))
+                .collect(Collectors.toList());
+        QueryResult newQueryResult = new QueryResult(variableDescriptorsWithTableAlias);
+        queryResult.seeRows().stream()
+                .forEach(r -> newQueryResult.addRow(new DataRow(variableDescriptorsWithTableAlias, r.seeValues())));
+
+        return newQueryResult;
     }
 }

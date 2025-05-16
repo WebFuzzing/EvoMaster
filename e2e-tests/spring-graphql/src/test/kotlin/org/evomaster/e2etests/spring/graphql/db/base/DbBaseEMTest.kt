@@ -7,7 +7,10 @@ import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.util.*
+import kotlin.booleanArrayOf
 
 class DbBaseEMTest : SpringTestBase() {
 
@@ -20,11 +23,13 @@ class DbBaseEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testRunEM() {
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testRunEM(heuristicsForSQLAdvanced: Boolean) {
         runTestHandlingFlakyAndCompilation(
             "GQL_DbBaseEM",
-            "org.foo.graphql.DbBaseEM",
+            "org.foo.graphql.DbBaseEM" +
+                    if (heuristicsForSQLAdvanced) "Complete" else "Partial",
             10000
         ) { args: MutableList<String> ->
 
@@ -35,19 +40,22 @@ class DbBaseEMTest : SpringTestBase() {
              */
             defaultSeed = 3
 
-            args.add("--problemType")
-            args.add(EMConfig.ProblemType.GRAPHQL.toString())
-
-            args.add("--heuristicsForSQL")
-            args.add("true")
-            args.add("--generateSqlDataWithSearch")
-            args.add("false")
-
+            setOption(args, "problemType", EMConfig.ProblemType.GRAPHQL.toString())
+            setOption(args, "heuristicsForSQL", "true")
+            setOption(args, "generateSqlDataWithSearch", "false")
+            setOption(args, "heuristicsForSQLAdvanced", if (heuristicsForSQLAdvanced) "true" else "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, "dbBaseByName", GQMethodType.QUERY, 200, Arrays.asList("\"id\":\"42\"","\"name\":\"foo\""), false)
+            assertHasAtLeastOne(
+                solution,
+                "dbBaseByName",
+                GQMethodType.QUERY,
+                200,
+                Arrays.asList("\"id\":\"42\"", "\"name\":\"foo\""),
+                false
+            )
             // there exists some problems on addDbBase, e.g., 500 MUTATION addDbBase, auth=NoAuth
             // assertNoneWithErrors(solution)
         }

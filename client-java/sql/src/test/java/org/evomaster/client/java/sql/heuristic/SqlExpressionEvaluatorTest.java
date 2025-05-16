@@ -120,7 +120,7 @@ class SqlExpressionEvaluatorTest {
         TaintHandler taintHandler = null;
 
         columnReferenceResolver.enterStatementeContext(select);
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, null, row);
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentStatementContext();
 
@@ -136,7 +136,7 @@ class SqlExpressionEvaluatorTest {
         TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
 
         columnReferenceResolver.enterStatementeContext(select);
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, row);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, null, row);
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentStatementContext();
 
@@ -1210,6 +1210,31 @@ class SqlExpressionEvaluatorTest {
                 Collections.singletonList(101)
         );
 
+        assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
+    }
+
+    @Test
+    public void testCastAsInteger() {
+        String sqlCommand = "SELECT * FROM Employees AS e WHERE e.salary > CAST(1.0 AS INTEGER)";
+
+        DataRow row = new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(101)
+        );
+
+        assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
+    }
+
+    @Test
+    public void testStringDecode() {
+        String sqlCommand = "SELECT * FROM Employees AS e WHERE e.name = STRINGDECODE('\\uffff')";
+
+        DataRow row = new DataRow(
+                "Employees",
+                Collections.singletonList("name"),
+                Collections.singletonList(String.valueOf('\uffff'))
+        );
         assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
     }
 }

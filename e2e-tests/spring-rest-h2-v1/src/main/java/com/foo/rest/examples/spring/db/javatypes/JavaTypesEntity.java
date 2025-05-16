@@ -17,12 +17,12 @@ public class JavaTypesEntity {
      * Primitive data types
      */
     private final boolean primitiveBoolean = true;
-    private final char primitvieChar = Character.MAX_VALUE;
+    private final char primitiveChar = Character.MAX_VALUE;
     private final short primitiveShort = Short.MAX_VALUE;
-    private final byte primitveByte = Byte.MAX_VALUE;
-    private final int primitveInt = Integer.MAX_VALUE;
-    private final long primitveLong = Long.MAX_VALUE;
-    private final float primitveFloat = Float.MAX_VALUE;
+    private final byte primitiveByte = Byte.MAX_VALUE;
+    private final int primitiveInt = Integer.MAX_VALUE;
+    private final long primitiveLong = Long.MAX_VALUE;
+    private final float primitiveFloat = Float.MAX_VALUE;
     private final double primitiveDouble = Double.MAX_VALUE;
 
     /**
@@ -72,9 +72,6 @@ public class JavaTypesEntity {
     @Column(length = H2_MAX_LENGTH_VARCHAR)
     private final String longString;
 
-    @NotNull
-    @Lob
-    private final String veryLongString;
 
     @NotNull
     private final BigDecimal bigDecimal = new BigDecimal(10);
@@ -92,7 +89,6 @@ public class JavaTypesEntity {
         characterField = 'X';
         byteField = Byte.MAX_VALUE;
         booleanField = true;
-        veryLongString = new String(new char[300]).replace('\0', 'X');
     }
 
     public Long getId() {

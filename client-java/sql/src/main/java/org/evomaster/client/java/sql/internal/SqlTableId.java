@@ -14,7 +14,8 @@ public class SqlTableId implements Comparable<SqlTableId> {
     private final String tableId;
 
     public SqlTableId(String tableId) {
-        this.tableId = tableId;
+        Objects.requireNonNull(tableId);
+        this.tableId = tableId.toLowerCase();
     }
 
     public String getTableId() {
@@ -31,7 +32,7 @@ public class SqlTableId implements Comparable<SqlTableId> {
         }
         if (obj instanceof SqlTableId) {
             SqlTableId other = (SqlTableId) obj;
-            return tableId.equals(other.tableId);
+            return tableId.equalsIgnoreCase(other.tableId);
         }
         return false;
     }

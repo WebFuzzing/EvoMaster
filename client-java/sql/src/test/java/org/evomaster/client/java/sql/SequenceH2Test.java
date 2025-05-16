@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.DriverManager;
 
+import static java.sql.DriverManager.getConnection;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,7 +21,7 @@ public class SequenceH2Test {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "");
+        connection = getConnection("jdbc:h2:mem:db_test", "sa", "");
     }
 
     @AfterAll

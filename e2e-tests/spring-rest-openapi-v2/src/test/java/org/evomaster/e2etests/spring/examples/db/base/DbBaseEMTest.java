@@ -19,10 +19,8 @@ public class DbBaseEMTest extends DbBaseTestBase {
                 10_000,
                 (args) -> {
 
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "false");
 
                     /*
                         FIXME: need to study and fix the side effects of Taint here.

@@ -6,7 +6,7 @@ import java.util.TreeMap;
 
 /**
  * Represents a collection of query results mapped to table names,
- * with support for both named and virtual tables.
+ * with support for only base (physical) tables.
  * <p>
  * This class only allows a case-insensitive handling of table names
  * and provides mechanisms to add, retrieve, and manage query results.
@@ -20,15 +20,18 @@ public class QueryResultSet {
     private final Map<String, QueryResult> queryResults;
 
     /**
-     * Stores the query result for a virtual table, if any.
-     */
-    private QueryResult queryResultForVirtualTable;
-
-    /**
      * Creates a QueryResult set with default case sensitivity (case-insensitive).
      */
     public QueryResultSet() {
         queryResults = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    }
+
+    public static QueryResultSet build(QueryResult... data) {
+        QueryResultSet queryResultSet = new QueryResultSet();
+        for (QueryResult queryResult : data) {
+            queryResultSet.addQueryResult(queryResult);
+        }
+        return queryResultSet;
     }
 
     private static boolean hasMultipleTableNames(QueryResult queryResult) {
@@ -66,10 +69,9 @@ public class QueryResultSet {
                 .orElse(null);
 
         if (tableName == null) {
-            handleVirtualTable(queryResult);
-        } else {
-            handleNamedTable(tableName, queryResult);
+            throw new IllegalArgumentException("Cannot add a query result without table name");
         }
+        handleNamedTable(tableName, queryResult);
     }
 
     private void handleNamedTable(String tableName, QueryResult queryResult) {
@@ -82,13 +84,6 @@ public class QueryResultSet {
         queryResults.put(lowerCaseTableName, queryResult);
     }
 
-    private void handleVirtualTable(QueryResult queryResult) {
-        if (queryResultForVirtualTable != null) {
-            throw new IllegalArgumentException("Duplicate values for virtual table");
-        }
-        queryResultForVirtualTable = queryResult;
-    }
-
     /**
      * Retrieves the query result associated with a named table.
      *
@@ -96,16 +91,10 @@ public class QueryResultSet {
      * @return the query result for the table, or {@code null} if no result exists
      */
     public QueryResult getQueryResultForNamedTable(String tableName) {
-        return queryResults.get(tableName != null ? tableName.toLowerCase() : null);
+        Objects.requireNonNull(tableName);
+
+        return queryResults.get(tableName.toLowerCase());
     }
 
-    /**
-     * Retrieves the query result for a virtual table.
-     *
-     * @return the query result for the virtual table, or {@code null} if none exists
-     */
-    public QueryResult getQueryResultForVirtualTable() {
-        return queryResultForVirtualTable;
-    }
 
 }

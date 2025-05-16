@@ -73,10 +73,6 @@ public class JavaTypesEntity {
     private final String longString;
 
     @NotNull
-    @Lob
-    private final String veryLongString;
-
-    @NotNull
     private final BigDecimal bigDecimal = new BigDecimal(10);
 
     public JavaTypesEntity() {
@@ -92,7 +88,6 @@ public class JavaTypesEntity {
         characterField = 'X';
         byteField = Byte.MAX_VALUE;
         booleanField = true;
-        veryLongString = new String(new char[300]).replace('\0', 'X');
     }
 
     public Long getId() {

@@ -25,13 +25,9 @@ public class ResourceDependencyDisableDBEMTest extends ResourceTestBase {
                 (args) -> {
 
                     //disable SQL
-                    args.add("--heuristicsForSQL");
-                    args.add("false");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--extractSqlExecutionInfo");
-                    args.add("true");
-
+                    setOption(args, "heuristicsForSQL","false");
+                    setOption(args, "generateSqlDataWithSearch","false");
+                    setOption(args, "extractSqlExecutionInfo","true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

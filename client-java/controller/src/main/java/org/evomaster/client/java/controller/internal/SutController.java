@@ -283,7 +283,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             boolean advancedHeuristics){
         sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
-        sqlHandler.setAdvancedHeuristics(advancedHeuristics);
+        sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
 

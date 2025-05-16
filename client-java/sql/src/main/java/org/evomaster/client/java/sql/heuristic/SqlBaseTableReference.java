@@ -1,5 +1,7 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import org.evomaster.client.java.sql.internal.SqlTableId;
+
 import java.util.Objects;
 
 /**
@@ -8,29 +10,23 @@ import java.util.Objects;
  */
 public class SqlBaseTableReference extends SqlTableReference {
 
-    private final String name;
+    private final SqlTableId tableId;
 
     public SqlBaseTableReference(String name) {
         Objects.requireNonNull(name);
-        this.name = name;
+        this.tableId = new SqlTableId(name);
     }
 
     public String getName() {
-        return name;
+        return tableId.getTableId();
     }
 
-    /**
-     * This name should be the result of combining
-     * the database, schema and table names.
-     *
-     * @return
-     */
-    public String getFullyQualifiedName() {
-        return name;
+    public SqlTableId getTableId() {
+        return tableId;
     }
 
     public String toString() {
-        return name;
+        return tableId.toString();
     }
 
     public boolean equals(Object obj) {
@@ -39,12 +35,12 @@ public class SqlBaseTableReference extends SqlTableReference {
         }
         if (obj instanceof SqlBaseTableReference) {
             SqlBaseTableReference other = (SqlBaseTableReference) obj;
-            return name.equals(other.name);
+            return tableId.equals(other.tableId);
         }
         return false;
     }
 
     public int hashCode() {
-        return name.hashCode();
+        return tableId.hashCode();
     }
 }

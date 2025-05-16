@@ -6,7 +6,8 @@ import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class DbDirectIntWithSQLEMTest : SpringTestBase() {
 
@@ -19,22 +20,20 @@ class DbDirectIntWithSQLEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testRunEM() {
+    @ParameterizedTest
+    @ValueSource(strings = [ "false", "true"])
+    fun testRunEM(heuristicsForSQLAdvanced: Boolean) {
         runTestHandlingFlakyAndCompilation(
             "GQL_DbDirectWithSqlEM",
-            "org.foo.graphql.DbDirectWithSqlEM",
+            "org.foo.graphql.DbDirectWithSqlEM" + if (heuristicsForSQLAdvanced) "Complete" else "Partial",
             2000
         ) { args: MutableList<String> ->
 
-            args.add("--problemType")
-            args.add(EMConfig.ProblemType.GRAPHQL.toString())
+            setOption(args, "problemType",EMConfig.ProblemType.GRAPHQL.toString())
 
-            args.add("--heuristicsForSQL")
-            args.add("true")
-            args.add("--generateSqlDataWithSearch")
-            args.add("true")
-
+            setOption(args, "heuristicsForSQL", "true")
+            setOption(args, "generateSqlDataWithSearch", "true")
+            setOption(args, "heuristicsForSQLAdvanced", if (heuristicsForSQLAdvanced) "true" else "false")
 
             val solution = initAndRun(args)
 

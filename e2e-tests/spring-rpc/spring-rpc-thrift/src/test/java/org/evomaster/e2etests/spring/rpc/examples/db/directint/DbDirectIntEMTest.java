@@ -10,6 +10,8 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.rpc.examples.SpringRPCTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,25 +24,28 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
     }
 
 
-    @Test
-    public void testRunEM_AVG_DISTANCE() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE);
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM_AVG_DISTANCE(boolean heuristicsForSQLAdvanced) throws Throwable {
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE, heuristicsForSQLAdvanced);
     }
 
-    @Test
-    public void testRunEM_AVG_DISTANCE_SAME_N_ACTIONS() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS);
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM_AVG_DISTANCE_SAME_N_ACTIONS(boolean heuristicsForSQLAdvanced) throws Throwable {
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS, heuristicsForSQLAdvanced);
     }
 
-    @Test
-    public void testRunEM_BEST_MIN() throws Throwable {
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN);
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM_BEST_MIN(boolean heuristicsForSQLAdvanced) throws Throwable {
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN, heuristicsForSQLAdvanced);
     }
 
 
-    private void testRunEM(EMConfig.SecondaryObjectiveStrategy strategy) throws Throwable {
+    private void testRunEM(EMConfig.SecondaryObjectiveStrategy strategy, boolean heuristicsForSQLAdvanced) throws Throwable {
         final String outputFolder = "DbDirectEM_"+ strategy;
-        final String outputTestName = "org.bar.db.DirectEM_" + strategy;
+        final String outputTestName = "org.bar.db.DirectEM_" + strategy + (heuristicsForSQLAdvanced ? "Complete" : "Partial");
 
         runTestHandlingFlakyAndCompilation(
                 outputFolder,
@@ -48,12 +53,10 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
                 7_000,
                 (args) -> {
 
-                    args.add("--secondaryObjectiveStrategy");
-                    args.add("" + strategy);
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
+                    setOption(args,"secondaryObjectiveStrategy",strategy.toString());
+                    setOption(args,"heuristicsForSQL","true");
+                    setOption(args,"generateSqlDataWithSearch","false");
+                    setOption(args,"heuristicsForSQLAdvanced",heuristicsForSQLAdvanced ? "true" : "false");
 
                     Solution<RPCIndividual> solution = initAndRun(args);
 

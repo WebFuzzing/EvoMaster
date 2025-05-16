@@ -1,12 +1,15 @@
 package org.evomaster.client.java.sql;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
+import org.evomaster.client.java.sql.heuristic.BooleanLiteralsHelper;
 import org.evomaster.client.java.sql.internal.SqlNameContext;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Clob;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
 
 /**
  * A row of data in the table results of a Select query.
@@ -78,25 +81,39 @@ public class DataRow {
         return getValueByName(name, null);
     }
 
+    public boolean hasValueByName(String columnName, String baseTableName) {
+        try {
+            this.getValueByName(columnName, baseTableName);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     public Object getValueByName(String name, String table) {
-        Objects.requireNonNull(name);
-        String n = name.trim();
+        String n = (name == null ? null : name.trim());
         String t = (table == null ? null : table.trim());
 
         //true/false are reserved keywords
-        if (n.equalsIgnoreCase("true")) {
+        /*
+         * There are test cases where some columns are
+         * called "y", therefore, we cannot use
+         * BooleanLiteralHelper.isBooleanLiteral() here
+         * since 'y','n','on','off', 'yes' and 'no'
+         * are also considered boolean literals.
+         */
+        if (n!=null && n.equalsIgnoreCase("true")) {
             return true;
         }
-        if (n.equalsIgnoreCase("false")) {
+        if (n!= null && n.equalsIgnoreCase("false")) {
             return false;
         }
-
 
         //first check aliases, but only if no specify table
         if (t == null || t.isEmpty()) {
             for (int i = 0; i < variableDescriptors.size(); i++) {
                 VariableDescriptor desc = variableDescriptors.get(i);
-                if (n.equalsIgnoreCase(desc.getAlias())) {
+                if (nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) {
                     return getValue(i);
                 }
             }
@@ -105,16 +122,16 @@ public class DataRow {
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if ((n.equalsIgnoreCase(desc.getColumnName()) || n.equalsIgnoreCase(desc.getAlias())) &&
+            if ((nullSafeEqualsIgnoreCase(n, desc.getColumnName()) || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) &&
                     (t == null || t.isEmpty()
-                            || t.equalsIgnoreCase(desc.getTableName())
+                            || nullSafeEqualsIgnoreCase(t, desc.getTableName())
                             /*
                                 TODO: this does not cover all possible cases, as in theory
                                 there can be many unnamed tables (eg results of sub-selects)
                                 with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
-                            || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)
+                            || nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)
                     )
             ) {
                 return getValue(i);
@@ -134,5 +151,18 @@ public class DataRow {
         dto.columnData = values.stream().map(obj -> (obj != null) ? obj.toString() : NULL_VALUE).collect(Collectors.toList());
 
         return dto;
+    }
+
+    public Object getValueByName(String columnName, String baseTableName, String aliasTableName) {
+        Objects.requireNonNull(aliasTableName);
+
+        for (int i = 0; i < this.variableDescriptors.size(); i++) {
+            VariableDescriptor desc = variableDescriptors.get(i);
+            if ((nullSafeEqualsIgnoreCase(columnName, desc.getColumnName()) || nullSafeEqualsIgnoreCase(columnName, desc.getAliasColumnName()))
+                    && (nullSafeEqualsIgnoreCase(baseTableName, desc.getTableName()) && nullSafeEqualsIgnoreCase(aliasTableName, desc.getAliasTableName())))
+                return values.get(i);
+        }
+
+        throw new IllegalArgumentException("No variable called '" + columnName + "' for table '" + baseTableName + "/" + aliasTableName + "'");
     }
 }

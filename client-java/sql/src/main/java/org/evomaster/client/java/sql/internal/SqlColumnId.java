@@ -1,5 +1,7 @@
 package org.evomaster.client.java.sql.internal;
 
+import java.util.Objects;
+
 /**
  * A class representing a SQL column identifier
  * from a physical database table.
@@ -8,12 +10,13 @@ package org.evomaster.client.java.sql.internal;
  * No case sensitive is considered when comparing column ids within
  * this class.
  */
-public class SqlColumnId {
+public class SqlColumnId implements  Comparable<SqlColumnId>  {
 
     private final String columnId;
 
     public SqlColumnId(String columnId) {
-        this.columnId = columnId;
+        Objects.requireNonNull(columnId);
+        this.columnId = columnId.toLowerCase();
     }
 
     public String getColumnId() {
@@ -30,12 +33,17 @@ public class SqlColumnId {
         }
         if (obj instanceof SqlColumnId) {
             SqlColumnId other = (SqlColumnId) obj;
-            return columnId.equals(other.columnId);
+            return columnId.equalsIgnoreCase(other.columnId);
         }
         return false;
     }
 
     public int hashCode() {
         return columnId.hashCode();
+    }
+    @Override
+    public int compareTo(SqlColumnId o) {
+        Objects.requireNonNull(o);
+        return this.getColumnId().compareTo(o.getColumnId());
     }
 }

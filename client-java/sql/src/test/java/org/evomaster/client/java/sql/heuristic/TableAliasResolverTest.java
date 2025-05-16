@@ -7,6 +7,7 @@ import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
+import org.evomaster.client.java.sql.internal.SqlTableId;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,7 +21,7 @@ class TableAliasResolverTest {
         TableAliasResolver resolver = new TableAliasResolver();
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
 
@@ -57,8 +58,8 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
     }
@@ -104,13 +105,13 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(0));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(1));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -154,7 +155,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
         assertEquals("SELECT * FROM Departments", ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect().toString());
 
         Select subSelect = ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect();
@@ -235,7 +236,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(0));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(1));
@@ -272,8 +273,8 @@ class TableAliasResolverTest {
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
 
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -316,13 +317,13 @@ class TableAliasResolverTest {
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
         assertTrue(resolver.resolveTableReference("e") instanceof SqlBaseTableReference);
-        assertEquals("employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(d);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("departments", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -337,7 +338,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(delete);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -351,7 +352,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(update);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -366,8 +367,8 @@ class TableAliasResolverTest {
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -382,8 +383,8 @@ class TableAliasResolverTest {
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -406,7 +407,7 @@ class TableAliasResolverTest {
 
         // Verify the alias in the DELETE statement
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -422,8 +423,8 @@ class TableAliasResolverTest {
         // Verify the aliases for both tables
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -438,7 +439,7 @@ class TableAliasResolverTest {
 
         // Verify alias in the main query
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
 
         // Access the subquery in IN expression
         InExpression inExpression = (InExpression) ((PlainSelect) select).getWhere();
@@ -447,7 +448,7 @@ class TableAliasResolverTest {
 
         // Verify alias in the subquery
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("Departments", ((SqlBaseTableReference) resolver.resolveTableReference("d")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -464,7 +465,8 @@ class TableAliasResolverTest {
         // Check case-sensitive alias resolution
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("E")); // Case-sensitive check
-        assertEquals("Employees", ((SqlBaseTableReference) resolver.resolveTableReference("e")).getFullyQualifiedName());
+        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());

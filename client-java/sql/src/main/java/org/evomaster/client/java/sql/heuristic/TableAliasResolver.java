@@ -171,7 +171,10 @@ class TableAliasResolver {
             throw new IllegalArgumentException("Alias not found in any context: " + alias);
         }
 
-        // The Deque's iterator traverses the stack from top (latest push) to bottom (first push)
+        /*
+         * The Deque<> iterator traverses the stack of context maps
+         * in a LIFO (Last-In-First-Out) order.
+         */
         for (Map<String, SqlTableReference> context : stackOfTableAliases) {
             if (context.containsKey(alias)) {
                 return context.get(alias);

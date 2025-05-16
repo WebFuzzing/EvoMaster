@@ -19,15 +19,7 @@ class QueryResultSetTest {
         assertEquals(queryResult, actualQueryResult);
     }
 
-    @Test
-    void testAddVirtualTableQueryResult() {
-        QueryResult queryResult =  new QueryResult(Arrays.asList("result1","result2"),null);
-        QueryResultSet queryResultSet = new QueryResultSet();
-        queryResultSet.addQueryResult(queryResult);
 
-        assertNotNull(queryResultSet.getQueryResultForVirtualTable());
-        assertEquals(queryResult, queryResultSet.getQueryResultForVirtualTable());
-    }
 
     @Test
     void testDuplicateNamedTableThrowsException() {
@@ -40,7 +32,7 @@ class QueryResultSetTest {
     }
 
     @Test
-    void testDuplicateVirtualTableThrowsException() {
+    void testDuplicatedTableThrowsException() {
         QueryResult queryResult1 =  new QueryResult(Arrays.asList("UserId","UserName"),"Users");
         QueryResult queryResult2 =  new QueryResult(Arrays.asList("userId","userName"),"users");
         QueryResultSet queryResultSet = new QueryResultSet();

@@ -17,7 +17,7 @@ public class SqlDatabaseDtoUtils {
      * @param filter specifies which column should be returned, null means all columns should be returned
      * @return name of columns based on specified filter
      */
-    public static List<String> extractColumnNames(InsertionDto dto, Set<SqlColumnId> filter){
+    public static List<String> extractColumnNamesUsedInTheInsertion(InsertionDto dto, Set<SqlColumnId> filter){
         return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.variableName).collect(Collectors.toList());
     }
 
