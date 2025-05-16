@@ -82,18 +82,6 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 currentDataRow);
     }
 
-    public SqlExpressionEvaluator(SqlHeuristicsCalculator parentStatementEvaluator,
-                                  TableColumnResolver tableColumnResolver,
-                                  TaintHandler taintHandler,
-                                  QueryResultSet queryResultSet) {
-        this(parentStatementEvaluator,
-                tableColumnResolver,
-                taintHandler,
-                queryResultSet,
-                null,
-                null);
-    }
-
     private Object popAsSingleValue() {
         Object value = evaluationStack.pop();
         if (value instanceof List<?>) {
@@ -811,12 +799,62 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(CaseExpression caseExpression) {
-        throw new UnsupportedOperationException("visit(CaseExpression) not supported");
+        super.visit(caseExpression);
+
+        final Object elseExpression;
+        final boolean elseExpressionIsValid;
+        if (caseExpression.getElseExpression() != null) {
+            elseExpression = this.popAsSingleValue();
+            elseExpressionIsValid = true;
+        } else {
+            elseExpression = null;
+            elseExpressionIsValid = false;
+        }
+
+        final List<Object> thenExpressions = new ArrayList<>();
+        final List<Object> whenExpressions = new ArrayList<>();
+        for (int i = 0; i < caseExpression.getWhenClauses().size(); i++) {
+            Object thenExpression = this.popAsSingleValue();
+            thenExpressions.add(thenExpression);
+            Object whenExpression = this.popAsSingleValue();
+            whenExpressions.add(whenExpression);
+        }
+        Collections.reverse(thenExpressions);
+        Collections.reverse(whenExpressions);
+
+        final Object switchExpression;
+        final boolean switchExpressionIsValid;
+        if (caseExpression.getSwitchExpression() != null) {
+            switchExpression = this.popAsSingleValue();
+            switchExpressionIsValid = true;
+        } else {
+            switchExpression = null;
+            switchExpressionIsValid = false;
+        }
+
+        for (int i = 0; i < whenExpressions.size(); i++) {
+            final Object whenExpression = whenExpressions.get(i);
+            final Object thenExpression = thenExpressions.get(i);
+            final Truthness truthness;
+            if (switchExpressionIsValid) {
+                truthness = evaluateTruthnessForComparisonOperator(switchExpression, whenExpression, ComparisonOperatorType.EQUALS_TO);
+            } else {
+                truthness = convertToTruthness(whenExpression);
+            }
+            if (truthness.isTrue()) {
+                evaluationStack.push(thenExpression);
+                return;
+            }
+        }
+        if (!elseExpressionIsValid) {
+            throw new IllegalStateException("elseExpression is null but it should not be");
+        }
+        evaluationStack.push(elseExpression);
     }
 
     @Override
     public void visit(WhenClause whenClause) {
-        throw new UnsupportedOperationException("visit(WhenClause) not supported");
+        super.visit(whenClause);
     }
 
     @Override
@@ -827,12 +865,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
         Select select = (Select) rightExpression;
 
-        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
-                this,
-                this.tableColumnResolver,
-                this.taintHandler,
-                this.queryResultSet,
-                this.dataRowStack);
+        SqlHeuristicsCalculator.Builder builder = new Builder();
+        builder.withParentExpressionEvaluator(this)
+                .withTableColumnResolver(this.tableColumnResolver)
+                .withTaintHandler(this.taintHandler)
+                .withSourceQueryResultSet(this.queryResultSet)
+                .withStackOfDataRows(this.dataRowStack);
+
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = builder.build();
 
         SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.computeHeuristic(select);
         if (existsExpression.isNot()) {
@@ -955,7 +995,6 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             }
         }
     }
-
 
 
     @Override
@@ -1269,12 +1308,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Select select) {
-        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
-                this,
-                this.tableColumnResolver,
-                this.taintHandler,
-                this.queryResultSet,
-                this.dataRowStack);
+        SqlHeuristicsCalculator.Builder builder = new Builder();
+        builder.withParentExpressionEvaluator(this)
+                .withTableColumnResolver(this.tableColumnResolver)
+                .withTaintHandler(this.taintHandler)
+                .withSourceQueryResultSet(this.queryResultSet)
+                .withStackOfDataRows(this.dataRowStack);
+
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = builder.build();
 
         SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.computeHeuristic(select);
         evaluationStack.push(heuristicResult.getQueryResult());

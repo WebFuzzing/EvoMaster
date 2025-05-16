@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -565,4 +566,71 @@ class TablesAndColumnsFinderTest {
 
     }
 
+    @Test
+    void testNullValue() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT NULL AS null_value FROM employees";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(new SqlBaseTableReference("employees")));
+        assertEquals(false, finder.hasColumnReferences(new SqlBaseTableReference("employees")));
+    }
+
+    @Test
+    void testNullValueInSubquery() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT null_value FROM (SELECT NULL AS null_value FROM employees)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(new SqlBaseTableReference("employees")));
+        assertEquals(false, finder.hasColumnReferences(new SqlBaseTableReference("employees")));
+    }
+
+    @Test
+    void testLongValue() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT 42 AS non_null_value FROM employees";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.getBaseTableReferences().contains(new SqlBaseTableReference("employees")));
+        assertEquals(false, finder.hasColumnReferences(new SqlBaseTableReference("employees")));
+    }
+
+    @Test
+    void testNullValueInSubqueryNoFrom() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT null_value FROM (SELECT NULL AS null_value)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(0, finder.getBaseTableReferences().size());
+
+    }
+
+    @Test
+    void testMissingTables() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+
+        Assumptions.assumeTrue(schema.tables.stream()
+                .filter(t -> t.name.equals("Foo"))
+                .count()==0);
+
+        String sql = "SELECT * FROM Foo";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(0, finder.getBaseTableReferences().size());
+
+    }
 }

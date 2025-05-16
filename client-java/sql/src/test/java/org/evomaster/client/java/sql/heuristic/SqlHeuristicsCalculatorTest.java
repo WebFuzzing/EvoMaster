@@ -33,10 +33,16 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT name FROM Person";
 
-        QueryResult databaseContents = new QueryResult(Collections.singletonList("name"), "Person");
-        databaseContents.addRow(new DataRow("name", "John", "Person"));
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(true, heuristicResult.getTruthness().isTrue());
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -48,8 +54,11 @@ public class SqlHeuristicsCalculatorTest {
     public void testSelectWithFalseWhereConditionWithoutFrom() {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 1 AS example_column WHERE 1 = 0";
-        QueryResult contents = new QueryResult(Collections.singletonList("example_column"), null);
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, contents);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         double expectedOfTrue = TruthnessUtils.buildAndAggregationTruthness(TRUE_TRUTHNESS, new Truthness(SqlHeuristicsCalculator.C, 1d)).getOfTrue();
@@ -66,9 +75,13 @@ public class SqlHeuristicsCalculatorTest {
     public void testSelectNoFromNeitherWhereClauses() {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 1 AS example_column";
-        QueryResult virtualTableContents = new QueryResult(Collections.singletonList("example_column"), null);
-        virtualTableContents.addRow(new DataRow("example_column", 1, null));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, virtualTableContents);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(true, heuristicResult.getTruthness().isTrue());
 
@@ -84,7 +97,12 @@ public class SqlHeuristicsCalculatorTest {
 
         String sqlCommand = "SELECT name FROM Person";
         QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, contents);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(false, heuristicResult.getTruthness().isTrue());
@@ -105,7 +123,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(true, heuristicResult.getTruthness().isTrue());
 
@@ -122,7 +147,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -146,9 +178,16 @@ public class SqlHeuristicsCalculatorTest {
 
         String sqlCommand = "SELECT name FROM TableA RIGHT JOIN TableB";
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
-        QueryResult rightTables = new QueryResult(Collections.singletonList("name"), "TableB");
+        QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTables);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(false, heuristicResult.getTruthness().isTrue());
@@ -167,7 +206,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         assertEquals(false, heuristicResult.getTruthness().isTrue());
 
@@ -185,7 +231,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         double expectedOfTrue = SqlHeuristicsCalculator.C;
@@ -205,7 +258,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -225,7 +285,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -248,7 +315,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         rightTable.addRow(new DataRow("name", "John", "TableB"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -268,7 +342,12 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT name FROM TableA CROSS JOIN TableB";
         QueryResult leftTable = new QueryResult(Collections.singletonList("name"), "TableA");
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+        QueryResultSet queryResultSet = QueryResultSet.build(leftTable, rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         double expectedOfTrue = SqlHeuristicsCalculator.C;
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
@@ -290,7 +369,16 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         leftTable.addRow(new DataRow("name", "John", "TableA"));
         rightTable.addRow(new DataRow("name", "Jack", "TableB"));
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, leftTable, rightTable);
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(leftTable);
+        queryResultSet.addQueryResult(rightTable);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -328,7 +416,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(departments);
+        queryResultSet.addQueryResult(employees);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -361,7 +456,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult projects = new QueryResult(Arrays.asList("project_id", "project_name"), "projects");
         projects.addRow(Arrays.asList("project_id", "project_name"), "projects", Arrays.asList(1, "ProjectX"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments, projects);
+        QueryResultSet queryResultSet = QueryResultSet.build(departments, employees, projects);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -392,7 +492,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Collections.singletonList("department_name"), "Departments");
         departments.addRow(Collections.singletonList("department_name"), "Departments", Collections.singletonList("Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -421,7 +526,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
@@ -497,8 +607,12 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -526,8 +640,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -550,10 +668,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult employees = new QueryResult(Collections.singletonList("name"), "Employees");
         employees.addRow(new DataRow("name", "John", "Employees"));
 
-        QueryResult[] arrayOfQueryResultSet = {employees};
         Select parsedSqlCommand = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic(parsedSqlCommand);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -579,10 +701,14 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult employees = new QueryResult(variableDescriptors);
         employees.addRow(new DataRow(variableDescriptors, Arrays.asList("John", 10000)));
 
-        QueryResult[] arrayOfQueryResultSet = {employees};
         Select parsedSqlCommand = (Select) SqlParserUtils.parseSqlCommand(sqlCommand);
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, arrayOfQueryResultSet);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic(parsedSqlCommand);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -616,7 +742,11 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(employees);
         TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(tableColumnResolver, null, queryResultSet);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(tableColumnResolver)
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic(select);
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -666,9 +796,31 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
         assertEquals(0.0, distanceWithMetrics.sqlDistance);
+    }
+
+    @Test
+    public void testUnsupportedQuery() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "create cached local temporary table if not exists HT_feature_constraint (id bigint not null) on commit drop transactional";
+        QueryResultSet queryResultSet = new QueryResultSet();
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
+        assertEquals(Double.MAX_VALUE, distanceWithMetrics.sqlDistance);
     }
 
     @Test
@@ -685,8 +837,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -712,8 +868,12 @@ public class SqlHeuristicsCalculatorTest {
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Delete) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -735,7 +895,12 @@ public class SqlHeuristicsCalculatorTest {
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(departments);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Update) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -754,9 +919,16 @@ public class SqlHeuristicsCalculatorTest {
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(2, "Marketing"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
-        assertThrows(IllegalArgumentException.class, () -> calculator.computeDistance(sqlCommand));
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+         SqlDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(sqlCommand);
+         assertEquals(Double.MAX_VALUE, distanceWithMetrics.sqlDistance);
+
     }
 
     @Test
@@ -768,8 +940,12 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult departments = new QueryResult(Arrays.asList("department_id", "department_name"), "departments");
         departments.addRow(Arrays.asList("department_id", "department_name"), "departments", Arrays.asList(1, "Sales"));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, departments);
+        QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Delete) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertTrue(heuristicResult.getTruthness().isTrue());
@@ -787,7 +963,10 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 24";
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertEquals(true, heuristicResult.getTruthness().isTrue());
@@ -796,7 +975,7 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(new VariableDescriptor(null, null, null), queryResult.seeVariableDescriptors().get(0));
 
         assertEquals(1, queryResult.seeRows().size());
-        assertEquals(24, ((Number)queryResult.seeRows().get(0).getValueByName(null)).intValue());
+        assertEquals(24, ((Number) queryResult.seeRows().get(0).getValueByName(null)).intValue());
 
     }
 
@@ -805,15 +984,20 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 24 UNION SELECT 42";
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
         QueryResult queryResult = heuristicResult.getQueryResult();
         assertEquals(1, queryResult.seeVariableDescriptors().size());
         assertEquals(new VariableDescriptor(null, null, null), queryResult.seeVariableDescriptors().get(0));
 
         assertEquals(2, queryResult.seeRows().size());
-        assertEquals(24, ((Number)queryResult.seeRows().get(0).getValueByName(null)).intValue());
-        assertEquals(42, ((Number)queryResult.seeRows().get(1).getValueByName(null)).intValue());
+        assertEquals(24, ((Number) queryResult.seeRows().get(0).getValueByName(null)).intValue());
+        assertEquals(42, ((Number) queryResult.seeRows().get(1).getValueByName(null)).intValue());
     }
 
     @Test
@@ -821,10 +1005,16 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT name FROM Person";
 
-        QueryResult databaseContents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        databaseContents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = QueryResultSet.build(person);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
 
@@ -843,10 +1033,16 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT name AS person_name FROM Person";
 
-        QueryResult databaseContents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        databaseContents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = QueryResultSet.build(person);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -864,10 +1060,16 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT * FROM Person";
 
-        QueryResult databaseContents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        databaseContents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
+        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = QueryResultSet.build(person);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -891,10 +1093,16 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT * FROM (SELECT salary, age FROM (SELECT * FROM person))";
 
-        QueryResult databaseContents = new QueryResult(Arrays.asList("name", "age", "salary"), "person");
-        databaseContents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
+        QueryResult personQueryResult = new QueryResult(Arrays.asList("name", "age", "salary"), "person");
+        personQueryResult.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -920,14 +1128,20 @@ public class SqlHeuristicsCalculatorTest {
                 "FROM categories child\n" +
                 "LEFT JOIN categories parent ON child.parent_id = parent.id;\n";
 
-        QueryResult databaseContents = new QueryResult(Arrays.asList("id", "name", "parent_id"), "categories");
-        databaseContents.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(1, "Electronics", null)));
-        databaseContents.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(2, "Computers", 1)));
-        databaseContents.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(3, "Laptops", 2)));
-        databaseContents.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(4, "Phones", 1)));
-        databaseContents.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(5, "Accessories", 2)));
+        QueryResult categoriesResultSet = new QueryResult(Arrays.asList("id", "name", "parent_id"), "categories");
+        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(1, "Electronics", null)));
+        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(2, "Computers", 1)));
+        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(3, "Laptops", 2)));
+        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(4, "Phones", 1)));
+        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(5, "Accessories", 2)));
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, databaseContents);
+        QueryResultSet queryResultSet = QueryResultSet.build(categoriesResultSet);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -971,8 +1185,13 @@ public class SqlHeuristicsCalculatorTest {
         projects.addRow(Arrays.asList("project_id", "project_name"), "projects", Arrays.asList(1, "ProjectX"));
 
 
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, projects);
 
-        SqlHeuristicsCalculator calculator = new SqlHeuristicsCalculator(schema, null, employees, projects);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         QueryResult queryResult = heuristicResult.getQueryResult();
@@ -999,4 +1218,149 @@ public class SqlHeuristicsCalculatorTest {
     }
 
 
+    @Test
+    public void testNull() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT NULL AS null_value";
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+    }
+
+    @Test
+    public void testNullInSubquery() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT * FROM (SELECT NULL UNION ALL SELECT name FROM employees)";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
+    }
+
+
+    @Test
+    public void testCaseWhen() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT \n" +
+                "    CASE \n" +
+                "      WHEN age < 18 THEN 'Minor'\n" +
+                "      ELSE 'Adult'\n" +
+                "    END AS age_group\n" +
+                "    FROM person;\n";
+
+        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
+        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(17)));
+        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals("Minor", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
+    }
+
+    @Test
+    public void testCaseWhenElse() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT \n" +
+                "    CASE \n" +
+                "      WHEN age < 18 THEN 'Minor'\n" +
+                "      ELSE 'Adult'\n" +
+                "    END AS age_group\n" +
+                "    FROM person;\n";
+
+        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
+        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
+        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals("Adult", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
+    }
+
+    @Test
+    public void testCaseSwitch() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT \n" +
+                "    CASE age \n" +
+                "      WHEN 1 THEN 'one year'\n" +
+                "      WHEN 2 THEN 'two years'\n" +
+                "      WHEN 3 THEN 'three years'\n" +
+                "      ELSE 'more than 3 years'\n" +
+                "    END AS age_group\n" +
+                "    FROM person;\n";
+
+        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
+        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(2)));
+        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals("two years", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
+    }
+
+    @Test
+    public void testCaseSwitchElse() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT \n" +
+                "    CASE age \n" +
+                "      WHEN 1 THEN 'one year'\n" +
+                "      WHEN 2 THEN 'two years'\n" +
+                "      WHEN 3 THEN 'three years'\n" +
+                "      ELSE 'more than 3 years'\n" +
+                "    END AS age_group\n" +
+                "    FROM person;\n";
+
+        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
+        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
+        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals("more than 3 years", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
+    }
+
+
 }
+

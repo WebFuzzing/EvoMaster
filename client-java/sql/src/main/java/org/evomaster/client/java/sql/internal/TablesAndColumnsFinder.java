@@ -189,19 +189,21 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             return findColumnReferences(subquery);
         } else if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
-            String tableName = table.getFullyQualifiedName();
             SqlTableReference tableReference = this.tableColumnResolver.resolve(table);
-            if (tableReference == null) {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
-            }
-            if (tableReference instanceof SqlBaseTableReference) {
-                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
-                return findColumnReferences(sqlBaseTableReference.getTableId());
-            } else if (tableReference instanceof SqlDerivedTableReference) {
-                SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) tableReference;
-                return findColumnReferences(sqlDerivedTableReference.getSelect());
+            if (tableReference != null) {
+                if (tableReference instanceof SqlBaseTableReference) {
+                    SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
+                    return findColumnReferences(sqlBaseTableReference.getTableId());
+                } else if (tableReference instanceof SqlDerivedTableReference) {
+                    SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) tableReference;
+                    return findColumnReferences(sqlDerivedTableReference.getSelect());
+                } else {
+                    throw new IllegalArgumentException("Cannot handle reference of class " + tableReference.getClass().getName());
+                }
             } else {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
+                // return an empty set of column references
+                // if the table could not have been resolved
+                return Collections.emptySet();
             }
         } else if (fromItem instanceof ParenthesedFromItem) {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;

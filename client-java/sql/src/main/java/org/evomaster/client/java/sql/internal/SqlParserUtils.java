@@ -152,15 +152,7 @@ public class SqlParserUtils {
         return fromItem instanceof Table;
     }
 
-    /**
-     * Checks if the given FromItem is a Subquery.
-     *
-     * @param fromItem the FromItem to check
-     * @return true if the FromItem is a Subquery, false otherwise
-     */
-    public static boolean isSubquery(FromItem fromItem) {
-        return fromItem instanceof ParenthesedSelect;
-    }
+
 
 
     /**
@@ -194,21 +186,6 @@ public class SqlParserUtils {
     }
 
     /**
-     * Retrieves the {@link PlainSelect} object from a {@link FromItem} that represents a subquery.
-     *
-     * @param fromItem
-     * @return
-     */
-    public static PlainSelect getSubquery(FromItem fromItem) {
-        if (fromItem instanceof ParenthesedSelect) {
-            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
-            return parenthesedSelect.getPlainSelect();
-        } else {
-            throw new IllegalArgumentException("From item " + fromItem + " is not a subquery");
-        }
-    }
-
-    /**
      * Checks if the given {@link Statement} is a UNION statement.
      *
      * @param statement
@@ -220,14 +197,6 @@ public class SqlParserUtils {
             return select instanceof SetOperationList;
         }
         return false;
-    }
-
-    public static List<Select> getUnionSubqueries(Statement query) {
-        if (!isUnion(query)) {
-            throw new IllegalArgumentException("The provided query is not a UNION statement");
-        }
-        SetOperationList unionQuery = (SetOperationList) query;
-        return unionQuery.getSelects();
     }
 
     /**

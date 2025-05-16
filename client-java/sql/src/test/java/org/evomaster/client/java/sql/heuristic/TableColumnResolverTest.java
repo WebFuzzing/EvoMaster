@@ -12,6 +12,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.SqlTableId;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -725,4 +726,74 @@ class TableColumnResolverTest {
         resolver.exitCurrentStatementContext();
     }
 
+    @Test
+    void testResolveNullColumn() throws Exception {
+        String sql = "SELECT e.null_value FROM (SELECT NULL AS null_value) e";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("null_value");
+        column.setTable(new Table("e"));
+
+        SqlColumnReference columnReference = resolver.resolve(column);
+        assertNotNull(columnReference);
+        assertEquals("null_value", columnReference.getColumnName());
+        assertTrue(columnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertEquals("(SELECT NULL AS null_value) e", ((SqlDerivedTableReference) columnReference.getTableReference()).getSelect().toString());
+    }
+
+    @Test
+    void testResolveNonNullColumn() throws Exception {
+        String sql = "SELECT non_null_value FROM (SELECT 42 AS non_null_value)";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("non_null_value");
+
+        SqlColumnReference outerReference = resolver.resolve(column);
+        assertNotNull(outerReference);
+    }
+
+    @Test
+    void testResolveColumnTableNotInSchema() throws Exception {
+
+        Assumptions.assumeTrue(this.schema.tables.stream()
+                .filter(t -> t.name.equals("Foo"))
+                .count()==0);
+
+        String sql = "SELECT * FROM Foo";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("bar");
+        column.setTable(new Table("Foo"));
+
+        SqlColumnReference columnReference = resolver.resolve(column);
+        assertNull(columnReference);
+    }
+
+    @Test
+    void testResolveTableNotInSchema() throws Exception {
+
+        Assumptions.assumeTrue(this.schema.tables.stream()
+                .filter(t -> t.name.equals("Foo"))
+                .count()==0);
+
+        String sql = "SELECT * FROM Foo";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("bar");
+
+        SqlColumnReference columnReference = resolver.resolve(column);
+        assertNull(columnReference);
+    }
 }

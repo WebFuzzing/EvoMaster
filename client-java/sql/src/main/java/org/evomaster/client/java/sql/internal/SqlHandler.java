@@ -16,10 +16,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.SqlScriptRunner;
-import org.evomaster.client.java.sql.heuristic.BooleanLiteralsHelper;
-import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
-import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
-import org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator;
+import org.evomaster.client.java.sql.heuristic.*;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
@@ -313,10 +310,12 @@ public class SqlHandler {
         }
 
         // compute the SQL heuristics using the fetched data
-        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculator(
-                schema,
-                taintHandler,
-                queryResultSet);
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = builder
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .withTaintHandler(taintHandler)
+                .withSourceQueryResultSet(queryResultSet)
+                .build();
 
         SqlDistanceWithMetrics sqlDistanceWithMetrics = sqlHeuristicsCalculator.computeDistance(sqlCommand);
 
@@ -534,7 +533,7 @@ public class SqlHandler {
         return result;
     }
 
-    private static void mergeNewData(
+    static void mergeNewData(
             Map<SqlTableId, Set<SqlColumnId>> current,
             Map<SqlTableId, Set<SqlColumnId>> toAdd
     ) {

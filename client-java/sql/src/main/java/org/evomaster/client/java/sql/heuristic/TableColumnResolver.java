@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Alias;
+import net.sf.jsqlparser.expression.NullValue;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -292,7 +293,9 @@ public class TableColumnResolver {
             } else if (isBaseTable(tableName)) {
                 sqlTableReference = new SqlBaseTableReference(table.getFullyQualifiedName());
             } else {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
+                // table was expected to be in the schema, but it is missing.
+                // Therefore, we cannot resolve the column
+                return null;
             }
             if (sqlTableReference instanceof SqlBaseTableReference) {
                 SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
@@ -306,7 +309,8 @@ public class TableColumnResolver {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
             } else {
-                throw new IllegalArgumentException("Table " + tableName + " not found in schema");
+                // Table was not found in schema (therefore, column cannot be resolved)
+                return null;
             }
         } else if (fromItem instanceof ParenthesedFromItem) {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
@@ -374,10 +378,11 @@ public class TableColumnResolver {
                 return findBaseTableColumnReference(table, columnName);
             } else if (selectItem.getExpression() instanceof Column) {
                 // handle column and column alias (if any)
+                Alias alias = selectItem.getAlias();
                 Column selectItemColumn = (Column) selectItem.getExpression();
                 Table columnTable = selectItemColumn.getTable();
-                Alias alias = selectItem.getAlias();
-                if (equalNames(selectItemColumn.getColumnName(), columnName) || (alias != null && equalNames(alias.getName(), columnName))) {
+                if (equalNames(selectItemColumn.getColumnName(), columnName)
+                        || (alias != null && equalNames(alias.getName(), columnName))) {
                     final SqlColumnReference sqlColumnReference;
                     if (columnTable != null) {
                         sqlColumnReference = findBaseTableColumnReference(columnTable, selectItemColumn.getColumnName());
@@ -389,8 +394,14 @@ public class TableColumnResolver {
                     }
                 }
             } else {
-                // handle other expressions
-                throw new IllegalArgumentException("Unsupported expression type: " + selectItem.getExpression().getClass());
+                Alias alias = selectItem.getAlias();
+                if (alias!=null && equalNames(alias.getName(), columnName)) {
+                    /* If an alias exists in the current SELECT that
+                       defines the column name, then the column is
+                       defined within the current SELECT (i.e., a derived table)
+                     */
+                    return new SqlColumnReference(new SqlDerivedTableReference(plainSelect), columnName);
+                }
             }
         }
         // column was not found

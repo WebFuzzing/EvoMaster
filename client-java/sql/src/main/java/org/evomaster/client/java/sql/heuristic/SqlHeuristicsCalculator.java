@@ -2,11 +2,11 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.sql.DataRow;
@@ -16,6 +16,7 @@ import org.evomaster.client.java.sql.VariableDescriptor;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,52 +31,67 @@ public class SqlHeuristicsCalculator {
     public static Truthness FALSE_TRUTHNESS = TRUE_TRUTHNESS.invert();
     public static Truthness FALSE_TRUTHNESS_BETTER = new Truthness(C_BETTER, 1);
 
-    private static QueryResultSet buildQueryResultSet(QueryResult... data) {
-        QueryResultSet queryResultSet = new QueryResultSet();
-        for (QueryResult queryResult : data) {
-            queryResultSet.addQueryResult(queryResult);
-        }
-        return queryResultSet;
-    }
-
     private final SqlExpressionEvaluator parentExpressionEvaluator;
-    private final QueryResultSet queryResultSet;
+    private final QueryResultSet sourceQueryResultSet;
     private final TaintHandler taintHandler;
     private final TableColumnResolver tableColumnResolver;
-    private final Deque<DataRow> stackOfDataRows = new ArrayDeque<>();
+    private final Deque<DataRow> stackOfEvaluatedDataRows = new ArrayDeque<>();
 
-    SqlHeuristicsCalculator(SqlExpressionEvaluator parentExpressionEvaluator,
-                            TableColumnResolver tableColumnResolver,
-                            TaintHandler taintHandler,
-                            QueryResultSet queryResultSet,
-                            Deque<DataRow> stackOfDataRows) {
-        this.parentExpressionEvaluator = parentExpressionEvaluator;
-        this.tableColumnResolver = tableColumnResolver;
-        this.taintHandler = taintHandler;
-        this.queryResultSet = queryResultSet;
-        if (stackOfDataRows != null) {
-            this.stackOfDataRows.addAll(stackOfDataRows);
+    // Refactor: Use Builder Pattern for Constructor
+    private SqlHeuristicsCalculator(Builder builder) {
+        this.parentExpressionEvaluator = builder.parentExpressionEvaluator;
+        this.tableColumnResolver = builder.tableColumnResolver;
+        this.taintHandler = builder.taintHandler;
+        if (builder.queryResultSet != null) {
+            this.sourceQueryResultSet = builder.queryResultSet;
+        } else {
+            this.sourceQueryResultSet = new QueryResultSet();
+        }
+        if (builder.stackOfDataRows != null) {
+            this.stackOfEvaluatedDataRows.addAll(builder.stackOfDataRows);
         }
     }
 
-    SqlHeuristicsCalculator(TableColumnResolver tableColumnResolver,
-                            TaintHandler taintHandler,
-                            QueryResultSet queryResultSet) {
-        this(null, tableColumnResolver, taintHandler, queryResultSet, null);
-    }
+    public static class Builder {
+        private SqlExpressionEvaluator parentExpressionEvaluator;
+        private TableColumnResolver tableColumnResolver;
+        private TaintHandler taintHandler;
+        private QueryResultSet queryResultSet;
+        private Deque<DataRow> stackOfDataRows;
 
+        public Builder withParentExpressionEvaluator(SqlExpressionEvaluator evaluator) {
+            this.parentExpressionEvaluator = evaluator;
+            return this;
+        }
 
-    public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResult... data) {
-        this(new TableColumnResolver(schema), taintHandler, buildQueryResultSet(data));
-    }
+        public Builder withTableColumnResolver(TableColumnResolver resolver) {
+            this.tableColumnResolver = resolver;
+            return this;
+        }
 
-    public SqlHeuristicsCalculator(DbInfoDto schema, TaintHandler taintHandler, QueryResultSet queryResultSet) {
-        this(new TableColumnResolver(schema), taintHandler, queryResultSet);
+        public Builder withTaintHandler(TaintHandler handler) {
+            this.taintHandler = handler;
+            return this;
+        }
+
+        public Builder withSourceQueryResultSet(QueryResultSet resultSet) {
+            this.queryResultSet = resultSet;
+            return this;
+        }
+
+        public Builder withStackOfDataRows(Deque<DataRow> rows) {
+            this.stackOfDataRows = rows;
+            return this;
+        }
+
+        public SqlHeuristicsCalculator build() {
+            return new SqlHeuristicsCalculator(this);
+        }
+
     }
 
     public static boolean isValidSqlCommandForSqlHeuristicsCalculation(String sqlCommand) {
-        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        return isValidSqlCommandForSqlHeuristicsCalculation(parsedSqlCommand);
+        return isValidSqlCommandForSqlHeuristicsCalculation(SqlParserUtils.parseSqlCommand(sqlCommand));
     }
 
     public static boolean isValidSqlCommandForSqlHeuristicsCalculation(Statement statement) {
@@ -84,32 +100,30 @@ public class SqlHeuristicsCalculator {
                 || (statement instanceof Select);
     }
 
-    public SqlExpressionEvaluator getParentExpressionEvaluator() {
-        return parentExpressionEvaluator;
-    }
-
     public SqlDistanceWithMetrics computeDistance(String sqlCommand) {
         Objects.requireNonNull(sqlCommand, "sqlCommand cannot be null");
-
-        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
-        if (!isValidSqlCommandForSqlHeuristicsCalculation(parsedSqlCommand)) {
-            throw new IllegalArgumentException("Cannot compute heuristics for SQL command of type " + parsedSqlCommand.getClass().getName());
+        try {
+            Truthness t;
+            Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+            if (parsedSqlCommand instanceof Select) {
+                Select select = (Select) parsedSqlCommand;
+                t = this.computeHeuristic(select).getTruthness();
+            } else if (parsedSqlCommand instanceof Update) {
+                Update update = (Update) parsedSqlCommand;
+                t = this.computeHeuristic(update).getTruthness();
+            } else if (parsedSqlCommand instanceof Delete) {
+                Delete delete = (Delete) parsedSqlCommand;
+                t = this.computeHeuristic(delete).getTruthness();
+            } else {
+                SimpleLogger.uniqueWarn("Cannot compute SQL complete heuristics for statement subclass: " + parsedSqlCommand.getClass().getName());
+                return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
+            }
+            double distanceToTrue = 1.0d - t.getOfTrue();
+            return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
+        } catch (Exception ex) {
+            SimpleLogger.uniqueWarn("Failed to compute complete SQL heuristics for: " + sqlCommand);
+            return new SqlDistanceWithMetrics(Double.MAX_VALUE, 0, true);
         }
-        Truthness t;
-        if (parsedSqlCommand instanceof Select) {
-            Select select = (Select) parsedSqlCommand;
-            t = this.computeHeuristic(select).getTruthness();
-        } else if (parsedSqlCommand instanceof Update) {
-            Update update = (Update) parsedSqlCommand;
-            t = this.computeHeuristic(update).getTruthness();
-        } else if (parsedSqlCommand instanceof Delete) {
-            Delete delete = (Delete) parsedSqlCommand;
-            t = this.computeHeuristic(delete).getTruthness();
-        } else {
-            throw new IllegalArgumentException("Cannot compute heuristics for SQL command of type " + parsedSqlCommand.getClass().getName());
-        }
-        double distanceToTrue = 1 - t.getOfTrue();
-        return new SqlDistanceWithMetrics(distanceToTrue, 0, false);
     }
 
     private SqlHeuristicResult computeHeuristicStatement(Statement statement) {
@@ -136,14 +150,10 @@ public class SqlHeuristicsCalculator {
             /**
              * Handle the case where no FROM is used (e.g. SELECT 42;)
              */
-            QueryResult queryResult = queryResultSet.getQueryResultForVirtualTable() == null
-                    ? new QueryResult(Collections.emptyList())
-                    : queryResultSet.getQueryResultForVirtualTable();
-
-            return new SqlHeuristicResult(TRUE_TRUTHNESS, queryResult);
+            return new SqlHeuristicResult(TRUE_TRUTHNESS, new QueryResult(Collections.emptyList()));
         }
 
-        if (SqlParserUtils.isTable(fromItem)) {
+        if (fromItem instanceof Table) {
             /**
              * Handles the case where the FROM is a table
              */
@@ -153,12 +163,21 @@ public class SqlHeuristicsCalculator {
             return new SqlHeuristicResult(truthness, tableContents);
         }
 
-        if (SqlParserUtils.isSubquery(fromItem)) {
+        if (fromItem instanceof ParenthesedSelect) {
             /**
              * Handles the case when FROM is a subquery
              */
-            final Select subquery = SqlParserUtils.getSubquery(fromItem);
+            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) fromItem;
+            final Select subquery = parenthesedSelect.getSelect();
             return computeHeuristic(subquery);
+        }
+
+        if (fromItem instanceof TableFunction) {
+            throw new UnsupportedOperationException("Must implement TableFunction for computing heuristics");
+        }
+
+        if (fromItem instanceof ParenthesedFromItem) {
+            throw new UnsupportedOperationException("Must implement ParenthesedFromItem for computing heuristics");
         }
 
         throw new IllegalArgumentException("Cannot compute heuristics for FROM item of type " + fromItem.getClass().getName());
@@ -479,8 +498,8 @@ public class SqlHeuristicsCalculator {
                 this,
                 this.tableColumnResolver,
                 this.taintHandler,
-                this.queryResultSet,
-                this.stackOfDataRows,
+                this.sourceQueryResultSet,
+                this.stackOfEvaluatedDataRows,
                 currentDataRow);
         expressionToEvaluate.accept(sqlExpressionEvaluator);
         Object value = sqlExpressionEvaluator.getEvaluatedValue();
@@ -635,8 +654,8 @@ public class SqlHeuristicsCalculator {
             SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this,
                     this.tableColumnResolver,
                     this.taintHandler,
-                    this.queryResultSet,
-                    this.stackOfDataRows,
+                    this.sourceQueryResultSet,
+                    this.stackOfEvaluatedDataRows,
                     row
             );
             condition.accept(expressionEvaluator);
@@ -648,7 +667,7 @@ public class SqlHeuristicsCalculator {
     private QueryResult createQueryResult(FromItem fromItem) {
         final QueryResult tableData;
         if (fromItem == null) {
-            tableData = queryResultSet.getQueryResultForVirtualTable();
+            tableData = new QueryResult(Collections.emptyList());
         } else {
             if (!SqlParserUtils.isTable(fromItem)) {
                 throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + fromItem);
@@ -656,9 +675,9 @@ public class SqlHeuristicsCalculator {
             String tableName = SqlParserUtils.getTableName(fromItem);
 
             if (fromItem.getAlias() != null) {
-                tableData = QueryResultUtils.addAliasToQueryResult(queryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
+                tableData = QueryResultUtils.addAliasToQueryResult(sourceQueryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
             } else {
-                tableData = queryResultSet.getQueryResultForNamedTable(tableName);
+                tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
             }
         }
         return tableData;
