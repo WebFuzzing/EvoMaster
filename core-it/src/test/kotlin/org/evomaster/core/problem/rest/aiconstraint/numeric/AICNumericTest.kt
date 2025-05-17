@@ -10,9 +10,11 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.math.*
+import java.util.Random
 
-class AICNumericTest: IntegrationTestRestBase() {
 
+class AICNumericTest : IntegrationTestRestBase() {
 
     companion object {
         @BeforeAll
@@ -23,9 +25,8 @@ class AICNumericTest: IntegrationTestRestBase() {
     }
 
     @BeforeEach
-    fun initializeTest(){
+    fun initializeTest() {
     }
-
 
     @Test
     fun testNumeric() {
@@ -34,12 +35,64 @@ class AICNumericTest: IntegrationTestRestBase() {
 
         val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "5"))!!
 
-        val x = createIndividual(listOf(get), SampleType.RANDOM)
-        val evaluatedAction = x.evaluatedMainActions()[0]
+        val individual0 = createIndividual(listOf(get), SampleType.RANDOM)
+        val evaluatedAction = individual0.evaluatedMainActions()[0]
         val action = evaluatedAction.action as RestCallAction
         val result = evaluatedAction.result as RestCallResult
         assertEquals(200, result.getStatusCode())
+    }
 
-        //injector.getInstance() //TODO get reference to the model singleton
+    @Test
+    fun testGaussianModel() {
+        val model = NaiveGaussianModel1D(initialMean = 1950.0, initialVariance = 1000.0)
+        val checker = CriteriaChecker()
+
+        repeat(100) {
+            val valList = model.generateRandomNumbers(1)
+            val value = valList[0]
+            if (checker.check(value) == 400) {
+                println("The sample is Invalid.")
+            } else {
+                println("The sample is valid.")
+                model.update(value)
+                println(model.values)
+                println("The model is updated.")
+            }
+        }
+    }
+
+    class NaiveGaussianModel1D(initialMean: Double = 0.0, initialVariance: Double = 1.0) {
+        private var n: Int = 1
+        private var mu: Double = initialMean
+        private var M2: Double = initialVariance
+        val values: MutableList<Double> = mutableListOf(initialMean)
+
+        fun update(x: Double) {
+            values.add(x)
+            n += 1
+            val delta = x - mu
+            mu += delta / n
+            val delta2 = x - mu
+            M2 += delta * delta2
+        }
+
+        fun posteriorMean(): Double = mu
+
+        fun posteriorVariance(): Double = if (n > 1) M2 / (n - 1) else 1e-6
+
+        fun generateRandomNumbers(numberOfSamples: Int = 1): List<Double> {
+            val mean = posteriorMean()
+            val stddev = sqrt(posteriorVariance())
+            return List(numberOfSamples) {
+                val random = Random()
+                random.nextGaussian() * stddev + mean
+            }
+        }
+    }
+
+    class CriteriaChecker {
+        fun check(x: Double): Int {
+            return if (x in 1925.0..2025.0) 200 else 400
+        }
     }
 }
