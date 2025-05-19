@@ -5,6 +5,8 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
@@ -364,6 +366,23 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         return getData(dto)
+    }
+
+    override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>) : List<DeriveParamResponseDto>{
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.DERIVE_PARAMS)
+                .request()
+                .put(Entity.entity(deriveParams, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<List<DeriveParamResponseDto>>>() {})
+
+        if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+            return listOf()
+        }
+
+        return dto?.data ?: listOf()
     }
 
 

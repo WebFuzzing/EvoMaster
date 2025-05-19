@@ -133,6 +133,12 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                     .forEach { it.isActive = on }
             }
         }
+
+        applyDerivedParamModifications(ind)
+    }
+
+    open fun applyDerivedParamModifications(ind: T){
+        // needs to be overridden
     }
 
     /**

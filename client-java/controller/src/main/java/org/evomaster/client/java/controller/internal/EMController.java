@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
@@ -206,6 +207,13 @@ public class EMController {
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
             dto.restProblem.openApiSchema = rp.getOpenApiSchema();
             dto.restProblem.servicesToNotMock = servicesToNotMock;
+            dto.restProblem.derivedParams = rp.getDerivedParams().stream()
+                    .map(p -> new RestDerivedParamDto(){{
+                        paramName = p.paramName;
+                        context = p.context.toString();
+                        endpointPaths = p.endpointPaths;
+                    }})
+                    .collect(Collectors.toList());
 
         } else if (info instanceof GraphQlProblem) {
             GraphQlProblem p = (GraphQlProblem) info;
@@ -639,6 +647,9 @@ public class EMController {
 
         return Response.status(200).entity(WrappedResponseDto.withData(responseDto)).build();
     }
+
+
+    TODO derived params
 
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)

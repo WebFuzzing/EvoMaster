@@ -2,15 +2,18 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoInsertBuilder
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.enterprise.param.DerivedParamHandler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlInsertBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -23,6 +26,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     @Inject(optional = true)
     protected lateinit var rc: RemoteController
 
+    protected val derivedParamHandler = DerivedParamHandler()
 
     var sqlInsertBuilder: SqlInsertBuilder? = null
         protected set
@@ -30,6 +34,36 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     var existingSqlData : List<SqlAction> = listOf()
         protected set
 
+
+    override fun applyDerivedParamModifications(ind: T) {
+
+        val req = derivedParamHandler.prepareRequest(ind)
+        if(req.isEmpty()){
+            return
+        }
+        val dto = req.map { DerivedParamChangeReqDto()
+            .apply {
+                paramName = it.paramName
+                jsonData = it.jsonData
+                entryPoint = it.entryPoint
+                actionIndex = it.actionIndex
+            }
+        }
+
+        val response = rc.deriveParams(dto)
+        if(response.size != req.size){
+            log.warn("Retrieved only ${response.size} derived params from ${req.size} requested")
+        }
+
+        for(res in response){
+            derivedParamHandler.modifyParam(ind, res.paramName, res.paramValue, res.actionIndex)
+        }
+    }
+
+    fun initializeDerivedParamRules(derivedParams: List<RestDerivedParamDto>){
+
+        derivedParamHandler.initialize(derivedParams)
+    }
 
 
     protected fun updateConfigBasedOnSutInfoDto(infoDto: SutInfoDto) {
