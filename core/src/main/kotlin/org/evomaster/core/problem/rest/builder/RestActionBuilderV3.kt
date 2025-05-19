@@ -623,6 +623,7 @@ object RestActionBuilderV3 {
             gene = OptionalGene(name, gene)
         }
 
+        // TODO: Adding description to the parameter occurs in multiple places. This can be refactored.
         when (p.`in`) {
             "query" -> params.add(QueryParam(name, gene, p.explode ?: true, p.style ?: Parameter.StyleEnum.FORM)
                     .apply { this.description = description })
@@ -630,7 +631,9 @@ object RestActionBuilderV3 {
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
-            "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0)))
+            "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0))
+                .apply { this.description = description }
+            )
             "header" -> params.add(HeaderParam(name, gene).apply { this.description = description })
             "cookie" -> params // do nothing?
             //TODO "cookie" does it need any special treatment? as anyway handled in auth configs
