@@ -258,7 +258,7 @@ class SecurityRest {
         //authenticated, but wrongly getting 401 (eg instead of 403)
         handleNotRecognizedAuthenticated()
 
-        handleForbiddenAuthentication()
+        handleForgottenAuthentication()
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -605,18 +605,46 @@ class SecurityRest {
 
     /**
      * Check if there is a test case with a 403 and another one with a 200 without authentication.
-     * To check this, a resource must first be created (PUT or POST). While the user who created this
+     * To check this, there must be a resource. It can either be newly created or already exist,
+     * such as during initialization. While the user who created this
      * resource can access it (200), the other user cannot (403). However, if a 200 status code is
      * returned when attempting to access the same resource without sending the authorization header,
-     * it indicates that the authorization has been forgotten.
+     * it indicates that authorization checks are wrongly ignored if no auth info is set.
      * Example:
      * POST /resources/ AUTH1 -> 201 (location header: /resources/42/)
      * GET /resources/42/ AUTH1 -> 200
      * GET /resources/42/ AUTH2 -> 403
-     * GET /resources/42/ AUTH1 -> 200
+     * GET /resources/42/ NOAUTH -> 200
      */
-    private fun handleForbiddenAuthentication(){
+    private fun handleForgottenAuthentication() {
         actionDefinitions.forEach { op ->
+            val i403or401 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_4xx,
+            )
+
+            if (i403or401.isEmpty()) {
+                return@forEach //there is not any protected resource for this path/verb.
+            }
+
+            val i200 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx
+            ).flatMap { individual ->
+                individual.individual.seeMainExecutableActions()
+                    .filter { it.auth is NoAuth }
+            }.toList()
+
+            if(i200.isNotEmpty()){
+                // we found a bug, no need to create new resource for this path/verb.
+                return@forEach
+            }
+
+            // now we are creating a request
             val candidates = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 op.verb,
@@ -627,42 +655,25 @@ class SecurityRest {
             if (candidates.isEmpty()) {
                 return@forEach
             }
-
             candidates.map {
-                it.individual.copy()
+                it.copy()
             }.forEach { ind ->
+                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    ind,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx
+                )
 
-                val isCreate = ind.seeMainExecutableActions().filter { (it as RestCallAction).verb == HttpVerb.POST || it.verb == HttpVerb.PUT }.isNotEmpty()
+                val finalIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    ind.individual,
+                    actionIndex
+                )
+                finalIndividual.seeMainExecutableActions().last().auth = HttpWsNoAuth()
 
-                if (!isCreate){
-                    return@forEach
-                }
-
-                val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
-
-                if(copyLast.verb != HttpVerb.GET)
-                    return@forEach
-
-                val copyNoAuthLast = copyLast.copy() as RestCallAction
-
-                copyLast.resetLocalIdRecursively()
-                copyNoAuthLast.resetLocalIdRecursively()
-
-                val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
-
-                otherUsers.forEach{ other ->
-                    val finalIndividual = ind.copy() as RestIndividual
-
-                    copyLast.auth =  other
-                    copyNoAuthLast.auth = HttpWsNoAuth()
-
-                    finalIndividual.addResourceCall(
-                        restCalls = RestResourceCalls(
-                            actions = mutableListOf(copyLast, copyNoAuthLast),
-                            sqlActions = listOf()
-                        )
-                    )
-                    finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                finalIndividual.seeMainExecutableActions()
+                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }
+                    .forEach{
                         it.saveCreatedResourceLocation = true
                     }
                     finalIndividual.fixResourceForwardLinks()
@@ -675,11 +686,11 @@ class SecurityRest {
                     if(ei != null) {
                         archive.addIfNeeded(ei)
                     }
-                }
-
             }
         }
     }
+
+
 
     /**
      * @return a test where last action is for given path and verb returning 403.

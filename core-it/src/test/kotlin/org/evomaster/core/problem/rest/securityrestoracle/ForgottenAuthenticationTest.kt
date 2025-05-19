@@ -96,4 +96,44 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(1, r3.getFaults().size)
     }
 
+
+    @Test
+    fun testForgottenAuthenticationWithCreateAndNoAuthRequest(){
+
+        val pirTest = getPirToRest()
+
+        val id42 = 42
+
+        val put42 = pirTest.fromVerbPath("PUT", "/api/resources/$id42")!!
+        val get42NotAuth = pirTest.fromVerbPath("GET", "/api/resources/$id42")!!
+
+        val auth = controller.getInfoForAuthentication()
+        val foo = HttpWsAuthenticationInfo.fromDto(auth.find { it.name == "FOO" }!!)
+
+        put42.auth = foo
+
+
+        val authenticated = createIndividual(listOf(put42), SampleType.SECURITY)
+        val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
+
+        val ind = RestIndividualBuilder.merge(authenticated.individual, forgottenAuth.individual)
+        assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
+        assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
+
+        ForgottenAuthenticationApplication.reset()
+        val ff = injector.getInstance(AbstractRestFitness::class.java)
+        val ei = ff.calculateCoverage(ind)!!
+
+        val r0 = ei.evaluatedMainActions()[0].result as RestCallResult
+        val r1 = ei.evaluatedMainActions()[1].result as RestCallResult
+        assertEquals(201, r0.getStatusCode())
+        assertEquals(200, r1.getStatusCode())
+
+        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
+        assertTrue(faultDetected)
+
+        //fault should be put on 200 with no authentication
+        assertEquals(0, r0.getFaults().size)
+        assertEquals(1, r1.getFaults().size)
+    }
 }

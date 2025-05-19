@@ -61,10 +61,9 @@ object RestSecurityOracle {
 
         verifySampleType(individual)
 
-        val actions = individual.seeMainExecutableActions()
-            .filter {
-                it.verb == HttpVerb.GET && it.path == path
-            }
+        val actions = individual.seeMainExecutableActions().filter {
+            it.path == path
+        }
 
         val actionsWithResults = actions.filter {
             //can be null if sequence was stopped
@@ -92,7 +91,7 @@ object RestSecurityOracle {
                 .getStatusCode() == 401
         }
 
-        val a200 = actionsWithResults.filter {
+        val a200WithoutAuth = actionsWithResults.filter {
             (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                 .getStatusCode() == 200
         }.filter {
@@ -100,7 +99,16 @@ object RestSecurityOracle {
             it.auth is NoAuth
         }
 
-        return (a403.isNotEmpty() || a401.isNotEmpty()) && a200.isNotEmpty()
+        val checkAnyAuth = actionsWithResults.filter {
+            it.auth !is NoAuth
+        }
+
+        // if the same path has authenticated and unauthenticated success requests
+        if(checkAnyAuth.isNotEmpty() && a200WithoutAuth.isNotEmpty()){
+            return true
+        }
+
+        return (a403.isNotEmpty() || a401.isNotEmpty()) && a200WithoutAuth.isNotEmpty()
     }
 
     fun hasExistenceLeakage(

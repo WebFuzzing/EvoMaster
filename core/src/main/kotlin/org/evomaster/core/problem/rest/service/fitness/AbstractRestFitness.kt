@@ -1203,7 +1203,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
         val getPaths = individual.seeMainExecutableActions()
-            .filter { it.verb == HttpVerb.GET }
             .map { it.path }
             .toSet()
 
@@ -1217,7 +1216,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
 
-            if(a.verb == HttpVerb.GET && a.auth is NoAuth && faultyPaths.contains(a.path) && r.getStatusCode() == 200){
+            if(a.auth is NoAuth && faultyPaths.contains(a.path) && r.getStatusCode() == 200){
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
                 )
