@@ -27,8 +27,10 @@ class SsrfEMTest: SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+
             setOption(args, "vulnerabilityAnalyser", "true")
             setOption(args, "vulnerabilitySelectionStrategy", "LLM")
+
             setOption(args, "languageModelConnector", "true")
             setOption(args, "schemaOracles", "false")
 
