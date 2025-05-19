@@ -283,7 +283,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             boolean advancedHeuristics){
         sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
-        sqlHandler.setAdvancedHeuristics(advancedHeuristics);
+        sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
 
@@ -980,6 +980,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.actionIndex = dto.index;
 
         resetExtraHeuristics();
+
+        newScheduleActionSpecificHandler(dto);
     }
 
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
@@ -998,8 +1000,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 newScheduleAction(dto, queryFromDatabase);
                 invokeScheduleTask(dto, responseDto);
             }catch (Exception e){
-                // now we execute all schedule tasks
-                SimpleLogger.warn(e.getMessage());
+                // we stop executing the following schedule task
+                throw new RuntimeException(e);
             }
         }
         assert dtos.size() == responseDto.results.size();
@@ -1234,6 +1236,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void newActionSpecificHandler(ActionDto dto);
 
+    public abstract void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto);
 
     /**
      * Check if bytecode instrumentation is on.
