@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.problem;
 
+import org.evomaster.client.java.controller.problem.param.RestDerivedParam;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -15,10 +17,19 @@ public class RestProblem extends ProblemInfo{
 
     private final String openApiSchema;
 
+    private final List<RestDerivedParam> derivedParams;
+
     public RestProblem(String openApiUrl, List<String> endpointsToSkip) {
         this(openApiUrl, endpointsToSkip, null);
     }
 
+    public RestProblem(
+            String openApiUrl,
+            List<String> endpointsToSkip,
+            String openApiSchema
+    ){
+        this(openApiUrl, endpointsToSkip, openApiSchema, null, null);
+    }
 
     /**
      *
@@ -31,12 +42,24 @@ public class RestProblem extends ProblemInfo{
      * @param openApiSchema the actual schema, as a string. Note, if this specified, then
      *                       openApiUrl must be null
      */
-    public RestProblem(String openApiUrl, List<String> endpointsToSkip, String openApiSchema) {
+    public RestProblem(
+            String openApiUrl,
+            List<String> endpointsToSkip,
+            String openApiSchema,
+            List<ExternalService> servicesToNotMock,
+            List<RestDerivedParam> derivedParams) {
         this.openApiUrl = openApiUrl;
         this.endpointsToSkip = endpointsToSkip == null
-                ? new ArrayList<>()
-                : new ArrayList<>(endpointsToSkip);
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(endpointsToSkip));
         this.openApiSchema = openApiSchema;
+
+        this.servicesToNotMock.clear();
+        this.servicesToNotMock.addAll(servicesToNotMock);
+
+        this.derivedParams = derivedParams == null
+                ? Collections.emptyList()
+                : Collections.unmodifiableList(new ArrayList<>(derivedParams));
 
         boolean url = openApiUrl != null && !openApiUrl.isEmpty();
         boolean schema = openApiSchema != null && !openApiSchema.isEmpty();
@@ -49,22 +72,29 @@ public class RestProblem extends ProblemInfo{
         }
     }
 
+
+    @Override
+    public RestProblem withServicesToNotMock(List<ExternalService> servicesToNotMock){
+        return new RestProblem(openApiUrl, endpointsToSkip,openApiSchema,servicesToNotMock,derivedParams);
+    }
+
+    public RestProblem withDerivedParams(List<RestDerivedParam> derivedParams){
+        return new RestProblem(openApiUrl, endpointsToSkip,openApiSchema,servicesToNotMock,derivedParams);
+    }
+
     public String getOpenApiUrl() {
         return openApiUrl;
     }
 
     public List<String> getEndpointsToSkip() {
-        return Collections.unmodifiableList(endpointsToSkip);
+        return endpointsToSkip;
     }
 
     public String getOpenApiSchema() {
         return openApiSchema;
     }
 
-    @Override
-    public RestProblem withServicesToNotMock(List<ExternalService> servicesToNotMock){
-        RestProblem p =  new RestProblem(this.openApiUrl, this.endpointsToSkip, this.openApiSchema);
-        p.servicesToNotMock.addAll(servicesToNotMock);
-        return p;
+    public List<RestDerivedParam> getDerivedParams() {
+        return derivedParams;
     }
 }

@@ -13,10 +13,13 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.param.DerivedParamContext;
+import org.evomaster.client.java.controller.problem.param.RestDerivedParam;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +36,8 @@ public class EmController extends EmbeddedSutController {
     }
 
 
-    public String deriveParameterData(String paramName, String jsonObject, String endpointPaths) throws Exception {
+    @Override
+    public String deriveObjectParameterData(String paramName, String jsonObject, String endpointPath) throws Exception {
 
         if(paramName.equals("sign")){
             CommonReq req = JSONObject.parseObject(jsonObject, CommonReq.class);
@@ -53,6 +57,18 @@ public class EmController extends EmbeddedSutController {
         throw new IllegalArgumentException("Unrecognized parameter: " + paramName);
     }
 
+
+    @Override
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(
+                "http://localhost:" + getSutPort() + "/v3/api-docs",
+                null
+        ).withDerivedParams(Arrays.asList(
+                new RestDerivedParam("sign", DerivedParamContext.BODY_PAYLOAD, null),
+                new RestDerivedParam("key", DerivedParamContext.BODY_PAYLOAD, null),
+                new RestDerivedParam("data", DerivedParamContext.BODY_PAYLOAD, null)
+        ));
+    }
 
     @Override
     public String startSut() {
@@ -93,13 +109,7 @@ public class EmController extends EmbeddedSutController {
         //nothing to do
     }
 
-    @Override
-    public ProblemInfo getProblemInfo() {
-        return new RestProblem(
-                "http://localhost:" + getSutPort() + "/v3/api-docs",
-                null
-        );
-    }
+
 
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
