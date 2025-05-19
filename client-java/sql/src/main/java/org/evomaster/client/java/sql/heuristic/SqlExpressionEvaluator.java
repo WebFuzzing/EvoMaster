@@ -424,21 +424,12 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     @Override
     public void visit(Function function) {
         String functionName = function.getName();
-
         SqlFunction sqlFunction = FunctionFinder.getInstance().getFunction(functionName);
         if (sqlFunction == null) {
             throw new UnsupportedOperationException("Function " + functionName + " needs to be implemented");
         }
-
         if (sqlFunction instanceof SqlAggregateFunction) {
-            for (int i = 0; i < function.getParameters().size(); i++) {
-                Expression parameterExpression = function.getParameters().get(i);
-                //SqlQueryResultEvaluator sqlQueryResultEvaluator = new SqlQueryResultEvaluator(tableColumnResolver, taintHandler, queryResultSet, dataRowStack);
-                //sqlQueryResultEvaluator.accept(parameterExpression);
-                //QueryResult evaluatedQueryResult = sqlQueryResultEvaluator.getEvaluatedQueryResult
-                //Object functionResult = sqlFunction.evaluate(concreteParameters.toArray(new Object[]{}));
-
-            }
+            throw new IllegalArgumentException("Aggregate function " + functionName + " not supported in this context");
         }
         super.visit(function);
         List<Object> concreteParameters = new ArrayList<>();

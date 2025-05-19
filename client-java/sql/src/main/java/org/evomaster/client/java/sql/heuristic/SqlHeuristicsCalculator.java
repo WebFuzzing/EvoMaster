@@ -460,7 +460,7 @@ public class SqlHeuristicsCalculator {
             final List<Object> rowValues = evaluate(selectItems);
             DataRow singleRow = new DataRow(variableDescriptors, rowValues);
             filteredQueryResult.addRow(singleRow);
-        } else if (queryResult.isEmpty() && hasAnyAggregateFunction(selectItems)) {
+        } else if (hasAnyAggregateFunction(selectItems)) {
             final List<Object> filteredValues = evaluate(selectItems, null, queryResult.seeRows());
             DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
             filteredQueryResult.addRow(filteredRow);
@@ -520,7 +520,19 @@ public class SqlHeuristicsCalculator {
             } else {
                 Expression expression = selectItem.getExpression();
                 final Object value = evaluate(expression, currentDataRow);
-                concreteValues.add(value);
+                if (value != null && value instanceof QueryResult) {
+                    QueryResult queryResult = (QueryResult) value;
+                    if (queryResult.isEmpty()) {
+                        concreteValues.add(null);
+                    } else if (queryResult.seeRows().size() == 1) {
+                        Object singleValue = queryResult.seeRows().get(0).getValue(0);
+                        concreteValues.add(singleValue);
+                    } else {
+                        throw new IllegalArgumentException("Cannot evaluate " + expression.toString() + " if resulting subquery size is greater than 1" + currentDataRow.toString());
+                    }
+                } else {
+                    concreteValues.add(value);
+                }
             }
         }
         return concreteValues;
