@@ -1521,7 +1521,10 @@ object RestActionBuilderV3 {
             else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
         }
 
-        mainGene.description = schema.description
+        // TODO: Seran: Investigate
+        if (mainGene.description.isNullOrBlank()) {
+            mainGene.description = schema.description
+        }
 
         /*
             See:
