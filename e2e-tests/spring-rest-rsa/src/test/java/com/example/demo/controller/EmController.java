@@ -1,6 +1,13 @@
 package com.example.demo.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.TypeReference;
 import com.example.demo.MySpringBootApplication;
+import com.example.demo.util.CryptoUtil;
+import com.example.demo.vo.BindCardReq;
+import com.example.demo.vo.CommonReq;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
@@ -18,10 +25,32 @@ public class EmController extends EmbeddedSutController {
     protected ConfigurableApplicationContext ctx;
     protected final Class<?> applicationClass;
 
+    private final String aesKey = RandomStringUtils.randomAlphanumeric(16);
 
     public EmController() {
         super.setControllerPort(0);
         this.applicationClass = MySpringBootApplication.class;
+    }
+
+
+    public String deriveParameterData(String paramName, String jsonObject, String endpointPaths) throws Exception {
+
+        if(paramName.equals("sign")){
+            CommonReq req = JSONObject.parseObject(jsonObject, CommonReq.class);
+            String signText = req.signText();
+            return CryptoUtil.sign(signText, DemoController.OTHER_PARTY_PRIVATE_KEY);
+        }
+
+        if(paramName.equals("key")){
+            return CryptoUtil.encryptByPublicKey(aesKey, DemoController.YOUR_PUBLIC_KEY);
+        }
+
+        if(paramName.equals("data")){
+            CommonReq<BindCardReq> req = JSON.parseObject(jsonObject, new TypeReference<CommonReq<BindCardReq>>() {});
+            return CryptoUtil.encrypt(JSONObject.toJSONString(req.getBizData()), aesKey);
+        }
+
+        throw new IllegalArgumentException("Unrecognized parameter: " + paramName);
     }
 
 
