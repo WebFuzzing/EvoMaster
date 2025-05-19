@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -13,6 +14,9 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.VariableDescriptor;
+import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
+import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
+import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -450,43 +454,81 @@ public class SqlHeuristicsCalculator {
 
         final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, queryResult.seeVariableDescriptors());
         QueryResult filteredQueryResult = new QueryResult(variableDescriptors);
+
+
         if (queryResult.isEmpty() && !hasAnyTableColumn(selectItems)) {
             final List<Object> rowValues = evaluate(selectItems);
             DataRow singleRow = new DataRow(variableDescriptors, rowValues);
             filteredQueryResult.addRow(singleRow);
+        } else if (queryResult.isEmpty() && hasAnyAggregateFunction(selectItems)) {
+            final List<Object> filteredValues = evaluate(selectItems, null, queryResult.seeRows());
+            DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
+            filteredQueryResult.addRow(filteredRow);
         } else {
             for (DataRow row : queryResult.seeRows()) {
-                final List<Object> filteredValues = evaluate(selectItems, row);
+                final List<Object> filteredValues = evaluate(selectItems, row, queryResult.seeRows());
                 DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
                 filteredQueryResult.addRow(filteredRow);
             }
         }
+
         return filteredQueryResult;
     }
 
-    private List<Object> evaluate(List<SelectItem<?>> selectItems, DataRow row) {
+    private List<Object> evaluate(List<SelectItem<?>> selectItems, DataRow currentDataRow, List<DataRow> dataRows) {
         List<Object> concreteValues = new ArrayList<>();
         for (SelectItem<?> selectItem : selectItems) {
             if (selectItem.getExpression() instanceof AllTableColumns) {
                 AllTableColumns allTableColumns = (AllTableColumns) selectItem.getExpression();
                 String tableName = allTableColumns.getTable().getName();
-                for (VariableDescriptor vd : row.getVariableDescriptors()) {
+                for (VariableDescriptor vd : currentDataRow.getVariableDescriptors()) {
                     if (tableName.equalsIgnoreCase(vd.getAliasTableName())
                             || tableName.equalsIgnoreCase(vd.getTableName())) {
-                        final Object value = row.getValueByName(vd.getColumnName(), vd.getTableName(), vd.getAliasTableName());
+                        final Object value = currentDataRow.getValueByName(vd.getColumnName(), vd.getTableName(), vd.getAliasTableName());
                         concreteValues.add(value);
                     }
                 }
 
             } else if (selectItem.getExpression() instanceof AllColumns) {
-                concreteValues.addAll(row.seeValues());
+                concreteValues.addAll(currentDataRow.seeValues());
+            } else if (selectItem.getExpression() instanceof Function
+                    && isAggregateFunction(((Function) selectItem.getExpression()).getName())) {
+
+                final Function functionExpression = (Function) selectItem.getExpression();
+                final String functionName = functionExpression.getName();
+                if (functionExpression.getParameters().size() != 1) {
+                    throw new IllegalArgumentException("Aggregate function " + functionName + " must have exactly one parameter");
+                }
+                Expression functionParameterExpression = functionExpression.getParameters().get(0);
+                List<Object> values = new ArrayList<>();
+                if (functionParameterExpression instanceof Column) {
+                    for (DataRow dataRow : dataRows) {
+                        final Object value = evaluate(functionParameterExpression, dataRow);
+                        values.add(value);
+                    }
+                } else if (functionParameterExpression instanceof AllColumns) {
+                    for (DataRow dataRow : dataRows) {
+                        values.add(dataRow);
+                    }
+                } else {
+                    Object value = evaluate(functionParameterExpression);
+                    values.add(value);
+                }
+                SqlFunction function = FunctionFinder.getInstance().getFunction(functionExpression.getName());
+                final Object evaluatedFunctionValue = function.evaluate(values);
+                concreteValues.add(evaluatedFunctionValue);
             } else {
                 Expression expression = selectItem.getExpression();
-                final Object value = evaluate(expression, row);
+                final Object value = evaluate(expression, currentDataRow);
                 concreteValues.add(value);
             }
         }
         return concreteValues;
+    }
+
+    private static boolean isAggregateFunction(String functionName) {
+        final SqlFunction function = FunctionFinder.getInstance().getFunction(functionName);
+        return function != null && function instanceof SqlAggregateFunction;
     }
 
     private Object evaluate(Expression expressionToEvaluate) {
@@ -518,21 +560,53 @@ public class SqlHeuristicsCalculator {
 
     /**
      * Checks if the select items contain any table column.
-     * Notice that, * and table.* include table columns.
+     * Notice that, allColumns (*) and allTableColumns (table.*) include table columns.
      *
      * @param selectItems
      * @return
      */
     private static boolean hasAnyTableColumn(List<SelectItem<?>> selectItems) {
-        boolean hasAnyColumn = false;
         for (SelectItem<?> selectItem : selectItems) {
-            if (selectItem.getExpression() instanceof AllTableColumns
-                    || selectItem.getExpression() instanceof AllColumns
-                    || selectItem.getExpression() instanceof Column) {
-                hasAnyColumn = true;
+            if (hasAnyTableColumn(selectItem.getExpression())) {
+                return true;
             }
         }
-        return hasAnyColumn;
+        return false;
+    }
+
+    private static boolean hasAnyTableColumn(Expression expression) {
+        if (expression instanceof AllTableColumns) {
+            return true;
+        }
+        if (expression instanceof AllColumns) {
+            return true;
+        }
+        if (expression instanceof Column) {
+            return true;
+        }
+        if (expression instanceof Function) {
+            Function functionExpression = (Function) expression;
+            String functionName = functionExpression.getName();
+            if (isAggregateFunction(functionName)) {
+                for (int i = 0; i < functionExpression.getParameters().size(); i++) {
+                    if (hasAnyTableColumn(functionExpression.getParameters().get(i))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    private static boolean hasAnyAggregateFunction(List<SelectItem<?>> selectItems) {
+        for (SelectItem<?> selectItem : selectItems) {
+            if (selectItem.getExpression() instanceof Function
+                    && isAggregateFunction(((Function) selectItem.getExpression()).getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<VariableDescriptor> createSelectVariableDescriptors(List<SelectItem<?>> selectItems, List<VariableDescriptor> variableDescriptors) {

@@ -21,6 +21,7 @@ import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.SqlDataType;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
+import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.*;
 
@@ -422,12 +423,24 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Function function) {
-        super.visit(function);
         String functionName = function.getName();
-        if (!FunctionFinder.getInstance().containsFunction(functionName)) {
+
+        SqlFunction sqlFunction = FunctionFinder.getInstance().getFunction(functionName);
+        if (sqlFunction == null) {
             throw new UnsupportedOperationException("Function " + functionName + " needs to be implemented");
         }
-        SqlFunction sqlFunction = FunctionFinder.getInstance().getFunction(functionName);
+
+        if (sqlFunction instanceof SqlAggregateFunction) {
+            for (int i = 0; i < function.getParameters().size(); i++) {
+                Expression parameterExpression = function.getParameters().get(i);
+                //SqlQueryResultEvaluator sqlQueryResultEvaluator = new SqlQueryResultEvaluator(tableColumnResolver, taintHandler, queryResultSet, dataRowStack);
+                //sqlQueryResultEvaluator.accept(parameterExpression);
+                //QueryResult evaluatedQueryResult = sqlQueryResultEvaluator.getEvaluatedQueryResult
+                //Object functionResult = sqlFunction.evaluate(concreteParameters.toArray(new Object[]{}));
+
+            }
+        }
+        super.visit(function);
         List<Object> concreteParameters = new ArrayList<>();
         for (int i = 0; i < function.getParameters().size(); i++) {
             Object concreteParameter = popAsSingleValue();
