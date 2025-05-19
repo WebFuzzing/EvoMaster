@@ -90,6 +90,21 @@ class LanguageModelConnector {
     }
 
     /**
+     * @return answer for the prompt as [Prompt] if exists
+     * @return null if there is no answer for the prompt
+     */
+    fun getAnswerByPrompt(prompt: String): Prompt? {
+        return prompts.filter { it.value.prompt == prompt && it.value.hasAnswer() }.values.firstOrNull()
+    }
+
+    /**
+     * @return answer for the UUID of the prompt
+     */
+    fun getAnswerById(id: String): Prompt? {
+        return prompts[id]
+    }
+
+    /**
      * To query the large language server with a simple prompt.
      * @return answer string from the language model server
      */
@@ -102,7 +117,7 @@ class LanguageModelConnector {
 
         return makeQuery(prompt)
     }
-    
+
     private fun makeQuery(prompt: String, id: String? = null): String? {
         validatePrompt(prompt)
 
