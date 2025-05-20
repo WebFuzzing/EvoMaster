@@ -2,6 +2,7 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -420,13 +421,40 @@ public class SqlHeuristicsCalculator {
             final List<Join> joins = getJoins(plainSelect);
             final Expression whereClause = getWhere(plainSelect);
             final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
-            QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), plainSelect.getSelectItems());
+            QueryResult queryResult;
+            if (plainSelect.getGroupBy() != null) {
+                final ExpressionList groupBy = plainSelect.getGroupBy().getGroupByExpressionList();
+                final List<Expression> groupByExpressions = groupBy.getExpressions();
+                List<QueryResult> groupByQueryResults = createQueryResultsGroupBy(intermediateHeuristicResult.getQueryResult(),
+                        groupByExpressions);
+                queryResult = new QueryResult(intermediateHeuristicResult.getQueryResult().seeVariableDescriptors());
+                for (QueryResult groupByQueryResult : groupByQueryResults) {
+                    QueryResult groupByAggregated = createQueryResult(groupByQueryResult, plainSelect.getSelectItems());
+                    queryResult.seeRows().addAll(groupByAggregated.seeRows());
+                }
+            } else {
+                queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), plainSelect.getSelectItems());
+            }
             heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
         } else {
             throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
         }
         tableColumnResolver.exitCurrentStatementContext();
         return heuristicResult;
+    }
+
+    private List<QueryResult> createQueryResultsGroupBy(QueryResult queryResult, List<Expression> groupByExpressions) {
+        Map<List<Object>, QueryResult> groupByQueryResults = new HashMap<>();
+        for (DataRow dataRow : queryResult.seeRows()) {
+            List<Object> key = new ArrayList<>();
+            for (Expression groupByExpression : groupByExpressions) {
+                Object value = evaluate(groupByExpression, dataRow);
+                key.add(value);
+            }
+            groupByQueryResults.computeIfAbsent(key, k -> new QueryResult(queryResult.seeVariableDescriptors()))
+                    .addRow(dataRow);
+        }
+        return new LinkedList<>(groupByQueryResults.values());
     }
 
     private SqlHeuristicResult computeHeuristic(FromItem fromItem, List<Join> joins, Expression whereExpression) {
@@ -455,13 +483,15 @@ public class SqlHeuristicsCalculator {
         final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, queryResult.seeVariableDescriptors());
         QueryResult filteredQueryResult = new QueryResult(variableDescriptors);
 
-
         if (queryResult.isEmpty() && !hasAnyTableColumn(selectItems)) {
             final List<Object> rowValues = evaluate(selectItems);
             DataRow singleRow = new DataRow(variableDescriptors, rowValues);
             filteredQueryResult.addRow(singleRow);
         } else if (hasAnyAggregateFunction(selectItems)) {
-            final List<Object> filteredValues = evaluate(selectItems, null, queryResult.seeRows());
+            DataRow witnessDataRow = queryResult.isEmpty()
+                    ? null
+                    : queryResult.seeRows().get(0);
+            final List<Object> filteredValues = evaluate(selectItems, witnessDataRow, queryResult.seeRows());
             DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
             filteredQueryResult.addRow(filteredRow);
         } else {

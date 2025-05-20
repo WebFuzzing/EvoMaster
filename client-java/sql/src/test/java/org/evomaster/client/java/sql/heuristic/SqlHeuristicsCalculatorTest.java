@@ -1821,7 +1821,7 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_salary"));
 
         assertEquals("Jack", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals( null, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("max_salary"));
+        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("max_salary"));
 
         assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(2).getValueByName("name"));
         assertEquals(null, heuristicResult.getQueryResult().seeRows().get(2).getValueByName("max_salary"));
@@ -1853,10 +1853,44 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("count_employees"));
 
         assertEquals("Jack", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals( 0L, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("count_employees"));
+        assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("count_employees"));
 
         assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(2).getValueByName("name"));
         assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(2).getValueByName("count_employees"));
+
+    }
+
+
+    @Test
+    public void testGroupBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT department_id, COUNT(*) As num_employees FROM employees GROUP BY department_id;";
+
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jane Doe", "Jane", 1, 1, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(2, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("department_id"));
+        assertEquals(3L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("num_employees"));
+
+        assertEquals(2, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("department_id"));
+        assertEquals(1L, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("num_employees"));
 
     }
 
