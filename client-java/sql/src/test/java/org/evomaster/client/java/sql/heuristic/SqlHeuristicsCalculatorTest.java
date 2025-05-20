@@ -1894,6 +1894,54 @@ public class SqlHeuristicsCalculatorTest {
 
     }
 
+    @Test
+    public void testGroupByMoreThanOneField() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project FROM employees GROUP BY department_id, project_id;";
+
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(3, heuristicResult.getQueryResult().seeRows().size());
+
+        assertEquals(1,
+                heuristicResult.getQueryResult().seeRows().stream()
+                        .filter(row -> row.getValueByName("department_id").equals(1))
+                        .filter(row -> row.getValueByName("project_id").equals(2))
+                        .filter(row -> row.getValueByName("employees_per_project").equals(1L))
+                        .count());
+
+        assertEquals(1,
+                heuristicResult.getQueryResult().seeRows().stream()
+                        .filter(row -> row.getValueByName("department_id").equals(1))
+                        .filter(row -> row.getValueByName("project_id").equals(3))
+                        .filter(row -> row.getValueByName("employees_per_project").equals(2L))
+                        .count());
+
+        assertEquals(1,
+                heuristicResult.getQueryResult().seeRows().stream()
+                        .filter(row -> row.getValueByName("department_id").equals(2))
+                        .filter(row -> row.getValueByName("project_id").equals(1))
+                        .filter(row -> row.getValueByName("employees_per_project").equals(1L))
+                        .count());
+
+    }
+
 
 }
 
