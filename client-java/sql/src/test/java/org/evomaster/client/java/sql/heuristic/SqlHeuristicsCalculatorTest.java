@@ -39,7 +39,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResultSet queryResultSet = new QueryResultSet();
         queryResultSet.addQueryResult(contents);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -55,7 +55,7 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 1 AS example_column WHERE 1 = 0";
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -76,7 +76,7 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT 1 AS example_column";
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -99,7 +99,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
         QueryResultSet queryResultSet = new QueryResultSet();
         queryResultSet.addQueryResult(contents);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -127,7 +127,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -151,7 +151,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -184,7 +184,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -210,7 +210,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -235,7 +235,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -262,7 +262,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -289,7 +289,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -319,7 +319,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -344,7 +344,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult rightTable = new QueryResult(Collections.singletonList("name"), "TableB");
         QueryResultSet queryResultSet = QueryResultSet.build(leftTable, rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -374,7 +374,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(leftTable);
         queryResultSet.addQueryResult(rightTable);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -420,7 +420,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(departments);
         queryResultSet.addQueryResult(employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -458,7 +458,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(departments, employees, projects);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -494,7 +494,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -528,7 +528,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -609,7 +609,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -642,7 +642,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -672,7 +672,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -705,7 +705,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -742,7 +742,7 @@ public class SqlHeuristicsCalculatorTest {
         queryResultSet.addQueryResult(employees);
         TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(tableColumnResolver)
                 .build();
@@ -798,7 +798,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -814,7 +814,7 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "create cached local temporary table if not exists HT_feature_constraint (id bigint not null) on commit drop transactional";
         QueryResultSet queryResultSet = new QueryResultSet();
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -839,7 +839,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -870,7 +870,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -897,7 +897,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -921,7 +921,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -942,7 +942,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(departments);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -964,7 +964,7 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT 24";
 
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
@@ -985,7 +985,7 @@ public class SqlHeuristicsCalculatorTest {
         String sqlCommand = "SELECT 24 UNION SELECT 42";
 
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1010,7 +1010,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1038,7 +1038,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1065,7 +1065,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1098,7 +1098,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1137,7 +1137,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(categoriesResultSet);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1187,7 +1187,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(employees, projects);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1223,7 +1223,7 @@ public class SqlHeuristicsCalculatorTest {
         DbInfoDto schema = buildSchema();
         String sqlCommand = "SELECT NULL AS null_value";
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1239,7 +1239,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withSourceQueryResultSet(queryResultSet)
@@ -1266,7 +1266,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
         personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(17)));
         QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withSourceQueryResultSet(queryResultSet)
@@ -1292,7 +1292,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
         personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
         QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withSourceQueryResultSet(queryResultSet)
@@ -1320,7 +1320,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
         personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(2)));
         QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withSourceQueryResultSet(queryResultSet)
@@ -1348,7 +1348,7 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
         personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
         QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withSourceQueryResultSet(queryResultSet)
@@ -1372,7 +1372,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1392,7 +1392,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1415,7 +1415,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1436,7 +1436,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1458,7 +1458,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1480,7 +1480,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1500,7 +1500,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1523,7 +1523,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1545,7 +1545,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1570,7 +1570,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1595,7 +1595,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1618,7 +1618,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1641,7 +1641,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1667,7 +1667,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1686,7 +1686,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1708,7 +1708,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1727,7 +1727,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1749,7 +1749,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1776,7 +1776,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1809,7 +1809,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person, employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1841,7 +1841,7 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResultSet queryResultSet = QueryResultSet.build(person, employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1878,7 +1878,7 @@ public class SqlHeuristicsCalculatorTest {
                 Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1897,8 +1897,9 @@ public class SqlHeuristicsCalculatorTest {
     @Test
     public void testGroupByMoreThanOneField() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project FROM employees GROUP BY department_id, project_id;";
-
+        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project " +
+                "FROM employees " +
+                "GROUP BY department_id, project_id;";
 
         QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
         employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
@@ -1911,7 +1912,7 @@ public class SqlHeuristicsCalculatorTest {
                 Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
@@ -1940,6 +1941,42 @@ public class SqlHeuristicsCalculatorTest {
                         .filter(row -> row.getValueByName("employees_per_project").equals(1L))
                         .count());
 
+    }
+
+    @Test
+    public void testGroupByWithHaving() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project " +
+                "FROM employees " +
+                "GROUP BY department_id, project_id " +
+                "HAVING COUNT(*) > 1;";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+
+        assertEquals(1,
+                heuristicResult.getQueryResult().seeRows().stream()
+                        .filter(row -> row.getValueByName("department_id").equals(1))
+                        .filter(row -> row.getValueByName("project_id").equals(3))
+                        .filter(row -> row.getValueByName("employees_per_project").equals(2L))
+                        .count());
     }
 
 

@@ -16,10 +16,7 @@ import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils;
-import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.QueryResultSet;
-import org.evomaster.client.java.sql.SqlDataType;
+import org.evomaster.client.java.sql.*;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
@@ -51,13 +48,85 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     private final Stack<Object> evaluationStack = new Stack<>();
     private final Deque<DataRow> dataRowStack = new ArrayDeque<>();
+    private final Deque<QueryResult> queryResultStack = new ArrayDeque<>();
 
-    public SqlExpressionEvaluator(SqlHeuristicsCalculator parentStatementEvaluator,
-                                  TableColumnResolver tableColumnResolver,
-                                  TaintHandler taintHandler,
-                                  QueryResultSet queryResultSet,
-                                  Deque<DataRow> dataRowStack,
-                                  DataRow currentDataRow) {
+    public static class SqlExpressionEvaluatorBuilder {
+        private SqlHeuristicsCalculator parentStatementEvaluator;
+        private TableColumnResolver tableColumnResolver;
+        private TaintHandler taintHandler;
+        private QueryResultSet queryResultSet;
+        private Deque<DataRow> dataRowStack;
+        private DataRow currentDataRow;
+        private Deque<QueryResult> queryResultStack;
+        private QueryResult currentQueryResult;
+
+        public SqlExpressionEvaluatorBuilder() {
+            super();
+        }
+
+        public SqlExpressionEvaluatorBuilder withParentStatementEvaluator(SqlHeuristicsCalculator val) {
+            this.parentStatementEvaluator = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withTableColumnResolver(TableColumnResolver val) {
+            this.tableColumnResolver = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withTaintHandler(TaintHandler val) {
+            this.taintHandler = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withQueryResultSet(QueryResultSet val) {
+            this.queryResultSet = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withDataRowStack(Deque<DataRow> val) {
+            this.dataRowStack = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withCurrentDataRow(DataRow val) {
+            this.currentDataRow = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withQueryResultStack(Deque<QueryResult> val) {
+            this.queryResultStack = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluatorBuilder withCurrentQueryResult(QueryResult val) {
+            this.currentQueryResult = val;
+            return this;
+        }
+
+        public SqlExpressionEvaluator build() {
+            return new SqlExpressionEvaluator(
+                    parentStatementEvaluator,
+                    tableColumnResolver,
+                    taintHandler,
+                    queryResultSet,
+                    dataRowStack,
+                    currentDataRow,
+                    queryResultStack,
+                    currentQueryResult
+            );
+        }
+    }
+
+
+    private SqlExpressionEvaluator(SqlHeuristicsCalculator parentStatementEvaluator,
+                                   TableColumnResolver tableColumnResolver,
+                                   TaintHandler taintHandler,
+                                   QueryResultSet queryResultSet,
+                                   Deque<DataRow> dataRowStack,
+                                   DataRow currentDataRow,
+                                   Deque<QueryResult> queryResultStack,
+                                   QueryResult currentQueryResult) {
         this.parentStatementEvaluator = parentStatementEvaluator;
         this.tableColumnResolver = tableColumnResolver;
         this.taintHandler = taintHandler;
@@ -68,20 +137,14 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         if (currentDataRow != null) {
             this.dataRowStack.push(currentDataRow);
         }
+        if (queryResultStack != null) {
+            this.queryResultStack.addAll(queryResultStack);
+        }
+        if (currentQueryResult != null) {
+            this.queryResultStack.push(currentQueryResult);
+        }
     }
 
-
-    public SqlExpressionEvaluator(TableColumnResolver tableColumnResolver,
-                                  TaintHandler taintHandler,
-                                  QueryResultSet queryResultSet,
-                                  DataRow currentDataRow) {
-        this(null,
-                tableColumnResolver,
-                taintHandler,
-                queryResultSet,
-                new ArrayDeque<>(),
-                currentDataRow);
-    }
 
     private Object popAsSingleValue() {
         Object value = evaluationStack.pop();
@@ -428,17 +491,45 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         if (sqlFunction == null) {
             throw new UnsupportedOperationException("Function " + functionName + " needs to be implemented");
         }
+        final Object functionResult;
+        List<Object> values = new ArrayList<>();
         if (sqlFunction instanceof SqlAggregateFunction) {
-            throw new IllegalArgumentException("Aggregate function " + functionName + " not supported in this context");
+            Expression parameterExpression = function.getParameters().get(0);
+
+            if (parameterExpression instanceof Column) {
+                for (DataRow dataRow : this.getCurrentQueryResult().seeRows()) {
+                    SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                            .withTaintHandler(this.taintHandler)
+                            .withTableColumnResolver(this.tableColumnResolver)
+                            .withQueryResultSet(this.queryResultSet)
+                            .withCurrentQueryResult(this.getCurrentQueryResult())
+                            .withDataRowStack(this.dataRowStack)
+                            .withCurrentDataRow(dataRow)
+                            .withParentStatementEvaluator(this.parentStatementEvaluator)
+                            .build();
+                    parameterExpression.accept(expressionEvaluator);
+                    final Object value = expressionEvaluator.popAsSingleValue();
+                    values.add(value);
+                }
+            } else if (parameterExpression instanceof AllColumns) {
+                for (DataRow dataRow : getCurrentQueryResult().seeRows()) {
+                    values.add(dataRow);
+                }
+            } else {
+                parameterExpression.accept(this);
+                Object value = this.popAsSingleValue();
+                values.add(value);
+            }
+            functionResult = sqlFunction.evaluate(values);
+        } else {
+            super.visit(function);
+            for (int i = 0; i < function.getParameters().size(); i++) {
+                Object concreteParameter = popAsSingleValue();
+                values.add(concreteParameter);
+            }
+            Collections.reverse(values);
+            functionResult = sqlFunction.evaluate(values.toArray(new Object[]{}));
         }
-        super.visit(function);
-        List<Object> concreteParameters = new ArrayList<>();
-        for (int i = 0; i < function.getParameters().size(); i++) {
-            Object concreteParameter = popAsSingleValue();
-            concreteParameters.add(concreteParameter);
-        }
-        Collections.reverse(concreteParameters);
-        Object functionResult = sqlFunction.evaluate(concreteParameters.toArray(new Object[]{}));
         this.evaluationStack.push(functionResult);
     }
 
@@ -788,6 +879,10 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         return dataRowStack.peek();
     }
 
+    QueryResult getCurrentQueryResult() {
+        return queryResultStack.peek();
+    }
+
     private Object getValueByName(String columnName, String baseTableName) {
         /*
          * Traverses the stack of data rows to find the first one that contains the requested column.
@@ -869,7 +964,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         }
         Select select = (Select) rightExpression;
 
-        SqlHeuristicsCalculator.Builder builder = new Builder();
+        SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculatorBuilder();
         builder.withParentExpressionEvaluator(this)
                 .withTableColumnResolver(this.tableColumnResolver)
                 .withTaintHandler(this.taintHandler)
@@ -1287,12 +1382,22 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(AllColumns allColumns) {
-        throw new UnsupportedOperationException("visit(AllColumns) not supported");
-    }
+        List<Object> values = new ArrayList<>(getCurrentDataRow().seeValues());
+        evaluationStack.push(values);
+   }
 
     @Override
     public void visit(AllTableColumns allTableColumns) {
-        throw new UnsupportedOperationException("visit(AllTableColumns) not supported");
+        String tableName = allTableColumns.getTable().getName();
+        List<Object> values = new ArrayList<>();
+        for (VariableDescriptor vd : getCurrentDataRow().getVariableDescriptors()) {
+            if (tableName.equalsIgnoreCase(vd.getAliasTableName())
+                    || tableName.equalsIgnoreCase(vd.getTableName())) {
+                final Object value = getCurrentDataRow().getValueByName(vd.getColumnName(), vd.getTableName(), vd.getAliasTableName());
+                values.add(value);
+            }
+        }
+        evaluationStack.push(values);
     }
 
     @Override
@@ -1312,14 +1417,11 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(Select select) {
-        SqlHeuristicsCalculator.Builder builder = new Builder();
-        builder.withParentExpressionEvaluator(this)
+        SqlHeuristicsCalculator sqlHeuristicsCalculator = new SqlHeuristicsCalculatorBuilder().withParentExpressionEvaluator(this)
                 .withTableColumnResolver(this.tableColumnResolver)
                 .withTaintHandler(this.taintHandler)
                 .withSourceQueryResultSet(this.queryResultSet)
-                .withStackOfDataRows(this.dataRowStack);
-
-        SqlHeuristicsCalculator sqlHeuristicsCalculator = builder.build();
+                .withStackOfDataRows(this.dataRowStack).build();
 
         SqlHeuristicResult heuristicResult = sqlHeuristicsCalculator.computeHeuristic(select);
         evaluationStack.push(heuristicResult.getQueryResult());
