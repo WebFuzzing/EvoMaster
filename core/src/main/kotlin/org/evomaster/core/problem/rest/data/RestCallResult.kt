@@ -4,6 +4,8 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.IdHeuristics
+import org.evomaster.core.problem.rest.IdLocationValue
 import org.evomaster.core.search.action.Action
 import javax.ws.rs.core.MediaType
 
@@ -24,9 +26,8 @@ class RestCallResult : HttpWsCallResult {
         return RestCallResult(this)
     }
 
-    fun getResourceIdName() = "id"
 
-    fun getResourceId(): String? {
+    fun getResourceId(): IdLocationValue? {
 
         /*
             TODO should use more sophisticated algorithm, taking into account what done in RestResponseFeeder
@@ -37,18 +38,8 @@ class RestCallResult : HttpWsCallResult {
             return null
         }
 
-        return getBody()?.let {
-            try {
-                /*
-                    TODO: "id" is the most common word, but could check
-                    if others are used as well.
-                 */
-                Gson().fromJson(it, JsonObject::class.java).get(getResourceIdName())?.asString
-            } catch (e: Exception){
-                //nothing to do
-                null
-            }
-        }
+        val body = getBody() ?: return null
+        return IdHeuristics.getId(body)
     }
 
 

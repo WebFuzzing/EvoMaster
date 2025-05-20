@@ -39,8 +39,9 @@ class RestIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
+    scheduleSize : Int = 0,
     cleanupSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize, 0, cleanupSize),
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions,mainSize,sqlSize,mongoSize,dnsSize, scheduleSize, cleanupSize),
 ): ApiWsIndividual(
     sampleType,
     trackOperator,
@@ -206,7 +207,7 @@ class RestIndividual(
                 //anyone after using it?
                 var using = false
                 for(j in (i+1) until actions.size){
-                    if(actions[j].usePreviousLocationId == a.postLocationId()){
+                    if(actions[j].usePreviousLocationId == a.creationLocationId()){
                         using = true
                         break
                     }
