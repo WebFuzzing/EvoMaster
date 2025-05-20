@@ -27,11 +27,11 @@ open class AICNumericApplication {
         @RequestParam("x", required = true) @Parameter(required=true) x: Int
     ) : ResponseEntity<String> {
 
-        if(x < 0){
-            return ResponseEntity.status(400).build()
+        if(x in 381..421){
+            return ResponseEntity.status(200).build()
         }
 
-        return ResponseEntity.status(200).build()
+        return ResponseEntity.status(400).build()
     }
 
 
