@@ -17,26 +17,21 @@ open class AICNumericApplication {
         fun main(args: Array<String>) {
             SpringApplication.run(AICNumericApplication::class.java, *args)
         }
-
     }
-
 
 
     @GetMapping("/numeric")
     open fun getString(
         @RequestParam("x", required = true) @Parameter(required=true) x: Int
+
     ) : ResponseEntity<String> {
 
-        if(x in 381..421){
-            return ResponseEntity.status(200).build()
+        if(x !in 1925..2025){
+            return ResponseEntity.status(400).build()
         }
+        return ResponseEntity.status(200).build()
 
-        return ResponseEntity.status(400).build()
     }
-
-
-
-
 
 
 
