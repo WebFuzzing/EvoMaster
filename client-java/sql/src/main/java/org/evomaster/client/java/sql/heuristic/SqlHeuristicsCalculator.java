@@ -420,14 +420,19 @@ public class SqlHeuristicsCalculator {
             final List<Join> joins = getJoins(plainSelect);
             final Expression whereClause = getWhere(plainSelect);
             if (plainSelect.getGroupBy() != null) {
-                heuristicResult = computeHeuristicGroupByHaving(plainSelect.getSelectItems(),
+                heuristicResult = computeHeuristicSelectGroupByHaving(
+                        plainSelect.getSelectItems(),
                         fromItem,
                         joins,
                         whereClause,
                         plainSelect.getGroupBy().getGroupByExpressionList(),
                         plainSelect.getHaving());
             } else {
-                heuristicResult = computeHeuristicSelect(plainSelect.getSelectItems(), fromItem, joins, whereClause);
+                heuristicResult = computeHeuristicSelect(
+                        plainSelect.getSelectItems(),
+                        fromItem,
+                        joins,
+                        whereClause);
             }
         } else {
             throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
@@ -437,14 +442,13 @@ public class SqlHeuristicsCalculator {
     }
 
     private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems, FromItem fromItem, List<Join> joins, Expression whereClause) {
-        final SqlHeuristicResult heuristicResult;
         final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
-        QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
-        heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        final QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
         return heuristicResult;
     }
 
-    private SqlHeuristicResult computeHeuristicGroupByHaving(
+    private SqlHeuristicResult computeHeuristicSelectGroupByHaving(
             List<SelectItem<?>> selectItems,
             FromItem fromItem,
             List<Join> joins,
@@ -454,25 +458,7 @@ public class SqlHeuristicsCalculator {
 
         final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
 
-        final SqlHeuristicResult groupByHeuristicResult = createQueryResultGroupBy(
-                intermediateHeuristicResult.getQueryResult(),
-                selectItems,
-                groupByExpressions,
-                having);
-        final QueryResult queryResult = groupByHeuristicResult.getQueryResult();
-
-        final Truthness truthness = TruthnessUtils.buildAndAggregationTruthness(
-                intermediateHeuristicResult.getTruthness(),
-                groupByHeuristicResult.getTruthness());
-
-        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(truthness, queryResult);
-        return heuristicResult;
-    }
-
-    private SqlHeuristicResult createQueryResultGroupBy(QueryResult sourceQueryResult,
-                                                        List<SelectItem<?>> selectItems,
-                                                        List<Expression> groupByExpressions,
-                                                        Expression havingExpression) {
+        QueryResult sourceQueryResult = intermediateHeuristicResult.getQueryResult();
 
         Map<List<Object>, QueryResult> groupByQueryResults = new HashMap<>();
         for (DataRow dataRow : sourceQueryResult.seeRows()) {
@@ -485,16 +471,16 @@ public class SqlHeuristicsCalculator {
                     .addRow(dataRow);
         }
 
-        List<DataRow> groupByDataRows = new ArrayList<>();
-        List<Truthness> truthnesses = new ArrayList<>();
+        final List<DataRow> groupByDataRows = new ArrayList<>();
+        final List<Truthness> truthnesses = new ArrayList<>();
         for (QueryResult groupByQueryResult : groupByQueryResults.values()) {
             QueryResult aggregatedQueryResult = createQueryResult(groupByQueryResult, selectItems);
             if (aggregatedQueryResult.size() != 1) {
                 throw new IllegalStateException("An aggregated query result cannot have " + aggregatedQueryResult.size() + "rows");
             }
             DataRow dataRow = aggregatedQueryResult.seeRows().get(0);
-            if (havingExpression != null) {
-                Truthness truthness = evaluateAll(Collections.singletonList(havingExpression), groupByQueryResult);
+            if (having != null) {
+                final Truthness truthness = evaluateAll(Collections.singletonList(having), groupByQueryResult);
                 truthnesses.add(truthness);
                 if (truthness.isTrue()) {
                     groupByDataRows.add(dataRow);
@@ -503,18 +489,23 @@ public class SqlHeuristicsCalculator {
                 groupByDataRows.add(dataRow);
             }
         }
-        List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, sourceQueryResult.seeVariableDescriptors());
-        QueryResult queryResult = new QueryResult(variableDescriptors);
+        final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, sourceQueryResult.seeVariableDescriptors());
+        final QueryResult queryResult = new QueryResult(variableDescriptors);
         for (DataRow groupByDataRow : groupByDataRows) {
             queryResult.addRow(groupByDataRow);
         }
-        final Truthness havingTruthnes;
+        final Truthness havingTruthness;
         if (truthnesses.isEmpty()) {
-            havingTruthnes = SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+            havingTruthness = SqlHeuristicsCalculator.TRUE_TRUTHNESS;
         } else {
-            havingTruthnes = TruthnessUtils.buildOrAggregationTruthness(truthnesses.toArray(new Truthness[]{}));
+            havingTruthness = TruthnessUtils.buildOrAggregationTruthness(truthnesses.toArray(new Truthness[]{}));
         }
-        return new SqlHeuristicResult(havingTruthnes, queryResult);
+
+        final Truthness groupByHavingTruthness = TruthnessUtils.buildAndAggregationTruthness(
+                intermediateHeuristicResult.getTruthness(),
+                havingTruthness);
+
+        return new SqlHeuristicResult(groupByHavingTruthness, queryResult);
     }
 
     private SqlHeuristicResult computeHeuristic(FromItem fromItem, List<Join> joins, Expression whereExpression) {

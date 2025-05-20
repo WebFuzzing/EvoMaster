@@ -1980,5 +1980,41 @@ public class SqlHeuristicsCalculatorTest {
     }
 
 
+    @Test
+    public void testGroupByWithHavingNotSatisfied() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT department_id, COUNT(*) As employees_per_department " +
+                "FROM employees " +
+                "GROUP BY department_id " +
+                "HAVING COUNT(*) = 2;";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
+        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
+                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertEquals(0, heuristicResult.getQueryResult().seeRows().size());
+        Truthness expectedTruthness =
+                TruthnessUtils.buildAndAggregationTruthness(new Truthness(1.0, 0.2), TruthnessUtils.buildOrAggregationTruthness(
+                        new Truthness(0.575, 1.0),
+                        new Truthness(0.575, 1.0)
+                ));
+        assertEquals(expectedTruthness.getOfTrue(), heuristicResult.getTruthness().getOfTrue());
+        assertEquals(expectedTruthness.getOfFalse(), heuristicResult.getTruthness().getOfFalse());
+    }
+
+
 }
 
