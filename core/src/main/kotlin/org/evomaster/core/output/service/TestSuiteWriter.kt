@@ -218,11 +218,11 @@ class TestSuiteWriter {
         )
     }
 
-    // TODO: extract DTO extraction and writing to a different class
+    // TODO: take DTO extraction and writing to a different class
     fun writeDtos(solutionFilename: String) {
         val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
         getDtos().forEach {
-            JavaDtoWriter(testSuitePath, config.outputFormat, it).write()
+            JavaDtoWriter.write(testSuitePath, config.outputFormat, it)
         }
     }
 
@@ -1102,16 +1102,20 @@ class TestSuiteWriter {
         restSampler.getActionDefinitions().forEach { action ->
             action.getViewOfChildren().forEach { child ->
                 if (child is BodyParam) {
-                    val primaryGene = child.primaryGene()
+                    val primaryGene = GeneUtils.getWrappedValueGene(child.primaryGene())
                     // TODO: Payloads could also be json arrays, analyze ArrayGene
                     if (primaryGene is ObjectGene) {
                         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
-                        val dtoClass = DtoClass(primaryGene.refType?:primaryGene.hashCode().toString())
+                        val dtoClass = DtoClass(primaryGene.refType?:TestWriterUtils.safeVariableName(action.getName()))
                         primaryGene.fixedFields.forEach { field ->
                             try {
                                 dtoClass.addField(getDtoField(field))
-                            } catch (e: Exception) {
-                                // do nothing for the moment
+                            } catch (ex: Exception) {
+                                log.warn("A failure has occurred when collecting DTOs. \n"
+                                            + "Exception: ${ex.localizedMessage} \n"
+                                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                                )
+                                assert(false)
                             }
                         }
                         result.add(dtoClass)
@@ -1132,6 +1136,7 @@ class TestSuiteWriter {
             is DoubleGene -> "Double"
             is FloatGene -> "Float"
             is Base64StringGene -> "String"
+            // Time and Date genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
             is DateGene -> "String"
             is TimeGene -> "String"
             is BooleanGene -> "Boolean"

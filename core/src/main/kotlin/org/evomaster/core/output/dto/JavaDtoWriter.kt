@@ -7,24 +7,28 @@ import org.evomaster.core.utils.StringUtils
 import java.nio.file.Files
 import java.nio.file.Path
 
-class JavaDtoWriter(private val testSuitePath: Path,
-                    private val outputFormat: OutputFormat,
-                    private val dtoClass: DtoClass) {
+/**
+ * When [EMConfig.dtoForRequestPayload] is enabled and [OutputFormat] is set to Java, this writer object will
+ * create DTO java classes in the filesystem under the `dto` package. These DTO classes will then be used for
+ * test case writing for JSON request payloads. Instead of having a stringified view of the payload, EM will
+ * leverage these DTOs.
+ */
+object JavaDtoWriter {
 
-    val dtoFilename: TestSuiteFileName
-
-    init {
-        dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
-    }
-
-    fun write() {
+    /**
+     * @param testSuitePath under which the java class must be written
+     * @param outputFormat forwarded to the [Lines] helper class and for setting the .java extension in the generated file
+     * @param dtoClass to be written to filesystem
+     */
+    fun write(testSuitePath: Path, outputFormat: OutputFormat, dtoClass: DtoClass) {
+        val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines)
         addImports(lines)
-        initClass(lines)
-        addClassContent(lines)
+        initClass(lines, dtoFilename.getClassName())
+        addClassContent(lines, dtoClass)
         closeClass(lines)
-        saveToDisk(lines.toString(), getTestSuitePath())
+        saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
     private fun setPackage(lines: Lines) {
@@ -40,18 +44,18 @@ class JavaDtoWriter(private val testSuitePath: Path,
         lines.addEmpty()
     }
 
-    private fun initClass(lines: Lines) {
+    private fun initClass(lines: Lines, dtoFilename: String) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
-        lines.add("public class ${dtoFilename.getClassName()} {")
+        lines.add("public class $dtoFilename {")
         lines.addEmpty()
     }
 
-    private fun addClassContent(lines: Lines) {
-        addVariables(lines)
-        addGettersAndSetters(lines)
+    private fun addClassContent(lines: Lines, dtoClass: DtoClass) {
+        addVariables(lines, dtoClass)
+        addGettersAndSetters(lines, dtoClass)
     }
 
-    private fun addVariables(lines: Lines) {
+    private fun addVariables(lines: Lines, dtoClass: DtoClass) {
         dtoClass.fields.forEach {
             lines.indented {
                 lines.add("@JsonProperty(\"${it.name}\")")
@@ -61,7 +65,7 @@ class JavaDtoWriter(private val testSuitePath: Path,
         }
     }
 
-    private fun addGettersAndSetters(lines: Lines) {
+    private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
         dtoClass.fields.forEach {
             val varName = it.name
             val varType = it.type
@@ -91,7 +95,7 @@ class JavaDtoWriter(private val testSuitePath: Path,
         return "dto.$name"
     }
 
-    private fun getTestSuitePath() : Path{
+    private fun getTestSuitePath(testSuitePath: Path, dtoFilename: TestSuiteFileName, outputFormat: OutputFormat) : Path{
         return testSuitePath.resolve(dtoFilename.getAsPath(outputFormat))
     }
 
