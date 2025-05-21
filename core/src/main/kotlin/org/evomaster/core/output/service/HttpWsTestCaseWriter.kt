@@ -22,7 +22,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
-import kotlin.text.format
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -334,11 +333,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
-        if (shouldWriteDtoForRequest(call)) {
-
-        }
-
-
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
@@ -417,12 +411,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
                 val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-
-                if (format.isJava() && config.dtoForRequestPayload) {
-                    lines.add(".$send()") // TODO PhG to set the DTO var
-                } else {
-                    printSendJsonBody(json, lines)
-                }
+                printSendJsonBody(json, lines)
 
             } else if (bodyParam.isTextPlain()) {
 
@@ -723,10 +712,5 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
             else -> throw IllegalStateException("Unsupported format $format")
         }
-    }
-
-    private fun shouldWriteDtoForRequest(call: HttpWsAction): Boolean {
-        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-        return format.isJava() && config.dtoForRequestPayload && bodyParam != null && bodyParam.isJson()
     }
 }
