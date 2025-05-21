@@ -1,14 +1,11 @@
 package org.evomaster.e2etests.spring.rest.bb.inputs
 
-import com.foo.rest.examples.bb.examplevalues.BBExamplesController
 import com.foo.rest.examples.bb.inputs.BBInputsController
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 

@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.authenticatedswaggeraccesstest;
 
 import com.foo.rest.examples.spring.authenticatedswaggeraccess.AuthenticatedSwaggerAccessController;
 
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;

@@ -12,18 +12,21 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.TestSuiteCode
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
-import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.service.WFCReportWriter
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.service.GraphQLBlackBoxModule
 import org.evomaster.core.problem.graphql.service.GraphQLModule
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
+import org.evomaster.core.problem.rest.service.module.ResourceRestModule
+import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -58,7 +61,7 @@ class Main {
                 printLogo()
                 printVersion()
 
-                if(!JdkIssue.checkAddOpens()){
+                if (!JdkIssue.checkAddOpens()) {
                     return
                 }
 
@@ -71,8 +74,10 @@ class Main {
                 val parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: ConfigProblemException) {
-                    logError("Invalid parameter settings: " + e.message +
-                            "\nUse --help to see the available options")
+                    logError(
+                        "Invalid parameter settings: " + e.message +
+                                "\nUse --help to see the available options"
+                    )
                     return
                 }
 
@@ -85,25 +90,27 @@ class Main {
 
                 val config = EMConfig().apply { updateProperties(options) }
 
-                if(config.runningInDocker){
-                    if(config.blackBox) {
+                if (config.runningInDocker) {
+                    if (config.blackBox) {
                         LoggingUtil.getInfoLogger().info(
-                            inGreen("You are running EvoMaster inside Docker." +
-                                    " To access the generated test suite under '/generated_tests', you will need to mount a folder" +
-                                    " or volume." +
-                                    " Also references to host machine on 'localhost' would need to be replaced with" +
-                                    " 'host.docker.internal'." +
-                                    " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
-                                    " check the documentation at:") +
+                            inGreen(
+                                "You are running EvoMaster inside Docker." +
+                                        " To access the generated test suite under '/generated_tests', you will need to mount a folder" +
+                                        " or volume." +
+                                        " Also references to host machine on 'localhost' would need to be replaced with" +
+                                        " 'host.docker.internal'." +
+                                        " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
+                                        " check the documentation at:"
+                            ) +
                                     " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}"
                         )
                     } else {
                         LoggingUtil.getInfoLogger().warn(
                             inYellow(
-                            "White-box testing (default in EvoMaster) is currently not supported / not recommended in Docker." +
-                                    " To run EvoMaster in black-box mode, you can use '--blackBox true'." +
-                                    " If you need to run in white-box mode, it is recommended to download an OS installer or" +
-                                    " the uber JAR file from the release-page on GitHub."
+                                "White-box testing (default in EvoMaster) is currently not supported / not recommended in Docker." +
+                                        " To run EvoMaster in black-box mode, you can use '--blackBox true'." +
+                                        " If you need to run in white-box mode, it is recommended to download an OS installer or" +
+                                        " the uber JAR file from the release-page on GitHub."
                             )
                         )
                     }
@@ -113,8 +120,10 @@ class Main {
 
                 LoggingUtil.getInfoLogger().apply {
                     info("EvoMaster process has completed successfully")
-                    info("Use ${inGreen("--help")} and visit ${inBlue("http://www.evomaster.org")} to" +
-                            " learn more about available options")
+                    info(
+                        "Use ${inGreen("--help")} and visit ${inBlue("https://www.evomaster.org")} to" +
+                                " learn more about available options"
+                    )
                 }
 
             } catch (e: Exception) {
@@ -126,23 +135,33 @@ class Main {
 
                 when (cause) {
                     is NoRemoteConnectionException ->
-                        logError("ERROR: ${cause.message}" +
-                                "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
+                        logError(
+                            "ERROR: ${cause.message}" +
+                                    "\n  Make sure the EvoMaster Driver for the system under test is running correctly."
+                        )
 
                     is SutProblemException ->
-                        logError("ERROR related to the system under test: ${cause.message}" +
-                                "\n  For white-box testing, look at the logs of the EvoMaster Driver to help debugging this problem.")
+                        logError(
+                            "ERROR related to the system under test: ${cause.message}" +
+                                    "\n  For white-box testing, look at the logs of the EvoMaster Driver to help debugging this problem."
+                        )
 
                     is ConfigProblemException ->
-                        logError("Invalid parameter settings: ${cause.message}" +
-                                "\nUse --help to see the available options")
+                        logError(
+                            "Invalid parameter settings: ${cause.message}" +
+                                    "\nUse --help to see the available options"
+                        )
 
                     else ->
-                        LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") +
-                                inYellow("EvoMaster process terminated abruptly." +
-                                        " This is likely a bug in EvoMaster." +
-                                        " Please copy&paste the following stacktrace, and create a new issue on" +
-                                        " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")), e)
+                        LoggingUtil.getInfoLogger().error(
+                            inRed("[ERROR] ") +
+                                    inYellow(
+                                        "EvoMaster process terminated abruptly." +
+                                                " This is likely a bug in EvoMaster." +
+                                                " Please copy&paste the following stacktrace, and create a new issue on" +
+                                                " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")
+                                    ), e
+                        )
                 }
 
                 /*
@@ -152,7 +171,7 @@ class Main {
                     the background might keep the JVM alive.
                     See for example HarvestActualHttpWsResponseHandler
                  */
-                exitProcess(1);
+                exitProcess(1)
             }
         }
 
@@ -181,7 +200,7 @@ class Main {
 
         private fun printVersion() {
 
-            val version = this.javaClass.`package`?.implementationVersion ?: "unknown"
+            val version = this::class.java.`package`?.implementationVersion ?: "unknown"
 
             LoggingUtil.getInfoLogger().info("EvoMaster version: $version")
         }
@@ -207,6 +226,204 @@ class Main {
             writeImpacts(injector, solution)
             writeExecuteInfo(injector)
 
+            logTimeSearchInfo(injector, config)
+
+            //apply new phases
+            solution = phaseHttpOracle(injector, config, solution)
+            solution = phaseSecurity(injector, config, epc, solution)
+
+
+            val suites = writeTests(injector, solution, controllerInfo)
+            writeWFCReport(injector, solution, suites)
+
+            writeCoveredTargets(injector, solution)
+            writeStatistics(injector, solution)
+            //FIXME if other phases after search, might get skewed data on 100% snapshots...
+
+            resetExternalServiceHandler(injector)
+
+            val statistics = injector.getInstance(Statistics::class.java)
+            val data = statistics.getData(solution)
+
+            val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
+            if (timeouts > 0) {
+                LoggingUtil.getInfoLogger().info("TCP timeouts: $timeouts")
+            }
+            val faults = solution.overall.potentialFoundFaults(idMapper)
+            LoggingUtil.getInfoLogger().info("Potential faults: ${faults.size}")
+
+            logCodeCoverage(injector, config, solution, idMapper)
+            logActionCoverage(injector, config, data)
+            logDefaultTimeBudgetWarning(config)
+
+            solution.statistics = data.toMutableList()
+
+            epc.finishSearch()
+
+            return solution
+        }
+
+        private fun logDefaultTimeBudgetWarning(config: EMConfig) {
+            if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
+                config.maxTime == config.defaultMaxTime
+            ) {
+                LoggingUtil.getInfoLogger().warn(
+                    inGreen(
+                        "You are using the default time budget '${config.defaultMaxTime}'." +
+                                " This is only for demo purposes. " +
+                                " You should increase such test budget." +
+                                " To obtain better results, use the '--maxTime' option" +
+                                " to run the search for longer, like for example something between '1h' and '24h' hours."
+                    )
+                )
+            }
+        }
+
+        private fun logActionCoverage(
+            injector: Injector,
+            config: EMConfig,
+            data: List<Statistics.Pair>
+        ) {
+            val sampler: Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>() {}))
+
+            val n = data.find { it.header == Statistics.DISTINCT_ACTIONS }!!.element.toInt()
+
+            when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
+                    val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
+                        /*
+                            FIXME this is a temporary hack...
+                            right now we might have 1 call to Schema that messes up this statistics
+                         */
+                        n + 1
+                    } else {
+                        n
+                    }
+                    assert(k <= t)
+                    val p = String.format("%.0f", (k.toDouble() / t) * 100)
+                    LoggingUtil.getInfoLogger()
+                        .info("Successfully executed (HTTP code 2xx) $k endpoints out of $t ($p%)")
+                }
+
+                EMConfig.ProblemType.GRAPHQL -> {
+                    val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
+                    val p = String.format("%.0f", (k.toDouble() / n) * 100)
+                    LoggingUtil.getInfoLogger().info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
+                }
+
+                else -> {}
+                //TODO others, eg RPC
+            }
+        }
+
+        private fun logCodeCoverage(
+            injector: Injector,
+            config: EMConfig,
+            solution: Solution<*>,
+            idMapper: IdMapper
+        ) {
+            if (!config.blackBox || config.bbExperiments) {
+                val rc = injector.getInstance(RemoteController::class.java)
+                val unitsInfo = rc.getSutInfo()?.unitsInfoDto
+                val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
+
+                val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
+                val linesInfo =
+                    solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
+
+                if (unitsInfo != null) {
+                    val units = unitsInfo.unitNames.size
+                    val totalLines = unitsInfo.numberOfLines
+                    val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
+
+                    /*
+                        This is a quite tricky case...
+                        the number of covered lines X should be less or equal than the total T, ie X<=T.
+                        However, we end up with cases like X > T where T=0.
+                        Should never happen in practice, but it does for E2E tests.
+                        This is because we could have different test suites working on same SUTs.
+                        Once one is finished, it would reset all data.
+                        Such data would not then be recomputed in the next test suite execution, as
+                        the classes are already loaded...
+                        Not sure if there is any clean solution for this...
+                        executing these tests in own process might be done with Failsafe/Surefire.
+
+                        Having check for totalLines == 0 was not a good solution. If the assertion fails,
+                        and test is re-executed on same JVM with classes already loaded, then we would get
+                        totalLines == 0 after the reset... and so the test cases will always pass :(
+                     */
+                    //assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
+                    /*
+                        Having this assertion is way too problematic... not only issue when more than 2 E2E use
+                        the same SUT, but also when flacky tests are re-run (both in our scaffolding, and in Maven)
+                     */
+                    //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
+
+                    LoggingUtil.getInfoLogger()
+                        .info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
+
+                    if (totalLines == 0 || units == 0) {
+                        logError(
+                            "Detected $totalLines lines to cover, for a total of $units units/classes." +
+                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?"
+                        )
+                    } else {
+                        LoggingUtil.getInfoLogger()
+                            .info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
+                    }
+                } else {
+                    LoggingUtil.getInfoLogger().warn("Failed to retrieve SUT info")
+                }
+            }
+        }
+
+        private fun phaseSecurity(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+            solution: Solution<*>
+        ): Solution<*> {
+            if (!config.security) {
+                return solution
+            }
+            //apply security testing phase
+            LoggingUtil.getInfoLogger().info("Starting to apply security testing")
+            epc.startSecurity()
+
+            //TODO might need to reset stc, and print some updated info again
+
+            return when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    val securityRest = injector.getInstance(SecurityRest::class.java)
+                    securityRest.applySecurityPhase()
+                }
+
+                else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    solution
+                }
+            }
+        }
+
+        private fun phaseHttpOracle(
+            injector: Injector,
+            config: EMConfig,
+            solution: Solution<*>
+        ): Solution<*> {
+
+            return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
+                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+
+                val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
+                httpSemanticsService.applyHttpSemanticsPhase()
+            } else {
+                solution
+            }
+        }
+
+        private fun logTimeSearchInfo(injector: Injector, config: EMConfig) {
             val stc = injector.getInstance(SearchTimeController::class.java)
 
             LoggingUtil.getInfoLogger().apply {
@@ -219,7 +436,7 @@ class Main {
                     info("Execution time per test (ms): ${stc.averageTestTimeMs}")
                     info("Execution time per action (ms): ${stc.averageActionTimeMs}")
                     info("Computation overhead between tests (ms): ${stc.averageOverheadMsBetweenTests}")
-                    if(!config.blackBox){
+                    if (!config.blackBox) {
                         info("Computation overhead of resetting the SUT (ms): ${stc.averageResetSUTTimeMs}")
                         //This one might be confusing, as based only on minimization phase...
                         //info("Data transfer overhead of test results, per test, all targets (bytes): ${stc.averageByteOverheadTestResultsAll}")
@@ -228,144 +445,6 @@ class Main {
                     }
                 }
             }
-
-            if(config.httpOracles && config.problemType == EMConfig.ProblemType.REST){
-                LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
-
-                val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
-                solution = httpSemanticsService.applyHttpSemanticsPhase()
-            }
-
-            if(config.security){
-                //apply security testing phase
-                LoggingUtil.getInfoLogger().info("Starting to apply security testing")
-                epc.startSecurity()
-
-                //TODO might need to reset stc, and print some updated info again
-
-                when(config.problemType){
-                    EMConfig.ProblemType.REST -> {
-                        val securityRest = injector.getInstance(SecurityRest::class.java)
-                        solution = securityRest.applySecurityPhase()
-                    }
-                    else ->{
-                        LoggingUtil.getInfoLogger().warn("Security phase currently not handled for problem type: ${config.problemType}")
-                    }
-                }
-            }
-
-            writeCoveredTargets(injector, solution)
-            writeTests(injector, solution, controllerInfo)
-            writeWFCReport(injector, solution)
-            writeStatistics(injector, solution) //FIXME if other phases after search, might get skewed data on 100% snapshots...
-
-            resetExternalServiceHandler(injector)
-
-            val statistics = injector.getInstance(Statistics::class.java)
-            val data = statistics.getData(solution)
-            val faults = solution.overall.potentialFoundFaults(idMapper)
-            val sampler : Sampler<*> = injector.getInstance(Key.get(object : TypeLiteral<Sampler<*>>(){}))
-
-            LoggingUtil.getInfoLogger().apply {
-
-                val timeouts = data.find { p -> p.header == Statistics.TEST_TIMEOUTS }!!.element.toInt()
-                if (timeouts > 0) {
-                    info("TCP timeouts: $timeouts")
-                }
-
-                info("Potential faults: ${faults.size}")
-
-                if (!config.blackBox || config.bbExperiments) {
-                    val rc = injector.getInstance(RemoteController::class.java)
-                    val unitsInfo = rc.getSutInfo()?.unitsInfoDto
-                    val bootTimeInfo = rc.getSutInfo()?.bootTimeInfoDto
-
-                    val targetsInfo = solution.overall.unionWithBootTimeCoveredTargets(null, idMapper, bootTimeInfo)
-                    val linesInfo = solution.overall.unionWithBootTimeCoveredTargets(ObjectiveNaming.LINE, idMapper, bootTimeInfo)
-
-                    if (unitsInfo != null) {
-                        val units = unitsInfo.unitNames.size
-                        val totalLines = unitsInfo.numberOfLines
-                        val percentage = String.format("%.0f", (linesInfo.total / totalLines.toDouble()) * 100)
-
-                        /*
-                            This is a quite tricky case...
-                            the number of covered lines X should be less or equal than the total T, ie X<=T.
-                            However, we end up with cases like X > T where T=0.
-                            Should never happen in practice, but it does for E2E tests.
-                            This is because we could have different test suites working on same SUTs.
-                            Once one is finished, it would reset all data.
-                            Such data would not then be recomputed in the next test suite execution, as
-                            the classes are already loaded...
-                            Not sure if there is any clean solution for this...
-                            executing these tests in own process might be done with Failsafe/Surefire.
-
-                            Having check for totalLines == 0 was not a good solution. If the assertion fails,
-                            and test is re-executed on same JVM with classes already loaded, then we would get
-                            totalLines == 0 after the reset... and so the test cases will always pass :(
-                         */
-                        //assert(totalLines == 0 || linesInfo.total <= totalLines){ "${linesInfo.total} > $totalLines"}
-                        /*
-                            Having this assertion is way too problematic... not only issue when more than 2 E2E use
-                            the same SUT, but also when flacky tests are re-run (both in our scaffolding, and in Maven)
-                         */
-                        //assert(linesInfo.total <= totalLines){ "WRONG COVERAGE: ${linesInfo.total} > $totalLines"}
-
-                        info("Covered targets (lines, branches, faults, etc.): ${targetsInfo.total}")
-
-                        if(totalLines == 0 || units == 0){
-                            logError("Detected $totalLines lines to cover, for a total of $units units/classes." +
-                                    " Are you sure you did setup getPackagePrefixesToCover() correctly?")
-                        } else {
-                            info("Bytecode line coverage: $percentage% (${linesInfo.total} out of $totalLines in $units units/classes)")
-                        }
-                    } else {
-                        warn("Failed to retrieve SUT info")
-                    }
-                }
-
-                val n = data.find { it.header == Statistics.DISTINCT_ACTIONS }!!.element.toInt()
-
-                when(config.problemType){
-                    EMConfig.ProblemType.REST -> {
-                        val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                        val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
-                            /*
-                                FIXME this is a temporary hack...
-                                right now we might have 1 call to Schema that messes up this statistics
-                             */
-                            n + 1
-                        } else {
-                            n
-                        }
-                        assert(k <= t)
-                        val p = String.format("%.0f", (k.toDouble()/t) * 100 )
-                        info("Successfully executed (HTTP code 2xx) $k endpoints out of $t ($p%)")
-                    }
-                    EMConfig.ProblemType.GRAPHQL ->{
-                        val k = data.find { it.header == Statistics.GQL_NO_ERRORS }!!.element.toInt()
-                        val p = String.format("%.0f", (k.toDouble()/n) * 100 )
-                        info("Successfully executed (no 'errors') $k endpoints out of $n ($p%)")
-                    }
-                    else -> {}
-                    //TODO others, eg RPC
-                }
-
-                if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
-                        config.maxTime == config.defaultMaxTime) {
-                    warn(inGreen("You are using the default time budget '${config.defaultMaxTime}'." +
-                            " This is only for demo purposes. " +
-                            " You should increase such test budget." +
-                            " To obtain better results, use the '--maxTime' option" +
-                            " to run the search for longer, like for example something between '1h' and '24h' hours."))
-                }
-            }
-
-            solution.statistics = data.toMutableList()
-
-            epc.finishSearch()
-
-            return solution
         }
 
         @JvmStatic
@@ -376,7 +455,7 @@ class Main {
             val base = BaseModule(args)
             val config = base.getEMConfig()
 
-            if(config.problemType == EMConfig.ProblemType.DEFAULT){
+            if (config.problemType == EMConfig.ProblemType.DEFAULT) {
                 /*
                     Note that, in case ob BB-testing, this would had been already modified
                  */
@@ -391,19 +470,21 @@ class Main {
                     state, eg the ephemeral port of the server
                  */
                 val started = rc.startSUT()
-                if(! started){
+                if (!started) {
                     throw SutProblemException("Failed to start the SUT")
                 }
 
                 val info = rc.getSutInfo()
-                        ?: throw SutProblemException("No 'problemType' was defined, but failed to retried the needed" +
-                                " info from the EM Driver.")
+                    ?: throw SutProblemException(
+                        "No 'problemType' was defined, but failed to retried the needed" +
+                                " info from the EM Driver."
+                    )
 
-                if(info.restProblem != null){
+                if (info.restProblem != null) {
                     config.problemType = EMConfig.ProblemType.REST
-                } else if (info.graphQLProblem != null){
+                } else if (info.graphQLProblem != null) {
                     config.problemType = EMConfig.ProblemType.GRAPHQL
-                } else if (info.rpcProblem != null){
+                } else if (info.rpcProblem != null) {
                     config.problemType = EMConfig.ProblemType.RPC
                 } else if (info.webProblem != null) {
                     config.problemType = EMConfig.ProblemType.WEBFRONTEND
@@ -435,22 +516,22 @@ class Main {
                 }
 
                 EMConfig.ProblemType.GRAPHQL -> {
-                    if(config.blackBox){
+                    if (config.blackBox) {
                         GraphQLBlackBoxModule(config.bbExperiments)
                     } else {
                         GraphQLModule()
                     }
                 }
 
-                EMConfig.ProblemType.RPC ->{
-                    if (config.blackBox){
+                EMConfig.ProblemType.RPC -> {
+                    if (config.blackBox) {
                         throw IllegalStateException("NOT SUPPORT black-box for RPC yet")
-                    }else{
+                    } else {
                         RPCModule()
                     }
                 }
 
-                EMConfig.ProblemType.WEBFRONTEND ->{
+                EMConfig.ProblemType.WEBFRONTEND -> {
                     //TODO black-box mode
                     WebModule()
                 }
@@ -461,9 +542,9 @@ class Main {
 
             val injector = try {
                 LifecycleInjector.builder()
-                        .withModules(base, problemModule)
-                        .build()
-                        .createInjector()
+                    .withModules(base, problemModule)
+                    .build()
+                    .createInjector()
 
             } catch (e: Error) {
                 /*
@@ -471,7 +552,8 @@ class Main {
                     https://github.com/Netflix/governator/issues/371
                  */
                 if (e.cause != null &&
-                        InvocationTargetException::class.java.isAssignableFrom(e.cause!!.javaClass)) {
+                    InvocationTargetException::class.java.isAssignableFrom(e.cause!!.javaClass)
+                ) {
                     throw e.cause!!
                 }
 
@@ -510,16 +592,22 @@ class Main {
             return when (config.algorithm) {
                 EMConfig.Algorithm.SMARTS ->
                     Key.get(object : TypeLiteral<SmartsAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -529,16 +617,22 @@ class Main {
             return when (config.algorithm) {
                 EMConfig.Algorithm.SMARTS ->
                     Key.get(object : TypeLiteral<SmartsAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -548,16 +642,22 @@ class Main {
             return when (config.algorithm) {
                 EMConfig.Algorithm.SMARTS ->
                     Key.get(object : TypeLiteral<SmartsAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -567,16 +667,22 @@ class Main {
             return when (config.algorithm) {
                 EMConfig.Algorithm.SMARTS ->
                     Key.get(object : TypeLiteral<SmartsAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.RANDOM ->
                     Key.get(object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MIO ->
                     Key.get(object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.WTS ->
                     Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -608,13 +714,17 @@ class Main {
                                 snapshotTimestamp: String ->
                 writeTestsAsSnapshots(injector, solution, controllerInfo, snapshotTimestamp)
             }.also {
-                if (config.isEnabledHarvestingActualResponse()){
+                if (config.isEnabledHarvestingActualResponse()) {
                     val hp = injector.getInstance(HarvestActualHttpWsResponseHandler::class.java)
                     hp.shutdown()
                 }
             }
         }
 
+
+        /**
+         * Log a warning if any experimental setting is used
+         */
         private fun checkExperimentalSettings(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -627,13 +737,15 @@ class Main {
 
             val options = "[" + experimental.joinToString(", ") + "]"
 
-            logWarn("Using experimental settings." +
-                    " Those might not work as expected, or simply straight out crash." +
-                    " Furthermore, they might simply be incomplete features still under development." +
-                    " Used experimental settings: $options")
+            logWarn(
+                "Using experimental settings." +
+                        " Those might not work as expected, or simply straight out crash." +
+                        " Furthermore, they might simply be incomplete features still under development." +
+                        " Used experimental settings: $options"
+            )
         }
 
-         fun checkState(injector: Injector): ControllerInfoDto? {
+        fun checkState(injector: Injector): ControllerInfoDto? {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -644,7 +756,8 @@ class Main {
             val rc = injector.getInstance(RemoteController::class.java)
 
             val dto = rc.getControllerInfo() ?: throw IllegalStateException(
-                    "Cannot retrieve Remote Controller info from ${rc.address()}")
+                "Cannot retrieve Remote Controller info from ${rc.address()}"
+            )
 
             if (dto.isInstrumentationOn != true) {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
@@ -659,7 +772,7 @@ class Main {
             return dto
         }
 
-        fun writeExecuteInfo(injector: Injector){
+        fun writeExecuteInfo(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -674,48 +787,28 @@ class Main {
             injector: Injector,
             solution: Solution<*>,
             controllerInfoDto: ControllerInfoDto?,
-            snapshotTimestamp: String = ""
+            snapshotTimestamp: String
         ) {
 
             val config = injector.getInstance(EMConfig::class.java)
-
             if (!config.createTests) {
                 return
             }
+            LoggingUtil.getInfoLogger().info("Saving snapshot of tests so far")
 
-            val n = solution.individuals.size
-            val tests = if (n == 1) "1 test" else "$n tests"
-
-            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
-
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-
-            if (config.problemType == EMConfig.ProblemType.REST ) {
-
-                val splitResult = TestSuiteSplitter.split(solution, config)
-
-                solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome
-                    .filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp) }
-            } else {
-                /*
-                    TODO refactor all the PartialOracle stuff that is meant for only REST
-                 */
-
-                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshotTimestamp)
-            }
+            writeTests(injector,solution,controllerInfoDto,snapshotTimestamp)
         }
 
-        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?,
-                       snapshot: String = "") {
-
-            //TODO: the code here is quite messy. Needs to be refactored and simplified
+        fun writeTests(
+            injector: Injector,
+            solution: Solution<*>,
+            controllerInfoDto: ControllerInfoDto?,
+            snapshotTimestamp: String = ""
+        ): List<TestSuiteCode> {
 
             val config = injector.getInstance(EMConfig::class.java)
-
             if (!config.createTests) {
-                return
+                return listOf()
             }
 
             val n = solution.individuals.size
@@ -724,88 +817,49 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-            if (config.problemType == EMConfig.ProblemType.REST) {
 
-                if (config.dtoForRequestPayload && config.outputFormat.isJava()) {
-                    writer.writeDtos(solution.getFileName())
-                }
-
-                val splitResult = TestSuiteSplitter.split(solution, config)
-
-                solution.clusteringTime = splitResult.clusteringTime.toInt()
-                splitResult.splitOutcome
-                    .filter { !it.individuals.isNullOrEmpty() }
-                    .flatMap {
-                        TestSuiteSplitter.splitSolutionByLimitSize(
-                            it as Solution<ApiWsIndividual>,
-                            config.maxTestsPerTestSuite
-                        )
-                    }
-                    .forEach {
-                        writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot)
-                    }
-
-            } else if (config.problemType == EMConfig.ProblemType.RPC){
-
-                // Man: only enable for RPC as it lacks of unit tests
-                writer.writeTestsDuringSeeding(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
-
-                when(config.testSuiteSplitType){
-                    EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath)
-                    /*
-                        for RPC, just simple split based on whether there exist any exception in a test
-                        TODD need to check with Andrea whether we use cluster or other type
-                     */
-                    else -> {
-                        val splitResult = TestSuiteSplitter.splitRPCByException(solution as Solution<RPCIndividual>)
-                        splitResult.splitOutcome
-                            .filter { !it.individuals.isNullOrEmpty() }
-                            .flatMap {
-                                TestSuiteSplitter.splitSolutionByLimitSize(
-                                    it as Solution<ApiWsIndividual>,
-                                    config.maxTestsPerTestSuite
-                                )
-                            }
-                            .forEach { writer.writeTests(it, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshot) }
-                    }
-                }
-
-            }else if (config.problemType == EMConfig.ProblemType.GRAPHQL) {
-                when(config.testSuiteSplitType){
-                    EMConfig.TestSuiteSplitType.NONE -> writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
-                    else -> {
-                        val splitResult = TestSuiteSplitter.split(solution, config)
-                        splitResult.splitOutcome
-                            .filter{ !it.individuals.isNullOrEmpty() }
-                            .flatMap {
-                                TestSuiteSplitter.splitSolutionByLimitSize(
-                                    it as Solution<ApiWsIndividual>,
-                                    config.maxTestsPerTestSuite
-                                )
-                            }
-                            .forEach {
-                                writer.writeTests(it, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath, snapshot )
-                            }
-                    }
-                }
-            } else {
-                writer.writeTests(solution, controllerInfoDto?.fullName, controllerInfoDto?.executableFullPath,)
+          if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJava()) {
+                writer.writeDtos(solution.getFileName())
             }
+
+            val splitResult = TestSuiteSplitter.split(solution, config)
+
+            val suites = splitResult.splitOutcome.map {
+                writer.convertToCompilableTestCode(
+                    it,
+                    it.getFileName(),
+                    snapshotTimestamp,
+                    controllerInfoDto?.fullName,
+                    controllerInfoDto?.executableFullPath
+                )
+            }
+            suites.forEach { suite -> writer.writeTests(suite) }
+
+            if (config.problemType == EMConfig.ProblemType.RPC) {
+                //TODO what is this? need to clarify
+                // Man: only enable for RPC as it lacks of unit tests
+                writer.writeTestsDuringSeeding(
+                    solution,
+                    controllerInfoDto?.fullName,
+                    controllerInfoDto?.executableFullPath
+                )
+            }
+
+            return suites
         }
 
-        private fun writeWFCReport(injector: Injector, solution: Solution<*>){
 
-            //TODO will need to change input from Solution to the outout of generated tests
+        private fun writeWFCReport(injector: Injector, solution: Solution<*>, suites: List<TestSuiteCode>) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if (!config.writeWFCReport) {
+            if (!config.writeWFCReport || suites.isEmpty()) {
                 return
             }
 
             val wfcr = injector.getInstance(WFCReportWriter::class.java)
 
-            wfcr.writeReport(solution)
+            wfcr.writeReport(solution,suites)
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -885,13 +939,15 @@ class Main {
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
 
-        private fun writeExecSummary(injector: Injector,
-                                     controllerInfoDto: ControllerInfoDto?,
-                                     splitResult: SplitResult,
-                                     snapshotTimestamp: String = "") {
+        private fun writeExecSummary(
+            injector: Injector,
+            controllerInfoDto: ControllerInfoDto?,
+            splitResult: SplitResult,
+            snapshotTimestamp: String = ""
+        ) {
 
             val executiveSummary = splitResult.executiveSummary
-                    ?: return
+                ?: return
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -901,7 +957,12 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto == null || controllerInfoDto.fullName != null)
-            writer.writeTests(executiveSummary, controllerInfoDto?.fullName,controllerInfoDto?.executableFullPath, snapshotTimestamp)
+            writer.writeTests(
+                executiveSummary,
+                controllerInfoDto?.fullName,
+                controllerInfoDto?.executableFullPath,
+                snapshotTimestamp
+            )
         }
 
         /**

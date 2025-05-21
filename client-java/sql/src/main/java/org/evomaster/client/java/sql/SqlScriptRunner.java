@@ -2,6 +2,7 @@ package org.evomaster.client.java.sql;
 
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
@@ -330,7 +331,7 @@ public class SqlScriptRunner {
         String insert = "INSERT ";
 
         command = command.trim();
-        if (!command.toUpperCase().startsWith(insert)) {
+        if (!command.toUpperCase(Locale.ENGLISH).startsWith(insert)) {
             throw new IllegalArgumentException("SQL command is not an INSERT\n" + command);
         }
 
@@ -416,16 +417,21 @@ public class SqlScriptRunner {
     }
 
     /**
-     * extract a map from table name to a list of SQL INSERT commands for initializing data into the table
+     * extract a map from table name to a list of SQL INSERT or Update commands for initializing data into the table
      * @param commands a list of SQL commands to be extracted
      * @return the map from table name (key) to a list of SQL INSERT commands (values) on the table
      */
     public static  Map<String, List<String>> extractSqlTableMap(List<String> commands){
         Map<String, List<String>> tableSqlMap = new HashMap<>();
         for (String command: commands){
-            if (SqlParserUtils.isInsert(command)){
-                Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(command);
-                Table table = stmt.getTable();
+            if (SqlParserUtils.isInsert(command) || SqlParserUtils.isUpdate(command)){
+                net.sf.jsqlparser.statement.Statement stmt = SqlParserUtils.parseSqlCommand(command);
+                Table table = null;
+                if (stmt instanceof Insert){
+                    table = ((Insert) stmt).getTable();
+                }else if (stmt instanceof Update){
+                    table = ((Update) stmt).getTable();
+                }
                 tableSqlMap.putIfAbsent(table.getName(), new ArrayList<>());
                 String end = "";
                 if (!command.replaceAll(" ","").replaceAll("\r","").replaceAll("\n","").endsWith(";"))

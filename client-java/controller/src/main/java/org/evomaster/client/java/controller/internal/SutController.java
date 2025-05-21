@@ -148,6 +148,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private int actionIndex = -1;
 
     /**
+     * possible quotation marks used in SQL commands
+     */
+    private final List<String> possibleQuotationMarksInDb = Arrays.asList("\"","'","`");
+
+    /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
      * port and host.
@@ -278,7 +283,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             boolean advancedHeuristics){
         sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
-        sqlHandler.setAdvancedHeuristics(advancedHeuristics);
+        sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
 
@@ -453,6 +458,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        /*
+            extract SQL database schema and constraints
+            such info will be used in re-adding init data after smart db cleaner
+         */
+        extractSqlDbSchemaAndConstraints();
         registerOrExecuteInitSqlCommandsIfNeeded(false);
     }
 
@@ -503,7 +513,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
                     }else
                         DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
@@ -515,12 +525,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    private boolean isSameTable(String tableA, String tableB) {
+        if (tableA.equalsIgnoreCase(tableB)) return true;
+        for (String qm : possibleQuotationMarksInDb){
+            if (wrapWithQuotationMarks(tableA, qm).equalsIgnoreCase(tableB)) return true;
+            if (wrapWithQuotationMarks(tableB, qm).equalsIgnoreCase(tableA)) return true;
+        }
+        return false;
+    }
+
+    private String wrapWithQuotationMarks(String wrap, String mark) {
+        return String.format("%s%s%s", mark, wrap, mark);
+    }
+
+
     private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
         if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
             tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                tableInitSqlMap.keySet().stream().filter(t-> isSameTable(t, a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
@@ -548,19 +572,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private int tableFkCompartor(String tableA, String tableB){
-        return getFkDepth(tableA, new HashSet<>()) - getFkDepth(tableB, new HashSet<>());
+        return Integer.compare(getFkDepth(tableA, new HashSet<>()), getFkDepth(tableB, new HashSet<>()));
     }
 
     private int getFkDepth(String tableName, Set<String> checked){
-        if(!fkMap.containsKey(tableName)) return -1;
+        List<String> keys = fkMap.keySet().stream().filter(s-> s.equalsIgnoreCase(tableName)).collect(Collectors.toList());
+        if(keys.isEmpty()) return -1;
         checked.add(tableName);
-        List<String> fks = fkMap.get(tableName);
+        List<String> fks = keys.stream().map(s -> fkMap.get(s)).flatMap(List::stream).collect(Collectors.toList());
         if (fks.isEmpty()) {
             return 0;
         }
         int sum = fks.size();
         for (String fk: fks){
-            if (!checked.contains(fk)){
+            if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
                 sum += getFkDepth(fk, checked);
             }
         }
@@ -665,29 +690,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return schemaDto;
         }
 
-        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
-            return null;
-        }
-
-        try {
-            schemaDto = DbInfoExtractor.extract(getConnectionIfExist());
-            Objects.requireNonNull(schemaDto);
-            schemaDto.employSmartDbClean = doEmploySmartDbClean();
-        } catch (Exception e) {
-            SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
-            return null;
-        }
-
-        if (fkMap.isEmpty()){
-            schemaDto.tables.forEach(t->{
-                fkMap.putIfAbsent(t.name, new ArrayList<>());
-                if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
-                    t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
-                    });
-                }
-            });
-        }
+        boolean success = extractSqlDbSchemaAndConstraints();
+        if (!success) return null;
 
         UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
         List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
@@ -697,6 +701,44 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
 
         return schemaDto;
+    }
+
+    /**
+     * @return if the extraction of SQL schema and constraints with the given DbSpecification has been proceeded successfully
+     * Note that such extraction is only performed once. if the extraction has been performed, it returns false.
+     */
+    public final boolean extractSqlDbSchemaAndConstraints(){
+
+        if (schemaDto != null) {
+            SimpleLogger.info("Sql Database Schema and Constraints have been extracted and built.");
+            return false;
+        }
+
+        if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
+            return false;
+        }
+
+        try {
+            schemaDto = DbInfoExtractor.extract(getConnectionIfExist());
+            Objects.requireNonNull(schemaDto);
+            schemaDto.employSmartDbClean = doEmploySmartDbClean();
+        } catch (Exception e) {
+            SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
+            return false;
+        }
+
+        if (fkMap.isEmpty()){
+            schemaDto.tables.forEach(t->{
+                fkMap.putIfAbsent(t.name, new ArrayList<>());
+                if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
+                    t.foreignKeys.forEach(f->{
+                        fkMap.get(t.name).add(f.targetTable.toUpperCase(Locale.ENGLISH));
+                    });
+                }
+            });
+        }
+
+        return true;
     }
 
     /**
@@ -938,6 +980,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.actionIndex = dto.index;
 
         resetExtraHeuristics();
+
+        newScheduleActionSpecificHandler(dto);
     }
 
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
@@ -956,8 +1000,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 newScheduleAction(dto, queryFromDatabase);
                 invokeScheduleTask(dto, responseDto);
             }catch (Exception e){
-                // now we execute all schedule tasks
-                SimpleLogger.warn(e.getMessage());
+                // we stop executing the following schedule task
+                throw new RuntimeException(e);
             }
         }
         assert dtos.size() == responseDto.results.size();
@@ -1192,6 +1236,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void newActionSpecificHandler(ActionDto dto);
 
+    public abstract void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto);
 
     /**
      * Check if bytecode instrumentation is on.

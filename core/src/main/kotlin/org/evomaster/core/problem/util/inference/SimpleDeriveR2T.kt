@@ -2,8 +2,8 @@ package org.evomaster.core.problem.util.inference
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ParamInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -73,7 +73,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
 
         //1.2 derive resource to tables based on type
         val reftypes = resourceNode.actions.filter { it.parameters.any{ p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}}
-                .flatMap { (it as RestCallAction ).parameters.filter{p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}.map { p-> (p.gene as ObjectGene).refType!!}}
+                .flatMap { (it as RestCallAction).parameters.filter{ p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}.map { p-> (p.gene as ObjectGene).refType!!}}
 
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
@@ -238,7 +238,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
             list.forEach { p->
                 if(!cleanList.any { e->e.equalWith(p)}) cleanList.add(p)
             }
-            calls.seeActions(ActionFilter.NO_SQL).filter { it is RestCallAction  && it.path.toString() == resource.getName()}.forEach { a->
+            calls.seeActions(ActionFilter.NO_SQL).filter { it is RestCallAction && it.path.toString() == resource.getName()}.forEach { a->
                 result[a as RestCallAction] = cleanList.filter { p-> (paramsInfo.any { m-> m.key == p.paramId && m.involvedAction.contains(a.verb) })}.toMutableList()
             }
         }

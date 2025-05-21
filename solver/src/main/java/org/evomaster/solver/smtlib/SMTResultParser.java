@@ -55,7 +55,8 @@ public class SMTResultParser {
                 continue;
             }
 
-            buffer.append(line.trim()).append(" ");
+            String sanitizedLine = line.trim().replaceAll("\\(-\\s+(\\d+)\\)", "(-$1)"); // Remove spaces for negative numbers, example: (- 321)
+            buffer.append(sanitizedLine).append(" ");
 
             // Check if the buffer contains a complete expression
             Matcher composedMatcher = composedTypePattern.matcher(buffer.toString());
@@ -100,6 +101,14 @@ public class SMTResultParser {
      * @return an SMTLibValue representing the parsed value
      */
     private static SMTLibValue parseValue(String value) {
+        if (value.startsWith("(")) {
+            // If it is a negative number in parentheses
+            value = value.substring(1).trim(); // Remove parentheses
+        }
+        if (value.endsWith(")")) {
+            // If it is a negative number in parentheses
+            value = value.substring(0, value.length() - 1).trim(); // Remove parentheses
+        }
         if (value.startsWith("\"") && value.endsWith("\"")) {
             // If it is a string
             return new StringValue(value.substring(1, value.length() - 1)); // Remove quotes

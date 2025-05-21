@@ -149,10 +149,12 @@
         -->
         <jackson.version>2.14.3</jackson.version>
         <asm.version>9.7</asm.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
-        <selenium.version>4.7.2</selenium.version>
+<!--        <selenium.version>4.31.0</selenium.version>-->
+        <!--  TODO 4.11 latest version supporting JDK 8. now on 11. update once update EM-->
+        <selenium.version>4.11.0</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -427,6 +429,12 @@
                 <artifactId>jgrapht</artifactId>
                 <version>${jgrapht.version}</version>
             </dependency>
+            <dependency>
+                <!--  Needed to avoid issues with Docker on Mac -->
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.17.0</version>
+            </dependency>
 <!--            <dependency> &lt;!&ndash; Needed for Process handling in Windows for JDK 8&ndash;&gt;-->
 <!--                <groupId>net.java.dev.jna</groupId>-->
 <!--                <artifactId>jna-platform</artifactId>-->
@@ -527,11 +535,6 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${jackson.version}</version>
             </dependency>

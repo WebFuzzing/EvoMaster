@@ -24,7 +24,7 @@ import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction.Companion.getRPCExternalServiceActionName
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
-import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual

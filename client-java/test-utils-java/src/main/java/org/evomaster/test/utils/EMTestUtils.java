@@ -42,15 +42,27 @@ public class EMTestUtils {
         } catch (Exception e){
             return locationHeader;
         }
+
+        /*
+            Default behavior of split() is "peculiar", to say the least...
+            /a
+            would be "/" split into ["",a]
+            the same as
+            /a/
+            !!!!!!!!
+            to get trailing "", need to put a negative limit...
+         */
+        int wtfJava = -1;
+
         String locationPath = locationURI.getPath();
-        String[] locationTokens = locationPath.split("/");
+        String[] locationTokens = locationPath.split("/",wtfJava);
 
 
         //the template is not a valid URL, due to {}
         String normalizedTemplate = expectedTemplate.replace("{","").replace("}","");
         URI templateURI = URI.create(normalizedTemplate);
         String templatePath = templateURI.getPath();
-        String[] templateTokens = templatePath.split("/");
+        String[] templateTokens = templatePath.split("/",wtfJava);
 
 
         String targetPath = locationPath;

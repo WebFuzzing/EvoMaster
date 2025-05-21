@@ -18,6 +18,10 @@
     <!-- Avoid annoying and pointless WARN messages from Governator -->
     <logger name="com.netflix.governator.lifecycle.ClasspathScanner" level="ERROR" />
 
+    <!-- Schema issues should be handled programmatically, and not flood the logs-->
+    <logger name="io.swagger" level="OFF" />
+
+
     <root level="warn">
         <appender-ref ref="REGULAR_STDOUT" />
     </root>
@@ -31,5 +35,11 @@
     <logger name="com.github.tomakehurst.wiremock" level="OFF"/>
     <logger name="wiremock.org" level="OFF"/>
     <logger name="WireMock" level="OFF"/>
+
+    <!-- Avoid pointless warnings from Jersey related to its inability to support HTTP semantics.
+         We know that current version of Jersey is limited, there is no need to flood the logs with warnings
+         at each fitness evaluation
+    -->
+    <logger name="org.glassfish.jersey.client.JerseyInvocation" level="OFF"/>
 
 </configuration>

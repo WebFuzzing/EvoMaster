@@ -8,15 +8,14 @@ import org.evomaster.client.java.instrumentation.shared.TaintType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.TaintedArrayGene
 import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.action.ActionFilter
-import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.StringGene

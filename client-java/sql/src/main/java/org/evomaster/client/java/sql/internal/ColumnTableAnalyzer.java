@@ -19,67 +19,62 @@ public class ColumnTableAnalyzer {
         the name of the tables involved, and not full column info.
      */
 
-    public static Set<String> getDeletedTables(String delete){
+    public static SqlTableId getDeletedTable(String delete) {
 
-        if(! SqlParserUtils.isDelete(delete)){
+        if (!SqlParserUtils.isDelete(delete)) {
             throw new IllegalArgumentException("Input string is not a valid SQL DELETE: " + delete);
         }
 
-        Set<String> set = new HashSet<>();
         Delete stmt = (Delete) SqlParserUtils.parseSqlCommand(delete);
 
         Table table = stmt.getTable();
-        if(table != null){
-            set.add(table.getFullyQualifiedName());
+        if (table != null) {
+            SqlTableId sqlTableId = new SqlTableId(table.getFullyQualifiedName());
+            return sqlTableId;
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
             throw new IllegalArgumentException("Cannot handle delete: " + delete);
         }
-
-        return set;
     }
 
 
-    public static Map<String, Set<String>> getInsertedDataFields(String insert){
+    public static Map.Entry<SqlTableId, Set<SqlColumnId>> getInsertedDataFields(String insert) {
 
-        if(! SqlParserUtils.isInsert(insert)){
+        if (!SqlParserUtils.isInsert(insert)) {
             throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + insert);
         }
 
-        Map<String, Set<String>> map = new HashMap<>();
-
         Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(insert);
-
         Table table = stmt.getTable();
-        if(table != null){
-            handleTable(map, table);
+        if (table != null) {
+            Map.Entry<SqlTableId, Set<SqlColumnId>> insertedDataFields = new AbstractMap.SimpleEntry<>(
+                    new SqlTableId(table.getFullyQualifiedName()),
+                    Collections.singleton(new SqlColumnId("*")));
+            return insertedDataFields;
         } else {
             //TODO all other cases
             throw new IllegalArgumentException("Cannot handle insert: " + insert);
         }
-
-        return map;
     }
 
 
-    public static Map<String, Set<String>> getUpdatedDataFields(String update){
+    public static Map.Entry<SqlTableId, Set<SqlColumnId>> getUpdatedDataFields(String update) {
 
-        if(! SqlParserUtils.isUpdate(update)){
+        if (!SqlParserUtils.isUpdate(update)) {
             throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + update);
         }
-
-        Map<String, Set<String>> map = new HashMap<>();
 
         Update stmt = (Update) SqlParserUtils.parseSqlCommand(update);
 
         Table table = stmt.getTable();
-        if(table!=null){
-            handleTable(map, table);
+        if (table != null) {
+            Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = new AbstractMap.SimpleEntry<>(
+                    new SqlTableId(table.getFullyQualifiedName()),
+                    Collections.singleton(new SqlColumnId("*")));
+            return updatedDataFields;
         } else {
             throw new IllegalArgumentException("Cannot handle update: " + update);
         }
-
-        return map;
     }
 
 
@@ -94,13 +89,13 @@ public class ColumnTableAnalyzer {
      * @param select SQL select command
      * @return a map from table_names to column_names
      */
-    public static Map<String, Set<String>> getSelectReadDataFields(String select){
+    public static Map<SqlTableId, Set<SqlColumnId>> getSelectReadDataFields(String select) {
 
-        if(! SqlParserUtils.isSelect(select)){
+        if (!SqlParserUtils.isSelect(select)) {
             throw new IllegalArgumentException("Input string is not a valid SQL SELECT: " + select);
         }
 
-        Map<String, Set<String>> map = new HashMap<>();
+        Map<SqlTableId, Set<SqlColumnId>> map = new HashMap<>();
 
         /*
             TODO: for now, we just use * for all read Tables.
@@ -111,7 +106,7 @@ public class ColumnTableAnalyzer {
         PlainSelect plainSelect = stmt.getPlainSelect();
 
         FromItem fromItem = plainSelect.getFromItem();
-        if(fromItem == null){
+        if (fromItem == null) {
             //is this even possible? ie, a SELECT without FROM
             return map;
         }
@@ -119,7 +114,7 @@ public class ColumnTableAnalyzer {
         extractUsedColumnsAndTables(map, fromItem);
 
         List<Join> joins = plainSelect.getJoins();
-        if(joins != null) {
+        if (joins != null) {
             for (Join join : joins) {
                 FromItem rightItem = join.getRightItem();
                 extractUsedColumnsAndTables(map, rightItem);
@@ -129,16 +124,16 @@ public class ColumnTableAnalyzer {
         return map;
     }
 
-    private static void handleTable(Map<String, Set<String>> map, Table table){
-        Set<String> columns = map.computeIfAbsent(table.getFullyQualifiedName(), k -> new HashSet<>());
+    private static void handleTable(Map<SqlTableId, Set<SqlColumnId>> map, Table table) {
+        Set<SqlColumnId> columns = map.computeIfAbsent(new SqlTableId(table.getFullyQualifiedName()), k -> new HashSet<>());
         //TODO: should check actual fields... would likely need to pass SelectBody as input as well
-        if(! columns.contains("*")) {
-            columns.add("*");
+        if (!columns.contains("*")) {
+            columns.add(new SqlColumnId("*"));
         }
     }
 
-    private static void extractUsedColumnsAndTables(Map<String, Set<String>> map, FromItem fromItem) {
-        if(fromItem instanceof Table){
+    private static void extractUsedColumnsAndTables(Map<SqlTableId, Set<SqlColumnId>> map, FromItem fromItem) {
+        if (fromItem instanceof Table) {
             Table table = (Table) fromItem;
             handleTable(map, table);
         } else {

@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.seeding.postman
 import com.google.gson.Gson
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
@@ -19,8 +19,8 @@ import java.nio.charset.StandardCharsets
 
 @Deprecated("Code here will be replaced with intermediate representation. See new 'seeding' package")
 class PostmanParser(
-        defaultRestCallActions: List<RestCallAction>,
-        swagger: OpenAPI
+    defaultRestCallActions: List<RestCallAction>,
+    swagger: OpenAPI
 ) : AbstractParser(defaultRestCallActions, swagger) {
 
     companion object {

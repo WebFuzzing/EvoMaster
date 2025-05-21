@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.cookielogin
 
 import com.foo.rest.examples.spring.openapi.v3.cookielogin.CookieLoginController
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll

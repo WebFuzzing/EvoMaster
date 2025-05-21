@@ -2,8 +2,7 @@ package org.evomaster.core.problem.rest
 
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.service.Sampler
 import java.net.URL
@@ -33,7 +32,7 @@ object BlackBoxUtils {
                 EMConfig.ProblemType.GRAPHQL -> throw IllegalStateException("BUG: no target for GQL is defined")
                 EMConfig.ProblemType.REST -> {
                     //https://swagger.io/docs/specification/api-host-and-base-path/
-                    val schema = (sampler as AbstractRestSampler).swagger.schemaParsed
+                    val schema = (sampler as AbstractRestSampler).schemaHolder.main.schemaParsed
                     return if (schema.servers == null || schema.servers.isEmpty()) {
                         /*
                             Schema has no info on where the API is, eg 'host' in v2 and 'servers' in v3.

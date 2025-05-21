@@ -342,7 +342,7 @@ Instructions can be found [here](./release.md).
 At this point, we only support JDK __8__ and the following major LTS versions.
 _EvoMaster_ must be built with JDK 8, but still must be able to run it with the most recent LTS JDK.
 Can be useful to setup your machine to easily switch between different JDK versions.
-For example, if you are using a Mac, in your `~/.profile` configuration, you could have something 
+For example, if you are using a Mac, in your `~/.zprofile` configuration, you could have something 
 like:
 ```
 export JAVA_HOME_8=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/ 
@@ -356,6 +356,8 @@ alias java11='$JAVA_HOME_11/bin/java'
 alias mvn8='JAVA_HOME=$JAVA_HOME_8 && mvn'
 alias mvn11='JAVA_HOME=$JAVA_HOME_11 && mvn'
 ```
+
+Note: recent Macs use `zsh` shell by default, and so you would need to edit `~/.zprofile` and not `~/.profile`, which is for Bash.
 
 If you are using Windows, it does not seem there is a simple way to define aliases.
 Besides setting up the `JAVA_HOME` environment variable, it can be useful to set up an environment variable for each LTS JDK version, e.g., `JAVA_HOME_8`, `JAVA_HOME_11` and `JAVA_HOME_17` (of course, you will need to install all those JDKs...).

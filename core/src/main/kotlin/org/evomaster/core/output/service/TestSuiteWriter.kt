@@ -21,6 +21,7 @@ import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.BooleanGene
@@ -72,7 +73,6 @@ class TestSuiteWriter {
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
@@ -99,9 +99,10 @@ class TestSuiteWriter {
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    private var activePartialOracles = mutableMapOf<String, Boolean>()
 
-
+    fun writeTests(testSuiteCode: TestSuiteCode){
+        saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
+    }
 
     fun writeTests(
         solution: Solution<*>,
@@ -110,9 +111,9 @@ class TestSuiteWriter {
         snapshotTimestamp: String = ""
     ) {
 
-        val name = TestSuiteFileName(solution.getFileName())
+        val name = solution.getFileName()
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
-        saveToDisk(content, getTestSuitePath(name, config))
+        saveToDisk(content.code, getTestSuitePath(name, config))
     }
 
     /**
@@ -137,13 +138,11 @@ class TestSuiteWriter {
         timestamp: String = "",
         controllerName: String?,
         controllerInput: String?
-    ): String {
+    ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
         val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
-
-       // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -173,8 +172,8 @@ class TestSuiteWriter {
         }
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
-        for (test in tests) {
-            lines.addEmpty(2)
+
+        val tc = tests.mapNotNull { test ->
 
             // catch writing problems on an individual test case basis
             val testLines = try {
@@ -191,7 +190,16 @@ class TestSuiteWriter {
                 assert(false) // in our tests, this should not happen... but should not crash in production
                 Lines(config.outputFormat)
             }
-            lines.add(testLines)
+
+            if(testLines.isEmpty()){
+                null
+            } else {
+                lines.addEmpty(2)
+                val start = lines.nextLineNumber()
+                lines.add(testLines)
+                val end = lines.nextLineNumber() - 1
+                TestCaseCode(test.name,test.test,testLines.toString(), start, end)
+            }
         }
 
         if (!config.outputFormat.isJavaScript()) {
@@ -203,7 +211,12 @@ class TestSuiteWriter {
         // additional handling on generated tests
         testCaseWriter.additionalTestHandling(tests)
 
-        return lines.toString()
+        return TestSuiteCode(
+            solution.getFileName().name,
+            solution.getFileRelativePath(config.outputFormat),
+            lines.toString(),
+            tc
+        )
     }
 
     // TODO: extract DTO extraction and writing to a different class
@@ -401,6 +414,10 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.Test", lines)
             addImport("org.junit.jupiter.api.Timeout", lines)
             addImport("org.junit.jupiter.api.Assertions.*", lines, true)
+            if (config.useTestMethodOrder) {
+                addImport("org.junit.jupiter.api.MethodOrderer", lines)
+                addImport("org.junit.jupiter.api.TestMethodOrder", lines)
+            }
         }
         if (format.isJUnit4()) {
             addImport("org.junit.AfterClass", lines)
@@ -1002,6 +1019,10 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val format = config.outputFormat
+
+        if (format.isKotlin() && format.isJUnit5() && config.useTestMethodOrder) {
+            lines.add("@TestMethodOrder(MethodOrderer.MethodName::class)")
+        }
 
         when {
             format.isJava() -> lines.append("public ")

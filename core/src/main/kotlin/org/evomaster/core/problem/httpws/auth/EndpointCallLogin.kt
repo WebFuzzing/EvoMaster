@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
 import org.evomaster.client.java.controller.api.dto.auth.PayloadUsernamePasswordDto
 import org.evomaster.client.java.controller.api.dto.auth.TokenHandlingDto
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.ContentType
+import org.evomaster.core.problem.rest.data.HttpVerb
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLEncoder
@@ -30,11 +30,11 @@ class EndpointCallLogin(
     val externalEndpointURL: String?,
 
     /**
-     * The raw payload to send, as a string
-     *
-     * TODO should this be nullable? eg, what about case of login based on GET with query params?
+     * The raw payload to send, as a string, if any
      */
-    val payload: String,
+    val payload: String?,
+
+    val headers: List<AuthenticationHeader>,
 
     /**
      * The verb used to connect to the login endpoint.
@@ -46,7 +46,7 @@ class EndpointCallLogin(
      * Specify the format in which the payload is sent to the login endpoint.
      * A common example is "application/json"
      */
-    val contentType: ContentType,
+    val contentType: ContentType?,
 
     val token: TokenHandling? = null
 ) {
@@ -74,8 +74,8 @@ class EndpointCallLogin(
                 throw IllegalArgumentException("'externalEndpointURL' is not a valid URL: ${e.message}")
             }
         }
-        if (payload.isEmpty()) {
-            throw IllegalArgumentException("Empty payload")
+        if( (payload != null && contentType==null) || (payload==null && contentType!=null)) {
+            throw IllegalArgumentException("Payload and contentType must be both specified, or none specified")
         }
     }
 
@@ -84,12 +84,11 @@ class EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
             externalEndpointURL = dto.externalEndpointURL,
-            payload = dto.payloadRaw ?: computePayload(
-                dto.payloadUserPwd ?: throw IllegalArgumentException("Must specify a payload for auth info"),
-                ContentType.from(dto.contentType)
-            ),
+            payload = dto.payloadRaw ?:
+                dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
+            headers = dto.headers?.map { AuthenticationHeader(it.name, it.value) } ?: emptyList(),
             verb = HttpVerb.valueOf(dto.verb.toString()),
-            contentType = ContentType.from(dto.contentType),
+            contentType = dto.contentType?.let { ContentType.from(it)},
             token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)
         )
 
