@@ -818,8 +818,8 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-          if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJava()) {
-                writer.writeDtos(solution.getFileName())
+            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJava()) {
+                writer.writeDtos(solution.getFileName().name)
             }
 
             val splitResult = TestSuiteSplitter.split(solution, config)
