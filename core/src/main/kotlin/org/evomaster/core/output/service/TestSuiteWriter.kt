@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.v3.oas.models.media.Schema
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -9,6 +8,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.dto.DtoClass
+import org.evomaster.core.output.dto.DtoField
 import org.evomaster.core.output.dto.JavaDtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
@@ -17,12 +18,23 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.problem.rest.service.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
@@ -88,65 +100,6 @@ class TestSuiteWriter {
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
     private var activePartialOracles = mutableMapOf<String, Boolean>()
-
-
-//    fun writeDtos(solutionFilename: StringString) {
-//        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
-//        getSchemaComponents()
-//            .filterKeys { it != null }
-//            .filterValues { it?.properties != null }
-//            .map {
-//                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
-//            }
-//    }
-
-    private fun getSchemaComponents(): Map<String?, Schema<*>?> {
-        val restSampler = sampler as RestSampler
-        val openAPI = restSampler.getOpenAPI()
-        val schema = openAPI.schemaParsed
-        val components = schema.components
-        return components.schemas ?: emptyMap()
-    }
-
-    fun writeDtos(solution: Solution<*>) {
-        val solutionFilename = solution.getFileName()
-        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
-
-        val individuals = solution.individuals
-        if (individuals.any { it.individual is RestIndividual }) {
-            individuals.forEach { ind ->
-                ind.evaluatedMainActions().forEach { action ->
-                    val call = action as RestCallAction
-                    val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-                    if (bodyParam != null && bodyParam.isJson()) {
-                        val json =
-                            bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
-                    }
-                }
-            }
-        }
-
-//        individuals.forEach { ind ->
-//            ind.evaluatedMainActions().forEach { evaluatedAction ->
-//                val call = evaluatedAction.action as HttpWsAction
-//            }
-//        }
-
-//        ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
-//        val call = evaluatedAction.action as HttpWsAction
-//        action as RestCallAction
-//        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-//        if (bodyParam.isJson()) {
-//        val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
-
-        getSchemaComponents()
-            .filterKeys { it != null }
-            .filterValues { it?.properties != null }
-            .map {
-                JavaDtoWriter(testSuitePath, config.outputFormat, it.key!!, it.value!!).write()
-            }
-    }
-
 
     fun writeTests(
         solution: Solution<*>,
@@ -249,6 +202,14 @@ class TestSuiteWriter {
         testCaseWriter.additionalTestHandling(tests)
 
         return lines.toString()
+    }
+
+    // TODO: extract DTO extraction and writing to a different class
+    fun writeDtos(solutionFilename: String) {
+        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+        getDtos().forEach {
+            JavaDtoWriter(testSuitePath, config.outputFormat, it).write()
+        }
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -1111,6 +1072,49 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun getDtos(): List<DtoClass> {
+        val restSampler = sampler as AbstractRestSampler
+        val result = mutableListOf<DtoClass>()
+        restSampler.getActionDefinitions().forEach { action ->
+            action.getViewOfChildren().forEach { child ->
+                if (child is BodyParam) {
+                    val primaryGene = child.primaryGene()
+                    // TODO: Payloads could also be json arrays, analyze ArrayGene
+                    if (primaryGene is ObjectGene) {
+                        // TODO: Determine strategy for objects that are not defined as a component and do not have a name
+                        val dtoClass = DtoClass(primaryGene.refType?:primaryGene.hashCode().toString())
+                        primaryGene.fixedFields.forEach { field ->
+                            try {
+                                dtoClass.addField(getDtoField(field))
+                            } catch (e: Exception) {
+                                // do nothing for the moment
+                            }
+                        }
+                        result.add(dtoClass)
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    private fun getDtoField(field: Gene): DtoField {
+        val wrappedGene = GeneUtils.getWrappedValueGene(field)
+        return DtoField(field.name, when (wrappedGene) {
+            // TODO: handle nested arrays, objects and extend type system for dto fields
+            is StringGene -> "String"
+            is IntegerGene -> "Integer"
+            is LongGene -> "Long"
+            is DoubleGene -> "Double"
+            is FloatGene -> "Float"
+            is Base64StringGene -> "String"
+            is DateGene -> "String"
+            is TimeGene -> "String"
+            is BooleanGene -> "Boolean"
+            else -> throw Exception("Not supported gene at the moment: ${wrappedGene?.javaClass?.simpleName}")
+        })
     }
 
 }

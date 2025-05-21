@@ -1,9 +1,5 @@
 package org.evomaster.core.output.dto
 
-import io.swagger.v3.oas.models.media.BooleanSchema
-import io.swagger.v3.oas.models.media.IntegerSchema
-import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
@@ -13,13 +9,12 @@ import java.nio.file.Path
 
 class JavaDtoWriter(private val testSuitePath: Path,
                     private val outputFormat: OutputFormat,
-                    name: String,
-                    private val schema: Schema<*>) {
+                    private val dtoClass: DtoClass) {
 
     val dtoFilename: TestSuiteFileName
 
     init {
-        dtoFilename = TestSuiteFileName(appendDtoPackage(name))
+        dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
     }
 
     fun write() {
@@ -57,33 +52,19 @@ class JavaDtoWriter(private val testSuitePath: Path,
     }
 
     private fun addVariables(lines: Lines) {
-        schema.properties.forEach {
-            val varName = it.key
-            val varType = when {
-                it.value is StringSchema -> "String"
-                it.value is BooleanSchema -> "Boolean"
-                it.value is IntegerSchema -> "Integer"
-                it.value is Schema -> extractRef(it.value.`$ref`)
-                else -> throw IllegalStateException("Schema '${it.value.type}' unrecognized")
-            }
+        dtoClass.fields.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${varName}\")")
-                lines.add("private Optional<${varType}> ${varName};")
+                lines.add("@JsonProperty(\"${it.name}\")")
+                lines.add("private Optional<${it.type}> ${it.name};")
             }
             lines.addEmpty()
         }
     }
 
     private fun addGettersAndSetters(lines: Lines) {
-        schema.properties.forEach {
-            val varName = it.key
-            val varType = when {
-                it.value is StringSchema -> "String"
-                it.value is BooleanSchema -> "Boolean"
-                it.value is IntegerSchema -> "Integer"
-                it.value is Schema -> extractRef(it.value.`$ref`)
-                else -> throw IllegalStateException("Schema '${it.value.type}' unrecognized")
-            }
+        dtoClass.fields.forEach {
+            val varName = it.name
+            val varType = it.type
             val capitalizedVarName = StringUtils.capitalization(varName)
             lines.indented {
                 lines.add("public Optional<${varType}> get${capitalizedVarName}() {")
@@ -108,10 +89,6 @@ class JavaDtoWriter(private val testSuitePath: Path,
 
     private fun appendDtoPackage(name: String): String {
         return "dto.$name"
-    }
-
-    private fun extractRef(ref: String): String {
-        return ref.substring(ref.lastIndexOf("/")+1)
     }
 
     private fun getTestSuitePath() : Path{
