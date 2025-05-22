@@ -22,7 +22,9 @@ public class RestDerivedParamDto {
     public Set<String> endpointPaths;
 
     /**
-     * Optional integer specifying in which order the updates are done.
+     * Optional positive integer specifying in which order the updates are done.
+     * Left empty is equivalent to set it to 0.
+     *
      * If all updates are independent (or there is only 1), then there is no point in specifying this value.
      * However, if the derivation of A depends on first deriving B, then A should get an higher order than B,
      * eg 1 vs 0.

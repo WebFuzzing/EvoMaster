@@ -30,9 +30,12 @@ RsaEMTest extends RestTestBase {
                 50,
                 (args) -> {
 
+                    //UUID.randomUUID() makes assertions flaky, which we don't handle yet
+                    setOption(args,"enableBasicAssertions", "false");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/bind_card_apply", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bind_card_apply", null);
                 }
         );
     }

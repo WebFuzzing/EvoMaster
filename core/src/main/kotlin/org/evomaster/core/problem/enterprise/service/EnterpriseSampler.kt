@@ -37,26 +37,31 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
 
     override fun applyDerivedParamModifications(ind: T) {
 
-        val req = derivedParamHandler.prepareRequest(ind)
-        if(req.isEmpty()){
-            return
-        }
-        val dto = req.map { DerivedParamChangeReqDto()
-            .apply {
-                paramName = it.paramName
-                jsonData = it.jsonData
-                entryPoint = it.entryPoint
-                actionIndex = it.actionIndex
+        val levels = derivedParamHandler.getOrderLevels()
+
+        for(level in levels) {
+            val req = derivedParamHandler.prepareRequest(ind, level)
+            if (req.isEmpty()) {
+                continue
             }
-        }
+            val dto = req.map {
+                DerivedParamChangeReqDto()
+                    .apply {
+                        paramName = it.paramName
+                        jsonData = it.jsonData
+                        entryPoint = it.entryPoint
+                        actionIndex = it.actionIndex
+                    }
+            }
 
-        val response = rc.deriveParams(dto)
-        if(response.size != req.size){
-            log.warn("Retrieved only ${response.size} derived params from ${req.size} requested")
-        }
+            val response = rc.deriveParams(dto)
+            if (response.size != req.size) {
+                log.warn("Retrieved only ${response.size} derived params from ${req.size} requested")
+            }
 
-        for(res in response){
-            derivedParamHandler.modifyParam(ind, res.paramName, res.paramValue, res.actionIndex)
+            for (res in response) {
+                derivedParamHandler.modifyParam(ind, res.paramName, res.paramValue, res.actionIndex)
+            }
         }
     }
 

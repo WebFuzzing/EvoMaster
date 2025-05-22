@@ -41,9 +41,13 @@ class DerivedParamHandler {
         }
     }
 
-    fun prepareRequest(ind: Individual) : List<DerivedParamChangeReq>{
+    fun getOrderLevels() : List<Int>{
+        return bodyParams.map { it.value.order }
+            .toSet()
+            .sorted()
+    }
 
-        need to handle order
+    fun prepareRequest(ind: Individual, orderLevel: Int) : List<DerivedParamChangeReq>{
 
         if(ind !is RestIndividual){
             return emptyList()
@@ -65,7 +69,11 @@ class DerivedParamHandler {
                 if(!bodyParams.containsKey(f.name)){
                     continue
                 }
-                val entryPoints = bodyParams[f.name]!!.entryPoints
+                val info = bodyParams[f.name]!!
+                if(info.order != orderLevel){
+                    continue
+                }
+                val entryPoints = info.entryPoints
                 if(entryPoints.isEmpty() || entryPoints.contains(a.path.toString())){
                     val json = obj.getValueAsPrintableString(targetFormat = null, mode = GeneUtils.EscapeMode.JSON)
                     req.add(DerivedParamChangeReq(f.name,json,a.path.toString(),i))

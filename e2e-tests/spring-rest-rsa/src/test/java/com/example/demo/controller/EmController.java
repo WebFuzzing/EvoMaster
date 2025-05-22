@@ -28,7 +28,7 @@ public class EmController extends EmbeddedSutController {
     protected ConfigurableApplicationContext ctx;
     protected final Class<?> applicationClass;
 
-    private final String aesKey = RandomStringUtils.randomAlphanumeric(16);
+    private static final String aesKey = RandomStringUtils.randomAlphanumeric(16);
 
     public EmController() {
         super.setControllerPort(0);
