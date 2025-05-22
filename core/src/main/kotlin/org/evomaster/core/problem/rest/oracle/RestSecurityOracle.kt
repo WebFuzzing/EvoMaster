@@ -54,7 +54,7 @@ object RestSecurityOracle {
     }
 
     fun hasForgottenAuthentication(
-        path: RestPath,
+        endpoint: String,
         individual: RestIndividual,
         actionResults: List<ActionResult>
     ): Boolean{
@@ -62,7 +62,7 @@ object RestSecurityOracle {
         verifySampleType(individual)
 
         val actions = individual.seeMainExecutableActions().filter {
-            it.path == path
+            it.getName() == endpoint
         }
 
         val actionsWithResults = actions.filter {
@@ -91,24 +91,15 @@ object RestSecurityOracle {
                 .getStatusCode() == 401
         }
 
-        val a200WithoutAuth = actionsWithResults.filter {
-            (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
-                .getStatusCode() == 200
+        val a2xxWithoutAuth = actionsWithResults.filter {
+             StatusGroup.G_2xx.isInGroup((actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                 .getStatusCode())
         }.filter {
             // check if the action is not authenticated
             it.auth is NoAuth
         }
 
-        val checkAnyAuth = actionsWithResults.filter {
-            it.auth !is NoAuth
-        }
-
-        // if the same path has authenticated and unauthenticated success requests
-        if(checkAnyAuth.isNotEmpty() && a200WithoutAuth.isNotEmpty()){
-            return true
-        }
-
-        return (a403.isNotEmpty() || a401.isNotEmpty()) && a200WithoutAuth.isNotEmpty()
+        return (a403.isNotEmpty() || a401.isNotEmpty()) && a2xxWithoutAuth.isNotEmpty()
     }
 
     fun hasExistenceLeakage(

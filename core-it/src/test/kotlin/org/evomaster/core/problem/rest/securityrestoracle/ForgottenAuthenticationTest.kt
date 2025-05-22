@@ -86,7 +86,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(403, r2.getStatusCode())
         assertEquals(200, r3.getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
+        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(get42NotAuth.getName(), ei.individual, ei.seeResults())
         assertTrue(faultDetected)
 
         //fault should be put on 200 with no authentication
@@ -129,7 +129,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(201, r0.getStatusCode())
         assertEquals(200, r1.getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
+        val faultDetected = RestSecurityOracle.hasForgottenAuthentication(put42.getName(), ei.individual, ei.seeResults())
         assertTrue(faultDetected)
 
         //fault should be put on 200 with no authentication

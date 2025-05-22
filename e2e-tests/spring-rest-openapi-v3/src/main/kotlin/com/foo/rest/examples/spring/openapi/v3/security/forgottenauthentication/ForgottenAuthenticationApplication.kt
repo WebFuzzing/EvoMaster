@@ -28,7 +28,7 @@ open class ForgottenAuthenticationApplication {
     private fun checkAuth(auth: String?) = auth != null && (auth == "FOO" || auth == "BAR")
 
     // this is the wrong check, it should be the same as checkAuth
-    private fun checkAuthWrongly(auth: String?) = auth == null || (auth == "FOO" || auth == "BAR")
+    private fun checkAuthWrongly(auth: String?) = true
 
 
     @PutMapping(path = ["/{id}"])
@@ -69,9 +69,9 @@ open class ForgottenAuthenticationApplication {
 
         val source = data.getValue(id)
 
-        if(auth != null && source != auth){
-            return ResponseEntity.status(403).build()
-        }
+//        if(auth != null && source != auth){
+//            return ResponseEntity.status(403).build()
+//        }
 
         return ResponseEntity.status(200).body(source)
     }

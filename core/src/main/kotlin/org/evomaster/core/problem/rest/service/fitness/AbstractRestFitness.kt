@@ -1202,13 +1202,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        val getPaths = individual.seeMainExecutableActions()
-            .map { it.path }
+        val getEndpoints = individual.seeMainExecutableActions()
+            .map { it.getName() }
             .toSet()
 
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
+        val faultyEndpoints = getEndpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
 
-        if(faultyPaths.isEmpty()){
+        if(faultyEndpoints.isEmpty()){
             return
         }
 
@@ -1216,7 +1216,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
 
-            if(a.auth is NoAuth && faultyPaths.contains(a.path) && r.getStatusCode() == 200){
+            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
                 )

@@ -622,7 +622,7 @@ class SecurityRest {
                 individualsInSolution,
                 op.verb,
                 op.path,
-                statusGroup = StatusGroup.G_4xx,
+                statusCodes = listOf(401,403)
             )
 
             if (i403or401.isEmpty()) {
@@ -665,27 +665,36 @@ class SecurityRest {
                     statusGroup = StatusGroup.G_2xx
                 )
 
-                val finalIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                    ind.individual,
-                    actionIndex
+                // TODO how can I create an individual with an action?
+                val finalIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
+                val copyLast = finalIndividual.seeMainExecutableActions().last().copy() as RestCallAction
+                copyLast.auth = HttpWsNoAuth()
+                copyLast.resetLocalIdRecursively()
+                finalIndividual.resetLocalIdRecursively()
+                println("${op.verb} - ${op.path}")
+
+                finalIndividual.addResourceCall(
+                    restCalls = RestResourceCalls(
+                        actions = mutableListOf(copyLast),
+                        sqlActions = listOf()
+                    )
                 )
-                finalIndividual.seeMainExecutableActions().last().auth = HttpWsNoAuth()
 
-                finalIndividual.seeMainExecutableActions()
-                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }
-                    .forEach{
-                        it.saveCreatedResourceLocation = true
-                    }
-                    finalIndividual.fixResourceForwardLinks()
+//                finalIndividual.seeMainExecutableActions()
+//                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }
+//                    .forEach{
+//                        it.saveCreatedResourceLocation = true
+//                    }
+//                finalIndividual.fixResourceForwardLinks()
 
-                    finalIndividual.modifySampleType(SampleType.SECURITY)
-                    finalIndividual.ensureFlattenedStructure()
-                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+                finalIndividual.modifySampleType(SampleType.SECURITY)
+                finalIndividual.ensureFlattenedStructure()
+                org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
 
-                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
-                    if(ei != null) {
-                        archive.addIfNeeded(ei)
-                    }
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                if(ei != null) {
+                    archive.addIfNeeded(ei)
+                }
             }
         }
     }
