@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
 import org.evomaster.client.java.controller.api.dto.problem.*;
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto;
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
@@ -649,7 +651,40 @@ public class EMController {
     }
 
 
-    TODO derived params
+    @Path(ControllerConstants.DERIVE_PARAMS)
+    @Consumes(MediaType.APPLICATION_JSON)
+    @GET
+    public Response deriveParams(List<DerivedParamChangeReqDto> dtos){
+
+        List<DeriveParamResponseDto> results = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+
+        for(DerivedParamChangeReqDto dto : dtos){
+            noKillSwitch(() -> {
+                try {
+                    String value = sutController.deriveObjectParameterData(dto.paramName, dto.jsonData, dto.entryPoint);
+                    DeriveParamResponseDto response = new DeriveParamResponseDto();
+                    response.paramName = dto.paramName;
+                    response.paramValue = value;
+                    response.actionIndex = dto.actionIndex;
+                    results.add(response);
+                } catch (Exception e) {
+                    String msg = "ERROR: failed to derived object parameter for '"
+                            + dto.paramName +"': " + e.getMessage();
+                    SimpleLogger.error(msg, e);
+                    errors.add(msg);
+                }
+            });
+        }
+
+        if(!errors.isEmpty()){
+            String msg = "There were " + errors.size() + " errors.\n";
+            msg += String.join("\n", errors);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
+
+        return Response.status(200).entity(WrappedResponseDto.withData(results)).build();
+    }
 
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
