@@ -25,7 +25,7 @@ object RestIndividualSelectorUtils {
                                                  status: Int? = null,
                                                  statusGroup: StatusGroup? = null,
                                                  statusCodes: Collection<Int>? = null,
-                                                 mustBeAuthenticated : Boolean? = null,
+                                                 authenticated : Boolean? = null,
                                                  authenticatedWith: String? = null
                                          ) : Boolean {
 
@@ -58,9 +58,14 @@ object RestIndividualSelectorUtils {
             return false
         }
 
-        // authenticated or not
-        if(mustBeAuthenticated == true && action.auth is NoAuth){
-            return false
+        if(authenticated != null) {
+            // authenticated or not
+            if (authenticated == true && action.auth is NoAuth) {
+                return false
+            }
+            if(authenticated == false && action.auth !is NoAuth) {
+                return false
+            }
         }
 
         if(authenticatedWith != null && action.auth.name != authenticatedWith){
