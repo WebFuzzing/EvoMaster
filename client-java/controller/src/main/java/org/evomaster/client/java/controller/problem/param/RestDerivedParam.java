@@ -21,9 +21,25 @@ public class RestDerivedParam {
      */
     public final Set<String> endpointPaths;
 
-    public RestDerivedParam(String paramName, DerivedParamContext context, Set<String> endpointPaths) {
+    /**
+     * Optional integer specifying in which order the updates are done.
+     * If all updates are independent (or there is only 1), then there is no point in specifying this value.
+     * However, if the derivation of A depends on first deriving B, then A should get an higher order than B,
+     * eg 1 vs 0.
+     * In this case, first B is computed based on current state, and then, A is computed with current state
+     * updated with derived B.
+     */
+    public final Integer order;
+
+    public RestDerivedParam(
+            String paramName,
+            DerivedParamContext context,
+            Set<String> endpointPaths,
+            Integer order
+    ) {
         this.paramName = paramName;
         this.context = context;
         this.endpointPaths = endpointPaths;
+        this.order = order;
     }
 }

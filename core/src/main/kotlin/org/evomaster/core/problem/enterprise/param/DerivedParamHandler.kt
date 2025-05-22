@@ -12,10 +12,10 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 class DerivedParamHandler {
 
     /**
-     * ParamName -> applicable entryPoints. if empty, consider all
+     * ParamName -> info
      *
      */
-    private val bodyParams: MutableMap<String,Set<String>> = mutableMapOf()
+    private val bodyParams: MutableMap<String,DerivedParamInfo> = mutableMapOf()
 
     fun initialize(derivedParams: List<RestDerivedParamDto>){
 
@@ -36,11 +36,14 @@ class DerivedParamHandler {
             if(param.endpointPaths != null){
                 entryPoints.addAll(param.endpointPaths)
             }
-            bodyParams[key] = entryPoints
+            val info = DerivedParamInfo(key,entryPoints,param.order)
+            bodyParams[key] = info
         }
     }
 
     fun prepareRequest(ind: Individual) : List<DerivedParamChangeReq>{
+
+        need to handle order
 
         if(ind !is RestIndividual){
             return emptyList()
@@ -62,7 +65,7 @@ class DerivedParamHandler {
                 if(!bodyParams.containsKey(f.name)){
                     continue
                 }
-                val entryPoints = bodyParams[f.name]!!
+                val entryPoints = bodyParams[f.name]!!.entryPoints
                 if(entryPoints.isEmpty() || entryPoints.contains(a.path.toString())){
                     val json = obj.getValueAsPrintableString(targetFormat = null, mode = GeneUtils.EscapeMode.JSON)
                     req.add(DerivedParamChangeReq(f.name,json,a.path.toString(),i))

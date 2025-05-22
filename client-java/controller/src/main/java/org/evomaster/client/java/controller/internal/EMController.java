@@ -214,6 +214,7 @@ public class EMController {
                         paramName = p.paramName;
                         context = p.context.toString();
                         endpointPaths = p.endpointPaths;
+                        order = p.order;
                     }})
                     .collect(Collectors.toList());
 

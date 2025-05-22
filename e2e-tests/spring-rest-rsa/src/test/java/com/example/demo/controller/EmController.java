@@ -64,9 +64,9 @@ public class EmController extends EmbeddedSutController {
                 "http://localhost:" + getSutPort() + "/v3/api-docs",
                 null
         ).withDerivedParams(Arrays.asList(
-                new RestDerivedParam("sign", DerivedParamContext.BODY_PAYLOAD, null),
-                new RestDerivedParam("key", DerivedParamContext.BODY_PAYLOAD, null),
-                new RestDerivedParam("data", DerivedParamContext.BODY_PAYLOAD, null)
+                new RestDerivedParam("key", DerivedParamContext.BODY_PAYLOAD, null, 0),
+                new RestDerivedParam("data", DerivedParamContext.BODY_PAYLOAD, null, 0),
+                new RestDerivedParam("sign", DerivedParamContext.BODY_PAYLOAD, null, 1)
         ));
     }
 
