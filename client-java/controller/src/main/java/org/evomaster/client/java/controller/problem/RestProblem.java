@@ -47,7 +47,8 @@ public class RestProblem extends ProblemInfo{
             List<String> endpointsToSkip,
             String openApiSchema,
             List<ExternalService> servicesToNotMock,
-            List<RestDerivedParam> derivedParams) {
+            List<RestDerivedParam> derivedParams
+    ) {
         this.openApiUrl = openApiUrl;
         this.endpointsToSkip = endpointsToSkip == null
                 ? Collections.emptyList()
@@ -55,7 +56,9 @@ public class RestProblem extends ProblemInfo{
         this.openApiSchema = openApiSchema;
 
         this.servicesToNotMock.clear();
-        this.servicesToNotMock.addAll(servicesToNotMock);
+        if(servicesToNotMock != null && !servicesToNotMock.isEmpty()) {
+            this.servicesToNotMock.addAll(servicesToNotMock);
+        }
 
         this.derivedParams = derivedParams == null
                 ? Collections.emptyList()

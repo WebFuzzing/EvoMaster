@@ -373,12 +373,12 @@ class RemoteControllerImplementation() : RemoteController{
             getWebTarget()
                 .path(ControllerConstants.DERIVE_PARAMS)
                 .request()
-                .put(Entity.entity(deriveParams, MediaType.APPLICATION_JSON_TYPE))
+                .post(Entity.entity(deriveParams, MediaType.APPLICATION_JSON_TYPE))
         }
 
         val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<List<DeriveParamResponseDto>>>() {})
 
-        if (!checkResponse(response, dto, "Failed to execute RPC call")) {
+        if (!checkResponse(response, dto, "Failed to execute call to fetch derived params")) {
             return listOf()
         }
 

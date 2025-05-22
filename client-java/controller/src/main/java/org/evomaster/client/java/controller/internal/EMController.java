@@ -653,7 +653,7 @@ public class EMController {
 
     @Path(ControllerConstants.DERIVE_PARAMS)
     @Consumes(MediaType.APPLICATION_JSON)
-    @GET
+    @POST
     public Response deriveParams(List<DerivedParamChangeReqDto> dtos){
 
         List<DeriveParamResponseDto> results = new ArrayList<>();
