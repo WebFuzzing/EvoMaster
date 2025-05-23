@@ -53,9 +53,9 @@ Once the command is executed, you can inspect the generated files under `generat
 
 * _Free_: this is an open-source project, with funding from public research (e.g., professors, postdocs and PhD students).
           There is no monetary cost involved in using this tool, or need to use any paid external services (e.g., external LLM APIs).
-          If you are resident in EU, or any associate country involved with ERC, thanks for your tax money. 
+          If you are a resident in EU, Norway, Argentina, China, or any associate country involved with ERC, thanks for your tax money supporting this project. 
 
-* _In-house, no telemetry_: currently there is no telemetry in use in _EvoMaster_, and it does not require to connect to any external service on internet, besides the tested application. AFAIK, it can be run in-house without any worry of leaking any IP to external parties (if not, please open a new issue to tell us how that could happen). 
+* _In-house, no telemetry_: currently there is no telemetry in use in _EvoMaster_, and it does not require to connect to any external service on internet, besides the tested application. AFAIK, it can be run in-house without any worry of leaking any IP to external parties (if not, please open a new issue to tell us how that could happen, and we will try to fix it). 
 
 * _Black-Box_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
   However, results for black-box testing will be worse than white-box testing (e.g., due to lack of code analysis).
