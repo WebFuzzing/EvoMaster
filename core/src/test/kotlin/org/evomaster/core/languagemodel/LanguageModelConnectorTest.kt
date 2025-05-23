@@ -50,13 +50,13 @@ class LanguageModelConnectorTest {
             val host = ollama.host
             val port = ollama.getMappedPort(11434)!!
 
-            ollama_url = "http://$host:$port/api/generate"
+            ollama_url = "http://$host:$port/"
 
             ollama.execInContainer("ollama", "pull", LANGUAGE_MODEL_NAME)
 
             ollama.waitingFor(
                 LogMessageWaitStrategy()
-                    .withRegEx("writing manifest \n success")
+                    .withRegEx(".*writing manifest \n success.*")
                     .withTimes(5)
             )
         }
@@ -91,8 +91,6 @@ class LanguageModelConnectorTest {
         // will the thrown.
         config.languageModelName = LANGUAGE_MODEL_NAME
         config.languageModelServerURL = ollama_url
-
-        languageModelConnector.init()
 
         // gemma3:1b returns with a newline character
         val answer = languageModelConnector.query("Is A is the first letter in english alphabet? say YES or NO")

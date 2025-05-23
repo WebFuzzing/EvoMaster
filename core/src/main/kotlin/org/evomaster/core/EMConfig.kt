@@ -2378,7 +2378,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
-    var languageModelServerURL: String = "http://localhost:11434/api/generate"
+    var languageModelServerURL: String = "http://localhost:11434/"
 
     @Experimental
     @Cfg("Large-language model name as listed in Ollama")

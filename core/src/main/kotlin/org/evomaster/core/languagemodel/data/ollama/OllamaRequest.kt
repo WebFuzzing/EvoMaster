@@ -1,4 +1,4 @@
-package org.evomaster.core.languagemodel.data
+package org.evomaster.core.languagemodel.data.ollama
 
 /**
  * DTO to represent the Ollama request schema.

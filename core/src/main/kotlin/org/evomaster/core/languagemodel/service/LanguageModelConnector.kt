@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
-import org.evomaster.core.languagemodel.data.OllamaRequest
-import org.evomaster.core.languagemodel.data.OllamaResponse
+import org.evomaster.core.languagemodel.data.ollama.OllamaModelResponse
+import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.logging.LoggingUtil
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -22,7 +25,7 @@ import kotlin.math.min
  * A utility service designed to handle large language model server
  * related functions.
  *
- * Designed to work with Ollama (version 0.6.2).
+ * Designed to work with Ollama (version 0.7.0).
  */
 class LanguageModelConnector {
 
@@ -42,6 +45,10 @@ class LanguageModelConnector {
 
     private lateinit var workerPool: ExecutorService
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(LanguageModelConnector::class.java)
+    }
+
     @PostConstruct
     fun init() {
         LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
@@ -54,6 +61,12 @@ class LanguageModelConnector {
             workerPool = Executors.newFixedThreadPool(
                 actualFixedThreadPool
             )
+
+            if (!this.isModelAvailable()) {
+                throw IllegalStateException("${config.languageModelName} is not available in the provided URL.")
+            } else {
+                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
+            }
         }
     }
 
@@ -123,7 +136,7 @@ class LanguageModelConnector {
     private fun makeQuery(prompt: String, id: UUID? = null): String? {
         validatePrompt(prompt)
 
-        val languageModelServerURL = getLanguageModelServerURL()
+        val languageModelServerURL = getLanguageModelServerGenerateURL()
 
         val languageModelName = getLanguageModelName()
 
@@ -148,6 +161,40 @@ class LanguageModelConnector {
         }
 
         return response
+    }
+
+    private fun isModelAvailable(): Boolean {
+        val url = config.languageModelServerURL + "/api/tags"
+
+        try {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 1000
+            connection.doInput = true
+            connection.useCaches = false
+
+            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
+                LoggingUtil.uniqueWarn(
+                    log,
+                    "Failed to connect to language model server with status code ${connection.responseCode}"
+                )
+                return false
+            }
+
+            val response = objectMapper.readValue(
+                connection.inputStream,
+                OllamaModelResponse::class.java
+            )
+
+            if (response.models.any { it.name == config.languageModelName }) {
+                return true
+            }
+
+        } catch (e: Exception) {
+            return false
+        }
+
+        return false
     }
 
     /**
@@ -176,18 +223,24 @@ class LanguageModelConnector {
             writer.close()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.Companion.getInfoLogger().warn("Failed to connect to language model server.")
+                LoggingUtil.uniqueWarn(
+                    log,
+                    "Failed to connect to language model server with status code ${connection.responseCode}"
+                )
                 return null
             }
 
             // This is designed to use the non-stream outputs.
             // If stream is needed, consider implementing a
             // different method to handle stream outputs.
-            val response = objectMapper.readValue(connection.inputStream, OllamaResponse::class.java)
+            val response = objectMapper.readValue(
+                connection.inputStream,
+                OllamaResponse::class.java
+            )
 
             return response.response
         } catch (e: Exception) {
-            LoggingUtil.Companion.getInfoLogger().warn("Failed to connect to language model server: ${e.message}.")
+            LoggingUtil.uniqueWarn(log, "Failed to connect to language model server: ${e.message}.")
 
             return null
         }
@@ -197,12 +250,12 @@ class LanguageModelConnector {
      * @return the large language model server URL from EMConfig
      * @return if URL not configured returns the localhost URL for Ollama API.
      */
-    private fun getLanguageModelServerURL(): String {
+    private fun getLanguageModelServerGenerateURL(): String {
         if (config.languageModelServerURL.isNullOrEmpty()) {
             throw IllegalArgumentException("Language model URL cannot be empty")
         }
 
-        return config.languageModelServerURL
+        return config.languageModelServerURL + "api/generate"
     }
 
     /**
