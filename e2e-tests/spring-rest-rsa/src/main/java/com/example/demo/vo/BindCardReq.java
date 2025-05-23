@@ -31,7 +31,7 @@ public class BindCardReq implements Serializable {
     @JSONField(name = "bank_card_no")
     @NotBlank
     @Size(min = 16, max = 19)
-    @Pattern(regexp = "^[0-9]+$")
+    @Pattern(regexp = "^[0-9]{16,19}$")
     private String bankCardNo;
 
     @JSONField(name = "bank_card_phone_number")
