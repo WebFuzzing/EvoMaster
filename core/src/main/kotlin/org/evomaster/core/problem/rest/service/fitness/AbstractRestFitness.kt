@@ -1202,11 +1202,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        val getEndpoints = individual.seeMainExecutableActions()
+        val endpoints = individual.seeMainExecutableActions()
             .map { it.getName() }
             .toSet()
 
-        val faultyEndpoints = getEndpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
+        val faultyEndpoints = endpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
 
         if(faultyEndpoints.isEmpty()){
             return

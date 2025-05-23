@@ -76,9 +76,9 @@ object RestSecurityOracle {
             }
         }
 
-        /**
-         * Check if there is any protected resource (i.e., one that returns 403 or 401 when accessed without proper authorization),
-         * but the same resource is also accessible without any authentication.
+        /*
+         Check if there is any protected resource (i.e., one that returns 403 or 401 when accessed without proper authorization),
+         but the same resource is also accessible without any authentication.
          */
 
         val a403 = actionsWithResults.filter {

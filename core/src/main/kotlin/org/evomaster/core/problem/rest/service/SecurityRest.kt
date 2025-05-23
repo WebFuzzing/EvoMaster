@@ -629,19 +629,19 @@ class SecurityRest {
                 return@forEach //there is not any protected resource for this path/verb.
             }
 
-            val i200 = RestIndividualSelectorUtils.findIndividuals(
+            val i2xx = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 op.verb,
                 op.path,
-                statusGroup = StatusGroup.G_2xx
-            ).flatMap { individual ->
-                individual.individual.seeMainExecutableActions()
-                    .filter { it.auth is NoAuth }
-            }.toList()
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
 
-            if(i200.isNotEmpty()){
-                // we found a bug, no need to create new resource for this path/verb.
+            if(i2xx.isNotEmpty()){
+                //will create a new individual
                 return@forEach
+
+
             }
 
             // now we are creating a request
@@ -665,35 +665,31 @@ class SecurityRest {
                     statusGroup = StatusGroup.G_2xx
                 )
 
-                // TODO how can I create an individual with an action?
-                val finalIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
-                val copyLast = finalIndividual.seeMainExecutableActions().last().copy() as RestCallAction
-                copyLast.auth = HttpWsNoAuth()
-                copyLast.resetLocalIdRecursively()
-                finalIndividual.resetLocalIdRecursively()
-                println("${op.verb} - ${op.path}")
+                val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
+                val noAuth = first.copy() as RestIndividual
 
-                finalIndividual.addResourceCall(
-                    restCalls = RestResourceCalls(
-                        actions = mutableListOf(copyLast),
-                        sqlActions = listOf()
-                    )
-                )
+                val otherUsers = authSettings.getAllOthers(first.seeMainExecutableActions().last().auth.name, HttpWsAuthenticationInfo::class.java)
 
-//                finalIndividual.seeMainExecutableActions()
-//                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }
-//                    .forEach{
-//                        it.saveCreatedResourceLocation = true
-//                    }
-//                finalIndividual.fixResourceForwardLinks()
+                noAuth.seeMainExecutableActions().last().auth = HttpWsNoAuth()
+                while(noAuth.seeMainExecutableActions().size > 1){
+                    //keep just relevant request
+                    noAuth.removeMainExecutableAction(0)
+                }
 
-                finalIndividual.modifySampleType(SampleType.SECURITY)
-                finalIndividual.ensureFlattenedStructure()
-                org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+                val withAuth = noAuth.copy() as RestIndividual
 
-                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
-                if(ei != null) {
-                    archive.addIfNeeded(ei)
+                otherUsers.forEach{ user ->
+                    withAuth.seeMainExecutableActions().last().auth = user
+                    val finalIndividual = RestIndividualBuilder.merge(first, withAuth, noAuth)
+
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
+                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                    }
                 }
             }
         }
