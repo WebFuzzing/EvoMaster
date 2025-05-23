@@ -33,7 +33,7 @@ class LanguageModelConnectorTest {
             .withExposedPorts(11434)
             .withEnv("OLLAMA_ORIGINS", "*") // This to allow avoiding CORS filtering.
 
-        private var ollama_url: String = ""
+        private var ollamaURL: String = ""
 
 
         @BeforeAll
@@ -50,7 +50,7 @@ class LanguageModelConnectorTest {
             val host = ollama.host
             val port = ollama.getMappedPort(11434)!!
 
-            ollama_url = "http://$host:$port/"
+            ollamaURL = "http://$host:$port/"
 
             ollama.execInContainer("ollama", "pull", LANGUAGE_MODEL_NAME)
 
@@ -90,7 +90,7 @@ class LanguageModelConnectorTest {
         // If languageModelName or languageModelURL set to empty, an exception
         // will the thrown.
         config.languageModelName = LANGUAGE_MODEL_NAME
-//        config.languageModelServerURL = ollama_url
+        config.languageModelServerURL = ollamaURL
 
         // gemma3:1b returns with a newline character
         val answer = languageModelConnector.queryWithHttpClient("Is A is the first letter in english alphabet? say YES or NO")
