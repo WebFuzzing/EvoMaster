@@ -2008,7 +2008,7 @@ class EMConfig {
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
             " billions of characters long")
-    var maxLengthForStrings = 200
+    var maxLengthForStrings = 1024
 
 
     @Min(0.0)
