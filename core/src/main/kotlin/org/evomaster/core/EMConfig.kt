@@ -2495,6 +2495,11 @@ class EMConfig {
             " on a single line")
     var maxLengthForCommentLine = 80
 
+    @Experimental
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
