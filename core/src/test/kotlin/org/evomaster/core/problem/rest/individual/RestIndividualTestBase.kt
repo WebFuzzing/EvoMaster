@@ -21,6 +21,8 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.client.java.sql.SqlScriptRunner
@@ -637,6 +639,10 @@ abstract class RestIndividualTestBase {
 
         override fun close() {
 
+        }
+
+        override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>): List<DeriveParamResponseDto> {
+            return listOf()
         }
 
         override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
