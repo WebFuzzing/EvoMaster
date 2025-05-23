@@ -88,7 +88,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         val problem = infoDto.restProblem
-                ?: throw java.lang.IllegalStateException("Missing problem definition object")
+                ?: throw SutProblemException("Missing problem definition object")
 
         val openApiURL = problem.openApiUrl
         val openApiSchema = problem.openApiSchema
@@ -121,6 +121,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
             addExtraHeader(actionCluster)
         }
 
+        if(problem.derivedParams != null) {
+            initializeDerivedParamRules(problem.derivedParams)
+        }
 
         initSqlInfo(infoDto)
 
@@ -141,8 +144,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         postInits()
 
         updateConfigBasedOnSutInfoDto(infoDto)
-
-        //partialOracles.setupForRest(swagger, config)
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
