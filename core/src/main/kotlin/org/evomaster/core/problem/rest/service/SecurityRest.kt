@@ -639,9 +639,8 @@ class SecurityRest {
 
             if(i2xx.isNotEmpty()){
                 //will create a new individual
+
                 return@forEach
-
-
             }
 
             // now we are creating a request

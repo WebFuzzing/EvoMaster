@@ -12,8 +12,7 @@ import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -112,7 +111,6 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
 
         put42.auth = foo
 
-
         val authenticated = createIndividual(listOf(put42), SampleType.SECURITY)
         val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
 
@@ -129,11 +127,11 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         assertEquals(201, r0.getStatusCode())
         assertEquals(200, r1.getStatusCode())
 
+        // we couldn't say this is forgotten because GET could be open, so we cannot be sure.
         val faultDetected = RestSecurityOracle.hasForgottenAuthentication(put42.getName(), ei.individual, ei.seeResults())
-        assertTrue(faultDetected)
+        assertFalse(faultDetected)
 
-        //fault should be put on 200 with no authentication
         assertEquals(0, r0.getFaults().size)
-        assertEquals(1, r1.getFaults().size)
+        assertEquals(0, r1.getFaults().size)
     }
 }
