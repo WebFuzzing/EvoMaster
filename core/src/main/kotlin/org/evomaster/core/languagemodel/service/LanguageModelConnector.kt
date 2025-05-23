@@ -15,6 +15,7 @@ import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -38,8 +39,9 @@ class LanguageModelConnector {
     private lateinit var config: EMConfig
 
     /**
-     * Key: UUID assigned when queryAsync invoked.
-     * Value: [Prompt]
+     * Holds request prompts using [query], [queryAsync], and [addPrompt]
+     * as [AnsweredPrompt].
+     * Key holds the promptId as type [UUID], and the value is the type of [AnsweredPrompt].
      */
     private var prompts: MutableMap<UUID, AnsweredPrompt> = mutableMapOf()
 
@@ -94,19 +96,46 @@ class LanguageModelConnector {
         }
     }
 
-    fun getHttpClientCount(): Int {
-        return httpClients.size
+    /**
+     * For testing purposes.
+     * @return number of [Client] in [httpClients]
+     */
+    fun getHttpClientCount() = httpClients.size
+
+    /**
+     * Use concurrent programming to make prompt request asynchronously.
+     * @return the [CompletableFuture] for the prompt.
+     */
+    fun queryAsync(prompt: String): CompletableFuture<AnsweredPrompt?> {
+        val promptDto = Prompt(getIdForPrompt(), prompt)
+
+        val client = httpClients.getOrPut(Thread.currentThread().id) {
+            getHttpClient()
+        }
+
+        val future = CompletableFuture.supplyAsync {
+            makeQueryWithClient(client, promptDto)
+        }
+
+        return future
     }
 
     /**
-     * To query the large language server asynchronously with a simple prompt.
+     * Added prompt will be queried in a separate thread without
+     * blocking the main thread.
+     * [getAnswerByPrompt] and [getAnswerById] can be used to retrieve the
+     * answers.
+     * @return unique prompt identifier as [UUID]
+     * @throws [IllegalStateException] if the connector is disabled in [EMConfig]
      */
-    fun queryAsync(prompt: String) {
+    fun addPrompt(prompt: String): UUID {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
-        val promptDto = Prompt(getIdForPrompt(), prompt)
+        val promptId = getIdForPrompt()
+
+        val promptDto = Prompt(promptId, prompt)
 
         val task = Runnable {
             val id = Thread.currentThread().id
@@ -117,11 +146,8 @@ class LanguageModelConnector {
         }
 
         workerPool.submit(task)
-    }
 
-    private fun getHttpClient(): Client {
-        return HttpClientFactory
-            .createTrustingJerseyClient(false, 60_000)
+        return promptId
     }
 
     /**
@@ -133,6 +159,7 @@ class LanguageModelConnector {
     }
 
     /**
+     * @param id unique identifier returned when [addPrompt] invoked.
      * @return answer for the UUID of the prompt
      */
     fun getAnswerById(id: UUID): AnsweredPrompt? {
@@ -141,9 +168,10 @@ class LanguageModelConnector {
 
     /**
      * To query the large language server with a simple prompt.
-     * @return answer string from the language model server
+     * @return answer string from the language model server.
+     * @return null if the request failed.
      */
-    fun queryWithHttpClient(prompt: String): AnsweredPrompt? {
+    fun query(prompt: String): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -157,6 +185,13 @@ class LanguageModelConnector {
         val response = makeQueryWithClient(client, promptDto)
 
         return response
+    }
+
+    /**
+     * @return the given structured request for the prompt.
+     */
+    fun queryStructured(prompt: String) {
+        TODO("Requires more time to implement this.")
     }
 
     private fun isModelAvailable(): Boolean {
@@ -185,6 +220,10 @@ class LanguageModelConnector {
         return false
     }
 
+    /**
+     * @return [AnsweredPrompt] if the request is successfully completed.
+     * @return null if the request failed.
+     */
     private fun makeQueryWithClient(httpClient: Client, prompt: Prompt): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
@@ -220,6 +259,7 @@ class LanguageModelConnector {
     }
 
     /**
+     * @return [Response] for the request.
      * Private method to make the call to the large language model server.
      *
      * Note: If you are using Ollama as a server, please make sure to set the
@@ -255,8 +295,19 @@ class LanguageModelConnector {
         return response
     }
 
+    /**
+     * @return unique prompt identifier as [UUID]
+     */
     private fun getIdForPrompt(): UUID {
         return UUID.randomUUID()
+    }
+
+    /**
+     * @return new [Client] from [HttpClientFactory]
+     */
+    private fun getHttpClient(): Client {
+        return HttpClientFactory
+            .createTrustingJerseyClient(false, 60_000)
     }
 
 }

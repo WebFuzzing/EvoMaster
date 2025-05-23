@@ -18,6 +18,10 @@ class LanguageModelConnectorTest {
 
     private lateinit var config: EMConfig
 
+    val injector: Injector = LifecycleInjector.builder()
+        .withModules(BaseModule())
+        .build().createInjector()
+
     private lateinit var languageModelConnector: LanguageModelConnector
 
     companion object {
@@ -29,12 +33,15 @@ class LanguageModelConnectorTest {
          */
         private const val LANGUAGE_MODEL_NAME: String = "gemma3:1b"
 
+        private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
+
+        private const val EXPECTED_ANSWER = "YES\n"
+
         private val ollama = KGenericContainer("ollama/ollama:latest")
             .withExposedPorts(11434)
             .withEnv("OLLAMA_ORIGINS", "*") // This to allow avoiding CORS filtering.
 
         private var ollamaURL: String = ""
-
 
         @BeforeAll
         @JvmStatic
@@ -69,37 +76,54 @@ class LanguageModelConnectorTest {
     }
 
     @BeforeEach
-    fun checkURL() {
+    fun prepareForTest() {
         if (!ollama.isRunning) {
             throw IllegalStateException("Ollama container is not running")
         }
-    }
-
-    @Test
-    fun testLocalOllamaConnection() {
-
-        val injector: Injector = LifecycleInjector.builder()
-            .withModules(BaseModule())
-            .build().createInjector()
 
         config = injector.getInstance(EMConfig::class.java)
         config.languageModelConnector = true
-
-        languageModelConnector = injector.getInstance(LanguageModelConnector::class.java)
-
         // If languageModelName or languageModelURL set to empty, an exception
         // will the thrown.
         config.languageModelName = LANGUAGE_MODEL_NAME
         config.languageModelServerURL = ollamaURL
 
-        // gemma3:1b returns with a newline character
-        val answer = languageModelConnector.queryWithHttpClient("Is A is the first letter in english alphabet? say YES or NO")
+        languageModelConnector = injector.getInstance(LanguageModelConnector::class.java)
+    }
 
-        Assertions.assertEquals(answer!!.answer, "YES\n")
+    @Test
+    fun testLocalOllamaConnection() {
+        // gemma3:1b returns with a newline character
+        val answer = languageModelConnector.query(PROMPT)
+
+        Assertions.assertEquals(EXPECTED_ANSWER, answer!!.answer)
         // We use HttpClient for two purposes by default when make a query.
         // First time connector checks for the model availability,
         // second to make the prompt query.
         // This check validates if there is a client it is repurposed for the second query.
-        Assertions.assertEquals(languageModelConnector.getHttpClientCount(), 1)
+        Assertions.assertEquals(1, languageModelConnector.getHttpClientCount())
+    }
+
+    @Test
+    fun testConcurrentRequests() {
+        // gemma3:1b returns with a newline character
+        val future = languageModelConnector.queryAsync(PROMPT)
+
+        future.thenAccept { result ->
+            Assertions.assertEquals(EXPECTED_ANSWER, result!!.answer)
+            Assertions.assertEquals(1, languageModelConnector.getHttpClientCount())
+        }
+    }
+
+    @Test
+    fun testQueriedPrompts() {
+        val promptId = languageModelConnector.addPrompt(PROMPT)
+
+        Thread.sleep(3000)
+
+        val result = languageModelConnector.getAnswerById(promptId)
+
+        Assertions.assertEquals(result!!.answer, EXPECTED_ANSWER)
+        Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
     }
 }
