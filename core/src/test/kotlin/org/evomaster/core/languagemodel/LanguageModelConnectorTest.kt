@@ -96,5 +96,10 @@ class LanguageModelConnectorTest {
         val answer = languageModelConnector.queryWithHttpClient("Is A is the first letter in english alphabet? say YES or NO")
 
         Assertions.assertEquals(answer!!.answer, "YES\n")
+        // We use HttpClient for two purposes by default when make a query.
+        // First time connector checks for the model availability,
+        // second to make the prompt query.
+        // This check validates if there is a client it is repurposed for the second query.
+        Assertions.assertEquals(languageModelConnector.getHttpClientCount(), 1)
     }
 }

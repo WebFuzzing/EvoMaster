@@ -8,6 +8,7 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaModelResponse
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
+import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
@@ -59,6 +60,15 @@ class LanguageModelConnector {
         LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
 
         if (config.languageModelConnector) {
+
+            if (config.languageModelServerURL.isNullOrEmpty()) {
+                throw IllegalArgumentException("Language model URL cannot be empty")
+            }
+
+            if (config.languageModelName.isNullOrEmpty()) {
+                throw IllegalArgumentException("Language model name cannot be empty")
+            }
+
             actualFixedThreadPool = min(
                 config.languageModelConnectorNumberOfThreads,
                 Runtime.getRuntime().availableProcessors()
@@ -84,6 +94,10 @@ class LanguageModelConnector {
         }
     }
 
+    fun getHttpClientCount(): Int {
+        return httpClients.size
+    }
+
     /**
      * To query the large language server asynchronously with a simple prompt.
      */
@@ -92,9 +106,7 @@ class LanguageModelConnector {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
-        val promptId = getIdForPrompt()
-
-        val promptDto = Prompt(promptId, prompt)
+        val promptDto = Prompt(getIdForPrompt(), prompt)
 
         val task = Runnable {
             val id = Thread.currentThread().id
@@ -148,10 +160,8 @@ class LanguageModelConnector {
     }
 
     private fun isModelAvailable(): Boolean {
-        // API URL to list models that are available locally.
-        val url = getLanguageModelServerGenerateURL() + "api/tags"
-
-        val languageModelName = getLanguageModelName()
+        val url = OllamaEndpoints
+            .getTagEndpoint(config.languageModelServerURL)
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
             getHttpClient()
@@ -167,7 +177,7 @@ class LanguageModelConnector {
                 OllamaModelResponse::class.java
             )
 
-            if (bodyObject.models.any { it.name == languageModelName }) {
+            if (bodyObject.models.any { it.name == config.languageModelName }) {
                 return true
             }
         }
@@ -176,13 +186,12 @@ class LanguageModelConnector {
     }
 
     private fun makeQueryWithClient(httpClient: Client, prompt: Prompt): AnsweredPrompt? {
-        // API URL to generate a response for a given prompt with a provided model.
-        val languageModelServerURL = getLanguageModelServerGenerateURL() + "api/generate"
-        val languageModelName = getLanguageModelName()
+        val languageModelServerURL = OllamaEndpoints
+            .getGenerateEndpoint(config.languageModelServerURL)
 
         val requestBody = objectMapper.writeValueAsString(
             OllamaRequest(
-                languageModelName.toString(),
+                config.languageModelName,
                 prompt.prompt,
                 false
             )
@@ -244,33 +253,6 @@ class LanguageModelConnector {
         }
 
         return response
-    }
-
-
-    /**
-     * @return the large language model server URL from EMConfig
-     * @return if URL not configured returns the localhost URL for Ollama API.
-     */
-    private fun getLanguageModelServerGenerateURL(): String {
-        if (config.languageModelServerURL.isNullOrEmpty()) {
-            throw IllegalArgumentException("Language model URL cannot be empty")
-        }
-
-        return config.languageModelServerURL
-    }
-
-    /**
-     * Private method, returns the large language model server name from
-     * EMConfig, otherwise return llama3.2:latest.
-     *
-     * TODO: Failsafe model name yet to be decided
-     */
-    private fun getLanguageModelName(): String {
-        if (config.languageModelName.isNullOrEmpty()) {
-            throw IllegalArgumentException("Language model name cannot be empty")
-        }
-
-        return config.languageModelName
     }
 
     private fun getIdForPrompt(): UUID {
