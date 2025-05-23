@@ -1,13 +1,18 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.SelectItem;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.DataRow;
 
+import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -111,7 +116,7 @@ class SqlExpressionEvaluatorTest {
 
     }
 
-    private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow row) {
+    private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, QueryResult queryResult) {
         Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
         Select select = (Select) parsedSqlCommand;
 
@@ -120,7 +125,35 @@ class SqlExpressionEvaluatorTest {
         TaintHandler taintHandler = null;
 
         columnReferenceResolver.enterStatementeContext(select);
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, null, row);
+
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withTableColumnResolver(columnReferenceResolver)
+                .withTaintHandler(taintHandler)
+                .withCurrentDataRow(queryResult.seeRows().get(0)).build();
+
+        select.getPlainSelect().getWhere().accept(evaluator);
+        columnReferenceResolver.exitCurrentStatementContext();
+
+        Truthness truthness = evaluator.getEvaluatedTruthness();
+        assertTrue(truthness.isTrue());
+    }
+
+
+    private void assertSqlExpressionEvaluatesToTrue(String sqlCommand, DataRow... row) {
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        Select select = (Select) parsedSqlCommand;
+
+
+        TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
+        TaintHandler taintHandler = null;
+
+        columnReferenceResolver.enterStatementeContext(select);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withTableColumnResolver(columnReferenceResolver)
+                .withTaintHandler(taintHandler)
+                .withCurrentDataRow(row[0])
+                .build();
+
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentStatementContext();
 
@@ -136,7 +169,12 @@ class SqlExpressionEvaluatorTest {
         TableColumnResolver columnReferenceResolver = new TableColumnResolver(schema);
 
         columnReferenceResolver.enterStatementeContext(select);
-        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator(columnReferenceResolver, taintHandler, null, row);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withTableColumnResolver(columnReferenceResolver)
+                .withTaintHandler(taintHandler)
+                .withCurrentDataRow(row)
+                .build();
+
         select.getPlainSelect().getWhere().accept(evaluator);
         columnReferenceResolver.exitCurrentStatementContext();
 
@@ -1235,6 +1273,174 @@ class SqlExpressionEvaluatorTest {
                 Collections.singletonList("name"),
                 Collections.singletonList(String.valueOf('\uffff'))
         );
+
         assertSqlExpressionEvaluatesToTrue(sqlCommand, row);
+    }
+
+    @Test
+    public void testCount() {
+        String sqlCommand = "SELECT COUNT(*) FROM Employees";
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
+        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        Expression countExpression = selectItem.getExpression();
+
+        QueryResult queryResult = new QueryResult(Collections.singletonList("name"), "Employees");
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("name"),
+                Collections.singletonList("John")
+        ));
+
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("name"),
+                Collections.singletonList("John")
+        ));
+
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withCurrentQueryResult(queryResult)
+                .build();
+
+        countExpression.accept(evaluator);
+        assertNotNull(evaluator.getEvaluatedValue());
+        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertEquals(2L, evaluator.getEvaluatedValue());
+    }
+
+    @Test
+    public void testSum() {
+        String sqlCommand = "SELECT SUM(salary) FROM Employees";
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
+        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        Expression sumExpression = selectItem.getExpression();
+
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(10_000)
+        ));
+
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(20_000)
+        ));
+
+        TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
+        tableColumnResolver.enterStatementeContext(parsedSqlCommand);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withCurrentQueryResult(queryResult)
+                .withTableColumnResolver(tableColumnResolver)
+                .build();
+
+        sumExpression.accept(evaluator);
+        assertNotNull(evaluator.getEvaluatedValue());
+        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertEquals(30_000L, evaluator.getEvaluatedValue());
+    }
+
+    @Test
+    public void testAvg() {
+        String sqlCommand = "SELECT AVG(salary) FROM Employees";
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
+        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        Expression avgExpression = selectItem.getExpression();
+
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(10_000)
+        ));
+
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(20_000)
+        ));
+
+        TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
+        tableColumnResolver.enterStatementeContext(parsedSqlCommand);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withCurrentQueryResult(queryResult)
+                .withTableColumnResolver(tableColumnResolver)
+                .build();
+
+        avgExpression.accept(evaluator);
+        assertNotNull(evaluator.getEvaluatedValue());
+        assertTrue(evaluator.getEvaluatedValue() instanceof Long);
+        assertEquals(15_000L, evaluator.getEvaluatedValue());
+    }
+
+    @Test
+    public void testMax() {
+        String sqlCommand = "SELECT MAX(salary) FROM Employees";
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
+        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        Expression maxExpression = selectItem.getExpression();
+
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(10_000)
+        ));
+
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(20_000)
+        ));
+
+        TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
+        tableColumnResolver.enterStatementeContext(parsedSqlCommand);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withCurrentQueryResult(queryResult)
+                .withTableColumnResolver(tableColumnResolver)
+                .build();
+
+        maxExpression.accept(evaluator);
+        assertNotNull(evaluator.getEvaluatedValue());
+        assertTrue(evaluator.getEvaluatedValue() instanceof Integer);
+        assertEquals(20_000, evaluator.getEvaluatedValue());
+    }
+
+    @Test
+    public void testMin() {
+        String sqlCommand = "SELECT MIN(salary) FROM Employees";
+        Statement parsedSqlCommand = SqlParserUtils.parseSqlCommand(sqlCommand);
+        PlainSelect plainSelect = (PlainSelect) parsedSqlCommand;
+        SelectItem selectItem = plainSelect.getSelectItems().get(0);
+        Expression minExpression = selectItem.getExpression();
+
+        QueryResult queryResult = new QueryResult(Collections.singletonList("salary"), "Employees");
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(10_000)
+        ));
+
+        queryResult.addRow(new DataRow(
+                "Employees",
+                Collections.singletonList("salary"),
+                Collections.singletonList(20_000)
+        ));
+
+        TableColumnResolver tableColumnResolver = new TableColumnResolver(schema);
+        tableColumnResolver.enterStatementeContext(parsedSqlCommand);
+        SqlExpressionEvaluator evaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                .withCurrentQueryResult(queryResult)
+                .withTableColumnResolver(tableColumnResolver)
+                .build();
+
+        minExpression.accept(evaluator);
+        assertNotNull(evaluator.getEvaluatedValue());
+        assertTrue(evaluator.getEvaluatedValue() instanceof Integer);
+        assertEquals(10_000, evaluator.getEvaluatedValue());
     }
 }

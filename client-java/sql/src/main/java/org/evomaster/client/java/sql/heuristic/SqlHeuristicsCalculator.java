@@ -1,6 +1,7 @@
 package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -13,6 +14,9 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.evomaster.client.java.sql.VariableDescriptor;
+import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
+import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
+import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -38,7 +42,7 @@ public class SqlHeuristicsCalculator {
     private final Deque<DataRow> stackOfEvaluatedDataRows = new ArrayDeque<>();
 
     // Refactor: Use Builder Pattern for Constructor
-    private SqlHeuristicsCalculator(Builder builder) {
+    private SqlHeuristicsCalculator(SqlHeuristicsCalculatorBuilder builder) {
         this.parentExpressionEvaluator = builder.parentExpressionEvaluator;
         this.tableColumnResolver = builder.tableColumnResolver;
         this.taintHandler = builder.taintHandler;
@@ -52,34 +56,34 @@ public class SqlHeuristicsCalculator {
         }
     }
 
-    public static class Builder {
+    public static class SqlHeuristicsCalculatorBuilder {
         private SqlExpressionEvaluator parentExpressionEvaluator;
         private TableColumnResolver tableColumnResolver;
         private TaintHandler taintHandler;
         private QueryResultSet queryResultSet;
         private Deque<DataRow> stackOfDataRows;
 
-        public Builder withParentExpressionEvaluator(SqlExpressionEvaluator evaluator) {
+        public SqlHeuristicsCalculatorBuilder withParentExpressionEvaluator(SqlExpressionEvaluator evaluator) {
             this.parentExpressionEvaluator = evaluator;
             return this;
         }
 
-        public Builder withTableColumnResolver(TableColumnResolver resolver) {
+        public SqlHeuristicsCalculatorBuilder withTableColumnResolver(TableColumnResolver resolver) {
             this.tableColumnResolver = resolver;
             return this;
         }
 
-        public Builder withTaintHandler(TaintHandler handler) {
+        public SqlHeuristicsCalculatorBuilder withTaintHandler(TaintHandler handler) {
             this.taintHandler = handler;
             return this;
         }
 
-        public Builder withSourceQueryResultSet(QueryResultSet resultSet) {
+        public SqlHeuristicsCalculatorBuilder withSourceQueryResultSet(QueryResultSet resultSet) {
             this.queryResultSet = resultSet;
             return this;
         }
 
-        public Builder withStackOfDataRows(Deque<DataRow> rows) {
+        public SqlHeuristicsCalculatorBuilder withStackOfDataRows(Deque<DataRow> rows) {
             this.stackOfDataRows = rows;
             return this;
         }
@@ -415,14 +419,93 @@ public class SqlHeuristicsCalculator {
             final FromItem fromItem = getFrom(plainSelect);
             final List<Join> joins = getJoins(plainSelect);
             final Expression whereClause = getWhere(plainSelect);
-            final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
-            QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), plainSelect.getSelectItems());
-            heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+            if (plainSelect.getGroupBy() != null) {
+                heuristicResult = computeHeuristicSelectGroupByHaving(
+                        plainSelect.getSelectItems(),
+                        fromItem,
+                        joins,
+                        whereClause,
+                        plainSelect.getGroupBy().getGroupByExpressionList(),
+                        plainSelect.getHaving());
+            } else {
+                heuristicResult = computeHeuristicSelect(
+                        plainSelect.getSelectItems(),
+                        fromItem,
+                        joins,
+                        whereClause);
+            }
         } else {
             throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
         }
         tableColumnResolver.exitCurrentStatementContext();
         return heuristicResult;
+    }
+
+    private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems, FromItem fromItem, List<Join> joins, Expression whereClause) {
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+        final QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        return heuristicResult;
+    }
+
+    private SqlHeuristicResult computeHeuristicSelectGroupByHaving(
+            List<SelectItem<?>> selectItems,
+            FromItem fromItem,
+            List<Join> joins,
+            Expression whereClause,
+            List<Expression> groupByExpressions,
+            Expression having) {
+
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+
+        QueryResult sourceQueryResult = intermediateHeuristicResult.getQueryResult();
+
+        Map<List<Object>, QueryResult> groupByQueryResults = new HashMap<>();
+        for (DataRow dataRow : sourceQueryResult.seeRows()) {
+            List<Object> key = new ArrayList<>();
+            for (Expression groupByExpression : groupByExpressions) {
+                Object value = evaluate(groupByExpression, dataRow);
+                key.add(value);
+            }
+            groupByQueryResults.computeIfAbsent(key, k -> new QueryResult(sourceQueryResult.seeVariableDescriptors()))
+                    .addRow(dataRow);
+        }
+
+        final List<DataRow> groupByDataRows = new ArrayList<>();
+        final List<Truthness> truthnesses = new ArrayList<>();
+        for (QueryResult groupByQueryResult : groupByQueryResults.values()) {
+            QueryResult aggregatedQueryResult = createQueryResult(groupByQueryResult, selectItems);
+            if (aggregatedQueryResult.size() != 1) {
+                throw new IllegalStateException("An aggregated query result cannot have " + aggregatedQueryResult.size() + "rows");
+            }
+            DataRow dataRow = aggregatedQueryResult.seeRows().get(0);
+            if (having != null) {
+                final Truthness truthness = evaluateAll(Collections.singletonList(having), groupByQueryResult);
+                truthnesses.add(truthness);
+                if (truthness.isTrue()) {
+                    groupByDataRows.add(dataRow);
+                }
+            } else {
+                groupByDataRows.add(dataRow);
+            }
+        }
+        final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, sourceQueryResult.seeVariableDescriptors());
+        final QueryResult queryResult = new QueryResult(variableDescriptors);
+        for (DataRow groupByDataRow : groupByDataRows) {
+            queryResult.addRow(groupByDataRow);
+        }
+        final Truthness havingTruthness;
+        if (truthnesses.isEmpty()) {
+            havingTruthness = SqlHeuristicsCalculator.TRUE_TRUTHNESS;
+        } else {
+            havingTruthness = TruthnessUtils.buildOrAggregationTruthness(truthnesses.toArray(new Truthness[]{}));
+        }
+
+        final Truthness groupByHavingTruthness = TruthnessUtils.buildAndAggregationTruthness(
+                intermediateHeuristicResult.getTruthness(),
+                havingTruthness);
+
+        return new SqlHeuristicResult(groupByHavingTruthness, queryResult);
     }
 
     private SqlHeuristicResult computeHeuristic(FromItem fromItem, List<Join> joins, Expression whereExpression) {
@@ -450,61 +533,95 @@ public class SqlHeuristicsCalculator {
 
         final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, queryResult.seeVariableDescriptors());
         QueryResult filteredQueryResult = new QueryResult(variableDescriptors);
+
         if (queryResult.isEmpty() && !hasAnyTableColumn(selectItems)) {
             final List<Object> rowValues = evaluate(selectItems);
             DataRow singleRow = new DataRow(variableDescriptors, rowValues);
             filteredQueryResult.addRow(singleRow);
+        } else if (hasAnyAggregateFunction(selectItems)) {
+            DataRow witnessDataRow = queryResult.isEmpty()
+                    ? null
+                    : queryResult.seeRows().get(0);
+            final List<Object> filteredValues = evaluate(selectItems, witnessDataRow, queryResult);
+            DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
+            filteredQueryResult.addRow(filteredRow);
         } else {
             for (DataRow row : queryResult.seeRows()) {
-                final List<Object> filteredValues = evaluate(selectItems, row);
+                final List<Object> filteredValues = evaluate(selectItems, row, queryResult);
                 DataRow filteredRow = new DataRow(variableDescriptors, filteredValues);
                 filteredQueryResult.addRow(filteredRow);
             }
         }
+
         return filteredQueryResult;
     }
 
-    private List<Object> evaluate(List<SelectItem<?>> selectItems, DataRow row) {
-        List<Object> concreteValues = new ArrayList<>();
+    private List<Object> evaluate(List<SelectItem<?>> selectItems, DataRow currentDataRow, QueryResult currentQueryResult) {
+        List<Object> values = new ArrayList<>();
         for (SelectItem<?> selectItem : selectItems) {
-            if (selectItem.getExpression() instanceof AllTableColumns) {
-                AllTableColumns allTableColumns = (AllTableColumns) selectItem.getExpression();
-                String tableName = allTableColumns.getTable().getName();
-                for (VariableDescriptor vd : row.getVariableDescriptors()) {
-                    if (tableName.equalsIgnoreCase(vd.getAliasTableName())
-                            || tableName.equalsIgnoreCase(vd.getTableName())) {
-                        final Object value = row.getValueByName(vd.getColumnName(), vd.getTableName(), vd.getAliasTableName());
-                        concreteValues.add(value);
-                    }
+            Expression expression = selectItem.getExpression();
+            final Object value = evaluate(expression, currentDataRow, currentQueryResult);
+            if (value != null && value instanceof QueryResult) {
+                QueryResult queryResult = (QueryResult) value;
+                if (queryResult.isEmpty()) {
+                    values.add(null);
+                } else if (queryResult.seeRows().size() == 1) {
+                    Object singleValue = queryResult.seeRows().get(0).getValue(0);
+                    values.add(singleValue);
+                } else {
+                    throw new IllegalArgumentException("Cannot evaluate " + expression.toString() + " if resulting subquery size is greater than 1" + currentDataRow.toString());
                 }
-
-            } else if (selectItem.getExpression() instanceof AllColumns) {
-                concreteValues.addAll(row.seeValues());
+            } else if (value != null && value instanceof List<?>) {
+                List<Object> evaluatedValues = (List<Object>) value;
+                values.addAll(evaluatedValues);
             } else {
-                Expression expression = selectItem.getExpression();
-                final Object value = evaluate(expression, row);
-                concreteValues.add(value);
+                values.add(value);
             }
         }
-        return concreteValues;
+        return values;
+    }
+
+    private static boolean isAggregateFunction(String functionName) {
+        final SqlFunction function = FunctionFinder.getInstance().getFunction(functionName);
+        return function != null && function instanceof SqlAggregateFunction;
     }
 
     private Object evaluate(Expression expressionToEvaluate) {
-        return evaluate(expressionToEvaluate, null);
+        return evaluate(expressionToEvaluate, null, null);
     }
 
     private Object evaluate(Expression expressionToEvaluate, DataRow currentDataRow) {
-        SqlExpressionEvaluator sqlExpressionEvaluator = new SqlExpressionEvaluator(
-                this,
-                this.tableColumnResolver,
-                this.taintHandler,
-                this.sourceQueryResultSet,
-                this.stackOfEvaluatedDataRows,
-                currentDataRow);
+        SqlExpressionEvaluator sqlExpressionEvaluator =
+                new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                        .withParentStatementEvaluator(this)
+                        .withTableColumnResolver(this.tableColumnResolver)
+                        .withTaintHandler(this.taintHandler)
+                        .withQueryResultSet(this.sourceQueryResultSet)
+                        .withDataRowStack(this.stackOfEvaluatedDataRows)
+                        .withCurrentDataRow(currentDataRow).build();
+
         expressionToEvaluate.accept(sqlExpressionEvaluator);
         Object value = sqlExpressionEvaluator.getEvaluatedValue();
         return value;
     }
+
+    private Object evaluate(Expression expressionToEvaluate, DataRow currentDataRow, QueryResult currentQueryResult) {
+        SqlExpressionEvaluator sqlExpressionEvaluator =
+                new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                        .withParentStatementEvaluator(this)
+                        .withTableColumnResolver(this.tableColumnResolver)
+                        .withTaintHandler(this.taintHandler)
+                        .withQueryResultSet(this.sourceQueryResultSet)
+                        .withDataRowStack(this.stackOfEvaluatedDataRows)
+                        .withCurrentDataRow(currentDataRow)
+                        .withCurrentQueryResult(currentQueryResult)
+                        .build();
+
+        expressionToEvaluate.accept(sqlExpressionEvaluator);
+        Object value = sqlExpressionEvaluator.getEvaluatedValue();
+        return value;
+    }
+
 
     private List<Object> evaluate(List<SelectItem<?>> selectItems) {
         List<Object> filteredValues = new ArrayList<>();
@@ -518,24 +635,57 @@ public class SqlHeuristicsCalculator {
 
     /**
      * Checks if the select items contain any table column.
-     * Notice that, * and table.* include table columns.
+     * Notice that, allColumns (*) and allTableColumns (table.*) include table columns.
      *
      * @param selectItems
      * @return
      */
     private static boolean hasAnyTableColumn(List<SelectItem<?>> selectItems) {
-        boolean hasAnyColumn = false;
         for (SelectItem<?> selectItem : selectItems) {
-            if (selectItem.getExpression() instanceof AllTableColumns
-                    || selectItem.getExpression() instanceof AllColumns
-                    || selectItem.getExpression() instanceof Column) {
-                hasAnyColumn = true;
+            if (hasAnyTableColumn(selectItem.getExpression())) {
+                return true;
             }
         }
-        return hasAnyColumn;
+        return false;
     }
 
-    private List<VariableDescriptor> createSelectVariableDescriptors(List<SelectItem<?>> selectItems, List<VariableDescriptor> variableDescriptors) {
+    private static boolean hasAnyTableColumn(Expression expression) {
+        if (expression instanceof AllTableColumns) {
+            return true;
+        }
+        if (expression instanceof AllColumns) {
+            return true;
+        }
+        if (expression instanceof Column) {
+            return true;
+        }
+        if (expression instanceof Function) {
+            Function functionExpression = (Function) expression;
+            String functionName = functionExpression.getName();
+            if (isAggregateFunction(functionName)) {
+                for (int i = 0; i < functionExpression.getParameters().size(); i++) {
+                    if (hasAnyTableColumn(functionExpression.getParameters().get(i))) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    private static boolean hasAnyAggregateFunction(List<SelectItem<?>> selectItems) {
+        for (SelectItem<?> selectItem : selectItems) {
+            if (selectItem.getExpression() instanceof Function
+                    && isAggregateFunction(((Function) selectItem.getExpression()).getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<VariableDescriptor> createSelectVariableDescriptors
+            (List<SelectItem<?>> selectItems, List<VariableDescriptor> variableDescriptors) {
         List<VariableDescriptor> selectVariableDescriptors = new ArrayList<>();
 
         for (SelectItem<?> selectItem : selectItems) {
@@ -642,8 +792,12 @@ public class SqlHeuristicsCalculator {
         }
     }
 
-    private Truthness evaluateAll(Collection<Expression> conditions, DataRow row) {
-        Objects.requireNonNull(row);
+    private Truthness evaluateAll(Collection<Expression> conditions, QueryResult currentQueryResult) {
+        Objects.requireNonNull(currentQueryResult);
+        return evaluateAll(conditions, null, currentQueryResult);
+    }
+
+    private Truthness evaluateAll(Collection<Expression> conditions, DataRow currentDataRow, QueryResult currentQueryResult) {
         if (conditions.isEmpty()) {
             throw new IllegalArgumentException("Cannot evaluate empty conditions");
         }
@@ -651,17 +805,25 @@ public class SqlHeuristicsCalculator {
         List<Truthness> truthnesses = new ArrayList<>();
         for (Expression condition : conditions) {
 
-            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator(this,
-                    this.tableColumnResolver,
-                    this.taintHandler,
-                    this.sourceQueryResultSet,
-                    this.stackOfEvaluatedDataRows,
-                    row
-            );
+            SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                    .withParentStatementEvaluator(this)
+                    .withTableColumnResolver(this.tableColumnResolver)
+                    .withTaintHandler(this.taintHandler)
+                    .withQueryResultSet(this.sourceQueryResultSet)
+                    .withDataRowStack(this.stackOfEvaluatedDataRows)
+                    .withCurrentDataRow(currentDataRow)
+                    .withCurrentQueryResult(currentQueryResult)
+                    .build();
             condition.accept(expressionEvaluator);
             truthnesses.add(expressionEvaluator.getEvaluatedTruthness());
         }
         return TruthnessUtils.buildAndAggregationTruthness(truthnesses.toArray(new Truthness[0]));
+    }
+
+
+    private Truthness evaluateAll(Collection<Expression> conditions, DataRow row) {
+        Objects.requireNonNull(row);
+        return evaluateAll(conditions, row, null);
     }
 
     private QueryResult createQueryResult(FromItem fromItem) {
