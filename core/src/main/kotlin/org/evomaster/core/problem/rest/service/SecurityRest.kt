@@ -665,24 +665,23 @@ class SecurityRest {
                 )
 
                 val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
-                val noAuth = first.copy() as RestIndividual
+                val lastCall = first.seeMainExecutableActions().last().copy()
+                val repeat = lastCall.copy() as RestCallAction
+                val repeatWithNoAuth = lastCall.copy() as RestCallAction
+                repeatWithNoAuth.auth = HttpWsNoAuth()
 
                 val otherUsers = authSettings.getAllOthers(first.seeMainExecutableActions().last().auth.name, HttpWsAuthenticationInfo::class.java)
-
-                noAuth.seeMainExecutableActions().last().auth = HttpWsNoAuth()
-                while(noAuth.seeMainExecutableActions().size > 1){
-                    //keep just relevant request
-                    noAuth.removeMainExecutableAction(0)
-                }
-
-                val withAuth = noAuth.copy() as RestIndividual
-
                 otherUsers.forEach{ user ->
-                    withAuth.seeMainExecutableActions().last().auth = user
-                    val finalIndividual = RestIndividualBuilder.merge(first, withAuth, noAuth)
+                    repeat.auth = user
+                    val finalIndividual = first.copy() as RestIndividual
+                    finalIndividual.addMainActionInEmptyEnterpriseGroup(action = repeat)
+                    finalIndividual.addMainActionInEmptyEnterpriseGroup(action = repeatWithNoAuth)
+                    finalIndividual.resetLocalIdRecursively()
+                    finalIndividual.doInitializeLocalId()
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)
                     finalIndividual.ensureFlattenedStructure()
+
                     org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
 
                     val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
