@@ -1,4 +1,4 @@
-package org.evomaster.core.languagemodel
+package org.evomaster.core.languagemodel.service
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
@@ -26,15 +26,15 @@ import kotlin.math.min
  */
 class LanguageModelConnector {
 
-    @PostConstruct
-    fun initialise() {
-        LoggingUtil.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
-    }
 
     @Inject
     private lateinit var config: EMConfig
 
-    private var prompts: MutableMap<String, Prompt> = mutableMapOf()
+    /**
+     * Key: UUID assigned when queryAsync invoked.
+     * Value: [Prompt]
+     */
+    private var prompts: MutableMap<UUID, Prompt> = mutableMapOf()
 
     private val objectMapper = ObjectMapper()
 
@@ -44,6 +44,8 @@ class LanguageModelConnector {
 
     @PostConstruct
     fun init() {
+        LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
+
         if (config.languageModelConnector) {
             actualFixedThreadPool = min(
                 config.languageModelConnectorNumberOfThreads,
@@ -100,7 +102,7 @@ class LanguageModelConnector {
     /**
      * @return answer for the UUID of the prompt
      */
-    fun getAnswerById(id: String): Prompt? {
+    fun getAnswerById(id: UUID): Prompt? {
         return prompts[id]
     }
 
@@ -110,7 +112,7 @@ class LanguageModelConnector {
      */
     fun query(prompt: String): String? {
         if (!config.languageModelConnector) {
-            return null
+            throw IllegalStateException("Language Model Connector is disabled")
         }
 
         validatePrompt(prompt)
@@ -118,7 +120,7 @@ class LanguageModelConnector {
         return makeQuery(prompt)
     }
 
-    private fun makeQuery(prompt: String, id: String? = null): String? {
+    private fun makeQuery(prompt: String, id: UUID? = null): String? {
         validatePrompt(prompt)
 
         val languageModelServerURL = getLanguageModelServerURL()
@@ -135,7 +137,7 @@ class LanguageModelConnector {
 
         val response = call(languageModelServerURL, requestBody)
 
-        if (!id.isNullOrBlank()) {
+        if (id != null) {
             if (prompts.contains(id)) {
                 val existingPrompt = prompts[id]
 
@@ -174,7 +176,7 @@ class LanguageModelConnector {
             writer.close()
 
             if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.getInfoLogger().warn("Failed to connect to language model server.")
+                LoggingUtil.Companion.getInfoLogger().warn("Failed to connect to language model server.")
                 return null
             }
 
@@ -185,28 +187,22 @@ class LanguageModelConnector {
 
             return response.response
         } catch (e: Exception) {
-            LoggingUtil.getInfoLogger().warn("Failed to connect to language model server: ${e.message}.")
+            LoggingUtil.Companion.getInfoLogger().warn("Failed to connect to language model server: ${e.message}.")
 
             return null
         }
     }
 
     /**
-     * Private method, returns the large language model server URL from
-     * EMConfig, otherwise returns the possible default local URL.
+     * @return the large language model server URL from EMConfig
+     * @return if URL not configured returns the localhost URL for Ollama API.
      */
     private fun getLanguageModelServerURL(): String {
-        val languageModelServerURL = if (config.languageModelServerURL == null) {
-            "http://localhost:11434/api/generate"
-        } else {
-            config.languageModelServerURL
-        }
-
-        if (languageModelServerURL.isNullOrEmpty()) {
+        if (config.languageModelServerURL.isNullOrEmpty()) {
             throw IllegalArgumentException("Language model URL cannot be empty")
         }
 
-        return languageModelServerURL
+        return config.languageModelServerURL
     }
 
     /**
@@ -216,21 +212,15 @@ class LanguageModelConnector {
      * TODO: Failsafe model name yet to be decided
      */
     private fun getLanguageModelName(): String {
-        val languageModelName = if (config.languageModelName == null) {
-            "llama3.2:latest"
-        } else {
-            config.languageModelName
-        }
-
-        if (languageModelName.isNullOrEmpty()) {
+        if (config.languageModelName.isNullOrEmpty()) {
             throw IllegalArgumentException("Language model name cannot be empty")
         }
 
-        return languageModelName
+        return config.languageModelName
     }
 
-    private fun getId(): String {
-        return UUID.randomUUID().toString()
+    private fun getId(): UUID {
+        return UUID.randomUUID()
     }
 
     private fun validatePrompt(prompt: String) {

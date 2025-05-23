@@ -2235,16 +2235,16 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Specify a method to select the first external service spoof IP address.")
     @Experimental
+    @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
+    @Experimental
     @Cfg("User provided external service IP." +
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
             " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
-    @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
 
@@ -2275,26 +2275,24 @@ class EMConfig {
     @Probability(true)
     var useExtraSqlDbConstraintsProbability = 0.9
 
-
-    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
+    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
-
-    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Experimental
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Probability(activating = true)
     var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
 
-    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
+    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Experimental
     @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
     @Min(1.0)
-    @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
 
@@ -2323,8 +2321,8 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Harvested external request response selection strategy")
     @Experimental
+    @Cfg("Harvested external request response selection strategy")
     var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
@@ -2370,25 +2368,25 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Cfg("Apply a security testing phase after functional test cases have been generated.")
     @Experimental
+    @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = false
 
-    @Cfg("Enable language model connector")
     @Experimental
+    @Cfg("Enable language model connector")
     var languageModelConnector = false
 
-    @Cfg("Large-language model external service URL")
     @Experimental
-    var languageModelServerURL: String? = null
+    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
+    var languageModelServerURL: String = "http://localhost:11434/api/generate"
 
+    @Experimental
     @Cfg("Large-language model name as listed in Ollama")
-    @Experimental
-    var languageModelName: String? = null
+    var languageModelName: String = "llama3.2:latest"
 
+    @Experimental
     @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
     @Min(1.0)
-    @Experimental
     var languageModelConnectorNumberOfThreads: Int = 2
 
 

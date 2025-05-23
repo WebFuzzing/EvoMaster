@@ -1,7 +1,9 @@
 package org.evomaster.core.languagemodel.data
 
+import java.util.UUID
+
 class Prompt (
-    val id: String,
+    val id: UUID,
 
     val prompt: String
 ) {
