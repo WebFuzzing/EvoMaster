@@ -50,7 +50,7 @@ class LanguageModelConnectorTest {
             // This test takes time to download the LLM model inside
             // docker. So it's wise to avoid running it on CI
             // to reduce execution time.
-            CIUtils.skipIfOnGA()
+//            CIUtils.skipIfOnGA()
 
             ollama.start()
 
