@@ -2375,8 +2375,7 @@ class EMConfig {
     var allowInvalidData: Boolean = true
 
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
-    @Experimental
-    var security = false
+    var security = true
 
     @Experimental
     @Cfg("Apply vulnerability hunter as part of security testing.")
@@ -2434,12 +2433,11 @@ class EMConfig {
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
-    @Experimental
     @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
             " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
             " However, this is done heuristically." +
             " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
-    var blackBoxCleanUp = false
+    var blackBoxCleanUp = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
