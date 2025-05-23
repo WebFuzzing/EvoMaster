@@ -10,13 +10,9 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.DataOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
@@ -37,7 +33,6 @@ import kotlin.math.min
  */
 class LanguageModelConnector {
 
-
     @Inject
     private lateinit var config: EMConfig
 
@@ -45,7 +40,7 @@ class LanguageModelConnector {
      * Key: UUID assigned when queryAsync invoked.
      * Value: [Prompt]
      */
-    private var prompts: MutableMap<UUID, Prompt> = mutableMapOf()
+    private var prompts: MutableMap<UUID, AnsweredPrompt> = mutableMapOf()
 
     private val objectMapper = ObjectMapper()
 
@@ -94,44 +89,41 @@ class LanguageModelConnector {
      */
     fun queryAsync(prompt: String) {
         if (!config.languageModelConnector) {
-            return
+            throw IllegalStateException("Language Model Connector is disabled")
         }
-
-        validatePrompt(prompt)
 
         val promptId = getIdForPrompt()
 
-        prompts[promptId] = Prompt(promptId, prompt)
+        val promptDto = Prompt(promptId, prompt)
 
         val task = Runnable {
             val id = Thread.currentThread().id
             val httpClient = httpClients.getOrPut(id) {
-                initialiseHttpClient()
+                getHttpClient()
             }
-            makeQueryWithClient(httpClient, prompt)
+            makeQueryWithClient(httpClient, promptDto)
         }
 
         workerPool.submit(task)
     }
 
-    private fun initialiseHttpClient(): Client {
-        val client = HttpClientFactory.createTrustingJerseyClient(false, 60_000)
-
-        return client
+    private fun getHttpClient(): Client {
+        return HttpClientFactory
+            .createTrustingJerseyClient(false, 60_000)
     }
 
     /**
      * @return answer for the prompt as [Prompt] if exists
      * @return null if there is no answer for the prompt
      */
-    fun getAnswerByPrompt(prompt: String): Prompt? {
-        return prompts.filter { it.value.prompt == prompt && it.value.hasAnswer() }.values.firstOrNull()
+    fun getAnswerByPrompt(prompt: String): AnsweredPrompt? {
+        return prompts.filter { it.value.prompt.prompt == prompt && !it.value.answer.isNullOrEmpty() }.values.firstOrNull()
     }
 
     /**
      * @return answer for the UUID of the prompt
      */
-    fun getAnswerById(id: UUID): Prompt? {
+    fun getAnswerById(id: UUID): AnsweredPrompt? {
         return prompts[id]
     }
 
@@ -144,24 +136,25 @@ class LanguageModelConnector {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
-        validatePrompt(prompt)
+        val promptDto = Prompt(getIdForPrompt(), prompt)
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
-            initialiseHttpClient()
+            getHttpClient()
         }
 
-        val response = makeQueryWithClient(client, prompt)
+        val response = makeQueryWithClient(client, promptDto)
 
         return response
     }
 
     private fun isModelAvailable(): Boolean {
+        // API URL to list models that are available locally.
         val url = getLanguageModelServerGenerateURL() + "api/tags"
 
         val languageModelName = getLanguageModelName()
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
-            initialiseHttpClient()
+            getHttpClient()
         }
 
         val response = callWithClient(client, url, OllamaRequestVerb.GET)
@@ -182,16 +175,15 @@ class LanguageModelConnector {
         return false
     }
 
-    private fun makeQueryWithClient(httpClient: Client, prompt: String, promptId: UUID? = null): AnsweredPrompt? {
-        validatePrompt(prompt)
-
+    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt): AnsweredPrompt? {
+        // API URL to generate a response for a given prompt with a provided model.
         val languageModelServerURL = getLanguageModelServerGenerateURL() + "api/generate"
         val languageModelName = getLanguageModelName()
 
         val requestBody = objectMapper.writeValueAsString(
             OllamaRequest(
                 languageModelName.toString(),
-                prompt,
+                prompt.prompt,
                 false
             )
         )
@@ -207,9 +199,10 @@ class LanguageModelConnector {
 
             val answer = AnsweredPrompt(
                 prompt,
-                bodyObject.response,
-                promptId
+                bodyObject.response
             )
+
+            prompts[prompt.id] = answer
 
             return answer
         }
@@ -284,9 +277,4 @@ class LanguageModelConnector {
         return UUID.randomUUID()
     }
 
-    private fun validatePrompt(prompt: String) {
-        if (prompt.isBlank()) {
-            throw IllegalArgumentException("Prompt cannot be empty")
-        }
-    }
 }
