@@ -7,22 +7,31 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.KGenericContainer
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 
 class LanguageModelConnectorTest {
 
     private lateinit var config: EMConfig
+
     private lateinit var languageModelConnector: LanguageModelConnector
 
     companion object {
 
-        private const val LANGUAGE_MODEL_NAME: String = "llama3.2:latest"
+        /**
+         * This chosen based on the two parameters, size and accuracy,
+         * after multiple manual trials with other smaller models.
+         * The model size is 815MB, so it might take a while to execute the test.
+         */
+        private const val LANGUAGE_MODEL_NAME: String = "gemma3:1b"
 
-        private val ollama = KGenericContainer("ollama/ollama")
+        private val ollama = KGenericContainer("ollama/ollama:latest")
             .withExposedPorts(11434)
+            .withEnv("OLLAMA_ORIGINS", "*") // This to allow avoiding CORS filtering.
 
         private var ollama_url: String = ""
 
@@ -31,6 +40,9 @@ class LanguageModelConnectorTest {
         @JvmStatic
         fun initClass() {
 
+            // This test takes time to download the LLM model inside
+            // docker. So it's wise to avoid running it on CI
+            // to reduce execution time.
             CIUtils.skipIfOnGA()
 
             ollama.start()
@@ -40,12 +52,26 @@ class LanguageModelConnectorTest {
 
             ollama_url = "http://$host:$port/api/generate"
 
+            ollama.execInContainer("ollama", "pull", LANGUAGE_MODEL_NAME)
+
+            ollama.waitingFor(
+                LogMessageWaitStrategy()
+                    .withRegEx("writing manifest \n success")
+                    .withTimes(5)
+            )
         }
 
         @AfterAll
         @JvmStatic
         fun cleanClass() {
             ollama.stop()
+        }
+    }
+
+    @BeforeEach
+    fun checkURL() {
+        if (!ollama.isRunning) {
+            throw IllegalStateException("Ollama container is not running")
         }
     }
 
@@ -64,12 +90,13 @@ class LanguageModelConnectorTest {
         // If languageModelName or languageModelURL set to empty, an exception
         // will the thrown.
         config.languageModelName = LANGUAGE_MODEL_NAME
-//        config.languageModelServerURL = ollama_url
+        config.languageModelServerURL = ollama_url
 
         languageModelConnector.init()
 
-        val answer = languageModelConnector.query("1+1? respond only the answer.")
+        // gemma3:1b returns with a newline character
+        val answer = languageModelConnector.query("Is A is the first letter in english alphabet? say YES or NO")
 
-        Assertions.assertEquals(answer, "2")
+        Assertions.assertEquals(answer, "YES\n")
     }
 }
