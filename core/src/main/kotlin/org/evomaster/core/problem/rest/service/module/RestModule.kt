@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
-import org.evomaster.core.languagemodel.LanguageModelConnector
+import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -70,9 +70,6 @@ class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
             .asEagerSingleton()
 
         bind(HarvestActualHttpWsResponseHandler::class.java)
-            .asEagerSingleton()
-
-        bind(LanguageModelConnector::class.java)
             .asEagerSingleton()
 
     }
