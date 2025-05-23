@@ -57,6 +57,7 @@ public class AdaptiveHypermutationEMTest extends RPCHypermutationTestBase {
                     //minimization loses impact info
                     args.add("--minimize");
                     args.add("false");
+                    setOption(args,"security","false"); //doesn't work without minimize
 
                     args.add("--focusedSearchActivationTime");
                     args.add("0.5");

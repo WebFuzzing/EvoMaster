@@ -102,5 +102,39 @@ class SqlStringUtilsTest {
         assertEquals(expected, actual);
     }
 
+    @Test
+    void testBothNull() {
+        assertTrue(SqlStringUtils.nullSafeEqualsIgnoreCase(null, null));
+    }
+
+    @Test
+    void testFirstNullSecondNotNull() {
+        assertFalse(SqlStringUtils.nullSafeEqualsIgnoreCase(null, "test"));
+    }
+
+    @Test
+    void testFirstNotNullSecondNull() {
+        assertFalse(SqlStringUtils.nullSafeEqualsIgnoreCase("test", null));
+    }
+
+    @Test
+    void testBothEqualIgnoreCase() {
+        assertTrue(SqlStringUtils.nullSafeEqualsIgnoreCase("test", "TEST"));
+    }
+
+    @Test
+    void testBothNotEqual() {
+        assertFalse(SqlStringUtils.nullSafeEqualsIgnoreCase("test", "different"));
+    }
+
+    @Test
+    void testEmptyStrings() {
+        assertTrue(SqlStringUtils.nullSafeEqualsIgnoreCase("", ""));
+    }
+
+    @Test
+    void testOneEmptyOneNonEmpty() {
+        assertFalse(SqlStringUtils.nullSafeEqualsIgnoreCase("", "nonempty"));
+    }
 }
 

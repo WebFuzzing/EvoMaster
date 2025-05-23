@@ -6,6 +6,7 @@ import com.example.demo.vo.BindCardReq;
 import com.example.demo.vo.BindCardResp;
 import com.example.demo.vo.CommonReq;
 import com.example.demo.vo.CommonResp;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,14 +27,17 @@ public class DemoController {
     public static final String OTHER_PARTY_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvCZFud5gXvHX2NO8VeDqvzoaOz1fGK2I5pWu8F3YSawkj3+g5Pk2aCrdKy7R1ZpKrFAxD19C96OdTVP564By/9GcuEO9vm1j2wKzyltk3Vz3HgEbWEvon5SoAyULhx2p90IOkNMWNn5YyNPsw/LU5QX0GuNl0NPrVlQl2APKqH6vU3m4FsWunMluuSegnoPxBFn9yC3c7xOpsGPjf9zOFoGkhOJvXA/y4V25vNR+QQZkNU4C0CndaGF6eAjL5rcaV03vWH3TxoDPBBdVIc4cwKlogZoLeA7J+umCk2V7+EQoa/zTuaxY5wcx8eWN/kbissVpis1CZi8tmSdqtsG3+QIDAQAB";
 
     @PostMapping("/bind_card_apply")
-    public CommonResp<BindCardResp> bindCardApply(@RequestBody CommonReq<BindCardReq> req) throws Exception {
+    //public CommonResp<BindCardResp> bindCardApply(@RequestBody CommonReq<BindCardReq> req) throws Exception {
+    public ResponseEntity bindCardApply(@RequestBody CommonReq<BindCardReq> req) throws Exception {
         // verify the signature
         String signContent = req.signText();
         String publicKey = OTHER_PARTY_PUBLIC_KEY;
         boolean checkSign = CryptoUtil.verify(signContent, req.getSign(), CryptoUtil.getPublicKey(publicKey));
         if (!checkSign) {
             System.out.println("------ERROR! Invalid sign for the req:{}" + JSONObject.toJSONString(req));
-            return handle(CommonResp.of("ERROR", "invalid signature", null));
+            return ResponseEntity.status(400).body(
+                    handle(CommonResp.of("ERROR", "invalid signature", null))
+                    );
         }
         // decrypt the biz data with your private key
         String bizData = null;
@@ -43,14 +47,18 @@ public class DemoController {
             bizData = CryptoUtil.decrypt(req.getData(), aesKeyPlainText);
         } catch (Exception ex) {
             System.out.println("------ERROR! Decryption failed");
-            return handle(CommonResp.of("ERROR", "Decryption failed", null));
+            return  ResponseEntity.status(400).body(
+                    handle(CommonResp.of("ERROR", "Decryption failed", null))
+            );
         }
         System.out.println("------Decrypted bizData:{}" + bizData);
 
         // generate the response
         BindCardResp resp = new BindCardResp();
         resp.setSessionId(UUID.randomUUID().toString());
-        return handle(CommonResp.of("OK", "request successful", resp));
+        return  ResponseEntity.status(200).body(
+                handle(CommonResp.of("OK", "request successful", resp))
+        );
     }
 
     private CommonResp handle(CommonResp commonResp) {

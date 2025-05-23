@@ -934,7 +934,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val id = rcr.getResourceId()
 
                 if (id != null && builder.hasParameterChild(a)) {
-                    location = a.resolvedPath() + "/" + id
+                    location = a.resolvedPath() + "/" + id.value
                     rcr.setHeuristicsForChainedLocation(true)
                 }
             }

@@ -1065,10 +1065,13 @@
                 <version>1.2.83</version>
             </dependency>
 
+            <!--
+                We shouldn't use Lombok in EM, but some E2E from external contributors do
+             -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.20</version>
+                <version>1.18.30</version>
             </dependency>
 
 
