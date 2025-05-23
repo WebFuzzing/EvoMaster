@@ -3,22 +3,30 @@ package org.evomaster.core.languagemodel.service
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.Lazy
+import org.evomaster.core.languagemodel.data.AnsweredPrompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaModelResponse
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
+import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.DataOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 import kotlin.math.min
 
 /**
@@ -44,6 +52,8 @@ class LanguageModelConnector {
     private var actualFixedThreadPool = 0
 
     private lateinit var workerPool: ExecutorService
+
+    private val httpClients: ConcurrentHashMap<Long, Client> = ConcurrentHashMap()
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LanguageModelConnector::class.java)
@@ -73,14 +83,10 @@ class LanguageModelConnector {
     @PreDestroy
     private fun preDestroy() {
         if (config.languageModelConnector) {
-            shutdown()
+            httpClients.values.forEach { it.close() }
+            workerPool.shutdown()
+            prompts.clear()
         }
-    }
-
-    private fun shutdown() {
-        Lazy.assert { config.languageModelConnector }
-        workerPool.shutdown()
-        prompts.clear()
     }
 
     /**
@@ -93,15 +99,25 @@ class LanguageModelConnector {
 
         validatePrompt(prompt)
 
-        val id = getId()
+        val promptId = getIdForPrompt()
 
-        prompts[id] = Prompt(id, prompt)
+        prompts[promptId] = Prompt(promptId, prompt)
 
         val task = Runnable {
-            makeQuery(prompt)
+            val id = Thread.currentThread().id
+            val httpClient = httpClients.getOrPut(id) {
+                initialiseHttpClient()
+            }
+            makeQueryWithClient(httpClient, prompt)
         }
 
         workerPool.submit(task)
+    }
+
+    private fun initialiseHttpClient(): Client {
+        val client = HttpClientFactory.createTrustingJerseyClient(false, 60_000)
+
+        return client
     }
 
     /**
@@ -123,78 +139,82 @@ class LanguageModelConnector {
      * To query the large language server with a simple prompt.
      * @return answer string from the language model server
      */
-    fun query(prompt: String): String? {
+    fun queryWithHttpClient(prompt: String): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
         validatePrompt(prompt)
 
-        return makeQuery(prompt)
-    }
-
-    private fun makeQuery(prompt: String, id: UUID? = null): String? {
-        validatePrompt(prompt)
-
-        val languageModelServerURL = getLanguageModelServerGenerateURL()
-
-        val languageModelName = getLanguageModelName()
-
-        val requestBody = objectMapper.writeValueAsString(
-            OllamaRequest(
-                prompt = prompt,
-                stream = false,
-                model = languageModelName.toString()
-            )
-        )
-
-        val response = call(languageModelServerURL, requestBody)
-
-        if (id != null) {
-            if (prompts.contains(id)) {
-                val existingPrompt = prompts[id]
-
-                if (existingPrompt != null) {
-                    existingPrompt?.answer = response
-                }
-            }
+        val client = httpClients.getOrPut(Thread.currentThread().id) {
+            initialiseHttpClient()
         }
+
+        val response = makeQueryWithClient(client, prompt)
 
         return response
     }
 
     private fun isModelAvailable(): Boolean {
-        val url = config.languageModelServerURL + "/api/tags"
+        val url = getLanguageModelServerGenerateURL() + "api/tags"
 
-        try {
-            val connection = URL(url).openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 1000
-            connection.doInput = true
-            connection.useCaches = false
+        val languageModelName = getLanguageModelName()
 
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.uniqueWarn(
-                    log,
-                    "Failed to connect to language model server with status code ${connection.responseCode}"
-                )
-                return false
-            }
+        val client = httpClients.getOrPut(Thread.currentThread().id) {
+            initialiseHttpClient()
+        }
 
-            val response = objectMapper.readValue(
-                connection.inputStream,
+        val response = callWithClient(client, url, OllamaRequestVerb.GET)
+
+        if (response != null && response.status == 200 && response.hasEntity()) {
+            val body = response.readEntity(String::class.java)
+
+            val bodyObject = objectMapper.readValue(
+                body,
                 OllamaModelResponse::class.java
             )
 
-            if (response.models.any { it.name == config.languageModelName }) {
+            if (bodyObject.models.any { it.name == languageModelName }) {
                 return true
             }
-
-        } catch (e: Exception) {
-            return false
         }
 
         return false
+    }
+
+    private fun makeQueryWithClient(httpClient: Client, prompt: String, promptId: UUID? = null): AnsweredPrompt? {
+        validatePrompt(prompt)
+
+        val languageModelServerURL = getLanguageModelServerGenerateURL() + "api/generate"
+        val languageModelName = getLanguageModelName()
+
+        val requestBody = objectMapper.writeValueAsString(
+            OllamaRequest(
+                languageModelName.toString(),
+                prompt,
+                false
+            )
+        )
+
+        val response = callWithClient(httpClient, languageModelServerURL, OllamaRequestVerb.POST, requestBody)
+
+        if (response != null && response.status == 200 && response.hasEntity()) {
+            val body = response.readEntity(String::class.java)
+            val bodyObject = objectMapper.readValue(
+                body,
+                OllamaResponse::class.java
+            )
+
+            val answer = AnsweredPrompt(
+                prompt,
+                bodyObject.response,
+                promptId
+            )
+
+            return answer
+        }
+
+        return null
     }
 
     /**
@@ -206,45 +226,33 @@ class LanguageModelConnector {
      * Reference:
      * https://medium.com/dcoderai/how-to-handle-cors-settings-in-ollama-a-comprehensive-guide-ee2a5a1beef0
      */
-    private fun call(languageModelServerURL: String, requestBody: String): String? {
-        try {
-            val connection = URL(languageModelServerURL).openConnection() as HttpURLConnection
-            connection.requestMethod = "POST"
-            // TODO: set to avoid long running calls
-            connection.connectTimeout = 4000
-            connection.setRequestProperty("Content-Type", "application/json")
-            connection.useCaches = false
-            connection.doInput = true
-            connection.doOutput = true
+    private fun callWithClient(
+        httpClient: Client,
+        languageModelServerURL: String,
+        requestMethod: OllamaRequestVerb,
+        requestBody: String? = "",
+    ): Response? {
+        val bodyEntity = Entity.entity(requestBody, MediaType.APPLICATION_JSON_TYPE)
 
-            val writer = DataOutputStream(connection.outputStream)
-            writer.writeBytes(requestBody)
-            writer.flush()
-            writer.close()
+        val builder = httpClient.target(languageModelServerURL)
+            .request("application/json")
 
-            if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                LoggingUtil.uniqueWarn(
-                    log,
-                    "Failed to connect to language model server with status code ${connection.responseCode}"
-                )
-                return null
-            }
+        val invocation = when (requestMethod) {
+            OllamaRequestVerb.GET -> builder.buildGet()
+            OllamaRequestVerb.POST -> builder.buildPost(bodyEntity)
+        }
 
-            // This is designed to use the non-stream outputs.
-            // If stream is needed, consider implementing a
-            // different method to handle stream outputs.
-            val response = objectMapper.readValue(
-                connection.inputStream,
-                OllamaResponse::class.java
-            )
-
-            return response.response
+        val response = try {
+            invocation.invoke()
         } catch (e: Exception) {
-            LoggingUtil.uniqueWarn(log, "Failed to connect to language model server: ${e.message}.")
+            LoggingUtil.uniqueWarn(log, "Failed to connect to the language model server. Error: ${e.message}")
 
             return null
         }
+
+        return response
     }
+
 
     /**
      * @return the large language model server URL from EMConfig
@@ -255,7 +263,7 @@ class LanguageModelConnector {
             throw IllegalArgumentException("Language model URL cannot be empty")
         }
 
-        return config.languageModelServerURL + "api/generate"
+        return config.languageModelServerURL
     }
 
     /**
@@ -272,7 +280,7 @@ class LanguageModelConnector {
         return config.languageModelName
     }
 
-    private fun getId(): UUID {
+    private fun getIdForPrompt(): UUID {
         return UUID.randomUUID()
     }
 

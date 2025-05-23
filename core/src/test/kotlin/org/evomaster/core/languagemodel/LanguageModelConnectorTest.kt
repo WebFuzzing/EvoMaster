@@ -90,11 +90,11 @@ class LanguageModelConnectorTest {
         // If languageModelName or languageModelURL set to empty, an exception
         // will the thrown.
         config.languageModelName = LANGUAGE_MODEL_NAME
-        config.languageModelServerURL = ollama_url
+//        config.languageModelServerURL = ollama_url
 
         // gemma3:1b returns with a newline character
-        val answer = languageModelConnector.query("Is A is the first letter in english alphabet? say YES or NO")
+        val answer = languageModelConnector.queryWithHttpClient("Is A is the first letter in english alphabet? say YES or NO")
 
-        Assertions.assertEquals(answer, "YES\n")
+        Assertions.assertEquals(answer!!.answer, "YES\n")
     }
 }

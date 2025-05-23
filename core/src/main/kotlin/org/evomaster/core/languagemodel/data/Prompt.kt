@@ -8,7 +8,7 @@ class Prompt (
     val prompt: String
 ) {
 
-    var answer: String? = null
+    var answer: AnsweredPrompt? = null
 
     fun hasAnswer(): Boolean {
         return this.answer != null
