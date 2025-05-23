@@ -310,7 +310,7 @@ public class SqlHandler {
         }
 
         // compute the SQL heuristics using the fetched data
-        SqlHeuristicsCalculator.Builder builder = new SqlHeuristicsCalculator.Builder();
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator sqlHeuristicsCalculator = builder
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .withTaintHandler(taintHandler)
