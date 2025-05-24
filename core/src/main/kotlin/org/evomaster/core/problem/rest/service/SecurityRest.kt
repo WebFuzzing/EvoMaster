@@ -665,19 +665,29 @@ class SecurityRest {
                 )
 
                 val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
-                val lastCall = first.seeMainExecutableActions().last().copy()
-                val repeat = lastCall.copy() as RestCallAction
-                val repeatWithNoAuth = lastCall.copy() as RestCallAction
-                repeatWithNoAuth.auth = HttpWsNoAuth()
+                val lastActionIndividual = first.copy() as RestIndividual
+
+                if(lastActionIndividual.seeMainExecutableActions().last().verb.isReadOperation()) {
+                    //if the endpoint is a read operation, we can remove all other actions
+                    while(lastActionIndividual.seeMainExecutableActions().size > 1){
+                        lastActionIndividual.removeMainExecutableAction(0)
+                    }
+                }
+
+                val lastActionWithoutAuth = lastActionIndividual.copy() as RestIndividual
+
+                lastActionWithoutAuth.seeMainExecutableActions().last().auth = HttpWsNoAuth()
+
 
                 val otherUsers = authSettings.getAllOthers(first.seeMainExecutableActions().last().auth.name, HttpWsAuthenticationInfo::class.java)
                 otherUsers.forEach{ user ->
-                    repeat.auth = user
-                    val finalIndividual = first.copy() as RestIndividual
-                    finalIndividual.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                    finalIndividual.addMainActionInEmptyEnterpriseGroup(action = repeatWithNoAuth)
-                    finalIndividual.resetLocalIdRecursively()
-                    finalIndividual.doInitializeLocalId()
+                    lastActionIndividual.seeMainExecutableActions().last().auth = user
+
+                    val finalIndividual = RestIndividualBuilder.merge(
+                        first,
+                        lastActionIndividual,
+                        lastActionWithoutAuth
+                    )
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)
                     finalIndividual.ensureFlattenedStructure()
