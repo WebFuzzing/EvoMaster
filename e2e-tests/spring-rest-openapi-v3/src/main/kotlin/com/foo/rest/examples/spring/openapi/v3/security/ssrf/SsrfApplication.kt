@@ -36,7 +36,9 @@ open class SsrfApplication {
             }
 
             val url = URL(userInfo.profileImageUrl)
-            val image = url.openConnection().getInputStream().readBytes()
+            val connection = url.openConnection()
+            connection.connectTimeout = 1000
+            val image = connection.getInputStream().readBytes()
 
             // Note: Here the saving file should exist
 
@@ -52,7 +54,9 @@ open class SsrfApplication {
     open fun fetchStockData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
         if (remoteData.sensorUrl!!.isNotEmpty()) {
             val url = URL(remoteData.sensorUrl)
-            val value = url.openConnection().getInputStream().readBytes()
+            val connection = url.openConnection()
+            connection.connectTimeout = 1000
+            val value = connection.getInputStream().readBytes()
             val mapper = ObjectMapper()
 
             try {
