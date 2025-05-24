@@ -9,6 +9,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
@@ -222,9 +223,7 @@ class SecurityRest {
                     }
                 }
             }
-
     }
-
 
     private fun addForAccessControl() {
 
@@ -259,6 +258,7 @@ class SecurityRest {
         //authenticated, but wrongly getting 401 (eg instead of 403)
         handleNotRecognizedAuthenticated()
 
+        handleForgottenAuthentication()
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -601,6 +601,109 @@ class SecurityRest {
             assert(added)
         }
     }
+
+
+    /**
+     * Check if there is a test case with a 403 and another one with a 200 without authentication.
+     * To check this, there must be a resource. It can either be newly created or already exist,
+     * such as during initialization. While the user who created this
+     * resource can access it (200), the other user cannot (403). However, if a 200 status code is
+     * returned when attempting to access the same resource without sending the authorization header,
+     * it indicates that authorization checks are wrongly ignored if no auth info is set.
+     * Example:
+     * POST /resources/ AUTH1 -> 201 (location header: /resources/42/)
+     * GET /resources/42/ AUTH1 -> 200
+     * GET /resources/42/ AUTH2 -> 403
+     * GET /resources/42/ NOAUTH -> 200
+     */
+    private fun handleForgottenAuthentication() {
+        actionDefinitions.forEach { op ->
+            val i403or401 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusCodes = listOf(401,403)
+            )
+
+            if (i403or401.isEmpty()) {
+                return@forEach //there is not any protected resource for this path/verb.
+            }
+
+            val i2xx = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(i2xx.isNotEmpty()){
+                //will create a new individual
+
+                return@forEach
+            }
+
+            // now we are creating a request
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (candidates.isEmpty()) {
+                return@forEach
+            }
+            candidates.map {
+                it.copy()
+            }.forEach { ind ->
+                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    ind,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx
+                )
+
+                val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
+                val lastActionIndividual = first.copy() as RestIndividual
+
+                if(lastActionIndividual.seeMainExecutableActions().last().verb.isReadOperation()) {
+                    //if the endpoint is a read operation, we can remove all other actions
+                    while(lastActionIndividual.seeMainExecutableActions().size > 1){
+                        lastActionIndividual.removeMainExecutableAction(0)
+                    }
+                }
+
+                val lastActionWithoutAuth = lastActionIndividual.copy() as RestIndividual
+
+                lastActionWithoutAuth.seeMainExecutableActions().last().auth = HttpWsNoAuth()
+
+
+                val otherUsers = authSettings.getAllOthers(first.seeMainExecutableActions().last().auth.name, HttpWsAuthenticationInfo::class.java)
+                otherUsers.forEach{ user ->
+                    lastActionIndividual.seeMainExecutableActions().last().auth = user
+
+                    val finalIndividual = RestIndividualBuilder.merge(
+                        first,
+                        lastActionIndividual,
+                        lastActionWithoutAuth
+                    )
+
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
+
+                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if(ei != null) {
+                        archive.addIfNeeded(ei)
+                    }
+                }
+            }
+        }
+    }
+
+
 
     /**
      * @return a test where last action is for given path and verb returning 403.
