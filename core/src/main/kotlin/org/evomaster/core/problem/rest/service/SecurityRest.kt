@@ -654,48 +654,43 @@ class SecurityRest {
             if (candidates.isEmpty()) {
                 return@forEach
             }
+
             candidates.map {
-                it.copy()
+                it.individual.copy()
             }.forEach { ind ->
-                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                    ind,
-                    op.verb,
-                    op.path,
-                    statusGroup = StatusGroup.G_2xx
-                )
 
-                val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ind.individual, actionIndex)
-                val lastActionIndividual = first.copy() as RestIndividual
+                val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
+                val copyNoAuthLast = copyLast.copy() as RestCallAction
 
-                if(lastActionIndividual.seeMainExecutableActions().last().verb.isReadOperation()) {
-                    //if the endpoint is a read operation, we can remove all other actions
-                    while(lastActionIndividual.seeMainExecutableActions().size > 1){
-                        lastActionIndividual.removeMainExecutableAction(0)
-                    }
-                }
+                copyLast.resetLocalIdRecursively()
+                copyNoAuthLast.resetLocalIdRecursively()
 
-                val lastActionWithoutAuth = lastActionIndividual.copy() as RestIndividual
+                val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
 
-                lastActionWithoutAuth.seeMainExecutableActions().last().auth = HttpWsNoAuth()
+                otherUsers.forEach { other ->
+                    val finalIndividual = ind.copy() as RestIndividual
 
+                    copyLast.auth = other
+                    copyNoAuthLast.auth = HttpWsNoAuth()
 
-                val otherUsers = authSettings.getAllOthers(first.seeMainExecutableActions().last().auth.name, HttpWsAuthenticationInfo::class.java)
-                otherUsers.forEach{ user ->
-                    lastActionIndividual.seeMainExecutableActions().last().auth = user
-
-                    val finalIndividual = RestIndividualBuilder.merge(
-                        first,
-                        lastActionIndividual,
-                        lastActionWithoutAuth
+                    finalIndividual.addResourceCall(
+                        restCalls = RestResourceCalls(
+                            actions = mutableListOf(copyLast, copyNoAuthLast),
+                            sqlActions = listOf()
+                        )
                     )
+                    finalIndividual.seeMainExecutableActions()
+                        .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
+                        it.saveCreatedResourceLocation = true
+                    }
+                    finalIndividual.fixResourceForwardLinks()
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)
                     finalIndividual.ensureFlattenedStructure()
-
-                    org.evomaster.core.Lazy.assert {finalIndividual.verifyValidity(); true}
+                    org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
 
                     val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
-                    if(ei != null) {
+                    if (ei != null) {
                         archive.addIfNeeded(ei)
                     }
                 }
