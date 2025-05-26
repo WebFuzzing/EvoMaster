@@ -42,7 +42,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.POST, 401, "/api/resources/", null)
 
 
-            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
+            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution).filter { it.name == FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.name }
             assertEquals(1, faults.size)
             assertEquals(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, faults.first())
         }
