@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service.module
 
 import com.google.inject.TypeLiteral
-import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -19,55 +18,58 @@ import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 
-class RestModule(private val bindRemote: Boolean = true) : RestBaseModule() {
+class RestModule(private val bindRemote : Boolean = true) : RestBaseModule(){
 
     override fun configure() {
 
         super.configure()
 
-        if (bindRemote) {
+        if (bindRemote){
             bind(RemoteController::class.java)
                 .to(RemoteControllerImplementation::class.java)
                 .asEagerSingleton()
         }
 
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
-            .to(RestSampler::class.java)
-            .asEagerSingleton()
+                .to(RestSampler::class.java)
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
-            .to(RestSampler::class.java)
-            .asEagerSingleton()
+                .to(RestSampler::class.java)
+                .asEagerSingleton()
 
         bind(AbstractRestSampler::class.java)
-            .to(RestSampler::class.java)
-            .asEagerSingleton()
+                .to(RestSampler::class.java)
+                .asEagerSingleton()
 
         bind(RestSampler::class.java)
-            .asEagerSingleton()
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RestIndividual>>() {})
-            .to(RestFitness::class.java)
-            .asEagerSingleton()
+                .to(RestFitness::class.java)
+                .asEagerSingleton()
 
         bind(object : TypeLiteral<AbstractRestFitness>() {})
             .to(ResourceRestFitness::class.java)
             .asEagerSingleton()
 
+
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
-            .to(RestFitness::class.java)
-            .asEagerSingleton()
+                .to(RestFitness::class.java)
+                .asEagerSingleton()
+
 
         bind(object : TypeLiteral<Mutator<RestIndividual>>() {})
-            .to(object : TypeLiteral<StandardMutator<RestIndividual>>() {})
-            .asEagerSingleton()
+                .to(object : TypeLiteral<StandardMutator<RestIndividual>>(){})
+                .asEagerSingleton()
 
         bind(StructureMutator::class.java)
-            .to(RestStructureMutator::class.java)
-            .asEagerSingleton()
+                .to(RestStructureMutator::class.java)
+                .asEagerSingleton()
+
 
         bind(HttpWsExternalServiceHandler::class.java)
-            .asEagerSingleton()
+                .asEagerSingleton()
 
         bind(HarvestActualHttpWsResponseHandler::class.java)
             .asEagerSingleton()
