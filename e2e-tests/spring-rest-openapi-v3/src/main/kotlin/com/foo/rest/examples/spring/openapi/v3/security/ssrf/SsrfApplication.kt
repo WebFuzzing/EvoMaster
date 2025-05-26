@@ -2,6 +2,9 @@ package com.foo.rest.examples.spring.openapi.v3.security.ssrf
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -24,6 +27,12 @@ open class SsrfApplication {
         }
     }
 
+    @Operation(summary = "POST endpoint to fetch remote image", description = "Can be used to fetch remote profile image for user.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successful response"),
+        ApiResponse(responseCode = "400", description = "Invalid request"),
+        ApiResponse(responseCode = "500", description = "Invalid server error")
+    ])
     @PostMapping(path = ["/fetch/image"])
     open fun fetchUserImage(@RequestBody userInfo: UserDto) : ResponseEntity<String> {
         if (userInfo.userId!!.isNotEmpty() && userInfo.profileImageUrl!!.isNotEmpty()) {
@@ -50,6 +59,12 @@ open class SsrfApplication {
         return ResponseEntity.badRequest().body("Invalid request")
     }
 
+    @Operation(summary = "POST endpoint to fetch sensor data", description = "Can be used to fetch sensor data from remote source")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successful response"),
+        ApiResponse(responseCode = "400", description = "Invalid request"),
+        ApiResponse(responseCode = "500", description = "Invalid server error")
+    ])
     @PostMapping(path = ["/fetch/data"])
     open fun fetchStockData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
         if (remoteData.sensorUrl!!.isNotEmpty()) {

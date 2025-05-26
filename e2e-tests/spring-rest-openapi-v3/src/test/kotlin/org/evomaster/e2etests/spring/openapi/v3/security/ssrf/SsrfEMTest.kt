@@ -18,7 +18,7 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-//    @Disabled("Work in progress")
+    @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
@@ -36,10 +36,10 @@ class SsrfEMTest: SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
+            assertTrue(solution.individuals.isNotEmpty())
 
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
         }
     }
 }
