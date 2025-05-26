@@ -638,7 +638,21 @@ class SecurityRest {
             )
 
             if(i2xx.isNotEmpty()){
-                //will create a new individual
+                val first = i403or401.minBy { it.individual.size() }
+                val second = i2xx.minBy { it.individual.size() }
+
+                val finalIndividual = RestIndividualBuilder.merge(
+                    first.individual,
+                    second.individual
+                )
+                finalIndividual.modifySampleType(SampleType.SECURITY)
+                finalIndividual.ensureFlattenedStructure()
+                org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                if (ei != null) {
+                    val added = archive.addIfNeeded(ei)
+                    assert(added)
+                }
 
                 return@forEach
             }
