@@ -206,7 +206,10 @@ open class RestActionNamingStrategyTest {
 
     @Test
     fun testResponseNamedWithMultipleFaults() {
-        val faults = listOf(DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items"), DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items"), DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items"))
+        val faults = listOf(
+            DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items"),
+            DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items"),
+            DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items"))
         val restAction = getRestCallAction()
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, faults, 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
@@ -215,7 +218,13 @@ open class RestActionNamingStrategyTest {
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
-        assertEquals("test_0_get_on_items_showsFaults_100_102_301", testCases[0].name)
+        //CANNOT HAVE hardcoded codes in the tests, as those might change
+        //assertEquals("test_0_get_on_items_showsFaults_100_102_301", testCases[0].name)
+        val name = testCases[0].name
+        assertTrue( name.startsWith("test_0_get_on_items_showsFaults_"))
+        for(f in faults) {
+            assertTrue(name.contains("${f.category.code}"))
+        }
     }
 
     @Test
