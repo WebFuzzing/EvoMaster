@@ -638,6 +638,8 @@ class SecurityRest {
             )
 
             if(i2xx.isNotEmpty()){
+                // we have a 2xx without auth, so we can create a test case
+                // we can just take the smallest 403 or 401 and the smallest 2xx
                 val first = i403or401.minBy { it.individual.size() }
                 val second = i2xx.minBy { it.individual.size() }
 
@@ -657,7 +659,7 @@ class SecurityRest {
                 return@forEach
             }
 
-            // now we are creating a request
+            // if we arrive here, we have a 403 or 401, but no 2xx without auth. Now, we can try to create one
             val candidates = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 op.verb,
@@ -673,18 +675,23 @@ class SecurityRest {
                 it.individual.copy()
             }.forEach { ind ->
 
+                // we have a candidate individual with a 2xx on the same path/verb
+                // we need to copy the last action, which is the one that returns 2xx
                 val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
                 val copyNoAuthLast = copyLast.copy() as RestCallAction
 
                 copyLast.resetLocalIdRecursively()
                 copyNoAuthLast.resetLocalIdRecursively()
 
+
                 val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
 
                 otherUsers.forEach { other ->
                     val finalIndividual = ind.copy() as RestIndividual
 
+                    // we need to set the auth for the last action to the other user
                     copyLast.auth = other
+                    // and for the no auth one, we set it to NoAuth
                     copyNoAuthLast.auth = HttpWsNoAuth()
 
                     finalIndividual.addResourceCall(
