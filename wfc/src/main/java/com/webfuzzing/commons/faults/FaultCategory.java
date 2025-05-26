@@ -16,9 +16,16 @@ public interface FaultCategory {
     public String getDescriptiveName();
 
     /**
-     * A short label to be used in test case naming when a single fault is found
+     * A short label that can be used in test case naming
      */
     public String getTestCaseLabel();
+
+    /**
+     * A full, lengthy description of this fault category.
+     * It should not contain any special formatting, as this field will be used for documentation
+     * in different context, eg, markdown and HTML.
+     */
+    public String getFullDescription();
 
     /**
      * A descriptive identifier for this category.
