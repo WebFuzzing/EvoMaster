@@ -159,7 +159,7 @@ class Main {
                                         "EvoMaster process terminated abruptly." +
                                                 " This is likely a bug in EvoMaster." +
                                                 " Please copy&paste the following stacktrace, and create a new issue on" +
-                                                " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")
+                                                " " + inBlue("https://github.com/WebFuzzing/EvoMaster/issues")
                                     ), e
                         )
                 }

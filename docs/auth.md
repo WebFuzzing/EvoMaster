@@ -6,7 +6,7 @@ And there are several different mechanism to do authentication.
 In _EvoMaster_, few mechanisms are supported, as discussed next.
 How to set them up will depend on whether you are doing _white_ or _black_ box testing. 
 
-__NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/EMResearch/EvoMaster/issues).     
+__NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/WebFuzzing/EvoMaster/issues).     
 
 
 The following documentation is divided on whether the tested API is a REST/GraphQL one, or RPC.
@@ -105,7 +105,7 @@ The different fields are then validated on load.
 To read the documentation of such fields, you can look at the [JavaDocs for that class](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller-api/latest/index.html).
 Note: the previous link is for the documentation of released versions of _EvoMaster_. 
 If you are using latest SNAPSHOT (e.g., built directly from latest `master` branch of the Git repository), the DTO definitions could be updated (e.g., there was major refactoring after version `2.0.0`). 
-In such case, you could directly look at the documentation in the [AuthenticationDto class](https://github.com/EMResearch/EvoMaster/blob/master/client-java/controller-api/src/main/java/org/evomaster/client/java/controller/api/dto/auth/AuthenticationDto.java). 
+In such case, you could directly look at the documentation in the [AuthenticationDto class](https://github.com/WebFuzzing/EvoMaster/blob/master/client-java/controller-api/src/main/java/org/evomaster/client/java/controller/api/dto/auth/AuthenticationDto.java). 
 
 
 
@@ -121,7 +121,7 @@ This DTOs can be instantiated directly.
 The `org.evomaster.client.java.controller.AuthUtils` can be used to simplify the creation of such
 configuration objects, e.g., by using methods like `getForDefaultSpringFormLogin()`.
 Consider the following example from the `proxyprint` case study
-in the [EMB repository](https://github.com/EMResearch/EMB).
+in the [EMB repository](https://github.com/WebFuzzing/EMB).
 
 ```
 @Override
