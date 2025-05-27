@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
-import kotlin.math.*
+import java.io.File
 
 
 class AICNumericTest : IntegrationTestRestBase() {
@@ -66,6 +66,12 @@ class AICNumericTest : IntegrationTestRestBase() {
             result = (individual.evaluatedMainActions()[0].result as RestCallResult).getStatusCode()
 
             println("Sampled x=$xValue, got status=$result")
+
+            val csvFile = File("samples.csv")
+            if (it == 0) {
+                csvFile.writeText("x,result\n") // header on first iteration
+            }
+            csvFile.appendText("$xValue,$result\n")
 
             if (result == 200) {
                 model.updateAccepted(xValue)
