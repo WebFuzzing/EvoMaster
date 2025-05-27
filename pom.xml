@@ -34,13 +34,13 @@
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 
@@ -1065,10 +1065,13 @@
                 <version>1.2.83</version>
             </dependency>
 
+            <!--
+                We shouldn't use Lombok in EM, but some E2E from external contributors do
+             -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.20</version>
+                <version>1.18.30</version>
             </dependency>
 
 

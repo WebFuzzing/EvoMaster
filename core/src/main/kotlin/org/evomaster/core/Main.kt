@@ -161,7 +161,7 @@ class Main {
                                         "EvoMaster process terminated abruptly." +
                                                 " This is likely a bug in EvoMaster." +
                                                 " Please copy&paste the following stacktrace, and create a new issue on" +
-                                                " " + inBlue("https://github.com/EMResearch/EvoMaster/issues")
+                                                " " + inBlue("https://github.com/WebFuzzing/EvoMaster/issues")
                                     ), e
                         )
                 }
@@ -829,6 +829,11 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+            // TODO: support Kotlin for DTOs
+            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJava()) {
+                writer.writeDtos(solution.getFileName().name)
+            }
 
             val splitResult = TestSuiteSplitter.split(solution, config)
 

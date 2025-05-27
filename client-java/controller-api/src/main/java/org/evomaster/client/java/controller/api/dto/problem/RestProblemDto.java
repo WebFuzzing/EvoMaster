@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.api.dto.problem;
 
+import org.evomaster.client.java.controller.api.dto.problem.param.RestDerivedParamDto;
+
 import java.util.List;
 
 /**
@@ -25,4 +27,7 @@ public class RestProblemDto extends ProblemInfoDto{
      * should not be set
      */
     public String openApiSchema;
+
+
+    public List<RestDerivedParamDto> derivedParams;
 }

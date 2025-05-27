@@ -28,6 +28,12 @@ public class FunctionFinder {
         this.addFunction(new TimeFunction());
         this.addFunction(new UpperFunction());
         this.addFunction(new StringDecodeFunction());
+        // aggregation functions
+        this.addFunction(new SqlCountFunction());
+        this.addFunction(new SqlMaxFunction());
+        this.addFunction(new SqlMinFunction());
+        this.addFunction(new SqlSumFunction());
+        this.addFunction(new SqlAvgFunction());
     }
 
     public SqlFunction getFunction(String functionName) {

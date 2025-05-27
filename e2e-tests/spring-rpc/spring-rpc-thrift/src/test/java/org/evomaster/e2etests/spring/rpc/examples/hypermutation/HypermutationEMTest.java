@@ -56,6 +56,8 @@ public class HypermutationEMTest extends RPCHypermutationTestBase {
                     //minimization loses impact info
                     args.add("--minimize");
                     args.add("false");
+                    setOption(args,"security","false"); //doesn't work without minimize
+
 
                     args.add("--probOfRandomSampling");
                     args.add("0.0");

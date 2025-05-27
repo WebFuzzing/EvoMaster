@@ -4,7 +4,7 @@ There are many ways in which you can contribute.
 If you found _EvoMaster_ of any use, _the easiest
 way to show appreciation is to **star** it_.
 Issues and feature requests can be reported on
-the [issues](https://github.com/EMResearch/EvoMaster/issues) page:  
+the [issues](https://github.com/WebFuzzing/EvoMaster/issues) page:  
   
 * *Bugs*: as for any bug report, the more detailed
   you can be the better.
@@ -32,7 +32,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
 
 * *Industry Collaborations*: to evaluate the effectiveness of _EvoMaster_, we need case studies.
   There are some open-source projects that can be used (e.g., which we selected and aggregated in the
-  [EMB repository](https://github.com/EMResearch/EMB)).
+  [EMB repository](https://github.com/WebFuzzing/EMB)).
   But open-source applications are not necessarily representative of software developed in industry.
   Therefore, we "collaborate" with different companies (e.g., currently Volkswagen and Meituan),
   to apply _EvoMaster_ on their systems.
