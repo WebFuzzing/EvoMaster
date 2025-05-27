@@ -45,14 +45,22 @@ class AICNumericTest : IntegrationTestRestBase() {
     @Test
     fun learnValidNumberRangeUsingNaiveGaussian() {
         val pirTest = getPirToRest()
-        val initialMean = Random.nextDouble(0.0, 5000.0)
-        val model = NaiveGaussianModel1D(initialMean = initialMean, initialVariance = 10.0)
-        val numIterations = 5000
-        var result: Int? = 0;
-        repeat(numIterations) {
-            val sample = model.sample()
-            val xValue = sample.toInt().coerceIn(0, 5000)
+        val lowerBound = -5_000
+        val upperBound = 5_000
 
+        val initialMean: Int = try {
+            findInitialValidInput(lowerBound, upperBound, 10_000)
+        } catch (e: Exception) {
+            Random.nextInt(lowerBound, upperBound)
+        }
+
+        val model = NaiveGaussianModel1D(initialMean = initialMean, initialVariance = 10.0, lowerBound, upperBound)
+
+        val numIterations = 2_000
+        var result: Int? = 0;
+
+        repeat(numIterations) {
+            val xValue = model.sample()
             val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to xValue.toString()))!!
             val individual = createIndividual(listOf(get), SampleType.RANDOM)
             result = (individual.evaluatedMainActions()[0].result as RestCallResult).getStatusCode()
@@ -60,14 +68,37 @@ class AICNumericTest : IntegrationTestRestBase() {
             println("Sampled x=$xValue, got status=$result")
 
             if (result == 200) {
-                model.updateAccepted(xValue.toDouble())
-            } else if (result == 400) {
-                model.updateRejected(xValue.toDouble())
+                model.updateAccepted(xValue)
+            }
+            else if (result == 400) {
+                model.updateRejected(xValue)
             }
         }
 
         println("Final mean: ${model.mean()}, variance: ${model.variance()}")
         assertEquals(result, 200)
+    }
+
+    private fun findInitialValidInput(
+        min: Int = Int.MIN_VALUE,
+        max: Int = Int.MAX_VALUE,
+        maxAttempts: Int = 10_000
+    ): Int {
+        val pirTest = getPirToRest()
+        val rng = Random.Default
+
+        repeat(maxAttempts) {
+            val guess = rng.nextInt(min, max + 1)
+
+            val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to guess.toString()))!!
+            val individual = createIndividual(listOf(get), SampleType.RANDOM)
+            val result = (individual.evaluatedMainActions()[0].result as RestCallResult).getStatusCode()
+
+            println("Trying initial x=$guess, got status=$result")
+            if (result == 200) return guess
+        }
+
+        error("Failed to find a valid initial value after $maxAttempts attempts")
     }
 
 
