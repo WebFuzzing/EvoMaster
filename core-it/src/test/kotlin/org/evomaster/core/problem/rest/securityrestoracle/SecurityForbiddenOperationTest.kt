@@ -5,6 +5,7 @@ import bar.examples.it.spring.securityforbiddenoperation.SecurityForbiddenOperat
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.JdkIssue
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
@@ -133,7 +134,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(FaultCategory.SECURITY_FORBIDDEN_DELETE, faults.first())
+        assertEquals(ExperimentalFaultCategory.SECURITY_FORBIDDEN_DELETE, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -191,7 +192,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(FaultCategory.SECURITY_FORBIDDEN_PUT, faults.first())
+        assertEquals(ExperimentalFaultCategory.SECURITY_FORBIDDEN_PUT, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
@@ -237,7 +238,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
 
         val faults = DetectedFaultUtils.getDetectedFaultCategories(target)
         assertEquals(1, faults.size)
-        assertEquals(FaultCategory.SECURITY_FORBIDDEN_PATCH, faults.first())
+        assertEquals(ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, faults.first())
 
         assertEquals(3, target.individual.size())
         assertEquals("/api/resources/$id", target.individual.seeMainExecutableActions()[0].resolvedPath())
