@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.notrecognized
+package org.evomaster.e2etests.spring.openapi.v3.security.forgottenauthentication
 
-import com.foo.rest.examples.spring.openapi.v3.security.notrecognized.NotRecognizedController
+import com.foo.rest.examples.spring.openapi.v3.security.forgottenauthentication.ForgottenAuthenticationController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SecurityNotRecognizedEMTest : SpringTestBase(){
+class ForgottenAuthenticationEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(NotRecognizedController())
+            initClass(ForgottenAuthenticationController())
         }
     }
 
@@ -25,8 +25,8 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "SecurityNotRecognizedEM",
-                200
+                "ForgottenAuthenticationEM",
+                100
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
@@ -39,12 +39,11 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 401, "/api/resources/", null)
 
 
-            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution).filter { it.name == FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.name }
+            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, faults.first())
+            assertEquals(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, faults.first())
         }
     }
 }
