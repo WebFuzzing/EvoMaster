@@ -640,21 +640,26 @@ class SecurityRest {
             if(i2xx.isNotEmpty()){
                 // we have a 2xx without auth, so we can create a test case
                 // we can just take the smallest 403 or 401 and the smallest 2xx
-//                val first = i403or401.minBy { it.individual.size() }
-//                val second = i2xx.minBy { it.individual.size() }
-//
-//                val finalIndividual = RestIndividualBuilder.merge(
-//                    first.individual,
-//                    second.individual
-//                )
-//                finalIndividual.modifySampleType(SampleType.SECURITY)
-//                finalIndividual.ensureFlattenedStructure()
-//                org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
-//                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
-//                if (ei != null) {
-//                    val added = archive.addIfNeeded(ei)
-//                    assert(added)
-//                }
+
+                // note: mocked external services might return 401/403 or 2xx without auth.
+                // in this case, we couldn't merge them because of "child already present" error.
+                // we need to fix this.
+
+                val first = i403or401.minBy { it.individual.size() }
+                val second = i2xx.minBy { it.individual.size() }
+
+                val finalIndividual = RestIndividualBuilder.merge(
+                    first.individual,
+                    second.individual
+                )
+                finalIndividual.modifySampleType(SampleType.SECURITY)
+                finalIndividual.ensureFlattenedStructure()
+                org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                if (ei != null) {
+                    val added = archive.addIfNeeded(ei)
+                    assert(added)
+                }
 
                 return@forEach
             }
