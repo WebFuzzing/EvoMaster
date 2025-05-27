@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.openapi.v3.security.forbiddendelete
 import com.foo.rest.examples.spring.openapi.v3.security.forbiddendelete.SecurityForbiddenDeleteController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -36,7 +37,7 @@ class SecurityForbiddenDeleteEMTest : SpringTestBase(){
             assertTrue(solution.individuals.size >= 1)
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(FaultCategory.SECURITY_FORBIDDEN_DELETE, faults.first())
+            assertEquals(ExperimentalFaultCategory.SECURITY_FORBIDDEN_DELETE, faults.first())
         }
     }
 }

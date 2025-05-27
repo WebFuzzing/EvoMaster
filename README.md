@@ -206,7 +206,7 @@ Current open positions: none.
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
 < !---
-For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
+For more details on current vacancies, see our group page at [AISE Lab](https://WebFuzzing.github.io/).
 --->
 
 

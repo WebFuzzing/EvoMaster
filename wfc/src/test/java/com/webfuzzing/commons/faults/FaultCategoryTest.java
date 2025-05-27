@@ -12,9 +12,9 @@ class FaultCategoryTest {
     @Test
     public void testUniqueCodes() {
 
-        int total = FaultCategory.values().length;
-        int unique = Arrays.stream(FaultCategory.values())
-                .map(c -> c.code)
+        int total = DefinedFaultCategory.values().length;
+        int unique = Arrays.stream(DefinedFaultCategory.values())
+                .map(c -> c.getCode())
                 .collect(Collectors.toSet())
                 .size();
 
