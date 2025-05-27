@@ -3,6 +3,7 @@ package org.evomaster.core.problem.webfrontend.service
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.enterprise.service.EnterpriseFitness
 import org.evomaster.core.problem.webfrontend.*
@@ -221,7 +222,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                     if(!found){
                         issues = true
 
-                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.WEB_BROKEN_LINK,it))
+                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.WEB_BROKEN_LINK,it))
                         fv.updateTarget(id, 1.0)
                     }
                     webGlobalState.addExternalLink(url, found, urlOfHtmlPage)

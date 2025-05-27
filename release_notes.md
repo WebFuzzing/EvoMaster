@@ -13,6 +13,8 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 - #1171: IllegalStateException: only support Map with String key in EvoMaster
 - #1159: EvoMaster crashed when reading em.yaml file 
+- #1154: Support for generating inputs dealing with RSA encryption 
+
 
 
 # Version: 3.4.0

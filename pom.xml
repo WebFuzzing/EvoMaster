@@ -34,13 +34,13 @@
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 

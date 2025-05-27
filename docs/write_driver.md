@@ -3,7 +3,7 @@
 To generate tests for [white-box testing](whitebox.md), you need an _EvoMaster Driver_ up and running before
 executing `evomaster.jar`.
 These drivers have to be built manually for each system under test (SUT).
-See the [EMB repository](https://github.com/EMResearch/EMB) for a set of existing SUTs with drivers.
+See the [EMB repository](https://github.com/WebFuzzing/EMB) for a set of existing SUTs with drivers.
 
 To build a client driver in Java (or any JVM language), you need to import the
 _EvoMaster_ Java client library. For example, in Maven:
@@ -128,12 +128,12 @@ When writing an _EvoMaster_ driver, there are 2 TCP ports that you need to consi
 How to start/reset/stop the SUT depends on the chosen framework used to implement the SUT.
 To implement an _EvoMaster Driver_ class, you need check the JavaDocs of the extended super class,
 e.g., `EmbeddedSutController`, and the existing examples in
-[EMB](https://github.com/EMResearch/EMB).
+[EMB](https://github.com/WebFuzzing/EMB).
 
 
 As _SpringBoot_ is nowadays the most common way to implement enterprise systems on the JVM, here we provide
 some discussions / walk-through on how to write a driver for it that extends `EmbeddedSutController`,
-using as reference the [driver for the *features-service* SUT in EMB](https://github.com/EMResearch/EMB/blob/master/jdk_8_maven/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
+using as reference the [driver for the *features-service* SUT in EMB](https://github.com/WebFuzzing/EMB/blob/master/jdk_8_maven/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
 
 
 To programmatically start a _SpringBoot_ application (needed to implement `startSut()`), you can use `SpringApplication.run`,
@@ -233,7 +233,7 @@ A database running in _Docker_ will still write on your hard-drive, which is an 
 time-consuming overhead.
 The idea then is to mount the folder, in which the database writes, directly in RAM.
 
-For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt).
+For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/WebFuzzing/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt).
 
 
 
