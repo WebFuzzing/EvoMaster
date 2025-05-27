@@ -63,7 +63,7 @@ object ConfigUtil {
         file.appendText("### Template configuration file for EvoMaster.\n")
         file.appendText("### Most important parameters are already present here, commented out.\n")
         file.appendText("### Note that there are more parameters that can be configured. For a full list, see:\n")
-        file.appendText("### https://github.com/EMResearch/EvoMaster/blob/master/docs/options.md\n")
+        file.appendText("### https://github.com/WebFuzzing/EvoMaster/blob/master/docs/options.md\n")
         file.appendText("### or check them with the --help option.\n")
         file.appendText("\n")
         file.appendText("\n")
@@ -92,7 +92,7 @@ object ConfigUtil {
         file.appendText("### For each possible registered user, can provide an ${AuthenticationDto::class.simpleName}" +
                 " object to define how to log them in.\n")
         file.appendText("### Different types of authentication mechanisms can be configured here.\n")
-        file.appendText("### For more information, read: https://github.com/EMResearch/EvoMaster/blob/master/docs/auth.md\n")
+        file.appendText("### For more information, read: https://github.com/WebFuzzing/EvoMaster/blob/master/docs/auth.md\n")
         file.appendText("\n")
 
         val auth = "auth"

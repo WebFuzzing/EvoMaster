@@ -694,7 +694,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         internal classes in JVM can throw this error directly, like
                         jdk.internal.util.ArraysSupport.hugeLength(...)
                         see:
-                        https://github.com/EMResearch/EvoMaster/issues/449
+                        https://github.com/WebFuzzing/EvoMaster/issues/449
                      */
                     LoggingUtil.uniqueWarn(
                         log,

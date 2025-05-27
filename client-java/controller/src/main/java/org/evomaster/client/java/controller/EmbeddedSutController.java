@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
  * For full details on how to implement this class, look at the documentation
  * for <em>Write an EvoMaster Driver for White-Box Testing</em>,
  * currently at
- * <a href=https://github.com/EMResearch/EvoMaster/blob/master/docs/write_driver.md>
- *     https://github.com/EMResearch/EvoMaster/blob/master/docs/write_driver.md</a>
+ * <a href=https://github.com/WebFuzzing/EvoMaster/blob/master/docs/write_driver.md>
+ *     https://github.com/WebFuzzing/EvoMaster/blob/master/docs/write_driver.md</a>
  * </p>
  */
 public abstract class EmbeddedSutController extends SutController {
