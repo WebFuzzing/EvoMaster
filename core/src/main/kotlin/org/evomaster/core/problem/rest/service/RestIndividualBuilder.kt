@@ -95,11 +95,21 @@ class RestIndividualBuilder {
             val other = second.copy() as RestIndividual
             other.ensureFlattenedStructure()
 
-            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+            /*
+                we need to reset local ids in other, to avoid clashes with ids in base.
+                however, need to make sure no chain is broken
+             */
+            other.seeAllActions().filterIsInstance<RestCallAction>()
+                .forEach { it.revertToWeakReference() }
+            other.resetLocalIdRecursively()
+
+            base.addInitializingActions(other.seeInitializingActions())
 
             other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
-                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+                base.addMainEnterpriseActionGroup(group)
             }
+
+            base.resolveAllTempData()
 
             /*
                 TODO are links properly handled in such a merge???
@@ -109,9 +119,6 @@ class RestIndividualBuilder {
             val after = base.seeAllActions().size
             //merge shouldn't lose any actions
             assert(before == after) { "$after!=$before" }
-
-            base.resetLocalIdRecursively()
-            base.doInitializeLocalId()
 
             base.verifyValidity()
 

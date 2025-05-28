@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import opennlp.tools.stemmer.PorterStemmer
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.IdHeuristics
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.RestResponseFeeder
 import org.evomaster.core.problem.rest.param.PathParam
@@ -75,7 +76,7 @@ class DataPool() {
         val x = extractValue(gene.name, context)
             ?: return false
 
-        if(RestResponseFeeder.heuristicIsId(gene.name) && gene.getFirstParent(PathParam::class.java)!=null){
+        if(IdHeuristics.heuristicIsId(gene.name) && gene.getFirstParent(PathParam::class.java)!=null){
             val action = gene.getFirstParent(RestCallAction::class.java)
             if(action != null && action.verb.isWriteOperation()){
                 /*

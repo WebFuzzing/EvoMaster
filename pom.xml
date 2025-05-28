@@ -29,18 +29,17 @@
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
-        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 
@@ -122,6 +121,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <wfc.version>0.0.1</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
@@ -281,6 +281,12 @@
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>commons</artifactId>
+                <version>${wfc.version}</version>
             </dependency>
 
 
@@ -1065,10 +1071,13 @@
                 <version>1.2.83</version>
             </dependency>
 
+            <!--
+                We shouldn't use Lombok in EM, but some E2E from external contributors do
+             -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
-                <version>1.18.20</version>
+                <version>1.18.30</version>
             </dependency>
 
 

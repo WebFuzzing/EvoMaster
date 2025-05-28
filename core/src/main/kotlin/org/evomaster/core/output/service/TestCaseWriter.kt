@@ -129,6 +129,7 @@ abstract class TestCaseWriter {
             //  handleFieldDeclarations.
             handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, insertionVars, test.name,testSuitePath)
         }
 
 
@@ -269,7 +270,7 @@ abstract class TestCaseWriter {
             result.getFaults().sortedBy { it.category.code }
                 .forEach {
                     val cat = it.category
-                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.descriptiveName}. ${it.context}")
                 }
         }
 

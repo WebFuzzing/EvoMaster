@@ -241,6 +241,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.controllerHost = controllerHost;
     }
 
+
+    /**
+     * Function used to derived params from the other values in the same object.
+     * @param paramName the name of the parameter we need to derive
+     * @param jsonObject JSON representation of full object evolved in EM. You might need just a subset to derive needed param
+     * @param endpointPath the path of endpoint for this object, in case need to distinguish between same params in different endpoints
+     * @return a string representation of derived value for paramName
+     * @throws Exception
+     */
+    public String deriveObjectParameterData(String paramName, String jsonObject, String endpointPath) throws Exception{
+        throw new IllegalStateException("You must override deriveObjectParameterData method if you use derived param data");
+    }
+
+
     @Override
     public InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous) {
 
@@ -283,7 +297,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             boolean advancedHeuristics){
         sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
-        sqlHandler.setAdvancedHeuristics(advancedHeuristics);
+        sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
 

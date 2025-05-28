@@ -207,7 +207,7 @@ class RestIndividual(
                 //anyone after using it?
                 var using = false
                 for(j in (i+1) until actions.size){
-                    if(actions[j].usePreviousLocationId == a.postLocationId()){
+                    if(actions[j].usePreviousLocationId == a.creationLocationId()){
                         using = true
                         break
                     }

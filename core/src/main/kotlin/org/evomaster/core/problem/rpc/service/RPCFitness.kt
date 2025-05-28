@@ -10,6 +10,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
@@ -288,7 +289,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val category = RPCCallResultCategory.valueOf(callResult.getInvocationCode()!!)
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPC(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.RPC_DECLARED_EXCEPTION,name))
+        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION,name))
 
         when(category){
             RPCCallResultCategory.HANDLED->{
@@ -314,9 +315,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 // exception type + last statement + endpoint name
                 val postfix = "${callResult.getExceptionTypeName()} $locationPotentialBug $name"
                 val descriptiveId = if (category == RPCCallResultCategory.UNEXPECTED_EXCEPTION){
-                    idMapper.getFaultDescriptiveId(FaultCategory.RPC_UNEXPECTED_EXCEPTION,postfix)
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_UNEXPECTED_EXCEPTION,postfix)
                 }else
-                    idMapper.getFaultDescriptiveId(FaultCategory.RPC_DECLARED_EXCEPTION,postfix)
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION,postfix)
 
                 val exceptionId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(exceptionId, 1.0, indexOfAction)
@@ -330,7 +331,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.RPC_INTERNAL_ERROR,postfix)
+                val descriptiveId = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_INTERNAL_ERROR,postfix)
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)
@@ -382,7 +383,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                                           locationPotentialBug: String){
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPCAndSuccess(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.RPC_HANDLED_ERROR, name))
+        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_HANDLED_ERROR, name))
 
         when{
             callResult.isSuccessfulBusinessLogicCode() ->{
@@ -400,7 +401,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.RPC_SERVICE_ERROR,postfix)
+                val descriptiveId = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_SERVICE_ERROR,postfix)
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)

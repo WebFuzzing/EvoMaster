@@ -84,7 +84,7 @@ class EMConfig {
 
         private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
 
-        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
+        private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -2004,7 +2004,7 @@ class EMConfig {
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
             " billions of characters long")
-    var maxLengthForStrings = 200
+    var maxLengthForStrings = 1024
 
 
     @Min(0.0)
@@ -2370,9 +2370,8 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
-    var security = false
+    var security = true
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
@@ -2391,12 +2390,11 @@ class EMConfig {
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
 
-    @Experimental
     @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
             " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
             " However, this is done heuristically." +
             " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
-    var blackBoxCleanUp = false
+    var blackBoxCleanUp = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2494,6 +2492,11 @@ class EMConfig {
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
             " on a single line")
     var maxLengthForCommentLine = 80
+
+    @Experimental
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){

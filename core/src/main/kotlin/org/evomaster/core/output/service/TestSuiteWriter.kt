@@ -8,6 +8,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.dto.DtoClass
+import org.evomaster.core.output.dto.DtoField
+import org.evomaster.core.output.dto.JavaDtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
@@ -15,9 +18,23 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.string.Base64StringGene
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
@@ -199,6 +216,14 @@ class TestSuiteWriter {
             lines.toString(),
             tc
         )
+    }
+
+    // TODO: take DTO extraction and writing to a different class
+    fun writeDtos(solutionFilename: String) {
+        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+        getDtos().forEach {
+            JavaDtoWriter.write(testSuitePath, config.outputFormat, it)
+        }
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -1069,6 +1094,54 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun getDtos(): List<DtoClass> {
+        val restSampler = sampler as AbstractRestSampler
+        val result = mutableListOf<DtoClass>()
+        restSampler.getActionDefinitions().forEach { action ->
+            action.getViewOfChildren().forEach { child ->
+                if (child is BodyParam) {
+                    val primaryGene = GeneUtils.getWrappedValueGene(child.primaryGene())
+                    // TODO: Payloads could also be json arrays, analyze ArrayGene
+                    if (primaryGene is ObjectGene) {
+                        // TODO: Determine strategy for objects that are not defined as a component and do not have a name
+                        val dtoClass = DtoClass(primaryGene.refType?:TestWriterUtils.safeVariableName(action.getName()))
+                        primaryGene.fixedFields.forEach { field ->
+                            try {
+                                dtoClass.addField(getDtoField(field))
+                            } catch (ex: Exception) {
+                                log.warn("A failure has occurred when collecting DTOs. \n"
+                                            + "Exception: ${ex.localizedMessage} \n"
+                                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                                )
+                                assert(false)
+                            }
+                        }
+                        result.add(dtoClass)
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    private fun getDtoField(field: Gene): DtoField {
+        val wrappedGene = GeneUtils.getWrappedValueGene(field)
+        return DtoField(field.name, when (wrappedGene) {
+            // TODO: handle nested arrays, objects and extend type system for dto fields
+            is StringGene -> "String"
+            is IntegerGene -> "Integer"
+            is LongGene -> "Long"
+            is DoubleGene -> "Double"
+            is FloatGene -> "Float"
+            is Base64StringGene -> "String"
+            // Time and Date genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
+            is DateGene -> "String"
+            is TimeGene -> "String"
+            is BooleanGene -> "Boolean"
+            else -> throw Exception("Not supported gene at the moment: ${wrappedGene?.javaClass?.simpleName}")
+        })
     }
 
 }

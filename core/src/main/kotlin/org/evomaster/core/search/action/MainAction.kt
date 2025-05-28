@@ -25,6 +25,8 @@ abstract class MainAction(
         return otherMainActions(false)
     }
 
+
+
     fun positionAmongMainActions(): Int{
         if(isCleanUp){
             return -1
@@ -34,11 +36,12 @@ abstract class MainAction(
             throw IllegalStateException("No local id defined for this main action")
         }
 
-        val ind = this.getRoot()
-        if(ind !is Individual){
+
+        if(!isMounted()){
             throw IllegalStateException("Action is not mounted inside an individual")
         }
 
+        val ind = this.getRoot() as Individual
         val all = ind.seeMainExecutableActions()
         val index = all.indexOfFirst { it.getLocalId() == this.getLocalId()}
         if(index < 0){
@@ -48,8 +51,16 @@ abstract class MainAction(
     }
 
     private fun otherMainActions(before: Boolean) : List<MainAction> {
-        val index = positionAmongMainActions()
         val all = (getRoot() as Individual).seeMainExecutableActions()
+        if(isCleanUp){
+            return if(before) {
+                all
+            } else {
+                listOf()
+            }
+        }
+
+        val index = positionAmongMainActions()
 
         if(before){
             if(index == 0){
