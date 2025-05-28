@@ -4,8 +4,10 @@ import bar.examples.it.spring.aiconstraint.numeric.AICNumericController
 import bar.examples.it.spring.cleanupcreate.CleanUpDeleteApplication
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
+import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -40,6 +42,12 @@ class AICNumericTest : IntegrationTestRestBase() {
         val action = evaluatedAction.action as RestCallAction
         val result = evaluatedAction.result as RestCallResult
         assertEquals(200, result.getStatusCode())
+
+        val classifier = injector.getInstance(AIResponseClassifier::class.java)
+
+        classifier.updateModel(action, result)
+        val c = classifier.classify(action)
+        assertTrue(c == StatusGroup.G_2xx)
     }
 
     @Test
