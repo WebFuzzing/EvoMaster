@@ -62,15 +62,6 @@ class LanguageModelConnector {
         LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
 
         if (config.languageModelConnector) {
-
-            if (config.languageModelServerURL.isNullOrEmpty()) {
-                throw IllegalArgumentException("Language model URL cannot be empty")
-            }
-
-            if (config.languageModelName.isNullOrEmpty()) {
-                throw IllegalArgumentException("Language model name cannot be empty")
-            }
-
             actualFixedThreadPool = min(
                 config.languageModelConnectorNumberOfThreads,
                 Runtime.getRuntime().availableProcessors()

@@ -591,6 +591,14 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
+        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model server URL cannot be empty.")
+        }
+
+        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model name cannot be empty.")
+        }
+
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
             throw ConfigProblemException("The use of 'prematureStop' is meaningful only if the stopping criterion" +
                     " 'stoppingCriterion' is based on time")
