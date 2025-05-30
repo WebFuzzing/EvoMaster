@@ -18,7 +18,7 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Work in progress")
+//    @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
@@ -30,9 +30,9 @@ class SsrfEMTest: SpringTestBase() {
             setOption(args, "externalServiceIP", "127.0.0.6")
             setOption(args, "instrumentMR_NET", "true")
 
-            setOption(args, "security", "false")
+            setOption(args, "security", "true")
 
-            setOption(args, "vulnerabilityAnalyser", "false")
+            setOption(args, "vulnerabilityAnalyser", "true")
             setOption(args, "vulnerabilitySelectionStrategy", "LLM")
 
             setOption(args, "languageModelConnector", "true")
@@ -42,8 +42,8 @@ class SsrfEMTest: SpringTestBase() {
 
             assertTrue(solution.individuals.isNotEmpty())
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
         }
     }
 }
