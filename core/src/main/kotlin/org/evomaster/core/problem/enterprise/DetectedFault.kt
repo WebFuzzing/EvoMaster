@@ -7,7 +7,17 @@ import com.webfuzzing.commons.faults.FaultCategory
  */
 class DetectedFault(
     val category: FaultCategory,
+    /**
+     * For a REST API, this would be the endpoint VERB:PATH
+     */
     val operationId: String,
+    /**
+     * For same operation and save fault type, we could detect more than 1 fault.
+     * We distinguish them based on the context, ie, a discriminating string.
+     * This does not apply to all kinds of faults.
+     * For example, in WB for HTTP 500, the discriminating context could be based on last executed
+     * line in the SUT.
+     */
     _context: String?
 ) {
 
