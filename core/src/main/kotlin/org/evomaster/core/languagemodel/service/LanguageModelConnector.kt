@@ -62,6 +62,15 @@ class LanguageModelConnector {
         LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
 
         if (config.languageModelConnector) {
+
+            if (!this.isModelAvailable()) {
+                config.languageModelConnector = false
+                LoggingUtil.uniqueWarn(log, "${config.languageModelName} is not available in the provided URL: ${config.languageModelServerURL}." +
+                        " Language Model will be disabled.")
+            } else {
+                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
+            }
+
             actualFixedThreadPool = min(
                 config.languageModelConnectorNumberOfThreads,
                 Runtime.getRuntime().availableProcessors()
@@ -69,12 +78,6 @@ class LanguageModelConnector {
             workerPool = Executors.newFixedThreadPool(
                 actualFixedThreadPool
             )
-
-            if (!this.isModelAvailable()) {
-                throw IllegalStateException("${config.languageModelName} is not available in the provided URL.")
-            } else {
-                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
-            }
         }
     }
 
@@ -98,6 +101,10 @@ class LanguageModelConnector {
      * @return the [CompletableFuture] for the prompt.
      */
     fun queryAsync(prompt: String): CompletableFuture<AnsweredPrompt?> {
+        if (!config.languageModelConnector) {
+            throw IllegalStateException("Language Model Connector is disabled")
+        }
+
         val promptDto = Prompt(getIdForPrompt(), prompt)
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
@@ -182,6 +189,10 @@ class LanguageModelConnector {
      * @return the given structured request for the prompt.
      */
     fun queryStructured(prompt: String) {
+        if (!config.languageModelConnector) {
+            throw IllegalStateException("Language Model Connector is disabled")
+        }
+
         TODO("Requires more time to implement this.")
     }
 
