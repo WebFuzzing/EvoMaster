@@ -545,7 +545,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, postfix))
+            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
         }
     }
 
@@ -724,7 +724,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
                 )
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
+                rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), it.message))
             }
         }
 
@@ -1088,7 +1088,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
             ?: return
-        ar.addFault(DetectedFault(category, put.getName()))
+        ar.addFault(DetectedFault(category, put.getName(), null))
     }
 
     private fun handleDeleteShouldDelete(
@@ -1114,7 +1114,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val delete = individual.seeMainExecutableActions()[res.index]
             val ar = actionResults.find { it.sourceLocalId == delete.getLocalId() } as RestCallResult?
                 ?: return
-            ar.addFault(DetectedFault(category, res.name))
+            ar.addFault(DetectedFault(category, res.name, null))
         }
     }
 
@@ -1165,7 +1165,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName()))
+            r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
         }
     }
 
@@ -1193,7 +1193,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName()))
+                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
             }
         }
     }
@@ -1217,7 +1217,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 idMapper.getFaultDescriptiveId(faultCategory, action.getName())
             )
             fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory, action.getName()))
+            result.addFault(DetectedFault(faultCategory, action.getName(), null))
         }
     }
 
