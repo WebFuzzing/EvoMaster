@@ -63,12 +63,14 @@ class LanguageModelConnector {
 
         if (config.languageModelConnector) {
 
-            if (config.languageModelServerURL.isNullOrEmpty()) {
-                throw IllegalArgumentException("Language model URL cannot be empty")
-            }
-
-            if (config.languageModelName.isNullOrEmpty()) {
-                throw IllegalArgumentException("Language model name cannot be empty")
+            if (!this.isModelAvailable()) {
+                LoggingUtil.uniqueWarn(log, "${config.languageModelName} is not available in the provided " +
+                        "language model server URL: ${config.languageModelServerURL}. " +
+                        "Language Model Connector will be disabled.")
+                config.languageModelConnector = false
+                return
+            } else {
+                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
             }
 
             actualFixedThreadPool = min(
@@ -78,12 +80,6 @@ class LanguageModelConnector {
             workerPool = Executors.newFixedThreadPool(
                 actualFixedThreadPool
             )
-
-            if (!this.isModelAvailable()) {
-                throw IllegalStateException("${config.languageModelName} is not available in the provided URL.")
-            } else {
-                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
-            }
         }
     }
 
@@ -107,6 +103,10 @@ class LanguageModelConnector {
      * @return the [CompletableFuture] for the prompt.
      */
     fun queryAsync(prompt: String): CompletableFuture<AnsweredPrompt?> {
+        if (!config.languageModelConnector) {
+            throw IllegalStateException("Language Model Connector is disabled")
+        }
+
         val promptDto = Prompt(getIdForPrompt(), prompt)
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
@@ -191,6 +191,10 @@ class LanguageModelConnector {
      * @return the given structured request for the prompt.
      */
     fun queryStructured(prompt: String) {
+        if (!config.languageModelConnector) {
+            throw IllegalStateException("Language Model Connector is disabled")
+        }
+
         TODO("Requires more time to implement this.")
     }
 
