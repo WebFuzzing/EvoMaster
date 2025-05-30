@@ -67,6 +67,7 @@ class LanguageModelConnector {
                 config.languageModelConnector = false
                 LoggingUtil.uniqueWarn(log, "${config.languageModelName} is not available in the provided URL: ${config.languageModelServerURL}." +
                         " Language Model will be disabled.")
+                return
             } else {
                 LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
             }
