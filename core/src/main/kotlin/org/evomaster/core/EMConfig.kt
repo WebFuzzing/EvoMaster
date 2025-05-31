@@ -62,7 +62,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.4"
+        private const val defaultExternalServiceIP = "127.0.0.5"
 
         //leading zeros are allowed
         private const val lz = "0*"
@@ -70,9 +70,9 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.4) are reserved
         // this is done with a negated lookahead ?!
-        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[01234]$)"
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
@@ -589,6 +589,18 @@ class EMConfig {
 
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
+
+        if(!security && vulnerabilityAnalyser) {
+            throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
+        }
+
+        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model server URL cannot be empty.")
+        }
+
+        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -2220,7 +2232,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
@@ -2235,16 +2247,16 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Specify a method to select the first external service spoof IP address.")
     @Experimental
+    @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
+    @Experimental
     @Cfg("User provided external service IP." +
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
             " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
-    @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
 
@@ -2275,26 +2287,24 @@ class EMConfig {
     @Probability(true)
     var useExtraSqlDbConstraintsProbability = 0.9
 
-
-    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
+    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
-
-    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Experimental
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Probability(activating = true)
     var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
 
-    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
+    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Experimental
     @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
     @Min(1.0)
-    @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
 
@@ -2323,8 +2333,8 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Harvested external request response selection strategy")
     @Experimental
+    @Cfg("Harvested external request response selection strategy")
     var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
@@ -2372,6 +2382,45 @@ class EMConfig {
 
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = true
+
+    @Experimental
+    @Cfg("Apply vulnerability hunter as part of security testing.")
+    var vulnerabilityAnalyser = false
+
+    enum class VulnerabilitySelectionStrategy {
+        /**
+         * Uses the manual methods to select the vulnerability classes associated with
+         * an endpoint.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerability classes associated with an
+         * endpoint.
+         */
+        LLM,
+    }
+
+    @Experimental
+    @Cfg("Potential vulnerability class associated with a endpoint classification strategy.")
+    var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
+
+    @Experimental
+    @Cfg("Enable language model connector")
+    var languageModelConnector = false
+
+    @Experimental
+    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
+    var languageModelServerURL: String = "http://localhost:11434/"
+
+    @Experimental
+    @Cfg("Large-language model name as listed in Ollama")
+    var languageModelName: String = "llama3.2:latest"
+
+    @Experimental
+    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
