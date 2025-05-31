@@ -17,9 +17,14 @@ class ActionMapping (
      */
     var httpCallbackURL: String? = null
 
-    var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
+    /**
+     * Holds potential vulnerability class for the [Action].
+     * Key contains the vulnerability class, and value marks the exploitability
+     * using a [Boolean].
+     */
+    var vulnerabilityClasses: MutableMap<VulnerabilityClass, Boolean> = mutableMapOf()
 
     fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
-        vulnerabilityClasses.add(vulnerabilityClass)
+        vulnerabilityClasses[vulnerabilityClass] = false
     }
 }
