@@ -4,7 +4,6 @@ import org.evomaster.core.problem.security.VulnerabilityClass
 
 class ActionMapping (
     val name: String,
-
 ) {
 
     var params: Map<String, ParamMapping> = mutableMapOf()
@@ -12,6 +11,11 @@ class ActionMapping (
     var isVulnerable = false
 
     var isExploitable = false
+
+    /**
+     * TODO: This is temporary to use it in the test cases.
+     */
+    var httpCallbackURL: String? = null
 
     var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
 
