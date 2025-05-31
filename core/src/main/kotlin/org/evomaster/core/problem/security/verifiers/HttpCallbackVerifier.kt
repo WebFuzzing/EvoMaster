@@ -24,46 +24,44 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
-//            wireMockServer!!.stubFor(
-//                WireMock.any(WireMock.anyUrl())
-//                    .atPriority(100)
-//                    .willReturn(
-//                        WireMock.aResponse()
-//                            .withStatus(418)
-//                            .withBody("I'm a teapot")
-//                    )
-//            )
+            wireMockServer!!.stubFor(
+                WireMock.any(WireMock.anyUrl())
+                    .atPriority(100)
+                    .willReturn(
+                        WireMock.aResponse()
+                            .withStatus(418)
+                            .withBody("I'm a teapot")
+                    )
+            )
         } catch (e: Exception) {
-            throw RuntimeException("Failed to initialize SSRFVulnerabilityVerifier due to " +
-                    e.message +
-                    " If it is macOS, please make sure loopback alias is set.")
+            throw RuntimeException(
+                "Failed to initialize SSRFVulnerabilityVerifier due to " +
+                        e.message +
+                        " If it is macOS, please make sure loopback alias is set."
+            )
         }
     }
 
-    fun generateLink(name: String): String {
+    fun generateCallbackLink(name: String): String {
         val token = UUID.randomUUID().toString()
         val ssrfPath = "sink/$token"
 
-       try {
-           wireMockServer!!.stubFor(
-               WireMock.post(WireMock.urlPathMatching(ssrfPath))
-                   .withMetadata(metadata().attr("originalPath", name))
-                   .willReturn(
-                       WireMock.aResponse()
-                           .withStatus(200)
-                           .withBody("OK")
-                   )
+        wireMockServer!!.stubFor(
+            WireMock.post(WireMock.urlPathMatching(ssrfPath))
+                .withMetadata(metadata().attr("originalPath", name))
+                .willReturn(
+                    WireMock.aResponse()
+                        .withStatus(200)
+                        .withBody("OK")
+                )
 
-           )
+        )
 
-           val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}/$ssrfPath"
+        val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}/$ssrfPath"
 
-           traceTokens[name] = link
+        traceTokens[name] = link
 
-           return link
-       } catch (e: Exception) {
-           throw RuntimeException("Failed to generate SSRFVulnerabilityVerifier link", e)
-       }
+        return link
     }
 
     override fun verify(name: String): Boolean {

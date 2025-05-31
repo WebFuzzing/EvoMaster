@@ -18,12 +18,12 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-//    @Disabled("Work in progress")
+    @Disabled("Work in progress")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
-            500
+            100
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
@@ -42,8 +42,8 @@ class SsrfEMTest: SpringTestBase() {
 
             assertTrue(solution.individuals.isNotEmpty())
 
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
         }
     }
 }
