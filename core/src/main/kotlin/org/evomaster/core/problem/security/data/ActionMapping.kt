@@ -7,7 +7,7 @@ class ActionMapping (
 
 ) {
 
-    var paramMapping: Map<String, ParamMapping> = mutableMapOf()
+    var params: Map<String, ParamMapping> = mutableMapOf()
 
     var isVulnerable = false
 
