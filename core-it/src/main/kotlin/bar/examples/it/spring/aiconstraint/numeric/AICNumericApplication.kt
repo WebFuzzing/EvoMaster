@@ -22,11 +22,11 @@ open class AICNumericApplication {
 
     @GetMapping("/numeric")
     open fun getString(
-        @RequestParam("x", required = true) @Parameter(required=true) x: Int
+        @RequestParam("x", required = true) @Parameter(required=true) x: Double
 
     ) : ResponseEntity<String> {
 
-        if(x !in 1925..2025){
+        if(x !in 1925.0..2025.0){
             return ResponseEntity.status(400).build()
         }
         return ResponseEntity.status(200).build()

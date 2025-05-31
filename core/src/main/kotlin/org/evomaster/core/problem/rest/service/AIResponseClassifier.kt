@@ -1,35 +1,44 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.junit.Test
-import kotlin.random.Random
+import org.evomaster.core.problem.rest.service.classifier.AIModel
+import org.evomaster.core.problem.rest.service.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.service.classifier.NeuralNetworkClassifier
 
 
 class AIResponseClassifier {
 
-    fun updateModel(input: RestCallAction, output: RestCallResult){
-        //TODO
+    // This should be set based on the config
+    // For now we consider GAUSSIAN as a default
+    private val aiModelType="GAUSSIAN"
+
+    @Inject
+    lateinit var gaussian: GaussianOnlineClassifier
+
+    @Inject
+    lateinit var neuralNet: NeuralNetworkClassifier
+
+    private val delegate: AIModel by lazy {
+        when (aiModelType) {
+            "GAUSSIAN" -> gaussian
+            "NEURAL" -> neuralNet
+            else -> error("Unknown model type: ${aiModelType}")
+        }
     }
 
-    fun classify(input: RestCallAction) : StatusGroup{
-
-        //TODO
-        return StatusGroup.G_2xx
-
+    fun updateModel(input: RestCallAction, output: RestCallResult) {
+        delegate.updateModel(input, output)
     }
 
-    // return the probability of acceptance based on the classifier
-    fun probValidity(input: RestCallAction) : Double{
-
-        // TODO
-        // this part must be fixed based on the gaussian model
-        // for now we just generate a random number assuming the model
-        // provided that
-        val prob2xx = Random.nextDouble(0.0, 1.0)
-        return prob2xx
-
+    fun classify(input: RestCallAction): StatusGroup {
+        return delegate.classify(input)
     }
 
+    fun probValidity(input: RestCallAction): Double {
+        return delegate.probValidity(input)
+    }
 }
+
