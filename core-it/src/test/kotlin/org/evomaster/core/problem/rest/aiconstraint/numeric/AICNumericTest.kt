@@ -37,14 +37,14 @@ class AICNumericTest : IntegrationTestRestBase() {
 
         val pirTest = getPirToRest()
         // get is a RestCallAction
-        val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "5.0"))!!
+        val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "2025.0"))!!
 
         // createIndividual send the request and evaluate, while we want to predict before sending
         val individual = createIndividual(listOf(get), SampleType.RANDOM)
         val evaluatedAction = individual.evaluatedMainActions()[0]
         val action = evaluatedAction.action as RestCallAction
         val result = evaluatedAction.result as RestCallResult
-//        assertEquals(200, result.getStatusCode())
+        assertEquals(200, result.getStatusCode())
 
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
 
