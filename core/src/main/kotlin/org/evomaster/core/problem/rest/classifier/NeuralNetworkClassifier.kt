@@ -1,21 +1,19 @@
-package org.evomaster.core.problem.rest.service.classifier
+package org.evomaster.core.problem.rest.classifier
 
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
+//TODO work-in-pgrogess
 class NeuralNetworkClassifier : AIModel {
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         // NN update logic
     }
 
-    override fun classify(input: RestCallAction): StatusGroup {
+    override fun classify(input: RestCallAction): AIResponseClassification {
         // NN classification
-        return StatusGroup.G_2xx
+        return AIResponseClassification()
     }
 
-    override fun probValidity(input: RestCallAction): Double {
-        // Probability from NN
-        return 0.8
-    }
+
 }

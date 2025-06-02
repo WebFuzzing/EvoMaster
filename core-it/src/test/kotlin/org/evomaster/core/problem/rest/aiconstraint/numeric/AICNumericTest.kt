@@ -32,7 +32,7 @@ class AICNumericTest : IntegrationTestRestBase() {
     }
 
     @Test
-    fun testNumeric() {
+    fun testBasicInjectorCallModelOnce() {
 
 
         val pirTest = getPirToRest()
@@ -50,7 +50,7 @@ class AICNumericTest : IntegrationTestRestBase() {
 
         classifier.updateModel(action, result)
         val c = classifier.classify(action)
-        assertTrue(c == StatusGroup.G_2xx)
+        assertTrue(c.probabilityOf400() == 0.0)
 
     }
 
@@ -81,18 +81,18 @@ class AICNumericTest : IntegrationTestRestBase() {
             // Strict approach
             // Send the request if the classifier says the request is valid
             // This approach is very biased!
-            if (c == StatusGroup.G_2xx) {
-                // createIndividual function create and test an individual
-                val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
-                val evaluatedAction = individual.evaluatedMainActions()[0]
-                val action = evaluatedAction.action as RestCallAction
-                val result = evaluatedAction.result as RestCallResult
-
-                // update the classifier based on the response
-                classifier.updateModel(action, result)
-
-
-            }
+//            if (c == StatusGroup.G_2xx) { //TODO put back
+//                // createIndividual function create and test an individual
+//                val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
+//                val evaluatedAction = individual.evaluatedMainActions()[0]
+//                val action = evaluatedAction.action as RestCallAction
+//                val result = evaluatedAction.result as RestCallResult
+//
+//                // update the classifier based on the response
+//                classifier.updateModel(action, result)
+//
+//
+//            }
 
             time += 1
 

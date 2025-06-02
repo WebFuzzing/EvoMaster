@@ -10,7 +10,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.SecurityRest
-import org.evomaster.core.problem.rest.service.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.seeding.service.rest.PirToRest
@@ -58,7 +58,5 @@ open class RestBaseModule : EnterpriseModule() {
         bind(AIResponseClassifier::class.java)
             .asEagerSingleton()
 
-        bind(GaussianOnlineClassifier::class.java)
-            .toInstance(GaussianOnlineClassifier(1))
     }
 }

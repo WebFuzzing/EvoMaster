@@ -3,6 +3,10 @@ package org.evomaster.core.problem.rest.aiconstraint.numeric
 import kotlin.math.*
 import kotlin.random.Random
 
+
+/**
+ * FIXME what is this???
+ */
 class NaiveGaussianModel1D(
     initialMean: Int = 0,
     initialVariance: Double = 1.0,

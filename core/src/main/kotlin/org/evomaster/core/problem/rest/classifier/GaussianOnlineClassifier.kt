@@ -1,17 +1,19 @@
-package org.evomaster.core.problem.rest.service.classifier
+package org.evomaster.core.problem.rest.classifier
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.evomaster.core.problem.rest.service.classifier.AIModel
+import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import kotlin.math.ln
 import kotlin.math.PI
 
-
+/**
+ * TODO this is work in progress
+ */
 class GaussianOnlineClassifier @Inject constructor(
     @Named("dimension") private val dimension: Int): AIModel {
 
@@ -50,24 +52,27 @@ class GaussianOnlineClassifier @Inject constructor(
     }
 
     // Gaussian classification
-    override fun classify(input: RestCallAction): StatusGroup {
+    override fun classify(input: RestCallAction): AIResponseClassification {
         val values = extractFeatures(input)
 
+        //FIXME for inputs, should rather throw IllegalArgumentException
         values.size == dimension || error("Invalid input vector due to size mismatch!")
 
+        // FIXME remove println before requesting PR review
         println("The model is classifying the values: $values")
 
-        return StatusGroup.G_2xx
+        // TODO
+        return AIResponseClassification()
     }
 
     // Probability of validity
-    override fun probValidity(input: RestCallAction): Double {
-        val values = extractFeatures(input)
-
-        values.size == dimension || error("Invalid input vector due to size mismatch!")
-
-        return logLikelihood(x=values, stats= count1)
-    }
+//    override fun probValidity(input: RestCallAction): Double {
+//        val values = extractFeatures(input)
+//
+//        values.size == dimension || error("Invalid input vector due to size mismatch!")
+//
+//        return logLikelihood(x=values, stats= count1)
+//    }
 
     fun predict(xD: List<Double>): StatusGroup {
         require(xD.size == dimension) { "Prediction input size must match dimension" }
