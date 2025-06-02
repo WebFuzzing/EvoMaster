@@ -117,7 +117,7 @@ There are 3 types of options:
 |`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `true`.|
 |`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Default value*: `true`.|
 |`feedbackDirectedSampling`| __Enum__. Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement. *Valid values*: `NONE, LAST, FOCUSED_QUICKEST`. *Default value*: `FOCUSED_QUICKEST`.|
-|`fixedRateMutation`| __Double__. Fixed mutation rate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.04`.|
+|`fixedRateMutation`| __Double__. Define the probability of happening mutation in the genetic algorithms. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.04`.|
 |`focusedSearchActivationTime`| __Double__. The percentage of passed search before starting a more focused, less exploratory one. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Default value*: `true`.|
 |`geneMutationStrategy`| __Enum__. Strategy used to define the mutation probability. *Valid values*: `ONE_OVER_N, ONE_OVER_N_BIASED_SQL`. *Default value*: `ONE_OVER_N_BIASED_SQL`.|
