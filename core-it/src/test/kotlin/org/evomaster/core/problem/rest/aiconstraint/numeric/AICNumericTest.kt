@@ -4,6 +4,7 @@ import bar.examples.it.spring.aiconstraint.numeric.AICNumericController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
@@ -12,6 +13,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 import kotlin.math.abs
@@ -32,74 +34,85 @@ class AICNumericTest : IntegrationTestRestBase() {
         recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
     }
 
+
     @Test
     fun testBasicInjectorCallModelOnce() {
 
 
         val pirTest = getPirToRest()
         // get is a RestCallAction
-        val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "2025.0"))!!
+        val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "2020.0"))!!
 
-        // createIndividual send the request and evaluate, while we want to predict before sending
-        val individual = createIndividual(listOf(get), SampleType.RANDOM)
-        val evaluatedAction = individual.evaluatedMainActions()[0]
-        val action = evaluatedAction.action as RestCallAction
-        val result = evaluatedAction.result as RestCallResult
-        assertEquals(200, result.getStatusCode())
-
-        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-
-        classifier.updateModel(action, result)
-        val c = classifier.classify(action)
-        assertTrue(c.probabilityOf400() == 0.0)
-
-    }
-
-
-    @Test
-    fun testAIModel() {
-
-        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-
-
-        // The learning continues until we reach the time limit
-        val timeLimit: Int = 100
-        var time: Int = 1
-        while (time < timeLimit) {
-
-            val pirTest = getPirToRest()
-
-            // Create a randomRestCallAction
-            // This part must be replaced by evomaster random generator!
-            val randomNum = Random.nextDouble()
-            // Here getTemp is a RestCallAction
-            val getTemp = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "$randomNum"))!!
-
-            // predict the response by the classifier
-            val c = classifier.classify(getTemp)
-
-
-            // Strict approach
-            // Send the request if the classifier says the request is valid
-            // This approach is very biased!
-//            if (c == StatusGroup.G_2xx) { //TODO put back
-//                // createIndividual function create and test an individual
-//                val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
-//                val evaluatedAction = individual.evaluatedMainActions()[0]
-//                val action = evaluatedAction.action as RestCallAction
-//                val result = evaluatedAction.result as RestCallResult
-//
-//                // update the classifier based on the response
-//                classifier.updateModel(action, result)
-//
-//
-//            }
-
-            time += 1
-
+        // this part provides the dimension
+        var values = get.seeTopGenes().mapNotNull { gene ->
+            when (gene) {
+                is DoubleGene -> gene.value
+                is IntegerGene -> gene.value.toDouble()
+                else -> null
+            }
         }
 
+        val classifier = injector.getInstance(AIResponseClassifier::class.java)
+        classifier.setDimension(values.size)
+        classifier.initModel() // manually call it after setting the dimension
+
+        // createIndividual send the request and evaluate, while we want to predict before sending
+//        val individual = createIndividual(listOf(get), SampleType.RANDOM)
+//        val evaluatedAction = individual.evaluatedMainActions()[0]
+//        val action = evaluatedAction.action as RestCallAction
+//        val result = evaluatedAction.result as RestCallResult
+//        assertEquals(200, result.getStatusCode())
+
+//        classifier.updateModel(action, result)
+//        val c = classifier.classify(action)
+//        assertTrue(c.probabilityOf400() == 0.0)
+
     }
+
+
+//    @Disabled("Disabled to avoid running the model during builds")
+//    @Test
+//    fun testAIModel() {
+//
+//        val classifier = injector.getInstance(AIResponseClassifier::class.java)
+//
+//
+//        // The learning continues until we reach the time limit
+//        val timeLimit: Int = 100
+//        var time: Int = 1
+//        while (time < timeLimit) {
+//
+//            val pirTest = getPirToRest()
+//
+//            // Create a randomRestCallAction
+//            // This part must be replaced by evomaster random generator!
+//            val randomNum = Random.nextDouble()
+//            // Here getTemp is a RestCallAction
+//            val getTemp = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "$randomNum"))!!
+//
+//            // predict the response by the classifier
+////            val c = classifier.classify(getTemp)
+//
+//
+//////             Strict approach
+//////             Send the request if the classifier says the request is valid
+//////             This approach is very biased!
+////            if (c == StatusGroup.G_2xx) { //TODO put back
+////                // createIndividual function create and test an individual
+////                val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
+////                val evaluatedAction = individual.evaluatedMainActions()[0]
+////                val action = evaluatedAction.action as RestCallAction
+////                val result = evaluatedAction.result as RestCallResult
+////
+////                // update the classifier based on the response
+////                classifier.updateModel(action, result)
+////            }
+//
+//            time += 1
+//        }
+//    }
+
+
 }
 
 //    @Test

@@ -14,13 +14,10 @@ import kotlin.math.PI
 /**
  * TODO this is work in progress
  */
-class GaussianOnlineClassifier @Inject constructor(
-    @Named("dimension") private val dimension: Int): AIModel {
+class GaussianOnlineClassifier(private val dimension: Int) : AIModel {
 
-    // Class invalid stats 400
-    private val count0 = Counter(dimension)
-    // Class valid stats 200
-    private val count1 = Counter(dimension)
+    private val count0 = Counter(dimension) // class for 400
+    private val count1 = Counter(dimension) // class for 200
 
     // Extracting numerical features of a RestCallAction as a double vector
     // as the input of a classifier is always a Double vector
@@ -34,11 +31,14 @@ class GaussianOnlineClassifier @Inject constructor(
         }
     }
 
+
     // Updating the classifier
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val values = extractFeatures(input)
 
-        values.size == dimension || error("Invalid input vector due to size mismatch!")
+        if(values.size != dimension){
+            throw IllegalArgumentException("Invalid input vector due to size mismatch!")
+        }
 
         println("The model is updating with the values: $values")
 

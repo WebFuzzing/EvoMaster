@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import javax.annotation.PostConstruct
 
 
@@ -16,6 +17,11 @@ class AIResponseClassifier : AIModel {
 
     private lateinit var delegate: AIModel
 
+    private var dimension: Int = 0
+    fun setDimension(d: Int) {
+        this.dimension = d
+    }
+
 
     @PostConstruct
     fun initModel(){
@@ -23,12 +29,17 @@ class AIResponseClassifier : AIModel {
         when(config.aiModelForResponseClassification){
             EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
                 //TODO
+                delegate = GaussianOnlineClassifier(dimension)
             }
             EMConfig.AIResponseClassifierModel.NN -> {
                 //TODO
             }
             EMConfig.AIResponseClassifierModel.NONE -> {
                 //TODO
+                delegate = object : AIModel {
+                    override fun updateModel(input: RestCallAction, output: RestCallResult) {}
+                    override fun classify(input: RestCallAction) = AIResponseClassification()
+                }
             }
         }
     }
