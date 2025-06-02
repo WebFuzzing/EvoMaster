@@ -1124,7 +1124,8 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        StandardGA, MonotonicGA, SteadyStateGA // These 3 are still work-in-progress
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1367,7 +1368,7 @@ class EMConfig {
     @Min(1.0)
     var populationSize = 30
 
-    @Cfg("Fixed mutation rate")
+    @Cfg("Define the probability of happening mutation in the genetic algorithms")
     @Probability
     var fixedRateMutation = 0.04
 
