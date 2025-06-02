@@ -194,7 +194,7 @@ open class RestActionNamingStrategyTest {
     @Test
     fun test500ResponseNamedWithInternalServerError() {
         val restAction = getRestCallAction()
-        val eIndividual = getEvaluatedIndividualWithFaults(restAction, singletonList(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items")), 500)
+        val eIndividual = getEvaluatedIndividualWithFaults(restAction, singletonList(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null)), 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
@@ -207,9 +207,9 @@ open class RestActionNamingStrategyTest {
     @Test
     fun testResponseNamedWithMultipleFaults() {
         val faults = listOf(
-            DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items"),
-            DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items"),
-            DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items"))
+            DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items", null),
+            DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items", null),
+            DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null))
         val restAction = getRestCallAction()
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, faults, 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
