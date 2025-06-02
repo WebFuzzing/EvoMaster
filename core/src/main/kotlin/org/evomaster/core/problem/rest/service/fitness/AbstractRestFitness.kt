@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service.fitness
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
@@ -10,6 +11,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -539,11 +541,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             Lazy.assert { location5xx != null || config.blackBox }
 
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(FaultCategory.HTTP_STATUS_500, postfix))
+            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
         }
     }
 
@@ -692,7 +694,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         internal classes in JVM can throw this error directly, like
                         jdk.internal.util.ArraysSupport.hugeLength(...)
                         see:
-                        https://github.com/EMResearch/EvoMaster/issues/449
+                        https://github.com/WebFuzzing/EvoMaster/issues/449
                      */
                     LoggingUtil.uniqueWarn(
                         log,
@@ -719,10 +721,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             report.messages.forEach {
                 val discriminant = a.getName() + " -> " + it.message
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
                 )
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                rcr.addFault(DetectedFault(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
+                rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), it.message))
             }
         }
 
@@ -1079,14 +1081,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = FaultCategory.HTTP_REPEATED_CREATE_PUT
+        val category = ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
         )
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
             ?: return
-        ar.addFault(DetectedFault(category, put.getName()))
+        ar.addFault(DetectedFault(category, put.getName(), null))
     }
 
     private fun handleDeleteShouldDelete(
@@ -1103,7 +1105,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if(res.nonWorking) {
-            val category = FaultCategory.HTTP_NONWORKING_DELETE
+            val category = ExperimentalFaultCategory.HTTP_NONWORKING_DELETE
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(category, res.name)
             )
@@ -1112,7 +1114,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val delete = individual.seeMainExecutableActions()[res.index]
             val ar = actionResults.find { it.sourceLocalId == delete.getLocalId() } as RestCallResult?
                 ?: return
-            ar.addFault(DetectedFault(category, res.name))
+            ar.addFault(DetectedFault(category, res.name, null))
         }
     }
 
@@ -1123,9 +1125,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ){
         //TODO the other cases
 
-        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, ExperimentalFaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
     }
@@ -1159,11 +1161,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         notRecognized.forEach {
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+                idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName()))
+            r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
         }
     }
 
@@ -1188,10 +1190,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName()))
+                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
             }
         }
     }
@@ -1215,7 +1217,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 idMapper.getFaultDescriptiveId(faultCategory, action.getName())
             )
             fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory, action.getName()))
+            result.addFault(DetectedFault(faultCategory, action.getName(), null))
         }
     }
 

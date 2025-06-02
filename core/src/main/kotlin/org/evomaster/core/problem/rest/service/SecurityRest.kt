@@ -5,6 +5,7 @@ import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -442,7 +443,7 @@ class SecurityRest {
             //fitness function should have detected the fault
             val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
 
-            if(check403 < 0 || check404 < 0 || faults.none { it.category == FaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
+            if(check403 < 0 || check404 < 0 || faults.none { it.category == ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
                 //if this happens, it is a bug in the merge... or flakiness
                 log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
                 return@forEach

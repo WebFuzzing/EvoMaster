@@ -8,6 +8,8 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -20,65 +22,52 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ResourceDependencyDBEMTest extends ResourceTestBase {
 
-    @Test
-    public void testRunEM() throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testRunEM(boolean heuristicsForSQLAdvanced) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "ResourceDBEM",
-                "org.db.resource.ResourceEM",
+                "org.db.resource.ResourceEM" + (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
                 1_000,
                 true,
                 (args) -> {
                     // disable taint analysis
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.0");
+                    setOption(args,"baseTaintAnalysisProbability","0.0");
 
                     //disable hypermutation
-                    args.add("--enableTrackEvaluatedIndividual");
-                    args.add("false");
-                    args.add("--weightBasedMutationRate");
-                    args.add("false");
-                    args.add("--adaptiveGeneSelectionMethod");
-                    args.add("NONE");
-                    args.add("--archiveGeneMutation");
-                    args.add("NONE");
-                    args.add("--probOfArchiveMutation");
-                    args.add("0.0");
+                    setOption(args, "enableTrackEvaluatedIndividual", "false");
+                    setOption(args, "weightBasedMutationRate", "false");
+                    setOption(args, "adaptiveGeneSelectionMethod", "NONE");
+                    setOption(args, "archiveGeneMutation", "NONE");
+                    setOption(args, "probOfArchiveMutation", "0.0");
 
-                    //disable SQL
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("true");
-                    args.add("--extractSqlExecutionInfo");
-                    args.add("true");
+                    //enable SQL
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "true");
+                    setOption(args,"extractSqlExecutionInfo","true");
+                    setOption(args, "heuristicsForSQLAdvanced", heuristicsForSQLAdvanced ? "true" : "false");
 
-                    args.add("--maxTestSize");
-                    args.add("4");
+                    setOption(args,"maxTestSize", "4");
 
-                    args.add("--exportDependencies");
-                    args.add("true");
+
+                    setOption(args,"exportDependencies","true");
 
                     String dependencies = "target/dependencyInfo/dependencies.csv";
 
-                    args.add("--dependencyFile");
-                    args.add(dependencies);
+                    setOption(args,"dependencyFile", dependencies);
 
-                    args.add("--probOfSmartSampling");
-                    args.add("1.0");
-                    args.add("--doesApplyNameMatching");
-                    args.add("true");
+                    setOption(args,"probOfSmartSampling","1.0");
 
-                    args.add("--probOfEnablingResourceDependencyHeuristics");
-                    args.add("1.0");
-                    args.add("--structureMutationProbability");
-                    args.add("1.0");
+                    setOption(args,"doesApplyNameMatching","true");
 
-                    args.add("--probOfApplySQLActionToCreateResources");
-                    args.add("0.8");
+                    setOption(args, "probOfEnablingResourceDependencyHeuristics", "1.0");
 
-                    args.add("--skipFailureSQLInTestFile");
-                    args.add("true");
+                    setOption(args, "structureMutationProbability","1.0");
+
+                    setOption(args,"probOfApplySQLActionToCreateResources", "0.8");
+
+                    setOption(args, "skipFailureSQLInTestFile", "true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

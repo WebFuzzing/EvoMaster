@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
@@ -8,6 +9,7 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getEvaluatedIndi
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
 import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -192,7 +194,7 @@ open class RestActionNamingStrategyTest {
     @Test
     fun test500ResponseNamedWithInternalServerError() {
         val restAction = getRestCallAction()
-        val eIndividual = getEvaluatedIndividualWithFaults(restAction, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")), 500)
+        val eIndividual = getEvaluatedIndividualWithFaults(restAction, singletonList(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null)), 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = RestActionTestCaseNamingStrategy(solution, pythonFormatter, NO_QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
@@ -204,7 +206,10 @@ open class RestActionNamingStrategyTest {
 
     @Test
     fun testResponseNamedWithMultipleFaults() {
-        val faults = listOf(DetectedFault(FaultCategory.GQL_ERROR_FIELD, "items"), DetectedFault(FaultCategory.HTTP_INVALID_LOCATION, "items"), DetectedFault(FaultCategory.HTTP_STATUS_500, "items"))
+        val faults = listOf(
+            DetectedFault(ExperimentalFaultCategory.GQL_ERROR_FIELD, "items", null),
+            DetectedFault(ExperimentalFaultCategory.HTTP_INVALID_LOCATION, "items", null),
+            DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null))
         val restAction = getRestCallAction()
         val eIndividual = getEvaluatedIndividualWithFaults(restAction, faults, 500)
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
@@ -213,7 +218,13 @@ open class RestActionNamingStrategyTest {
         val testCases = namingStrategy.getTestCases()
 
         assertEquals(1, testCases.size)
-        assertEquals("test_0_get_on_items_showsFaults_100_102_301", testCases[0].name)
+        //CANNOT HAVE hardcoded codes in the tests, as those might change
+        //assertEquals("test_0_get_on_items_showsFaults_100_102_301", testCases[0].name)
+        val name = testCases[0].name
+        assertTrue( name.startsWith("test_0_get_on_items_showsFaults_"))
+        for(f in faults) {
+            assertTrue(name.contains("${f.category.code}"))
+        }
     }
 
     @Test
