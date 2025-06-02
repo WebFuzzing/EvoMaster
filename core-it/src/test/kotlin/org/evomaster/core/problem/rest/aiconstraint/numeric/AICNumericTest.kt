@@ -29,6 +29,7 @@ class AICNumericTest : IntegrationTestRestBase() {
 
     @BeforeEach
     fun initializeTest() {
+        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
     }
 
     @Test
