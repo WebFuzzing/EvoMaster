@@ -8,17 +8,13 @@ import kotlin.math.exp
 import kotlin.math.floor
 import kotlin.math.pow
 import kotlin.math.sqrt
-import kotlin.random.Random
 
-class NaiveGaussian1DClassifier: AIModel {
+class NaiveGaussian1DClassifier (private var mean: Double = 0.0,
+                                 private var variance: Double = 10.0,
+                                 private val lowerBound: Double = -5_000.0,
+                                 private val upperBound: Double = 5_000.0): AIModel {
 
     private var n = 1
-    private var mu:Double = 0.0 //initial mean
-    private var M2 = 10.0 //initial variance
-    private val rng = Random.Default
-
-    private val minValue: Double = -5_000.0
-    private val maxValue: Double = 5_000.0
 
     // Rejection tracking
     private val recentRejects = mutableListOf<Double>()
@@ -43,11 +39,11 @@ class NaiveGaussian1DClassifier: AIModel {
 
         if (n < 2) return AIResponseClassification(mapOf(400 to 1.0)) // not enough data
 
-        val variance = M2 / (n - 1)
+        val variance = variance / (n - 1)
         if (variance == 0.0) return AIResponseClassification(mapOf(400 to 1.0))
 
         val stdDev = sqrt(variance)
-        val p200 = gaussianPdf(x, mu, stdDev)
+        val p200 = gaussianPdf(x, mean, stdDev)
 
         // Normalize p200 to get probabilities for 200 and 400
         val epsilon = 1e-10
@@ -83,11 +79,11 @@ class NaiveGaussian1DClassifier: AIModel {
     private fun updateAccepted(x: Double) {
 
         n += 1
-        val delta = x - mu
-        mu += delta / n
-        M2 += delta * (x - mu)
+        val delta = x - mean
+        mean += delta / n
+        variance += delta * (x - mean)
 
-        mu = floor(mu).coerceAtMost(maxValue - 1.0).coerceAtLeast(minValue + 1.0)
+        mean = floor(mean).coerceAtMost(upperBound - 1.0).coerceAtLeast(lowerBound + 1.0)
     }
 
     private fun updateRejected(x: Double) {
@@ -98,12 +94,12 @@ class NaiveGaussian1DClassifier: AIModel {
 
         // Apply soft penalty: move mean away from recent rejections
         val penalty = recentRejects.sumOf { reject ->
-            var direction = if (reject == maxValue) -2 else if (reject == minValue) 2 else if (reject < mu) 1 else -1
+            var direction = if (reject == upperBound) -2 else if (reject == lowerBound) 2 else if (reject < mean) 1 else -1
 
             direction * rejectionWeight
         }
-        mu += penalty
-        mu = floor(mu).coerceAtMost(maxValue - 1.0).coerceAtLeast(minValue + 1.0)
+        mean += penalty
+        mean = floor(mean).coerceAtMost(upperBound - 1.0).coerceAtLeast(lowerBound + 1.0)
 
     }
 }
