@@ -15,4 +15,12 @@ class AIResponseClassification(
         }
         return probabilities[400]!!
     }
+
+    fun probabilityOf200() : Double{
+
+        if(probabilities[200] == null){
+            return 0.0
+        }
+        return probabilities[200]!!
+    }
 }

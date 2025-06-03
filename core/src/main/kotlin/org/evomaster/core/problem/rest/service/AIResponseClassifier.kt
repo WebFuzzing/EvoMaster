@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.NaiveGaussian1DClassifier
 import javax.annotation.PostConstruct
 
 
@@ -29,6 +30,9 @@ class AIResponseClassifier : AIModel {
             }
             EMConfig.AIResponseClassifierModel.NONE -> {
                 //TODO
+            }
+            EMConfig.AIResponseClassifierModel.NAIVE_GAUSSIAN_1D -> {
+                delegate = NaiveGaussian1DClassifier()
             }
         }
     }

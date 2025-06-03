@@ -1260,7 +1260,8 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN
+        NONE, GAUSSIAN, NN,
+        NAIVE_GAUSSIAN_1D
     }
 
     @Experimental
