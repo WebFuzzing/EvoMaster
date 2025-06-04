@@ -17,11 +17,11 @@ class AIResponseClassifier : AIModel {
 
     private lateinit var delegate: AIModel
 
+    // Input dimension of the classifier
     private var dimension: Int = 0
     fun setDimension(d: Int) {
         this.dimension = d
     }
-
 
     @PostConstruct
     fun initModel(){

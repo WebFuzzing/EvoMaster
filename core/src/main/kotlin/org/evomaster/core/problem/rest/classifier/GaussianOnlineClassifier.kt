@@ -1,89 +1,65 @@
 package org.evomaster.core.problem.rest.classifier
 
-import com.google.inject.Inject
-import com.google.inject.name.Named
-import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
 import kotlin.math.ln
 import kotlin.math.PI
+import kotlin.math.exp
 
 /**
  * TODO this is work in progress
  */
-class GaussianOnlineClassifier(private val dimension: Int) : AIModel {
+class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
+    private val density400 = Density(dimension) // class for 400
+    private val density200 = Density(dimension) // class for 200
 
-    private val count0 = Counter(dimension) // class for 400
-    private val count1 = Counter(dimension) // class for 200
-
-    // Extracting numerical features of a RestCallAction as a double vector
-    // as the input of a classifier is always a Double vector
-    private fun extractFeatures(input: RestCallAction): List<Double> {
-        return input.seeTopGenes().mapNotNull { gene ->
-            when (gene) {
-                is DoubleGene -> gene.value
-                is IntegerGene -> gene.value.toDouble()
-                else -> null
-            }
-        }
-    }
 
 
     // Updating the classifier
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val values = extractFeatures(input)
+        val inputVector = inputEncoder(input)
 
-        if(values.size != dimension){
+        // check the compatibility of the input vector and the classifier dimension
+        if(inputVector.size != dimension){
             throw IllegalArgumentException("Invalid input vector due to size mismatch!")
         }
 
-        println("The model is updating with the values: $values")
-
+        // Update Gaussian densities
         when (output.getStatusCode()) {
-            400 -> count0.update(values)
-            200 -> count1.update(values)
+            400 -> density400.update(inputVector)
+            200 -> density200.update(inputVector)
             else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
         }
 
-        // Gaussian update logic
     }
 
     // Gaussian classification
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val values = extractFeatures(input)
+        val inputVector = inputEncoder(input)
 
-        //FIXME for inputs, should rather throw IllegalArgumentException
-        values.size == dimension || error("Invalid input vector due to size mismatch!")
+        // check the compatibility of the input vector and the classifier dimension
+        if(inputVector.size != dimension){
+            throw IllegalArgumentException("Invalid input vector due to size mismatch!")
+        }
 
-        // FIXME remove println before requesting PR review
-        println("The model is classifying the values: $values")
+        val logProbability400 = ln(density400.weight()) + logLikelihood(inputVector, density400)
+        val logProbability200 = ln(density200.weight()) + logLikelihood(inputVector, density200)
 
-        // TODO
-        return AIResponseClassification()
+        val probability400 = exp(logProbability400)
+        val probability200 = exp(logProbability200)
+
+        val response = AIResponseClassification(
+            probabilities = mapOf(
+                400 to probability400,
+                200 to probability200
+            )
+        )
+
+        return response
     }
 
-    // Probability of validity
-//    override fun probValidity(input: RestCallAction): Double {
-//        val values = extractFeatures(input)
-//
-//        values.size == dimension || error("Invalid input vector due to size mismatch!")
-//
-//        return logLikelihood(x=values, stats= count1)
-//    }
 
-    fun predict(xD: List<Double>): StatusGroup {
-        require(xD.size == dimension) { "Prediction input size must match dimension" }
-
-        val logP0 = ln(count0.weight()) + logLikelihood(xD, count0)
-        val logP1 = ln(count1.weight()) + logLikelihood(xD, count1)
-
-        return if (logP1 > logP0) StatusGroup.G_2xx else StatusGroup.G_4xx
-    }
-
-    private fun logLikelihood(x: List<Double>, stats: Counter): Double {
+    private fun logLikelihood(x: List<Double>, stats: Density): Double {
         return x.indices.sumOf { i ->
             val mu = stats.mean[i]
             val varI = stats.variance[i].coerceAtLeast(1e-6) // avoid division by zero
@@ -92,7 +68,7 @@ class GaussianOnlineClassifier(private val dimension: Int) : AIModel {
         }
     }
 
-    private class Counter(dimension: Int) {
+    private class Density(dimension: Int) {
         var n = 0
         val mean = MutableList(dimension) { 0.0 }
         private val M2 = MutableList(dimension) { 0.0 }

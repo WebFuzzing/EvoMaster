@@ -3,11 +3,11 @@ package org.evomaster.core.problem.rest.aiconstraint.numeric
 import bar.examples.it.spring.aiconstraint.numeric.AICNumericController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.StatusGroup
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.junit.jupiter.api.Assertions.*
@@ -15,8 +15,6 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import kotlin.random.Random
-import kotlin.math.abs
 
 
 class AICNumericTest : IntegrationTestRestBase() {
@@ -35,281 +33,53 @@ class AICNumericTest : IntegrationTestRestBase() {
     }
 
 
+    @Disabled("Disabled to avoid running the model during builds")
     @Test
     fun testBasicInjectorCallModelOnce() {
 
-
+        // For now, we use one request to read the genes
+        // However, this part must be handled later based on the schema
         val pirTest = getPirToRest()
         // get is a RestCallAction
-        val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "2020.0"))!!
+        val get = pirTest.fromVerbPath("get", "/api/petShop",
+            mapOf("category" to "REPTILE",
+                "gender" to "FEMALE",
+                "birthYear" to "2007",
+                "vaccinationYear" to "2020",
+                "isAlive" to "true",
+                "weight" to "10.5"))!!
 
-        // this part provides the dimension
-        var values = get.seeTopGenes().mapNotNull { gene ->
+        // Encode the genes and calculate the input dimension of the classifier
+        var dimension:Int = 0
+        for (gene in get.seeTopGenes()) {
             when (gene) {
-                is DoubleGene -> gene.value
-                is IntegerGene -> gene.value.toDouble()
-                else -> null
+                is IntegerGene, is DoubleGene, is BooleanGene, is EnumGene<*> -> {
+                    dimension++
+                }
             }
         }
+        assertTrue(dimension==6)
 
+        // Create a gaussian classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.setDimension(values.size)
-        classifier.initModel() // manually call it after setting the dimension
+        classifier.setDimension(dimension)
+        classifier.initModel() // initialize after setting the dimension
 
-        // createIndividual send the request and evaluate, while we want to predict before sending
-//        val individual = createIndividual(listOf(get), SampleType.RANDOM)
-//        val evaluatedAction = individual.evaluatedMainActions()[0]
-//        val action = evaluatedAction.action as RestCallAction
-//        val result = evaluatedAction.result as RestCallResult
-//        assertEquals(200, result.getStatusCode())
+        // createIndividual send the request and evaluate
+        val individual = createIndividual(listOf(get), SampleType.RANDOM)
+        val evaluatedAction = individual.evaluatedMainActions()[0]
+        val action = evaluatedAction.action as RestCallAction
+        val result = evaluatedAction.result as RestCallResult
 
-//        classifier.updateModel(action, result)
-//        val c = classifier.classify(action)
-//        assertTrue(c.probabilityOf400() == 0.0)
+        // update the model
+        classifier.updateModel(action, result)
+
+        // classify an action
+        val c = classifier.classify(action)
+        // the classification provides two values as the probability of getting 400 and 200
+        assertTrue(c.probabilities.values.all { it in 0.0..1.0 }, "All probabilities must be in [0,1]")
 
     }
 
-
-//    @Disabled("Disabled to avoid running the model during builds")
-//    @Test
-//    fun testAIModel() {
-//
-//        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-//
-//
-//        // The learning continues until we reach the time limit
-//        val timeLimit: Int = 100
-//        var time: Int = 1
-//        while (time < timeLimit) {
-//
-//            val pirTest = getPirToRest()
-//
-//            // Create a randomRestCallAction
-//            // This part must be replaced by evomaster random generator!
-//            val randomNum = Random.nextDouble()
-//            // Here getTemp is a RestCallAction
-//            val getTemp = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "$randomNum"))!!
-//
-//            // predict the response by the classifier
-////            val c = classifier.classify(getTemp)
-//
-//
-//////             Strict approach
-//////             Send the request if the classifier says the request is valid
-//////             This approach is very biased!
-////            if (c == StatusGroup.G_2xx) { //TODO put back
-////                // createIndividual function create and test an individual
-////                val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
-////                val evaluatedAction = individual.evaluatedMainActions()[0]
-////                val action = evaluatedAction.action as RestCallAction
-////                val result = evaluatedAction.result as RestCallResult
-////
-////                // update the classifier based on the response
-////                classifier.updateModel(action, result)
-////            }
-//
-//            time += 1
-//        }
-//    }
-
-
 }
 
-//    @Test
-//    fun testAIModel() {
-//
-//        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-//
-//
-////        val decisionMaking = "Flexible"
-//        val decisionMaking = "nonFlexible"
-//
-//        // The learning continues until we reach the time limit
-//        val timeLimit:Int = 100
-//        var time:Int = 1
-//        while (time < timeLimit) {
-//
-//            val pirTest = getPirToRest()
-//
-//            // Create a randomRestCallAction
-//            // This part must be replaced by evomaster random generator!
-//            val randomNum = Random.nextDouble()
-//            // Here getTemp is a RestCallAction
-//            val getTemp = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to "$randomNum"))!!
-//
-//            // predict the response by the classifier
-//            val c = classifier.classify(getTemp)
-//
-//
-//            if(decisionMaking!="Flexible") {
-//                // Strict approach
-//                // Send the request if the classifier says the request is valid
-//                // This approach is very biased!
-//                if (c == StatusGroup.G_2xx) {
-//                    // createIndividual function create and test an individual
-//                    val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
-//                    val evaluatedAction = individual.evaluatedMainActions()[0]
-//                    val action = evaluatedAction.action as RestCallAction
-//                    val result = evaluatedAction.result as RestCallResult
-//
-//                    // update the classifier based on the response
-//                    classifier.updateModel(action, result)
-//                }
-//            }else{
-//                // Flexible approach
-//                // We use the probability generated by the classifier to send a request
-//                // This approach has the flexibility to disobey the classifier
-//                val probVal = classifier.probValidity(getTemp)
-//                val  sendReqOrNot = sampleFun(values = listOf(1, 0), probabilities = listOf(probVal, 1-probVal))
-//
-//                if (sendReqOrNot == 1) {
-//                    // createIndividual function create and test an individual
-//                    val individual = createIndividual(listOf(getTemp), SampleType.RANDOM)
-//                    val evaluatedAction = individual.evaluatedMainActions()[0]
-//                    val action = evaluatedAction.action as RestCallAction
-//                    val result = evaluatedAction.result as RestCallResult
-//
-//                    // update the classifier based on the response
-//                    classifier.updateModel(action, result)
-//                }
-//            }
-//
-//            time += 1
-//
-//        }
-//
-//    }
-//
-//    // sample function like the sample(c(1,0),size = 1,prob = c(p,1-p)) in R
-//    private fun <T> sampleFun(values: List<T>, probabilities: List<Double>): T {
-//        require(values.size == probabilities.size) { "Values and probabilities must have the same size." }
-//        require(probabilities.all { it > 0.0 }) { "All probabilities must be strictly positive." }
-//        require(abs(probabilities.sum() - 1.0) < 1e-8) { "Probabilities must sum to 1.0." }
-//
-//        val cumulative = probabilities.runningReduce(Double::plus)
-//        val r = Random.nextDouble()
-//        for ((i, threshold) in cumulative.withIndex()) {
-//            if (r < threshold) return values[i]
-//        }
-//        return values.last() // fallback for edge case
-//    }
-//
-//    @Test
-//    fun learnValidNumberRangeUsingNaiveGaussian() {
-//        val pirTest = getPirToRest()
-//        val lowerBound = -5_000
-//        val upperBound = 5_000
-//
-//        val initialMean: Int = try {
-//            findInitialValidInput(lowerBound, upperBound, 10_000)
-//        } catch (e: Exception) {
-//            Random.nextInt(lowerBound, upperBound)
-//        }
-//
-//        val model = NaiveGaussianModel1D(initialMean = initialMean, initialVariance = 10.0, lowerBound, upperBound)
-//
-//        val numIterations = 2_000
-//        var result: Int? = 0;
-//
-//        repeat(numIterations) {
-//            val xValue = model.sample()
-//            val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to xValue.toString()))!!
-//            val individual = createIndividual(listOf(get), SampleType.RANDOM)
-//            result = (individual.evaluatedMainActions()[0].result as RestCallResult).getStatusCode()
-//
-//            println("Sampled x=$xValue, got status=$result")
-//
-//            val csvFile = File("samples.csv")
-//            if (it == 0) {
-//                csvFile.writeText("x,result\n") // header on first iteration
-//            }
-//            csvFile.appendText("$xValue,$result\n")
-//
-//            if (result == 200) {
-//                model.updateAccepted(xValue)
-//            }
-//            else if (result == 400) {
-//                model.updateRejected(xValue)
-//            }
-//        }
-//
-//        println("Final mean: ${model.mean()}, variance: ${model.variance()}")
-//        assertEquals(result, 200)
-//    }
-//
-//    private fun findInitialValidInput(
-//        min: Int = Int.MIN_VALUE,
-//        max: Int = Int.MAX_VALUE,
-//        maxAttempts: Int = 10_000
-//    ): Int {
-//        val pirTest = getPirToRest()
-//        val rng = Random.Default
-//
-//        repeat(maxAttempts) {
-//            val guess = rng.nextInt(min, max + 1)
-//
-//            val get = pirTest.fromVerbPath("get", "/api/numeric", mapOf("x" to guess.toString()))!!
-//            val individual = createIndividual(listOf(get), SampleType.RANDOM)
-//            val result = (individual.evaluatedMainActions()[0].result as RestCallResult).getStatusCode()
-//
-//            println("Trying initial x=$guess, got status=$result")
-//            if (result == 200) return guess
-//        }
-//
-//        error("Failed to find a valid initial value after $maxAttempts attempts")
-//    }
-//
-//
-//
-//    fun testGaussianModel() {
-//        val model = NaiveGaussianModel1D(initialMean = 1950.0, initialVariance = 1000.0)
-//        val checker = CriteriaChecker()
-//
-//        repeat(100) {
-//            val valList = model.generateRandomNumbers(1)
-//            val value = valList[0]
-//            if (checker.check(value) == 400) {
-//                println("The sample is Invalid.")
-//            } else {
-//                println("The sample is valid.")
-//                model.update(value)
-//                println(model.values)
-//                println("The model is updated.")
-//            }
-//        }
-//    }
-//
-//    class NaiveGaussianModel1D(initialMean: Double = 0.0, initialVariance: Double = 1.0) {
-//        private var n: Int = 1
-//        private var mu: Double = initialMean
-//        private var M2: Double = initialVariance
-//        val values: MutableList<Double> = mutableListOf(initialMean)
-//
-//        fun update(x: Double) {
-//            values.add(x)
-//            n += 1
-//            val delta = x - mu
-//            mu += delta / n
-//            val delta2 = x - mu
-//            M2 += delta * delta2
-//        }
-//
-//        fun posteriorMean(): Double = mu
-//
-//        fun posteriorVariance(): Double = if (n > 1) M2 / (n - 1) else 1e-6
-//
-//        fun generateRandomNumbers(numberOfSamples: Int = 1): List<Double> {
-//            val mean = posteriorMean()
-//            val stddev = sqrt(posteriorVariance())
-//            return List(numberOfSamples) {
-//                val random = Random()
-//                random.nextGaussian() * stddev + mean
-//            }
-//        }
-//    }
-//
-//    class CriteriaChecker {
-//        fun check(x: Double): Int {
-//            return if (x in 1925.0..2025.0) 200 else 400
-//        }
-//    }
