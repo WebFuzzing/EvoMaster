@@ -33,12 +33,11 @@ class AICNumericTest : IntegrationTestRestBase() {
     }
 
 
-    @Disabled("Disabled to avoid running the model during builds")
     @Test
     fun testBasicInjectorCallModelOnce() {
 
-        // For now, we use one request to read the genes
-        // However, this part must be handled later based on the schema
+
+        // create a request
         val pirTest = getPirToRest()
         // get is a RestCallAction
         val get = pirTest.fromVerbPath("get", "/api/petShop",
@@ -49,7 +48,8 @@ class AICNumericTest : IntegrationTestRestBase() {
                 "isAlive" to "true",
                 "weight" to "10.5"))!!
 
-        // Encode the genes and calculate the input dimension of the classifier
+        // Calculate the input dimension of the classifier
+        // However, this part should be handled based on the schema
         var dimension:Int = 0
         for (gene in get.seeTopGenes()) {
             when (gene) {
