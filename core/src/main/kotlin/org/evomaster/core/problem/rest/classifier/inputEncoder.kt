@@ -29,7 +29,7 @@ fun inputEncoder(input: RestCallAction): List<Double> {
                 encodedFeatures.add(gene.value.toDouble())
             }
             is DoubleGene -> {
-                encodedFeatures.add(gene.value.toInt().toDouble()) // or use rounding logic if needed
+                encodedFeatures.add(gene.value)
             }
             is BooleanGene -> {
                 val boolVal = gene.getValueAsRawString().toBoolean()

@@ -70,10 +70,6 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 
     private class Density(dimension: Int) {
 
-        init {
-            require(dimension > 0) { "Dimension must be greater than 0 but got $dimension" }
-        }
-
         var n = 0
         val mean = MutableList(dimension) { 0.0 }
         private val M2 = MutableList(dimension) { 0.0 }
