@@ -10,9 +10,9 @@ import kotlin.math.exp
  * TODO this is work in progress
  */
 class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
+
     private val density400 = Density(dimension) // class for 400
     private val density200 = Density(dimension) // class for 200
-
 
 
     // Updating the classifier
@@ -21,7 +21,7 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 
         // check the compatibility of the input vector and the classifier dimension
         if(inputVector.size != dimension){
-            throw IllegalArgumentException("Invalid input vector due to size mismatch!")
+            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
         }
 
         // Update Gaussian densities
@@ -39,7 +39,7 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 
         // check the compatibility of the input vector and the classifier dimension
         if(inputVector.size != dimension){
-            throw IllegalArgumentException("Invalid input vector due to size mismatch!")
+            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
         }
 
         val logProbability400 = ln(density400.weight()) + logLikelihood(inputVector, density400)
@@ -69,6 +69,11 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
     }
 
     private class Density(dimension: Int) {
+
+        init {
+            require(dimension > 0) { "Dimension must be greater than 0 but got $dimension" }
+        }
+
         var n = 0
         val mean = MutableList(dimension) { 0.0 }
         private val M2 = MutableList(dimension) { 0.0 }
