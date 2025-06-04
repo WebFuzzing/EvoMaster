@@ -10,20 +10,25 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
 
 
-class AICNumericTest : IntegrationTestRestBase() {
+class AICNumericCheck : IntegrationTestRestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
             initClass(AICNumericController())
+        }
+
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val test = AICNumericCheck()
+            init()
+            test.initializeTest()
+            test.runClassifierExample()
         }
     }
 
@@ -32,10 +37,7 @@ class AICNumericTest : IntegrationTestRestBase() {
         recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
     }
 
-
-    @Test
-    fun testBasicInjectorCallModelOnce() {
-
+    fun runClassifierExample() {
 
         // create a request
         val pirTest = getPirToRest()
@@ -58,7 +60,7 @@ class AICNumericTest : IntegrationTestRestBase() {
                 }
             }
         }
-        assertTrue(dimension==6)
+        require(dimension == 6)
 
         // Create a gaussian classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
@@ -77,8 +79,9 @@ class AICNumericTest : IntegrationTestRestBase() {
         // classify an action
         val c = classifier.classify(action)
         // the classification provides two values as the probability of getting 400 and 200
-        assertTrue(c.probabilities.values.all { it in 0.0..1.0 }, "All probabilities must be in [0,1]")
-
+        require(c.probabilities.values.all { it in 0.0..1.0 }) {
+            "All probabilities must be in [0,1]"
+        }
     }
 
 }
