@@ -53,24 +53,27 @@ class LanguageModelConnector {
 
     private val httpClients: ConcurrentHashMap<Long, Client> = ConcurrentHashMap()
 
+    private var isLanguageModelAvailable: Boolean = false
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(LanguageModelConnector::class.java)
     }
 
     @PostConstruct
     fun init() {
-        LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
-
         if (config.languageModelConnector) {
+            LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
 
             if (!this.isModelAvailable()) {
-                LoggingUtil.uniqueWarn(log, "${config.languageModelName} is not available in the provided " +
-                        "language model server URL: ${config.languageModelServerURL}. " +
-                        "Language Model Connector will be disabled.")
-                config.languageModelConnector = false
+                LoggingUtil.uniqueWarn(
+                    log, "${config.languageModelName} is not available in the provided " +
+                            "language model server URL: ${config.languageModelServerURL}. " +
+                            "Language Model Connector will be disabled."
+                )
                 return
             } else {
                 LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
+                isLanguageModelAvailable = true
             }
 
             actualFixedThreadPool = min(
@@ -107,6 +110,10 @@ class LanguageModelConnector {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
+        if (!isLanguageModelAvailable) {
+            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
+        }
+
         val promptDto = Prompt(getIdForPrompt(), prompt)
 
         val client = httpClients.getOrPut(Thread.currentThread().id) {
@@ -131,6 +138,10 @@ class LanguageModelConnector {
     fun addPrompt(prompt: String): UUID {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
+        }
+
+        if (!isLanguageModelAvailable) {
+            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
         }
 
         val promptId = getIdForPrompt()
@@ -174,6 +185,10 @@ class LanguageModelConnector {
     fun query(prompt: String): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
+        }
+
+        if (!isLanguageModelAvailable) {
+            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
         }
 
         val promptDto = Prompt(getIdForPrompt(), prompt)

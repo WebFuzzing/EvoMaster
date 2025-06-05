@@ -13,6 +13,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
+import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -37,6 +38,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -633,6 +635,9 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -658,7 +663,6 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -683,7 +687,6 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
-
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -704,6 +707,15 @@ class Main {
                     Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.StandardGA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.MonotonicGA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.SteadyStateGA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
