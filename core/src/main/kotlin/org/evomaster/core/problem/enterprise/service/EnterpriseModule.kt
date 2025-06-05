@@ -1,6 +1,8 @@
 package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.AbstractModule
+import org.evomaster.core.languagemodel.service.LanguageModelConnector
+import org.evomaster.core.problem.security.VulnerabilityAnalyser
 
 abstract class EnterpriseModule :  AbstractModule() {
 
@@ -8,6 +10,12 @@ abstract class EnterpriseModule :  AbstractModule() {
         super.configure()
 
         bind(WFCReportWriter::class.java)
+            .asEagerSingleton()
+
+        bind(LanguageModelConnector::class.java)
+            .asEagerSingleton()
+
+        bind(VulnerabilityAnalyser::class.java)
             .asEagerSingleton()
     }
 }
