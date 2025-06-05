@@ -14,10 +14,9 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
     private val density400 = Density(dimension) // class for 400
     private val density200 = Density(dimension) // class for 200
 
-
-    // Updating the classifier
+    /** Updates the classifier using a request of type `RestCallAction` and its result of type `RestCallResult` */
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = inputEncoder(input)
+        val inputVector = InputEncoderUtils.encode(input)
 
         // check the compatibility of the input vector and the classifier dimension
         if(inputVector.size != dimension){
@@ -33,9 +32,9 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 
     }
 
-    // Gaussian classification
+    /** Classifies a request of type `RestCallAction` using Gaussian classification */
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val inputVector = inputEncoder(input)
+        val inputVector = InputEncoderUtils.encode(input)
 
         // check the compatibility of the input vector and the classifier dimension
         if(inputVector.size != dimension){

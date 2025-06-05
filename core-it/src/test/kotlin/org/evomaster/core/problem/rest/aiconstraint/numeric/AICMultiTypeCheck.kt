@@ -10,15 +10,11 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
 
 
-class AICNumericCheck : IntegrationTestRestBase() {
+class AICMultiTypeCheck : IntegrationTestRestBase() {
 
     companion object {
-        @BeforeAll
         @JvmStatic
         fun init() {
             initClass(AICNumericController())
@@ -26,14 +22,13 @@ class AICNumericCheck : IntegrationTestRestBase() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AICNumericCheck()
+            val test = AICMultiTypeCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
         }
     }
 
-    @BeforeEach
     fun initializeTest() {
         recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
     }
@@ -65,8 +60,7 @@ class AICNumericCheck : IntegrationTestRestBase() {
 
         // Create a gaussian classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.setDimension(dimension)
-        classifier.initModel() // initialize after setting the dimension
+        classifier.initModel(dimension)
 
         // createIndividual send the request and evaluate
         val individual = createIndividual(listOf(get), SampleType.RANDOM)
