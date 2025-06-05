@@ -1132,7 +1132,8 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        StandardGA, MonotonicGA, SteadyStateGA // These 3 are still work-in-progress
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1374,6 +1375,10 @@ class EMConfig {
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
+
+    @Cfg("Define the probability of happening mutation in the genetic algorithms")
+    @Probability
+    var fixedRateMutation = 0.04
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
@@ -2479,7 +2484,7 @@ class EMConfig {
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
-
+    
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
@@ -2515,6 +2520,10 @@ class EMConfig {
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
             " on a single line")
     var maxLengthForCommentLine = 80
+
+    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
+    @Min(0.0)
+    var elitesCount: Int = 1
 
     @Experimental
     @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
