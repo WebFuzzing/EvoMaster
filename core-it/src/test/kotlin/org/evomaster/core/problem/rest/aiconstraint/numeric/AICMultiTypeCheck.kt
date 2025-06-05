@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.aiconstraint.numeric
 
-import bar.examples.it.spring.aiconstraint.numeric.AICNumericController
+import bar.examples.it.spring.aiconstraint.numeric.AICMultiTypeController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -17,7 +17,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-            initClass(AICNumericController())
+            initClass(AICMultiTypeController())
         }
 
         @JvmStatic
