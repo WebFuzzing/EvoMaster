@@ -2,7 +2,6 @@ package org.evomaster.core.problem.httpws.service
 
 import com.webfuzzing.commons.auth.Header
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
