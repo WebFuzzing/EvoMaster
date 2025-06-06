@@ -52,7 +52,7 @@ public class AuthSetupController extends SpringController {
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return Arrays.asList(new AuthenticationDto() {{
-            name = "foo";
+            setName("foo");
             jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
                 endpointName = "login";
                 interfaceName = AuthSetupService.Iface.class.getName();
@@ -68,7 +68,7 @@ public class AuthSetupController extends SpringController {
             }};
         }},
                 new AuthenticationDto() {{
-                    name = "bar";
+                    setName("bar");
                     jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
                         endpointName = "login";
                         interfaceName = AuthSetupService.Iface.class.getName();

@@ -1,8 +1,10 @@
 package com.foo.rest.examples.spring.openapi.v3.logintokenheader
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
-import org.evomaster.client.java.controller.AuthUtils
-import org.evomaster.client.java.controller.api.dto.auth.*
+import com.webfuzzing.commons.auth.Header
+import com.webfuzzing.commons.auth.LoginEndpoint
+import com.webfuzzing.commons.auth.TokenHandling
+import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 
@@ -18,14 +20,14 @@ class LoginTokenHeaderController : SpringController(LoginTokenHeaderApplication:
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
 
-        val le = LoginEndpointDto()
+        val le = LoginEndpoint()
         le.endpoint = "/api/logintokenheader/login"
-        le.verb = HttpVerb.POST
+        le.verb = LoginEndpoint.HttpVerb.POST
         le.contentType = null
         le.expectCookies = false
-        le.headers.add(HeaderDto().apply { name="Authorization"; value = "foo 123"  })
+        le.headers.add(Header().apply { name="Authorization"; value = "foo 123"  })
 
-        le.token = TokenHandlingDto()
+        le.token = TokenHandling()
         le.token.extractFromField = "/token/authToken"
         le.token.headerPrefix = "Bearer "
         le.token.httpHeaderName = "Authorization"

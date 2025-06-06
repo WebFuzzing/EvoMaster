@@ -14,6 +14,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>commons</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-sql-dto</artifactId>
         </dependency>

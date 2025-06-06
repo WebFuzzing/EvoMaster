@@ -2,7 +2,7 @@ package org.evomaster.core.config
 
 import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import com.webfuzzing.commons.auth.AuthenticationInfo
 import java.io.File
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
@@ -89,7 +89,7 @@ object ConfigUtil {
 
         file.appendText("\n\n\n")
         file.appendText("### Authentication configurations.\n")
-        file.appendText("### For each possible registered user, can provide an ${AuthenticationDto::class.simpleName}" +
+        file.appendText("### For each possible registered user, can provide an ${AuthenticationInfo::class.simpleName}" +
                 " object to define how to log them in.\n")
         file.appendText("### Different types of authentication mechanisms can be configured here.\n")
         file.appendText("### For more information, read: https://github.com/WebFuzzing/EvoMaster/blob/master/docs/auth.md\n")
@@ -98,7 +98,7 @@ object ConfigUtil {
         val auth = "auth"
 
         if(isToml(stringPath)) {
-            AuthenticationDto::class.java.fields
+            AuthenticationInfo::class.java.declaredFields
                     .filter { it.name != "name" }
                     .forEach {
                         file.appendText("# [[$auth]]\n")
@@ -111,8 +111,8 @@ object ConfigUtil {
             file.appendText("#auth:\n")
             val indent = "    "
             file.appendText("#  - name: ?\n")
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("loginEndpointAuth"))
         }
 
         file.appendText("\n\n")
@@ -131,8 +131,8 @@ object ConfigUtil {
         if(isYaml(stringPath)){
             file.appendText("#authTemplate:\n")
             val indent = "    "
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("loginEndpointAuth"))
         }
 
         file.appendText("\n")

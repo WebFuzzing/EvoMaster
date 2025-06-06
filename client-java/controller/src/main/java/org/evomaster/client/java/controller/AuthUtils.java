@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller;
 
+import com.webfuzzing.commons.auth.Header;
+import com.webfuzzing.commons.auth.LoginEndpoint;
+import com.webfuzzing.commons.auth.TokenHandling;
 import org.evomaster.client.java.controller.api.dto.auth.*;
 
 import java.io.UnsupportedEncodingException;
@@ -48,7 +51,10 @@ public class AuthUtils {
     public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.fixedHeaders.add(new HeaderDto("Authorization", authorizationValue));
+        Header header = new Header();
+        header.setName("Authorization");
+        header.setValue(authorizationValue);
+        dto.getFixedHeaders().add(header);
 
         return dto;
     }
@@ -86,12 +92,12 @@ public class AuthUtils {
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password, String endpoint){
 
-        LoginEndpointDto cookie = new LoginEndpointDto();
+        LoginEndpoint cookie = new LoginEndpoint();
 
-        cookie.endpoint = endpoint;
-        cookie.verb = HttpVerb.POST;
-        cookie.contentType = "application/x-www-form-urlencoded";
-        cookie.expectCookies = true;
+        cookie.setEndpoint(endpoint);
+        cookie.setVerb(LoginEndpoint.HttpVerb.POST);
+        cookie.setContentType("application/x-www-form-urlencoded");
+        cookie.setExpectCookies(true);
         try {
             String payload;
             String usernameField = URLEncoder.encode("username", "UTF-8");
@@ -99,12 +105,12 @@ public class AuthUtils {
             payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
             payload += "&";
             payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
-            cookie.payloadRaw = payload;
+            cookie.setPayloadRaw(payload);
         }catch (UnsupportedEncodingException e){
             throw new RuntimeException(e); //ah, the joys of Java...
         }
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.loginEndpointAuth = cookie;
+        dto.setLoginEndpointAuth(cookie);
 
         return dto;
     }
@@ -137,20 +143,20 @@ public class AuthUtils {
             String headerPrefix
     ){
 
-        LoginEndpointDto le = new LoginEndpointDto();
+        LoginEndpoint le = new LoginEndpoint();
 
-        le.endpoint = postEndpoint;
-        le.verb = HttpVerb.POST;
-        le.contentType = "application/json";
-        le.expectCookies = false;
-        le.payloadRaw = payload;
-        le.token = new TokenHandlingDto();
-        le.token.extractFromField = extractFromField;
-        le.token.headerPrefix = headerPrefix;
-        le.token.httpHeaderName = "Authorization";
+        le.setEndpoint(postEndpoint);
+        le.setVerb(LoginEndpoint.HttpVerb.POST);
+        le.setContentType("application/json");
+        le.setExpectCookies(false);
+        le.setPayloadRaw(payload);
+        le.setToken(new TokenHandling());
+        le.getToken().setExtractFromField(extractFromField);
+        le.getToken().setHeaderPrefix(headerPrefix);
+        le.getToken().setHttpHeaderName("Authorization");
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.loginEndpointAuth = le;
+        dto.setLoginEndpointAuth(le);
 
         return dto;
     }

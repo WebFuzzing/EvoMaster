@@ -1313,7 +1313,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * <p>
      * What type of info to provide here depends on the auth mechanism, e.g.,
-     * Basic or cookie-based (using {@link org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto}).
+     * Basic or cookie-based (using LoginEndpoint).
      * To simplify the creation of these DTOs with auth info, you can look
      * at {@link org.evomaster.client.java.controller.AuthUtils}.
      * </p>
