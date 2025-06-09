@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.NeuralNetworkClassifier
 import javax.annotation.PostConstruct
 
 
@@ -25,7 +26,7 @@ class AIResponseClassifier : AIModel {
                 delegate = GaussianOnlineClassifier(dimension)
             }
             EMConfig.AIResponseClassifierModel.NN -> {
-                //TODO
+                delegate = NeuralNetworkClassifier(dimension)
             }
             EMConfig.AIResponseClassifierModel.NONE -> {
                 //TODO

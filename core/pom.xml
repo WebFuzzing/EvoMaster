@@ -282,6 +282,21 @@
             <artifactId>solver</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- DL4J Core -->
+        <dependency>
+            <groupId>org.deeplearning4j</groupId>
+            <artifactId>deeplearning4j-core</artifactId>
+            <version>1.0.0-beta7</version>
+        </dependency>
+
+        <!-- ND4J CPU backend (required to run neural nets on CPU) -->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-native-platform</artifactId>
+            <version>1.0.0-beta7</version>
+        </dependency>
+
     </dependencies>
 
 
