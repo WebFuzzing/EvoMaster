@@ -140,13 +140,21 @@ object ConfigUtil {
 
     private fun printObjectDefinition(isYaml: Boolean, file: File, prefix: String, field: Field){
 
+        if(field.name == "additionalProperties"){
+            return
+        }
+
         var isCollection = false
 
         val type = if(List::class.java.isAssignableFrom(field.type)
             || Set::class.java.isAssignableFrom(field.type)
             || field.type.isArray){
             isCollection = true
-            (field.genericType as ParameterizedType).actualTypeArguments[0] as Class<*>
+            val actualType = (field.genericType as ParameterizedType).actualTypeArguments[0]
+            if(actualType !is Class<*>){
+                throw IllegalStateException("Cannot handle actual type: $actualType")
+            }
+            actualType as Class<*>
         } else {
             field.type
         }
@@ -178,7 +186,7 @@ object ConfigUtil {
             } else {
                 printIndentation(file, true, prefix)
                 file.appendText("${field.name}$sep\n")
-                type.fields.forEachIndexed { index, it ->
+                type.declaredFields.forEachIndexed { index, it ->
                     val p = if(index == 0 && isCollection) "  - " else "    "
                     printObjectDefinition(true, file, prefix+p, it)
                 }
