@@ -64,7 +64,7 @@ class LanguageModelConnector {
         if (config.languageModelConnector) {
             LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
 
-            if (!this.isModelAvailable()) {
+            if (!this.checkModelAvailable()) {
                 LoggingUtil.uniqueWarn(
                     log, "${config.languageModelName} is not available in the provided " +
                             "language model server URL: ${config.languageModelServerURL}. " +
@@ -100,6 +100,12 @@ class LanguageModelConnector {
      * @return number of [Client] in [httpClients]
      */
     fun getHttpClientCount() = httpClients.size
+
+    /**
+     * To check if the configured language model available.
+     * @return Boolean if the configured model available [true], otherwise [false]
+     */
+    fun isModelAvailable() = isLanguageModelAvailable
 
     /**
      * Use concurrent programming to make prompt request asynchronously.
@@ -213,7 +219,7 @@ class LanguageModelConnector {
         TODO("Requires more time to implement this.")
     }
 
-    private fun isModelAvailable(): Boolean {
+    private fun checkModelAvailable(): Boolean {
         val url = OllamaEndpoints
             .getTagEndpoint(config.languageModelServerURL)
 
