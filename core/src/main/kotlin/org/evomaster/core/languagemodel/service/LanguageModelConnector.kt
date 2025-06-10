@@ -14,6 +14,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -205,10 +206,19 @@ class LanguageModelConnector {
     /**
      * @return the given structured request for the prompt.
      */
-    fun queryStructured(prompt: String) {
+    fun queryStructured(prompt: String, response: Map<String, Any>) {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
+
+        if (!isLanguageModelAvailable) {
+            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
+        }
+
+        val x: Any = object  {
+            val n = mutableListOf<Int>(1, 2, 3)
+        }
+
 
         TODO("Requires more time to implement this.")
     }
