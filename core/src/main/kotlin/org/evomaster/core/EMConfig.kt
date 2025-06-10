@@ -1268,6 +1268,14 @@ class EMConfig {
     var statisticsFile = "statistics.csv"
 
 
+    enum class AIResponseClassifierModel {
+        NONE, GAUSSIAN, NN
+    }
+
+    @Experimental
+    @Cfg("Model used to learn input constraints and infer response status before making request.")
+    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+
     @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
     var writeWFCReport = false
