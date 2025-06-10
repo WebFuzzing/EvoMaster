@@ -1,8 +1,7 @@
 package org.evomaster.core.problem.httpws.auth
 
-import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
-import org.evomaster.client.java.controller.api.dto.auth.PayloadUsernamePasswordDto
-import org.evomaster.client.java.controller.api.dto.auth.TokenHandlingDto
+import com.webfuzzing.commons.auth.LoginEndpoint
+import com.webfuzzing.commons.auth.PayloadUsernamePassword
 import org.evomaster.core.Lazy
 import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.problem.rest.data.HttpVerb
@@ -80,7 +79,7 @@ class EndpointCallLogin(
     }
 
     companion object {
-        fun fromDto(name: String, dto: LoginEndpointDto) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpoint) = EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
             externalEndpointURL = dto.externalEndpointURL,
@@ -92,14 +91,14 @@ class EndpointCallLogin(
             token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)
         )
 
-        private fun computeTokenHandling(dto: TokenHandlingDto) = TokenHandling(
+        private fun computeTokenHandling(dto: com.webfuzzing.commons.auth.TokenHandling) = TokenHandling(
             extractFromField = dto.extractFromField,
             httpHeaderName = dto.httpHeaderName,
             headerPrefix = dto.headerPrefix
         )
 
 
-        private fun computePayload(dto: PayloadUsernamePasswordDto, contentType: ContentType): String {
+        private fun computePayload(dto: PayloadUsernamePassword, contentType: ContentType): String {
 
             return when (contentType) {
                 ContentType.X_WWW_FORM_URLENCODED ->
