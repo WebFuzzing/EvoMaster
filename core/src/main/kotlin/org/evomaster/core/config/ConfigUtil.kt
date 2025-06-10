@@ -150,7 +150,11 @@ object ConfigUtil {
             || Set::class.java.isAssignableFrom(field.type)
             || field.type.isArray){
             isCollection = true
-            val actualType = (field.genericType as ParameterizedType).actualTypeArguments[0]
+            val actualType = if(field.genericType is ParameterizedType) {
+                (field.genericType as ParameterizedType).actualTypeArguments[0]
+            } else {
+                field.genericType
+            }
             if(actualType !is Class<*>){
                 throw IllegalStateException("Cannot handle actual type: $actualType")
             }
