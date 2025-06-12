@@ -126,6 +126,7 @@ Migrations/
 /test-old-libraries/target/
 /e2e-tests/spring-web/target/
 /e2e-tests/spring-rest-mongo/target/
+/e2e-tests/spring-rest-opensearch/target/
 /client-java/target/
 /client-java/dependencies/target/
 /client-java/sql-dto/target/
