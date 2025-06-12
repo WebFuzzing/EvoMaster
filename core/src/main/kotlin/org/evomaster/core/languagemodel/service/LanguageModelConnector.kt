@@ -322,6 +322,10 @@ class LanguageModelConnector {
 
         val response = callWithClient(httpClient, languageModelServerURL, OllamaRequestVerb.POST, requestBody)
 
+        val statusCode = response!!.status
+        val e = response!!.hasEntity()
+        val b = response!!.readEntity(String::class.java)
+
         if (response != null && response.status == 200 && response.hasEntity()) {
             val body = response.readEntity(String::class.java)
             val bodyObject = objectMapper.readValue(

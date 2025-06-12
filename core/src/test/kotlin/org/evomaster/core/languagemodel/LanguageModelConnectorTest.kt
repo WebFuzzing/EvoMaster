@@ -7,6 +7,8 @@ import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.KGenericContainer
+import org.evomaster.core.languagemodel.data.ollama.OllamaRequestFormat
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseProperty
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.AfterAll
@@ -37,7 +39,8 @@ class LanguageModelConnectorTest {
 
         private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
 
-        private const val PROMPT_STRUCTURED = "What is the capital city of Norway and what are the official languages. Respond using JSON."
+        private const val PROMPT_STRUCTURED =
+            "What is the capital city of Norway and what are the official languages. Respond using JSON."
 
         private const val EXPECTED_ANSWER = "YES\n"
 
@@ -131,14 +134,21 @@ class LanguageModelConnectorTest {
         Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
     }
 
-    @Disabled("Work in progress")
+    //    @Disabled("Work in progress")
     @Test
     fun testStructuredRequest() {
+        val properties: Map<String, OllamaResponseProperty> =
+            mapOf("city" to OllamaResponseProperty("string"), "languages" to OllamaResponseProperty("array"))
         val objectMapper = ObjectMapper()
 
-        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
-            SampleDto::class,
-            listOf("city", "languages")
+//        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
+//            SampleDto::class,
+//            listOf("city", "languages")
+//        )
+        val responseFormat = OllamaRequestFormat(
+            "object",
+            properties,
+            listOf("city", "languages"),
         )
         val answer = languageModelConnector.queryStructured(PROMPT_STRUCTURED, responseFormat)
 
