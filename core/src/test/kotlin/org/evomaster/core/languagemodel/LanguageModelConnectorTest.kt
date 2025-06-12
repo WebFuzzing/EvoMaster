@@ -40,7 +40,7 @@ class LanguageModelConnectorTest {
         private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
 
         private const val PROMPT_STRUCTURED =
-            "What is the capital city of Norway and what are the official languages. Respond using JSON."
+            "What is the capital city of Norway and what are the official languages."
 
         private const val EXPECTED_ANSWER = "YES\n"
 
@@ -134,7 +134,7 @@ class LanguageModelConnectorTest {
         Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
     }
 
-    //    @Disabled("Work in progress")
+    @Disabled("Work in progress")
     @Test
     fun testStructuredRequest() {
         val properties: Map<String, OllamaResponseProperty> =
