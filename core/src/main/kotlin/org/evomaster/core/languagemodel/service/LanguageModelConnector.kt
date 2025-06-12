@@ -10,6 +10,7 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
+import org.evomaster.core.languagemodel.data.ollama.OllamaStructuredRequest
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
@@ -212,7 +213,7 @@ class LanguageModelConnector {
     /**
      * @return the given structured request for the prompt.
      */
-    fun queryStructured(prompt: String, response: Map<String, Any>) {
+    fun queryStructured(prompt: String, responseStructure: Any) {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -221,10 +222,13 @@ class LanguageModelConnector {
             throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
         }
 
-        val x: Any = object  {
-            val n = mutableListOf<Int>(1, 2, 3)
+        val promptDto = Prompt(getIdForPrompt(), prompt)
+
+        val client = httpClients.getOrPut(Thread.currentThread().id) {
+            getHttpClient()
         }
 
+        val response = makeQueryWithClient(client, promptDto)
 
         TODO("Requires more time to implement this.")
     }
@@ -259,17 +263,28 @@ class LanguageModelConnector {
      * @return [AnsweredPrompt] if the request is successfully completed.
      * @return null if the request failed.
      */
-    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt): AnsweredPrompt? {
+    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt, responseStructure: OllamaStructuredRequest? = null): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
 
-        val requestBody = objectMapper.writeValueAsString(
-            OllamaRequest(
-                config.languageModelName,
-                prompt.prompt,
-                false
+        val requestBody = if (responseStructure != null) {
+            objectMapper.writeValueAsString(
+                OllamaStructuredRequest(
+                    config.languageModelName,
+                    prompt.prompt,
+                    false,
+                    responseStructure
+                )
             )
-        )
+        } else {
+            objectMapper.writeValueAsString(
+                OllamaRequest(
+                    config.languageModelName,
+                    prompt.prompt,
+                    false
+                )
+            )
+        }
 
         val response = callWithClient(httpClient, languageModelServerURL, OllamaRequestVerb.POST, requestBody)
 
