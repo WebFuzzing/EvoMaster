@@ -9,13 +9,13 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
+import org.evomaster.core.languagemodel.data.ollama.OllamaRequestFormat
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
 import org.evomaster.core.languagemodel.data.ollama.OllamaStructuredRequest
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -174,7 +174,7 @@ class LanguageModelConnector {
      * @return null if there is no answer for the prompt
      */
     fun getAnswerByPrompt(prompt: String): AnsweredPrompt? {
-        return prompts.filter { it.value.prompt.prompt == prompt && !it.value.answer.isNullOrEmpty() }.values.firstOrNull()
+        return prompts.filter { it.value.prompt.prompt == prompt }.values.firstOrNull()
     }
 
     /**
@@ -263,17 +263,17 @@ class LanguageModelConnector {
      * @return [AnsweredPrompt] if the request is successfully completed.
      * @return null if the request failed.
      */
-    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt, responseStructure: OllamaStructuredRequest? = null): AnsweredPrompt? {
+    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt, responseFormat: OllamaRequestFormat? = null): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
 
-        val requestBody = if (responseStructure != null) {
+        val requestBody = if (responseFormat != null) {
             objectMapper.writeValueAsString(
                 OllamaStructuredRequest(
                     config.languageModelName,
                     prompt.prompt,
                     false,
-                    responseStructure
+                    responseFormat
                 )
             )
         } else {
@@ -295,10 +295,22 @@ class LanguageModelConnector {
                 OllamaResponse::class.java
             )
 
-            val answer = AnsweredPrompt(
-                prompt,
-                bodyObject.response
-            )
+            val answer = if (responseFormat != null) {
+                val responseFormatted = objectMapper.readValue(
+                    bodyObject.response,
+                    OllamaRequestFormat::class.java
+                )
+                AnsweredPrompt(
+                    prompt,
+                    responseFormatted,
+                    true
+                )
+            } else {
+                AnsweredPrompt(
+                    prompt,
+                    bodyObject.response
+                )
+            }
 
             prompts[prompt.id] = answer
 
