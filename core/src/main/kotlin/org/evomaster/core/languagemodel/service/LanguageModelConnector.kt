@@ -9,8 +9,9 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
-import org.evomaster.core.languagemodel.data.ollama.OllamaRequestFormat
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseFormat
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseArrayProperty
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponseProperty
 import org.evomaster.core.languagemodel.data.ollama.OllamaStructuredRequest
 import org.evomaster.core.logging.LoggingUtil
@@ -31,6 +32,7 @@ import javax.ws.rs.core.Response
 import kotlin.collections.set
 import kotlin.math.min
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.jvmErasure
 
@@ -218,7 +220,7 @@ class LanguageModelConnector {
     /**
      * @return the given structured request for the prompt.
      */
-    fun queryStructured(prompt: String, requestFormat: OllamaRequestFormat): AnsweredPrompt? {
+    fun queryStructured(prompt: String, requestFormat: OllamaResponseFormat): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -239,24 +241,24 @@ class LanguageModelConnector {
     }
 
 
-    fun parseObjectToResponseFormat(klass: KClass<*>, required: List<String>) : OllamaRequestFormat {
+    /**
+     * Can be used to create a custom response format using a DTO.
+     *
+     * Note: For now [Map] and subclasses are not supported. Use primitive types only.
+     *
+     * @param [klass] holds the DTO
+     * @param [required] a list of fields which are required in the response from the Language Model Server
+     * @return [OllamaResponseFormat]
+     */
+    fun parseObjectToResponseFormat(klass: KClass<*>, required: List<String>): OllamaResponseFormat {
         val properties: MutableMap<String, OllamaResponseProperty> = mutableMapOf()
 
         klass.memberProperties.forEach { prop ->
-            val typeName = when(prop.returnType.jvmErasure.simpleName) {
-                "String" -> OllamaResponseProperty("string")
-                "List" -> OllamaResponseProperty("array")
-                "Map" -> OllamaResponseProperty("object")
-                "Int" -> OllamaResponseProperty("integer")
-                else -> {
-                    LoggingUtil.uniqueWarn(log, "Unhandled property type ${prop.returnType}")
-                    OllamaResponseProperty("string")
-                }
-            }
+            val typeName = getPropertyType(prop.returnType)
             properties[prop.name] = typeName
         }
 
-        return OllamaRequestFormat(
+        return OllamaResponseFormat(
             "object",
             properties,
             required
@@ -296,7 +298,7 @@ class LanguageModelConnector {
     private fun makeQueryWithClient(
         httpClient: Client,
         prompt: Prompt,
-        responseFormat: OllamaRequestFormat? = null
+        responseFormat: OllamaResponseFormat? = null
     ): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
@@ -321,10 +323,6 @@ class LanguageModelConnector {
         }
 
         val response = callWithClient(httpClient, languageModelServerURL, OllamaRequestVerb.POST, requestBody)
-
-        val statusCode = response!!.status
-        val e = response!!.hasEntity()
-        val b = response!!.readEntity(String::class.java)
 
         if (response != null && response.status == 200 && response.hasEntity()) {
             val body = response.readEntity(String::class.java)
@@ -397,6 +395,34 @@ class LanguageModelConnector {
     private fun getHttpClient(): Client {
         return HttpClientFactory
             .createTrustingJerseyClient(false, 60_000)
+    }
+
+    /**
+     * Can be used to get the [OllamaResponseProperty] to be used in the custom response format.
+     * @param [kType]
+     * @return [OllamaResponseProperty]
+     */
+    private fun getPropertyType(kType: KType): OllamaResponseProperty {
+        val typeName = when (kType.jvmErasure.simpleName) {
+            "String" -> OllamaResponseProperty("string")
+            "List" -> {
+                val elementType =
+                    kType.arguments[0].type!!
+                OllamaResponseArrayProperty(
+                    "array",
+                    getPropertyType(elementType)
+                )
+            }
+            "Int" -> OllamaResponseProperty("integer")
+            "Long" -> OllamaResponseProperty("integer")
+            "Boolean" -> OllamaResponseProperty("boolean")
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Unhandled type ${kType.jvmErasure.simpleName}")
+                OllamaResponseProperty("object")
+            }
+        }
+
+        return typeName
     }
 
 }

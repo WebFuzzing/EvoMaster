@@ -1,6 +1,6 @@
 package org.evomaster.core.languagemodel.data.ollama
 
-class OllamaRequestFormat (
+class OllamaResponseFormat (
     val type: String,
 
     val properties: Map<String, OllamaResponseProperty>,

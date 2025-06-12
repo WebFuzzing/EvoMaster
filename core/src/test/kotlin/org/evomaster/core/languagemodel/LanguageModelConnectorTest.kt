@@ -7,15 +7,12 @@ import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.KGenericContainer
-import org.evomaster.core.languagemodel.data.ollama.OllamaRequestFormat
-import org.evomaster.core.languagemodel.data.ollama.OllamaResponseProperty
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 
 class LanguageModelConnectorTest {
@@ -40,9 +37,11 @@ class LanguageModelConnectorTest {
         private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
 
         private const val PROMPT_STRUCTURED =
-            "What is the capital city of Norway and what are the official languages."
+            "What is the capital city of Norway and what are the languages. Also, is Norway close to Antarctic continent?"
 
         private const val EXPECTED_ANSWER = "YES\n"
+
+        private const val EXPECTED_STRUCTURED_ANSWER = "Oslo"
 
         private val ollama = KGenericContainer("ollama/ollama:latest")
             .withExposedPorts(11434)
@@ -134,29 +133,24 @@ class LanguageModelConnectorTest {
         Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
     }
 
-    @Disabled("Work in progress")
     @Test
     fun testStructuredRequest() {
-        val properties: Map<String, OllamaResponseProperty> =
-            mapOf("city" to OllamaResponseProperty("string"), "languages" to OllamaResponseProperty("array"))
         val objectMapper = ObjectMapper()
 
-//        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
-//            SampleDto::class,
-//            listOf("city", "languages")
-//        )
-        val responseFormat = OllamaRequestFormat(
-            "object",
-            properties,
-            listOf("city", "languages"),
+        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
+            ResponseDto::class,
+            listOf("city", "languages", "antarctic")
         )
+
         val answer = languageModelConnector.queryStructured(PROMPT_STRUCTURED, responseFormat)
 
-        val dto: SampleDto = objectMapper.readValue(
-            answer!!.answer as String,
-            SampleDto::class.java
+        val dto: ResponseDto = objectMapper.readValue(
+            answer!!.answer,
+            ResponseDto::class.java
         )
 
-        Assertions.assertEquals(EXPECTED_ANSWER, dto.city)
+        Assertions.assertEquals(EXPECTED_STRUCTURED_ANSWER, dto.city)
+        Assertions.assertTrue(dto.languages.contains("Norwegian"))
+        Assertions.assertEquals(false, dto.antarctic)
     }
 }

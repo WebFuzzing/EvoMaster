@@ -1,6 +1,6 @@
 package org.evomaster.core.languagemodel.data.ollama
 
-class OllamaResponseProperty (
-    val type: String,
+open class OllamaResponseProperty (
+    open val type: String,
 ) {
 }

@@ -14,6 +14,6 @@ class OllamaStructuredRequest (
      */
     val stream: Boolean = false,
 
-    val format: OllamaRequestFormat
+    val format: OllamaResponseFormat
 ) {
 }
