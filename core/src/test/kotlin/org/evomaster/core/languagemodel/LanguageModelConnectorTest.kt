@@ -1,5 +1,6 @@
 package org.evomaster.core.languagemodel
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Injector
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.ci.utils.CIUtils
@@ -12,6 +13,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 
 class LanguageModelConnectorTest {
@@ -34,6 +36,8 @@ class LanguageModelConnectorTest {
         private const val LANGUAGE_MODEL_NAME: String = "gemma3:1b"
 
         private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
+
+        private const val PROMPT_STRUCTURED = "What is the capital city of Norway and what are the official languages. Respond using JSON."
 
         private const val EXPECTED_ANSWER = "YES\n"
 
@@ -125,5 +129,24 @@ class LanguageModelConnectorTest {
 
         Assertions.assertEquals(result!!.answer, EXPECTED_ANSWER)
         Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
+    }
+
+    @Disabled("Work in progress")
+    @Test
+    fun testStructuredRequest() {
+        val objectMapper = ObjectMapper()
+
+        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
+            SampleDto::class,
+            listOf("city", "languages")
+        )
+        val answer = languageModelConnector.queryStructured(PROMPT_STRUCTURED, responseFormat)
+
+        val dto: SampleDto = objectMapper.readValue(
+            answer!!.answer as String,
+            SampleDto::class.java
+        )
+
+        Assertions.assertEquals(EXPECTED_ANSWER, dto.city)
     }
 }

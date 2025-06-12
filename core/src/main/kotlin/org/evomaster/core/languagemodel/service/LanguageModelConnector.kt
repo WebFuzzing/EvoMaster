@@ -11,6 +11,7 @@ import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestFormat
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseProperty
 import org.evomaster.core.languagemodel.data.ollama.OllamaStructuredRequest
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
@@ -27,7 +28,11 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.collections.set
 import kotlin.math.min
+import kotlin.reflect.KClass
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.jvmErasure
 
 /**
  * A utility service designed to handle large language model server
@@ -213,7 +218,7 @@ class LanguageModelConnector {
     /**
      * @return the given structured request for the prompt.
      */
-    fun queryStructured(prompt: String, responseStructure: Any) {
+    fun queryStructured(prompt: String, requestFormat: OllamaRequestFormat): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -228,9 +233,34 @@ class LanguageModelConnector {
             getHttpClient()
         }
 
-        val response = makeQueryWithClient(client, promptDto)
+        val response = makeQueryWithClient(client, promptDto, requestFormat)
 
-        TODO("Requires more time to implement this.")
+        return response
+    }
+
+
+    fun parseObjectToResponseFormat(klass: KClass<*>, required: List<String>) : OllamaRequestFormat {
+        val properties: MutableMap<String, OllamaResponseProperty> = mutableMapOf()
+
+        klass.memberProperties.forEach { prop ->
+            val typeName = when(prop.returnType.jvmErasure.simpleName) {
+                "String" -> OllamaResponseProperty("string")
+                "List" -> OllamaResponseProperty("array")
+                "Map" -> OllamaResponseProperty("object")
+                "Int" -> OllamaResponseProperty("integer")
+                else -> {
+                    LoggingUtil.uniqueWarn(log, "Unhandled property type ${prop.returnType}")
+                    OllamaResponseProperty("string")
+                }
+            }
+            properties[prop.name] = typeName
+        }
+
+        return OllamaRequestFormat(
+            "object",
+            properties,
+            required
+        )
     }
 
     private fun checkModelAvailable(): Boolean {
@@ -263,7 +293,11 @@ class LanguageModelConnector {
      * @return [AnsweredPrompt] if the request is successfully completed.
      * @return null if the request failed.
      */
-    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt, responseFormat: OllamaRequestFormat? = null): AnsweredPrompt? {
+    private fun makeQueryWithClient(
+        httpClient: Client,
+        prompt: Prompt,
+        responseFormat: OllamaRequestFormat? = null
+    ): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
 
@@ -295,22 +329,11 @@ class LanguageModelConnector {
                 OllamaResponse::class.java
             )
 
-            val answer = if (responseFormat != null) {
-                val responseFormatted = objectMapper.readValue(
-                    bodyObject.response,
-                    OllamaRequestFormat::class.java
-                )
-                AnsweredPrompt(
-                    prompt,
-                    responseFormatted,
-                    true
-                )
-            } else {
-                AnsweredPrompt(
-                    prompt,
-                    bodyObject.response
-                )
-            }
+            val answer = AnsweredPrompt(
+                prompt,
+                bodyObject.response,
+                responseFormat == null
+            )
 
             prompts[prompt.id] = answer
 
