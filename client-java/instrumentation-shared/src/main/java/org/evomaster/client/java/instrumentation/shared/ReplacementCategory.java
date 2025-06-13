@@ -43,7 +43,8 @@ public enum ReplacementCategory {
     OPENSEARCH,
 
     /**
-     * Replacements to handle REDImvn  clean install -DskipTestsS command interceptions
+     * Replacements to handle REDIS command interceptions
      */
     REDIS
 }
+
