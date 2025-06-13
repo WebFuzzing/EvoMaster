@@ -40,6 +40,10 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle OPENSEARCH command interceptions
      */
-    OPENSEARCH
+    OPENSEARCH,
 
+    /**
+     * Replacements to handle REDImvn  clean install -DskipTestsS command interceptions
+     */
+    REDIS
 }
