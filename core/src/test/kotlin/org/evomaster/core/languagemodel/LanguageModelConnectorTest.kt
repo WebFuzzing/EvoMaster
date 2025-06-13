@@ -1,5 +1,6 @@
 package org.evomaster.core.languagemodel
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Injector
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.ci.utils.CIUtils
@@ -35,7 +36,12 @@ class LanguageModelConnectorTest {
 
         private const val PROMPT = "Is A is the first letter in english alphabet? say YES or NO"
 
+        private const val PROMPT_STRUCTURED =
+            "What is the capital city of Norway and what are the languages. Also, is Norway close to Antarctic continent?"
+
         private const val EXPECTED_ANSWER = "YES\n"
+
+        private const val EXPECTED_STRUCTURED_ANSWER = "Oslo"
 
         private val ollama = KGenericContainer("ollama/ollama:latest")
             .withExposedPorts(11434)
@@ -125,5 +131,26 @@ class LanguageModelConnectorTest {
 
         Assertions.assertEquals(result!!.answer, EXPECTED_ANSWER)
         Assertions.assertEquals(2, languageModelConnector.getHttpClientCount())
+    }
+
+    @Test
+    fun testStructuredRequest() {
+        val objectMapper = ObjectMapper()
+
+        val responseFormat = languageModelConnector.parseObjectToResponseFormat(
+            ResponseDto::class,
+            listOf("city", "languages", "antarctic")
+        )
+
+        val answer = languageModelConnector.query(PROMPT_STRUCTURED, responseFormat)
+
+        val dto: ResponseDto = objectMapper.readValue(
+            answer!!.answer,
+            ResponseDto::class.java
+        )
+
+        Assertions.assertEquals(EXPECTED_STRUCTURED_ANSWER, dto.city)
+        Assertions.assertTrue(dto.languages.contains("Norwegian"))
+        Assertions.assertEquals(false, dto.antarctic)
     }
 }
