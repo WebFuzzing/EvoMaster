@@ -117,32 +117,6 @@ class LanguageModelConnector {
     fun isModelAvailable() = isLanguageModelAvailable
 
     /**
-     * Use concurrent programming to make prompt request asynchronously.
-     * @return the [CompletableFuture] for the prompt.
-     */
-    fun queryAsync(prompt: String): CompletableFuture<AnsweredPrompt?> {
-        if (!config.languageModelConnector) {
-            throw IllegalStateException("Language Model Connector is disabled")
-        }
-
-        if (!isLanguageModelAvailable) {
-            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
-        }
-
-        val promptDto = Prompt(getIdForPrompt(), prompt)
-
-        val client = httpClients.getOrPut(Thread.currentThread().id) {
-            getHttpClient()
-        }
-
-        val future = CompletableFuture.supplyAsync {
-            makeQueryWithClient(client, promptDto)
-        }
-
-        return future
-    }
-
-    /**
      * Added prompt will be queried in a separate thread without
      * blocking the main thread.
      * [getAnswerByPrompt] and [getAnswerById] can be used to retrieve the
@@ -150,7 +124,7 @@ class LanguageModelConnector {
      * @return unique prompt identifier as [UUID]
      * @throws [IllegalStateException] if the connector is disabled in [EMConfig]
      */
-    fun addPrompt(prompt: String): UUID {
+    fun addPrompt(prompt: String, responseFormat: OllamaResponseFormat? = null): UUID {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -168,7 +142,7 @@ class LanguageModelConnector {
             val httpClient = httpClients.getOrPut(id) {
                 getHttpClient()
             }
-            makeQueryWithClient(httpClient, promptDto)
+            makeQueryWithClient(httpClient, promptDto, responseFormat)
         }
 
         workerPool.submit(task)
@@ -197,7 +171,7 @@ class LanguageModelConnector {
      * @return answer string from the language model server.
      * @return null if the request failed.
      */
-    fun query(prompt: String): AnsweredPrompt? {
+    fun query(prompt: String, responseFormat: OllamaResponseFormat? = null): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -212,15 +186,16 @@ class LanguageModelConnector {
             getHttpClient()
         }
 
-        val response = makeQueryWithClient(client, promptDto)
+        val response = makeQueryWithClient(client, promptDto, responseFormat)
 
         return response
     }
 
     /**
-     * @return the given structured request for the prompt.
+     * Use concurrent programming to make prompt request asynchronously.
+     * @return the [CompletableFuture] for the prompt.
      */
-    fun queryStructured(prompt: String, requestFormat: OllamaResponseFormat): AnsweredPrompt? {
+    fun queryAsync(prompt: String, responseFormat: OllamaResponseFormat? = null): CompletableFuture<AnsweredPrompt?> {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -235,11 +210,12 @@ class LanguageModelConnector {
             getHttpClient()
         }
 
-        val response = makeQueryWithClient(client, promptDto, requestFormat)
+        val future = CompletableFuture.supplyAsync {
+            makeQueryWithClient(client, promptDto, responseFormat)
+        }
 
-        return response
+        return future
     }
-
 
     /**
      * Can be used to create a custom response format using a DTO.

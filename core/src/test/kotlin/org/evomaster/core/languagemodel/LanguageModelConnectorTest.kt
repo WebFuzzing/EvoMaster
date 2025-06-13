@@ -142,7 +142,7 @@ class LanguageModelConnectorTest {
             listOf("city", "languages", "antarctic")
         )
 
-        val answer = languageModelConnector.queryStructured(PROMPT_STRUCTURED, responseFormat)
+        val answer = languageModelConnector.query(PROMPT_STRUCTURED, responseFormat)
 
         val dto: ResponseDto = objectMapper.readValue(
             answer!!.answer,
