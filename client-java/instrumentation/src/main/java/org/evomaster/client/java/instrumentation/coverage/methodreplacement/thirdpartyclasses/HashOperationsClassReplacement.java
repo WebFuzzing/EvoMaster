@@ -53,20 +53,7 @@ public class HashOperationsClassReplacement extends ThirdPartyMethodReplacementC
         }
     }
 
-    /*
-opsForHash().get(key, field)	HGET	Trae un valor específico de un campo en un hash
-opsForHash().entries(key)	HGETALL	Trae todos los campos y valores del hash
-opsForHash().values(key)	HVALS	Trae solo los valores del hash
-opsForHash().keys(key)	HKEYS	Trae solo las claves del hash
-
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, category = ReplacementCategory.REDIS)
-    public static Map<Object, Object> entries(Object hashOps, Object key) throws Throwable {
-        addRedisKeyType(key.toString(), Object.class);  // registrar uso del hash
-
-        Method method = getOriginal(singleton, "entries", hashOps);
-        return (Map<Object, Object>) method.invoke(hashOps, key);
-    }
-     */
+    // ToDo: Evaluate adding replacements for entries (HGETALL), values (HVALS) and/or keys (HKEYS)
 
     private static <T> void addRedisKeyType(String keyName, Class<T> entityClass) {
         String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(entityClass, true, Collections.emptyList());
