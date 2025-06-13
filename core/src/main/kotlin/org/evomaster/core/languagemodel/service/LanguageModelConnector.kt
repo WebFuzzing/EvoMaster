@@ -244,7 +244,8 @@ class LanguageModelConnector {
     /**
      * Can be used to create a custom response format using a DTO.
      *
-     * Note: For now [Map] and subclasses are not supported. Use primitive types only.
+     * Note: Currently only primitives (i.e., [Boolean], [Int], [String], and [List])
+     * are supported except [Map].
      *
      * @param [klass] holds the DTO
      * @param [required] a list of fields which are required in the response from the Language Model Server
@@ -413,6 +414,7 @@ class LanguageModelConnector {
                     getPropertyType(elementType)
                 )
             }
+
             "Int" -> OllamaResponseProperty("integer")
             "Long" -> OllamaResponseProperty("integer")
             "Boolean" -> OllamaResponseProperty("boolean")
