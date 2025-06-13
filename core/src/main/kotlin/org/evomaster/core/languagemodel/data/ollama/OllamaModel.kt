@@ -8,7 +8,7 @@ class OllamaModel {
 
     val modified_at: String = ""
 
-    val size: Int = 0
+    val size: Long = 0
 
     val digest: String = ""
 

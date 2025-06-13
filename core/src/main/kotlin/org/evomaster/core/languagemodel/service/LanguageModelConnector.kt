@@ -9,7 +9,11 @@ import org.evomaster.core.languagemodel.data.ollama.OllamaRequest
 import org.evomaster.core.languagemodel.data.ollama.OllamaResponse
 import org.evomaster.core.languagemodel.data.Prompt
 import org.evomaster.core.languagemodel.data.ollama.OllamaEndpoints
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseFormat
 import org.evomaster.core.languagemodel.data.ollama.OllamaRequestVerb
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseArrayProperty
+import org.evomaster.core.languagemodel.data.ollama.OllamaResponseProperty
+import org.evomaster.core.languagemodel.data.ollama.OllamaStructuredRequest
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.slf4j.Logger
@@ -25,7 +29,12 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import kotlin.collections.set
 import kotlin.math.min
+import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.jvm.jvmErasure
 
 /**
  * A utility service designed to handle large language model server
@@ -108,32 +117,6 @@ class LanguageModelConnector {
     fun isModelAvailable() = isLanguageModelAvailable
 
     /**
-     * Use concurrent programming to make prompt request asynchronously.
-     * @return the [CompletableFuture] for the prompt.
-     */
-    fun queryAsync(prompt: String): CompletableFuture<AnsweredPrompt?> {
-        if (!config.languageModelConnector) {
-            throw IllegalStateException("Language Model Connector is disabled")
-        }
-
-        if (!isLanguageModelAvailable) {
-            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
-        }
-
-        val promptDto = Prompt(getIdForPrompt(), prompt)
-
-        val client = httpClients.getOrPut(Thread.currentThread().id) {
-            getHttpClient()
-        }
-
-        val future = CompletableFuture.supplyAsync {
-            makeQueryWithClient(client, promptDto)
-        }
-
-        return future
-    }
-
-    /**
      * Added prompt will be queried in a separate thread without
      * blocking the main thread.
      * [getAnswerByPrompt] and [getAnswerById] can be used to retrieve the
@@ -141,7 +124,7 @@ class LanguageModelConnector {
      * @return unique prompt identifier as [UUID]
      * @throws [IllegalStateException] if the connector is disabled in [EMConfig]
      */
-    fun addPrompt(prompt: String): UUID {
+    fun addPrompt(prompt: String, responseFormat: OllamaResponseFormat? = null): UUID {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -159,7 +142,7 @@ class LanguageModelConnector {
             val httpClient = httpClients.getOrPut(id) {
                 getHttpClient()
             }
-            makeQueryWithClient(httpClient, promptDto)
+            makeQueryWithClient(httpClient, promptDto, responseFormat)
         }
 
         workerPool.submit(task)
@@ -172,7 +155,7 @@ class LanguageModelConnector {
      * @return null if there is no answer for the prompt
      */
     fun getAnswerByPrompt(prompt: String): AnsweredPrompt? {
-        return prompts.filter { it.value.prompt.prompt == prompt && !it.value.answer.isNullOrEmpty() }.values.firstOrNull()
+        return prompts.filter { it.value.prompt.prompt == prompt }.values.firstOrNull()
     }
 
     /**
@@ -188,7 +171,7 @@ class LanguageModelConnector {
      * @return answer string from the language model server.
      * @return null if the request failed.
      */
-    fun query(prompt: String): AnsweredPrompt? {
+    fun query(prompt: String, responseFormat: OllamaResponseFormat? = null): AnsweredPrompt? {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
@@ -203,20 +186,60 @@ class LanguageModelConnector {
             getHttpClient()
         }
 
-        val response = makeQueryWithClient(client, promptDto)
+        val response = makeQueryWithClient(client, promptDto, responseFormat)
 
         return response
     }
 
     /**
-     * @return the given structured request for the prompt.
+     * Use concurrent programming to make prompt request asynchronously.
+     * @return the [CompletableFuture] for the prompt.
      */
-    fun queryStructured(prompt: String) {
+    fun queryAsync(prompt: String, responseFormat: OllamaResponseFormat? = null): CompletableFuture<AnsweredPrompt?> {
         if (!config.languageModelConnector) {
             throw IllegalStateException("Language Model Connector is disabled")
         }
 
-        TODO("Requires more time to implement this.")
+        if (!isLanguageModelAvailable) {
+            throw IllegalStateException("Specified Language Model (${config.languageModelName}) is not available in the server.")
+        }
+
+        val promptDto = Prompt(getIdForPrompt(), prompt)
+
+        val client = httpClients.getOrPut(Thread.currentThread().id) {
+            getHttpClient()
+        }
+
+        val future = CompletableFuture.supplyAsync {
+            makeQueryWithClient(client, promptDto, responseFormat)
+        }
+
+        return future
+    }
+
+    /**
+     * Can be used to create a custom response format using a DTO.
+     *
+     * Note: Currently only primitives (i.e., [Boolean], [Int], [String], and [List])
+     * are supported except [Map].
+     *
+     * @param [klass] holds the DTO
+     * @param [required] a list of fields which are required in the response from the Language Model Server
+     * @return [OllamaResponseFormat]
+     */
+    fun parseObjectToResponseFormat(klass: KClass<*>, required: List<String>): OllamaResponseFormat {
+        val properties: MutableMap<String, OllamaResponseProperty> = mutableMapOf()
+
+        klass.memberProperties.forEach { prop ->
+            val typeName = getPropertyType(prop.returnType)
+            properties[prop.name] = typeName
+        }
+
+        return OllamaResponseFormat(
+            "object",
+            properties,
+            required
+        )
     }
 
     private fun checkModelAvailable(): Boolean {
@@ -249,17 +272,32 @@ class LanguageModelConnector {
      * @return [AnsweredPrompt] if the request is successfully completed.
      * @return null if the request failed.
      */
-    private fun makeQueryWithClient(httpClient: Client, prompt: Prompt): AnsweredPrompt? {
+    private fun makeQueryWithClient(
+        httpClient: Client,
+        prompt: Prompt,
+        responseFormat: OllamaResponseFormat? = null
+    ): AnsweredPrompt? {
         val languageModelServerURL = OllamaEndpoints
             .getGenerateEndpoint(config.languageModelServerURL)
 
-        val requestBody = objectMapper.writeValueAsString(
-            OllamaRequest(
-                config.languageModelName,
-                prompt.prompt,
-                false
+        val requestBody = if (responseFormat != null) {
+            objectMapper.writeValueAsString(
+                OllamaStructuredRequest(
+                    config.languageModelName,
+                    prompt.prompt,
+                    false,
+                    responseFormat
+                )
             )
-        )
+        } else {
+            objectMapper.writeValueAsString(
+                OllamaRequest(
+                    config.languageModelName,
+                    prompt.prompt,
+                    false
+                )
+            )
+        }
 
         val response = callWithClient(httpClient, languageModelServerURL, OllamaRequestVerb.POST, requestBody)
 
@@ -272,7 +310,8 @@ class LanguageModelConnector {
 
             val answer = AnsweredPrompt(
                 prompt,
-                bodyObject.response
+                bodyObject.response,
+                responseFormat == null
             )
 
             prompts[prompt.id] = answer
@@ -333,6 +372,35 @@ class LanguageModelConnector {
     private fun getHttpClient(): Client {
         return HttpClientFactory
             .createTrustingJerseyClient(false, 60_000)
+    }
+
+    /**
+     * Can be used to get the [OllamaResponseProperty] to be used in the custom response format.
+     * @param [kType]
+     * @return [OllamaResponseProperty]
+     */
+    private fun getPropertyType(kType: KType): OllamaResponseProperty {
+        val typeName = when (kType.jvmErasure.simpleName) {
+            "String" -> OllamaResponseProperty("string")
+            "List" -> {
+                val elementType =
+                    kType.arguments[0].type!!
+                OllamaResponseArrayProperty(
+                    "array",
+                    getPropertyType(elementType)
+                )
+            }
+
+            "Int" -> OllamaResponseProperty("integer")
+            "Long" -> OllamaResponseProperty("integer")
+            "Boolean" -> OllamaResponseProperty("boolean")
+            else -> {
+                LoggingUtil.uniqueWarn(log, "Unhandled type ${kType.jvmErasure.simpleName}")
+                OllamaResponseProperty("object")
+            }
+        }
+
+        return typeName
     }
 
 }
