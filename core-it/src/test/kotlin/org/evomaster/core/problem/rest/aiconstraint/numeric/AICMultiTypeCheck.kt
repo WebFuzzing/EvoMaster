@@ -10,6 +10,12 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.schema.RestSchema
+import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.service.Randomness
 
 
 class AICMultiTypeCheck : IntegrationTestRestBase() {
@@ -35,21 +41,38 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
 
     fun runClassifierExample() {
 
-        // create a request
-        val pirTest = getPirToRest()
-        // get is a RestCallAction
-        val get = pirTest.fromVerbPath("get", "/api/petShop",
-            mapOf("category" to "REPTILE",
-                "gender" to "FEMALE",
-                "birthYear" to "2007",
-                "vaccinationYear" to "2020",
-                "isAlive" to "true",
-                "weight" to "10.5"))!!
+        /**
+         * Generate a random RestCallAction using EvoMaster Randomness
+         */
+        // Fetch and parse OpenAPI schema based on the schema location
+        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
+        // Wrap schema into RestSchema
+        val restSchema = RestSchema(schema)
+        // Configuration for gene generation
+        val config = EMConfig().apply {
+            enableSchemaConstraintHandling = true
+            allowInvalidData = false
+            probRestDefault = 0.0
+            probRestExamples = 0.0
+        }
+        val options = RestActionBuilderV3.Options(config)
+        // actionCluster contains provides possible actions
+        val actionCluster = mutableMapOf<String, Action>()
+        // Generate RestCallAction
+        RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
+        // Sample a random RestCallAction
+        val random = Randomness()
+        val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
+        val template = random.choose(actionList)
+        val sampledAction = template.copy() as RestCallAction
+        sampledAction.doInitialize(random)
+//        sampledAction.parameters.forEach { param ->
+//            println("  - Param: ${param.name}, Gene value is: ${param.gene.getValueAsRawString()}, Gene type: ${param.gene::class.simpleName}")
+//        }
 
         // Calculate the input dimension of the classifier
-        // However, this part should be handled based on the schema
         var dimension:Int = 0
-        for (gene in get.seeTopGenes()) {
+        for (gene in sampledAction.seeTopGenes()) {
             when (gene) {
                 is IntegerGene, is DoubleGene, is BooleanGene, is EnumGene<*> -> {
                     dimension++
@@ -63,7 +86,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         classifier.initModel(dimension)
 
         // createIndividual send the request and evaluate
-        val individual = createIndividual(listOf(get), SampleType.RANDOM)
+        val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
         val evaluatedAction = individual.evaluatedMainActions()[0]
         val action = evaluatedAction.action as RestCallAction
         val result = evaluatedAction.result as RestCallResult

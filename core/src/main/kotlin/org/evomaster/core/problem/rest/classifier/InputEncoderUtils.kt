@@ -7,6 +7,11 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 
+/**
+ * Utility object for encoding the genes of a [RestCallAction] into a numerical representation.
+ * This is primarily used in AI-based models that require fixed-length numeric feature vectors
+ * as input.
+ */
 object InputEncoderUtils {
 
     /** Encodes `IntegerGene`, `DoubleGene`, `EnumGene`, and `BooleanGene` of a `RestCallAction` into a vector of `Double` elements */
