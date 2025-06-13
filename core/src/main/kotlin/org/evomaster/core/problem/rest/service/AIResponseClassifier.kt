@@ -24,6 +24,9 @@ class AIResponseClassifier : AIModel {
                 //TODO
                 delegate = GaussianOnlineClassifier(dimension)
             }
+            EMConfig.AIResponseClassifierModel.GLM -> {
+                //TODO
+            }
             EMConfig.AIResponseClassifierModel.NN -> {
                 //TODO
             }
