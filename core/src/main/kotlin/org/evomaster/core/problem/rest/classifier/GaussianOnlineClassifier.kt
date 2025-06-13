@@ -7,7 +7,25 @@ import kotlin.math.PI
 import kotlin.math.exp
 
 /**
- * TODO this is work in progress
+ * Gaussian classifier for REST API calls.
+ *
+ * This classifier builds two independent multivariate Gaussian distributions (one for HTTP 200 responses,
+ * and one for HTTP 400 responses) based on numeric feature encodings of `RestCallAction` instances.
+ *
+ * ## Features:
+ * - Learns in an *online* fashion: it updates its parameters incrementally as new samples arrive.
+ * - Uses the encoded input vectors from REST actions.
+ * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
+ *
+ * ## Internals:
+ * - Maintains two `Density` instances: one for class 200 (successful responses) and one for class 400 (error responses).
+ * - Computes log-likelihood under each distribution and classifies based on maximum likelihood with class priors.
+ *
+ * ## Assumptions:
+ * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
+ * - The only two supported classes are 200 and 400.
+ *
+ * @param dimension the fixed dimensionality of the input feature vectors.
  */
 class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 

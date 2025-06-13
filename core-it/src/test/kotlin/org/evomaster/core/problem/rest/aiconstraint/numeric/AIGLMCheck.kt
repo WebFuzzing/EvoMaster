@@ -13,13 +13,13 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
 
 
-class AIGaussianCheck : IntegrationTestRestBase() {
+class AIGLMCheck : IntegrationTestRestBase() {
 
     companion object {
         @JvmStatic
@@ -29,7 +29,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AIGaussianCheck()
+            val test = AIGLMCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
@@ -37,7 +37,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
+        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GLM"))
     }
 
     fun runClassifierExample() {
@@ -79,14 +79,15 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         }
         require(dimension == 6)
 
-        // Create a gaussian classifier
+        // Create a glm classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
+        classifier.setLearningRate(0.05)  // Set learning rate before initModel()
         classifier.initModel(dimension)
 
         // Use reflection to access the private delegate
         val delegateField = classifier::class.java.getDeclaredField("delegate")
         delegateField.isAccessible = true
-        val gaussian = delegateField.get(classifier) as? GaussianOnlineClassifier
+        val glm = delegateField.get(classifier) as? GLMOnlineClassifier
 
         var time =1
         val timeLimit = 20
@@ -116,29 +117,18 @@ class AIGaussianCheck : IntegrationTestRestBase() {
                 "All probabilities must be in [0,1]"
             }
 
-            if (gaussian != null) {
-                val d200 = gaussian.getDensity200()
-                val d400 = gaussian.getDensity400()
-                val mean200 = d200.mean.map { "%.2f".format(it) }
-                val var200 = d200.variance.map { "%.2f".format(it) }
-                val mean400 = d400.mean.map { "%.2f".format(it) }
-                val var400 = d400.variance.map { "%.2f".format(it) }
+            if (glm != null) {
+                val weightsAndBias = glm.getModelParams()
 
                 println(
                     """
-                    n200 = ${d200.n}
-                    mean200 = $mean200
-                    variance200 = $var200 * I_$dimension
-                    n400 = ${d400.n}
-                    mean400 = $mean400
-                    variance400 = $var400 * I_$dimension
+                    Weights and Bias = $weightsAndBias
                     """.trimIndent()
                 )
                 println("**********************************************")
             } else {
-                println("The classifier is not a GaussianOnlineClassifier")
+                println("The classifier is not a GLMOnlineClassifier")
             }
-
 
             time++
         }
