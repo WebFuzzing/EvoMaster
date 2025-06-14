@@ -1268,6 +1268,10 @@ class EMConfig {
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
+    @Cfg("Learning rate for classifiers like GLM and NN.")
+    var aiResponseClassifierLearningRate: Double = 0.01
+
+    @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
     var writeWFCReport = false
 

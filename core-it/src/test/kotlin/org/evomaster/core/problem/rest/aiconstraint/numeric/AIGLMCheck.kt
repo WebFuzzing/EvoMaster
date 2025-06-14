@@ -37,7 +37,12 @@ class AIGLMCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GLM"))
+        recreateInjectorForWhite(
+            listOf(
+                "--aiModelForResponseClassification", "GLM",
+                "--aiResponseClassifierLearningRate", "0.05"
+            )
+        )
     }
 
     fun runClassifierExample() {
@@ -81,7 +86,6 @@ class AIGLMCheck : IntegrationTestRestBase() {
 
         // Create a glm classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.setLearningRate(0.05)  // Set learning rate before initModel()
         classifier.initModel(dimension)
 
         // Use reflection to access the private delegate

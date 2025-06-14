@@ -18,12 +18,6 @@ class AIResponseClassifier : AIModel {
 
     private lateinit var delegate: AIModel
 
-    // learning rate can be used for different classifiers like glm and NN
-    private var learningRate: Double = 0.01
-    fun setLearningRate(rate: Double) {
-        learningRate = rate
-    }
-
     fun initModel(dimension: Int){
 
         when(config.aiModelForResponseClassification){
@@ -33,7 +27,7 @@ class AIResponseClassifier : AIModel {
             }
             EMConfig.AIResponseClassifierModel.GLM -> {
                 //TODO
-                delegate = GLMOnlineClassifier(dimension, learningRate)
+                delegate = GLMOnlineClassifier(dimension, config.aiResponseClassifierLearningRate)
             }
             EMConfig.AIResponseClassifierModel.NN -> {
                 //TODO
