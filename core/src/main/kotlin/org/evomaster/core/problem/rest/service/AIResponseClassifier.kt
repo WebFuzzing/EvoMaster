@@ -22,11 +22,9 @@ class AIResponseClassifier : AIModel {
 
         when(config.aiModelForResponseClassification){
             EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
-                //TODO
                 delegate = GaussianOnlineClassifier(dimension)
             }
             EMConfig.AIResponseClassifierModel.GLM -> {
-                //TODO
                 delegate = GLMOnlineClassifier(dimension, config.aiResponseClassifierLearningRate)
             }
             EMConfig.AIResponseClassifierModel.NN -> {
