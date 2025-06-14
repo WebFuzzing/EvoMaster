@@ -4,7 +4,7 @@ import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
-//TODO work-in-pgrogess
+//TODO work-in-progress
 class NeuralNetworkClassifier : AIModel {
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         // NN update logic
@@ -14,6 +14,5 @@ class NeuralNetworkClassifier : AIModel {
         // NN classification
         return AIResponseClassification()
     }
-
 
 }
