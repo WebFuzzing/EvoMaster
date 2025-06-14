@@ -66,7 +66,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
         val actionCluster = mutableMapOf<String, Action>()
         // Generate RestCallAction
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
-        // Sample a random RestCallAction
+        // Sample one random RestCallAction
         val random = Randomness()
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
         val template = random.choose(actionList)
@@ -123,7 +123,6 @@ class AIGLMCheck : IntegrationTestRestBase() {
 
             if (glm != null) {
                 val weightsAndBias = glm.getModelParams()
-
                 println(
                     """
                     Weights and Bias = $weightsAndBias
