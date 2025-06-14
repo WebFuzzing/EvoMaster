@@ -43,7 +43,6 @@ public abstract class OpenSearchController extends EmbeddedSutController {
     @Override
     public String startSut() {
         opensearch.start();
-
         int port = opensearch.getMappedPort(OPENSEARCH_PORT);
 
         try {
@@ -54,7 +53,12 @@ public abstract class OpenSearchController extends EmbeddedSutController {
         }
 
         SpringApplicationBuilder app = new SpringApplicationBuilder(opensearchAppClass);
-        app.properties("--server.port=0");
+        app.properties(
+            "--server.port=0",
+            "opensearch.port=" + port,
+            "opensearch.indexName=" + indexName
+        );
+
         ctx = app.run();
 
         return "http://localhost:" + getSutPort();
