@@ -129,6 +129,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
                     """.trimIndent()
                 )
                 println("**********************************************")
+                println("**********************************************")
             } else {
                 println("The classifier is not a GLMOnlineClassifier")
             }
