@@ -12,7 +12,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 
 public class SwaggerConfiguration {
 
-    String path;
+    private final String path;
 
     public SwaggerConfiguration(String path) {
         this.path = path;
@@ -30,8 +30,8 @@ public class SwaggerConfiguration {
 
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("API")
-                .description("Some description")
+                .title("OpenSearch Sample API")
+                .description("OpenSearch Sample API description for " + path)
                 .version("1.0")
                 .build();
     }
