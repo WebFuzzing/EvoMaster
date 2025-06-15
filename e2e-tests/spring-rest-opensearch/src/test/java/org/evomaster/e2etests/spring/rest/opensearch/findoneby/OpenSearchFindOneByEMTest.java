@@ -38,7 +38,7 @@ public class OpenSearchFindOneByEMTest extends RestTestBase {
 //
 //          setOption(args, "endpointFocus", endpoint);
 //          setOption(args, "heuristicsForMongo", "true");
-//          setOption(args, "instrumentMR_MONGO", "true");
+          setOption(args, "instrumentMR_OPENSEARCH", "true");
 //          setOption(args, "generateMongoData", "true");
 //          setOption(args, "extractMongoExecutionInfo", "true");
 

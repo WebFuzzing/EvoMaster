@@ -208,6 +208,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.EXECUTING_INIT_MONGO, executingInitMongo);
     }
 
+    public boolean setExecutingInitOpenSearch(boolean executingInitOpenSearch) {
+        return sendWithDataAndExpectACK(Command.EXECUTING_INIT_OPENSEARCH, executingInitOpenSearch);
+    }
+
     public boolean setExecutingAction(boolean executingAction){
         return sendWithDataAndExpectACK(Command.EXECUTING_ACTION, executingAction);
     }

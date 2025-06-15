@@ -106,6 +106,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
+    private final Set<OpenSearchFindCommand> openSearchFindCommandData = new CopyOnWriteArraySet<>();
+
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
     public Set<ExecutedSqlCommand> getSqlInfoData(){
@@ -114,6 +116,10 @@ public class AdditionalInfo implements Serializable {
 
     public Set<MongoFindCommand> getMongoInfoData(){
         return Collections.unmodifiableSet(mongoFindCommandData);
+    }
+
+    public Set<OpenSearchFindCommand> getOpenSearchInfoData() {
+        return Collections.unmodifiableSet(openSearchFindCommandData);
     }
 
     public Set<MongoCollectionSchema> getMongoCollectionTypeData(){
@@ -126,6 +132,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoInfo(MongoFindCommand info){
         mongoFindCommandData.add(info);
+    }
+
+    public void addOpenSearchInfo(OpenSearchFindCommand info){
+        openSearchFindCommandData.add(info);
     }
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){

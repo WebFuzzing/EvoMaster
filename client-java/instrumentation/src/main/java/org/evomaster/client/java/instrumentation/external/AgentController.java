@@ -94,6 +94,10 @@ public class AgentController {
                         handleExecutingInitMongo();
                         sendCommand(Command.ACK);
                         break;
+                    case EXECUTING_INIT_OPENSEARCH:
+                        handleExecutingInitOpenSearch();
+                        sendCommand(Command.ACK);
+                        break;
                     case EXECUTING_ACTION:
                         handleExecutingAction();
                         sendCommand(Command.ACK);
@@ -177,6 +181,16 @@ public class AgentController {
             InstrumentationController.setExecutingInitMongo(executingInitMongo);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling executing-init-mongo: "+e.getMessage());
+        }
+    }
+
+    private static void handleExecutingInitOpenSearch() {
+        try {
+            Object msg = in.readObject();
+            Boolean executingInitOpenSearch = (Boolean) msg;
+            InstrumentationController.setExecutingInitOpenSearch(executingInitOpenSearch);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling executing-init-opensearch: " + e.getMessage());
         }
     }
 

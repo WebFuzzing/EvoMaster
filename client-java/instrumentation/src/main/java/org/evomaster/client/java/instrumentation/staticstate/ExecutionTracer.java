@@ -35,6 +35,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitMongo = false;
 
+    private static boolean executingInitOpenSearch = false;
+
     /**
      * indicate whether now it is to execute action during the search
      */
@@ -193,6 +195,10 @@ public class ExecutionTracer {
 
     public static void setExecutingInitMongo(boolean executingInitMongo) {
         ExecutionTracer.executingInitMongo = executingInitMongo;
+    }
+
+    public static void setExecutingInitOpenSearch(boolean executingInitOpenSearch) {
+        ExecutionTracer.executingInitOpenSearch = executingInitOpenSearch;
     }
 
     public static boolean isExecutingAction() {
@@ -421,6 +427,12 @@ public class ExecutionTracer {
     public static void addMongoInfo(MongoFindCommand info){
         if (!executingInitMongo)
             getCurrentAdditionalInfo().addMongoInfo(info);
+    }
+
+    public static void addOpenSearchInfo(OpenSearchFindCommand info) {
+        if (!executingInitOpenSearch) {
+            getCurrentAdditionalInfo().addOpenSearchInfo(info);
+        }
     }
 
     public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){

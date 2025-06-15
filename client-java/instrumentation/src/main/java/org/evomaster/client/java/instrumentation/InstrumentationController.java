@@ -51,6 +51,10 @@ public class InstrumentationController {
         ExecutionTracer.setExecutingInitMongo(executingInitMongo);
     }
 
+    public static void setExecutingInitOpenSearch(boolean executingInitOpenSearch){
+        ExecutionTracer.setExecutingInitOpenSearch(executingInitOpenSearch);
+    }
+
     public static void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }

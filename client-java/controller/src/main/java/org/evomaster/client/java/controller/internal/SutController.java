@@ -1307,6 +1307,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingInitMongo(boolean executingInitMongo);
 
+    public abstract void setExecutingInitOpenSearch(boolean executingInitOpenSearch);
+
     public abstract void setExecutingAction(boolean executingAction);
 
 
