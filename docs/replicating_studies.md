@@ -31,7 +31,7 @@ This means that, often, the experiment settings for a scientific study is quite 
 To help running these experiments, we usually employ a script (written in Python) to configure all these settings.
 
 This script has been evolving throughout the years, to simplify the running of the experiments, from paper to paper, with as little effort as possible. 
-A template for one of its most recent versions can be found [in the _scripts_ folder (i.e., _scritps/exp.py_)](../scripts/exp.py).
+A template for one of its most recent versions can be found [in the _scripts_ folder (i.e., _scritps/exp.py_)](../scripts/wb_exp.py).
 Here, we briefly discuss how it works. 
 
 Once defined a set of configurations of _EvoMaster_ to experiment with, the _exp.py_ script will generate a set of Bash scripts, in which the experiments will be distributed.
