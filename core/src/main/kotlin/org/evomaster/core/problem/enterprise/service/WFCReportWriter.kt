@@ -30,6 +30,37 @@ class WFCReportWriter {
     private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
         suite.testSuitePath + "#" + test.name
 
+
+
+    fun writeWebApp(){
+        val prefix = "/webreport"
+        exportResource(prefix, "/index.html")
+        exportResource(prefix, "/icon.svg")
+        exportResource(prefix, "/assets/report.js")
+        exportResource(prefix, "/assets/report.css")
+    }
+
+    private fun exportResource(prefix: String, resource: String){
+
+        val text = readResource(prefix+resource)
+
+        val path = Paths.get(config.outputFolder, resource).toAbsolutePath()
+
+        Files.createDirectories(path.parent)
+        Files.deleteIfExists(path)
+        Files.createFile(path)
+
+        path.toFile().appendText(text)
+    }
+
+    private fun readResource(path: String) : String {
+
+      return  WFCReportWriter::class.java.getResourceAsStream(path)
+            ?.bufferedReader()
+            ?.use { it.readText() }
+            ?: throw IllegalArgumentException("Resource not found: $path")
+    }
+
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
         val report = com.webfuzzing.commons.report.Report()
@@ -37,7 +68,7 @@ class WFCReportWriter {
 
         report.schemaVersion = "0.0.1" //TODO
         report.toolName = toolName
-        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
+        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
         report.creationTime = Date()
         report.totalTests = solution.individuals.size
         report.testFilePaths = suites.map { it.testSuitePath }.toSet()
