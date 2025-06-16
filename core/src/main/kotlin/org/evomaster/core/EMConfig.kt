@@ -1273,12 +1273,16 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN
+        NONE, GAUSSIAN, NN, GLM
     }
 
     @Experimental
     @Cfg("Model used to learn input constraints and infer response status before making request.")
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+
+    @Experimental
+    @Cfg("Learning rate for classifiers like GLM and NN.")
+    var aiResponseClassifierLearningRate: Double = 0.01
 
     @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")

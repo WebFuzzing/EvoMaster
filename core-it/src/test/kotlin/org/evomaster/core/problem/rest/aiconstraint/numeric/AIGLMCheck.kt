@@ -13,12 +13,13 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
 
 
-class AICMultiTypeCheck : IntegrationTestRestBase() {
+class AIGLMCheck : IntegrationTestRestBase() {
 
     companion object {
         @JvmStatic
@@ -28,7 +29,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AICMultiTypeCheck()
+            val test = AIGLMCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
@@ -36,7 +37,12 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
+        recreateInjectorForWhite(
+            listOf(
+                "--aiModelForResponseClassification", "GLM",
+                "--aiResponseClassifierLearningRate", "0.05"
+            )
+        )
     }
 
     fun runClassifierExample() {
@@ -60,15 +66,12 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         val actionCluster = mutableMapOf<String, Action>()
         // Generate RestCallAction
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
-        // Sample a random RestCallAction
+        // Sample one random RestCallAction
         val random = Randomness()
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
         val template = random.choose(actionList)
         val sampledAction = template.copy() as RestCallAction
         sampledAction.doInitialize(random)
-//        sampledAction.parameters.forEach { param ->
-//            println("  - Param: ${param.name}, Gene value is: ${param.gene.getValueAsRawString()}, Gene type: ${param.gene::class.simpleName}")
-//        }
 
         // Calculate the input dimension of the classifier
         var dimension:Int = 0
@@ -81,25 +84,60 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         }
         require(dimension == 6)
 
-        // Create a gaussian classifier
+        // Create a glm classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
         classifier.initModel(dimension)
 
-        // createIndividual send the request and evaluate
-        val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
-        val evaluatedAction = individual.evaluatedMainActions()[0]
-        val action = evaluatedAction.action as RestCallAction
-        val result = evaluatedAction.result as RestCallResult
+        // Use reflection to access the private delegate
+        val delegateField = classifier::class.java.getDeclaredField("delegate")
+        delegateField.isAccessible = true
+        val glm = delegateField.get(classifier) as? GLMOnlineClassifier
 
-        // update the model
-        classifier.updateModel(action, result)
+        var time =1
+        val timeLimit = 20
+        while (time <= timeLimit) {
+            val template = random.choose(actionList)
+            val sampledAction = template.copy() as RestCallAction
+            sampledAction.doInitialize(random)
 
-        // classify an action
-        val c = classifier.classify(action)
-        // the classification provides two values as the probability of getting 400 and 200
-        require(c.probabilities.values.all { it in 0.0..1.0 }) {
-            "All probabilities must be in [0,1]"
+            val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+            println("**********************************************")
+            println("Time: $time")
+            println("Genes: [${geneValues.joinToString(", ")}]")
+
+            // createIndividual send the request and evaluate
+            val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
+            val evaluatedAction = individual.evaluatedMainActions()[0]
+            val action = evaluatedAction.action as RestCallAction
+            val result = evaluatedAction.result as RestCallResult
+
+            // update the model
+            classifier.updateModel(action, result)
+
+            // classify an action
+            val c = classifier.classify(action)
+            // the classification provides two values as the probability of getting 400 and 200
+            require(c.probabilities.values.all { it in 0.0..1.0 }) {
+                "All probabilities must be in [0,1]"
+            }
+
+            if (glm != null) {
+                val weightsAndBias = glm.getModelParams()
+                println(
+                    """
+                    Weights and Bias = $weightsAndBias
+                    """.trimIndent()
+                )
+                println("**********************************************")
+                println("**********************************************")
+            } else {
+                println("The classifier is not a GLMOnlineClassifier")
+            }
+
+            time++
         }
+
+
     }
 
 }

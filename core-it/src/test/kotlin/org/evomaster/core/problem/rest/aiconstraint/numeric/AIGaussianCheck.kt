@@ -13,12 +13,13 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
 
 
-class AICMultiTypeCheck : IntegrationTestRestBase() {
+class AIGaussianCheck : IntegrationTestRestBase() {
 
     companion object {
         @JvmStatic
@@ -28,7 +29,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AICMultiTypeCheck()
+            val test = AIGaussianCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
@@ -66,9 +67,6 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         val template = random.choose(actionList)
         val sampledAction = template.copy() as RestCallAction
         sampledAction.doInitialize(random)
-//        sampledAction.parameters.forEach { param ->
-//            println("  - Param: ${param.name}, Gene value is: ${param.gene.getValueAsRawString()}, Gene type: ${param.gene::class.simpleName}")
-//        }
 
         // Calculate the input dimension of the classifier
         var dimension:Int = 0
@@ -85,21 +83,67 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
         classifier.initModel(dimension)
 
-        // createIndividual send the request and evaluate
-        val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
-        val evaluatedAction = individual.evaluatedMainActions()[0]
-        val action = evaluatedAction.action as RestCallAction
-        val result = evaluatedAction.result as RestCallResult
+        // Use reflection to access the private delegate
+        val delegateField = classifier::class.java.getDeclaredField("delegate")
+        delegateField.isAccessible = true
+        val gaussian = delegateField.get(classifier) as? GaussianOnlineClassifier
 
-        // update the model
-        classifier.updateModel(action, result)
+        var time =1
+        val timeLimit = 20
+        while (time <= timeLimit) {
+            val template = random.choose(actionList)
+            val sampledAction = template.copy() as RestCallAction
+            sampledAction.doInitialize(random)
 
-        // classify an action
-        val c = classifier.classify(action)
-        // the classification provides two values as the probability of getting 400 and 200
-        require(c.probabilities.values.all { it in 0.0..1.0 }) {
-            "All probabilities must be in [0,1]"
+            val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+            println("**********************************************")
+            println("Time: $time")
+            println("Genes: [${geneValues.joinToString(", ")}]")
+
+            // createIndividual send the request and evaluate
+            val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
+            val evaluatedAction = individual.evaluatedMainActions()[0]
+            val action = evaluatedAction.action as RestCallAction
+            val result = evaluatedAction.result as RestCallResult
+
+            // update the model
+            classifier.updateModel(action, result)
+
+            // classify an action
+            val c = classifier.classify(action)
+            // the classification provides two values as the probability of getting 400 and 200
+            require(c.probabilities.values.all { it in 0.0..1.0 }) {
+                "All probabilities must be in [0,1]"
+            }
+
+            if (gaussian != null) {
+                val d200 = gaussian.getDensity200()
+                val d400 = gaussian.getDensity400()
+                val mean200 = d200.mean.map { "%.2f".format(it) }
+                val var200 = d200.variance.map { "%.2f".format(it) }
+                val mean400 = d400.mean.map { "%.2f".format(it) }
+                val var400 = d400.variance.map { "%.2f".format(it) }
+
+                println(
+                    """
+                    n200 = ${d200.n}
+                    mean200 = $mean200
+                    variance200 = $var200 * I_$dimension
+                    n400 = ${d400.n}
+                    mean400 = $mean400
+                    variance400 = $var400 * I_$dimension
+                    """.trimIndent()
+                )
+                println("**********************************************")
+            } else {
+                println("The classifier is not a GaussianOnlineClassifier")
+            }
+
+
+            time++
         }
+
+
     }
 
 }
