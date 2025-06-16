@@ -81,8 +81,12 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         wireMockServer!!.stop()
     }
 
+    fun isActive(): Boolean {
+        return wireMockServer != null
+    }
 
-    private fun resetHTTPVerifier() {
+
+    fun resetHTTPVerifier() {
         wireMockServer?.resetAll()
         traceTokens.clear()
     }
