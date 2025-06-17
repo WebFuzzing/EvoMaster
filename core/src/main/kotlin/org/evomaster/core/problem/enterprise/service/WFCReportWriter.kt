@@ -13,6 +13,8 @@ import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class WFCReportWriter {
@@ -75,7 +77,7 @@ class WFCReportWriter {
         report.schemaVersion = "0.0.1" //TODO
         report.toolName = toolName
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
-        report.creationTime = Date()
+        report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         report.totalTests = solution.individuals.size
         report.testFilePaths = suites.map { it.testSuitePath }.toSet()
 
