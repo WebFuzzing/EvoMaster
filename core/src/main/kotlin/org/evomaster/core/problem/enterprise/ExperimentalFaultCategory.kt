@@ -60,8 +60,13 @@ enum class ExperimentalFaultCategory(
     SECURITY_FORBIDDEN_PATCH(984, "Forbidden Updates But Allowed Modifications", "forbidsUpdatesButAllowsModifications",
         "TODO"),
     SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
-        "TODO")
+        "TODO"),
+
+    // 99x: Vulnerabilities
+    // TODO: Might need to change the code if we are dealing with other vulnerabilities in future.
+    VULNERABILITY_SSRF(990, "SSRF Exists", "probableSSRF", "TODO"),
     ;
+
 
     override fun getCode(): Int {
         return code

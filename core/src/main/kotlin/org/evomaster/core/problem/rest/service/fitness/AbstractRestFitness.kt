@@ -1153,6 +1153,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         vulnerables.forEach {
             // TODO: Set-up the fitness
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.VULNERABILITY_SSRF, it.getName())
+            )
         }
     }
 
