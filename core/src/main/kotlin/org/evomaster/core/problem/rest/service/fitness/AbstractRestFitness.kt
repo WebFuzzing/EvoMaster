@@ -38,6 +38,7 @@ import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.VulnerabilityAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -75,6 +76,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var vulnerabilityAnalyser: VulnerabilityAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -1130,6 +1134,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PATCH, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
+        handleVulnerabilities(individual, actionResults, fv)
+    }
+
+    private fun handleVulnerabilities(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        // TODO: Implement handling vulnerabilities
+        val vulnerables = individual.seeMainExecutableActions().filter {
+            vulnerabilityAnalyser.hasVulnerabilities(it, individual)
+        }
+
+        if (vulnerables.isEmpty()) {
+            return
+        }
+
+        vulnerables.forEach {
+            // TODO: Set-up the fitness
+        }
     }
 
     private fun handleNotRecognizedAuthenticated(
