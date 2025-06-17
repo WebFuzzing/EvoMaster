@@ -35,7 +35,7 @@ class WFCReportWriter {
     fun writeWebApp(){
         val prefix = "/webreport"
         exportResource(prefix, "/index.html")
-        exportResource(prefix, "/icon.svg")
+        exportResource(prefix, "/assets/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
     }
