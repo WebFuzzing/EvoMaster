@@ -35,12 +35,16 @@ class WFCReportWriter {
     fun writeWebApp(){
         val prefix = "/webreport"
         exportResource(prefix, "/index.html")
+        exportResource(prefix, "/robots.txt")
+        exportResource(prefix, "/webreport.py")
+        exportResource(prefix, "/webreport.command", true)
+        exportResource(prefix, "/webreport.bat", true)
         exportResource(prefix, "/assets/icon.svg")
         exportResource(prefix, "/assets/report.js")
         exportResource(prefix, "/assets/report.css")
     }
 
-    private fun exportResource(prefix: String, resource: String){
+    private fun exportResource(prefix: String, resource: String, executable: Boolean = false) {
 
         val text = readResource(prefix+resource)
 
@@ -50,7 +54,9 @@ class WFCReportWriter {
         Files.deleteIfExists(path)
         Files.createFile(path)
 
-        path.toFile().appendText(text)
+        val file = path.toFile()
+        file.appendText(text)
+        file.setExecutable(executable)
     }
 
     private fun readResource(path: String) : String {
