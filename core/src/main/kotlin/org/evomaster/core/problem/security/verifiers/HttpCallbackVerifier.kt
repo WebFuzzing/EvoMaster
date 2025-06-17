@@ -6,7 +6,10 @@ import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import org.evomaster.client.java.instrumentation.shared.SecuritySharedUtils
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.security.VulnerabilityVerifier
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 class HttpCallbackVerifier : VulnerabilityVerifier() {
@@ -15,12 +18,17 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
     private var traceTokens: MutableMap<String, String> = mutableMapOf()
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
+    }
+
     override fun init() {
         try {
             val config = WireMockConfiguration()
                 .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
-                .port(9000)
+                .dynamicPort()
+//                .port(19000) // Changed for testing purposes
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
@@ -34,6 +42,11 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
                     )
             )
         } catch (e: Exception) {
+            LoggingUtil.uniqueWarn(
+                log, "Failed to initialize SSRFVulnerabilityVerifier due to " +
+                        e.message +
+                        " If it is macOS, please make sure loopback alias is set."
+            )
             throw RuntimeException(
                 "Failed to initialize SSRFVulnerabilityVerifier due to " +
                         e.message +
@@ -79,10 +92,11 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
     override fun destroy() {
         wireMockServer!!.stop()
+        wireMockServer = null
     }
 
     fun isActive(): Boolean {
-        return wireMockServer != null
+        return wireMockServer != null && wireMockServer!!.isRunning
     }
 
 

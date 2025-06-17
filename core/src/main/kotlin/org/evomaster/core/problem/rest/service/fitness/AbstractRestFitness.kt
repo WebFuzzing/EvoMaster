@@ -1144,7 +1144,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ) {
         // TODO: Implement handling vulnerabilities
         val vulnerableActions = individual.seeMainExecutableActions().filter {
-            vulnerabilityAnalyser.hasVulnerabilities(it, individual)
+            vulnerabilityAnalyser.hasVulnerabilities(it)
         }
 
         if (vulnerableActions.isEmpty()) {
