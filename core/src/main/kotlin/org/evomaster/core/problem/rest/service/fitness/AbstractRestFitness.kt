@@ -1143,19 +1143,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
         // TODO: Implement handling vulnerabilities
-        val vulnerables = individual.seeMainExecutableActions().filter {
+        val vulnerableActions = individual.seeMainExecutableActions().filter {
             vulnerabilityAnalyser.hasVulnerabilities(it, individual)
         }
 
-        if (vulnerables.isEmpty()) {
+        if (vulnerableActions.isEmpty()) {
             return
         }
 
-        vulnerables.forEach {
+        vulnerableActions.forEach {
             // TODO: Set-up the fitness
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.VULNERABILITY_SSRF, it.getName())
             )
+            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+            var r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            r.addFault(DetectedFault(ExperimentalFaultCategory.VULNERABILITY_SSRF, it.getName(), null))
         }
     }
 
