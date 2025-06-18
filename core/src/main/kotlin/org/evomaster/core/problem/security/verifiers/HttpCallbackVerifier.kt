@@ -27,8 +27,7 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
             val config = WireMockConfiguration()
                 .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
-                .dynamicPort()
-//                .port(19000) // Changed for testing purposes
+                .port(19000) // Changed for testing purposes
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
