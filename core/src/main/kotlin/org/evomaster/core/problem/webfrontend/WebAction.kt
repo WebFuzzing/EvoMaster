@@ -11,12 +11,14 @@ import org.jsoup.Jsoup
 
 class WebAction(
     /**
-     * Different interactions could be squizzed into a single action, like filling all text inputs
-     * of a form and then submit it
+     * Different interactions could be squeezed into a single action, like filling all text inputs
+     * of a form and then submit it -
+     * ie. filling a form and submitting - would be considered one action
      */
     val userInteractions: MutableList<WebUserInteraction> = mutableListOf(),
     /**
      * Map from cssLocator (coming from [userInteractions]) for text input to StringGene representing its value
+     * MutableMap<csslocator, gene>
      */
     val textData : MutableMap<String, StringGene> = mutableMapOf(),
     /**

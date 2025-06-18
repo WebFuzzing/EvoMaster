@@ -16,7 +16,7 @@ public class DropDownEMTest extends SpringTestBase {
         SpringTestBase.initClass(new DropDownController());
     }
 
-    @Disabled
+    //@Disabled
     @Test
     public void testRunEM() throws Throwable {
 

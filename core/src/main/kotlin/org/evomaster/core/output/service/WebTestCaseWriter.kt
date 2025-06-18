@@ -77,6 +77,10 @@ class WebTestCaseWriter : TestCaseWriter() {
                     lines.addStatement("clickAndWaitPageLoad($driver, \"${it.cssSelector}\")")
                     lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
+                UserActionType.SELECT_SINGLE-> {
+                    lines.addStatement("selectAndWaitPageLoad($driver, \"${it.cssSelector}\")")
+                    lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
+                }
                 //TODO all other cases
                 else -> throw IllegalStateException("Not handled action type: ${it.userActionType}")
             }

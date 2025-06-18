@@ -51,6 +51,8 @@ class BrowserController {
 
     fun cleanBrowser(){
         //TODO clean cookies
+        driver.manage().deleteAllCookies();
+        //maybe also clean cache?
     }
 
     fun goToStartingPage(){
@@ -86,8 +88,12 @@ class BrowserController {
         SeleniumEMUtils.clickAndWaitPageLoad(driver, cssSelector)
     }
 
+    //fun selectAndWaitPageLoad(cssSelector: String, values: List<String>){
     fun selectAndWaitPageLoad(cssSelector: String, values: List<String>){
         //TODO
+        if(values.size == 1) // if single select
+            SeleniumEMUtils.selectAndWaitPageLoad(driver,cssSelector,values[0]);
+        //TODO for multi
     }
 
     fun goBack(){

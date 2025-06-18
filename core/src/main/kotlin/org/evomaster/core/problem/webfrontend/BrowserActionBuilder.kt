@@ -56,6 +56,8 @@ object BrowserActionBuilder {
             }
     }
 
+
+/* Analyze anchor tags to identify clickable elements*/
     private fun handleALinks(
         document: Document,
         driver: RemoteWebDriver,
