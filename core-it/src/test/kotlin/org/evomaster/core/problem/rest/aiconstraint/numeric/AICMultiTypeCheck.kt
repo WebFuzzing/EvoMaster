@@ -83,7 +83,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
 
         // Create a gaussian classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.initModel(dimension)
+        //classifier.initModel(dimension) //FIXME
 
         // createIndividual send the request and evaluate
         val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
