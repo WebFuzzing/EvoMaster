@@ -160,7 +160,14 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                         //TODO better wait
                     }
 
-                    UserActionType.SELECT_SINGLE, UserActionType.SELECT_MULTI -> {
+                    UserActionType.SELECT_SINGLE ->{
+                        for(select in wa.singleSelection){
+                            val css = select.key
+                            val index = select.value.value
+                            browserController.selectAndWaitPageLoad(css, TODO)
+                        }
+                    }
+                    UserActionType.SELECT_MULTI -> {
                         //TODO
                         /*
                             not just clicking, but deciding which options to select.
