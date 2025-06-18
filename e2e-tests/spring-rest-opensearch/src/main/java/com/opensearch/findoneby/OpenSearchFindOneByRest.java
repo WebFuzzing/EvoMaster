@@ -1,6 +1,6 @@
 package com.opensearch.findoneby;
 
-import com.opensearch.OpenSearchRepository;
+import com.opensearch.config.OpenSearchRepository;
 import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

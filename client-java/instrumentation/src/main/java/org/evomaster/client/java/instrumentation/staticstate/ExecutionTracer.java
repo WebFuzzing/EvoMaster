@@ -429,7 +429,7 @@ public class ExecutionTracer {
             getCurrentAdditionalInfo().addMongoInfo(info);
     }
 
-    public static void addOpenSearchInfo(OpenSearchFindCommand info) {
+    public static void addOpenSearchInfo(OpenSearchCommand info) {
         if (!executingInitOpenSearch) {
             getCurrentAdditionalInfo().addOpenSearchInfo(info);
         }

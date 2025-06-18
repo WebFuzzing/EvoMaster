@@ -1,4 +1,4 @@
-package com.opensearch.findoneby;
+package com.opensearch.findstring;
 
 import com.opensearch.config.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
@@ -9,14 +9,15 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
 @SpringBootApplication(exclude = SecurityAutoConfiguration.class)
-@ComponentScan({"com.opensearch.config", "com.opensearch.findoneby"})
-public class OpenSearchFindOneByApp extends SwaggerConfiguration {
-    public OpenSearchFindOneByApp() {
-        super("findoneby");
+@ComponentScan({"com.opensearch.config", "com.opensearch.findstring"})
+public class OpenSearchFindStringApp extends SwaggerConfiguration {
+    public OpenSearchFindStringApp() {
+        super("findstring");
     }
 
     public static void main(String[] args) {
-        SpringApplication.run(OpenSearchFindOneByApp.class, args);
+        SpringApplication.run(OpenSearchFindStringApp.class, args);
     }
 
 }
+

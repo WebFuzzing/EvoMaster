@@ -1,4 +1,4 @@
-package com.opensearch;
+package com.opensearch.config;
 
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.springframework.beans.factory.annotation.Autowired;

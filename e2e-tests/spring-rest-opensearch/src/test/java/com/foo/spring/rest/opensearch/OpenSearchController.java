@@ -1,6 +1,6 @@
 package com.foo.spring.rest.opensearch;
 
-import com.opensearch.SampleClient;
+import com.opensearch.config.SampleClient;
 import java.io.IOException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -15,7 +15,6 @@ import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
-import org.opensearch.client.opensearch.indices.DeleteIndexRequest;
 import org.opensearch.testcontainers.OpensearchContainer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -114,8 +113,8 @@ public abstract class OpenSearchController extends EmbeddedSutController {
                 .get("local.server.port");
     }
 
-    @Override
-    public OpenSearchClient getMongoConnection() {
-        return openSearchClient;
-    }
+//    @Override
+//    public OpenSearchClient getOpenSearchConnection() {
+//        return openSearchClient;
+//    }
 }

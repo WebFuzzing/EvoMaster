@@ -1,8 +1,11 @@
-package com.opensearch;
+package com.opensearch.config;
 
+import java.util.List;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.core.GetRequest;
 import org.opensearch.client.opensearch.core.GetResponse;
+import org.opensearch.client.opensearch.core.SearchRequest;
+import org.opensearch.client.opensearch.core.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -25,5 +28,19 @@ public class OpenSearchRepository {
 
         GetResponse<T> response = openSearchClient.get(getRequest, clazz);
         return response.found() ? response.source() : null;
+    }
+
+    public <T> List<T> search(String q, Class<T> clazz) throws IOException {
+        SearchRequest searchRequest = new SearchRequest.Builder()
+            .index(openSearchProperties.getIndexName())
+            .q(wrapIntoDoubleQuotes(q))
+            .build();
+
+        SearchResponse<T> response = openSearchClient.search(searchRequest, clazz);
+        return !response.documents().isEmpty() ? response.documents() : null;
+    }
+
+    private static String wrapIntoDoubleQuotes(String q) {
+        return "\"" + q + "\"";
     }
 }

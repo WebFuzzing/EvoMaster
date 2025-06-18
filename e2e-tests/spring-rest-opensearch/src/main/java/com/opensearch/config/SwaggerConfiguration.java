@@ -1,4 +1,4 @@
-package com.opensearch;
+package com.opensearch.config;
 
 import static springfox.documentation.builders.PathSelectors.regex;
 

@@ -1,4 +1,4 @@
-package com.opensearch;
+package com.opensearch.config;
 
 import java.util.Map;
 import java.security.KeyManagementException;

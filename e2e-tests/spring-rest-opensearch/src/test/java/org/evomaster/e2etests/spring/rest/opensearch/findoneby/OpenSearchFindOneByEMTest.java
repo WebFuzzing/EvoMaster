@@ -10,14 +10,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-
 public class OpenSearchFindOneByEMTest extends RestTestBase {
 
   @BeforeAll
   public static void initClass() throws Exception {
     EMConfig config = new EMConfig();
-    config.setInstrumentMR_MONGO(true);
+    config.setInstrumentMR_OPENSEARCH(true);
     RestTestBase.initClass(new OpenSearchFindOneByController(), config);
   }
 
@@ -25,7 +23,7 @@ public class OpenSearchFindOneByEMTest extends RestTestBase {
   @ValueSource(strings = {"/findoneby/{id}"})
   public void testFindOneOnGivenEndpoint(String endpoint) throws Throwable {
 
-    int id = endpoint.length(); // quite brittle
+    int id = endpoint.length();
 
     runTestHandlingFlaky(
         "OpenSearchFindOneByEM_" + id,
@@ -33,24 +31,11 @@ public class OpenSearchFindOneByEMTest extends RestTestBase {
         1000,
         true,
         (args) -> {
-//          setOption(args, "taintForceSelectionOfGenesWithSpecialization", "true");
-//          setOption(args, "discoveredInfoRewardedInFitness", "true");
-//
-//          setOption(args, "endpointFocus", endpoint);
-//          setOption(args, "heuristicsForMongo", "true");
           setOption(args, "instrumentMR_OPENSEARCH", "true");
-//          setOption(args, "generateMongoData", "true");
-//          setOption(args, "extractMongoExecutionInfo", "true");
-
-          // issue with generated classes Instantiator and Accessor when running in Maven
-//          setOption(args, "minimizeThresholdForLoss", "0.5");
 
           Solution<RestIndividual> solution = initAndRun(args);
 
-//          assertFalse(solution.getIndividuals().isEmpty());
-//          assertHasAtLeastOne(solution, HttpVerb.GET, 400, endpoint, null);
-//          assertHasAtLeastOne(solution, HttpVerb.GET, 200, endpoint, null);
-          assertFalse(false);
+          assertHasAtLeastOne(solution, HttpVerb.GET, 404, endpoint, null);
         });
   }
 }
