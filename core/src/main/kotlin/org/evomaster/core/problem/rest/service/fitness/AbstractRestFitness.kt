@@ -35,6 +35,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
@@ -81,6 +82,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
+
+    @Inject
+    protected lateinit var responseClassifier: AIResponseClassifier
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -726,6 +730,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
                 rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), it.message))
             }
+        }
+
+        if(config.isEnabledAIModelForResponseClassification()) {
+            responseClassifier.updateModel(a, rcr)
         }
 
         if (!handleSaveLocation(a, rcr, chainState)){
