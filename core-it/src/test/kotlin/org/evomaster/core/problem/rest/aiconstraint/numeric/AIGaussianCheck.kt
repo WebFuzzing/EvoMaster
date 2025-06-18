@@ -81,7 +81,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
         // Create a gaussian classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.initModel(dimension)
+        //classifier.initModel(dimension) //FIXME
 
         // Use reflection to access the private delegate
         val delegateField = classifier::class.java.getDeclaredField("delegate")
