@@ -18,7 +18,10 @@ class AIResponseClassifier : AIModel {
 
     private lateinit var delegate: AIModel
 
-    fun initModel(dimension: Int){
+    @PostConstruct
+    fun initModel(){
+
+        val dimension = 1 //FIXME
 
         when(config.aiModelForResponseClassification){
             EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
@@ -48,5 +51,15 @@ class AIResponseClassifier : AIModel {
         return delegate.classify(input)
     }
 
+
+    /**
+     * If the model thinks this call will lead to a user error (eg 400), then try to repair
+     * the action to be able to solve the input constraints, aiming for a 2xx.
+     * There is no guarantee that this will work.
+     */
+    fun attemptRepair(reference: RestCallAction){
+
+        //TODO
+    }
 }
 
