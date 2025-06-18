@@ -1,14 +1,21 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.naming.TestCaseNamingStrategy
+import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.problem.graphql.GraphQLAction
+import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rpc.RPCCallAction
+import org.evomaster.core.problem.rpc.RPCIndividual
+import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.reflect.KFunction1
 
 /**
@@ -24,21 +31,14 @@ import kotlin.reflect.KFunction1
 class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
-    private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
 
-    fun sortTests(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
+    fun sortTests(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
         //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
-        return sortingHelper.sort(solution, namingStrategy)
+        return sortingHelper.sort(solution, namingStrategy, testCaseSortingStrategy)
     }
-
-//    fun setPartialOracles(partialOracles: PartialOracles){
-//        this.partialOracles = partialOracles
-//        namingHelper.setPartialOracles(partialOracles)
-//    }
-
 }
 
 class NamingHelper {
@@ -135,6 +135,10 @@ class NamingHelper {
 
 class SortingHelper {
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SortingHelper::class.java)
+    }
+
     /** [maxStatusCode] sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
      *
      * **/
@@ -196,6 +200,40 @@ class SortingHelper {
      */
 
     var comparatorList = listOf(statusCode, coveredTargets)
+
+    val restComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+            (ind.evaluatedMainActions().last().action as RestCallAction).path.levels()
+        }
+        .thenBy { ind ->
+            val min = ind.seeResults().filterIsInstance<HttpWsCallResult>().minByOrNull {
+                it.getStatusCode()?.rem(500) ?: 0
+            }
+            (min?.getStatusCode())?.rem(500) ?: 0
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().action as RestCallAction).verb
+        }
+
+    val graphQLComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+            (ind.evaluatedMainActions().last().action as GraphQLAction).methodName
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().action as GraphQLAction).methodType
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().action as GraphQLAction).parameters.size
+        }
+
+    val rpcComparator: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>> { ind ->
+            (ind.evaluatedMainActions().last().action as RPCCallAction).getSimpleClassName()
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().action as RPCCallAction).getExecutedFunctionName()
+        }
+        .thenBy { ind ->
+            (ind.evaluatedMainActions().last().action as RPCCallAction).parameters.size
+        }
+
     private val availableSortCriteria = listOf(statusCode, minActions, coveredTargets, maxStatusCode, maxActions, dbInitSize)
 
 
@@ -249,11 +287,30 @@ class SortingHelper {
          */
 
         return namingStrategy.getSortedTestCases(comparators)
-
     }
 
-    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
-        val newSort = sortByComparatorList(comparatorList, namingStrategy)
+    private fun sortByTargetIncremental(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy): List<TestCase> {
+        val individuals = solution.individuals
+        val comparator = when {
+            individuals.any { it.individual is RestIndividual } -> restComparator
+            individuals.any { it.individual is GraphQLIndividual } -> graphQLComparator
+            individuals.any { it.individual is RPCIndividual } -> rpcComparator
+            individuals.any { it.individual is WebIndividual } -> {
+                log.warn("Web individuals do not have action based test case naming yet. Defaulting to Numbered strategy.")
+                statusCode
+            }
+            else -> throw IllegalStateException("Unrecognized test individuals with no target incremental based sorting strategy set.")
+        }
+
+        return namingStrategy.getSortedTestCases(comparator)
+    }
+
+    fun sort(solution: Solution<*>, namingStrategy: TestCaseNamingStrategy, testCaseSortingStrategy: SortingStrategy): List<TestCase> {
+        val newSort = when (testCaseSortingStrategy) {
+            SortingStrategy.COVERED_TARGETS -> sortByComparatorList(comparatorList, namingStrategy)
+            SortingStrategy.TARGET_INCREMENTAL -> sortByTargetIncremental(solution, namingStrategy)
+            else -> throw IllegalStateException("Unrecognized sorting strategy $testCaseSortingStrategy")
+        }
 
         Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
         return newSort

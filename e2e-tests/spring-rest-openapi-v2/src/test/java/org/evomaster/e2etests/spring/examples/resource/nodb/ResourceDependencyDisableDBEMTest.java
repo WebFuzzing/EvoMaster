@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.nodb;
 
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.Test;
@@ -25,13 +25,9 @@ public class ResourceDependencyDisableDBEMTest extends ResourceTestBase {
                 (args) -> {
 
                     //disable SQL
-                    args.add("--heuristicsForSQL");
-                    args.add("false");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--extractSqlExecutionInfo");
-                    args.add("true");
-
+                    setOption(args, "heuristicsForSQL","false");
+                    setOption(args, "generateSqlDataWithSearch","false");
+                    setOption(args, "extractSqlExecutionInfo","true");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

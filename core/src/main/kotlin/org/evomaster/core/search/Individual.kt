@@ -57,6 +57,9 @@ abstract class Individual(
 
     companion object{
         private val log = LoggerFactory.getLogger(Individual::class.java)
+
+        const val LOCAL_ID_PREFIX_ACTION = "ACTION_COMPONENT"
+        const val LOCAL_ID_PREFIX_GENE = "GENE"
     }
 
 
@@ -99,9 +102,16 @@ abstract class Individual(
     /**
      * get local id based on the given counter
      */
-    private fun getLocalId(obj: StructuralElement, counter: Int) : String
-    = "${if (obj is ActionComponent) "ACTION_COMPONENT" else if (obj is Gene) "GENE" else throw IllegalStateException("Only Generate local id for ActionComponent and Gene")}_$counter"
+    private fun getLocalId(obj: StructuralElement, counter: Int) : String {
 
+         val prefix  = when (obj) {
+             is ActionComponent -> LOCAL_ID_PREFIX_ACTION
+             is Gene -> LOCAL_ID_PREFIX_GENE
+             else -> throw IllegalStateException("Only Generate local id for ActionComponent and Gene")
+         }
+
+        return "${prefix}_$counter"
+    }
     /**
      * Make a deep copy of this individual
      */
@@ -143,8 +153,18 @@ abstract class Individual(
             .filter { time > it.searchPercentageActive }
             .forEach { it.forbidSelection() }
 
+        resolveAllTempData()
 
         computeTransitiveBindingGenes()
+    }
+
+    fun resolveAllTempData(){
+        seeAllActions().forEach {
+            val resolved = it.resolveTempData()
+            if(!resolved){
+                throw IllegalStateException("Failed to resolve temp data in ${it.getName()}")
+            }
+        }
     }
 
     fun isInitialized() : Boolean{
@@ -163,14 +183,15 @@ abstract class Individual(
 
         groupsView()?.verifyGroups()
 
-        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
-            throw IllegalStateException("Initializing actions break SQL constraints")
-        }
+        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
+            if(!a.isGloballyValid()){
+                throw IllegalStateException("Action ${a.getName()} does not satisfy global validity constraints")
+            }
             a.seeTopGenes().forEach { g ->
                 if(!g.isGloballyValid()){
-                    throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
+                    throw IllegalStateException("Global validity failure: invalid gene named '${g.name}' in action ${a.getName()}")
                 }
             }
         }
@@ -183,7 +204,6 @@ abstract class Individual(
     override fun copyContent(): Individual {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
-
 
     /**
      * Return a view of all the top Genes in this chromosome/individual.
@@ -493,7 +513,11 @@ abstract class Individual(
             if(it !is Action) {
                 listOf(it)
             } else {
-                it.seeTopGenes().flatMap {g ->  g.flatView() }
+                // there might be the case whereby the action does not have genes eg, schedule task
+                if (it.seeTopGenes().isEmpty())
+                    listOf(it)
+                else
+                    it.seeTopGenes().flatMap {g ->  g.flatView() }
             }
         }
     }
@@ -535,24 +559,33 @@ abstract class Individual(
 
 
     /**
-     * handle local ids of children (ie ActionComponent) to add
+     * handle local ids of children or descendant to add.
+     * These elements might not be mounted yet inside the individual when this method is called
      */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>) {
-        children.forEach { child ->
-            if (child is ActionComponent) {
-                if (child is Action && !child.hasLocalId())
+    fun handleLocalIdsForAddition(elements: Collection<StructuralElement>) {
+        elements.forEach { child ->
+
+            if (child is Action) {
+                if (!child.hasLocalId()) {
                     setLocalIdsForChildren(listOf(child), true)
-
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree ->
-                    if (!tree.hasLocalId()) {
-                        setLocalIdsForChildren(listOf(tree), false)
-
+                }
+            } else if (child is ActionTree){
+                child.flatView().forEach { a ->
+                    if (a is Action) {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), true)
+                        }
+                    } else {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), false)
+                        }
                         // local id can be assigned for flatten of the tree
                         // only if the tree itself and none of its flatten do not have local id
-                        if (tree.flatten().none { it.hasLocalId() })
-                            setLocalIdsForChildren(child.flatten(), true)
-                    } else if (!tree.flatten().all { it.hasLocalId() }) {
-                        throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        if (a.flatten().none { it.hasLocalId() }) {
+                            setLocalIdsForChildren(a.flatten(), true)
+                        } else if (!a.flatten().all { it.hasLocalId() }) {
+                            throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        }
                     }
                 }
             } else if (child is Gene) {
@@ -562,8 +595,9 @@ abstract class Individual(
                     throw IllegalStateException("local ids of Gene to add are partially assigned")
             } else if (child is Param){
                 setLocalIdForStructuralElement(child.genes.flatMap { it.flatView() })
-            }else
+            } else {
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+            }
         }
     }
 

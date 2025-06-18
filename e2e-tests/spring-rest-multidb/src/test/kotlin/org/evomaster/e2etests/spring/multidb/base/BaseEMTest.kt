@@ -1,15 +1,10 @@
 package org.evomaster.e2etests.spring.multidb.base
 
-import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.driver.multidb.SpringController
 import org.evomaster.e2etests.spring.multidb.MultiDbParameterizedE2ETemplate
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
-import java.nio.file.Files
-import java.nio.file.Paths
 import org.evomaster.driver.multidb.base.BaseController
 
 /**

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dropdown Navigation</title>
+</head>
+<body>
+<h1>Select a Page</h1>
+
+<form method="GET" id="navigateForm">
+    <select onchange="this.form.action='/navigate/' + this.value; this.form.submit();">
+        <option value="">-- Select Page --</option>
+        <option value="1">Page 1</option>
+        <option value="2">Page 2</option>
+        <option value="3">Page 3</option>
+    </select>
+</form>
+</body>
+</html>

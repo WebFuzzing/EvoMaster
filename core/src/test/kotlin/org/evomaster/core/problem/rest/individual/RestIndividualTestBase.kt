@@ -21,6 +21,10 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionsDto
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.BaseModule
@@ -28,11 +32,11 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
@@ -246,10 +250,10 @@ abstract class RestIndividualTestBase {
     }
 
     open fun extraMutatedIndividualCheck(
-            evaluated: Int,
-            copyOfImpact: ImpactsOfIndividual?,
-            original: EvaluatedIndividual<RestIndividual>,
-            mutated: EvaluatedIndividual<RestIndividual>){}
+        evaluated: Int,
+        copyOfImpact: ImpactsOfIndividual?,
+        original: EvaluatedIndividual<RestIndividual>,
+        mutated: EvaluatedIndividual<RestIndividual>){}
 
 
     fun registerTable(tableName: String, columns: List<Pair<String, Boolean>>, columnTypes: List<ColumnDataType>){
@@ -637,6 +641,10 @@ abstract class RestIndividualTestBase {
 
         }
 
+        override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>): List<DeriveParamResponseDto> {
+            return listOf()
+        }
+
         override fun postSearchAction(postSearchActionDto: PostSearchActionDto): Boolean {
             return true
         }
@@ -666,6 +674,10 @@ abstract class RestIndividualTestBase {
         }
 
         override fun executeMongoDatabaseInsertions(dto: MongoDatabaseCommandDto): MongoInsertionResultsDto? {
+            return null
+        }
+
+        override fun invokeScheduleTasksAndGetResults(dtos: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
             return null
         }
 

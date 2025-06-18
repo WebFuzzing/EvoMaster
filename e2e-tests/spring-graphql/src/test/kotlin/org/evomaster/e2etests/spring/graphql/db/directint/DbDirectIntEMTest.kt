@@ -7,6 +7,8 @@ import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import java.util.*
 
 class DbDirectIntEMTest : SpringTestBase() {
@@ -20,25 +22,28 @@ class DbDirectIntEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testAvg(){
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testAvg(heuristicsForSQLAdvanced: Boolean){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE, heuristicsForSQLAdvanced)
     }
 
-    @Test
-    fun testAvg_SAME_N(){
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testAvg_SAME_N(heuristicsForSQLAdvanced: Boolean){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS, heuristicsForSQLAdvanced)
     }
 
-    @Test
-    fun testBest_MIO(){
-        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN)
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testBest_MIO(heuristicsForSQLAdvanced: Boolean){
+        testRunEM(EMConfig.SecondaryObjectiveStrategy.BEST_MIN, heuristicsForSQLAdvanced)
     }
 
 
-    private fun testRunEM(strategy : EMConfig.SecondaryObjectiveStrategy) {
+    private fun testRunEM(strategy : EMConfig.SecondaryObjectiveStrategy, heuristicsForSQLAdvanced: Boolean) {
         val outputFolder = "GQL_DirectIntEM_$strategy"
-        val outputTestName = "org.foo.graphql.DirectIntEM_$strategy"
+        val outputTestName = "org.foo.graphql.DirectIntEM_$strategy" + if (heuristicsForSQLAdvanced) "Complete" else "Partial"
 
         runTestHandlingFlakyAndCompilation(
             outputFolder,
@@ -46,18 +51,15 @@ class DbDirectIntEMTest : SpringTestBase() {
             7000
         ) { args: MutableList<String> ->
 
-            args.add("--problemType")
-            args.add(EMConfig.ProblemType.GRAPHQL.toString())
+            setOption(args,"problemType", EMConfig.ProblemType.GRAPHQL.toString())
 
-            args.add("--secondaryObjectiveStrategy")
-            args.add("" + strategy)
-            args.add("--heuristicsForSQL")
-            args.add("true")
-            args.add("--generateSqlDataWithSearch")
-            args.add("false")
-            args.add("--probOfSmartSampling")
-            args.add("0.0") // on this example, it has huge negative impact
+            setOption(args, "secondaryObjectiveStrategy", strategy.toString())
 
+            setOption(args, "heuristicsForSQL", "true")
+            setOption(args, "generateSqlDataWithSearch", "false")
+            setOption(args, "heuristicsForSQLAdvanced", if (heuristicsForSQLAdvanced) "true" else "false")
+
+            setOption(args, "probOfSmartSampling", "0.0") // on this example, it has huge negative impact
 
             val solution = initAndRun(args)
 

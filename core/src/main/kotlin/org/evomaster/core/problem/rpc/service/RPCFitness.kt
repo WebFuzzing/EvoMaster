@@ -3,21 +3,27 @@ package org.evomaster.core.problem.rpc.service
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ExecutionStatusDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.exception.RPCExceptionType
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCCallResultCategory
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskActionResult
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.GroupsOfChildren
+import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
@@ -54,8 +60,17 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
 
         run loop@{
+            // handle schedule task
+            val scheduleTasks = individual.seeActions(ActionFilter.ONLY_SCHEDULE_TASK)
+            if (scheduleTasks.isNotEmpty()){
+                val ok = executeScheduleTasks(0, individual.seeScheduleTaskActions(), actionResults)
+                if (!ok) return@loop
+            }
+
+            // TODO do we need to ensure all schedule tasks are completed before executing main actions?
+
             individual.seeAllActions().filterIsInstance<RPCCallAction>().forEachIndexed { index, action->
-                val ok = executeNewAction(action, index, actionResults)
+                val ok = executeNewAction(action, scheduleTasks.size + index, actionResults)
                 if (!ok) return@loop
             }
         }
@@ -65,6 +80,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         handleExtra(dto, fv)
 
 //        expandIndividual(individual)
+        val scheduleTasksResults = actionResults.filterIsInstance<ScheduleTaskActionResult>()
         /*
             TODO Man handle targets regarding info in responses,
             eg, exception
@@ -73,10 +89,21 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 status info in GRPC, see https://grpc.github.io/grpc/core/md_doc_statuscodes.html
          */
         val rpcActionResults = actionResults.filterIsInstance<RPCCallResult>()
-        handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, dto.additionalInfoList)
+
+        val additionalInfoForScheduleTask = dto.additionalInfoList.subList(0, scheduleTasksResults.size)
+        // TODO man might need to handle additional targets for schedule task later
+
+        if (rpcActionResults.isNotEmpty()){
+            val startingIndexForMainAction = scheduleTasksResults.size
+            if (startingIndexForMainAction > dto.additionalInfoList.size)
+                throw IllegalStateException("missing ${rpcActionResults.size} additionalInfo for RPC Actions, starting Index: $startingIndexForMainAction, and total: ${dto.additionalInfoList.size}")
+            val additionalInfoForMainTask= dto.additionalInfoList.subList(scheduleTasksResults.size, dto.additionalInfoList.size)
+            handleResponseTargets(fv, individual.seeAllActions().filterIsInstance<RPCCallAction>(), rpcActionResults, additionalInfoForMainTask)
+        }
+
 
         if (config.isEnabledTaintAnalysis()) {
-            Lazy.assert { rpcActionResults.size == dto.additionalInfoList.size }
+            Lazy.assert { (scheduleTasksResults.size + rpcActionResults.size) == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
@@ -112,6 +139,41 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
 //            }
 //        }
 //    }
+
+    /**
+     * @return if all tasks have been successfully executed
+     */
+    private fun executeScheduleTasks(firstIndex : Int, tasks : List<ScheduleTaskAction>, actionResults : MutableList<ActionResult>) : Boolean{
+        searchTimeController.waitForRateLimiter()
+
+        val taskDtos = tasks.mapIndexed { index, scheduleTaskAction -> rpcHandler.transformScheduleTaskInvocationDto(scheduleTaskAction).apply {
+            this.index = firstIndex + index
+        }
+        }
+        val command = ScheduleTaskInvocationsDto()
+        command.tasks = taskDtos
+        val response = rc.invokeScheduleTasksAndGetResults(command)
+
+        if (response != null){
+            if (response.results.size > tasks.size)
+                throw IllegalStateException("Received more responses (ie, ${response.results.size}) than tasks (ie, ${tasks.size})")
+
+            response.results.forEachIndexed { index, resultDto ->
+                val taskResult = ScheduleTaskActionResult(tasks[index].getLocalId())
+                taskResult.setResultBasedOnDto(resultDto)
+                taskResult.stopping = resultDto.status == ExecutionStatusDto.FAILED
+                actionResults.add(taskResult)
+                if (taskResult.stopping){
+                    log.warn("fail to execute the task at $index (in total ${tasks.size}), and the task name is ${tasks[index].taskName}")
+                    return false
+                }
+            }
+        }else{
+            log.warn("no response when executing schedule tasks")
+        }
+
+        return response != null && response.results.size == tasks.size
+    }
 
     private fun executeNewAction(action: RPCCallAction, index: Int, actionResults: MutableList<ActionResult>) : Boolean{
 
@@ -227,7 +289,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
         val category = RPCCallResultCategory.valueOf(callResult.getInvocationCode()!!)
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPC(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.RPC_DECLARED_EXCEPTION,name))
+        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION,name))
 
         when(category){
             RPCCallResultCategory.HANDLED->{
@@ -253,9 +315,9 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 // exception type + last statement + endpoint name
                 val postfix = "${callResult.getExceptionTypeName()} $locationPotentialBug $name"
                 val descriptiveId = if (category == RPCCallResultCategory.UNEXPECTED_EXCEPTION){
-                    idMapper.getFaultDescriptiveId(FaultCategory.RPC_UNEXPECTED_EXCEPTION,postfix)
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_UNEXPECTED_EXCEPTION,postfix)
                 }else
-                    idMapper.getFaultDescriptiveId(FaultCategory.RPC_DECLARED_EXCEPTION,postfix)
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION,postfix)
 
                 val exceptionId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(exceptionId, 1.0, indexOfAction)
@@ -269,7 +331,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.RPC_INTERNAL_ERROR,postfix)
+                val descriptiveId = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_INTERNAL_ERROR,postfix)
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)
@@ -321,7 +383,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                                           locationPotentialBug: String){
 
         val okId = idMapper.handleLocalTarget(idMapper.getHandledRPCAndSuccess(name))
-        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(FaultCategory.RPC_HANDLED_ERROR, name))
+        val failId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_HANDLED_ERROR, name))
 
         when{
             callResult.isSuccessfulBusinessLogicCode() ->{
@@ -339,7 +401,7 @@ class RPCFitness : ApiWsFitness<RPCIndividual>() {
                 fv.updateTarget(failId, 1.0, indexOfAction)
 
                 val postfix = "$locationPotentialBug $name"
-                val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.RPC_SERVICE_ERROR,postfix)
+                val descriptiveId = idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.RPC_SERVICE_ERROR,postfix)
 
                 val bugId = idMapper.handleLocalTarget(descriptiveId)
                 fv.updateTarget(bugId, 1.0, indexOfAction)

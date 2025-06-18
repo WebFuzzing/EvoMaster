@@ -125,6 +125,7 @@ public class SqlNameContext {
     private List<String> getTableNamesInFrom() {
 
         List<String> names = new ArrayList<>();
+
         if (hasFromItem()) {
             FromItem fromItem = getFromItem();
 
@@ -132,6 +133,28 @@ public class SqlNameContext {
                 @Override
                 public void visit(Table table) {
                     names.add(table.getName().toLowerCase());
+                }
+
+                @Override
+                public void visit(ParenthesedSelect selectBody) {
+                    PlainSelect plainSelect = selectBody.getPlainSelect();
+                    SqlNameContext subContext = new SqlNameContext(plainSelect);
+                    tableAliases.putAll(subContext.tableAliases);
+                }
+
+                @Override
+                public void visit(LateralSubSelect lateralSubSelect) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
+                }
+
+                @Override
+                public void visit(TableFunction valuesList) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
+                }
+
+                @Override
+                public void visit(ParenthesedFromItem aThis) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
                 }
             };
 
@@ -143,12 +166,13 @@ public class SqlNameContext {
     private boolean hasFromItem() {
         if(statement instanceof Select) {
             Select select = (Select)statement;
-            PlainSelect plainSelect = select.getPlainSelect();
-            FromItem fromItem =  plainSelect.getFromItem();
-            return fromItem != null;
-        } else {
-            return false;
+            if (select instanceof PlainSelect) {
+                PlainSelect plainSelect = (PlainSelect) select;
+                FromItem fromItem =  plainSelect.getFromItem();
+                return fromItem != null;
+            }
         }
+        return false;
    }
 
     private FromItem getFromItem() {
@@ -211,6 +235,23 @@ public class SqlNameContext {
         public void visit(ParenthesedSelect selectBody) {
             handleAlias(aliases, selectBody.getPlainSelect());
         }
+
+        @Override
+        public void visit(LateralSubSelect lateralSubSelect) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void visit(TableFunction valuesList) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void visit(ParenthesedFromItem aThis) {
+            throw new UnsupportedOperationException();
+        }
+
+
     }
 
 

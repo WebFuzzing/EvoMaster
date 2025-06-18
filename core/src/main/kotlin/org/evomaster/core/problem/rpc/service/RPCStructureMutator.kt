@@ -33,8 +33,13 @@ class RPCStructureMutator : ApiWsStructureMutator() {
 
     private fun mutateForRandomType(individual: RPCIndividual, mutatedGenes: MutatedGeneSpecification?) {
 
+        /*
+            TODO
+            here we implement strategies to support structure mutation on main action,
+            as we support the schedule task now, also need to be able to apply structure mutation on schedule task
+         */
         val size = individual.seeMainExecutableActions().size
-        if ((size + 1 < config.maxTestSize) && (size == 1 || randomness.nextBoolean())){
+        if ((size + 1 < config.maxTestSize) && (size <= 1 || randomness.nextBoolean())){
             // add
             val sampledAction = sampler.sampleRandomAction()
 

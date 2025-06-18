@@ -19,7 +19,7 @@ else
     exit 1
 fi
 
-VERSION=3.4.0
+VERSION=3.4.1
 
 RELEASE=release
 BUILD=build

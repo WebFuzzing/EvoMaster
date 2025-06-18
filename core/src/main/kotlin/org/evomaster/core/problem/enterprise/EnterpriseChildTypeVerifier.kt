@@ -2,6 +2,7 @@ package org.evomaster.core.problem.enterprise
 
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.sql.SqlAction
@@ -21,11 +22,14 @@ import org.evomaster.core.sql.SqlAction
          return SqlAction::class.java.isAssignableFrom(t)
                  || MongoDbAction::class.java.isAssignableFrom(t)
                  || HostnameResolutionAction::class.java.isAssignableFrom(t)
+                 || ScheduleTaskAction::class.java.isAssignableFrom(t)
      }
 
      override fun invoke(t: Class<*>): Boolean {
-         //TODO use mainType
-         return ( EnterpriseActionGroup::class.java.isAssignableFrom(t)
+         return (
+                 //TODO due to reified generics, doesn't seem possible to check mainType in EnterpriseActionGroup
+                 EnterpriseActionGroup::class.java.isAssignableFrom(t)
+                 || mainType.isAssignableFrom(t)
                  || isInitializingAction(t)
                  || (secondaryType != null && secondaryType.isAssignableFrom(t)))
      }

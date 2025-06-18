@@ -13,34 +13,44 @@ public class VariableDescriptor {
     /**
      * If no alias, this value will be equal to the column name
      */
-    private final String alias;
+    private final String aliasColumnName;
 
     /**
      * Can be null
      */
     private final String tableName;
 
+    /*
+     * If no alias, this value will be equal to table name
+     */
+    private final String aliasTableName;
 
     public VariableDescriptor(String columnName) {
-        this(columnName, columnName, null);
+        this(columnName, columnName, null, null);
     }
 
-    public VariableDescriptor(String columnName, String alias, String tableName) {
+    public VariableDescriptor(String columnName, String aliasColumnName, String tableName) {
+        this(columnName, aliasColumnName, tableName, tableName);
+    }
+
+    public VariableDescriptor(String columnName, String aliasColumnName, String tableName, String aliasTableName) {
         this.columnName = (columnName==null || columnName.trim().isEmpty() ?
                 null : columnName.trim().toLowerCase());
-        this.alias = (alias == null || alias.trim().isEmpty() ?
+        this.aliasColumnName = (aliasColumnName == null || aliasColumnName.trim().isEmpty() ?
                 this.columnName :
-                alias.trim().toLowerCase());
+                aliasColumnName.trim().toLowerCase());
         this.tableName = (tableName == null || tableName.trim().isEmpty() ?
                 null : tableName.trim().toLowerCase());
+        this.aliasTableName = (aliasTableName == null || aliasTableName.trim().isEmpty() ?
+                null : aliasTableName.trim().toLowerCase());
     }
 
     public String getColumnName() {
         return columnName;
     }
 
-    public String getAlias() {
-        return alias;
+    public String getAliasColumnName() {
+        return aliasColumnName;
     }
 
     public String getTableName() {
@@ -52,10 +62,10 @@ public class VariableDescriptor {
     public String toString() {
         String table = "";
         if(tableName != null){
-            table = tableName +".";
+            table = tableName + "/" + aliasTableName +".";
         }
 
-        return table + columnName + "/" + alias;
+        return table + columnName + "/" + aliasColumnName;
     }
 
     @Override
@@ -66,15 +76,21 @@ public class VariableDescriptor {
         VariableDescriptor that = (VariableDescriptor) o;
 
         if (columnName != null ? !columnName.equals(that.columnName) : that.columnName != null) return false;
-        if (alias != null ? !alias.equals(that.alias) : that.alias != null) return false;
-        return tableName != null ? tableName.equals(that.tableName) : that.tableName == null;
+        if (aliasColumnName != null ? !aliasColumnName.equals(that.aliasColumnName) : that.aliasColumnName != null) return false;
+        if (tableName != null ? !tableName.equals(that.tableName) : that.tableName != null) return false;
+        return aliasTableName != null ? aliasTableName.equals(that.aliasTableName) : that.aliasTableName == null;
     }
 
     @Override
     public int hashCode() {
         int result = columnName != null ? columnName.hashCode() : 0;
-        result = 31 * result + (alias != null ? alias.hashCode() : 0);
+        result = 31 * result + (aliasColumnName != null ? aliasColumnName.hashCode() : 0);
         result = 31 * result + (tableName != null ? tableName.hashCode() : 0);
+        result = 31 * result + (aliasTableName != null ? aliasTableName.hashCode() : 0);
         return result;
+    }
+
+    public String getAliasTableName() {
+        return aliasTableName;
     }
 }

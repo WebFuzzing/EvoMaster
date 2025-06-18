@@ -19,7 +19,7 @@ that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
 In particular, _EvoMaster_ can fuzz APIs such as REST, GraphQL and RPC.
-Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JS and Java/Kotlin JUnit format) that can be used for _regression testing_.
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JavaScript and Java/Kotlin JUnit format) that can be used for _regression testing_.
 
 _EvoMaster_ is an AI driven tool.
 In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm)
@@ -31,9 +31,31 @@ _EvoMaster_ uses several kinds of AI heuristics to improve performance even furt
 building on decades of research in the field of [Search-Based Software Testing](https://en.wikipedia.org/wiki/Search-based_software_engineering).
 
 
-__Key features__:
+### 1-Minute Example 
+
+On a console, copy&paste the following (requires _Docker_ installed).
+It will fuzz the PetClinic example API from Swagger, for 30 seconds. 
+
+```
+docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+```
+Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $ (as in the following video).
+
+
+![](docs/img/evomaster_docker_use.gif)
+
+Once the command is executed, you can inspect the generated files under `generated_tests` folder. 
+
+
+### Key features
 
 * _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
+
+* _Free_: this is an open-source project, with funding from public research (e.g., professors, postdocs and PhD students).
+          There is no monetary cost involved in using this tool, or need to use any paid external services (e.g., external LLM APIs).
+          If you are a resident in EU, Norway, Argentina, China, or any associate country involved with ERC, thanks for your tax money supporting this project. 
+
+* _In-house, no telemetry_: currently there is no telemetry in use in _EvoMaster_, and it does not require to connect to any external service on internet, besides the tested application. AFAIK, it can be run in-house without any worry of leaking any IP to external parties (if not, please open a new issue to tell us how that could happen, and we will try to fix it). 
 
 * _Black-Box_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
   However, results for black-box testing will be worse than white-box testing (e.g., due to lack of code analysis).
@@ -54,6 +76,12 @@ __Key features__:
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
 
+* _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
+
+* _GitHub Action_: it is possible to run _EvoMaster_ in GitHub Actions, as part of Continuous Integration, by using the [following custom action](https://github.com/WebFuzzing/evomaster-action) (which is in a different GitHub repository).
+
+* _Hardware_: although state-of-the-art AI techniques are used, there is no major hardware requirement to be able to run _EvoMaster_. It will work even on old laptops. The main computational bottleneck is running the tested applications, and making network calls to them. 
+
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
 * _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
@@ -72,18 +100,16 @@ __Key features__:
   of the application, and run with any build tool such as Maven and Gradle).
   For black-box testing, you will need to make sure the application is up and running before executing the tests. 
 
-
 * _SQL handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests.
   At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.
 
-
 * _Authentication_: we support auth based on authentication headers and cookies.
   Besides using fixed HTTP headers, 
   it is also possible to declaratively specify which login endpoint should be used to dynamically obtain authentication info (e.g., auth tokens or cookies) for each test execution. [See documentation](docs/auth.md).
 
-__Known limitations__:
+### Known Limitations
 
 * _Driver_: to be used for _white-box_ testing, users need to write a [driver manually](docs/write_driver.md).
   We recommend to try _black-box_ mode first (should just need a few minutes to get it up and running) to get
@@ -145,19 +171,19 @@ Example of Fortune 500 companies using _EvoMaster_ are:
 
 * [Short presentation](https://youtu.be/iQSAlrr-PZo) (5 minutes) about version 2.0.0. 
 
+* [Demonstration of Docker and GitHub Actions support](https://youtu.be/l1ybs7SjvcA).
+
 ### Alternatives
 
 In the last few years, several few tools have been proposed in the academic literature and in the open-source community.
 You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
 
-Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+Existing open-source tools for REST API fuzzing, with at least 100 stars on GitHub, are for example (in alphabetic order):
 [CATS](https://github.com/Endava/cats),
 [Dredd](https://github.com/apiaryio/dredd),
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
-[RestCT](https://github.com/GIST-NJU/RestCT),
 [Restler](https://github.com/microsoft/restler-fuzzer),
-[RestTestGen](https://github.com/SeUniVr/RestTestGen),
 and
 [Schemathesis](https://github.com/schemathesis/schemathesis).
 
@@ -180,7 +206,7 @@ Current open positions: none.
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
 < !---
-For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
+For more details on current vacancies, see our group page at [AISE Lab](https://WebFuzzing.github.io/).
 --->
 
 
@@ -212,6 +238,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
   * [Technical notes for developers contributing to EvoMaster](docs/for_developers.md)
 * Troubleshooting
   * [Windows and networking](docs/troubleshooting/windows.md)
+  * [java.lang.OutOfMemoryError](docs/troubleshooting/outofmemory.md)
 * More Info
   * [Academic papers related to EvoMaster](docs/publications.md)
   * [Slides of presentations/seminars](docs/presentations.md)
@@ -225,7 +252,7 @@ Otherwise, if you are working in industry on closed-source APIs, we have options
 ### Funding
 
 _EvoMaster_ has been funded by:
-* 2020-2025: a 2 million Euro grant by the European Research Council (ERC),
+* 2020-2026: a 2 million Euro grant by the European Research Council (ERC),
   as part of the *ERC Consolidator* project
   <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN),

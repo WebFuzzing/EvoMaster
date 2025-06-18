@@ -7,7 +7,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -42,7 +42,7 @@ class HarvestingStrategyTest : SpringTestBase() {
                 .willReturn(WireMock.aResponse().withStatus(200).withBody("{\"message\" : \"Working\"}"))
         )
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.10")
+        DnsCacheManipulator.setDnsCache("mock.test", "127.0.0.10")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyExactEMTest",
@@ -98,7 +98,7 @@ class HarvestingStrategyTest : SpringTestBase() {
                 .willReturn(WireMock.aResponse().withStatus(500).withBody("Internal Server Error"))
         )
 
-        DnsCacheManipulator.setDnsCache("mock.int", "127.0.0.13")
+        DnsCacheManipulator.setDnsCache("mock.test", "127.0.0.13")
 
         runTestHandlingFlakyAndCompilation(
             "HarvestStrategyClosestSameDomainEMTest",

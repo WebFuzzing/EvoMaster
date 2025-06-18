@@ -13,6 +13,7 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
+**/*.DS_Store
 /.idea/
 .idea/
 *.iml
@@ -123,6 +124,7 @@ Migrations/
 /e2e-tests/spring-rest-mysql-column-types/target/
 /e2e-tests/spring-rest-postgres-column-types/target/
 /e2e-tests/spring-rest-h2-column-types/target/
+/e2e-tests/spring-rest-h2-z3solver/target/
 /test-old-libraries/target/
 /e2e-tests/spring-web/target/
 /e2e-tests/spring-rest-mongo/target/
@@ -167,6 +169,9 @@ Migrations/
 /e2e-tests/spring-rest-bb/maven/target/
 /target/
 /wfc/target/
+
 /e2e-tests/emb-json/target/
 /process_data/
 /e2e-tests/spring-rest-multidb/target/
+/e2e-tests/spring-rest-h2-v2/target/
+e2e-tests/spring-rest-rsa/target/

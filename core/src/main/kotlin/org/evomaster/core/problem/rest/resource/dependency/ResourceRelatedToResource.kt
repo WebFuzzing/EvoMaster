@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestPath
 
 /**
  *  @param path is a list of path(s), which can be parsed with [RelatedTo.parseMultipleKey]

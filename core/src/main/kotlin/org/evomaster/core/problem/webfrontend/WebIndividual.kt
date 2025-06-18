@@ -18,7 +18,7 @@ class WebIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,mainSize,sqlSize,mongoSize,dnsSize, 0, 0)
 ) : GuiIndividual(
     sampleType = sampleType,
     children = children,

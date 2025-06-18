@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>3.4.0</version>
+        <version>3.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-sql</artifactId>
@@ -15,6 +15,10 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-distance-heuristics</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
         </dependency>
         <!--
             This is for SimpleLogger.
@@ -91,6 +95,7 @@
             <artifactId>mssql-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
+
 
     </dependencies>
 

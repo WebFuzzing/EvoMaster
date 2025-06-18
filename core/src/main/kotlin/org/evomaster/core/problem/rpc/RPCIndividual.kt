@@ -12,6 +12,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
@@ -31,7 +32,8 @@ class RPCIndividual(
     sqlSize: Int = 0,
     mongoSize: Int = 0,
     dnsSize: Int = 0,
-    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize)
+    scheduleTaskSize : Int = 0,
+    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize, scheduleTaskSize, 0)
 ) : ApiWsIndividual(
     sampleType,
     trackOperator, index, allActions,
@@ -43,6 +45,7 @@ class RPCIndividual(
         sampleType: SampleType,
         actions: MutableList<RPCCallAction>,
         externalServicesActions: MutableList<List<ApiExternalServiceAction>> = mutableListOf(),
+        scheduleTaskActions: MutableList<ScheduleTaskAction> = mutableListOf(),
         /*
             TODO might add sample type here as REST (check later)
          */
@@ -54,10 +57,12 @@ class RPCIndividual(
         trackOperator = trackOperator,
         index = index,
         allActions = mutableListOf<ActionComponent>().apply {
-            addAll(dbInitialization);
+            addAll(dbInitialization)
+            addAll(scheduleTaskActions)
             addAll(actions.mapIndexed { index, rpcCallAction ->
-                if (externalServicesActions.isNotEmpty())
+                if (externalServicesActions.isNotEmpty()){
                     Lazy.assert { actions.size == externalServicesActions.size }
+                }
                 EnterpriseActionGroup(mutableListOf(rpcCallAction), RPCCallAction::class.java).apply {
                     addChildrenToGroup(
                         externalServicesActions[index],
@@ -65,8 +70,10 @@ class RPCIndividual(
                     )
                 }})
         },
-        mainSize = actions.size, sqlSize = dbInitialization.size)
-
+        mainSize = actions.size,
+        sqlSize = dbInitialization.size,
+        scheduleTaskSize = scheduleTaskActions.size
+        )
 
     override fun canMutateStructure(): Boolean = true
 
@@ -112,7 +119,8 @@ class RPCIndividual(
             mainSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.MAIN),
             sqlSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SQL),
             mongoSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_MONGO),
-            dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS)
+            dnsSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_DNS),
+            scheduleTaskSize = groupsView()!!.sizeOfGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
         )
     }
 

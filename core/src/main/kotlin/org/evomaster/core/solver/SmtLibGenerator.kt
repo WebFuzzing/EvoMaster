@@ -1,6 +1,8 @@
 package org.evomaster.core.solver
 
+import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
@@ -425,21 +427,26 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val fromItem = plainSelect.fromItem
-            val tableName = (fromItem as net.sf.jsqlparser.schema.Table).name
-            val alias = fromItem.alias?.name ?: tableName
-            tableAliasMap[alias] = tableName
+            if (fromItem != null) {
+                val tableName = getTableName(fromItem)
+                val alias = fromItem.alias?.name ?: tableName
+                tableAliasMap[alias] = tableName
 
-            val joins = plainSelect.joins
-            if (joins != null) {
-                for (join in joins) {
-                    val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                    val joinName = (join.rightItem as net.sf.jsqlparser.schema.Table).name
-                    tableAliasMap[joinAlias] = joinName
+                val joins = plainSelect.joins
+                if (joins != null) {
+                    for (join in joins) {
+                        val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
+                        val joinName = getTableName(join.rightItem)
+                        tableAliasMap[joinAlias] = joinName
+                    }
                 }
             }
         }
         return tableAliasMap
     }
+
+    private fun getTableName(fromItem: FromItem?): String =
+        (fromItem as Table).getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
@@ -497,7 +504,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
     private fun getConstructors(table: TableDto): List<DeclareConstSMTNode> {
         return table.columns.map { c ->
             val smtType = TYPE_MAP[c.type.uppercase(Locale.getDefault())]
-            DeclareConstSMTNode(c.name, smtType!!)
+                ?: throw RuntimeException("Unsupported column type: ${c.type}")
+            DeclareConstSMTNode(c.name, smtType)
         }
     }
 
@@ -509,8 +517,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "TIMESTAMP" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
+            "DECIMAL" to "Real",
+            "REAL" to "Real",
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
+            "VARCHAR" to "String",
             "CHARACTER LARGE OBJECT" to "String",
             "BOOLEAN" to "String", // TODO: Check this
         )

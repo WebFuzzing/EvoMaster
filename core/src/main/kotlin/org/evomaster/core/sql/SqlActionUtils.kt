@@ -169,10 +169,32 @@ object SqlActionUtils {
     fun verifyActions(actions: List<SqlAction>): Boolean {
         return verifyUniqueColumns(actions)
                 && verifyForeignKeys(actions)
+                && verifyExistingDataFirst(actions)
+    }
+
+    fun checkActions(actions: List<SqlAction>){
+
+        if(!verifyActions(actions)){
+            if(!verifyUniqueColumns(actions)){
+                throw IllegalStateException("Unsatisfied unique column constraints")
+            }
+            if(!verifyForeignKeys(actions)){
+                throw IllegalStateException("Unsatisfied foreign key constraints")
+            }
+            if(!verifyExistingDataFirst(actions)){
+                throw IllegalStateException("Unsatisfied existing data constraints")
+            }
+            throw IllegalStateException("Bug in EvoMaster, unhandled verification case in SQL properties")
+        }
+    }
+
+    fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{
+        val startingIndex = actions.indexOfLast { it.representExistingData } + 1
+        return actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }.isEmpty()
     }
 
     /**
-     * Returns true if a insertion tries to insert a repeated value
+     * Returns false if a insertion tries to insert a repeated value
      * in a unique column
      */
     fun verifyUniqueColumns(actions: List<SqlAction>): Boolean {

@@ -8,7 +8,7 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 3.4.0
+  evomaster-version: 3.4.1
   jdk-jar: 1.8
   jdk-jpackage: 21
   retention-days: 1
@@ -165,7 +165,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          body: "See release notes at [release_notes.md](https://github.com/EMResearch/EvoMaster/blob/master/release_notes.md)."
+          body: "See release notes at [release_notes.md](https://github.com/WebFuzzing/EvoMaster/blob/master/release_notes.md)."
           prerelease: false
           draft: false
           fail_on_unmatched_files: true

@@ -1,0 +1,161 @@
+package org.evomaster.core.search.algorithms
+
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
+import org.evomaster.core.search.service.SearchAlgorithm
+
+/**
+ * Abstract base class for implementing Genetic Algorithms (GAs) in EvoMaster.
+ *
+ * Provides core logic for:
+ * - Population initialization,
+ * - Elitism,
+ * - Mutation and crossover operators,
+ * - Tournament selection.
+ *
+ * Concrete subclasses (e.g., StandardGeneticAlgorithm) should implement
+ * the specifics of how the population is evolved in each generation
+ * (typically by overriding searchOnce).
+ *
+ * @param T The type of individual (e.g., representing a test suite or test case).
+ */
+abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
+
+    /** The current population of evaluated individuals (test suites). */
+    protected val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+
+    /**
+     * Called once before the search begins. Clears any old population and initializes a new one.
+     */
+    override fun setupBeforeSearch() {
+        population.clear()
+        initPopulation()
+    }
+
+    /**
+     * Initializes the population with randomly sampled suites up to the configured population size.
+     * Stops early if the time budget is exhausted.
+     */
+    protected open fun initPopulation() {
+        val n = config.populationSize
+
+        for (i in 1..n) {
+            population.add(sampleSuite())
+
+            if (!time.shouldContinueSearch()) {
+                break
+            }
+        }
+    }
+
+    /**
+     * Forms the starting point of the next generation's population.
+     * Applies elitism: retains a fixed number of top individuals based on fitness.
+     *
+     * @param population The current generation.
+     * @return A mutable list containing elite individuals for the next generation.
+     */
+    protected fun formTheNextPopulation(population: MutableList<WtsEvalIndividual<T>>): MutableList<WtsEvalIndividual<T>> {
+        val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+
+        if (config.elitesCount > 0 && population.isNotEmpty()) {
+            val sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
+            val elites = sortedPopulation.take(config.elitesCount)
+            nextPop.addAll(elites)
+        }
+
+        return nextPop
+    }
+
+    /**
+     * Applies mutation to a given individual.
+     *
+     * The mutation operator is chosen randomly from:
+     * - "del": Delete a random element from the suite (if more than one).
+     * - "add": Add a newly sampled element (if below max suite size).
+     * - "mod": Modify an existing element using the mutator.
+     *
+     * This method modifies the individual in-place.
+     */
+    protected fun mutate(wts: WtsEvalIndividual<T>) {
+        val op = randomness.choose(listOf("del", "add", "mod"))
+        val n = wts.suite.size
+
+        when (op) {
+            "del" -> if (n > 1) {
+                val i = randomness.nextInt(n)
+                wts.suite.removeAt(i)
+            }
+
+            "add" -> if (n < config.maxSearchSuiteSize) {
+                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
+                    archive.addIfNeeded(this)
+                    wts.suite.add(this)
+                }
+            }
+
+            "mod" -> {
+                val i = randomness.nextInt(n)
+                val ind = wts.suite[i]
+
+                getMutatator().mutateAndSave(ind, archive)
+                    ?.let { wts.suite[i] = it }
+            }
+        }
+    }
+
+    /**
+     * Applies crossover between two individuals.
+     *
+     * Swaps elements in their suites up to a randomly chosen split point
+     * (bounded by the size of the smaller suite).
+     */
+    protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
+        val nx = x.suite.size
+        val ny = y.suite.size
+
+        val splitPoint = randomness.nextInt(Math.min(nx, ny))
+
+        (0..splitPoint).forEach {
+            val k = x.suite[it]
+            x.suite[it] = y.suite[it]
+            y.suite[it] = k
+        }
+    }
+
+    /**
+     * Selects one individual using tournament selection.
+     *
+     * A subset of the population is randomly selected, and the individual with the
+     * highest fitness among them is chosen. Falls back to random selection if needed.
+     */
+    protected fun tournamentSelection(): WtsEvalIndividual<T> {
+        val selectedIndividuals = randomness.choose(population, config.tournamentSize)
+        val bestIndividual = selectedIndividuals.maxByOrNull { it.calculateCombinedFitness() }
+        return bestIndividual ?: randomness.choose(population)
+    }
+
+    /**
+     * Samples a new individual suite consisting of 1 to maxSearchSuiteSize elements.
+     *
+     * Each element is generated by sampling and evaluated via the fitness function.
+     * Stops early if the time budget is exceeded.
+     */
+    private fun sampleSuite(): WtsEvalIndividual<T> {
+        val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
+        val suite = WtsEvalIndividual<T>(mutableListOf())
+
+        for (i in 1..n) {
+            ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
+                archive.addIfNeeded(this)
+                suite.suite.add(this)
+            }
+
+            if (!time.shouldContinueSearch()) {
+                break
+            }
+        }
+
+        return suite
+    }
+}

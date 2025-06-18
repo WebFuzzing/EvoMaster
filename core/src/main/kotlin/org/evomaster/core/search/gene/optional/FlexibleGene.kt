@@ -163,7 +163,7 @@ class FlexibleGene(name: String,
         return false
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
     }
 

@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>3.4.0</version>
+        <version>3.4.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-controller-api</artifactId>
@@ -13,6 +13,10 @@
 
 
     <dependencies>
+        <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>commons</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-sql-dto</artifactId>

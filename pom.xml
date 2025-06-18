@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>3.4.0</version>
+    <version>3.4.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -29,18 +29,17 @@
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
-        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 
@@ -122,6 +121,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <wfc.version>0.0.3</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
@@ -149,10 +149,12 @@
         -->
         <jackson.version>2.14.3</jackson.version>
         <asm.version>9.7</asm.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
-        <selenium.version>4.7.2</selenium.version>
+<!--        <selenium.version>4.31.0</selenium.version>-->
+        <!--  TODO 4.11 latest version supporting JDK 8. now on 11. update once update EM-->
+        <selenium.version>4.11.0</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -281,6 +283,12 @@
                 <version>${project.version}</version>
                 <type>pom</type>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>commons</artifactId>
+                <version>${wfc.version}</version>
             </dependency>
 
 
@@ -429,6 +437,12 @@
                 <artifactId>jgrapht</artifactId>
                 <version>${jgrapht.version}</version>
             </dependency>
+            <dependency>
+                <!--  Needed to avoid issues with Docker on Mac -->
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.17.0</version>
+            </dependency>
 <!--            <dependency> &lt;!&ndash; Needed for Process handling in Windows for JDK 8&ndash;&gt;-->
 <!--                <groupId>net.java.dev.jna</groupId>-->
 <!--                <artifactId>jna-platform</artifactId>-->
@@ -533,11 +547,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-toml</artifactId>
                 <version>${jackson.version}</version>
@@ -550,11 +559,6 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.jaxrs</groupId>
                 <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
@@ -1064,6 +1068,35 @@
                 <artifactId>itu</artifactId>
                 <version>1.10.2</version>
             </dependency>
+
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.59</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.7</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>1.2.83</version>
+            </dependency>
+
+            <!--
+                We shouldn't use Lombok in EM, but some E2E from external contributors do
+             -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.30</version>
+            </dependency>
+
+
 
         </dependencies>
     </dependencyManagement>

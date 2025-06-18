@@ -1,13 +1,14 @@
 package org.evomaster.core.problem.rest.resource
 
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.impact.impactinfocollection.ActionStructureImpact
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfAction
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.impact.impactinfocollection.InitializationGroupedActionsImpacts
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.IntegerGeneImpact
+import kotlin.reflect.KClass
 
 /**
  * created by manzhang on 2021/10/21
@@ -56,7 +57,7 @@ class ResourceImpactOfIndividual : ImpactsOfIndividual {
         this.anySqlTableSizeImpact = anySqlTableSizeImpact
     }
 
-    constructor(individual: RestIndividual, initActionTypes: List<String>, abstractInitializationGeneToMutate: Boolean, fitnessValue: FitnessValue?)
+    constructor(individual: RestIndividual, initActionTypes: List<KClass<*>>, abstractInitializationGeneToMutate: Boolean, fitnessValue: FitnessValue?)
             : super(individual, initActionTypes, abstractInitializationGeneToMutate, fitnessValue) {
         resourceSizeImpact = mutableMapOf<String, IntegerGeneImpact>().apply {
             individual.seeResource(RestIndividual.ResourceFilter.ALL).forEach { r->

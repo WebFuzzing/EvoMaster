@@ -1,22 +1,16 @@
 package org.evomaster.e2etests.spring.examples.blackbox;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.constant.ConstantController;
-import com.foo.rest.examples.spring.constant.ConstantResponseDto;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallResult;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

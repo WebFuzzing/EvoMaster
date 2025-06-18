@@ -44,9 +44,13 @@ class RPCExternalServiceAction(
 
     companion object{
         fun getRPCExternalServiceActionName(apiDto: MockRPCExternalServiceDto, index: Int) =
-            getRPCExternalServiceActionName(apiDto.interfaceFullName, apiDto.functionName, apiDto.requestRules?.get(index), apiDto.responseFullTypesWithGeneric?.get(index)?:apiDto.responseTypes[index])
-
-
+            getRPCExternalServiceActionName(
+                apiDto.interfaceFullName,
+                apiDto.functionName,
+                apiDto.requestRules?.run{
+                    if (this.size > index) get(index)
+                    else throw IllegalArgumentException("request rules are unspecified for function ${apiDto.functionName} from interface ${apiDto.interfaceFullName}") },
+                apiDto.responseFullTypesWithGeneric?.run{ if (this.size > index) get(index) else null }?:apiDto.responseTypes[index])
 
         fun getRPCExternalServiceActionName(interfaceName: String, functionName: String, requestRuleIdentifier: String?, responseClassType: String) = "$interfaceName$EXACTION_NAME_SEPARATOR$functionName$EXACTION_NAME_SEPARATOR${requestRuleIdentifier?:"ANY"}$EXACTION_NAME_SEPARATOR$responseClassType"
     }

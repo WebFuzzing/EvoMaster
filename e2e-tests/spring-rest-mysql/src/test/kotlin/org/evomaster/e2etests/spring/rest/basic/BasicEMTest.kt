@@ -1,8 +1,8 @@
 package org.evomaster.e2etests.spring.rest.basic
 
 import com.foo.spring.rest.mysql.basic.BasicController
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.service.sampler.RestSampler
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.e2etests.utils.RestTestBase

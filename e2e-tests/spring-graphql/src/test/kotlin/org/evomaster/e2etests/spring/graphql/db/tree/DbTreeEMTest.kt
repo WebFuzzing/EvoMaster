@@ -7,7 +7,8 @@ import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class DbTreeEMTest : SpringTestBase() {
 
@@ -19,25 +20,26 @@ class DbTreeEMTest : SpringTestBase() {
         }
     }
 
-    @Test
-    fun testEM(){
+    @ParameterizedTest
+    @ValueSource(booleans = [false, true])
+    fun testEM(heuristicsForSQLAdvanced: Boolean){
 
-        defaultSeed = 0
+        defaultSeed = 1
 
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
-            "org.foo.graphql.DbTreeEM",
+            "org.foo.graphql.DbTreeEM" +
+                    if (heuristicsForSQLAdvanced) "Complete" else "Partial",
             1000
         ) { args: MutableList<String> ->
 
-            args.add("--problemType")
-            args.add(EMConfig.ProblemType.GRAPHQL.toString())
+            setOption(args, "problemType", EMConfig.ProblemType.GRAPHQL.toString())
+            setOption(args, "heuristicsForSQL","true")
+            setOption(args,"generateSqlDataWithSearch","true" )
+            setOption(args,"heuristicsForSQLAdvanced", if (heuristicsForSQLAdvanced) "true" else "false")
 
-            args.add("--heuristicsForSQL")
-            args.add("true")
-            args.add("--generateSqlDataWithSearch")
-            args.add("true")
-
+            //issues with CI... trying to debug
+            setOption(args,"useTimeInFeedbackSampling","false")
 
             val solution = initAndRun(args)
 

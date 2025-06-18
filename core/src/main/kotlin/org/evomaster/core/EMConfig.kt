@@ -12,6 +12,7 @@ import org.evomaster.core.config.ConfigsFromFile
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
+import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -81,7 +82,9 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
+
+        private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -352,9 +355,16 @@ class EMConfig {
             LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
         }
 
-        val cf = ConfigUtil.readFromFile(configPath)
-        cf.validateAndNormalizeAuth()
-        return cf
+        try {
+            val cf = ConfigUtil.readFromFile(configPath)
+            cf.validateAndNormalizeAuth()
+            return cf
+        }catch (e: Exception){
+            val cause = if(e.cause!=null) "\nCause:${e.cause!!.message}" else ""
+            throw ConfigProblemException("Failed when reading configuration file at $configPath." +
+                    "\nError: ${e.message}" +
+                    "$cause")
+        }
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -569,6 +579,9 @@ class EMConfig {
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
 
+        if (saveScheduleTaskInvocationAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files (ie, saveScheduleTaskInvocationAsSeparatedFile=true)")
+
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
@@ -576,6 +589,14 @@ class EMConfig {
 
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
+
+        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model server URL cannot be empty.")
+        }
+
+        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -1111,7 +1132,8 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        StandardGA, MonotonicGA, SteadyStateGA // These 3 are still work-in-progress
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1246,6 +1268,18 @@ class EMConfig {
     var statisticsFile = "statistics.csv"
 
 
+    enum class AIResponseClassifierModel {
+        NONE, GAUSSIAN, NN, GLM
+    }
+
+    @Experimental
+    @Cfg("Model used to learn input constraints and infer response status before making request.")
+    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+
+    @Experimental
+    @Cfg("Learning rate for classifiers like GLM and NN.")
+    var aiResponseClassifierLearningRate: Double = 0.01
+
     @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
     var writeWFCReport = false
@@ -1353,6 +1387,10 @@ class EMConfig {
     @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
+
+    @Cfg("Define the probability of happening mutation in the genetic algorithms")
+    @Probability
+    var fixedRateMutation = 0.04
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
@@ -1623,6 +1661,12 @@ class EMConfig {
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.1
+
+
+    @Experimental
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.0
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -1990,7 +2034,7 @@ class EMConfig {
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
             " billions of characters long")
-    var maxLengthForStrings = 200
+    var maxLengthForStrings = 1024
 
 
     @Min(0.0)
@@ -2221,16 +2265,16 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Specify a method to select the first external service spoof IP address.")
     @Experimental
+    @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
+    @Experimental
     @Cfg("User provided external service IP." +
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
             " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
-    @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
 
@@ -2238,9 +2282,18 @@ class EMConfig {
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
     var enableCustomizedMethodForMockObjectHandling = false
 
+
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task.")
+    var enableCustomizedMethodForScheduleTaskHandling = false
+
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Whether to save schedule task invocation as separated files")
+    var saveScheduleTaskInvocationAsSeparatedFile = false
 
     @Experimental
     @Cfg("Specify test resource path where to save mocked responses as separated files")
@@ -2252,26 +2305,24 @@ class EMConfig {
     @Probability(true)
     var useExtraSqlDbConstraintsProbability = 0.9
 
-
-    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
+    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
-
-    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Experimental
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Probability(activating = true)
     var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
 
-    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
+    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Experimental
     @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
     @Min(1.0)
-    @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
 
@@ -2300,8 +2351,8 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Harvested external request response selection strategy")
     @Experimental
+    @Cfg("Harvested external request response selection strategy")
     var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
@@ -2347,9 +2398,25 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
-    var security = false
+    var security = true
+
+    @Experimental
+    @Cfg("Enable language model connector")
+    var languageModelConnector = false
+
+    @Experimental
+    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
+    var languageModelServerURL: String = "http://localhost:11434/"
+
+    @Experimental
+    @Cfg("Large-language model name as listed in Ollama")
+    var languageModelName: String = "llama3.2:latest"
+
+    @Experimental
+    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
@@ -2367,6 +2434,12 @@ class EMConfig {
 
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
+
+    @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
+            " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
+            " However, this is done heuristically." +
+            " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
+    var blackBoxCleanUp = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2432,11 +2505,19 @@ class EMConfig {
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
-    @Experimental
+    @Cfg("Specify the hard limit for test case name length")
+    var maxTestCaseNameLength = 80
+
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
-    var nameWithQueryParameters = false
+    var nameWithQueryParameters = true
 
+    @Cfg("Specify the test case sorting strategy")
+    var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
 
     @Experimental
     @Probability(true)
@@ -2456,6 +2537,15 @@ class EMConfig {
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
             " on a single line")
     var maxLengthForCommentLine = 80
+
+    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
+    @Min(0.0)
+    var elitesCount: Int = 1
+
+    @Experimental
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
@@ -2555,4 +2645,6 @@ class EMConfig {
     fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 }

@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.MockDatabaseDto
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*
+import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
@@ -23,13 +24,15 @@ import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction.Companion.getRPCExternalServiceActionName
 import org.evomaster.core.problem.externalservice.rpc.parm.ClassResponseParam
 import org.evomaster.core.problem.externalservice.rpc.parm.UpdateForRPCResponseParam
-import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCCallResult
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.auth.RPCAuthenticationInfo
 import org.evomaster.core.problem.rpc.auth.RPCNoAuth
 import org.evomaster.core.problem.rpc.param.RPCParam
+import org.evomaster.core.scheduletask.ScheduleTaskAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction.Companion.getScheduleTaskActionId
 import org.evomaster.core.problem.util.ActionBuilderUtil
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.ParserDtoUtil.parseJsonNodeAsGene
@@ -98,6 +101,12 @@ class RPCEndpointsHandler {
     private val actionSchemaCluster = mutableMapOf<String, RPCActionDto>()
 
     /**
+     * key is an id of the schedule task, ie, task id
+     * value is corresponding endpoint dto schema
+     */
+    private val scheduleTaskSchemaCluster = mutableMapOf<String, ScheduleTaskInvocationDto>()
+
+    /**
      * a map of authorizedAction with available auth info
      * - Key is the id of action (which is consistent with key of [actionSchemaCluster])
      * - Value is a list of auth (which is based on key of [authentications])
@@ -141,6 +150,12 @@ class RPCEndpointsHandler {
     private val seededDbMockObjects = mutableMapOf<String, DbAsExternalServiceAction>()
 
     /**
+     * a map of schedule tasks based on seeded tests
+     *
+     */
+    private val seededScheduleTaskActions = mutableMapOf<String, MutableList<ScheduleTaskAction>>()
+
+    /**
      * key is type in the schema
      * value is object gene for it
      */
@@ -164,7 +179,7 @@ class RPCEndpointsHandler {
     fun handleCustomizedTests(individuals : List<EvaluatedIndividual<RPCIndividual>>){
         val postSearchActionDto = PostSearchActionDto()
         postSearchActionDto.rpcTests = individuals.map {eval->
-            val test = RPCTestDto()
+            val test = RPCTestWithResultsDto()
             test.actions = eval.evaluatedMainActions().map { eval->
                 val call = eval.action as RPCCallAction
                 val res = eval.result as RPCCallResult
@@ -184,9 +199,9 @@ class RPCEndpointsHandler {
     /**
      * create RPC individual based on seeded tests
      */
-    fun handledSeededTests(tests: Map<String, List<RPCActionDto>>): List<RPCIndividual>{
+    fun handledSeededTests(tests: Map<String, RPCTestDto>): List<RPCIndividual>{
         return tests.map {e->
-            val rpcActionDtos = e.value
+            val rpcActionDtos = e.value.rpcFuctions?: emptyList()
             val exActions = mutableListOf<List<ApiExternalServiceAction>>()
             val rpcActions = rpcActionDtos.map { rpcActionDto->
                 val external = mutableListOf<ApiExternalServiceAction>()
@@ -210,8 +225,7 @@ class RPCEndpointsHandler {
                     external.addAll(ex)
                 }
 
-
-               if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
+                if (rpcActionDto.mockDatabaseDtos != null && rpcActionDto.mockDatabaseDtos.isNotEmpty()){
                    val dbEx = rpcActionDto.mockDatabaseDtos.map { dbDto->
                         val dbExAction = seededDbMockObjects[
                             getDbAsExternalServiceAction(dbDto)
@@ -230,22 +244,32 @@ class RPCEndpointsHandler {
                     }.filterNotNull()
                    external.addAll(dbEx)
                 }
-
                 exActions.add(external)
                 processEndpoint(name, rpcActionDto, true)
             }.toMutableList()
 
-            if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
-                log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
-                null
-            }else
-                RPCIndividual(sampleType = SampleType.SEEDED, actions = rpcActions, externalServicesActions = exActions)
+            // handle schedule task action
+            val scheduleTaskActions = e.value.scheduleTaskInvocationDtos?.map {
+                handleScheduleTask(it)
+            }?.toMutableList()?: mutableListOf()
 
+            if (rpcActions.isNotEmpty() || scheduleTaskActions.isNotEmpty()){
+                if (rpcActions.any { it.seeTopGenes().any { g-> !g.isLocallyValid() } }){
+                    log.warn("The given test (${e.key}) is invalid (e.g., violate constraints) that will not be involved in the test generation")
+                    null
+                }else
+                    RPCIndividual(
+                        sampleType = SampleType.SEEDED,
+                        actions = rpcActions,
+                        externalServicesActions = exActions,
+                        scheduleTaskActions =  scheduleTaskActions
+                    )
+            }else{
+                log.warn("The given test (${e.key}) has 0 RPCCall Actions and 0 ScheduleTask Actions")
+                null
+            }
         }.filterNotNull()
     }
-
-
-
 
     private fun readJson(response: String) : JsonNode?{
         return try {
@@ -253,6 +277,59 @@ class RPCEndpointsHandler {
         }catch (e: Exception){
             null
         }
+    }
+
+    private fun emptyRequestParams(dto: ScheduleTaskInvocationDto) : Boolean{
+        return ((dto.requestParams?.size ?: 0) == 0) && ((dto.requestParamsAsStrings?.size ?: 0) == 0)
+    }
+
+    private fun extractScheduleTaskAction(dto: ScheduleTaskInvocationDto, cluster : MutableMap<String, Action>){
+        val id = getScheduleTaskActionId(taskType = dto.scheduleTaskType?:"null", taskName = dto.taskName)
+
+        val existing = cluster[id] as? ScheduleTaskAction
+        if (existing != null &&
+            (existing.parameters.isNotEmpty() || emptyRequestParams(dto))) return
+
+        val scheduleTaskAction = handleScheduleTask(dto)
+        cluster[scheduleTaskAction.taskId] = scheduleTaskAction
+    }
+
+    private fun handleScheduleTask(dto: ScheduleTaskInvocationDto) : ScheduleTaskAction {
+        val params : MutableList<Param> = if (dto.requestParams == null && dto.requestParamsAsStrings == null) {
+            mutableListOf()
+        } else if (dto.requestParams == null && dto.requestParamsAsStrings != null){
+            dto.requestParamsAsStrings.mapIndexed { index, s ->
+                val requestName = "scheduleRequestParam$index"
+                val node = readJson(s)
+                val gene = (if (node != null){
+                    parseJsonNodeAsGene(requestName, node)
+                }else{
+                    StringGene(requestName, s)
+                }.run { wrapWithOptionalGene(this, true) })
+                RPCParam(requestName, gene)
+            }.toMutableList()
+        }else if ((dto.requestParams != null && dto.requestParamsAsStrings == null) ||
+            (dto.requestParams.size ==  dto.requestParamsAsStrings.size)){
+            dto.requestParams.mapIndexed { index,  paramDto ->
+                RPCParam("scheduleRequestParam$index",
+                    wrapWithOptionalGene(handleDtoParam(paramDto), true)
+                )
+            }.toMutableList()
+        }else{
+            throw IllegalArgumentException("mismatched request parameters info")
+        }
+
+        return ScheduleTaskAction(
+            taskId = getScheduleTaskActionId(taskType = dto.scheduleTaskType?:"null", taskName = dto.taskName),
+            taskName = dto.taskName,
+            parameters = params,
+            immutableExtraInfo = mutableMapOf(
+                "appKey" to dto.appKey,
+                "scheduleTaskType" to dto.scheduleTaskType,
+                "descriptiveInfo" to dto.descriptiveInfo,
+                "hostName" to dto.hostName
+            )
+        )
     }
 
     private fun extractRPCExternalServiceAction(sutInfoDto: SutInfoDto, rpcActionDto: RPCActionDto){
@@ -299,7 +376,7 @@ class RPCEndpointsHandler {
                                 if (node != null){
                                     parseJsonNodeAsGene("return", node)
                                 }else{
-                                    StringGene("return")
+                                    StringGene("return", dto.responses[index])
                                 }
                             }.run { wrapWithOptionalGene(this, true) }) as OptionalGene
 
@@ -323,8 +400,7 @@ class RPCEndpointsHandler {
 
         rpcActionDto.mockDatabaseDtos?.forEach{ dbDto->
             if (dbDto.commandName != null && dbDto.appKey!=null && dbDto.responseFullType != null){
-                val exKey = DbAsExternalServiceAction
-                    .getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
+                val exKey = getDbAsExternalServiceAction(dbDto.commandName, dbDto.requests, dbDto.responseFullTypeWithGeneric?:dbDto.responseFullType)
 
                 if (!seededDbMockObjects.containsKey(exKey)){
                     val responseTypeClass = interfaceDto.identifiedResponseTypes?.find {
@@ -363,6 +439,19 @@ class RPCEndpointsHandler {
                 LoggingUtil.uniqueWarn(log, "incorrect mockDatabaseDto with ${dbDto.commandName?:"null"} commandName, ${dbDto.appKey?:"null"} appKey, and ${dbDto.responseFullType?:"null"} responseFullType")
             }
 
+        }
+    }
+
+    fun transformScheduleTaskInvocationDto(scheduleTaskAction: ScheduleTaskAction) : ScheduleTaskInvocationDto{
+        return ScheduleTaskInvocationDto().apply {
+            taskName = scheduleTaskAction.taskName
+            requestParamsAsStrings = scheduleTaskAction.parameters.map {
+                (it as RPCParam).primaryGene().getValueAsRawString()
+            }
+            appKey = scheduleTaskAction.immutableExtraInfo?.get("appKey")
+            scheduleTaskType = scheduleTaskAction.immutableExtraInfo?.get("scheduleTaskType")
+            descriptiveInfo = scheduleTaskAction.immutableExtraInfo?.get("descriptiveInfo")
+            hostName = scheduleTaskAction.immutableExtraInfo?.get("hostName")
         }
     }
 
@@ -487,7 +576,28 @@ class RPCEndpointsHandler {
     }
 
 
-    private fun handleActionWithSeededCandidates(action: RPCCallAction, candidateKey: String){
+    /**
+     * @param action to be set with one seed at random
+     * @param noSeedProbability  is a probability to not apply any seed
+     * @return an action with/without seed
+     */
+    fun scheduleActionWithRandomSeeded(action: ScheduleTaskAction, noSeedProbability: Double): ScheduleTaskAction {
+        if (action.seeTopGenes().isEmpty()) return action
+        /*
+            TODO Man need to check
+             if we need to have seeded genes for schedule task
+             if needed, how to specify it, same as RPCCall?
+         */
+        val candidates = actionWithCustomizedCandidatesMap[action.taskId]
+        if (candidates.isNullOrEmpty() || randomness.nextBoolean(noSeedProbability))
+            handleActionNoSeededCandidates(action)
+        else
+            handleActionWithSeededCandidates(action, randomness.choose(candidates))
+        return action
+    }
+
+
+    private fun handleActionWithSeededCandidates(action: Action, candidateKey: String){
         action.seeTopGenes().flatMap { it.flatView() }.filter { it is CustomMutationRateGene<*> && it.gene is SeededGene<*> }.forEach { g->
             val index = ((g as CustomMutationRateGene<*>).gene as SeededGene<*>).seeded.values.indexOfFirst { it is Gene && it.name == candidateKey }
             if (index != -1){
@@ -497,7 +607,7 @@ class RPCEndpointsHandler {
         }
     }
 
-    private fun handleActionNoSeededCandidates(action: RPCCallAction){
+    private fun handleActionNoSeededCandidates(action: Action){
         action.seeTopGenes().filter { it is CustomMutationRateGene<*> && it.gene is SeededGene<*> }.forEach { g->
             ((g as CustomMutationRateGene<*>).gene as SeededGene<*>).employSeeded = false
             ((g.gene as SeededGene<*>).gene as Gene).randomize(randomness, false)
@@ -507,7 +617,12 @@ class RPCEndpointsHandler {
     /**
      * reset [actionCluster] based on interface schemas specified in [problem]
      */
-    fun initActionCluster(problem: RPCProblemDto, actionCluster: MutableMap<String, Action>, infoDto: SutInfoDto){
+    fun initActionCluster(
+        problem: RPCProblemDto,
+        actionCluster: MutableMap<String, Action>,
+        scheduleActionsCluster: MutableMap<String, Action>,
+        infoDto: SutInfoDto
+    ){
         this.infoDto = infoDto
 
         val clientVariableMap = problem.schemas.mapIndexed {i, e->
@@ -522,9 +637,12 @@ class RPCEndpointsHandler {
         }
 
         actionCluster.clear()
+        scheduleActionsCluster.clear()
+
         problem.schemas.forEach{ i->
             i.endpoints.forEach{e->
                 e.clientVariable = clientVariableMap[e.interfaceId]
+
                 actionSchemaCluster.putIfAbsent(actionName(i.interfaceId, e.actionName), e)
                 val name = actionName(i.interfaceId, e.actionName)
                 if (actionCluster.containsKey(name))
@@ -537,6 +655,7 @@ class RPCEndpointsHandler {
                     actionWithCustomizedCandidatesMap[name] = e.relatedCustomization
                 }
             }
+
             if (i.authEndpoints != null && i.authEndpointReferences != null){
                 Lazy.assert { i.authEndpoints.size == i.authEndpointReferences.size }
                 i.authEndpoints.forEachIndexed { index, e ->
@@ -565,10 +684,17 @@ class RPCEndpointsHandler {
         if (config.seedTestCases){
             // handle seeded test dto
             infoDto.rpcProblem.seededTestDtos?.values?.forEach { t->
-                t.forEach { a->
+                // handle rpc function with corresponding mock objects
+                t.rpcFuctions?.forEach { a->
                     extractRPCExternalServiceAction(infoDto, a)
                 }
+                // handle schedule task
+                t.scheduleTaskInvocationDtos?.forEach{s ->
+                    extractScheduleTaskAction(s, scheduleActionsCluster)
+                }
+
             }
+
         }
 
 
@@ -824,13 +950,14 @@ class RPCEndpointsHandler {
 //        }
 //    }
 
-    private fun transformResponseDto(action: RPCCallAction) : EvaluatedRPCActionDto{
+    private fun transformResponseDto(action: RPCCallAction) : RPCActionWithResultDto {
         // generate RPCActionDto
         val rpcAction = actionSchemaCluster[action.id]?.copy()?: throw IllegalStateException("cannot find the ${action.id} in actionSchemaCluster")
         val rpcResponseDto = rpcAction.responseParam
         if (action.response != null) transformGeneToParamDto(action.response!!.gene, rpcResponseDto)
 
-        val evaluatedDto = EvaluatedRPCActionDto()
+        val evaluatedDto =
+            RPCActionWithResultDto()
         evaluatedDto.rpcAction = transformActionDto(action)
         evaluatedDto.response = rpcResponseDto
         return evaluatedDto

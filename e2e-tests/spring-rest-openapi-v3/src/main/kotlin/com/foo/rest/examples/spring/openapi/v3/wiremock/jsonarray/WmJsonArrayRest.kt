@@ -16,7 +16,7 @@ class WmJsonArrayRest {
     @GetMapping
     fun getObject() : ResponseEntity<String> {
 
-        val url = URL("http://json.array:10877/api/foo")
+        val url = URL("http://json.test:10877/api/foo")
         val connection = url.openConnection()
         connection.setRequestProperty("accept", "application/json")
 
