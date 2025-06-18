@@ -732,7 +732,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        val handledSavedLocation = handleSaveLocation(a, rcr, chainState))
+        val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
 
         if(config.isEnabledAIModelForResponseClassification()) {
             responseClassifier.updateModel(a, rcr)
