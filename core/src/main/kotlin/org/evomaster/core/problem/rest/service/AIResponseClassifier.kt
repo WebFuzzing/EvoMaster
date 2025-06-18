@@ -18,7 +18,10 @@ class AIResponseClassifier : AIModel {
 
     private lateinit var delegate: AIModel
 
-    fun initModel(dimension: Int){
+    @PostConstruct
+    fun initModel(){
+
+        val dimension = 1 //FIXME
 
         when(config.aiModelForResponseClassification){
             EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
