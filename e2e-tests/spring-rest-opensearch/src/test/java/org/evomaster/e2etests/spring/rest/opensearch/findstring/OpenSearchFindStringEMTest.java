@@ -2,8 +2,8 @@ package org.evomaster.e2etests.spring.rest.opensearch.findstring;
 
 import com.foo.spring.rest.opensearch.findstring.OpenSearchFindStringController;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
