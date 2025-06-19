@@ -2522,7 +2522,7 @@ class EMConfig {
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
-    
+
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
@@ -2665,4 +2665,6 @@ class EMConfig {
     fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 }

@@ -33,7 +33,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
      *
      * @param noAuthP the probability of having an HTTP call without any authentication header.
      */
-    fun sampleRandomAction(noAuthP: Double): HttpWsAction {
+    open fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
         action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
