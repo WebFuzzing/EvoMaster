@@ -873,6 +873,10 @@ class Main {
             val wfcr = injector.getInstance(WFCReportWriter::class.java)
 
             wfcr.writeReport(solution,suites)
+
+            if(!config.writeWFCReportExcludeWebApp){
+                wfcr.writeWebApp()
+            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
