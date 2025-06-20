@@ -518,14 +518,6 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public final void setExecutingInitOpenSearch(boolean executingInitOpenSearch) {
-        checkInstrumentation();
-        serverController.setExecutingInitOpenSearch(executingInitOpenSearch);
-        // sync executingInitOpenSearch on the local ExecutionTracer
-        ExecutionTracer.setExecutingInitOpenSearch(executingInitOpenSearch);
-    }
-
-    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

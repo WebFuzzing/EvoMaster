@@ -20,19 +20,24 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacementClass {
     private static final OpenSearchClientClassReplacement singleton = new OpenSearchClientClassReplacement();
 
+    private static final String THIRD_PARTY_CLASS = "org.opensearch.client.opensearch.OpenSearchClient";
+    private static final String GET_METHOD = "get";
+    private static final String SEARCH_METHOD = "search";
+    private static final String INDEX_METHOD = "index";
+
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "org.opensearch.client.opensearch.OpenSearchClient";
+        return THIRD_PARTY_CLASS;
     }
 
-    @Replacement(type = ReplacementType.TRACKER, id = "get", usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.GetResponse")
+    @Replacement(type = ReplacementType.TRACKER, id = GET_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.GetResponse")
     public static <TDocument> Object get(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.GetRequest") Object request, Class<TDocument> documentClass) {
-        return handleMethod(openSearchClient, "get", Arrays.asList(request, documentClass), request);
+        return handleMethod(openSearchClient, GET_METHOD, Arrays.asList(request, documentClass), request);
     }
 
-    @Replacement(type = ReplacementType.TRACKER, id = "search", usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.SearchResponse")
+    @Replacement(type = ReplacementType.TRACKER, id = SEARCH_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.SearchResponse")
     public static <TDocument> Object search(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.SearchRequest") Object request, Class<TDocument> documentClass) {
-        return handleMethod(openSearchClient, "search", Arrays.asList(request, documentClass), request);
+        return handleMethod(openSearchClient, SEARCH_METHOD, Arrays.asList(request, documentClass), request);
     }
 
     /**
@@ -72,7 +77,7 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
 
     private static Object getIndex(Object query) {
         try {
-            return query.getClass().getMethod("index").invoke(query);
+            return query.getClass().getMethod(INDEX_METHOD).invoke(query);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }

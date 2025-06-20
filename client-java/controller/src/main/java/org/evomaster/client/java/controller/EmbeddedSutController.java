@@ -115,11 +115,6 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public final void setExecutingInitOpenSearch(boolean executingInitOpenSearch) {
-        ExecutionTracer.setExecutingInitOpenSearch(executingInitOpenSearch);
-    }
-
-    @Override
     public final void setExecutingAction(boolean executingAction){
         ExecutionTracer.setExecutingAction(executingAction);
     }
