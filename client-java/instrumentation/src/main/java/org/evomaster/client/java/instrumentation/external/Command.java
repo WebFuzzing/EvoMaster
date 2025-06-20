@@ -19,7 +19,6 @@ public enum Command implements Serializable {
     KILL_SWITCH,
     EXECUTING_INIT_SQL,
     EXECUTING_INIT_MONGO,
-    EXECUTING_INIT_OPENSEARCH,
     EXECUTING_ACTION,
     BOOT_TIME_INFO,
     EXTRACT_JVM_DTO,
