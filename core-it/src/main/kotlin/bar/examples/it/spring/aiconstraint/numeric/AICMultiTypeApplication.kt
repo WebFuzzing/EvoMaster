@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
-@RequestMapping(path = ["/api"])
+@RequestMapping(path = ["/petShopApi"])
 @RestController
 open class AICMultiTypeApplication {
 
@@ -32,7 +32,7 @@ open class AICMultiTypeApplication {
         FEMALE
     }
 
-    @GetMapping("/petShop")
+    @GetMapping("/petInfo")
     open fun getString(
 
         @RequestParam("category", required = true)
@@ -89,6 +89,29 @@ open class AICMultiTypeApplication {
         return ResponseEntity.status(200).body(
             "Birth Year: $birthYear, Vaccination Year: $vaccinationYear, Gender: $gender, Is Alive: $isAlive"
         )
+    }
+
+    @GetMapping("/ownerInfo")
+    open fun getOwnerInfo(
+        @RequestParam("name", required = true)
+        @Parameter(required = true, description = "Owner's name")
+        name: String,
+
+        @RequestParam("age", required = true)
+        @Parameter(required = true, description = "Owner's age")
+        age: Int
+
+    ): ResponseEntity<String> {
+
+        if (age <= 0) {
+            return ResponseEntity.status(400).body("Owner age must be a positive number.")
+        }
+
+        // Response
+        return ResponseEntity.status(200).body(
+            "Owner Name: $name, Age: $age"
+        )
+
     }
 
 }
