@@ -1161,11 +1161,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             // TODO: Set-up the fitness
             // TODO: Fault category should be changed to [DefinedFaultCategory]
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.VULNERABILITY_SSRF, it.getName())
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             var r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(ExperimentalFaultCategory.VULNERABILITY_SSRF, it.getName(), null))
+            r.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
         }
     }
 
