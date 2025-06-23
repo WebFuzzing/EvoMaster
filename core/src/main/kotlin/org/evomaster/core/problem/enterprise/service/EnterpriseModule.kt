@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise.service
 import com.google.inject.AbstractModule
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.problem.security.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.VulnerabilityClassifier
 
 abstract class EnterpriseModule :  AbstractModule() {
 
@@ -16,6 +17,9 @@ abstract class EnterpriseModule :  AbstractModule() {
             .asEagerSingleton()
 
         bind(VulnerabilityAnalyser::class.java)
+            .asEagerSingleton()
+
+        bind(VulnerabilityClassifier::class.java)
             .asEagerSingleton()
     }
 }
