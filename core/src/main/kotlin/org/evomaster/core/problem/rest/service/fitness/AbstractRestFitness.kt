@@ -1065,6 +1065,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
+        // TODO: Confirm the approach, also do we to use SampleType.SECURITY
+        if (config.vulnerabilityAnalyser) {
+            handleVulnerabilities(individual, actionResults, fv)
+        }
+
         //TODO likely would need to consider SEEDED as well in future
         if(config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS){
             analyzeHttpSemantics(individual, actionResults, fv)
@@ -1140,7 +1145,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PATCH, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
-        handleVulnerabilities(individual, actionResults, fv)
     }
 
     private fun handleVulnerabilities(

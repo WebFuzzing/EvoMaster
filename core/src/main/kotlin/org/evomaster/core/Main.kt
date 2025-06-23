@@ -420,9 +420,10 @@ class Main {
                 return solution
             }
 
+            LoggingUtil.getInfoLogger().info("Starting to apply Vulnerability Analyser")
+
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    LoggingUtil.getInfoLogger().info("Starting to apply Vulnerability Analyser")
                     val vulnerabilityAnalyser = injector.getInstance(VulnerabilityAnalyser::class.java)
                     vulnerabilityAnalyser.applyVulnerabilityAnalyser()
                 }
