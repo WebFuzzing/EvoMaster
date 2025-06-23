@@ -37,14 +37,14 @@ public class HashOperationsClassReplacement extends ThirdPartyMethodReplacementC
     public static <T> T get(Object hashOps, Object key, Object hashKey) {
         try {
             long start = System.currentTimeMillis();
-            Method findOneMethod = getOriginal(singleton, GET, hashOps);
-            Object result = findOneMethod.invoke(hashOps, key, hashKey);
+            Method getMethod = getOriginal(singleton, GET, hashOps);
+            Object result = getMethod.invoke(hashOps, key, hashKey);
             long end = System.currentTimeMillis();
 
             Class<?> entityClass = result != null ? result.getClass() : Object.class;
 
             addRedisKeyType(key.toString(), entityClass);
-            addRedisInfo(key.toString(), hashKey.toString(), entityClass, result, end - start);
+            addRedisCommand(key.toString(), hashKey.toString(), entityClass, result, end - start);
             return (T) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -60,7 +60,7 @@ public class HashOperationsClassReplacement extends ThirdPartyMethodReplacementC
         ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
     }
 
-    private static <T> void addRedisInfo(String keyName, String hashKey, Class<T> entityClass, Object result, long executionTime) {
+    private static <T> void addRedisCommand(String keyName, String hashKey, Class<T> entityClass, Object result, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGET,
                 keyName,
@@ -71,7 +71,7 @@ public class HashOperationsClassReplacement extends ThirdPartyMethodReplacementC
                 true,
                 executionTime
         );
-        ExecutionTracer.addRedisInfo(cmd);
+        ExecutionTracer.addRedisCommand(cmd);
     }
 
 }

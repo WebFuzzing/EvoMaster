@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.example.redis;
 
-import com.foo.somedifferentpackage.examples.methodreplacement.RedisHashOperationsImpl;
+import com.foo.somedifferentpackage.examples.methodreplacement.redis.RedisHashOperationsImpl;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.*;

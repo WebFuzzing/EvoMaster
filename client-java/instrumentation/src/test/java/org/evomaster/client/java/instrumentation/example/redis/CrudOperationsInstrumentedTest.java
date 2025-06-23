@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.example.redis;
 
-import com.foo.somedifferentpackage.examples.methodreplacement.RedisCrudOperationsImpl;
+import com.foo.somedifferentpackage.examples.methodreplacement.redis.RedisCrudOperationsImpl;
 import com.foo.somedifferentpackage.examples.methodreplacement.subclass.RedisCrudRepository;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
