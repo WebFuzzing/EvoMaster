@@ -71,8 +71,6 @@ class LanguageModelConnector {
     @PostConstruct
     fun init() {
         if (config.languageModelConnector) {
-            LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
-
             if (!this.checkModelAvailable()) {
                 LoggingUtil.uniqueWarn(
                     log, "${config.languageModelName} is not available in the provided " +
@@ -81,7 +79,6 @@ class LanguageModelConnector {
                 )
                 return
             } else {
-                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
                 isLanguageModelAvailable = true
             }
 
