@@ -1,4 +1,4 @@
-package com.foo.somedifferentpackage.examples.methodreplacement;
+package com.foo.somedifferentpackage.examples.methodreplacement.redis;
 
 import org.evomaster.client.java.instrumentation.example.redis.RedisHashOperations;
 

@@ -37,14 +37,14 @@ public class ValueOperationsClassReplacement extends ThirdPartyMethodReplacement
     public static <T> T get(Object valueOps, Object key) {
         try {
             long start = System.currentTimeMillis();
-            Method findOneMethod = getOriginal(singleton, GET, valueOps);
-            Object result = findOneMethod.invoke(valueOps, key);
+            Method getMethod = getOriginal(singleton, GET, valueOps);
+            Object result = getMethod.invoke(valueOps, key);
             long end = System.currentTimeMillis();
 
             Class<?> entityClass = result != null ? result.getClass() : Object.class;
 
             addRedisKeyType(key.toString(), entityClass);
-            addRedisInfo(key.toString(), entityClass, result, end - start);
+            addRedisCommand(key.toString(), entityClass, result, end - start);
             return (T) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -58,7 +58,7 @@ public class ValueOperationsClassReplacement extends ThirdPartyMethodReplacement
         ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
     }
 
-    private static <T> void addRedisInfo(String keyName, Class<T> entityClass, Object result, long executionTime) {
+    private static <T> void addRedisCommand(String keyName, Class<T> entityClass, Object result, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.GET,
                 keyName,
@@ -69,7 +69,7 @@ public class ValueOperationsClassReplacement extends ThirdPartyMethodReplacement
                 true,
                 executionTime
         );
-        ExecutionTracer.addRedisInfo(cmd);
+        ExecutionTracer.addRedisCommand(cmd);
     }
 
 }

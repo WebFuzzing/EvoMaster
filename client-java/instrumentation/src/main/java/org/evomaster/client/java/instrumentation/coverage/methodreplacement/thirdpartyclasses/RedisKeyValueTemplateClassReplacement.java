@@ -17,7 +17,7 @@ import java.util.Optional;
 
 /**
  * This replacement captures operations when Redis is integrated using a CrudRepository.
- * For other libraries such as Lettuce or Redisson, other replacements where included.
+ * For other libraries such as Lettuce or Redisson, other replacements were included.
  * HashOperationsClassReplacement and ValueOperationsClassReplacements are examples of this.
  */
 public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodReplacementClass {
@@ -39,12 +39,12 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
     public static <T> Optional<T> findById(Object redisKeyValueTemplate, Object id, Class<T> entityType) {
         try {
             long start = System.currentTimeMillis();
-            Method findOneMethod = getOriginal(singleton, FIND_BY_ID, redisKeyValueTemplate);
-            Object result = findOneMethod.invoke(redisKeyValueTemplate, id, entityType);
+            Method findByIdMethod = getOriginal(singleton, FIND_BY_ID, redisKeyValueTemplate);
+            Object result = findByIdMethod.invoke(redisKeyValueTemplate, id, entityType);
             long end = System.currentTimeMillis();
             Object resultData = ((Optional<?>) result).orElse(null);
             addRedisKeyType(id.toString(), entityType);
-            addRedisInfo(id.toString(), entityType, resultData, end - start);
+            addRedisCommand(id.toString(), entityType, resultData, end - start);
             return (Optional<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -63,12 +63,12 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
     public static <T> Iterable<T> findAll(Object redisKeyValueTemplate, Class<T> entityType) {
         try {
             long start = System.currentTimeMillis();
-            Method findOneMethod = getOriginal(singleton, FIND_ALL, redisKeyValueTemplate);
-            Object result = findOneMethod.invoke(redisKeyValueTemplate, entityType);
+            Method findAllMethod = getOriginal(singleton, FIND_ALL, redisKeyValueTemplate);
+            Object result = findAllMethod.invoke(redisKeyValueTemplate, entityType);
             long end = System.currentTimeMillis();
 
             addRedisKeyType("ALL:" + entityType.getSimpleName(), entityType);
-            addRedisInfo("ALL:" + entityType.getSimpleName(), entityType, result, end - start);
+            addRedisCommand("ALL:" + entityType.getSimpleName(), entityType, result, end - start);
             return (Iterable<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -82,7 +82,7 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
         ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
     }
 
-    private static <T> void addRedisInfo(String keyName, Class<T> entityClass, Object result, long executionTime) {
+    private static <T> void addRedisCommand(String keyName, Class<T> entityClass, Object result, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGETALL,
                 keyName,
@@ -93,7 +93,7 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
                 true,
                 executionTime
         );
-        ExecutionTracer.addRedisInfo(cmd);
+        ExecutionTracer.addRedisCommand(cmd);
     }
 
 }
