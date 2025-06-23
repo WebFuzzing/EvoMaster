@@ -2,11 +2,12 @@ package org.evomaster.core.problem.security.verifiers
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.any
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import org.evomaster.client.java.instrumentation.shared.SecuritySharedUtils
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.security.VulnerabilityVerifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,6 +18,8 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
     private var wireMockServer: WireMockServer? = null
 
     private var traceTokens: MutableMap<String, String> = mutableMapOf()
+
+    val isActive: Boolean get() = wireMockServer != null && wireMockServer!!.isRunning
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
@@ -41,11 +44,6 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
                     )
             )
         } catch (e: Exception) {
-            LoggingUtil.uniqueWarn(
-                log, "Failed to initialize SSRFVulnerabilityVerifier due to " +
-                        e.message +
-                        " If it is macOS, please make sure loopback alias is set."
-            )
             throw RuntimeException(
                 "Failed to initialize SSRFVulnerabilityVerifier due to " +
                         e.message +
@@ -56,11 +54,12 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
     fun generateCallbackLink(name: String): String {
         val token = UUID.randomUUID().toString()
-        val ssrfPath = "sink/$token"
+        val ssrfPath = "/sink/$token"
 
         wireMockServer!!.stubFor(
-            WireMock.post(WireMock.urlPathMatching(ssrfPath))
+            any(urlEqualTo(ssrfPath))
                 .withMetadata(metadata().attr("originalPath", name))
+                .atPriority(1)
                 .willReturn(
                     WireMock.aResponse()
                         .withStatus(200)
@@ -69,7 +68,7 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
         )
 
-        val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}/$ssrfPath"
+        val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}$ssrfPath"
 
         traceTokens[name] = link
 
@@ -77,15 +76,17 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
     }
 
     override fun verify(name: String): Boolean {
-        if (wireMockServer!!.allServeEvents.any { it -> it.wasMatched }) {
-            wireMockServer!!.allServeEvents.filter { event -> event.wasMatched }
+        if (isActive) {
+            wireMockServer!!.allServeEvents
+                .filter { event -> event.wasMatched }
                 .forEach { e ->
-                    val matched = e.stubMapping.metadata.getString("originalPath")
-                    if (matched == name) {
+                    val matched = e.stubMapping.metadata
+                    if (matched != null && matched.getString("originalPath") == name) {
                         return true
                     }
                 }
         }
+
         return false
     }
 
@@ -94,13 +95,9 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         wireMockServer = null
     }
 
-    fun isActive(): Boolean {
-        return wireMockServer != null && wireMockServer!!.isRunning
-    }
-
-
     fun resetHTTPVerifier() {
         wireMockServer?.resetAll()
+        // TODO: set default stub
         traceTokens.clear()
     }
 

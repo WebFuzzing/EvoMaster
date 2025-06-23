@@ -1159,7 +1159,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         vulnerableActions.forEach {
             // TODO: Set-up the fitness
-            // TODO: Fault category should be changed to [DefinedFaultCategory]
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
             )
