@@ -35,36 +35,36 @@ class GaussianOnlineClassifier : AIModel {
 
     fun setDimension(d: Int) {
         require(d > 0) { "Dimension must be positive." }
-        dimension = d
-        density200 = Density(d)
-        density400 = Density(d)
+        this.dimension = d
+        this.density200 = Density(d)
+        this.density400 = Density(d)
     }
 
     fun getDimension(): Int {
-        check(dimension != null) { "Classifier not initialized. Call setDimension first." }
-        return dimension!!
+        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
+        return this.dimension!!
     }
 
     fun getDensity200(): Density {
-        check(density200 != null) { "Classifier not initialized. Call setDimension first." }
-        return density200!!
+        check(this.density200 != null) { "Classifier not initialized. Call setDimension first." }
+        return this.density200!!
     }
 
     fun getDensity400(): Density {
-        check(density400 != null) { "Classifier not initialized. Call setDimension first." }
-        return density400!!
+        check(this.density400 != null) { "Classifier not initialized. Call setDimension first." }
+        return this.density400!!
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val inputVector = InputEncoderUtils.encode(input)
 
-        if (inputVector.size != dimension) {
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
         when (output.getStatusCode()) {
-            200 -> density200!!.update(inputVector)
-            400 -> density400!!.update(inputVector)
+            200 -> this.density200!!.update(inputVector)
+            400 -> this.density400!!.update(inputVector)
             else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
         }
     }
@@ -72,12 +72,12 @@ class GaussianOnlineClassifier : AIModel {
     override fun classify(input: RestCallAction): AIResponseClassification {
         val inputVector = InputEncoderUtils.encode(input)
 
-        if (inputVector.size != dimension) {
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logProbability200 = ln(density200!!.weight()) + logLikelihood(inputVector, density200!!)
-        val logProbability400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
+        val logProbability200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
+        val logProbability400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
 
         val probability200 = exp(logProbability200)
         val probability400 = exp(logProbability400)
@@ -120,5 +120,3 @@ class GaussianOnlineClassifier : AIModel {
         fun weight() = n.toDouble()
     }
 }
-
-

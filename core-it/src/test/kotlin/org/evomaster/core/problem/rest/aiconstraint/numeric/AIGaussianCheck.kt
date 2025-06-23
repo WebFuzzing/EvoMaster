@@ -50,13 +50,13 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             probRestDefault = 0.0
             probRestExamples = 0.0
         }
+
         val options = RestActionBuilderV3.Options(config)
         val actionCluster = mutableMapOf<String, Action>()
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
 
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
-        // Step 1: Compute dimensions
         val pathToDimension = mutableMapOf<String, Int>()
         for (action in actionList) {
             val path = action.path.toString()
@@ -69,31 +69,21 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             pathToDimension[path] = dimension
         }
 
-        // Step 2: Initialize classifiers
-        val pathToClassifier = mutableMapOf<String, GaussianOnlineClassifier>()
+        val pathToClassifier = mutableMapOf<String, AIResponseClassifier>()
         for ((path, dimension) in pathToDimension) {
-            val classifier = injector.getInstance(AIResponseClassifier::class.java)
-            classifier.initModel()
-
-            val delegateField = classifier::class.java.getDeclaredField("delegate")
-            delegateField.isAccessible = true
-            val gaussian = delegateField.get(classifier) as? GaussianOnlineClassifier
-                ?: throw IllegalStateException("Delegate is not a GaussianOnlineClassifier")
-
+            val gaussian = GaussianOnlineClassifier()
             gaussian.setDimension(dimension)
-            pathToClassifier[path] = gaussian
+            val classifier = AIResponseClassifier(explicitModel = gaussian)
+            pathToClassifier[path] = classifier
         }
 
-        // Print for verification
         println("Classifiers initialized with their dimensions:")
         for ((path, expected) in pathToDimension) {
-            val actualDim = pathToClassifier[path]?.getDimension()
-            println("$path -> expected: $expected, actualDim: $actualDim")
+            val delegate = classifierDelegate(pathToClassifier[path]!!)
+            println("$path -> expected: $expected, actualDim: ${delegate.getDimension()}")
         }
 
         val random = Randomness()
-
-
         var time = 1
         val timeLimit = 20
         while (time <= timeLimit) {
@@ -103,17 +93,15 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             val path = sampledAction.path.toString()
             val dimension = pathToDimension[path] ?: error("No dimension for path: $path")
-            val gaussianTemp = pathToClassifier[path] ?: error("No classifier for path: $path")
+            val classifier = pathToClassifier[path] ?: error("No classifier for path: $path")
+            val gaussian = classifierDelegate(classifier)
 
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
 
             println("*************************************************")
-            println("*************************************************")
-            println("*************************************************")
-            println("*************************************************")
             println("Time         : $time")
             println("Path         : $path")
-            println("gaussian dim : ${gaussianTemp.getDimension()}")
+            println("gaussian dim : ${gaussian.getDimension()}")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Expected Dim : $dimension")
             println("Actual Genes : ${geneValues.size}")
@@ -122,28 +110,26 @@ class AIGaussianCheck : IntegrationTestRestBase() {
                 println("Gene count ${geneValues.size} != expected dimension $dimension")
             }
 
-            // Evaluate and classify
             val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
             val evaluatedAction = individual.evaluatedMainActions()[0]
             val action = evaluatedAction.action as RestCallAction
             val result = evaluatedAction.result as RestCallResult
 
-            gaussianTemp.updateModel(action, result)
-            val classification = gaussianTemp.classify(action)
+            classifier.updateModel(action, result)
+            val classification = classifier.classify(action)
 
             println("Probabilities: ${classification.probabilities}")
-            // the classification provides two values as the probability of getting 400 and 200
             require(classification.probabilities.values.all { it in 0.0..1.0 }) {
                 "All probabilities must be in [0,1]"
             }
 
-            val d200 = gaussianTemp.getDensity200()
-            val d400 = gaussianTemp.getDensity400()
+            val d200 = gaussian.getDensity200()
+            val d400 = gaussian.getDensity400()
 
             fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
                 val m = mean.map { "%.2f".format(it) }
                 val v = variance.map { "%.2f".format(it) }
-                println("$name: n=$n, mean=$m, variance=$v * I_$dimension")
+                println("$name: n=$n, mean=$m, variance=$v * I_${gaussian.getDimension()}")
             }
 
             formatStats("Density200", d200.mean, d200.variance, d200.n)
@@ -152,6 +138,9 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             println("----------------------------------")
             time++
         }
+    }
 
+    private fun classifierDelegate(classifier: AIResponseClassifier): GaussianOnlineClassifier {
+        return classifier.getInnerModel() as GaussianOnlineClassifier
     }
 }
