@@ -37,19 +37,13 @@ class AIGaussianCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
+        recreateInjectorForWhite(listOf("--aiModelForResponseClassification", "GAUSSIAN"))
     }
 
     fun runClassifierExample() {
-
-        /**
-         * Generate a random RestCallAction using EvoMaster Randomness
-         */
-        // Fetch and parse OpenAPI schema based on the schema location
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
-        // Wrap schema into RestSchema
         val restSchema = RestSchema(schema)
-        // Configuration for gene generation
+
         val config = EMConfig().apply {
             enableSchemaConstraintHandling = true
             allowInvalidData = false
@@ -57,94 +51,107 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             probRestExamples = 0.0
         }
         val options = RestActionBuilderV3.Options(config)
-        // actionCluster contains provides possible actions
         val actionCluster = mutableMapOf<String, Action>()
-        // Generate RestCallAction
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
-        // Sample a random RestCallAction
-        val random = Randomness()
+
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
-        val template = random.choose(actionList)
-        val sampledAction = template.copy() as RestCallAction
-        sampledAction.doInitialize(random)
 
-        // Calculate the input dimension of the classifier
-        var dimension:Int = 0
-        for (gene in sampledAction.seeTopGenes()) {
-            when (gene) {
-                is IntegerGene, is DoubleGene, is BooleanGene, is EnumGene<*> -> {
-                    dimension++
-                }
+        // Step 1: Compute dimensions
+        val pathToDimension = mutableMapOf<String, Int>()
+        for (action in actionList) {
+            val path = action.path.toString()
+            if (pathToDimension.containsKey(path)) continue
+
+            val dimension = action.parameters.count { p ->
+                val g = p.gene
+                g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
             }
+            pathToDimension[path] = dimension
         }
-        //require(dimension == 6) //FIXME
 
-        // Create a gaussian classifier
-        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        //classifier.initModel(dimension) //FIXME
+        // Step 2: Initialize classifiers
+        val pathToClassifier = mutableMapOf<String, GaussianOnlineClassifier>()
+        for ((path, dimension) in pathToDimension) {
+            val classifier = injector.getInstance(AIResponseClassifier::class.java)
+            classifier.initModel()
 
-        // Use reflection to access the private delegate
-        val delegateField = classifier::class.java.getDeclaredField("delegate")
-        delegateField.isAccessible = true
-        val gaussian = delegateField.get(classifier) as? GaussianOnlineClassifier
+            val delegateField = classifier::class.java.getDeclaredField("delegate")
+            delegateField.isAccessible = true
+            val gaussian = delegateField.get(classifier) as? GaussianOnlineClassifier
+                ?: throw IllegalStateException("Delegate is not a GaussianOnlineClassifier")
 
-        var time =1
+            gaussian.setDimension(dimension)
+            pathToClassifier[path] = gaussian
+        }
+
+        // Print for verification
+        println("Classifiers initialized with their dimensions:")
+        for ((path, expected) in pathToDimension) {
+            val actualDim = pathToClassifier[path]?.getDimension()
+            println("$path -> expected: $expected, actualDim: $actualDim")
+        }
+
+        val random = Randomness()
+
+
+        var time = 1
         val timeLimit = 20
         while (time <= timeLimit) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
 
-            val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
-            println("**********************************************")
-            println("Time: $time")
-            println("Genes: [${geneValues.joinToString(", ")}]")
+            val path = sampledAction.path.toString()
+            val dimension = pathToDimension[path] ?: error("No dimension for path: $path")
+            val gaussianTemp = pathToClassifier[path] ?: error("No classifier for path: $path")
 
-            // createIndividual send the request and evaluate
+            val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+
+            println("*************************************************")
+            println("*************************************************")
+            println("*************************************************")
+            println("*************************************************")
+            println("Time         : $time")
+            println("Path         : $path")
+            println("gaussian dim : ${gaussianTemp.getDimension()}")
+            println("Input Genes  : ${geneValues.joinToString(", ")}")
+            println("Expected Dim : $dimension")
+            println("Actual Genes : ${geneValues.size}")
+
+            if (geneValues.size != dimension) {
+                println("Gene count ${geneValues.size} != expected dimension $dimension")
+            }
+
+            // Evaluate and classify
             val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
             val evaluatedAction = individual.evaluatedMainActions()[0]
             val action = evaluatedAction.action as RestCallAction
             val result = evaluatedAction.result as RestCallResult
 
-            // update the model
-            classifier.updateModel(action, result)
+            gaussianTemp.updateModel(action, result)
+            val classification = gaussianTemp.classify(action)
 
-            // classify an action
-            val c = classifier.classify(action)
+            println("Probabilities: ${classification.probabilities}")
             // the classification provides two values as the probability of getting 400 and 200
-            require(c.probabilities.values.all { it in 0.0..1.0 }) {
+            require(classification.probabilities.values.all { it in 0.0..1.0 }) {
                 "All probabilities must be in [0,1]"
             }
 
-            if (gaussian != null) {
-                val d200 = gaussian.getDensity200()
-                val d400 = gaussian.getDensity400()
-                val mean200 = d200.mean.map { "%.2f".format(it) }
-                val var200 = d200.variance.map { "%.2f".format(it) }
-                val mean400 = d400.mean.map { "%.2f".format(it) }
-                val var400 = d400.variance.map { "%.2f".format(it) }
+            val d200 = gaussianTemp.getDensity200()
+            val d400 = gaussianTemp.getDensity400()
 
-                println(
-                    """
-                    n200 = ${d200.n}
-                    mean200 = $mean200
-                    variance200 = $var200 * I_$dimension
-                    n400 = ${d400.n}
-                    mean400 = $mean400
-                    variance400 = $var400 * I_$dimension
-                    """.trimIndent()
-                )
-                println("**********************************************")
-            } else {
-                println("The classifier is not a GaussianOnlineClassifier")
+            fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
+                val m = mean.map { "%.2f".format(it) }
+                val v = variance.map { "%.2f".format(it) }
+                println("$name: n=$n, mean=$m, variance=$v * I_$dimension")
             }
 
+            formatStats("Density200", d200.mean, d200.variance, d200.n)
+            formatStats("Density400", d400.mean, d400.variance, d400.n)
 
+            println("----------------------------------")
             time++
         }
 
-
     }
-
 }
-

@@ -21,14 +21,12 @@ class AIResponseClassifier : AIModel {
     @PostConstruct
     fun initModel(){
 
-        val dimension = 1 //FIXME
-
         when(config.aiModelForResponseClassification){
             EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
-                delegate = GaussianOnlineClassifier(dimension)
+                delegate = GaussianOnlineClassifier()
             }
             EMConfig.AIResponseClassifierModel.GLM -> {
-                delegate = GLMOnlineClassifier(dimension, config.aiResponseClassifierLearningRate)
+                delegate = GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
             }
             EMConfig.AIResponseClassifierModel.NN -> {
                 //TODO

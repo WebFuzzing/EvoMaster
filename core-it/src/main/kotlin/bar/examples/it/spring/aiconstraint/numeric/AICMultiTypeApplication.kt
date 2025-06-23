@@ -93,9 +93,9 @@ open class AICMultiTypeApplication {
 
     @GetMapping("/ownerInfo")
     open fun getOwnerInfo(
-        @RequestParam("name", required = true)
-        @Parameter(required = true, description = "Owner's name")
-        name: String,
+        @RequestParam("id", required = true)
+        @Parameter(required = true, description = "Owner's id")
+        id: Int,
 
         @RequestParam("age", required = true)
         @Parameter(required = true, description = "Owner's age")
@@ -103,13 +103,16 @@ open class AICMultiTypeApplication {
 
     ): ResponseEntity<String> {
 
+        if (id <= 0) {
+            return ResponseEntity.status(400).body("Owner id must be a positive number.")
+        }
         if (age <= 0) {
             return ResponseEntity.status(400).body("Owner age must be a positive number.")
         }
 
         // Response
         return ResponseEntity.status(200).body(
-            "Owner Name: $name, Age: $age"
+            "Owner Name: $id, Age: $age"
         )
 
     }

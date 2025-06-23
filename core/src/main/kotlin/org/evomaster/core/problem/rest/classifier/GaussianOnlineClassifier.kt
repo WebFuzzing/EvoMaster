@@ -27,72 +27,82 @@ import kotlin.math.exp
  *
  * @param dimension the fixed dimensionality of the input feature vectors.
  */
-class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
+class GaussianOnlineClassifier : AIModel {
 
-    private val density200 = Density(dimension) // class for 200
-    private val density400 = Density(dimension) // class for 400
+    private var dimension: Int? = null
+    private var density200: Density? = null
+    private var density400: Density? = null
 
-    // getter
-    fun getDensity200(): Density = density200
-    fun getDensity400(): Density = density400
+    fun setDimension(d: Int) {
+        require(d > 0) { "Dimension must be positive." }
+        dimension = d
+        density200 = Density(d)
+        density400 = Density(d)
+    }
 
-    /** Updates the classifier using a request of type `RestCallAction` and its result of type `RestCallResult` */
+    fun getDimension(): Int {
+        check(dimension != null) { "Classifier not initialized. Call setDimension first." }
+        return dimension!!
+    }
+
+    fun getDensity200(): Density {
+        check(density200 != null) { "Classifier not initialized. Call setDimension first." }
+        return density200!!
+    }
+
+    fun getDensity400(): Density {
+        check(density400 != null) { "Classifier not initialized. Call setDimension first." }
+        return density400!!
+    }
+
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val inputVector = InputEncoderUtils.encode(input)
 
-        // check the compatibility of the input vector and the classifier dimension
-        if(inputVector.size != dimension){
+        if (inputVector.size != dimension) {
             throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
         }
 
-        // Update Gaussian densities
         when (output.getStatusCode()) {
-            200 -> density200.update(inputVector)
-            400 -> density400.update(inputVector)
+            200 -> density200!!.update(inputVector)
+            400 -> density400!!.update(inputVector)
             else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
         }
-
     }
 
-    /** Classifies a request of type `RestCallAction` using Gaussian classification */
     override fun classify(input: RestCallAction): AIResponseClassification {
         val inputVector = InputEncoderUtils.encode(input)
 
-        // check the compatibility of the input vector and the classifier dimension
-        if(inputVector.size != dimension){
+        if (inputVector.size != dimension) {
             throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
         }
 
-        val logProbability200 = ln(density200.weight()) + logLikelihood(inputVector, density200)
-        val logProbability400 = ln(density400.weight()) + logLikelihood(inputVector, density400)
+        val logProbability200 = ln(density200!!.weight()) + logLikelihood(inputVector, density200!!)
+        val logProbability400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
 
         val probability200 = exp(logProbability200)
         val probability400 = exp(logProbability400)
 
-        val response = AIResponseClassification(
+        return AIResponseClassification(
             probabilities = mapOf(
                 200 to probability200,
                 400 to probability400
             )
         )
-
-        return response
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
         return x.indices.sumOf { i ->
             val mu = stats.mean[i]
-            val varI = stats.variance[i].coerceAtLeast(1e-6) // avoid division by zero
+            val varI = stats.variance[i].coerceAtLeast(1e-6)
             val diff = x[i] - mu
             -0.5 * ln(2 * PI * varI) - (diff * diff) / (2 * varI)
         }
     }
 
     class Density(dimension: Int) {
-
         var n = 0
         val mean = MutableList(dimension) { 0.0 }
-        val M2 = MutableList(dimension) { 0.0 }
+        val M2 = MutableList(dimension) { 1.0 }
 
         fun update(x: List<Double>) {
             n++
@@ -109,6 +119,6 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
 
         fun weight() = n.toDouble()
     }
-
 }
+
 
