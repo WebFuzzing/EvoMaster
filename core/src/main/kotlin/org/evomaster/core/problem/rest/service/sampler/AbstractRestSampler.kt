@@ -30,7 +30,6 @@ import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
-import org.evomaster.core.problem.security.VulnerabilityClassifier
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
@@ -68,9 +67,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         protected set
 
     private lateinit var infoDto: SutInfoDto
-
-    @Inject
-    private lateinit var vulnerabilityClassifier: VulnerabilityClassifier
 
     // TODO: This will moved under ApiWsSampler once RPC and GraphQL support is completed
     @Inject
@@ -143,10 +139,6 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         // TODO: temp
         if (problem.servicesToNotMock != null) {
             registerExternalServicesToSkip(problem.servicesToNotMock)
-        }
-
-        if (config.vulnerabilityAnalyser) {
-            vulnerabilityClassifier.classify(schemaHolder)
         }
 
         initAdHocInitialIndividuals()
