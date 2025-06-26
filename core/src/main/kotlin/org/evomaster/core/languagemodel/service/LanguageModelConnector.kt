@@ -79,7 +79,7 @@ class LanguageModelConnector {
                 )
                 return
             } else {
-                LoggingUtil.uniqueWarn(log, "${config.languageModelName} is available.")
+                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
                 isLanguageModelAvailable = true
             }
 
