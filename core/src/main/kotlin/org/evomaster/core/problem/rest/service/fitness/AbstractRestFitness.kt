@@ -742,6 +742,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
+        TODO check here for SSRF. if so, add to rcr object
+
         return handledSavedLocation
     }
 
@@ -1063,11 +1065,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
             analyzeSecurityProperties(individual,actionResults,fv)
-        }
 
-        // TODO: Confirm the approach, also do we to use SampleType.SECURITY
-        if (config.vulnerabilityAnalyser) {
-            handleVulnerabilities(individual, actionResults, fv)
+            if(config.vulnerabilityAnalyser){
+                handleVulnerabilities(individual, actionResults, fv)
+            }
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1162,12 +1163,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         vulnerableActions.forEach {
-            // TODO: Set-up the fitness
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-            var r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
             r.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
         }
     }
