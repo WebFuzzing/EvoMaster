@@ -71,8 +71,6 @@ class LanguageModelConnector {
     @PostConstruct
     fun init() {
         if (config.languageModelConnector) {
-            LoggingUtil.Companion.getInfoLogger().info("Initializing {}", LanguageModelConnector::class.simpleName)
-
             if (!this.checkModelAvailable()) {
                 LoggingUtil.uniqueWarn(
                     log, "${config.languageModelName} is not available in the provided " +
@@ -243,6 +241,10 @@ class LanguageModelConnector {
     }
 
     private fun checkModelAvailable(): Boolean {
+        if (isLanguageModelAvailable) {
+            return true
+        }
+
         val url = OllamaEndpoints
             .getTagEndpoint(config.languageModelServerURL)
 
