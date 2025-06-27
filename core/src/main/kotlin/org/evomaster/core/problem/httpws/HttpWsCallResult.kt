@@ -26,6 +26,8 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
+
+        TODO add new entry for SSRF detection. boolean?
     }
 
     /**

@@ -250,7 +250,7 @@ There are 3 types of options:
 |`exportTestCasesDuringSeeding`| __Boolean__. Whether to export test cases during seeding as a separate file. *Default value*: `false`.|
 |`externalRequestHarvesterNumberOfThreads`| __Int__. Number of threads for external request harvester. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
-|`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
+|`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.5. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[01234]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.5`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
@@ -293,6 +293,8 @@ There are 3 types of options:
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
+|`vulnerabilityAnalyser`| __Boolean__. Apply vulnerability hunter as part of security testing. *Default value*: `false`.|
+|`vulnerabilitySelectionStrategy`| __Enum__. Potential vulnerability class associated with a endpoint classification strategy. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
 |`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Default value*: `false`.|
