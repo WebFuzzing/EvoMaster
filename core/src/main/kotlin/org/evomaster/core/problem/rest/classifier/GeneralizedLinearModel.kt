@@ -18,25 +18,38 @@ import kotlin.math.exp
  * @param learningRate learning rate for SGD updates
  */
 class GLMOnlineClassifier(
-    private val dimension: Int = 0,
     private val learningRate: Double = 0.01
 ) : AIModel {
 
-    private val weights = MutableList(dimension) { 0.0 }
-    private var bias = 0.0
+    private var dimension: Int? = null
+    private var weights: MutableList<Double>? = null
+    private var bias: Double = 0.0
 
+    /** Must be called once to initialize model weights based on dimension */
+    fun setDimension(d: Int) {
+        require(d > 0) { "Dimension must be positive." }
+        dimension = d
+        weights = MutableList(d) { 0.0 }
+        bias = 0.0
+    }
 
-    // getter returns the current weights and bias
-    fun getModelParams(): List<Double> = weights.toList() + bias
+    fun getModelParams(): List<Double> {
+        check(weights != null) { "Classifier not initialized. Call setDimension first." }
+        return weights!!.toList() + bias
+    }
 
-    /** Predicts the probability that the input belongs to class 1 (HTTP 200) */
+    fun getDimension(): Int {
+        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
+        return this.dimension!!
+    }
+
     override fun classify(input: RestCallAction): AIResponseClassification {
         val x = InputEncoderUtils.encode(input)
 
-        if (x.size != dimension)
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${x.size}")
+        val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
+        if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
 
-        val z = x.zip(weights).sumOf { (xi, wi) -> xi * wi } + bias
+        val z = x.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prob200 = sigmoid(z)
         val prob400 = 1.0 - prob200
 
@@ -48,12 +61,11 @@ class GLMOnlineClassifier(
         )
     }
 
-    /** Updates the weights using SGD based on the label from the HTTP response */
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val x = InputEncoderUtils.encode(input)
 
-        if (x.size != dimension)
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${x.size}")
+        val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
+        if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
 
         val y = when (output.getStatusCode()) {
             200 -> 1.0
@@ -61,17 +73,15 @@ class GLMOnlineClassifier(
             else -> throw IllegalArgumentException("Unsupported label: only 200 and 400 are handled")
         }
 
-        val z = x.zip(weights).sumOf { (xi, wi) -> xi * wi } + bias
+        val z = x.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prediction = sigmoid(z)
         val error = prediction - y
 
-        // SGD update
         for (i in x.indices) {
-            weights[i] -= learningRate * error * x[i]
+            weights!![i] -= learningRate * error * x[i]
         }
         bias -= learningRate * error
     }
 
     private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
-
 }
