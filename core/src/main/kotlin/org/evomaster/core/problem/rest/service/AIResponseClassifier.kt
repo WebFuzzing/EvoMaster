@@ -12,19 +12,27 @@ import javax.annotation.PostConstruct
 
 
 
-class AIResponseClassifier(
-    private val config: EMConfig = EMConfig(),
-    private val explicitModel: AIModel? = null
-) : AIModel {
+class AIResponseClassifier : AIModel {
 
-    private val model: AIModel = explicitModel ?: when (config.aiModelForResponseClassification) {
-        EMConfig.AIResponseClassifierModel.GAUSSIAN -> GaussianOnlineClassifier()
-        EMConfig.AIResponseClassifierModel.GLM -> GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
-        else -> object : AIModel {
-            override fun updateModel(input: RestCallAction, output: RestCallResult) {}
-            override fun classify(input: RestCallAction) = AIResponseClassification()
+    @Inject
+    private lateinit var config: EMConfig
+
+    private lateinit var model: AIModel
+
+    @PostConstruct
+    fun initModel() {
+        model = when (config.aiModelForResponseClassification) {
+            EMConfig.AIResponseClassifierModel.GAUSSIAN ->
+                GaussianOnlineClassifier()
+            EMConfig.AIResponseClassifierModel.GLM ->
+                GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+            else -> object : AIModel {
+                override fun updateModel(input: RestCallAction, output: RestCallResult) {}
+                override fun classify(input: RestCallAction) = AIResponseClassification()
+            }
         }
     }
+
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         model.updateModel(input, output)

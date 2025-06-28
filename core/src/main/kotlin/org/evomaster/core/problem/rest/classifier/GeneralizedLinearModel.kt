@@ -38,6 +38,11 @@ class GLMOnlineClassifier(
         return weights!!.toList() + bias
     }
 
+    fun getDimension(): Int {
+        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
+        return this.dimension!!
+    }
+
     override fun classify(input: RestCallAction): AIResponseClassification {
         val x = InputEncoderUtils.encode(input)
 
