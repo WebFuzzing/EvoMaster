@@ -162,28 +162,27 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                     UserActionType.SELECT_SINGLE ->{
                         for(select in wa.singleSelection){
                             val css = select.key
-                            val index = select.value.value
-                            browserController.selectAndWaitPageLoad(css, TODO)
+                            val valueAttributeOrText = select.value.getValueAsRawString()
+                            browserController.selectAndWaitPageLoad(css, listOf(valueAttributeOrText))
                         }
                     }
                     UserActionType.SELECT_MULTI -> {
                         //TODO
-                        /*
-                            not just clicking, but deciding which options to select.
-                            this is based on values in the genes
-                         */
-                        wa.seeTopGenes().size // size 0 ? No genes in webaction
-
-
-                       // val selectedValues = listOf("")  // select options coming from genes
-
-                        // from webaction, check if it is a single selector or multi,
-                        // then extract the gene, then from the browser controller extract the value
-
-
-                            browserController.selectAndWaitPageLoad(it.cssSelector, selectedValues)
-
-
+//                        /*
+//                            not just clicking, but deciding which options to select.
+//                            this is based on values in the genes
+//                         */
+//                        wa.seeTopGenes().size // size 0 ? No genes in webaction
+//
+//
+//                       // val selectedValues = listOf("")  // select options coming from genes
+//
+//                        // from webaction, check if it is a single selector or multi,
+//                        // then extract the gene, then from the browser controller extract the value
+//
+//
+//                            browserController.selectAndWaitPageLoad(it.cssSelector, selectedValues)
+//
                     }
 
                     else -> {

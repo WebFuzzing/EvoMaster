@@ -138,7 +138,12 @@ public class SeleniumEMUtils {
                     "\nCurrent URL is: " + driver.getCurrentUrl() +
                     "\nCurrent page is: " + driver.getPageSource());
         }
-        element.selectByValue(value);
+        try {
+            element.selectByValue(value);
+        } catch (NoSuchElementException e){
+            element.selectByVisibleText(value);
+        }
+
         try {
             Thread.sleep(50);
         } catch (Exception e) {

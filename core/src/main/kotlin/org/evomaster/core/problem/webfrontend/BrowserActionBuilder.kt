@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.webfrontend
 
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -51,7 +52,15 @@ object BrowserActionBuilder {
                 }
                 val options = dropdown.options
                     .filter{it.isEnabled}
-                    .map{it.text}
+                    .map{
+                        /*
+                            Look at "value" attribute. unfortunately, it is not mandatory.
+                            in such case, we rather use the visible text.
+                            note: prefer avoiding indices, as they are not reliable, eg, if changes, it would not
+                            break the test, unless out of bounds
+                         */
+                        it.getAttribute("value") ?: it.text
+                    }
                 list.add(WebUserInteraction(jsoup.cssSelector(), type, options))
             }
     }
@@ -99,7 +108,7 @@ object BrowserActionBuilder {
             when(it.userActionType) {
                 UserActionType.CLICK -> WebAction(mutableListOf(it))
                 UserActionType.SELECT_SINGLE -> {
-                    val selection = IntegerGene(it.cssSelector, min=0, max=it.inputs.size)
+                    val selection = EnumGene<String>(it.cssSelector, it.inputs)
                     WebAction(mutableListOf(it), singleSelection = mutableMapOf(it.cssSelector to selection))
                 }
                 //TODO multi

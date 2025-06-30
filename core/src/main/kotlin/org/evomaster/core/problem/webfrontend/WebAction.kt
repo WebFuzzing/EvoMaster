@@ -5,6 +5,7 @@ import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.jsoup.Jsoup
@@ -22,11 +23,13 @@ class WebAction(
      */
     val textData : MutableMap<String, StringGene> = mutableMapOf(),
     /**
-     * TODO explanation
+     * For a dropdown menu, where only one selection is possible, specify which one to choose.
+     * This is based on the "value" attribute, or the visible text if not available.
      */
-    val singleSelection: MutableMap<String, IntegerGene> = mutableMapOf(),
+    val singleSelection: MutableMap<String, EnumGene<String>> = mutableMapOf(),
     /**
      * TODO explanation
+     * TODO might change ArrayGene<BooleanGene>
      */
     val multiSelection: MutableMap<String, ArrayGene<BooleanGene>> = mutableMapOf(),
 ) : GuiAction(
@@ -84,7 +87,7 @@ class WebAction(
         return WebAction(
             userInteractions.map { it.copy() }.toMutableList(),
             textData.entries.associate { it.key to it.value.copy() as StringGene }.toMutableMap(),
-            singleSelection.entries.associate { it.key to it.value.copy() as IntegerGene }.toMutableMap(),
+            singleSelection.entries.associate { it.key to it.value.copy() as EnumGene<String> }.toMutableMap(),
             multiSelection.entries.associate { it.key to it.value.copy() as ArrayGene<BooleanGene> }.toMutableMap(),
         )
     }
