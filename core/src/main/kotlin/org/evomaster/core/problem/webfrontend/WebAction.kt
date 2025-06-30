@@ -92,12 +92,24 @@ class WebAction(
         )
     }
 
+    /**
+     * Given another WebAction, copy its entire genotype into this.
+     */
     fun copyValueFrom(other: WebAction){
+
+        killAllChildren()
+
         userInteractions.clear()
         userInteractions.addAll(other.userInteractions) //immutable elements
         textData.clear()
         textData.putAll(other.textData.entries.associate { it.key to it.value.copy() as StringGene })
-        //TODO singleSelection multiSelection
+        singleSelection.clear()
+        singleSelection.putAll(other.singleSelection.entries.associate { it.key to it.value.copy() as EnumGene<String> })
+        //TODO  multiSelection
+
+        addChildren(textData.values.toList())
+        addChildren(singleSelection.values.toList())
+        addChildren(multiSelection.values.toList())
     }
 
     fun getIdentifier() : String {

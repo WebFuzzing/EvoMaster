@@ -26,6 +26,9 @@ public class DropDownEMTest extends SpringTestBase {
                 50,
                 (args) -> {
 
+                    //TODO need to ask Man
+                    setOption(args, "adaptiveGeneSelectionMethod", "NONE");
+
                     Solution<WebIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() > 0);

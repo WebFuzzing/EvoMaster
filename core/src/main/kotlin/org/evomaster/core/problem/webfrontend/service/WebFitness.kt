@@ -140,6 +140,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                 //TODO check archive for missing targets when choosing possibilities
                 val chosen = randomness.choose(possibilities)
                 assert(chosen.isDefined())
+                chosen.doInitialize(randomness)
                 wa.copyValueFrom(chosen)
             }
         }

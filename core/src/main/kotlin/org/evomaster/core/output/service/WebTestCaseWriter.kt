@@ -78,7 +78,8 @@ class WebTestCaseWriter : TestCaseWriter() {
                     lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
                 UserActionType.SELECT_SINGLE-> {
-                    lines.addStatement("selectAndWaitPageLoad($driver, \"${it.cssSelector}\")")
+                    val selectedValue = a.singleSelection[it.cssSelector]?.getValueAsRawString() // TODO what if missing?
+                    lines.addStatement("selectAndWaitPageLoad($driver, \"${it.cssSelector}\", \"$selectedValue\")")
                     lines.append(getCommentOnPage("on page", r.getUrlPageStart()!!, r.getUrlPageEnd(), r.getValidHtml()))
                 }
                 //TODO all other cases
