@@ -20,7 +20,8 @@ class WebPageIdentifier {
 
     fun registerShape(html: String) : String{
 
-        val shape = normalizeHtml(html);
+        val shape = html
+        //normalizeHtml(html); -> if needed, should go to HtmlUtils.computeIdentifyingShape
         var id = shapeToId[shape]
         if(id != null){
             //already registered
