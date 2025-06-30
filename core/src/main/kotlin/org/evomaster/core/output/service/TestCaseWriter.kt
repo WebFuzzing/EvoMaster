@@ -8,6 +8,7 @@ import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
@@ -128,6 +129,7 @@ abstract class TestCaseWriter {
             //  handleFieldDeclarations.
             handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars, test.name)
             handleActionCalls(lines, baseUrlOfSut, ind, insertionVars, testCaseName = test.name, testSuitePath)
+            handleCleanUpActions(lines, baseUrlOfSut, ind, insertionVars, test.name,testSuitePath)
         }
 
 
@@ -223,6 +225,35 @@ abstract class TestCaseWriter {
             testSuitePath: Path?
     )
 
+    protected fun handleCleanUpActions(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>,
+        testCaseName: String,
+        testSuitePath: Path?
+    ){
+        /*
+            TODO: right now we only have DELETE in BB REST.
+            But, if/when we support other types, we will need to refactor this
+         */
+        val individual = ind.individual
+        if(individual !is EnterpriseIndividual){
+            return
+        }
+        val cleanup = individual.seeCleanUpActions()
+        if(cleanup.isEmpty()){
+            return
+        }
+
+        lines.addEmpty(1)
+        lines.addSingleCommentLine("Cleanup actions")
+
+        cleanup.forEach {
+            addActionLinesPerType(it.flatten().first(),-1,testCaseName,lines,ind.seeResult(it.getLocalId())!!,testSuitePath,baseUrlOfSut)
+        }
+    }
+
     /**
      * handle action call generation
      * @param action is the call to be generated
@@ -239,7 +270,7 @@ abstract class TestCaseWriter {
             result.getFaults().sortedBy { it.category.code }
                 .forEach {
                     val cat = it.category
-                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.descriptiveName}. ${it.context}")
                 }
         }
 

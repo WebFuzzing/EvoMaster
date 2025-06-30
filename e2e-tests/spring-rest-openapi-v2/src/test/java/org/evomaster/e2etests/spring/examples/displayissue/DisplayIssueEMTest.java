@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.displayissue;
 
 import com.foo.rest.examples.spring.bodytypes.BodyTypesController;
 
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 
@@ -16,7 +16,7 @@ import java.io.PrintStream;
 
 
 /**
- * This class is to test the issue: <a href="https://github.com/EMResearch/EvoMaster/issues/765">#765</a>
+ * This class is to test the issue: <a href="https://github.com/WebFuzzing/EvoMaster/issues/765">#765</a>
  * In which number of potential faults and number of test targets covered are shown for whitebox
  * but not for blackbox.
  * Run the application

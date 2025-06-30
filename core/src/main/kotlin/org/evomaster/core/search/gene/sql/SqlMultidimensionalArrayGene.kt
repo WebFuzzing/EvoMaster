@@ -271,7 +271,7 @@ class SqlMultidimensionalArrayGene<T>(
      * A multidimensional array gene can only bind to other multidimensional array genes
      * with the same template and number of dimensions.
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene !is SqlMultidimensionalArrayGene<*>) {
             LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
             return false

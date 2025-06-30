@@ -7,7 +7,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
-import org.evomaster.core.problem.rest.service.AbstractRestSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 

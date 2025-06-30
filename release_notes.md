@@ -2,14 +2,22 @@
 
 Under development in `master` branch.
 
+### Breaking Changes
+- The packages in the definition of auth information in the embedded/external drivers are changed. Now they use WFC declarations, with packages in `com.webfuzzing.commons.auth`. The DTOs are the same, though. However, some names have dropped the `Dto` suffix. If you set auth configurations with `AuthUtils`, then likely you do not need to change anything. Otherwise, if you built DTOs manually, you will need to update them.   
+
 ### New Features
 - Generated test suite files have now a license disclaimer stating these generated files are not subject to LGPL.
 - Support for object in example/examples in OpenAPI schemas.
 - In REST APIs, if OpenAPI schema has $ref entries pointing to external schema files, those will be automatically downloaded and processed.
+- Now generated tests have meaningful names, instead of being just numbers  like _test01()_.
+- For REST, a new security testing phase is executed, to check for access control vulnerabilities (e.g., BOLA and BFLA).
+- For black-box REST, now EvoMaster attempts to always DELETE data created in the tests with POST and PUT (i.e., tests try to clean up after themselves).
 
 ### Addressed GitHub Issues
 - #1171: IllegalStateException: only support Map with String key in EvoMaster
 - #1159: EvoMaster crashed when reading em.yaml file 
+- #1154: Support for generating inputs dealing with RSA encryption 
+
 
 
 # Version: 3.4.0

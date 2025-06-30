@@ -1,6 +1,5 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
@@ -8,7 +7,7 @@ import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResou
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.junit.jupiter.api.Assertions.*

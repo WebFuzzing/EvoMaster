@@ -71,9 +71,9 @@ class ObjectIdGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is ObjectIdGene) {
-            return id.bindValueBasedOn(gene.id)
+            return id.setValueBasedOn(gene.id)
         }
         LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
         return false

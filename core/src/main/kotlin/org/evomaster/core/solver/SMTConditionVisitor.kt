@@ -149,7 +149,11 @@ class SMTConditionVisitor(
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
             }
-        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        return if (conditions.size == 1) {
+            conditions[0]
+        } else {
+            AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        }
     }
 
     private fun asLiteral(expression: SqlCondition?): String {

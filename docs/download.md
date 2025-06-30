@@ -13,7 +13,7 @@ _EvoMaster_ is composed of two main components:
 ## Core Tool
 
 The latest release of the `evomaster.jar` executable  can be downloaded from GitHub
- on the [releases page](https://github.com/EMResearch/EvoMaster/releases).
+ on the [releases page](https://github.com/WebFuzzing/EvoMaster/releases).
 Alternatively, it can be built from [source code](./build.md).
 
 Note: it does not matter where you download the jar file (e.g., your home folder, or the folder

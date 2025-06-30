@@ -1,9 +1,10 @@
 package org.evomaster.core.problem.rest
 
 import com.atlassian.oai.validator.report.ValidationReport
-import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.schema.RestSchema
-import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

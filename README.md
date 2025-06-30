@@ -19,7 +19,7 @@ that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
 In particular, _EvoMaster_ can fuzz APIs such as REST, GraphQL and RPC.
-Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JS and Java/Kotlin JUnit format) that can be used for _regression testing_.
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JavaScript and Java/Kotlin JUnit format) that can be used for _regression testing_.
 
 _EvoMaster_ is an AI driven tool.
 In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm)
@@ -51,6 +51,12 @@ Once the command is executed, you can inspect the generated files under `generat
 
 * _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
 
+* _Free_: this is an open-source project, with funding from public research (e.g., professors, postdocs and PhD students).
+          There is no monetary cost involved in using this tool, or need to use any paid external services (e.g., external LLM APIs).
+          If you are a resident in EU, Norway, Argentina, China, or any associate country involved with ERC, thanks for your tax money supporting this project. 
+
+* _In-house, no telemetry_: currently there is no telemetry in use in _EvoMaster_, and it does not require to connect to any external service on internet, besides the tested application. AFAIK, it can be run in-house without any worry of leaking any IP to external parties (if not, please open a new issue to tell us how that could happen, and we will try to fix it). 
+
 * _Black-Box_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
   However, results for black-box testing will be worse than white-box testing (e.g., due to lack of code analysis).
   Default test case output is in Python, but other formats are available as well. 
@@ -74,6 +80,8 @@ Once the command is executed, you can inspect the generated files under `generat
 
 * _GitHub Action_: it is possible to run _EvoMaster_ in GitHub Actions, as part of Continuous Integration, by using the [following custom action](https://github.com/WebFuzzing/evomaster-action) (which is in a different GitHub repository).
 
+* _Hardware_: although state-of-the-art AI techniques are used, there is no major hardware requirement to be able to run _EvoMaster_. It will work even on old laptops. The main computational bottleneck is running the tested applications, and making network calls to them. 
+
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
 * _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
@@ -92,12 +100,10 @@ Once the command is executed, you can inspect the generated files under `generat
   of the application, and run with any build tool such as Maven and Gradle).
   For black-box testing, you will need to make sure the application is up and running before executing the tests. 
 
-
 * _SQL handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests.
   At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.
-
 
 * _Authentication_: we support auth based on authentication headers and cookies.
   Besides using fixed HTTP headers, 
@@ -144,7 +150,7 @@ Several enterprises use _EvoMaster_ to fuzz their Web APIs.
 We do few academia-industry collaborations ([see more info here](docs/contribute.md)), where we help test engineers to apply _EvoMaster_ on their systems, as long as we can then report on such experience.
 Example of Fortune 500 companies using _EvoMaster_ are:
 
-* [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf).
+* [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf), [SCP'25](docs/publications/2025_scp.pdf).
 
 * [Volkswagen](https://www.volkswagen.com): see [AUSE'24](docs/publications/2024_ause_vw.pdf), [ICST'25](docs/publications/2025_icst.pdf).
 
@@ -172,14 +178,12 @@ Example of Fortune 500 companies using _EvoMaster_ are:
 In the last few years, several few tools have been proposed in the academic literature and in the open-source community.
 You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
 
-Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+Existing open-source tools for REST API fuzzing, with at least 100 stars on GitHub, are for example (in alphabetic order):
 [CATS](https://github.com/Endava/cats),
 [Dredd](https://github.com/apiaryio/dredd),
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
-[RestCT](https://github.com/GIST-NJU/RestCT),
 [Restler](https://github.com/microsoft/restler-fuzzer),
-[RestTestGen](https://github.com/SeUniVr/RestTestGen),
 and
 [Schemathesis](https://github.com/schemathesis/schemathesis).
 
@@ -202,7 +206,7 @@ Current open positions: none.
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
 < !---
-For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
+For more details on current vacancies, see our group page at [AISE Lab](https://WebFuzzing.github.io/).
 --->
 
 

@@ -9,7 +9,11 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
@@ -63,47 +67,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         testName: String
     ) {
         super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
-
-        if (hasChainedLocations(ind.individual)) {
-            assert(ind.individual is RestIndividual)
-            /*
-                If the "location" header of a HTTP response is used in a following
-                call, we need to save it in a variable.
-                We declare all such variables at the beginning of the test.
-
-                TODO: rather declare variable first time we access it?
-                Yes! can use location index for unique name
-                FIXME: refactor
-             */
-            lines.addEmpty()
-
-            ind.evaluatedMainActions().asSequence()
-                .map { it.action }
-                .filterIsInstance(RestCallAction::class.java)
-                /*
-                    FIXME postLocationId() is not guaranteed to be unique...
-                    in fitness function it works because we handle it by taking last definition,
-                    but, here, if we refactor to declare it on its first use, we might end up with
-                    variable name clashes, unless we change the id to consider the action index, somehow
-                 */
-                .filter { it.saveCreatedResourceLocation }
-                .map { it.postLocationId() }
-//                .filter { it.usePreviousLocationId != null }
-//                .map { it.usePreviousLocationId }
-                .distinct()
-                .forEach { id ->
-                    val name = locationVar(id!!)
-                    when {
-                        format.isJava() -> lines.add("String $name = \"\";")
-                        format.isKotlin() -> lines.add("var $name : String? = \"\"")
-                        format.isJavaScript() -> lines.add("let $name = \"\";")
-                        format.isCsharp() -> lines.add("var $name = \"\";")
-                        format.isPython() -> {} // no need to declare variables
-                        // should never happen
-                        else -> throw IllegalStateException("Unsupported format $format")
-                    }
-                }
-        }
     }
 
     override fun handleActionCalls(
@@ -145,9 +108,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
     protected fun locationVar(id: String): String {
+        /*
+            Ids are supposed to be unique, but might have invalid characters for a variable
+         */
         //TODO make sure name is syntactically valid
-        //TODO use counters to make them unique
-        return "location_${id.trim().replace(" ", "_")}"
+
+        return "location_${id.trim().replace(" ", "_").replace(Individual.LOCAL_ID_PREFIX_ACTION,"")}"
     }
 
 
@@ -179,10 +145,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
         handleLinkInfo(call, res, responseVariableName, lines)
-
-//        if (shouldCheckExpectations() && !res.failedCall()) {
-//            handleExpectationSpecificLines(call, lines, res, responseVariableName)
-//        }
     }
 
     private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
@@ -234,11 +196,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines.append(extracted)
         lines.appendSemicolon()
     }
-
-
-//    private fun shouldCheckExpectations() =
-//    //for now Expectations are only supported on the JVM
-//        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
 
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
@@ -411,7 +368,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //using what present in the "location" HTTP header
 
-                val location = locationVar(call.postLocationId())
+                val location = locationVar(call.creationLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -426,12 +383,17 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 when {
                     format.isJavaOrKotlin() -> {
                         val extract = "$resVarName.extract().header(\"location\")"
-                        lines.add("$location = $extract")
+                        if(format.isJava()){
+                            lines.add("String ")
+                        } else {
+                            lines.add("val ")
+                        }
+                        lines.append("$location = $extract")
                         lines.appendSemicolon()
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        lines.add("$location = $resVarName.header['location'];")
+                        lines.add("const $location = $resVarName.header['location'];")
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
@@ -448,10 +410,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //trying to infer linked ids from HTTP response
 
-                val extraTypeInfo = when {
-                    format.isKotlin() -> "<Object>"
-                    else -> ""
-                }
                 val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
                     locationVar(call.usePreviousLocationId!!)
@@ -460,44 +418,21 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"${call.path.resolveOnlyPath(call.parameters)}\""
                 }
 
-                //TODO JS
-                //TODO code here should use same algorithm as in res.getResourceId()
-                //TODO this is quite limited, would need proper refactoring
-                val extract = when {
-                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
-                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
-                }
+                val idPointer = res.getResourceId()?.pointer ?: "/id"
 
-                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
+                val extract = extractValueFromJsonResponse(resVarName, idPointer)
+
+                when{
+                    format.isJavaScript() -> lines.add("const ")
+                    format.isJava() -> lines.add("String ")
+                    format.isKotlin() -> lines.add("val ")
+                    format.isPython()  -> { /* nothing to do in Python */}
+                }
+                lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }
     }
-
-//    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
-//        if (!partialOracles.generatesExpectation(individual)) {
-//            return
-//        }
-//
-//        if (!format.isJavaOrKotlin()) {
-//            //TODO will need to see if going to support JS and C# as well
-//            return
-//        }
-//
-//        lines.addEmpty()
-//        when {
-//            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-//            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-//        }
-//        lines.appendSemicolon()
-//    }
-//
-//    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
-//        lines.addEmpty()
-//        if (partialOracles.generatesExpectation(call, res)) {
-//            partialOracles.addExpectations(call, lines, res, name, format)
-//        }
-//    }
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 

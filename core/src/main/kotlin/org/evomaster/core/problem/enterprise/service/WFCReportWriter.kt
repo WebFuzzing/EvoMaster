@@ -6,14 +6,15 @@ import com.webfuzzing.commons.report.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestCaseCode
 import org.evomaster.core.output.TestSuiteCode
-import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
-import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.Statistics
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class WFCReportWriter {
@@ -31,6 +32,43 @@ class WFCReportWriter {
     private fun getTestId(suite: TestSuiteCode, test: TestCaseCode) =
         suite.testSuitePath + "#" + test.name
 
+
+
+    fun writeWebApp(){
+        val prefix = "/webreport"
+        exportResource(prefix, "/index.html")
+        exportResource(prefix, "/robots.txt")
+        exportResource(prefix, "/webreport.py")
+        exportResource(prefix, "/webreport.command", true)
+        exportResource(prefix, "/webreport.bat", true)
+        exportResource(prefix, "/assets/icon.svg")
+        exportResource(prefix, "/assets/report.js")
+        exportResource(prefix, "/assets/report.css")
+    }
+
+    private fun exportResource(prefix: String, resource: String, executable: Boolean = false) {
+
+        val text = readResource(prefix+resource)
+
+        val path = Paths.get(config.outputFolder, resource).toAbsolutePath()
+
+        Files.createDirectories(path.parent)
+        Files.deleteIfExists(path)
+        Files.createFile(path)
+
+        val file = path.toFile()
+        file.appendText(text)
+        file.setExecutable(executable)
+    }
+
+    private fun readResource(path: String) : String {
+
+      return  WFCReportWriter::class.java.getResourceAsStream(path)
+            ?.bufferedReader()
+            ?.use { it.readText() }
+            ?: throw IllegalArgumentException("Resource not found: $path")
+    }
+
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
         val report = com.webfuzzing.commons.report.Report()
@@ -38,8 +76,8 @@ class WFCReportWriter {
 
         report.schemaVersion = "0.0.1" //TODO
         report.toolName = toolName
-        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "unknown"
-        report.creationTime = Date()
+        report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
+        report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         report.totalTests = solution.individuals.size
         report.testFilePaths = suites.map { it.testSuitePath }.toSet()
 

@@ -1,29 +1,29 @@
 package org.evomaster.e2etests.spring.examples.db.auth;
 
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 //@Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
 public class DbAuthEMTest extends DbAuthTestBase {
 
-    @Test
-    public void testRunEM() throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM(boolean heuristicsForSQLAdvanced) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "DbAuthEM",
-                "org.bar.db.AuthEM",
+                "org.bar.db.AuthEM"+ (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
                 500,
                 (args) -> {
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("true");
-
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "true");
+                    setOption(args,"heuristicsForSQLAdvanced", heuristicsForSQLAdvanced ? "true" : "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

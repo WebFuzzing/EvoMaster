@@ -19,6 +19,20 @@ public class SelectTransformerTest {
         assertTrue(withoutOperations.contains("id"));
         assertFalse(withoutOperations.contains("count"));
     }
+    @Test
+    public void testCountWithoutWhere(){
+
+        String select = "select count(c.id) from categories c";
+
+        String withFields =  SelectTransformer.addFieldsToSelect(select);
+        String withoutConstraints = SelectTransformer.removeConstraints(withFields);
+        String withoutOperations = SelectTransformer.removeOperations(withoutConstraints);
+
+        assertFalse(withoutOperations.contains("where"));
+        assertTrue(withoutOperations.contains("*"));
+        assertFalse(withoutOperations.contains("count"));
+    }
+
 
     @Test
     public void testGroupBy(){

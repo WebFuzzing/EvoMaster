@@ -54,7 +54,6 @@
         <dependency>
             <groupId>com.webfuzzing</groupId>
             <artifactId>commons</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
         </dependency>
 
 
@@ -89,6 +88,10 @@
             <artifactId>kotlin-compiler-embeddable</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>

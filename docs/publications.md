@@ -14,9 +14,6 @@ Also, some of these papers provides full replication packages, which are linked 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
   
-* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
-  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
-  [[arXiv](https://arxiv.org/abs/2208.03988)]
 
 * O. Sahin, M. Zhang, A. Arcuri.
   *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
@@ -27,10 +24,20 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
+* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
+  Science of Computer Programming (SCP).
+  [[PDF](publications/2025_scp.pdf)]
+
+* S. Seran, M. Zhang, O. Duman, A. Arcuri.
+  *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.
+   ACM Transactions on Software Engineering and Methodology (TOSEM).
+   [[PDF](publications/2025_tosem_wm.pdf)][[Scripts](exp/2025_tosem_wm.py)]
+
 * A. Arcuri, P. Garrett, J.P. Galeotti, M . Zhang.
   *Widening The Adoption of Web API Fuzzing: Docker, GitHub Action and Python Support for EvoMaster*.
   ACM International Conference on the Foundations of Software Engineering (FSE), Demo Track.
-  _(To appear)_
+  [[PDF](publications/2025_fse_tool.pdf)]
 
 * G. Fraser, A. Arcuri.
   *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.

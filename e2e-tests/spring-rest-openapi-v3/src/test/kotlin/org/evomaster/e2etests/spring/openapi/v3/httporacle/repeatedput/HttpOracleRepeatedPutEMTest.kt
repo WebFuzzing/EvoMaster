@@ -3,13 +3,12 @@ package org.evomaster.e2etests.spring.openapi.v3.httporacle.repeatedput
 import com.foo.rest.examples.spring.openapi.v3.httporacle.repeatedput.HttpOracleRepeatedPutController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class HttpOracleRepeatedPutEMTest : SpringTestBase(){
@@ -43,7 +42,7 @@ class HttpOracleRepeatedPutEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(FaultCategory.HTTP_REPEATED_CREATE_PUT, faults.first())
+            assertEquals(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT, faults.first())
         }
     }
 }

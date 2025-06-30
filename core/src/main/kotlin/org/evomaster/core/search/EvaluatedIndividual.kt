@@ -14,10 +14,11 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -108,7 +109,7 @@ class EvaluatedIndividual<T>(
                 trackOperator = trackOperator,
                 index = index,
                 impactInfo = if ((config.isEnabledImpactCollection())) {
-                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class.java.name }.keys.toList()
+                    val initActionTypes = individual.seeInitializingActions().groupBy { it::class }.keys.toList()
                     if (individual is RestIndividual && config.isEnabledResourceDependency())
                         ResourceImpactOfIndividual(individual, initActionTypes, config.abstractInitializationGeneToMutate, fitness)
                     else
@@ -988,7 +989,7 @@ class EvaluatedIndividual<T>(
         return !invalid
     }
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class, ScheduleTaskAction::class)
     }
 
     fun hasAnyPotentialFault() = this.fitness.hasAnyPotentialFault(this.individual.searchGlobalState!!.idMapper)

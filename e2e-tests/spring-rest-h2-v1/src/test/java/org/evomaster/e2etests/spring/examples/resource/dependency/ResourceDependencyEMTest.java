@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.resource.dependency;
 
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.resource.ResourceTestBase;
 import org.junit.jupiter.api.Test;
@@ -26,52 +26,37 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                 true,
                 (args) -> {
                     // disable taint analysis
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.0");
+                    setOption(args, "baseTaintAnalysisProbability", "0.0");
 
                     //disable hypermutation
-                    args.add("--enableTrackEvaluatedIndividual");
-                    args.add("false");
-                    args.add("--weightBasedMutationRate");
-                    args.add("false");
-                    args.add("--adaptiveGeneSelectionMethod");
-                    args.add("NONE");
-                    args.add("--archiveGeneMutation");
-                    args.add("NONE");
-                    args.add("--probOfArchiveMutation");
-                    args.add("0.0");
+                    setOption(args, "enableTrackEvaluatedIndividual", "false");
+                    setOption(args, "weightBasedMutationRate", "false");
+                    setOption(args, "adaptiveGeneSelectionMethod", "NONE");
+                    setOption(args, "archiveGeneMutation", "NONE");
+                    setOption(args, "probOfArchiveMutation", "0.0");
 
                     //disable SQL
-                    args.add("--heuristicsForSQL");
-                    args.add("false");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
-                    args.add("--extractSqlExecutionInfo");
-                    args.add("true");
+                    setOption(args, "heuristicsForSQL", "false");
+                    setOption(args, "generateSqlDataWithSearch", "false");
+                    setOption(args, "extractSqlExecutionInfo", "true");
 
-                    args.add("--maxTestSize");
-                    args.add("4");
+                    setOption(args, "maxTestSize", "4");
 
-                    args.add("--exportDependencies");
-                    args.add("true");
+                    setOption(args, "exportDependencies","true");
 
                     String dependencies = "target/dependencyInfo/dependencies.csv";
 
-                    args.add("--dependencyFile");
-                    args.add(dependencies);
+                    setOption(args, "dependencyFile", dependencies);
 
-                    args.add("--resourceSampleStrategy");
-                    args.add("EqualProbability");
+                    setOption(args, "resourceSampleStrategy","EqualProbability");
 
-                    args.add("--probOfSmartSampling");
-                    args.add("1.0");
-                    args.add("--doesApplyNameMatching");
-                    args.add("false");
+                    setOption(args, "probOfSmartSampling", "1.0");
 
-                    args.add("--probOfEnablingResourceDependencyHeuristics");
-                    args.add("1.0");
-                    args.add("--structureMutationProbability");
-                    args.add("1.0");
+                    setOption(args, "doesApplyNameMatching", "false");
+
+
+                    setOption(args, "probOfEnablingResourceDependencyHeuristics","1.0");
+                    setOption(args, "structureMutationProbability", "1.0");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

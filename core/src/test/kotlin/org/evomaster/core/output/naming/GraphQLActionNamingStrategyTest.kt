@@ -1,5 +1,6 @@
 package org.evomaster.core.output.naming
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.TestUtils
 import org.evomaster.core.output.OutputFormat
@@ -55,7 +56,7 @@ class GraphQLActionNamingStrategyTest {
 
     @Test
     fun testQueryOnAddCausesInternalServerError() {
-        val eIndividual = getEvaluatedIndividualWithFaults(GQMethodType.QUERY, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")))
+        val eIndividual = getEvaluatedIndividualWithFaults(GQMethodType.QUERY, singletonList(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null)))
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val namingStrategy = GraphQLActionTestCaseNamingStrategy(solution, pythonFormatter, MAX_NAME_LENGTH)
@@ -67,7 +68,7 @@ class GraphQLActionNamingStrategyTest {
 
     @Test
     fun testActionAndMethodNameAreAddedTogether() {
-        val eIndividual = getEvaluatedIndividualWithFaults(GQMethodType.QUERY, singletonList(DetectedFault(FaultCategory.HTTP_STATUS_500, "items")))
+        val eIndividual = getEvaluatedIndividualWithFaults(GQMethodType.QUERY, singletonList(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, "items", null)))
         val solution = Solution(singletonList(eIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
 
         val withActionAndMethodName = GraphQLActionTestCaseNamingStrategy(solution, pythonFormatter, 20).getTestCases()

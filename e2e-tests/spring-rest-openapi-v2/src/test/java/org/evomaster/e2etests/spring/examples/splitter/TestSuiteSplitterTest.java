@@ -5,8 +5,7 @@ import org.evomaster.core.EMConfig;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
 import org.evomaster.core.output.clustering.SplitResult;
-import org.evomaster.core.output.service.PartialOracles;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
 

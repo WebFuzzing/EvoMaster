@@ -3,6 +3,7 @@ package org.evomaster.core.problem.webfrontend.service
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.problem.enterprise.service.EnterpriseFitness
 import org.evomaster.core.problem.webfrontend.*
@@ -81,29 +82,27 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
             val ok = handleWebAction(a, actionResults, fv)
             actionResults.filterIsInstance<WebResult>()[i].stopping = !ok
-            // the concept of stopping - stopping the execution of  all suggested test cases ( instead of 5 for instance, execute only 3)
 
             if (!ok) {
                 break
             }
         }
-        // once stopped, ask the driver to give all the heuristics collected
+
         val dto = updateFitnessAfterEvaluation(targets, allTargets, fullyCovered, descriptiveIds, individual, fv)
             ?: return null
 
         handleExtra(dto, fv)
 
-        //
         val webResults = actionResults.filterIsInstance<WebResult>()
         handleResponseTargets(fv, actions, webResults, dto.additionalInfoList)// handles black box interaction
 
 
-        if (config.isEnabledTaintAnalysis()) {// skip for now
+        if (config.isEnabledTaintAnalysis()) {
             Lazy.assert { webResults.size == dto.additionalInfoList.size }
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness, config)
         }
 
-        return EvaluatedIndividual( //
+        return EvaluatedIndividual(
             fv,
             individual.copy() as WebIndividual,
             actionResults,
@@ -116,7 +115,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
     //the actual execution
     private fun handleWebAction(wa: WebAction, actionResults: MutableList<ActionResult>, fv: FitnessValue): Boolean {
 
-        //TODO should check if current "page" is not html, eg an image -done - to be checked
+        //TODO should check if current "page" is not html, eg an image
 
         val pageBeforeExecutingAction = browserController.getCurrentPageSource()
         val urlBeforeExecutingAction = browserController.getCurrentUrl()
@@ -268,12 +267,7 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
                     if (!found) {
                         issues = true
 
-                        val id = idMapper.handleLocalTarget(
-                            idMapper.getFaultDescriptiveId(
-                                FaultCategory.WEB_BROKEN_LINK,
-                                it
-                            )
-                        )
+                        val id = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.WEB_BROKEN_LINK,it))
                         fv.updateTarget(id, 1.0)
                     }
                     webGlobalState.addExternalLink(url, found, urlOfHtmlPage)
@@ -288,6 +282,8 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
         return !issues
     }
+
+
 
     private fun handleResponseTargets(
         fv: FitnessValue,
@@ -311,17 +307,17 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
             fv.updateTarget(pageId, 1.0, i)
 
             //target for transaction S->E
-            val transactionId =
-                idMapper.handleLocalTarget("WEB_TRANSACTION:${r.getIdentifyingPageIdStart()}->${r.getIdentifyingPageIdEnd()}")
+            val transactionId = idMapper.handleLocalTarget("WEB_TRANSACTION:${r.getIdentifyingPageIdStart()}->${r.getIdentifyingPageIdEnd()}")
             fv.updateTarget(transactionId, 1.0, i)
 
             val executedActionId = a.getIdentifier()
             r.getPossibleActionIds().forEach {
                 val actionInPageId = idMapper.handleLocalTarget("WEB_ACTION:${r.getIdentifyingPageIdStart()}@$it")
-                val h = if (it == executedActionId) 1.0 else 0.5
+                val h = if(it == executedActionId) 1.0 else 0.5
                 fv.updateTarget(actionInPageId, h, i)
             }
             Lazy.assert { r.getPossibleActionIds().contains(executedActionId) }
+
 
 
             //TODO possibly check error logs in Chrome Tool

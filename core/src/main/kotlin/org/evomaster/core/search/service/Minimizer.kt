@@ -7,7 +7,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.gui.GuiIndividual
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.GroupsOfChildren
 import org.evomaster.core.search.Individual

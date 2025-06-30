@@ -1,11 +1,9 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.service.Randomness
-import java.util.*
 
 /**
  * to present a chain of actions to create a resource with its dependent resource(s)

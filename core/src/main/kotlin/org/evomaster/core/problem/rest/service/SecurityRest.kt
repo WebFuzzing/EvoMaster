@@ -5,13 +5,18 @@ import com.webfuzzing.commons.faults.FaultCategory
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
@@ -201,7 +206,7 @@ class SecurityRest {
                          */
                         val repeat = lastCall.copy() as RestCallAction
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                        copy.resetLocalIdRecursively()
+                        copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
                     }
                     copy.seeMainExecutableActions().last().auth = otherAuth
@@ -438,7 +443,7 @@ class SecurityRest {
             //fitness function should have detected the fault
             val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
 
-            if(check403 < 0 || check404 < 0 || faults.none { it.category == FaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
+            if(check403 < 0 || check404 < 0 || faults.none { it.category == ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
                 //if this happens, it is a bug in the merge... or flakiness
                 log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
                 return@forEach
@@ -542,6 +547,12 @@ class SecurityRest {
                     sqlActions = listOf()
                 )
             )
+
+            finalIndividual.seeMainExecutableActions().filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach{
+                it.saveCreatedResourceLocation = true
+            }
+            finalIndividual.fixResourceForwardLinks()
+
             finalIndividual.modifySampleType(SampleType.SECURITY)
             finalIndividual.ensureFlattenedStructure()
 
@@ -723,7 +734,7 @@ class SecurityRest {
         creationAction: RestCallAction,
         targetAction: RestCallAction
     ) {
-        PostCreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
+        CreateResourceUtils.linkDynamicCreateResource(creationAction, targetAction)
         if (creationAction.path.isEquivalent(targetAction.path)) {
             targetAction.bindBasedOn(creationAction.path, creationAction.parameters.filterIsInstance<PathParam>(), null)
         }
