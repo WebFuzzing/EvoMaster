@@ -33,16 +33,6 @@ public class RedisCommand implements Serializable {
     private final String subKey;
 
     /**
-     * Expected value before query
-     */
-    private final Object expectedValue;
-
-    /**
-     * Actual value after query
-     */
-    private final Object actualValue;
-
-    /**
      * Type of the stored values.
      */
     private final Class<?> valueType;
@@ -59,16 +49,12 @@ public class RedisCommand implements Serializable {
     public RedisCommand(RedisCommandType type,
                         String key,
                         String subKey,
-                        Object expectedValue,
-                        Object actualValue,
                         Class<?> valueType,
                         boolean successfullyExecuted,
                         long executionTime) {
         this.type = type;
         this.key = key;
         this.subKey = subKey;
-        this.expectedValue = expectedValue;
-        this.actualValue = actualValue;
         this.valueType = valueType;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
@@ -84,14 +70,6 @@ public class RedisCommand implements Serializable {
 
     public String getSubKey() {
         return subKey;
-    }
-
-    public Object getExpectedValue() {
-        return expectedValue;
-    }
-
-    public Object getActualValue() {
-        return actualValue;
     }
 
     public Class<?> getValueType() {
