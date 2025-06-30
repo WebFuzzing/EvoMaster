@@ -17,11 +17,11 @@ class AIResponseClassifier : AIModel {
     @Inject
     private lateinit var config: EMConfig
 
-    private lateinit var model: AIModel
+    private lateinit var delegate: AIModel
 
     @PostConstruct
     fun initModel() {
-        model = when (config.aiModelForResponseClassification) {
+        delegate = when (config.aiModelForResponseClassification) {
             EMConfig.AIResponseClassifierModel.GAUSSIAN ->
                 GaussianOnlineClassifier()
             EMConfig.AIResponseClassifierModel.GLM ->
@@ -35,14 +35,14 @@ class AIResponseClassifier : AIModel {
 
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        model.updateModel(input, output)
+        delegate.updateModel(input, output)
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
-        return model.classify(input)
+        return delegate.classify(input)
     }
 
-    fun getInnerModel(): AIModel = model
+    fun viewInnerModel(): AIModel = delegate
 
     /**
      * If the model thinks this call will lead to a user error (eg 400), then try to repair
