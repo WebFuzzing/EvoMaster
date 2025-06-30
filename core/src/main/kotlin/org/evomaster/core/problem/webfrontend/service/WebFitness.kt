@@ -312,7 +312,19 @@ class WebFitness : EnterpriseFitness<WebIndividual>() {
 
             val executedActionId = a.getIdentifier()
             r.getPossibleActionIds().forEach {
-                val actionInPageId = idMapper.handleLocalTarget("WEB_ACTION:${r.getIdentifyingPageIdStart()}@$it")
+                val prefix = "WEB_ACTION:${r.getIdentifyingPageIdStart()}@$it"
+                val actionInPageId = idMapper.handleLocalTarget(
+                    if(a.singleSelection.isEmpty()){
+                        prefix
+                    } else {
+                        prefix + a.singleSelection.values.joinToString(",") { g -> g.getValueAsRawString() }
+                    }
+                )
+                /*
+                    on a page, there could be several interesting actions to do... we don't want to lose info on them.
+                    we give as such a non-zero score.
+                    of course, for action we actually made, it is covered (ie score 1)
+                 */
                 val h = if(it == executedActionId) 1.0 else 0.5
                 fv.updateTarget(actionInPageId, h, i)
             }
