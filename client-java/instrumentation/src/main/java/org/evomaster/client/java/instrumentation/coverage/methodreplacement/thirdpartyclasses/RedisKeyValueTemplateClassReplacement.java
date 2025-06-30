@@ -17,8 +17,8 @@ import java.util.Optional;
 
 /**
  * This replacement captures operations when Redis is integrated using a CrudRepository.
- * For other libraries such as Lettuce or Redisson, other replacements were included.
- * HashOperationsClassReplacement and ValueOperationsClassReplacements are examples of this.
+ * For other libraries such as Lettuce other replacements were included.
+ * RedisCommandsClassReplacement and RedisAsyncCommandsClassReplacement are examples of this.
  */
 public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodReplacementClass {
 
@@ -42,9 +42,8 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
             Method findByIdMethod = getOriginal(singleton, FIND_BY_ID, redisKeyValueTemplate);
             Object result = findByIdMethod.invoke(redisKeyValueTemplate, id, entityType);
             long end = System.currentTimeMillis();
-            Object resultData = ((Optional<?>) result).orElse(null);
             addRedisKeyType(id.toString(), entityType);
-            addRedisCommand(id.toString(), entityType, resultData, end - start);
+            addRedisCommand(id.toString(), entityType, end - start);
             return (Optional<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -68,7 +67,7 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
             long end = System.currentTimeMillis();
 
             addRedisKeyType("ALL:" + entityType.getSimpleName(), entityType);
-            addRedisCommand("ALL:" + entityType.getSimpleName(), entityType, result, end - start);
+            addRedisCommand("ALL:" + entityType.getSimpleName(), entityType, end - start);
             return (Iterable<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -82,13 +81,11 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
         ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
     }
 
-    private static <T> void addRedisCommand(String keyName, Class<T> entityClass, Object result, long executionTime) {
+    private static <T> void addRedisCommand(String keyName, Class<T> entityClass, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGETALL,
                 keyName,
                 null,
-                null,
-                result,
                 entityClass,
                 true,
                 executionTime
