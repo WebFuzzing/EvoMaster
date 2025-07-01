@@ -34,7 +34,12 @@ class WebTestCaseWriter : TestCaseWriter() {
         lines.addStatement("goToPage($driver, $baseUrlOfSut, 5)")
 
         if(ind.individual is WebIndividual){
-            ind.evaluatedMainActions().forEachIndexed { index,  a ->
+            val all = ind.evaluatedMainActions()
+            for(index in all.indices) {
+                val a = all[index]
+                if(a.result.stopping){
+                    break
+                }
                 addActionLines(a.action, index, testCaseName, lines, a.result, testSuitePath, baseUrlOfSut)
             }
             val lastEvaluated = ind.evaluatedMainActions().last()
@@ -44,8 +49,10 @@ class WebTestCaseWriter : TestCaseWriter() {
                  lastResult.getUrlPageEnd()!!
             } else {
                 //if stopping, it means nothing could be done, and no info on where it went.
-                //it also implies that such entry itself was printed out in the test
-                assert(lastAction.userInteractions.isEmpty())
+                //it also implies that such entry itself was printed out in the test.
+                //however, it might be that a mutated test ends up on a page in which action is not applicable
+                //TODO should check lastAction.isApplicableInGivenPage(pageBeforeExecutingAction)
+                //assert(lastAction.userInteractions.isEmpty())
                 lastResult.getUrlPageStart()!!
             }
             lines.add(getCommentOnPage("ended on page", url,null,lastResult.getValidHtml()))

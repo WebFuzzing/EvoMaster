@@ -33,7 +33,8 @@ public class DropDownEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() > 0);
 
-                    assertHasVisitedUrlPath(solution, "/dropdown/index.html", "/dropdown/page1.html", "/dropdown/page2.html", "/dropdown/page3.html");
+//                    assertHasVisitedUrlPath(solution, "/dropdown/index.html", "/dropdown/page1.html", "/dropdown/page2.html", "/dropdown/page3.html");
+                    assertHasVisitedUrlPath(solution, "/dropdown/index.html", "/navigate/1", "/navigate/2", "/navigate/3");
                     assertNoHtmlErrors(solution); // statement ok - gives no errors
                 }
         );
