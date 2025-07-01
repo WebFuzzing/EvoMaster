@@ -11,37 +11,28 @@ import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import javax.annotation.PostConstruct
 
 
+
 class AIResponseClassifier : AIModel {
 
     @Inject
-    private lateinit var config : EMConfig
+    private lateinit var config: EMConfig
 
     private lateinit var delegate: AIModel
 
     @PostConstruct
-    fun initModel(){
-
-        val dimension = 1 //FIXME
-
-        when(config.aiModelForResponseClassification){
-            EMConfig.AIResponseClassifierModel.GAUSSIAN -> {
-                delegate = GaussianOnlineClassifier(dimension)
-            }
-            EMConfig.AIResponseClassifierModel.GLM -> {
-                delegate = GLMOnlineClassifier(dimension, config.aiResponseClassifierLearningRate)
-            }
-            EMConfig.AIResponseClassifierModel.NN -> {
-                //TODO
-            }
-            EMConfig.AIResponseClassifierModel.NONE -> {
-                //TODO
-                delegate = object : AIModel {
-                    override fun updateModel(input: RestCallAction, output: RestCallResult) {}
-                    override fun classify(input: RestCallAction) = AIResponseClassification()
-                }
+    fun initModel() {
+        delegate = when (config.aiModelForResponseClassification) {
+            EMConfig.AIResponseClassifierModel.GAUSSIAN ->
+                GaussianOnlineClassifier()
+            EMConfig.AIResponseClassifierModel.GLM ->
+                GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+            else -> object : AIModel {
+                override fun updateModel(input: RestCallAction, output: RestCallResult) {}
+                override fun classify(input: RestCallAction) = AIResponseClassification()
             }
         }
     }
+
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         delegate.updateModel(input, output)
@@ -51,6 +42,7 @@ class AIResponseClassifier : AIModel {
         return delegate.classify(input)
     }
 
+    fun viewInnerModel(): AIModel = delegate
 
     /**
      * If the model thinks this call will lead to a user error (eg 400), then try to repair
@@ -62,4 +54,3 @@ class AIResponseClassifier : AIModel {
         //TODO
     }
 }
-
