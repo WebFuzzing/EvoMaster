@@ -742,7 +742,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        TODO check here for SSRF. if so, add to rcr object
+        if (config.vulnerabilityAnalyser) {
+            // TODO: check here for SSRF. if so, add to rcr object
+            if (vulnerabilityAnalyser.hasVulnerabilities(a)) {
+                // TODO: Add vulnerability marker to RestCall Result
+            }
+        }
 
         return handledSavedLocation
     }

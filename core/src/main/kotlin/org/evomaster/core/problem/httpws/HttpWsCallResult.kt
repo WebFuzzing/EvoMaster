@@ -4,7 +4,6 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
-import org.evomaster.core.search.action.ActionResult
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
@@ -27,7 +26,8 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
 
-        TODO add new entry for SSRF detection. boolean?
+        // TODO: Seran, add new entry for SSRF detection. boolean?
+        const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
     }
 
     /**
