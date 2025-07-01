@@ -14,9 +14,14 @@ import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
+import java.net.HttpURLConnection
+import java.net.URL
+import javax.ws.rs.core.MediaType
 
 
 class AIGLMCheck : IntegrationTestRestBase() {
@@ -45,100 +50,126 @@ class AIGLMCheck : IntegrationTestRestBase() {
         )
     }
 
-    fun runClassifierExample() {
+    fun executeRestCallAction(action: RestCallAction, baseUrlOfSut: String): RestCallResult {
+        val fullUrl = "$baseUrlOfSut${action.resolvedPath()}"
+        val url = URL(fullUrl)
+        val connection = url.openConnection() as HttpURLConnection
 
-        /**
-         * Generate a random RestCallAction using EvoMaster Randomness
-         */
-        // Fetch and parse OpenAPI schema based on the schema location
+        connection.requestMethod = action.verb.name
+        connection.connectTimeout = 5000
+        connection.readTimeout = 5000
+
+        val result = RestCallResult(action.getLocalId())
+
+        try {
+            val status = connection.responseCode
+            result.setStatusCode(status)
+
+            val body = connection.inputStream.bufferedReader().use { it.readText() }
+            result.setBody(body)
+            result.setBodyType(MediaType.APPLICATION_JSON_TYPE) // or guess based on Content-Type header
+
+        } catch (e: Exception) {
+            result.setTimedout(true)
+            result.setBody("ERROR: ${e.message}")
+        }
+
+        return result
+    }
+
+    fun runClassifierExample() {
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
-        // Wrap schema into RestSchema
         val restSchema = RestSchema(schema)
-        // Configuration for gene generation
+
         val config = EMConfig().apply {
+            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.GLM
             enableSchemaConstraintHandling = true
             allowInvalidData = false
             probRestDefault = 0.0
             probRestExamples = 0.0
         }
+
+
         val options = RestActionBuilderV3.Options(config)
-        // actionCluster contains provides possible actions
         val actionCluster = mutableMapOf<String, Action>()
-        // Generate RestCallAction
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
-        // Sample one random RestCallAction
-        val random = Randomness()
+
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
-        val template = random.choose(actionList)
-        val sampledAction = template.copy() as RestCallAction
-        sampledAction.doInitialize(random)
 
-        // Calculate the input dimension of the classifier
-        var dimension:Int = 0
-        for (gene in sampledAction.seeTopGenes()) {
-            when (gene) {
-                is IntegerGene, is DoubleGene, is BooleanGene, is EnumGene<*> -> {
-                    dimension++
-                }
+        val pathToDimension = mutableMapOf<RestPath, Int>()
+        for (action in actionList) {
+            val path = action.path
+            if (pathToDimension.containsKey(path)) continue
+
+            val dimension = action.parameters.count { p ->
+                val g = p.gene
+                g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
             }
+            pathToDimension[path] = dimension
         }
-        require(dimension == 6)
 
-        // Create a glm classifier
-        val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        //classifier.initModel(dimension) //FIXME
+        val pathToClassifier = mutableMapOf<RestPath, GLMOnlineClassifier>()
+        for ((path, dimension) in pathToDimension) {
+            val model = GLMOnlineClassifier()
+            model.setDimension(dimension)
+            pathToClassifier[path] = model
+        }
 
-        // Use reflection to access the private delegate
-        val delegateField = classifier::class.java.getDeclaredField("delegate")
-        delegateField.isAccessible = true
-        val glm = delegateField.get(classifier) as? GLMOnlineClassifier
+        println("Classifiers initialized with their dimensions:")
+        for ((path, expected) in pathToDimension) {
+            val classifier = pathToClassifier[path]!!
+            println("$path -> expected: $expected, actualDim: ${classifier.getDimension()}")
+        }
 
-        var time =1
+
+        val random = Randomness()
+        val sampler = injector.getInstance(AbstractRestSampler::class.java)
+        var time = 1
         val timeLimit = 20
         while (time <= timeLimit) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
 
+            val path = sampledAction.path
+            val dimension = pathToDimension[path] ?: error("No dimension for path: $path")
+            val classifier = pathToClassifier[path] ?: error("Expected classifier for path: $path")
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
-            println("**********************************************")
-            println("Time: $time")
-            println("Genes: [${geneValues.joinToString(", ")}]")
 
-            // createIndividual send the request and evaluate
-            val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
-            val evaluatedAction = individual.evaluatedMainActions()[0]
-            val action = evaluatedAction.action as RestCallAction
-            val result = evaluatedAction.result as RestCallResult
+            println("*************************************************")
+            println("Time         : $time")
+            println("Path         : $path")
+            println("Input Genes  : ${geneValues.joinToString(", ")}")
+            println("Input dim    : ${classifier.getDimension()}")
+            println("Expected Dim : $dimension")
+            println("Actual Genes : ${geneValues.size}")
 
-            // update the model
+            //  //executeRestCallAction is replaced with createIndividual to avoid override error
+            //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
+            val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
+            val action = individual.seeMainExecutableActions()[0]
+            val result = executeRestCallAction(action,"$baseUrlOfSut")
+            println("Response:\n${result.getStatusCode()}")
+
+
+            // Update and classify
             classifier.updateModel(action, result)
+            val classification = classifier.classify(action)
 
-            // classify an action
-            val c = classifier.classify(action)
-            // the classification provides two values as the probability of getting 400 and 200
-            require(c.probabilities.values.all { it in 0.0..1.0 }) {
+            println("Probabilities: ${classification.probabilities}")
+            require(classification.probabilities.values.all { it in 0.0..1.0 }) {
                 "All probabilities must be in [0,1]"
             }
 
-            if (glm != null) {
-                val weightsAndBias = glm.getModelParams()
-                println(
-                    """
-                    Weights and Bias = $weightsAndBias
-                    """.trimIndent()
-                )
+            if (classifier != null) {
+                val weightsAndBias = classifier.getModelParams()
+                println("Weights and Bias = $weightsAndBias")
                 println("**********************************************")
                 println("**********************************************")
             } else {
                 println("The classifier is not a GLMOnlineClassifier")
             }
-
             time++
         }
-
-
     }
-
 }
-
