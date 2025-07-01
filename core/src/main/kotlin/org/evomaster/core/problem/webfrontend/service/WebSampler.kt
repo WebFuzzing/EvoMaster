@@ -14,6 +14,11 @@ import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 
+//gives a random test case -
+//problem - the actions we are sampling are undefined ->
+//different from rest or graphql where there is a schema that defines all possible cases and interactions
+//in front-end you would have to visit a page to know what u can do there.
+//exploring pages and different inputs
 class WebSampler : EnterpriseSampler<WebIndividual>() {
 
     companion object {
@@ -74,12 +79,13 @@ class WebSampler : EnterpriseSampler<WebIndividual>() {
     }
 
 
+    //Create a random test case
     override fun sampleAtRandom(): WebIndividual {
         val actions = mutableListOf<EnterpriseActionGroup<*>>()
-        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler())
-
+        val n = randomness.nextInt(1, getMaxTestSizeDuringSampler()) // random test length ?
+        //sample n random actions
         (0 until n).forEach {
-            val a = sampleUndefinedAction()
+            val a = sampleUndefinedAction()// when we sample it will be a list of undefined actions
             actions.add(EnterpriseActionGroup(mutableListOf(a), WebAction::class.java))
         }
         val ind =  WebIndividual(SampleType.RANDOM, actions)
