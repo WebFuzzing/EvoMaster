@@ -31,11 +31,6 @@ public class RedisCommand implements Serializable {
      * Additional parameter used in some commands like HGET.
      */
     private final String subKey;
-
-    /**
-     * Type of the stored values.
-     */
-    private final Class<?> valueType;
     /**
      * If the operation was successfully executed
      */
@@ -49,13 +44,11 @@ public class RedisCommand implements Serializable {
     public RedisCommand(RedisCommandType type,
                         String key,
                         String subKey,
-                        Class<?> valueType,
                         boolean successfullyExecuted,
                         long executionTime) {
         this.type = type;
         this.key = key;
         this.subKey = subKey;
-        this.valueType = valueType;
         this.successfullyExecuted = successfullyExecuted;
         this.executionTime = executionTime;
     }
@@ -70,10 +63,6 @@ public class RedisCommand implements Serializable {
 
     public String getSubKey() {
         return subKey;
-    }
-
-    public Class<?> getValueType() {
-        return valueType;
     }
 
     public boolean isHashCommand() {

@@ -4,10 +4,8 @@ import io.lettuce.core.RedisClient;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
-import io.lettuce.core.protocol.AsyncCommand;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.instrumentation.RedisKeySchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
@@ -17,7 +15,6 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class RedisAsyncCommandsClassReplacementTest {
@@ -74,12 +71,6 @@ public class RedisAsyncCommandsClassReplacementTest {
         RedisCommand cmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(RedisCommand.RedisCommandType.GET, cmd.getType());
         assertEquals(key, cmd.getKey());
-        assertTrue(RedisFuture.class.isAssignableFrom(cmd.getValueType()));
-        assertEquals(AsyncCommand.class, cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 
     @Test
@@ -103,12 +94,6 @@ public class RedisAsyncCommandsClassReplacementTest {
         assertEquals(RedisCommand.RedisCommandType.HGET, cmd.getType());
         assertEquals(key, cmd.getKey());
         assertEquals(hashKey, cmd.getSubKey());
-        assertTrue(RedisFuture.class.isAssignableFrom(cmd.getValueType()));
-        assertEquals(AsyncCommand.class, cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 
     @Test
@@ -131,11 +116,5 @@ public class RedisAsyncCommandsClassReplacementTest {
         RedisCommand cmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(RedisCommand.RedisCommandType.HGETALL, cmd.getType());
         assertEquals(key, cmd.getKey());
-        assertTrue(RedisFuture.class.isAssignableFrom(cmd.getValueType()));
-        assertEquals(AsyncCommand.class, cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 }
