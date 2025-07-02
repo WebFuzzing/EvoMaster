@@ -30,7 +30,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","GAUSSIAN"))
+        recreateInjectorForWhite(listOf("--aiModelForResponseClassification","NN"))
     }
 
     fun runClassifierExample() {
@@ -58,7 +58,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
         }
         require(dimension == 6)
 
-        // Create a gaussian classifier
+        // Create a classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
         classifier.initModel(dimension)
 

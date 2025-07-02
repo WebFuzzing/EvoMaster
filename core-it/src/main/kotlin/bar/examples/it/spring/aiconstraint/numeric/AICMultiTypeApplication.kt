@@ -75,10 +75,10 @@ open class AICMultiTypeApplication {
     ): ResponseEntity<String> {
 
         // Dependencies
-        if (birthYear !in 2000..2025) {
+        if (birthYear < 0) {
             return ResponseEntity.status(400).body("Invalid birth year. It must be between 2000 and 2025.")
         }
-        if (vaccinationYear !in 2000..2025) {
+        if (vaccinationYear < 0) {
             return ResponseEntity.status(400).body("Invalid vaccination year. It must be between 2000 and 2025.")
         }
         if (vaccinationYear < birthYear) {

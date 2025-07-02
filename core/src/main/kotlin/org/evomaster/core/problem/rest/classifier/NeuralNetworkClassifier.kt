@@ -1,10 +1,9 @@
 package org.evomaster.core.problem.rest.classifier
 
-import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration
+import org.deeplearning4j.nn.conf.layers.DenseLayer
 import org.deeplearning4j.nn.conf.layers.OutputLayer
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork
 import org.nd4j.linalg.activations.Activation
@@ -14,19 +13,38 @@ import org.nd4j.linalg.factory.Nd4j
 import org.nd4j.linalg.learning.config.Adam
 import org.nd4j.linalg.lossfunctions.LossFunctions
 
-//TODO work-in-progress
-class NeuralNetworkClassifier(private val dimension: Int=0) : AIModel {
+class NeuralNetworkClassifier(private val dimension: Int = 6) : AIModel {
 
     private val statusToClass = mapOf(200 to 0, 400 to 1)
     private val classToStatus = statusToClass.entries.associate { (k, v) -> v to k }
+
+    private val inputBuffer = mutableListOf<FloatArray>()
+    private val labelBuffer = mutableListOf<FloatArray>()
+    private val batchSize = 16
 
     private val model: MultiLayerNetwork = NeuralNetConfiguration.Builder()
         .updater(Adam(0.01))
         .list()
         .layer(
-            OutputLayer.Builder()
+            DenseLayer.Builder()
                 .nIn(dimension)
-                .nOut(2) // binary classification: 200 vs 400
+                .nOut(32)  // increased neurons
+                .activation(Activation.RELU)
+                .dropOut(0.5) // 🔽 Dropout here
+                .build()
+        )
+        .layer(
+            DenseLayer.Builder()
+                .nIn(32)
+                .nOut(16)
+                .activation(Activation.RELU)
+                .dropOut(0.5) // 🔽 Optional second dropout
+                .build()
+        )
+        .layer(
+            OutputLayer.Builder()
+                .nIn(16)
+                .nOut(2)
                 .activation(Activation.SOFTMAX)
                 .lossFunction(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
                 .build()
@@ -35,16 +53,21 @@ class NeuralNetworkClassifier(private val dimension: Int=0) : AIModel {
         .let { MultiLayerNetwork(it).apply { init() } }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input)
+        val inputVector = InputEncoderUtils.encode(input).map { it.toFloat() }.toFloatArray()
+        val labelIndex = statusToClass[output.getStatusCode()] ?: return
 
-        val label = statusToClass[output.getStatusCode()] ?: return
+        val labelVector = FloatArray(2) { 0f }.also { it[labelIndex] = 1f }
 
-        val inputArray = Nd4j.create(arrayOf(inputVector.map { it.toFloat() }.toFloatArray()))
-        val labelArray = Nd4j.create(1, 2)
-        labelArray.putScalar(intArrayOf(0, label), 1.0)
+        inputBuffer.add(inputVector)
+        labelBuffer.add(labelVector)
 
-        val data = DataSet(inputArray, labelArray)
-        model.fit(data)
+        if (inputBuffer.size >= batchSize) {
+            val inputMatrix = Nd4j.create(inputBuffer.toTypedArray())
+            val labelMatrix = Nd4j.create(labelBuffer.toTypedArray())
+            model.fit(DataSet(inputMatrix, labelMatrix))
+            inputBuffer.clear()
+            labelBuffer.clear()
+        }
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
@@ -59,6 +82,4 @@ class NeuralNetworkClassifier(private val dimension: Int=0) : AIModel {
 
         return AIResponseClassification(probabilities)
     }
-
-
 }
