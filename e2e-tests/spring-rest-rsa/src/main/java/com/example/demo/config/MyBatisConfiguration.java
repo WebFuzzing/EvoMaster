@@ -19,7 +19,6 @@ import javax.sql.DataSource;
 public class MyBatisConfiguration {
 
 
-    // 直接注入 Spring Boot 自动配置的数据源
     @Bean
     @Primary
     public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
@@ -28,15 +27,6 @@ public class MyBatisConfiguration {
         sessionFactory.setMapperLocations(getResourcePatternResolver().getResources("classpath*:mapper/*.xml"));
         return sessionFactory.getObject();
     }
-
-//    @Bean(name = "sqlSessionFactory")
-//    @Primary
-//    public SqlSessionFactory sqlSessionFactory(@Qualifier("dataSource") DataSource dataSource) throws Exception {
-//        SqlSessionFactoryBean sessionFactory = new SqlSessionFactoryBean();
-//        sessionFactory.setDataSource(dataSource);
-//        sessionFactory.setMapperLocations(getResourcePatternResolver().getResources("classpath*:mapper/*.xml"));
-//        return sessionFactory.getObject();
-//    }
 
     @Bean
     @Primary
