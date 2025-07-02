@@ -99,7 +99,11 @@ open class ResourceSampler : AbstractRestSampler() {
             r.randomRestResourceCalls(randomness,left)
         }
         rc.seeActions(ActionFilter.MAIN_EXECUTABLE).forEach {
-            (it as RestCallAction).auth = getRandomAuth(noAuthP)
+            val action = it as RestCallAction
+            action.auth = getRandomAuth(noAuthP)
+            if(config.isEnabledAIModelForResponseClassification()) {
+                responseClassifier.attemptRepair(action)
+            }
         }
         return rc
     }

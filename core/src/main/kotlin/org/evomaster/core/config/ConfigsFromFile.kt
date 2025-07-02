@@ -1,7 +1,7 @@
 package org.evomaster.core.config
 
+import com.webfuzzing.commons.auth.LoginEndpoint
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
 import java.lang.reflect.Field
 import java.lang.reflect.Modifier
 
@@ -40,7 +40,7 @@ class ConfigsFromFile {
             auth.filter { it.loginEndpointAuth!=null }
                     .forEach { a ->
                         val base = a.loginEndpointAuth!!
-                        applyMissingFields(template, base, LoginEndpointDto::class.java)
+                        applyMissingFields(template, base, LoginEndpoint::class.java)
                     }
         }
     }
@@ -51,6 +51,7 @@ class ConfigsFromFile {
             if(Modifier.isStatic(f.modifiers) || Modifier.isTransient(f.modifiers)){
                 continue
             }
+            f.isAccessible = true
             val t = f.get(template) ?: continue
             val b = f.get(base)
 

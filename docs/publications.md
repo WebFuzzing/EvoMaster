@@ -27,7 +27,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   Science of Computer Programming (SCP).
-  _(to appear)_ [[arXiv](https://arxiv.org/abs/2208.03988)]
+  [[PDF](publications/2025_scp.pdf)]
 
 * S. Seran, M. Zhang, O. Duman, A. Arcuri.
   *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.

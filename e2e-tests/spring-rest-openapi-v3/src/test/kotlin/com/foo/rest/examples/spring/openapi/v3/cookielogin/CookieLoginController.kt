@@ -2,10 +2,9 @@ package com.foo.rest.examples.spring.openapi.v3.cookielogin
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
 import com.foo.rest.examples.spring.openapi.v3.fakecookieLogin.CookieLoginCenterApplication
+import com.webfuzzing.commons.auth.LoginEndpoint
+import com.webfuzzing.commons.auth.PayloadUsernamePassword
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.auth.HttpVerb
-import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
-import org.evomaster.client.java.controller.api.dto.auth.PayloadUsernamePasswordDto
 import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 import org.springframework.boot.SpringApplication
@@ -42,32 +41,32 @@ class CookieLoginController : SpringController(CookieLoginApplication::class.jav
         return listOf(
             AuthenticationDto("42Foo")
                 .apply {
-                    loginEndpointAuth = LoginEndpointDto()
+                    loginEndpointAuth = LoginEndpoint()
                         .apply {
-                            payloadUserPwd = PayloadUsernamePasswordDto().apply {
+                            payloadUserPwd = PayloadUsernamePassword().apply {
                                 username = "foo"
                                 usernameField = "username"
                                 password = "123"
                                 passwordField = "password"
                             }
                             endpoint = "/api/logintoken/login"
-                            verb = HttpVerb.POST
+                            verb = LoginEndpoint.HttpVerb.POST
                             contentType = "application/json"
                             expectCookies = true
                         }
                 },
             AuthenticationDto("B-a-r")
                 .apply {
-                    loginEndpointAuth = LoginEndpointDto()
+                    loginEndpointAuth = LoginEndpoint()
                         .apply {
-                            payloadUserPwd = PayloadUsernamePasswordDto().apply {
+                            payloadUserPwd = PayloadUsernamePassword().apply {
                                 username = "bar"
                                 usernameField = "username"
                                 password = "456"
                                 passwordField = "password"
                             }
                             externalEndpointURL = getFakeApplicationURL() + "/api/manager/login"
-                            verb = HttpVerb.POST
+                            verb = LoginEndpoint.HttpVerb.POST
                             contentType = "application/json"
                             expectCookies = true
                         }

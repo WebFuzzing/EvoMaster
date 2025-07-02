@@ -2,6 +2,9 @@
 
 Under development in `master` branch.
 
+### Breaking Changes
+- The packages in the definition of auth information in the embedded/external drivers are changed. Now they use WFC declarations, with packages in `com.webfuzzing.commons.auth`. The DTOs are the same, though. However, some names have dropped the `Dto` suffix. If you set auth configurations with `AuthUtils`, then likely you do not need to change anything. Otherwise, if you built DTOs manually, you will need to update them.   
+
 ### New Features
 - Generated test suite files have now a license disclaimer stating these generated files are not subject to LGPL.
 - Support for object in example/examples in OpenAPI schemas.

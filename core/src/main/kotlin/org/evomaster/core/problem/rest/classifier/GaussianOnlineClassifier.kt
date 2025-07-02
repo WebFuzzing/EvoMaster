@@ -7,71 +7,102 @@ import kotlin.math.PI
 import kotlin.math.exp
 
 /**
- * TODO this is work in progress
+ * Gaussian classifier for REST API calls.
+ *
+ * This classifier builds two independent multivariate Gaussian distributions (one for HTTP 200 responses,
+ * and one for HTTP 400 responses) based on numeric feature encodings of `RestCallAction` instances.
+ *
+ * ## Features:
+ * - Learns in an *online* fashion: it updates its parameters incrementally as new samples arrive.
+ * - Uses the encoded input vectors from REST actions.
+ * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
+ *
+ * ## Internals:
+ * - Maintains two `Density` instances: one for class 200 (successful responses) and one for class 400 (error responses).
+ * - Computes log-likelihood under each distribution and classifies based on maximum likelihood with class priors.
+ *
+ * ## Assumptions:
+ * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
+ * - The only two supported classes are 200 and 400.
+ *
+ * @param dimension the fixed dimensionality of the input feature vectors.
  */
-class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
+class GaussianOnlineClassifier : AIModel {
 
-    private val density400 = Density(dimension) // class for 400
-    private val density200 = Density(dimension) // class for 200
+    private var dimension: Int? = null
+    private var density200: Density? = null
+    private var density400: Density? = null
 
-    /** Updates the classifier using a request of type `RestCallAction` and its result of type `RestCallResult` */
+    fun setDimension(d: Int) {
+        require(d > 0) { "Dimension must be positive." }
+        this.dimension = d
+        this.density200 = Density(d)
+        this.density400 = Density(d)
+    }
+
+    fun getDimension(): Int {
+        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
+        return this.dimension!!
+    }
+
+    fun getDensity200(): Density {
+        check(this.density200 != null) { "Classifier not initialized. Call setDimension first." }
+        return this.density200!!
+    }
+
+    fun getDensity400(): Density {
+        check(this.density400 != null) { "Classifier not initialized. Call setDimension first." }
+        return this.density400!!
+    }
+
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val inputVector = InputEncoderUtils.encode(input)
 
-        // check the compatibility of the input vector and the classifier dimension
-        if(inputVector.size != dimension){
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        // Update Gaussian densities
         when (output.getStatusCode()) {
-            400 -> density400.update(inputVector)
-            200 -> density200.update(inputVector)
+            200 -> this.density200!!.update(inputVector)
+            400 -> this.density400!!.update(inputVector)
             else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
         }
-
     }
 
-    /** Classifies a request of type `RestCallAction` using Gaussian classification */
     override fun classify(input: RestCallAction): AIResponseClassification {
         val inputVector = InputEncoderUtils.encode(input)
 
-        // check the compatibility of the input vector and the classifier dimension
-        if(inputVector.size != dimension){
-            throw IllegalArgumentException("Expected input vector of size $dimension but got ${inputVector.size}")
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logProbability400 = ln(density400.weight()) + logLikelihood(inputVector, density400)
-        val logProbability200 = ln(density200.weight()) + logLikelihood(inputVector, density200)
+        val logProbability200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
+        val logProbability400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
 
-        val probability400 = exp(logProbability400)
         val probability200 = exp(logProbability200)
+        val probability400 = exp(logProbability400)
 
-        val response = AIResponseClassification(
+        return AIResponseClassification(
             probabilities = mapOf(
-                400 to probability400,
-                200 to probability200
+                200 to probability200,
+                400 to probability400
             )
         )
-
-        return response
     }
-
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
         return x.indices.sumOf { i ->
             val mu = stats.mean[i]
-            val varI = stats.variance[i].coerceAtLeast(1e-6) // avoid division by zero
+            val varI = stats.variance[i].coerceAtLeast(1e-6)
             val diff = x[i] - mu
             -0.5 * ln(2 * PI * varI) - (diff * diff) / (2 * varI)
         }
     }
 
-    private class Density(dimension: Int) {
-
+    class Density(dimension: Int) {
         var n = 0
         val mean = MutableList(dimension) { 0.0 }
-        private val M2 = MutableList(dimension) { 0.0 }
+        val M2 = MutableList(dimension) { 1.0 }
 
         fun update(x: List<Double>) {
             n++
@@ -89,4 +120,3 @@ class GaussianOnlineClassifier(private val dimension: Int=0) : AIModel {
         fun weight() = n.toDouble()
     }
 }
-

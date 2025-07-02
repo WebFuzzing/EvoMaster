@@ -47,7 +47,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
     public List<AuthenticationDto> getAuthInfo() {
         return Arrays.asList(
                 new AuthenticationDto() {{
-                    name = "foo";
+                    setName("foo");
                     jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
                         endpointName = "login";
                         interfaceName = RPCInterfaceExample.class.getName();
@@ -63,7 +63,7 @@ public class ExampleBuilderTest extends RPCEndpointsBuilderTestBase {
                     }};
                 }},
                 new AuthenticationDto() {{
-                    name = "bar";
+                    setName("bar");
                     jsonAuthEndpoint = new JsonAuthRPCEndpointDto() {{
                         endpointName = "login";
                         interfaceName = RPCInterfaceExample.class.getName();
