@@ -2,7 +2,6 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.instrumentation.RedisKeySchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.*;
 import org.springframework.data.annotation.Id;
@@ -45,7 +44,6 @@ public class RedisKeyValueTemplateClassReplacementTest {
         redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         redisTemplate.afterPropertiesSet();
 
-        // Redis Mapping Infrastructure
         RedisMappingContext mappingContext = new RedisMappingContext();
         mappingContext.afterPropertiesSet();
 
@@ -114,14 +112,6 @@ public class RedisKeyValueTemplateClassReplacementTest {
         RedisCommand cmd = commands.iterator().next();
         assertEquals(RedisCommand.RedisCommandType.HGETALL, cmd.getType());
         assertEquals("abc123", cmd.getKey());
-        assertEquals(result.get().getClass(), cmd.getValueType());
-
-        Set<RedisKeySchema> schemas = info.getRedisKeyTypeData();
-        assertEquals(1, schemas.size());
-        RedisKeySchema schema = schemas.iterator().next();
-        assertEquals("abc123", schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("name"));
-        assertTrue(schema.getSchemaJson().contains("age"));
     }
 
     @Test
@@ -146,11 +136,5 @@ public class RedisKeyValueTemplateClassReplacementTest {
         RedisCommand cmd = commands.iterator().next();
         assertEquals(RedisCommand.RedisCommandType.HGETALL, cmd.getType());
         assertTrue(cmd.getKey().startsWith("ALL:"));
-
-        Set<RedisKeySchema> schemas = info.getRedisKeyTypeData();
-        assertEquals(1, schemas.size());
-        RedisKeySchema schema = schemas.iterator().next();
-        assertTrue(schema.getKeyName().startsWith("ALL:"));
-        assertTrue(schema.getSchemaJson().contains("name"));
     }
 }

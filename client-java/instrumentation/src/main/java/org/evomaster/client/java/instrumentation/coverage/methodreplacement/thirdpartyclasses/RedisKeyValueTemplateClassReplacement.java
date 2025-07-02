@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.instrumentation.RedisKeySchema;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -42,8 +41,7 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
             Method findByIdMethod = getOriginal(singleton, FIND_BY_ID, redisKeyValueTemplate);
             Object result = findByIdMethod.invoke(redisKeyValueTemplate, id, entityType);
             long end = System.currentTimeMillis();
-            addRedisKeyType(id.toString(), entityType);
-            addRedisCommand(id.toString(), entityType, end - start);
+            addRedisCommand(id.toString(), end - start);
             return (Optional<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -66,8 +64,7 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
             Object result = findAllMethod.invoke(redisKeyValueTemplate, entityType);
             long end = System.currentTimeMillis();
 
-            addRedisKeyType("ALL:" + entityType.getSimpleName(), entityType);
-            addRedisCommand("ALL:" + entityType.getSimpleName(), entityType, end - start);
+            addRedisCommand("ALL:" + entityType.getSimpleName(), end - start);
             return (Iterable<T>) result;
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -76,17 +73,11 @@ public class RedisKeyValueTemplateClassReplacement extends ThirdPartyMethodRepla
         }
     }
 
-    private static <T> void addRedisKeyType(String keyName, Class<T> entityClass) {
-        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(entityClass, true, Collections.emptyList());
-        ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
-    }
-
-    private static <T> void addRedisCommand(String keyName, Class<T> entityClass, long executionTime) {
+    private static <T> void addRedisCommand(String keyName, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 RedisCommand.RedisCommandType.HGETALL,
                 keyName,
                 null,
-                entityClass,
                 true,
                 executionTime
         );

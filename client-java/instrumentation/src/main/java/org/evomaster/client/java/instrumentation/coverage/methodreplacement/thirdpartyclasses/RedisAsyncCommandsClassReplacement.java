@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thirdpartyclasses;
 
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.instrumentation.RedisKeySchema;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
@@ -83,24 +82,18 @@ public class RedisAsyncCommandsClassReplacement extends ThirdPartyMethodReplacem
         Object result = Objects.isNull(hashKey) ? method.invoke(redis, key) : method.invoke(redis, key, hashKey);
         long end = System.currentTimeMillis();
 
-        Class<?> valueType = !Objects.isNull(result) ? result.getClass() : Object.class;
-        addRedisKeyType(key.toString(), valueType);
-        addRedisCommand(commandType, key.toString(), hashKey, valueType, end - start);
+
+        addRedisCommand(commandType, key.toString(), hashKey, end - start);
         return result;
     }
 
-    private static void addRedisKeyType(String keyName, Class<?> valueType) {
-        String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(valueType, true, Collections.emptyList());
-        ExecutionTracer.addRedisSchemaType(new RedisKeySchema(keyName, schema));
-    }
 
     private static void addRedisCommand(RedisCommand.RedisCommandType type, String key, String hashKey,
-                                        Class<?> valueType, long executionTime) {
+                                        long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 type,
                 key,
                 hashKey,
-                valueType,
                 true,
                 executionTime
         );

@@ -25,14 +25,13 @@ public class CrudOperationsInstrumentedTest {
     private static RedisCrudRepository repository;
     private static RedisTemplate<RedisEntity, String> redisTemplate;
 
-    private RedisCrudOperations redisOps; // este es el proxy instrumentado
+    private RedisCrudOperations redisOps;
 
     protected RedisCrudOperations getInstrumentedInstance() throws Exception {
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         Class<?> clazz = cl.loadClass(RedisCrudOperationsImpl.class.getName());
 
-        // Set static RedisTemplate field usando reflection
         Method setter = clazz.getMethod("setRepository", Object.class);
         setter.invoke(null, repository);
 

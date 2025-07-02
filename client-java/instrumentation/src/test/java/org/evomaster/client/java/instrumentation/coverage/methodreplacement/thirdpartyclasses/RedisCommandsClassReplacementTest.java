@@ -5,17 +5,14 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.instrumentation.RedisKeySchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class RedisCommandsClassReplacementTest {
 
@@ -70,11 +67,6 @@ public class RedisCommandsClassReplacementTest {
         RedisCommand cmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(RedisCommand.RedisCommandType.GET, cmd.getType());
         assertEquals(key, cmd.getKey());
-        assertEquals(value.getClass(), cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 
     @Test
@@ -96,11 +88,6 @@ public class RedisCommandsClassReplacementTest {
         assertEquals(RedisCommand.RedisCommandType.HGET, cmd.getType());
         assertEquals(key, cmd.getKey());
         assertEquals(hashKey, cmd.getSubKey());
-        assertEquals(value.getClass(), cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 
     @Test
@@ -121,10 +108,5 @@ public class RedisCommandsClassReplacementTest {
         RedisCommand cmd = infoList.get(0).getRedisCommandData().iterator().next();
         assertEquals(RedisCommand.RedisCommandType.HGETALL, cmd.getType());
         assertEquals(key, cmd.getKey());
-        assertEquals(LinkedHashMap.class, cmd.getValueType());
-
-        RedisKeySchema schema = infoList.get(0).getRedisKeyTypeData().iterator().next();
-        assertEquals(key, schema.getKeyName());
-        assertTrue(schema.getSchemaJson().contains("type"));
     }
 }
