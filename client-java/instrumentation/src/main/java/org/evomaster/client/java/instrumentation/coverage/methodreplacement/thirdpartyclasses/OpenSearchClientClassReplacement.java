@@ -31,12 +31,12 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = GET_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.GetResponse")
-    public static <TDocument> Object get(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.GetRequest") Object request, Class<TDocument> documentClass) {
+    public static <T> Object get(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.GetRequest") Object request, Class<T> documentClass) {
         return handleMethod(openSearchClient, GET_METHOD, Arrays.asList(request, documentClass), request);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = SEARCH_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.SearchResponse")
-    public static <TDocument> Object search(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.SearchRequest") Object request, Class<TDocument> documentClass) {
+    public static <T> Object search(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.SearchRequest") Object request, Class<T> documentClass) {
         return handleMethod(openSearchClient, SEARCH_METHOD, Arrays.asList(request, documentClass), request);
     }
 

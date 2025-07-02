@@ -1589,8 +1589,8 @@ class EMConfig {
     @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
             " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
             " on the JVM.")
-    var instrumentMR_OPENSEARCH = true
-
+    @Experimental
+    var instrumentMR_OPENSEARCH = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
