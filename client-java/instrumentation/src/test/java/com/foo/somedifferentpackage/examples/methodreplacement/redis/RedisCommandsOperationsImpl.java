@@ -9,6 +9,10 @@ public class RedisCommandsOperationsImpl implements RedisCommandsOperations {
 
     private static Object syncCommands;
 
+    private static final String GET = "get";
+    private static final String HGET = "hget";
+    private static final String HGETALL = "hgetall";
+
     public static void setSyncCommands(Object commands) {
         syncCommands = commands;
     }
@@ -16,7 +20,7 @@ public class RedisCommandsOperationsImpl implements RedisCommandsOperations {
     @Override
     public String get(String key) {
         try {
-            Method method = syncCommands.getClass().getMethod("get", Object.class);
+            Method method = syncCommands.getClass().getMethod(GET, Object.class);
             return (String) method.invoke(syncCommands, key);
         } catch (Exception e) {
             throw new RuntimeException("Reflection for GET failed", e);
@@ -26,7 +30,7 @@ public class RedisCommandsOperationsImpl implements RedisCommandsOperations {
     @Override
     public String hget(String key, String hashKey) {
         try {
-            Method method = syncCommands.getClass().getMethod("hget", Object.class, Object.class);
+            Method method = syncCommands.getClass().getMethod(HGET, Object.class, Object.class);
             return (String) method.invoke(syncCommands, key, hashKey);
         } catch (Exception e) {
             throw new RuntimeException("Reflection for HGET failed", e);
@@ -36,7 +40,7 @@ public class RedisCommandsOperationsImpl implements RedisCommandsOperations {
     @Override
     public Map<String, String> hgetall(String key) {
         try {
-            Method method = syncCommands.getClass().getMethod("hgetall", Object.class);
+            Method method = syncCommands.getClass().getMethod(HGETALL, Object.class);
             Object result = method.invoke(syncCommands, key);
             return (Map<String, String>) result;
         } catch (Exception e) {
