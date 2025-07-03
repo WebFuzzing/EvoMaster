@@ -25,7 +25,7 @@ public abstract class OpenSearchController extends EmbeddedSutController {
     private static final int OPENSEARCH_PORT = 9200;
     private OpenSearchClient openSearchClient;
 
-    private final GenericContainer<?> opensearch = new OpensearchContainer<>("opensearchproject/opensearch:latest")
+    private final GenericContainer<?> opensearch = new OpensearchContainer("opensearchproject/opensearch:latest")
             .withExposedPorts(OPENSEARCH_PORT);
     private ConfigurableApplicationContext ctx;
 
