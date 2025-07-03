@@ -1131,9 +1131,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ){
         //TODO the other cases
 
-        handleForbiddenOperation(HttpVerb.DELETE, ExperimentalFaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
     }
@@ -1167,11 +1167,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         notRecognized.forEach {
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
+            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
         }
     }
 
@@ -1196,10 +1196,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
             }
         }
     }
