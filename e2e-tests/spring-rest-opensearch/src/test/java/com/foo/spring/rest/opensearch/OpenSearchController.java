@@ -15,6 +15,7 @@ import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.opensearch.client.opensearch.OpenSearchClient;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
+import org.opensearch.testcontainers.OpensearchContainer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.testcontainers.containers.GenericContainer;
@@ -24,7 +25,7 @@ public abstract class OpenSearchController extends EmbeddedSutController {
     private static final int OPENSEARCH_PORT = 9200;
     private OpenSearchClient openSearchClient;
 
-    private final GenericContainer<?> opensearch = new OpenSearchContainer<>("opensearchproject/opensearch:latest")
+    private final GenericContainer<?> opensearch = new OpensearchContainer<>("opensearchproject/opensearch:latest")
             .withExposedPorts(OPENSEARCH_PORT);
     private ConfigurableApplicationContext ctx;
 

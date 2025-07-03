@@ -56,6 +56,11 @@
             <artifactId>opensearch-java</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.opensearch</groupId>
+            <artifactId>opensearch-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-swagger2</artifactId>
             <exclusions>
