@@ -12,6 +12,7 @@ Under development in `master` branch.
 - Now generated tests have meaningful names, instead of being just numbers  like _test01()_.
 - For REST, a new security testing phase is executed, to check for access control vulnerabilities (e.g., BOLA and BFLA).
 - For black-box REST, now EvoMaster attempts to always DELETE data created in the tests with POST and PUT (i.e., tests try to clean up after themselves).
+- Added options to define dependencies and transformations among input values. For example, if an input is the signature/hash of other input variables, such rules can now be defined. Also useful when data needs to be encrypted at the application level. 
 
 ### Addressed GitHub Issues
 - #1171: IllegalStateException: only support Map with String key in EvoMaster

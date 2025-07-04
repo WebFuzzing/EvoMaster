@@ -121,7 +121,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.0.4</wfc.version>
+        <wfc.version>0.0.5</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
@@ -184,6 +184,8 @@
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
+        <org.opensearch.version>3.1.0</org.opensearch.version>
+        <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
     </properties>
 
 
@@ -771,6 +773,20 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <!-- OpenSearch -->
+            <dependency>
+                <groupId>org.opensearch.client</groupId>
+                <artifactId>opensearch-java</artifactId>
+                <version>${org.opensearch.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch-testcontainers</artifactId>
+                <version>${org.opensearch.testcontainers.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!--   XML  -->
