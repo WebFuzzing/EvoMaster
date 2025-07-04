@@ -173,6 +173,11 @@
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
