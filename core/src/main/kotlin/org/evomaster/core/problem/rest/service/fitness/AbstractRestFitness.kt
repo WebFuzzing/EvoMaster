@@ -39,6 +39,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.VulnerabilityAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -76,6 +77,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var vulnerabilityAnalyser: VulnerabilityAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -738,6 +742,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
+        if (config.vulnerabilityAnalyser) {
+            // TODO: check here for SSRF. if so, add to rcr object
+            if (vulnerabilityAnalyser.hasVulnerabilities(a)) {
+                // TODO: Add vulnerability marker to RestCall Result
+            }
+        }
+
         return handledSavedLocation
     }
 
@@ -1059,6 +1070,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
             analyzeSecurityProperties(individual,actionResults,fv)
+
+            if(config.vulnerabilityAnalyser){
+                handleVulnerabilities(individual, actionResults, fv)
+            }
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1136,6 +1151,30 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
+    }
+
+    private fun handleVulnerabilities(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        // TODO: Implement handling vulnerabilities
+        val vulnerableActions = individual.seeMainExecutableActions().filter {
+            vulnerabilityAnalyser.hasVulnerabilities(it)
+        }
+
+        if (vulnerableActions.isEmpty()) {
+            return
+        }
+
+        vulnerableActions.forEach {
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            r.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
+        }
     }
 
     private fun handleNotRecognizedAuthenticated(
