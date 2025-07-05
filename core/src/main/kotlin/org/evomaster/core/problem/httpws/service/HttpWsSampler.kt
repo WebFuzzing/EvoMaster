@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.httpws.service
 
+import com.webfuzzing.commons.auth.Header
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
-import org.evomaster.client.java.controller.api.dto.auth.HeaderDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -33,7 +33,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
      *
      * @param noAuthP the probability of having an HTTP call without any authentication header.
      */
-    fun sampleRandomAction(noAuthP: Double): HttpWsAction {
+    open fun sampleRandomAction(noAuthP: Double): HttpWsAction {
         val action = randomness.choose(actionCluster).copy() as HttpWsAction
         action.doInitialize(randomness)
         action.auth = getRandomAuth(noAuthP)
@@ -72,7 +72,10 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
             val k = it.indexOf(":")
             val name = it.substring(0, k)
             val content = it.substring(k+1)
-            dto.fixedHeaders.add(HeaderDto(name, content))
+            val header = Header()
+            header.name = name
+            header.value = content
+            dto.fixedHeaders.add(header)
         }
 
         dto.name = "Fixed Headers"

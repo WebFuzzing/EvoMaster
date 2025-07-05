@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.graphql.errors
 import com.foo.graphql.onlyerrors.OnlyErrorsController
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -59,7 +60,7 @@ class OnlyErrorsEMTest : SpringTestBase() {
         assertTrue(file.exists())
 
         val targets = file.readText()
-        assertTrue(targets.contains(FaultCategory.GQL_ERROR_FIELD.code.toString()))
+        assertTrue(targets.contains(ExperimentalFaultCategory.GQL_ERROR_FIELD.code.toString()))
     }
 
 }

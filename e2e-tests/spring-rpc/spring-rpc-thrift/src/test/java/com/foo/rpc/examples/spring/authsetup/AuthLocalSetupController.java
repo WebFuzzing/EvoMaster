@@ -67,7 +67,7 @@ public class AuthLocalSetupController extends SpringController {
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return Arrays.asList(new AuthenticationDto() {{
-            name = "foo";
+            setName("foo");
             localAuthSetup = new LocalAuthenticationDto() {{
                 authenticationInfo="{\n" +
                         "\"id\":\"foo\",\n" +

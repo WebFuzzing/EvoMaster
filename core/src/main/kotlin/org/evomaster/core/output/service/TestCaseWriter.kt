@@ -270,7 +270,7 @@ abstract class TestCaseWriter {
             result.getFaults().sortedBy { it.category.code }
                 .forEach {
                     val cat = it.category
-                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.name}. ${it.context}")
+                    lines.addSingleCommentLine("Fault${cat.code}. ${cat.descriptiveName}. ${it.context}")
                 }
         }
 

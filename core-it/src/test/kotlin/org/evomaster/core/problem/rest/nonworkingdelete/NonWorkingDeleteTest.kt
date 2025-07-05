@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.nonworkingdelete
 import bar.examples.it.spring.nonworkingdelete.NonWorkingDeleteApplication
 import bar.examples.it.spring.nonworkingdelete.NonWorkingDeleteController
 import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -61,6 +62,6 @@ class NonWorkingDeleteTest: IntegrationTestRestBase() {
 
         val ar = y.evaluatedMainActions()[2].result as RestCallResult
         assertEquals(1, ar.getFaults().size)
-        assertEquals(FaultCategory.HTTP_NONWORKING_DELETE, ar.getFaults()[0].category)
+        assertEquals(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE, ar.getFaults()[0].category)
     }
 }
