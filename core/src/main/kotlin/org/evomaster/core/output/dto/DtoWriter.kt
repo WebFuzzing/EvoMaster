@@ -8,11 +8,13 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -21,9 +23,21 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 
+/**
+ * When creating tests for REST APIs, enabling the [EMConfig.dtoForRequestPayload] feature causes EVoMaster to use
+ * DTOs when handling request payloads instead of stringifying the JSON payload.
+ *
+ * Using DTOs provides a major advantage towards code readability and sustainability. It is more flexible and scales
+ * better.
+ */
 object DtoWriter {
 
     private val log: Logger = LoggerFactory.getLogger(DtoWriter::class.java)
+
+    /**
+     * [MutableMap] that will collect the different DTOs to be handled by the test suite. Keys in the map are the
+     * DTO name String which translates directly into the .kt or .java class name in filesystem.
+     */
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
     fun write(testSuitePath: Path, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
@@ -51,6 +65,7 @@ object DtoWriter {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
         val dtoName = gene.refType?:TestWriterUtils.safeVariableName(actionName)
         val dtoClass = DtoClass(dtoName)
+        // TODO: add suport for additionalFields
         gene.fixedFields.forEach { field ->
             try {
                 val wrappedGene = GeneUtils.getWrappedValueGene(field)
@@ -79,9 +94,11 @@ object DtoWriter {
             is DoubleGene -> "Double"
             is FloatGene -> "Float"
             is Base64StringGene -> "String"
-            // Time and Date genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
+            // Time, Date, DateTime and Regex genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
             is DateGene -> "String"
             is TimeGene -> "String"
+            is DateTimeGene -> "String"
+            is RegexGene -> "String"
             is BooleanGene -> "Boolean"
             is ObjectGene -> StringUtils.capitalization(fieldName)
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName}")
