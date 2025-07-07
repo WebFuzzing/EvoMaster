@@ -3,8 +3,9 @@ package org.evomaster.core.problem.enterprise.service
 import com.google.inject.AbstractModule
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.problem.security.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.verifiers.HttpCallbackVerifier
 
-abstract class EnterpriseModule :  AbstractModule() {
+abstract class EnterpriseModule : AbstractModule() {
 
     override fun configure() {
         super.configure()
@@ -16,6 +17,9 @@ abstract class EnterpriseModule :  AbstractModule() {
             .asEagerSingleton()
 
         bind(VulnerabilityAnalyser::class.java)
+            .asEagerSingleton()
+
+        bind(HttpCallbackVerifier::class.java)
             .asEagerSingleton()
     }
 }

@@ -19,6 +19,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
@@ -1072,10 +1073,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //TODO likely would need to consider SEEDED as well in future
         if (config.security && individual.sampleType == SampleType.SECURITY) {
             analyzeSecurityProperties(individual, actionResults, fv)
+        }
 
-            if (config.vulnerabilityAnalyser) {
-                handleVulnerabilities(individual, actionResults, fv)
-            }
+        if (config.vulnerabilityAnalyser) {
+            handleVulnerabilities(individual, actionResults, fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1179,6 +1180,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        actionResults.forEach { actionResult ->
+            val isVulnerable = actionResult.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)
+            if (isVulnerable == "true") {
+                //
+            }
+        }
         // TODO: Implement handling vulnerabilities
         val vulnerableActions = individual.seeMainExecutableActions().filter {
             vulnerabilityAnalyser.hasVulnerabilities(it)

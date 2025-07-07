@@ -2,18 +2,27 @@ package org.evomaster.core.problem.security.verifiers
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.any
+import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import com.github.tomakehurst.wiremock.common.Metadata.metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
+import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.SecuritySharedUtils
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.security.VulnerabilityVerifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 
 class HttpCallbackVerifier : VulnerabilityVerifier() {
+
+    @Inject
+    private lateinit var config: EMConfig
 
     private var wireMockServer: WireMockServer? = null
 
@@ -25,7 +34,20 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
     }
 
+    @PostConstruct
     override fun init() {
+        if (config.vulnerabilityAnalyser) {
+            // TODO: Nothing to do now
+        }
+    }
+
+    @PreDestroy
+    override fun destroy() {
+        wireMockServer!!.stop()
+        wireMockServer = null
+    }
+
+    fun initWireMockServer() {
         try {
             val config = WireMockConfiguration()
                 .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
@@ -35,19 +57,18 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
             wireMockServer!!.stubFor(
-                WireMock.any(WireMock.anyUrl())
+                any(anyUrl())
                     .atPriority(100)
                     .willReturn(
-                        WireMock.aResponse()
+                        aResponse()
                             .withStatus(418)
                             .withBody("I'm a teapot")
                     )
             )
         } catch (e: Exception) {
             throw RuntimeException(
-                "Failed to initialize SSRFVulnerabilityVerifier due to " +
-                        e.message +
-                        " If it is macOS, please make sure loopback alias is set."
+                e.message +
+                        ". If it is macOS, please make sure loopback alias is set."
             )
         }
     }
@@ -75,6 +96,11 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         return link
     }
 
+    /**
+     * @param name represents the [Action] name
+     *
+     * During stub creation, stubs are tagged with [Action] name in the metadata.
+     */
     override fun verify(name: String): Boolean {
         if (isActive) {
             wireMockServer!!.allServeEvents
@@ -88,11 +114,6 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         }
 
         return false
-    }
-
-    override fun destroy() {
-        wireMockServer!!.stop()
-        wireMockServer = null
     }
 
     fun resetHTTPVerifier() {
