@@ -121,4 +121,10 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     fun setAppliedLink(applied: Boolean) = addResultValue(APPLIED_LINK, applied.toString())
     fun getAppliedLink(): Boolean = getResultValue(APPLIED_LINK)?.toBoolean() ?: false
+
+    /**
+     * FIXME: When dealing with additional vulnerabilities, consider changing the data structure.
+     */
+    fun setVulnerableForSSRF(on: Boolean) = addResultValue(VULNERABLE_SSRF, on.toString())
+    fun getVulnerableForSSRF() : Boolean = getResultValue(VULNERABLE_SSRF)?.toBoolean() ?: false
 }
