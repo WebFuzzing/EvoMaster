@@ -20,6 +20,11 @@ public class DbSpecification {
     public final Connection connection;
 
     /**
+     * sql connection to data which collected eg during production
+     */
+    public final Connection harvestConnection;
+
+    /**
      * schema name
      * TODO might remove this later if we could get such info with the connection
      */
@@ -45,17 +50,22 @@ public class DbSpecification {
     public final boolean employSmartDbClean;
 
 
-    private DbSpecification(DatabaseType dbType, Connection connection, List<String> schemaNames, String initSqlScript, String initSqlOnResourcePath, boolean employSmartDbClean) {
+    private DbSpecification(DatabaseType dbType, Connection connection, Connection harvestConnection, List<String> schemaNames, String initSqlScript, String initSqlOnResourcePath, boolean employSmartDbClean) {
         this.dbType = Objects.requireNonNull(dbType);
         this.connection = Objects.requireNonNull(connection);
         this.schemaNames = schemaNames;
         this.initSqlScript = initSqlScript;
         this.initSqlOnResourcePath = initSqlOnResourcePath;
         this.employSmartDbClean = employSmartDbClean;
+        this.harvestConnection = harvestConnection;
     }
 
     public DbSpecification(DatabaseType dbType, Connection connection) {
-        this(dbType, connection, null, null, null, true);
+        this(dbType, connection, null, null, null, null, true);
+    }
+
+    public DbSpecification(DatabaseType dbType, Connection connection, Connection harvestConnection) {
+        this(dbType, connection, harvestConnection, null, null, null, true);
     }
 
     public DbSpecification withSchemas(String... schemas){
@@ -72,6 +82,7 @@ public class DbSpecification {
         return new DbSpecification(
                 this.dbType,
                 this.connection,
+                this.harvestConnection,
                 Arrays.asList(schemas),
                 this.initSqlScript,
                 this.initSqlOnResourcePath,
@@ -89,6 +100,7 @@ public class DbSpecification {
         return new DbSpecification(
                 this.dbType,
                 this.connection,
+                this.harvestConnection,
                 this.schemaNames,
                 this.initSqlScript,
                 this.initSqlOnResourcePath,
@@ -111,6 +123,7 @@ public class DbSpecification {
         return new DbSpecification(
                 this.dbType,
                 this.connection,
+                this.harvestConnection,
                 this.schemaNames,
                 script,
                 this.initSqlOnResourcePath,
@@ -132,6 +145,7 @@ public class DbSpecification {
         return new DbSpecification(
                 this.dbType,
                 this.connection,
+                this.harvestConnection,
                 this.schemaNames,
                 this.initSqlScript,
                 path,
