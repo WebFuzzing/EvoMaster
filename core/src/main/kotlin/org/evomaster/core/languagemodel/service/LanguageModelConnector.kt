@@ -79,7 +79,6 @@ class LanguageModelConnector {
                 )
                 return
             } else {
-                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
                 isLanguageModelAvailable = true
             }
 
@@ -263,6 +262,8 @@ class LanguageModelConnector {
             )
 
             if (bodyObject.models.any { it.name == config.languageModelName }) {
+                LoggingUtil.getInfoLogger().info("Language model ${config.languageModelName} is available.")
+
                 return true
             }
         }

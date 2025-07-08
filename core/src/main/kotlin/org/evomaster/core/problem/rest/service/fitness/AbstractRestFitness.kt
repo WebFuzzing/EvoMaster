@@ -1179,28 +1179,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        actionResults.forEach { actionResult ->
-            val isVulnerable = actionResult.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)
-            if (isVulnerable == "true") {
-                //
+
+        individual.seeMainExecutableActions().forEach {
+            val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+
+            if (ar != null && ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)?.toBoolean() ?: false) {
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+
+                ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
             }
-        }
-        // TODO: Implement handling vulnerabilities
-        val vulnerableActions = individual.seeMainExecutableActions().filter {
-            vulnerabilityAnalyser.hasVulnerabilities(it)
-        }
-
-        if (vulnerableActions.isEmpty()) {
-            return
-        }
-
-        vulnerableActions.forEach {
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
         }
     }
 
