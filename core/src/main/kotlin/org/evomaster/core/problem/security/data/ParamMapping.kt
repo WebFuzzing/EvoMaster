@@ -12,10 +12,10 @@ class ParamMapping (
      * Key contains the vulnerability class, and value marks the exploitability
      * using a [Boolean].
      */
-    var vulnerabilityClasses: MutableMap<VulnerabilityClass, Boolean> = mutableMapOf()
+    var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
 
     fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
-        vulnerabilityClasses[vulnerabilityClass] = false
+        vulnerabilityClasses.add(vulnerabilityClass)
     }
 
     fun hasVulnerabilityClass(vulnerabilityClass: VulnerabilityClass): Boolean {
