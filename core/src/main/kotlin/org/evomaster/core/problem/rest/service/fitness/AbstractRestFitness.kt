@@ -1179,10 +1179,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!vulnerabilityAnalyser.analysing) {
-            return
-        }
-
         actionResults.forEach { actionResult ->
             val isVulnerable = actionResult.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)
             if (isVulnerable == "true") {
