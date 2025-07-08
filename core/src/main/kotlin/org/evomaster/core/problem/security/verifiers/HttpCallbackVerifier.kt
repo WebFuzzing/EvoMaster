@@ -73,6 +73,26 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         }
     }
 
+    fun hasTokenForActionName(name: String, value: String): Boolean {
+        return traceTokens.containsKey(name) && traceTokens[name] == value
+    }
+
+    fun isCallbackURL(value: String): Boolean {
+        val pattern =
+            """^http:\/\/${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:[0-9]{5}\/sink\/.{36}""".toRegex()
+
+        return pattern.matches(value)
+    }
+
+    fun getTraceTokenFromURL(url: String): String {
+        if (isCallbackURL(url)) {
+            val token = url.substringAfterLast("/")
+            return token
+        }
+
+        return ""
+    }
+
     fun generateCallbackLink(name: String): String {
         val token = UUID.randomUUID().toString()
         val ssrfPath = "/sink/$token"

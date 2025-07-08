@@ -1087,7 +1087,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
-
         handleDeleteShouldDelete(individual, actionResults, fv)
         handleRepeatedCreatePut(individual, actionResults, fv)
     }
@@ -1180,6 +1179,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        if (!vulnerabilityAnalyser.analysing) {
+            return
+        }
+
         actionResults.forEach { actionResult ->
             val isVulnerable = actionResult.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)
             if (isVulnerable == "true") {
