@@ -31,6 +31,7 @@
         <module>spring-graphql-bb</module>
         <module>emb-json</module>
         <module>spring-rest-multidb</module>
+        <module>spring-rest-opensearch</module>
         <module>spring-rest-rsa</module>
 
     </modules>

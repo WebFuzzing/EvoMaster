@@ -1281,8 +1281,14 @@ class EMConfig {
     var aiResponseClassifierLearningRate: Double = 0.01
 
     @Experimental
-    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
+            " This also includes a index.html web application to visualize such data.")
     var writeWFCReport = false
+
+    @Experimental
+    @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
+            " the JSON report file will be created.")
+    var writeWFCReportExcludeWebApp = false
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
@@ -1580,6 +1586,11 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_OPENSEARCH = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -2496,7 +2507,7 @@ class EMConfig {
     @Cfg("Specify the probability of using the data pool when sampling test cases." +
             " This is for white-box (wb) mode")
     var wbProbabilityUseDataPool = 0.2
-    
+
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
@@ -2595,6 +2606,7 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         return categories.joinToString(",")
     }
 
@@ -2639,4 +2651,6 @@ class EMConfig {
     fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 }
