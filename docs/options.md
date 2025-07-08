@@ -266,12 +266,14 @@ There are 3 types of options:
 |`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
 |`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
+|`maxSizeOfHarvestedDbRecordsPerTable`| __Int__. Specify a maximum number of harvested records per table. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeOfMutatingInitAction`| __Int__. Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING, DPC_DECREASING`. *Default value*: `SPECIFIED`.|
 |`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. Note that a negative number presents no limit per test suite. *Default value*: `-1`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`prematureStopStrategy`| __Enum__. Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY), or at least one new target is fully covered (NEW). *Valid values*: `ANY, NEW`. *Default value*: `NEW`.|
 |`probOfHandlingLength`| __Double__. Specify a probability of applying length handling. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+|`probOfHarvestingDbRecords`| __Double__. Probability of harvesting database records using a given data source (e.g., production data). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfHarvestingResponsesFromActualExternalServices`| __Double__. a probability of harvesting actual responses from external services as seeds. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfMutatingResponsesBasedOnActualResponse`| __Double__. a probability of mutating mocked responses based on actual responses. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfPrioritizingSuccessfulHarvestedActualResponses`| __Double__. a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
@@ -290,6 +292,7 @@ There are 3 types of options:
 |`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
 |`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
+|`useDbRecordHarvestStrategy`| __Enum__. Specify a strategy to harvest database records. *Valid values*: `RANDOME`. *Default value*: `RANDOME`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|

@@ -1675,6 +1675,24 @@ class EMConfig {
     var probOfSamplingScheduleTask = 0.0
 
     @Experimental
+    @Cfg("Probability of harvesting database records using a given data source (e.g., production data)")
+    @Probability
+    var probOfHarvestingDbRecords  = 0.0
+
+    @Experimental
+    @Cfg("Specify a maximum number of harvested records per table")
+    @Min(0.0)
+    var maxSizeOfHarvestedDbRecordsPerTable = 0
+
+    @Experimental
+    @Cfg("Specify a strategy to harvest database records")
+    var useDbRecordHarvestStrategy  = DatabaseRecordHarvestStrategy.RANDOME
+
+    enum class DatabaseRecordHarvestStrategy{
+        RANDOME
+    }
+
+    @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
     @Min(0.0)
     var maxSizeOfHandlingResource = 0
