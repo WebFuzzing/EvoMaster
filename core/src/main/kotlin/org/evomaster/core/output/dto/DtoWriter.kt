@@ -43,19 +43,21 @@ object DtoWriter {
     fun write(testSuitePath: Path, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
         getDtos(actionDefinitions)
         dtoCollector.forEach {
-            JavaDtoWriter.write(testSuitePath, outputFormat, it.value)
+            when {
+                outputFormat.isJava() -> JavaDtoWriter.write(testSuitePath, outputFormat, it.value)
+                else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
+            }
         }
     }
 
     private fun getDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
-            action.getViewOfChildren().forEach { child ->
-                if (child is BodyParam) {
-                    val primaryGene = GeneUtils.getWrappedValueGene(child.primaryGene())
-                    // TODO: Payloads could also be json arrays, analyze ArrayGene
-                    if (primaryGene is ObjectGene) {
-                        getDtoFromObject(primaryGene, action.getName())
-                    }
+        action.getViewOfChildren().find { it is BodyParam }
+            .let {
+                val primaryGene = GeneUtils.getWrappedValueGene((it as BodyParam).primaryGene())
+                // TODO: Payloads could also be json arrays, analyze ArrayGene
+                if (primaryGene is ObjectGene) {
+                    getDtoFromObject(primaryGene, action.getName())
                 }
             }
         }
