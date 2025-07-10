@@ -201,7 +201,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
-        val verb = call.verb.name.lowercase(Locale.ENGLISH)
+        val verb = call.verb.name.lowercase(Locale.getDefault())
 
         if (format.isCsharp()) {
             lines.append(".${StringUtils.capitalization(verb)}Async(")
