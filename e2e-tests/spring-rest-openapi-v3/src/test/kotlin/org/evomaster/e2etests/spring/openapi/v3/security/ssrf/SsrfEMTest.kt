@@ -18,16 +18,24 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Work in progress")
+    @Disabled("WIP")
     @Test
     fun testSsrfEM() {
-
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
-            1000
+            100
         ) { args: MutableList<String> ->
 
+            setOption(args, "externalServiceIPSelectionStrategy", "USER")
+            setOption(args, "externalServiceIP", "127.0.0.6")
+            setOption(args, "instrumentMR_NET", "true")
+
             setOption(args, "security", "true")
+
+            setOption(args, "vulnerabilityAnalyser", "true")
+            setOption(args, "vulnerabilitySelectionStrategy", "LLM")
+
+            setOption(args, "languageModelConnector", "true")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
