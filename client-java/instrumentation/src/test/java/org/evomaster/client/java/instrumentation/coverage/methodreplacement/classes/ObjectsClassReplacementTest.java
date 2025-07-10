@@ -117,7 +117,7 @@ public class ObjectsClassReplacementTest {
 
         String format = "MM/dd/yyyy hh:mm a";
 
-        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.ENGLISH);
+        SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
 
         Date dateObject1 = sdf.parse(date1 + " " + time1);
         Date dateObject2 = sdf.parse(date1 + " " + time2);

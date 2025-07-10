@@ -9,8 +9,8 @@ object StringUtils {
             return word
         }
 
-        return word.substring(0, 1).uppercase(Locale.ENGLISH) +
-                word.substring(1).lowercase(Locale.ENGLISH)
+        return word.substring(0, 1).uppercase(Locale.getDefault()) +
+                word.substring(1).lowercase(Locale.getDefault())
     }
 
     /**
