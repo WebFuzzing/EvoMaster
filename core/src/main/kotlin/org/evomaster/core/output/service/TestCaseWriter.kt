@@ -344,6 +344,12 @@ abstract class TestCaseWriter {
             lines.indented {
                 lines.add("raise e")
             }
+            if (config.testTimeout > 0) {
+                lines.add("except TimeoutError as e:")
+                lines.indented {
+                    lines.add("unittest.skip(\"Test skipped due to timeout\")")
+                }
+            }
         }
 
         when {
