@@ -289,6 +289,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 if (bodyParam != null) {
                     lines.append(", data=body")
                 }
+                if(config.testTimeout > 0) {
+                    lines.append(", timeout=${config.testTimeout}")
+                }
             }
         }
 
