@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -75,9 +76,21 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
         ExecutionTracer.addOpenSearchInfo(info);
     }
 
-    private static Object getIndex(Object query) {
+    private static List<String> getIndex(Object query) {
         try {
-            return query.getClass().getMethod(INDEX_METHOD).invoke(query);
+            Object result = query.getClass().getMethod(INDEX_METHOD).invoke(query);
+            if (result == null) {
+                return null;
+            }
+
+            if (result instanceof List) {
+                List<String> indexList = (List<String>) result;
+                return indexList;
+            } else if (result instanceof String) {
+                return Collections.singletonList((String) result);
+            } else {
+                return Collections.singletonList(result.toString());
+            }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }

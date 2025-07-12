@@ -2,6 +2,7 @@ package com.opensearch.config;
 
 import java.util.List;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch.core.GetRequest;
 import org.opensearch.client.opensearch.core.GetResponse;
 import org.opensearch.client.opensearch.core.SearchRequest;
@@ -34,6 +35,11 @@ public class OpenSearchRepository {
         SearchRequest searchRequest = new SearchRequest.Builder()
             .index(openSearchProperties.getIndexName())
             .q(wrapIntoDoubleQuotes(q))
+            // query example which matches 2 random field names with query string random
+            .query(
+                query -> query
+                    .match(matcher -> matcher.field("title").query(value -> value.stringValue(q)))
+            )
             .build();
 
         SearchResponse<T> response = openSearchClient.search(searchRequest, clazz);
