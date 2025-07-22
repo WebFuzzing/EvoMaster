@@ -122,7 +122,7 @@ public class AuthUtils {
             String payload,
             String extractFromField){
 
-        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "JWT ", "application/json");
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "JWT ");
     }
 
 
@@ -132,7 +132,17 @@ public class AuthUtils {
             String payload,
             String extractFromField){
 
-        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "Bearer ", "application/json");
+        return  getForJsonToken(dtoName, postEndpoint, payload, extractFromField, "Bearer ");
+    }
+
+    public static AuthenticationDto getForJsonToken(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField,
+            String headerPrefix
+    ){
+        return getForJsonToken(dtoName, postEndpoint, payload, extractFromField, headerPrefix,"application/json");
     }
 
     public static AuthenticationDto getForJsonToken(
