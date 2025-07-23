@@ -166,7 +166,7 @@ public class TestabilityExcInstrumentedTest {
 
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         Date dateInstance1 = sdf.parse("07/15/2016 11:00 AM");
         Date dateInstance2 = sdf.parse("07/15/2016 11:15 AM");
 
@@ -204,7 +204,7 @@ public class TestabilityExcInstrumentedTest {
 
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         Date dateInstance1 = sdf.parse("07/15/2016 11:00 AM");
         Date dateInstance2 = sdf.parse("07/15/2016 11:15 AM");
 
@@ -242,7 +242,7 @@ public class TestabilityExcInstrumentedTest {
 
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a", Locale.getDefault());
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy hh:mm a");
         Date dateInstance1 = sdf.parse("07/15/2016 11:00 AM");
         Date dateInstance2 = sdf.parse("07/15/2016 11:15 AM");
         Date dateInstance3 = sdf.parse("07/15/2016 11:30 AM");

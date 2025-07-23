@@ -41,7 +41,7 @@ public class ColumnTypeParser {
                             // add pattern
                             .appendPattern("dd-MMM-yy")
                             // create formatter (use English Locale to parse month names)
-                            .toFormatter(Locale.getDefault());
+                            .toFormatter();
 
                     return LocalDate.parse(content.toString(), df)
                             .atStartOfDay().toInstant(ZoneOffset.UTC);

@@ -42,7 +42,7 @@ public class SqlParserUtils {
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix) {
-        return input != null && input.trim().toLowerCase(Locale.getDefault()).startsWith(prefix);
+        return input != null && input.trim().toLowerCase().startsWith(prefix);
     }
 
     private static boolean isASequence(String input) {
