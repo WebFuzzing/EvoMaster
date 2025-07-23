@@ -289,6 +289,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 if (bodyParam != null) {
                     lines.append(", data=body")
                 }
+                if(config.testTimeout > 0) {
+                    /*
+                        As timeout at test level does not work reliably in Python, we do timeout as well in each HTTP call.
+                    */
+                    lines.append(", timeout=${config.testTimeout}")
+                }
             }
         }
 
