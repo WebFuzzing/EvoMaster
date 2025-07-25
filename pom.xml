@@ -1151,7 +1151,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <!--  Commented out, as no longer using CircleCI-->
                         <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
