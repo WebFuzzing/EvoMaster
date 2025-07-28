@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.security.verifiers
 
 import com.github.tomakehurst.wiremock.WireMockServer
+import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.any
@@ -56,15 +57,7 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
-            wireMockServer!!.stubFor(
-                any(anyUrl())
-                    .atPriority(100)
-                    .willReturn(
-                        aResponse()
-                            .withStatus(418)
-                            .withBody("I'm a teapot")
-                    )
-            )
+            wireMockServer!!.stubFor(getDefaultStub())
         } catch (e: Exception) {
             throw RuntimeException(
                 e.message +
@@ -138,8 +131,18 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
 
     fun resetHTTPVerifier() {
         wireMockServer?.resetAll()
-        // TODO: set default stub
+        wireMockServer?.stubFor(getDefaultStub())
         traceTokens.clear()
+    }
+
+    private fun getDefaultStub() : MappingBuilder {
+        return any(anyUrl())
+            .atPriority(100)
+            .willReturn(
+                aResponse()
+                    .withStatus(418)
+                    .withBody("I'm a teapot")
+            )
     }
 
 }
