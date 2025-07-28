@@ -26,7 +26,6 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
 
-        // TODO: Seran, add new entry for SSRF detection. boolean?
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
     }
 
@@ -123,7 +122,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun getAppliedLink(): Boolean = getResultValue(APPLIED_LINK)?.toBoolean() ?: false
 
     /**
-     * FIXME: When dealing with additional vulnerabilities, consider changing the data structure.
+     * TODO: When dealing with additional vulnerabilities, consider changing the data structure.
      */
     fun setVulnerableForSSRF(on: Boolean) = addResultValue(VULNERABLE_SSRF, on.toString())
     fun getVulnerableForSSRF() : Boolean = getResultValue(VULNERABLE_SSRF)?.toBoolean() ?: false
