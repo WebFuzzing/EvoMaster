@@ -201,7 +201,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
-        val verb = call.verb.name.lowercase(Locale.getDefault())
+        val verb = call.verb.name.lowercase()
 
         if (format.isCsharp()) {
             lines.append(".${StringUtils.capitalization(verb)}Async(")
@@ -288,6 +288,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val bodyParam = action.parameters.find { param -> param is BodyParam } as BodyParam?
                 if (bodyParam != null) {
                     lines.append(", data=body")
+                }
+                if(config.testTimeout > 0) {
+                    /*
+                        As timeout at test level does not work reliably in Python, we do timeout as well in each HTTP call.
+                    */
+                    lines.append(", timeout=${config.testTimeout}")
                 }
             }
         }
