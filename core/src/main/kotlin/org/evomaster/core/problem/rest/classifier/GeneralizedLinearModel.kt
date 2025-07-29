@@ -54,7 +54,7 @@ class GLMOnlineClassifier(
         val prob400 = 1.0 - prob200
 
         return AIResponseClassification(
-            probabilities = mapOf(
+            scores = mapOf(
                 200 to prob200,
                 400 to prob400
             )

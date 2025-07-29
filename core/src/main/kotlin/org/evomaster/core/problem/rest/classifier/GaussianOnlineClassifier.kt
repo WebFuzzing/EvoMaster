@@ -76,16 +76,17 @@ class GaussianOnlineClassifier : AIModel {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logProbability200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
-        val logProbability400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
+        val logLikelihood200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
+        val logLikelihood400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
 
-        val probability200 = exp(logProbability200)
-        val probability400 = exp(logProbability400)
+        // ensure the outputs as positives
+        val likelihood200 = exp(logLikelihood200)
+        val likelihood400 = exp(logLikelihood400)
 
         return AIResponseClassification(
-            probabilities = mapOf(
-                200 to probability200,
-                400 to probability400
+            scores = mapOf(
+                200 to likelihood200,
+                400 to likelihood400
             )
         )
     }

@@ -2,17 +2,18 @@ package org.evomaster.core.problem.rest.classifier
 
 class AIResponseClassification(
     /**
-     * Map from HTTP Status Code to the probability of getting such code as response.
-     * If code is not defined, then expect probability to be 0.
+     * Map from HTTP Status Code to the scores of getting such code as response.
+     * Score is a positive value reflecting the likelihood or probability of occurrence based on the applied model
+     * If code is not defined, then expect the score as 0.
      */
-    val probabilities : Map<Int, Double> = mapOf()
+    val scores : Map<Int, Double> = mapOf()
 ) {
 
-    fun probabilityOf400() : Double{
+    fun scoreOf400() : Double{
 
-        if(probabilities[400] == null){
+        if(scores[400] == null){
             return 0.0
         }
-        return probabilities[400]!!
+        return scores[400]!!
     }
 }

@@ -13,7 +13,6 @@ import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
-import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -71,7 +70,6 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         return result
     }
 
-
     fun runClassifierExample() {
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
         val restSchema = RestSchema(schema)
@@ -84,88 +82,96 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             probRestExamples = 0.0
         }
 
-
         val options = RestActionBuilderV3.Options(config)
         val actionCluster = mutableMapOf<String, Action>()
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
 
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
-        val pathToDimension = mutableMapOf<RestPath, Int>()
+        val endpointToDimension = mutableMapOf<String, Int?>()
         for (action in actionList) {
-            val path = action.path
-            if (pathToDimension.containsKey(path)) continue
+            val name = action.getName()
 
-            val dimension = action.parameters.count { p ->
+            val hasUnsupportedGene = action.parameters.any { p ->
                 val g = p.gene
-                g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
+                g !is IntegerGene && g !is DoubleGene && g !is BooleanGene && g !is EnumGene<*>
             }
-            pathToDimension[path] = dimension
+
+            val dimension = if (hasUnsupportedGene) {
+                null
+            } else {
+                action.parameters.count { p ->
+                    val g = p.gene
+                    g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
+                }
+            }
+
+            println("Endpoint: $name, dimension: $dimension")
+            endpointToDimension[name] = dimension
         }
 
-        val pathToClassifier = mutableMapOf<RestPath, GaussianOnlineClassifier>()
-        for ((path, dimension) in pathToDimension) {
-            val model = GaussianOnlineClassifier()
-            model.setDimension(dimension)
-            pathToClassifier[path] = model
+        /**
+         * Initialize a classifier for each endpoint
+         * For an endpoint containing unsupported genes, the associated classifier is null
+         */
+        val endpointToClassifier = mutableMapOf<String, GaussianOnlineClassifier?>()
+        for ((name, dimension) in endpointToDimension) {
+            if(dimension==null){
+                endpointToClassifier[name] = null
+            }else{
+                val model = GaussianOnlineClassifier()
+                model.setDimension(dimension)
+                endpointToClassifier[name] = model
+            }
         }
 
-        println("Classifiers initialized with their dimensions:")
-        for ((path, expected) in pathToDimension) {
-            val classifier = pathToClassifier[path]!!
-            println("$path -> expected: $expected, actualDim: ${classifier.getDimension()}")
+        for ((name, expectedDimension) in endpointToDimension) {
+            println("Expected dimension for $name: $expectedDimension")
         }
 
-//        val random = Randomness()
-//        val sampler = injector.getInstance(AbstractRestSampler::class.java)
-//        val template = random.choose(actionList)
-//        val sampledAction = template.copy() as RestCallAction
-//        sampledAction.doInitialize(random)
-//
-//        //  createIndividual doesn't work!
-//        //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
-//
-//        val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
-//        val mainAction = individual.seeMainExecutableActions()[0]
-//        val response = executeRestCallAction(mainAction,"$baseUrlOfSut")
-//        println("Response:\n${response.getStatusCode()}")
-
+        // Execute the procedure for a period of time
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         var time = 1
-        val timeLimit = 20
+        val timeLimit = 200
         while (time <= timeLimit) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
 
-            val path = sampledAction.path
-            val dimension = pathToDimension[path] ?: error("No dimension for path: $path")
-            val classifier = pathToClassifier[path] ?: error("Expected classifier for path: $path")
+            val name = sampledAction.getName()
+            val classifier = endpointToClassifier[name]
+            val dimension = endpointToDimension[name]
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
 
             println("*************************************************")
             println("Time         : $time")
-            println("Path         : $path")
+            println("Path         : $name")
+            println("Classifier   : ${if (classifier == null) "null" else "GAUSSIAN"}")
+            println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
-            println("Input dim    : ${classifier.getDimension()}")
-            println("Expected Dim : $dimension")
             println("Actual Genes : ${geneValues.size}")
 
-            //  //executeRestCallAction is replaced with createIndividual to avoid override error
+            //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
             val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
             val result = executeRestCallAction(action,"$baseUrlOfSut")
-            println("Response:\n${result.getStatusCode()}")
+            println("Response     : ${result.getStatusCode()}")
+
+            // Skip classification for the endpoints with unsupported genes
+            if (classifier==null){
+                println("No classification as the classifier is null, i.e., the endpoint contains unsupported genes")
+                continue
+            }
 
             // Update and classify
             classifier.updateModel(action, result)
             val classification = classifier.classify(action)
 
-            println("Probabilities: ${classification.probabilities}")
-            require(classification.probabilities.values.all { it in 0.0..1.0 }) {
-                "All probabilities must be in [0,1]"
+            println("Score: ${classification.scores}")
+            require(classification.scores.values.all { it >= 0 }) {
+                "In Gaussian scores must be positive as they are likelihoods."
             }
 
             val d200 = classifier.getDensity200()
@@ -180,7 +186,6 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             formatStats("Density200", d200.mean, d200.variance, d200.n)
             formatStats("Density400", d400.mean, d400.variance, d400.n)
 
-            println("----------------------------------")
             time++
         }
     }
