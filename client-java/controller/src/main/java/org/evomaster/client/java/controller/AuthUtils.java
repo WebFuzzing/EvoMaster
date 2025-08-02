@@ -156,7 +156,12 @@ public class AuthUtils {
 
         LoginEndpoint le = new LoginEndpoint();
 
-        le.setEndpoint(postEndpoint);
+        if(postEndpoint.startsWith("http://") || postEndpoint.startsWith("https://")){
+            le.setExternalEndpointURL(postEndpoint);
+        } else {
+            le.setEndpoint(postEndpoint);
+        }
+
         le.setVerb(LoginEndpoint.HttpVerb.POST);
         le.setContentType(contentType);
         le.setExpectCookies(false);
