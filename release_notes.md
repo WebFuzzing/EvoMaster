@@ -19,7 +19,8 @@ Under development in `master` branch.
 - #1159: EvoMaster crashed when reading em.yaml file 
 - #1154: Support for generating inputs dealing with RSA encryption 
 
-
+### Fixed Bugs
+- Fixed issues in which too many repeated schema faults (eg, when returned responses are arrays of objects) were wrongly flagged as distinct faults. 
 
 # Version: 3.4.0
 
