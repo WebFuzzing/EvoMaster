@@ -111,9 +111,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         /*
             Ids are supposed to be unique, but might have invalid characters for a variable
          */
-        //TODO make sure name is syntactically valid
-
-        return "location_${id.trim().replace(" ", "_").replace(Individual.LOCAL_ID_PREFIX_ACTION,"")}"
+        val suffix = TestWriterUtils.safeVariableName(id.trim().replace(Individual.LOCAL_ID_PREFIX_ACTION,""))
+        return "location_$suffix"
     }
 
 
