@@ -109,6 +109,9 @@ class DtoWriter {
         })
     }
 
+    /**
+     * @return collected DTOs by the DTO writer. Only for testing, otherwise we're breaking encapsulation.
+     */
     @VisibleForTesting
     internal fun getCollectedDtos() : Map<String, DtoClass> {
         return dtoCollector
