@@ -66,9 +66,10 @@ class DtoWriter {
 
     private fun getDtoFromObject(gene: ObjectGene, actionName: String) {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
+        // TODO: consider an inline schema using more than one possible component: any/one/allOf[object,object]
         val dtoName = gene.refType?:TestWriterUtils.safeVariableName(actionName)
         val dtoClass = DtoClass(dtoName)
-        // TODO: add suport for additionalFields
+        // TODO: add support for additionalFields
         gene.fixedFields.forEach { field ->
             try {
                 val wrappedGene = GeneUtils.getWrappedValueGene(field)
