@@ -722,13 +722,31 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
             val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
 
-            report.messages.forEach {
-                val discriminant = a.getName() + " -> " + it.message
+            val onePerType = report.messages
+                                    .groupBy { it.key }
+                                    .filter {
+                                        /*
+                                            FIXME this is due to bug in library.
+                                            see disabled test in [RestSchemaOraclesTest]
+                                         */
+                                        it.key !=  "validation.response.body.schema.additionalProperties"
+                                    }
+                                    .map { (key, value) -> value.first() }
+
+            onePerType.forEach {
+
+                val discriminant = a.getName() + " -> " + it.key
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
                 )
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), it.message))
+                val fault = DetectedFault(
+                    DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                    a.getName(),
+                    "Type: ${it.key}",
+                    it.message?.replace("\n"," ")
+                )
+                rcr.addFault(fault)
             }
         }
 
