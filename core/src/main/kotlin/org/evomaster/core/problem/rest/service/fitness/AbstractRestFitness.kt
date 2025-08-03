@@ -740,7 +740,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
                 )
                 fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                val fault = DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), "Type: ${it.key}", it.message)
+                val fault = DetectedFault(
+                    DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                    a.getName(),
+                    "Type: ${it.key}",
+                    it.message?.replace("\n"," ")
+                )
                 rcr.addFault(fault)
             }
         }
