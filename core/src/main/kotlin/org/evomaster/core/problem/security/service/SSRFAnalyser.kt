@@ -258,8 +258,7 @@ class SSRFAnalyser {
     }
 
     /**
-     * Run the determined vulnerability class (from the classification)
-     * analyzers
+     * Run the determined vulnerability class (from the classification) analysers.
      */
     private fun analyse() {
         if (config.problemType == EMConfig.ProblemType.REST) {
@@ -275,37 +274,44 @@ class SSRFAnalyser {
                             val mapping = actionVulnerabilityMapping[action.getName()]
 
                             if (mapping != null) {
-                                val copy = evaluatedIndividual.individual.copy() as RestIndividual
-                                // TODO: Need individual URL for each param?
-                                val callbackURL = httpCallbackVerifier.generateCallbackLink(
-                                    action.getName()
-                                )
-
-                                copy.seeMainExecutableActions().forEach { action ->
-                                    action.parameters.forEach { param ->
-                                        updateGeneWithCallbackURL(action.getName(), param.primaryGene(), callbackURL)
-                                    }
-                                }
-
-                                val executedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
-
-                                if (executedIndividual != null) {
-                                    // TODO: This have to be extended to mark other vulnerability types in future
-                                    actionVulnerabilityMapping.getValue(action.getName()).httpCallbackURL = callbackURL
-                                    val result = httpCallbackVerifier.verify(action.getName())
-                                    if (result) {
-                                        val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
-                                        actionMapping.isExploitable = true
-                                        actionMapping.securityFaults[DefinedFaultCategory.SSRF] = true
-                                        // Create a testing target
-                                        archive.addIfNeeded(executedIndividual)
-                                    }
-                                }
+                               handleVulnerableAction(evaluatedIndividual, action)
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    private fun handleVulnerableAction(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, action: RestCallAction) {
+        val copy = evaluatedIndividual.individual.copy() as RestIndividual
+        // TODO: Need individual callback URL for each param?
+        val callbackURL = httpCallbackVerifier.generateCallbackLink(
+            action.getName()
+        )
+
+        copy.seeMainExecutableActions().forEach { action ->
+            action.parameters.forEach { param ->
+                updateGeneWithCallbackURL(action.getName(), param.primaryGene(), callbackURL)
+            }
+        }
+
+        val executedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+
+        if (executedIndividual != null) {
+            handleExecutedIndividual(action, executedIndividual, callbackURL)
+        }
+    }
+
+    private fun handleExecutedIndividual(action: RestCallAction, executedIndividual: EvaluatedIndividual<RestIndividual>, callbackURL: String) {
+        actionVulnerabilityMapping.getValue(action.getName()).httpCallbackURL = callbackURL
+        val result = httpCallbackVerifier.verify(action.getName())
+        if (result) {
+            val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
+            actionMapping.isExploitable = true
+            actionMapping.securityFaults[DefinedFaultCategory.SSRF] = true
+            // Create a testing target
+            archive.addIfNeeded(executedIndividual)
         }
     }
 
