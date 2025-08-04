@@ -122,6 +122,12 @@ class HttpCallbackVerifier {
         actionCallbackLinkMapping.clear()
     }
 
+    fun reset() {
+        wireMockServer?.stop()
+        wireMockServer = null
+        actionCallbackLinkMapping.clear()
+    }
+
     private fun getDefaultStub(): MappingBuilder {
         return WireMock.any(WireMock.anyUrl())
             .atPriority(100)

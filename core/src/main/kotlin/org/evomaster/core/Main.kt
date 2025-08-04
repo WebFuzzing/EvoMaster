@@ -29,6 +29,7 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
@@ -243,6 +244,8 @@ class Main {
 
             resetExternalServiceHandler(injector)
 
+            resetHTTPCallbackVerifier(injector)
+
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
 
@@ -402,8 +405,8 @@ class Main {
                     if (config.ssrf) {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
-                        val SSRFAnalyser = injector.getInstance(SSRFAnalyser::class.java)
-                        SSRFAnalyser.apply()
+                        val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
+                        ssrfAnalyser.apply()
                     } else {
                         solution
                     }
@@ -997,6 +1000,11 @@ class Main {
         private fun resetExternalServiceHandler(injector: Injector) {
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
             externalServiceHandler.reset()
+        }
+
+        private fun resetHTTPCallbackVerifier(injector: Injector) {
+            val httpCallbackVerifier = injector.getInstance(HttpCallbackVerifier::class.java)
+            httpCallbackVerifier.reset()
         }
     }
 }
