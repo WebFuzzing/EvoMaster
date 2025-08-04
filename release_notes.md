@@ -15,11 +15,13 @@ Under development in `master` branch.
 - Added options to define dependencies and transformations among input values. For example, if an input is the signature/hash of other input variables, such rules can now be defined. Also useful when data needs to be encrypted at the application level. 
 
 ### Addressed GitHub Issues
+- #1275: EvoMaster generates invalid Python variable names in Pytest due to Django app naming 
 - #1171: IllegalStateException: only support Map with String key in EvoMaster
 - #1159: EvoMaster crashed when reading em.yaml file 
 - #1154: Support for generating inputs dealing with RSA encryption 
 
-
+### Fixed Bugs
+- Fixed issues in which too many repeated schema faults (eg, when returned responses are arrays of objects) were wrongly flagged as distinct faults. 
 
 # Version: 3.4.0
 

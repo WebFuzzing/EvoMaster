@@ -13,7 +13,7 @@ public class CPGManualTest extends CPGTestBase {
     public void testGet() {
 
         String location = given()
-                .post(baseUrlOfSut + "/api/cpg/x")
+                .post(baseUrlOfSut + "/api/cpg/x-k")
                 .then()
                 .statusCode(201)
                 .extract().header("location");
@@ -21,7 +21,7 @@ public class CPGManualTest extends CPGTestBase {
         int a = 42;
         int b = 77;
 
-        location = resolveLocation(location, baseUrlOfSut + "/api/cpg/x/{id}/y");
+        location = resolveLocation(location, baseUrlOfSut + "/api/cpg/x-k/{id}/y");
 
         given().contentType(ContentType.JSON)
                 .body("{\"a\":" + a + ", \"b\":" + b + "}")
