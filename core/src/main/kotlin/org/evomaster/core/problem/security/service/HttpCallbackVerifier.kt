@@ -65,8 +65,10 @@ class HttpCallbackVerifier {
     }
 
     fun isCallbackURL(value: String): Boolean {
+        // Regex pattern looks for URL contains [HTTP_CALLBACK_VERIFIER] address and [HTTPCallbackVerifier]
+        // port, along with the path /sink/ and UUID as token generated to make the callback URL unique.
         val pattern =
-            """^http:\/\/${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:[0-9]{5}\/sink\/.{36}""".toRegex()
+            """^http:\/\/${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${config.httpCallbackVerifierPort}\/sink\/.{36}""".toRegex()
 
         return pattern.matches(value)
     }
