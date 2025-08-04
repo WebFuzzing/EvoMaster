@@ -764,7 +764,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.vulnerabilityAnalyser) {
+        if (config.security && config.ssrf) {
             // TODO: check here for SSRF. if so, add to rcr object
             if (vulnerabilityAnalyser.hasVulnerableInputs(a)) {
                 // TODO: Add vulnerability marker to RestCall Result
@@ -1093,7 +1093,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual, actionResults, fv)
         }
 
-        if (config.vulnerabilityAnalyser) {
+        if (config.ssrf) {
             handleVulnerabilities(individual, actionResults, fv)
         }
 

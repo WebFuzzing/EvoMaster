@@ -32,7 +32,7 @@ class HttpCallbackVerifier {
 
     @PostConstruct
     fun init() {
-        if (config.vulnerabilityAnalyser) {
+        if (config.ssrf) {
             // TODO: Nothing to do now
         }
     }
@@ -48,7 +48,7 @@ class HttpCallbackVerifier {
             val config = WireMockConfiguration()
                 .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
-                .port(19000) // Changed for testing purposes
+                .port(config.httpCallbackVerifierPort)
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()

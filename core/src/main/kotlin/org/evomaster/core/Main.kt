@@ -415,7 +415,7 @@ class Main {
             config: EMConfig,
             solution: Solution<*>,
         ): Solution<*> {
-            if (!config.vulnerabilityAnalyser) {
+            if (!config.ssrf) {
                 return solution
             }
 

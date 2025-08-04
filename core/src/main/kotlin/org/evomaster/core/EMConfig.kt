@@ -591,7 +591,7 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
-        if(!security && vulnerabilityAnalyser) {
+        if(!security && ssrf) {
             throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
         }
 
@@ -2412,26 +2412,30 @@ class EMConfig {
     var security = true
 
     @Experimental
-    @Cfg("Apply vulnerability hunter as part of security testing.")
-    var vulnerabilityAnalyser = false
+    @Cfg("To apply SSRF detection as part of security testing.")
+    var ssrf = false
 
-    enum class VulnerabilitySelectionStrategy {
+    enum class VulnerableInputClassificationStrategy {
         /**
-         * Uses the manual methods to select the vulnerability classes associated with
-         * an endpoint.
+         * Uses the manual methods to select the vulnerable inputs.
          */
         MANUAL,
 
         /**
-         * Use LLMs to select potential vulnerability classes associated with an
-         * endpoint.
+         * Use LLMs to select potential vulnerable inputs.
          */
         LLM,
     }
 
     @Experimental
+    @Cfg("HTTP callback verifier port.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var httpCallbackVerifierPort: Int = 19000
+
+    @Experimental
     @Cfg("Potential vulnerability class associated with a endpoint classification strategy.")
-    var vulnerabilitySelectionStrategy = VulnerabilitySelectionStrategy.MANUAL
+    var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
 
     @Experimental
     @Cfg("Enable language model connector")
