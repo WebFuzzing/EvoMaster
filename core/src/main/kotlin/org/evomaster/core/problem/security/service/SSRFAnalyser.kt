@@ -11,8 +11,8 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.problem.security.data.ActionMapping
-import org.evomaster.core.problem.security.data.InputMapping
+import org.evomaster.core.problem.security.data.ActionFaultMapping
+import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
@@ -48,7 +48,7 @@ class SSRFAnalyser {
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
-    private val actionVulnerabilityMapping: MutableMap<String, ActionMapping> = mutableMapOf()
+    private val actionVulnerabilityMapping: MutableMap<String, ActionFaultMapping> = mutableMapOf()
 
     /**
      * Individuals in the solution.
@@ -90,7 +90,7 @@ class SSRFAnalyser {
             httpCallbackVerifier.resetHTTPVerifier()
         }
 
-        LoggingUtil.Companion.getInfoLogger().info("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
+        LoggingUtil.uniqueWarn(log,"Total individuals before vulnerability analysis: {}", individualsInSolution.size)
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
@@ -105,7 +105,7 @@ class SSRFAnalyser {
             statusCodes = listOf(200, 201)
         )
 
-        LoggingUtil.Companion.getInfoLogger().info("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
+        LoggingUtil.uniqueWarn(log, "Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
 
         return archive.extractSolution()
     }
@@ -177,11 +177,11 @@ class SSRFAnalyser {
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
                 if (action is RestCallAction) {
-                    val actionMapping = ActionMapping(action.getName())
-                    val inputMapping: MutableMap<String, InputMapping> =
+                    val actionFaultMapping = ActionFaultMapping(action.getName())
+                    val inputFaultMapping: MutableMap<String, InputFaultMapping> =
                         extractBodyParameters(action.parameters)
 
-                    inputMapping.forEach { paramName, paramMapping ->
+                    inputFaultMapping.forEach { paramName, paramMapping ->
                         val answer = if (!paramMapping.description.isNullOrBlank()) {
                             languageModelConnector.query(
                                 SSRFUtil.Companion.getPromptWithNameAndDescription(
@@ -199,15 +199,15 @@ class SSRFAnalyser {
 
                         if (answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
                             paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
-                            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
-                            actionMapping.isVulnerable = true
+                            actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+                            actionFaultMapping.isVulnerable = true
                         }
                     }
 
                     // Assign the param mapping
-                    actionMapping.params = inputMapping
+                    actionFaultMapping.params = inputFaultMapping
 
-                    actionVulnerabilityMapping[action.getName()] = actionMapping
+                    actionVulnerabilityMapping[action.getName()] = actionFaultMapping
                 }
             }
         }
@@ -218,15 +218,15 @@ class SSRFAnalyser {
      */
     private fun extractBodyParameters(
         parameters: List<Param>
-    ): MutableMap<String, InputMapping> {
-        val output = mutableMapOf<String, InputMapping>()
+    ): MutableMap<String, InputFaultMapping> {
+        val output = mutableMapOf<String, InputFaultMapping>()
 
         parameters.forEach { param ->
             when (param) {
                 is BodyParam -> {
                     param.seeGenes().filter { it.name == "body" }.forEach { gene ->
                         gene.getAllGenesInIndividual().forEach { geneInIndividual ->
-                            output[geneInIndividual.name] = InputMapping(
+                            output[geneInIndividual.name] = InputFaultMapping(
                                 geneInIndividual.name,
                                 geneInIndividual.description
                             )
@@ -236,7 +236,7 @@ class SSRFAnalyser {
 
                 is HeaderParam -> {
                     param.seeGenes().filter { it.name != "body" }.forEach { gene ->
-                        output[gene.name] = InputMapping(
+                        output[gene.name] = InputFaultMapping(
                             gene.name,
                             gene.description
                         )

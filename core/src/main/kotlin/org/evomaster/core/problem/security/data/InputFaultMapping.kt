@@ -2,7 +2,7 @@ package org.evomaster.core.problem.security.data
 
 import com.webfuzzing.commons.faults.FaultCategory
 
-class InputMapping (
+class InputFaultMapping (
     val name: String,
     val description: String?
 ) {

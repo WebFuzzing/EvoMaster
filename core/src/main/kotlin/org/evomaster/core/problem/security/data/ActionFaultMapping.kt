@@ -2,14 +2,18 @@ package org.evomaster.core.problem.security.data
 
 import com.webfuzzing.commons.faults.FaultCategory
 
-class ActionMapping (
+/**
+ * [ActionFaultMapping] represents the [Action] and related [Param] with security faults.
+ * This used in [SSRFAnalyser].
+ */
+class ActionFaultMapping (
     val name: String,
 ) {
 
     /**
-     * Key holds the parameter name, and the value holds the related [InputMapping].
+     * Key holds the parameter name, and the value holds the related [InputFaultMapping].
      */
-    var params: Map<String, InputMapping> = mutableMapOf()
+    var params: Map<String, InputFaultMapping> = mutableMapOf()
 
     var isVulnerable = false
 
