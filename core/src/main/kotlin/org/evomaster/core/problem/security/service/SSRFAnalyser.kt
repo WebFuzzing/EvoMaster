@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.security.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.logging.LoggingUtil
@@ -10,7 +11,6 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.problem.security.VulnerabilityClass
 import org.evomaster.core.problem.security.data.ActionMapping
 import org.evomaster.core.problem.security.data.InputMapping
 import org.evomaster.core.problem.security.vulnerabilities.SSRFVulnerability
@@ -210,8 +210,8 @@ class SSRFAnalyser {
                         }
 
                         if (answer != null && answer.answer == SSRFVulnerability.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
-                            paramMapping.addVulnerabilityClass(VulnerabilityClass.SSRF)
-                            actionMapping.addVulnerabilityClass(VulnerabilityClass.SSRF)
+                            paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+                            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionMapping.isVulnerable = true
                         }
                     }
@@ -303,7 +303,7 @@ class SSRFAnalyser {
                                     if (result) {
                                         val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
                                         actionMapping.isExploitable = true
-                                        actionMapping.vulnerabilityClasses[VulnerabilityClass.SSRF] = true
+                                        actionMapping.securityFaults[DefinedFaultCategory.SSRF] = true
                                         // Create a testing target
                                         archive.addIfNeeded(executedIndividual)
                                     }
@@ -320,7 +320,7 @@ class SSRFAnalyser {
         primaryGene.getViewOfChildren().forEach { gene ->
             if (actionVulnerabilityMapping.containsKey(actionName)) {
                 val g = actionVulnerabilityMapping[actionName]!!.params[gene.name]
-                if (g!!.vulnerabilityClasses.contains(VulnerabilityClass.SSRF)) {
+                if (g!!.securityFaults.contains(DefinedFaultCategory.SSRF)) {
                     // Only change the param marked for SSRF
                     gene.setFromStringValue(callBackUrl)
                 }

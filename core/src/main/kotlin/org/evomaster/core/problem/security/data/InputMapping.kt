@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.security.data
 
-import org.evomaster.core.problem.security.VulnerabilityClass
+import com.webfuzzing.commons.faults.FaultCategory
 
 class InputMapping (
     val name: String,
@@ -9,17 +9,13 @@ class InputMapping (
 
     /**
      * Holds potential vulnerability class for the [Param].
-     * Key contains the vulnerability class, and value marks the exploitability
+     * Key contains the security related faults, and value marks the exploitability
      * using a [Boolean].
      */
-    var vulnerabilityClasses: MutableList<VulnerabilityClass> = mutableListOf()
+    var securityFaults: MutableList<FaultCategory> = mutableListOf()
 
-    fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
-        vulnerabilityClasses.add(vulnerabilityClass)
-    }
-
-    fun hasVulnerabilityClass(vulnerabilityClass: VulnerabilityClass): Boolean {
-        return vulnerabilityClasses.contains(vulnerabilityClass)
+    fun addSecurityFaultCategory(faultCategory: FaultCategory) {
+        securityFaults.add(faultCategory)
     }
 
 }

@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.security.data
 
-import org.evomaster.core.problem.security.VulnerabilityClass
+import com.webfuzzing.commons.faults.FaultCategory
 
 class ActionMapping (
     val name: String,
@@ -18,13 +18,13 @@ class ActionMapping (
     var httpCallbackURL: String? = null
 
     /**
-     * Holds potential vulnerability class for the [Action].
-     * Key contains the vulnerability class, and value marks the exploitability
+     * Holds potential security faults for the [Action].
+     * Key contains the faults related to security, and value marks the exploitability
      * using a [Boolean].
      */
-    var vulnerabilityClasses: MutableMap<VulnerabilityClass, Boolean> = mutableMapOf()
+    var securityFaults: MutableMap<FaultCategory, Boolean> = mutableMapOf()
 
-    fun addVulnerabilityClass(vulnerabilityClass: VulnerabilityClass) {
-        vulnerabilityClasses[vulnerabilityClass] = false
+    fun addSecurityFaultCategory(faultCategory: FaultCategory) {
+        securityFaults[faultCategory] = false
     }
 }
