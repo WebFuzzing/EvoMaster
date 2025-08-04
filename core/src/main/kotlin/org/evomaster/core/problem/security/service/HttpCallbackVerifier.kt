@@ -1,19 +1,14 @@
-package org.evomaster.core.problem.security.verifiers
+package org.evomaster.core.problem.security.service
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.MappingBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.any
-import com.github.tomakehurst.wiremock.client.WireMock.anyUrl
-import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
-import com.github.tomakehurst.wiremock.common.Metadata.metadata
+import com.github.tomakehurst.wiremock.common.Metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.SecuritySharedUtils
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.security.VulnerabilityVerifier
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.UUID
@@ -91,8 +86,8 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         val ssrfPath = "/sink/$token"
 
         wireMockServer!!.stubFor(
-            any(urlEqualTo(ssrfPath))
-                .withMetadata(metadata().attr("originalPath", name))
+            WireMock.any(WireMock.urlEqualTo(ssrfPath))
+                .withMetadata(Metadata.metadata().attr("originalPath", name))
                 .atPriority(1)
                 .willReturn(
                     WireMock.aResponse()
@@ -136,10 +131,10 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
     }
 
     private fun getDefaultStub() : MappingBuilder {
-        return any(anyUrl())
+        return WireMock.any(WireMock.anyUrl())
             .atPriority(100)
             .willReturn(
-                aResponse()
+                WireMock.aResponse()
                     .withStatus(418)
                     .withBody("I'm a teapot")
             )

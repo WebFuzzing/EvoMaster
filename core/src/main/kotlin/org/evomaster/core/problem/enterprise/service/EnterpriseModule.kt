@@ -2,8 +2,8 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.AbstractModule
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
-import org.evomaster.core.problem.security.VulnerabilityAnalyser
-import org.evomaster.core.problem.security.verifiers.HttpCallbackVerifier
+import org.evomaster.core.problem.security.service.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 
 abstract class EnterpriseModule : AbstractModule() {
 

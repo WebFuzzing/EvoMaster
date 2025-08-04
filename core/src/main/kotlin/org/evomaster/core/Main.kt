@@ -29,7 +29,7 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
-import org.evomaster.core.problem.security.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.service.VulnerabilityAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
