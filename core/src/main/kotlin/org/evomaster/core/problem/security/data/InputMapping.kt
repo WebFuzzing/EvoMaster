@@ -2,7 +2,7 @@ package org.evomaster.core.problem.security.data
 
 import org.evomaster.core.problem.security.VulnerabilityClass
 
-class ParamMapping (
+class InputMapping (
     val name: String,
     val description: String?
 ) {
