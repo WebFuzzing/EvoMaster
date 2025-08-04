@@ -49,7 +49,7 @@ class SSRFAnalyser {
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
-    private var actionVulnerabilityMapping: MutableMap<String, ActionMapping> = mutableMapOf()
+    private val actionVulnerabilityMapping: MutableMap<String, ActionMapping> = mutableMapOf()
 
     /**
      * Individuals in the solution.
@@ -59,13 +59,6 @@ class SSRFAnalyser {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
-    }
-
-    @PostConstruct
-    fun init() {
-        if (config.ssrf) {
-//            httpCallbackVerifier = HttpCallbackVerifier()
-        }
     }
 
     @PreDestroy
@@ -179,10 +172,6 @@ class SSRFAnalyser {
      * Private method to classify parameters using a large language model.
      */
     private fun llmClassifier() {
-        if (!config.languageModelConnector) {
-            throw IllegalStateException("Language Model Connector is disabled. Unable to run the classification.")
-        }
-
         // For now, we consider only the individuals selected from [Archive]
         // TODO: This can be isolated to classify at the beginning of the search
         individualsInSolution.forEach { evaluatedIndividual ->

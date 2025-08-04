@@ -595,6 +595,12 @@ class EMConfig {
             throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
         }
 
+        if (ssrf &&
+            vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
+            !languageModelConnector) {
+            throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
+        }
+
         if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
             throw ConfigProblemException("Language model server URL cannot be empty.")
         }
