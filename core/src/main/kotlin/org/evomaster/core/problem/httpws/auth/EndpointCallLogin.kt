@@ -79,10 +79,10 @@ class EndpointCallLogin(
     }
 
     companion object {
-        fun fromDto(name: String, dto: LoginEndpoint) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpoint, externalEndpointURL: String?) = EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
-            externalEndpointURL = dto.externalEndpointURL,
+            externalEndpointURL = externalEndpointURL ?: dto.externalEndpointURL,
             payload = dto.payloadRaw ?:
                 dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
             headers = dto.headers?.map { AuthenticationHeader(it.name, it.value) } ?: emptyList(),

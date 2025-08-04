@@ -2553,6 +2553,12 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Cfg("Override the value of externalEndpointURL in auth configurations." +
+            " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
+            " are run in parallel, to avoid creating/modifying auth configuration files.")
+    var overrideAuthExternalEndpointURL : String? = null
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
