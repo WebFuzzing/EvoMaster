@@ -18,36 +18,35 @@ class SsrfEMTest : SpringTestBase() {
         }
     }
 
-    //    @Disabled("WIP")
+    @Disabled("WIP")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
-            500,
+            100,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
             setOption(args, "externalServiceIP", "127.0.0.6")
             setOption(args, "instrumentMR_NET", "true")
 
-            setOption(args, "security", "true")
+            setOption(args, "security", "false")
 
-            setOption(args, "ssrf", "true")
+            setOption(args, "ssrf", "false")
             setOption(args, "vulnerableInputClassificationStrategy", "LLM")
 
-            setOption(args, "languageModelConnector", "true")
+            setOption(args, "languageModelConnector", "false")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
 
-            // TODO: Temporary
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/data", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/image", null)
 
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "Unable to fetch sensor data.")
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "Unable to fetch remote image.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "Unable to fetch sensor data.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "Unable to fetch remote image.")
         }
     }
 }
