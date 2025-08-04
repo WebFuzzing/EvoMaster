@@ -91,7 +91,7 @@ class SSRFAnalyser {
             httpCallbackVerifier.resetHTTPVerifier()
         }
 
-        log.debug("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
+        log.debug("Total individuals before vulnerability analysis: {}", individuals.size)
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
