@@ -6,6 +6,9 @@ class ActionMapping (
     val name: String,
 ) {
 
+    /**
+     * Key holds the parameter name, and the value holds the related [InputMapping].
+     */
     var params: Map<String, InputMapping> = mutableMapOf()
 
     var isVulnerable = false

@@ -1,6 +1,6 @@
-package org.evomaster.core.problem.security.vulnerabilities
+package org.evomaster.core.problem.security
 
-class SSRFVulnerability {
+class SSRFUtil {
 
     companion object {
         const val SSRF_PROMPT_ANSWER_FOR_POSSIBILITY = "TRUE"

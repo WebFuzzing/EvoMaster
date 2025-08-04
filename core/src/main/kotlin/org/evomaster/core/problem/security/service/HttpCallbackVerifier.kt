@@ -22,7 +22,10 @@ class HttpCallbackVerifier {
 
     private var wireMockServer: WireMockServer? = null
 
-    private var traceTokens: MutableMap<String, String> = mutableMapOf()
+    /**
+     * Key holds the name of the [Action] and value holds the callback link generated for it.
+     */
+    private var actionCallbackLinkMapping: MutableMap<String, String> = mutableMapOf()
 
     val isActive: Boolean get() = wireMockServer != null && wireMockServer!!.isRunning
 
@@ -61,24 +64,11 @@ class HttpCallbackVerifier {
         }
     }
 
-    fun hasTokenForActionName(name: String, value: String): Boolean {
-        return traceTokens.containsKey(name) && traceTokens[name] == value
-    }
-
     fun isCallbackURL(value: String): Boolean {
         val pattern =
             """^http:\/\/${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:[0-9]{5}\/sink\/.{36}""".toRegex()
 
         return pattern.matches(value)
-    }
-
-    fun getTraceTokenFromURL(url: String): String {
-        if (isCallbackURL(url)) {
-            val token = url.substringAfterLast("/")
-            return token
-        }
-
-        return ""
     }
 
     fun generateCallbackLink(name: String): String {
@@ -99,7 +89,7 @@ class HttpCallbackVerifier {
 
         val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}$ssrfPath"
 
-        traceTokens[name] = link
+        actionCallbackLinkMapping[name] = link
 
         return link
     }
@@ -127,7 +117,7 @@ class HttpCallbackVerifier {
     fun resetHTTPVerifier() {
         wireMockServer?.resetAll()
         wireMockServer?.stubFor(getDefaultStub())
-        traceTokens.clear()
+        actionCallbackLinkMapping.clear()
     }
 
     private fun getDefaultStub(): MappingBuilder {

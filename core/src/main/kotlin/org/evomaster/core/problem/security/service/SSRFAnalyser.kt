@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.security.data.ActionMapping
 import org.evomaster.core.problem.security.data.InputMapping
-import org.evomaster.core.problem.security.vulnerabilities.SSRFVulnerability
+import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
@@ -21,7 +21,6 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
 class SSRFAnalyser {
@@ -185,20 +184,20 @@ class SSRFAnalyser {
                     inputMapping.forEach { paramName, paramMapping ->
                         val answer = if (!paramMapping.description.isNullOrBlank()) {
                             languageModelConnector.query(
-                                SSRFVulnerability.Companion.getPromptWithNameAndDescription(
+                                SSRFUtil.Companion.getPromptWithNameAndDescription(
                                     paramMapping.name,
                                     paramMapping.description
                                 )
                             )
                         } else {
                             languageModelConnector.query(
-                                SSRFVulnerability.Companion.getPromptWithNameOnly(
+                                SSRFUtil.Companion.getPromptWithNameOnly(
                                     paramMapping.name
                                 )
                             )
                         }
 
-                        if (answer != null && answer.answer == SSRFVulnerability.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
+                        if (answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
                             paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionMapping.isVulnerable = true
