@@ -2,7 +2,7 @@ package org.evomaster.core.problem.enterprise.service
 
 import com.google.inject.AbstractModule
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
-import org.evomaster.core.problem.security.service.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 
 abstract class EnterpriseModule : AbstractModule() {
@@ -16,7 +16,7 @@ abstract class EnterpriseModule : AbstractModule() {
         bind(LanguageModelConnector::class.java)
             .asEagerSingleton()
 
-        bind(VulnerabilityAnalyser::class.java)
+        bind(SSRFAnalyser::class.java)
             .asEagerSingleton()
 
         bind(HttpCallbackVerifier::class.java)

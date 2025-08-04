@@ -29,7 +29,7 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
-import org.evomaster.core.problem.security.service.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -402,8 +402,8 @@ class Main {
                     if (config.ssrf) {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
-                        val vulnerabilityAnalyser = injector.getInstance(VulnerabilityAnalyser::class.java)
-                        vulnerabilityAnalyser.applyVulnerabilityAnalyser()
+                        val SSRFAnalyser = injector.getInstance(SSRFAnalyser::class.java)
+                        SSRFAnalyser.applyVulnerabilityAnalyser()
                     } else {
                         solution
                     }

@@ -40,7 +40,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
-import org.evomaster.core.problem.security.service.VulnerabilityAnalyser
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -80,7 +80,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     @Inject
-    protected lateinit var vulnerabilityAnalyser: VulnerabilityAnalyser
+    protected lateinit var SSRFAnalyser: SSRFAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -762,7 +762,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (config.security && config.ssrf) {
-            if (vulnerabilityAnalyser.hasVulnerableInputs(a)) {
+            if (SSRFAnalyser.hasVulnerableInputs(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
         }

@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
-class VulnerabilityAnalyser {
+class SSRFAnalyser {
 
     @Inject
     private lateinit var config: EMConfig
@@ -58,7 +58,7 @@ class VulnerabilityAnalyser {
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(VulnerabilityAnalyser::class.java)
+        private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
     }
 
     @PostConstruct
@@ -77,7 +77,7 @@ class VulnerabilityAnalyser {
 
 
     fun applyVulnerabilityAnalyser(): Solution<RestIndividual> {
-        LoggingUtil.Companion.getInfoLogger().info("Applying {}", VulnerabilityAnalyser::class.simpleName)
+        LoggingUtil.Companion.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
         // extract individuals from the archive
         val individuals = this.archive.extractSolution().individuals
