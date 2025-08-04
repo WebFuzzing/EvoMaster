@@ -234,6 +234,7 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
+            solution = phaseSSRF(injector, config, solution)
 
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
@@ -410,6 +411,30 @@ class Main {
                     } else {
                         solution
                     }
+                }
+
+                else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    solution
+                }
+            }
+        }
+
+        private fun phaseSSRF(
+            injector: Injector,
+            config: EMConfig,
+            solution: Solution<*>
+        ): Solution<*> {
+            if (!config.ssrf) {
+                return solution
+            }
+            LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
+
+            return when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
+                    ssrfAnalyser.apply()
                 }
 
                 else -> {

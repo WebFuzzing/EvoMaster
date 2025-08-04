@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class SsrfEMTest: SpringTestBase() {
+class SsrfEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -18,12 +18,12 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("WIP")
+    //    @Disabled("WIP")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
             "SsrfEM",
-            100,
+            500,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
@@ -43,8 +43,11 @@ class SsrfEMTest: SpringTestBase() {
             assertTrue(solution.individuals.isNotEmpty())
 
             // TODO: Temporary
-            // assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-            // t assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/data", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/image", null)
+
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "Unable to fetch sensor data.")
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "Unable to fetch remote image.")
         }
     }
 }
