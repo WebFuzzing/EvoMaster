@@ -20,6 +20,7 @@ import org.evomaster.core.search.service.Randomness
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
+import kotlin.math.abs
 
 
 class AIGLMCheck : IntegrationTestRestBase() {
@@ -174,9 +175,10 @@ class AIGLMCheck : IntegrationTestRestBase() {
             classifier.updateModel(action, result)
             val classification = classifier.classify(action)
 
-            println("Probabilities: ${classification.scores}")
-            require(classification.scores.values.all { it in 0.0..1.0 }) {
-                "In GLM, scores must be in [0,1]"
+            println("Probabilities: ${classification.probabilities}")
+            require(classification.probabilities.values.all { it in 0.0..1.0 } &&
+                    classification.probabilities.values.sum().let { abs(it - 1.0) < 1e-6 }) {
+                "Probabilities must be in [0,1] and sum to 1"
             }
 
             if (classifier != null) {
