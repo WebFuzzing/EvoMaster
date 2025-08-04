@@ -91,7 +91,7 @@ class SSRFAnalyser {
             httpCallbackVerifier.resetHTTPVerifier()
         }
 
-        LoggingUtil.uniqueWarn(log,"Total individuals before vulnerability analysis: {}", individualsInSolution.size)
+        log.debug("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
@@ -101,12 +101,12 @@ class SSRFAnalyser {
         // execute
         analyse()
 
+        // TODO: This is for development, remove it later
         val individualsAfterExecution = RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
             statusCodes = listOf(200, 201)
         )
-
-        LoggingUtil.uniqueWarn(log, "Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
+        log.debug("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
 
         return archive.extractSolution()
     }
