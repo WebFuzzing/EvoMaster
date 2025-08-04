@@ -60,7 +60,7 @@ class AICMultiTypeCheck : IntegrationTestRestBase() {
 
         // Create a classifier
         val classifier = injector.getInstance(AIResponseClassifier::class.java)
-        classifier.initModel(dimension)
+        classifier.initModel() //TODO
 
         // createIndividual send the request and evaluate
         val individual = createIndividual(listOf(get), SampleType.RANDOM)

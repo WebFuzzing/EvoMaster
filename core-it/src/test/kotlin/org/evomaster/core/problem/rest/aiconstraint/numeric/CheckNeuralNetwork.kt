@@ -52,7 +52,7 @@ class CheckNeuralNetwork : IntegrationTestRestBase() {
             it is IntegerGene || it is DoubleGene || it is BooleanGene || it is EnumGene<*>
         }
         require(dimension == 6)
-        classifier.initModel(dimension)
+        classifier.initModel() //TODO
 
         val trainingSet = mutableListOf<Pair<RestCallAction, RestCallResult>>()
         val testSet = mutableListOf<Pair<RestCallAction, Int>>()
