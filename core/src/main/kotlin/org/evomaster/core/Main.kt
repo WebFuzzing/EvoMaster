@@ -233,8 +233,6 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
-            solution = phaseVulnerabilityAnalyser(injector, config, solution)
-
 
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
@@ -399,37 +397,21 @@ class Main {
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
-                    securityRest.applySecurityPhase()
+                    val solution = securityRest.applySecurityPhase()
+
+                    if (config.ssrf) {
+                        LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
+
+                        val vulnerabilityAnalyser = injector.getInstance(VulnerabilityAnalyser::class.java)
+                        vulnerabilityAnalyser.applyVulnerabilityAnalyser()
+                    } else {
+                        solution
+                    }
                 }
 
                 else -> {
                     LoggingUtil.getInfoLogger()
                         .warn("Security phase currently not handled for problem type: ${config.problemType}")
-                    solution
-                }
-            }
-        }
-
-        private fun phaseVulnerabilityAnalyser(
-            injector: Injector,
-            config: EMConfig,
-            solution: Solution<*>,
-        ): Solution<*> {
-            if (!config.ssrf) {
-                return solution
-            }
-
-            LoggingUtil.getInfoLogger().info("Starting to apply Vulnerability Analyser")
-
-            return when (config.problemType) {
-                EMConfig.ProblemType.REST -> {
-                    val vulnerabilityAnalyser = injector.getInstance(VulnerabilityAnalyser::class.java)
-                    vulnerabilityAnalyser.applyVulnerabilityAnalyser()
-                }
-
-                else -> {
-                    LoggingUtil.getInfoLogger()
-                        .warn("Vulnerability analyser phase currently not handled for problem type: ${config.problemType}")
                     solution
                 }
             }
