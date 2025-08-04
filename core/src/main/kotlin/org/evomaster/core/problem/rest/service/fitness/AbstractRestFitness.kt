@@ -94,7 +94,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     private lateinit var schemaOracle: RestSchemaOracle
 
     @PostConstruct
-    fun initBean() {
+    fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
     }
 
@@ -221,8 +221,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 .forEach {
                     val gene = StringGene(it)
                     action.addParam(
-                        HeaderParam(
-                            it,
+                        HeaderParam(it,
                             OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() })
                     )
                 }
@@ -257,8 +256,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 .forEach {
                     val gene = StringGene(it).apply { doInitialize(randomness) }
                     action.addParam(
-                        QueryParam(
-                            it,
+                        QueryParam(it,
                             OptionalGene(it, gene, false, requestSelection = true).apply { doInitialize() })
                     )
                 }
@@ -279,7 +277,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     val obj = ObjectGene("body", listOf())
                     // TODO could look at "Accept" header instead of defaulting to JSON
                     val enumGene = EnumGene("contentType", listOf("application/json"))
-                    val body = BodyParam(obj, enumGene)
+                    val body = BodyParam(obj,enumGene)
                     body.seeGenes().forEach { it.doInitialize(randomness) }
 
                     val update = UpdateForBodyParam(body)
@@ -318,7 +316,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val name = dtoNames.first()
                 val obj = getGeneForDto(name)
                 val enumGene = EnumGene("contentType", listOf("application/json"))
-                val body = BodyParam(obj, enumGene)
+                val body = BodyParam(obj,enumGene)
                 body.seeGenes().forEach { it.doInitialize(randomness) }
                 val update = UpdateForBodyParam(body)
                 action.addParam(update)
@@ -398,11 +396,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv.updateTarget(unauthorizedId, 1.0, actionIndex)
         }
 
-        if (config.security && (sampler as AbstractRestSampler).authentications.isNotEmpty()) {
+        if(config.security && (sampler as AbstractRestSampler).authentications.isNotEmpty()){
 
-            val label = when {
+            val label = when{
                 StatusGroup.G_2xx.isInGroup(status) -> "2xx"
-                status == 401 && !action.auth.requireMockHandling -> "401"
+                status == 401  && !action.auth.requireMockHandling-> "401"
                 status == 403 -> "403"
                 else -> return
             }
@@ -414,18 +412,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     private fun handleAdvancedBlackBoxCriteria(fv: FitnessValue, call: RestCallAction, result: RestCallResult) {
 
-        if (!config.advancedBlackBoxCoverage) {
+        if(!config.advancedBlackBoxCoverage){
             return
         }
         val status = result.getStatusCode()
         val success = StatusGroup.G_2xx.isInGroup(status)
 
         //Links
-        if (result.getAppliedLink()) {
+        if(result.getAppliedLink()){
             //create objectives to keep track of followed links
             val root = "LINK_FOLLOWED"
             fv.coverTarget(idMapper.handleLocalTarget("${root}_${call.id}"))
-            if (success) {
+            if(success) {
                 fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${call.id}"))
             }
         }
@@ -439,7 +437,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             //up to 4 targets
             fv.coverTarget(idMapper.handleLocalTarget("${root}_${id}"))
-            if (success) {
+            if(success){
                 fv.coverTarget(idMapper.handleLocalTarget("${root}_SUCCESS_${id}"))
             }
         }
@@ -456,7 +454,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
                 val root = "INPUT_${call.id}_${p.javaClass.simpleName}_${p.name}"
 
-                val genes = if (p is BodyParam) {
+                val genes = if(p is BodyParam) {
                     listOf(p.contentTypeGene) // ie, ignore the payload
                 } else {
                     p.seeGenes()
@@ -464,19 +462,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 genes.flatMap { g -> g.flatView() }
                     .filter { g -> g.staticCheckIfImpactPhenotype() }
                     .forEach { g ->
-                        if (g is EnumGene<*> || g is BooleanGene || g is NumberGene<*>) {
+                        if(g is EnumGene<*> || g is BooleanGene || g is NumberGene<*>) {
                             val prefix = "${root}_${g.name}"
                             val suffix = when (g) {
                                 is EnumGene<*>, is BooleanGene -> g.getValueAsRawString()
                                 is NumberGene<*> -> {
                                     val negative = g.getValueAsRawString().startsWith("-")
-                                    if (negative) "negative" else "positive"
+                                    if(negative) "negative" else "positive"
                                 }
-
                                 else -> throw IllegalStateException("Not handled type: ${g.javaClass}")
                             }
                             fv.coverTarget(idMapper.handleLocalTarget("${prefix}_${suffix}"))
-                            if (success) {
+                            if(success){
                                 fv.coverTarget(idMapper.handleLocalTarget("${prefix}_SUCCESS_${suffix}"))
                             }
                         }
@@ -496,10 +493,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         examples.forEach {
             val name = (it.parent as Gene).name
-            val label = when (it) {
+            val label = when(it){
                 is EnumGene<*> -> it.getValueAsRawString()
-                is ChoiceGene<*> -> "" + it.activeGeneIndex
-                else -> {
+                is ChoiceGene<*> -> ""+it.activeGeneIndex
+                else ->{
                     log.warn("Unhandled example gene type: ${it.javaClass}")
                     assert(false)
                     "undefined"
@@ -553,11 +550,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             Lazy.assert { location5xx != null || config.blackBox }
 
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500, postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name, location5xx))
+            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
         }
     }
 
@@ -581,7 +578,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val rcr = RestCallResult(a.getLocalId())
         actionResults.add(rcr)
 
-        val appliedLink = handleLinks(a, all, actionResults)
+        val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
             createInvocation(a, chainState, cookies, tokens).invoke()
@@ -727,7 +724,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if (config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
+        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
             val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
 
             val onePerType = report.messages
@@ -760,14 +757,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
 
-        if (config.isEnabledAIModelForResponseClassification()) {
+        if(config.isEnabledAIModelForResponseClassification()) {
             responseClassifier.updateModel(a, rcr)
         }
 
         if (config.security && config.ssrf) {
-            // TODO: check here for SSRF. if so, add to rcr object
             if (vulnerabilityAnalyser.hasVulnerableInputs(a)) {
-                // TODO: Add vulnerability marker to RestCall Result
                 rcr.setVulnerableForSSRF(true)
             }
         }
@@ -780,14 +775,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         a: RestCallAction,
         all: List<RestCallAction>,
         actionResults: List<ActionResult>
-    ): Boolean {
+    ) : Boolean {
         val index = all.indexOfFirst { it.getLocalId() == a.getLocalId() }
-        if (index < 0) {
+        if(index < 0){
             throw IllegalStateException("Bug: input REST call action is not present in 'all' list")
         }
 
         val reference = a.backwardLinkReference
-        //nothing to do
+            //nothing to do
             ?: return false
 
         /*
@@ -799,25 +794,25 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val previous = all.take(index)
             .find { action ->
                 reference.sourceActionId == action.id
-                        // not only must be of right kind, but also return right status code
-                        &&
-                        (actionResults.find { it.sourceLocalId == action.getLocalId() } as RestCallResult?)
-                            ?.getStatusCode() == reference.statusCode
+                // not only must be of right kind, but also return right status code
+                &&
+                (actionResults.find { it.sourceLocalId == action.getLocalId() } as RestCallResult?)
+                    ?.getStatusCode() == reference.statusCode
             }
-        //could happen if mutation (unless we force updating broken links), but never on sampling
-        //TODO should handle this
+            //could happen if mutation (unless we force updating broken links), but never on sampling
+            //TODO should handle this
             ?: return false
         val link = previous.links.find { it.id == reference.sourceLinkId }
             ?: throw IllegalStateException("Bug: endpoint ${previous.id} has no link of type ${reference.sourceLinkId}")
 
         val result = actionResults.find { it.sourceLocalId == previous.getLocalId() } as RestCallResult?
-        // in theory, this branch is unreachable, as otherwise previous would had been null
+            // in theory, this branch is unreachable, as otherwise previous would had been null
             ?: throw IllegalArgumentException("No action result for ${previous.getLocalId()}")
 
-        val modified = RestLinkValueUpdater.update(a, link, previous, result)
-        if (modified) {
+        val modified = RestLinkValueUpdater.update(a,link,previous,result)
+        if(modified){
             reference.actualSourceActionLocalId = previous.getLocalId()
-        } else {
+        } else{
             reference.actualSourceActionLocalId = null
         }
         return modified
@@ -988,6 +983,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
+
+
     private fun locationName(id: String): String {
         return "location_$id"
     }
@@ -1025,7 +1022,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
 
         val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
-        if (wmStarted) {
+        if(wmStarted){
             /*
                 Quite tricky... if a WM instance was started as part of this test case evaluation,
                 then the results are invalid, as they are based on WM not being there.
@@ -1044,7 +1041,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
              */
             //cannot return null here, as otherwise SUT gets restarted
-            //return null
+             //return null
             actionResults.forEach { it.deathSentence = true }
         }
 
@@ -1065,7 +1062,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        analyzeResponseData(fv, individual, actionResults, dto.additionalInfoList)
+        analyzeResponseData(fv,individual,actionResults,dto.additionalInfoList)
 
         return dto
     }
@@ -1089,8 +1086,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         //TODO likely would need to consider SEEDED as well in future
-        if (config.security && individual.sampleType == SampleType.SECURITY) {
-            analyzeSecurityProperties(individual, actionResults, fv)
+        if(config.security && individual.sampleType == SampleType.SECURITY){
+            analyzeSecurityProperties(individual,actionResults,fv)
         }
 
         if (config.ssrf) {
@@ -1098,13 +1095,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         //TODO likely would need to consider SEEDED as well in future
-        if (config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS) {
+        if(config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS){
             analyzeHttpSemantics(individual, actionResults, fv)
         }
 
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+
         handleDeleteShouldDelete(individual, actionResults, fv)
         handleRepeatedCreatePut(individual, actionResults, fv)
     }
@@ -1115,16 +1113,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
 
-        val issues = HttpSemanticsOracle.hasRepeatedCreatePut(individual, actionResults)
-        if (!issues) {
+        val issues = HttpSemanticsOracle.hasRepeatedCreatePut(individual,actionResults)
+        if(!issues){
             return
         }
 
         val put = individual.seeMainExecutableActions().last()
 
         val category = ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT
-        val scenarioId = idMapper.handleLocalTarget(
-            idMapper.getFaultDescriptiveId(category, put.getName())
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
         )
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
@@ -1140,13 +1137,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ) {
         val res = HttpSemanticsOracle.hasNonWorkingDelete(individual, actionResults)
 
-        if (res.checkingDelete) {
+        if(res.checkingDelete){
             //even if no fault found, it is useful to have such test for readability and for validation
             val scenarioId = idMapper.handleLocalTarget("checkdelete:${res.name}")
             fv.updateTarget(scenarioId, 1.0, res.index)
         }
 
-        if (res.nonWorking) {
+        if(res.nonWorking) {
             val category = ExperimentalFaultCategory.HTTP_NONWORKING_DELETE
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(category, res.name)
@@ -1164,31 +1161,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         individual: RestIndividual,
         actionResults: List<ActionResult>,
         fv: FitnessValue
-    ) {
+    ){
         //TODO the other cases
 
-        handleForbiddenOperation(
-            HttpVerb.DELETE,
-            DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION,
-            individual,
-            actionResults,
-            fv
-        )
-        handleForbiddenOperation(
-            HttpVerb.PUT,
-            DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION,
-            individual,
-            actionResults,
-            fv
-        )
-        handleForbiddenOperation(
-            HttpVerb.PATCH,
-            DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION,
-            individual,
-            actionResults,
-            fv
-        )
-        handleExistenceLeakage(individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
     }
 
@@ -1221,13 +1200,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val notRecognized = individual.seeMainExecutableActions()
             .filter {
                 val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
-                if (ar == null) {
+                if(ar == null){
                     // this can be happened in the POST/DELETE template
-                    val prematureStoppedAction = individual.seeMainExecutableActions().filter {
-                        it.auth !is NoAuth
-                                && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
+                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
+                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
                     }
-                    if (prematureStoppedAction.isNotEmpty()) {
+                    if (prematureStoppedAction.isNotEmpty()){
                         log.debug("Premature stopping of HTTP call sequence")
                         return
                     }
@@ -1236,7 +1214,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 it.auth !is NoAuth && ar.getStatusCode() == 401
             }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
 
-        if (notRecognized.isEmpty()) {
+        if(notRecognized.isEmpty()){
             return
         }
 
@@ -1260,16 +1238,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             .map { it.path }
             .toSet()
 
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults) }
-        if (faultyPaths.isEmpty()) {
+        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        if(faultyPaths.isEmpty()){
             return
         }
 
-        for (index in individual.seeMainExecutableActions().indices) {
+        for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
 
-            if (a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404) {
+            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
@@ -1287,7 +1265,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
         if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
-            val actionIndex = individual.size() - 1
+           val actionIndex = individual.size() - 1
             val action = individual.seeMainExecutableActions()[actionIndex]
             val result = actionResults
                 .filterIsInstance<RestCallResult>()
@@ -1317,6 +1295,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
 
+
     /**
      * Based on info coming from SUT execution, register and start new WireMock instances.
      *
@@ -1328,7 +1307,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         individual: RestIndividual,
         fv: FitnessValue,
         infoDto: List<AdditionalInfoDto>
-    ): Boolean {
+    ) : Boolean {
 
         /*
             Note: this info here is based from what connections / hostname resolving done in the SUT,
