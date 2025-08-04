@@ -11,6 +11,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.security.data.ActionFaultMapping
 import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
@@ -241,6 +242,10 @@ class SSRFAnalyser {
                             gene.description
                         )
                     }
+                }
+
+                is QueryParam -> {
+                    // TODO: Need to create an example to handle this
                 }
 
                 else -> {
