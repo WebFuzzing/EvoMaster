@@ -403,7 +403,7 @@ class Main {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
                         val SSRFAnalyser = injector.getInstance(SSRFAnalyser::class.java)
-                        SSRFAnalyser.applyVulnerabilityAnalyser()
+                        SSRFAnalyser.apply()
                     } else {
                         solution
                     }

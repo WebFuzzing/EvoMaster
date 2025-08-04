@@ -592,7 +592,7 @@ class EMConfig {
         }
 
         if(!security && ssrf) {
-            throw ConfigProblemException("The use of 'vulnerabilityAnalyser' requires 'security'")
+            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
         }
 
         if (ssrf &&

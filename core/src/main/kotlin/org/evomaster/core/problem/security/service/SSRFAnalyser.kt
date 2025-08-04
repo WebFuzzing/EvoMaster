@@ -69,7 +69,7 @@ class SSRFAnalyser {
     }
 
 
-    fun applyVulnerabilityAnalyser(): Solution<RestIndividual> {
+    fun apply(): Solution<RestIndividual> {
         LoggingUtil.Companion.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
         // extract individuals from the archive
