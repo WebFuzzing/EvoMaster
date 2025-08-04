@@ -766,7 +766,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         if (config.security && config.vulnerabilityAnalyser) {
             // TODO: check here for SSRF. if so, add to rcr object
-            if (vulnerabilityAnalyser.hasVulnerabilities(a)) {
+            if (vulnerabilityAnalyser.hasVulnerableInputs(a)) {
                 // TODO: Add vulnerability marker to RestCall Result
                 rcr.setVulnerableForSSRF(true)
             }

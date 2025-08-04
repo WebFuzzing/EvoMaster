@@ -15,7 +15,7 @@ import java.util.UUID
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
-class HttpCallbackVerifier : VulnerabilityVerifier() {
+class HttpCallbackVerifier {
 
     @Inject
     private lateinit var config: EMConfig
@@ -31,14 +31,14 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
     }
 
     @PostConstruct
-    override fun init() {
+    fun init() {
         if (config.vulnerabilityAnalyser) {
             // TODO: Nothing to do now
         }
     }
 
     @PreDestroy
-    override fun destroy() {
+    fun destroy() {
         wireMockServer!!.stop()
         wireMockServer = null
     }
@@ -109,7 +109,7 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
      *
      * During stub creation, stubs are tagged with [Action] name in the metadata.
      */
-    override fun verify(name: String): Boolean {
+    fun verify(name: String): Boolean {
         if (isActive) {
             wireMockServer!!.allServeEvents
                 .filter { event -> event.wasMatched }
@@ -130,7 +130,7 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
         traceTokens.clear()
     }
 
-    private fun getDefaultStub() : MappingBuilder {
+    private fun getDefaultStub(): MappingBuilder {
         return WireMock.any(WireMock.anyUrl())
             .atPriority(100)
             .willReturn(
@@ -139,5 +139,4 @@ class HttpCallbackVerifier : VulnerabilityVerifier() {
                     .withBody("I'm a teapot")
             )
     }
-
 }
