@@ -41,7 +41,7 @@ open class HttpWsAuthenticationInfo(
          * @param dto the DTO to convert into internal representation
          * @param externalEndpointURL optionally override the value for externalEndpointURL in the DTO
          */
-        fun fromDto(dto: AuthenticationDto, externalEndpointURL: String?) : HttpWsAuthenticationInfo{
+        fun fromDto(dto: AuthenticationDto, externalEndpointURL: String? = null) : HttpWsAuthenticationInfo{
 
             if (dto.name == null || dto.name.isBlank()) {
                 throw IllegalArgumentException("Missing name in authentication info")

@@ -79,7 +79,7 @@ class EndpointCallLogin(
     }
 
     companion object {
-        fun fromDto(name: String, dto: LoginEndpoint, externalEndpointURL: String?) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpoint, externalEndpointURL: String? = null) = EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
             externalEndpointURL = externalEndpointURL ?: dto.externalEndpointURL,
