@@ -2555,7 +2555,10 @@ class EMConfig {
 
     @Cfg("Override the value of externalEndpointURL in auth configurations." +
             " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
-            " are run in parallel, to avoid creating/modifying auth configuration files.")
+            " are run in parallel, to avoid creating/modifying auth configuration files." +
+            " If what provided is a URL starting with 'http', then full replacement will occur." +
+            " Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g.," +
+            " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
 
