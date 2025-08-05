@@ -13,14 +13,13 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
 class DtoWriterTest {
 
     companion object {
-        val tmpTestSuitePath: Path = Paths.get(Files.createTempDirectory("dto-writer-test").toUri())
+        val outputTestSuitePath: Path = Paths.get("./target/dto-writer-test")
         val outputFormat = OutputFormat.JAVA_JUNIT_4
 
         val config = EMConfig().apply {
@@ -45,14 +44,14 @@ class DtoWriterTest {
 
         supportedOutputFormats.forEach { outputFormat ->
             val dtoWriter = DtoWriter()
-            dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
             assertTrue(dtoWriter.getCollectedDtos().isNotEmpty())
         }
 
         unsupportedOutputFormats.forEach { outputFormat ->
             assertThrows(IllegalStateException::class.java, {
                 val dtoWriter = DtoWriter()
-                dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+                dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
             })
         }
     }
@@ -61,7 +60,7 @@ class DtoWriterTest {
     fun emptyActionListReturnsNoDtos() {
         val dtoWriter = DtoWriter()
 
-        dtoWriter.write(tmpTestSuitePath, outputFormat, emptyList())
+        dtoWriter.write(outputTestSuitePath, outputFormat, emptyList())
 
         assertTrue(dtoWriter.getCollectedDtos().isEmpty())
     }
@@ -71,7 +70,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("/swagger/dto-writer/primitiveTypes.yaml")
 
-        dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -98,7 +97,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("/swagger/dto-writer/childObjectInline.yaml")
 
-        dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -122,7 +121,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("/swagger/dto-writer/simpleComponents.yaml")
 
-        dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -144,7 +143,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("/swagger/dto-writer/childObjectComponent.yaml")
 
-        dtoWriter.write(tmpTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
