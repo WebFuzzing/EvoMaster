@@ -165,6 +165,7 @@ There are 3 types of options:
 |`nameWithQueryParameters`| __Boolean__. Specify if true boolean query parameters are included in the test case name. Used for test case naming disambiguation. Only valid for Action based naming strategy. *Default value*: `true`.|
 |`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED, ACTION`. *Default value*: `ACTION`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *DEBUG option*. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
+|`overrideAuthExternalEndpointURL`| __String__. Override the value of externalEndpointURL in auth configurations. This is useful when the auth server is running locally on an ephemeral port, or when several instances are run in parallel, to avoid creating/modifying auth configuration files. *Default value*: `null`.|
 |`populationSize`| __Int__. Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
 |`probOfApplySQLActionToCreateResources`| __Double__. Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`probOfArchiveMutation`| __Double__. Specify a probability to enable archive-based mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
