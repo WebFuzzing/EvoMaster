@@ -49,6 +49,9 @@ class SSRFAnalyser {
     @Inject
     private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
+    /**
+     * Key holds the name of the [Action], and value holds the [ActionFaultMapping].
+     */
     private val actionVulnerabilityMapping: MutableMap<String, ActionFaultMapping> = mutableMapOf()
 
     /**

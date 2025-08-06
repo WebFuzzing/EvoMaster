@@ -9,8 +9,6 @@ class InputFaultMapping (
 
     /**
      * Holds potential vulnerability class for the [Param].
-     * Key contains the security related faults, and value marks the exploitability
-     * using a [Boolean].
      */
     var securityFaults: MutableList<FaultCategory> = mutableListOf()
 
