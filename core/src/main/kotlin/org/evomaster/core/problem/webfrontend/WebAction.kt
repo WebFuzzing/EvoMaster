@@ -21,7 +21,7 @@ class WebAction(
      * Map from cssLocator (coming from [userInteractions]) for text input to StringGene representing its value
      * MutableMap<csslocator, gene>
      */
-    val textData : MutableMap<String, StringGene> = mutableMapOf(),
+    val textData: MutableMap<String, StringGene> = mutableMapOf(),
     /**
      * For a dropdown menu, where only one selection is possible, specify which one to choose.
      * This is based on the "value" attribute, or the visible text if not available.
@@ -40,18 +40,49 @@ class WebAction(
 
     init {
         val nFillText = userInteractions.count { it.userActionType == UserActionType.FILL_TEXT }
-        if(nFillText != textData.size){
+        if (nFillText != textData.size) {
             throw IllegalArgumentException("Mismatch between $nFillText fill text actions and ${textData.size} genes for it")
         }
-        for(key in textData.keys){
-            if(! userInteractions.any { it.cssSelector == key }){
+        for (key in textData.keys) {
+            if (!userInteractions.any { it.cssSelector == key }) {
                 throw IllegalArgumentException("Missing info for input: $key")
             }
         }
         //TODO constraint checks on singleSelection and multiSelection
+
+        for ((key, value) in singleSelection) {
+            val selectedValue = singleSelection.getValue(key).index
+            val allowedValues = singleSelection.getValue(key).values
+
+            val duplicates = allowedValues
+                .groupingBy { it }
+                .eachCount()
+                .filter { it.value > 1 }
+                .keys
+
+
+            //Constraint: Empty option list
+            if (allowedValues.isNullOrEmpty()) {
+                throw IllegalArgumentException("List is Empty")
+            }
+            //Constraint: No duplicate values
+            if (duplicates.isNotEmpty()) {
+                throw IllegalArgumentException("Selection contains duplicate values")
+            }
+
+            // Constraint: Selection must empty?
+            if (selectedValue == 0) {
+                throw IllegalArgumentException("Selection for '$selectedValue' is missing.")
+            }
+
+            // Constraint: Selection must be in the allowed values
+            if (!allowedValues.contains(selectedValue.toString())) {
+                throw IllegalArgumentException("Invalid selection for '$selectedValue': '$selectedValue' is not among allowed values $allowedValues.")
+            }
+        }
     }
 
-    override fun isDefined() : Boolean {
+    override fun isDefined(): Boolean {
         return userInteractions.isNotEmpty()
     }
 
@@ -59,19 +90,19 @@ class WebAction(
         TODO("Not yet implemented")
     }
 
-    fun isApplicableInGivenPage(page: String) : Boolean{
+    fun isApplicableInGivenPage(page: String): Boolean {
 
-        val document = try{
+        val document = try {
             Jsoup.parse(page)
-        }catch (e: Exception){
+        } catch (e: Exception) {
             return false
         }
 
-        return userInteractions.all { document.select(it.cssSelector).size > 0   }
+        return userInteractions.all { document.select(it.cssSelector).size > 0 }
     }
 
     override fun getName(): String {
-        if(userInteractions.isEmpty()){
+        if (userInteractions.isEmpty()) {
             return "Undefined"
         }
         val x = userInteractions.last()
@@ -79,7 +110,7 @@ class WebAction(
     }
 
     override fun seeTopGenes(): List<out Gene> {
-        return  children as List<out Gene>
+        return children as List<out Gene>
     }
 
 
@@ -95,7 +126,7 @@ class WebAction(
     /**
      * Given another WebAction, copy its entire genotype into this.
      */
-    fun copyValueFrom(other: WebAction){
+    fun copyValueFrom(other: WebAction) {
 
         killAllChildren()
 
@@ -112,7 +143,7 @@ class WebAction(
         addChildren(multiSelection.values.toList())
     }
 
-    fun getIdentifier() : String {
-        return "A:" + userInteractions.joinToString(","){"${it.userActionType}:${it.cssSelector}"}
+    fun getIdentifier(): String {
+        return "A:" + userInteractions.joinToString(",") { "${it.userActionType}:${it.cssSelector}" }
     }
 }
