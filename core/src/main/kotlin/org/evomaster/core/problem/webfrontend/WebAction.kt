@@ -71,9 +71,9 @@ class WebAction(
             }
 
             // Constraint: Selection must empty?
-            if (selectedValue == 0) {
-                throw IllegalArgumentException("Selection for '$selectedValue' is missing.")
-            }
+//            if (selectedValue == 0) {
+//                throw IllegalArgumentException("Selection for '$selectedValue' is missing.")
+//            }
 
             // Constraint: Selection must be in the allowed values
             if (!allowedValues.contains(selectedValue.toString())) {
