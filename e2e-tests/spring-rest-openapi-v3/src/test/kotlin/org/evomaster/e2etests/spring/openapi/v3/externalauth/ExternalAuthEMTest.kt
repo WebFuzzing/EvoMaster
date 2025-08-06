@@ -21,7 +21,6 @@ class ExternalAuthEMTest : SpringTestBase(){
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
                 "ExternalAuthEM",
-                "org.foo.ExternalAuthEM",
                 20
         ) { args: List<String> ->
             val solution = initAndRun(args)
@@ -36,7 +35,6 @@ class ExternalAuthEMTest : SpringTestBase(){
     fun testRunOverrideExternal() {
         runTestHandlingFlakyAndCompilation(
             "ExternalAuthEM2",
-            "org.foo.ExternalAuthEM",
             20
         ) { args: List<String> ->
             setOption(args, "overrideAuthExternalEndpointURL", "$baseUrlOfSut/api/externalauth/login2")

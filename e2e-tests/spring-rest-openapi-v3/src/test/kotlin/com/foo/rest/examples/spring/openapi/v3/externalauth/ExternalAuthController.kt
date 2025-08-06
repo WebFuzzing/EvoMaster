@@ -7,19 +7,14 @@ import org.evomaster.client.java.controller.problem.ProblemInfo
 import org.evomaster.client.java.controller.problem.RestProblem
 
 
-
 class ExternalAuthController : SpringController(ExternalAuthApplication::class.java) {
-
-
 
     override fun getProblemInfo(): ProblemInfo {
         return RestProblem(
             "http://localhost:$sutPort/v3/api-docs",
-            listOf("/api/logintoken/login") // make sure it is handled in auth
+            listOf("/api/externalauth/login1","/api/externalauth/login2")
         )
     }
-
-
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
@@ -31,6 +26,4 @@ class ExternalAuthController : SpringController(ExternalAuthApplication::class.j
                 "application/json"),
         )
     }
-
-
 }

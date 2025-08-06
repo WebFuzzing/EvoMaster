@@ -11,18 +11,17 @@ import javax.servlet.http.HttpServletResponse
 class ExternalAuthRest {
 
     @PostMapping(path = ["/login1"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun login(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<Map<String, String>>{
+    open fun login(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<String>{
         if(login.username == "foo" && login.password == "123"){
-            return ResponseEntity.ok(mapOf("access_token" to "token1"))
+            return ResponseEntity.ok("{\"access_token\":\"token1\"}")
         }
         return ResponseEntity.status(401).build()
     }
 
     @PostMapping(path = ["/login2"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun login2(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<Map<String, String>>{
+    open fun login2(@RequestBody login : LoginDto, response : HttpServletResponse) : ResponseEntity<String>{
         if(login.username == "foo" && login.password == "123"){
-
-            return ResponseEntity.ok(mapOf("access_token" to "token2"))
+            return ResponseEntity.ok("{\"access_token\":\"token2\"}")
         }
         return ResponseEntity.status(401).build()
     }
