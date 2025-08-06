@@ -54,7 +54,7 @@ object TokenWriter {
             if(k.token!!.headerPrefix.isNotEmpty()) {
                 lines.append("\"${k.token!!.headerPrefix}\"")
             }else{
-                if (format.isJavaScript() || format.isPython())
+                if (format.isJavaScript() || format.isPython() || format.isKotlin())
                     lines.append("\"\"")
             }
 
