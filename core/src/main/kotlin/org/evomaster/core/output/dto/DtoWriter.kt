@@ -1,5 +1,6 @@
 package org.evomaster.core.output.dto
 
+import com.google.common.annotations.VisibleForTesting
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -30,7 +31,7 @@ import java.nio.file.Path
  * Using DTOs provides a major advantage towards code readability and sustainability. It is more flexible and scales
  * better.
  */
-object DtoWriter {
+class DtoWriter {
 
     private val log: Logger = LoggerFactory.getLogger(DtoWriter::class.java)
 
@@ -52,7 +53,7 @@ object DtoWriter {
 
     private fun getDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
-        action.getViewOfChildren().find { it is BodyParam }
+            action.getViewOfChildren().find { it is BodyParam }
             .let {
                 val primaryGene = GeneUtils.getWrappedValueGene((it as BodyParam).primaryGene())
                 // TODO: Payloads could also be json arrays, analyze ArrayGene
@@ -65,9 +66,10 @@ object DtoWriter {
 
     private fun getDtoFromObject(gene: ObjectGene, actionName: String) {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
+        // TODO: consider an inline schema using more than one possible component: any/one/allOf[object,object]
         val dtoName = gene.refType?:TestWriterUtils.safeVariableName(actionName)
         val dtoClass = DtoClass(dtoName)
-        // TODO: add suport for additionalFields
+        // TODO: add support for additionalFields
         gene.fixedFields.forEach { field ->
             try {
                 val wrappedGene = GeneUtils.getWrappedValueGene(field)
@@ -102,8 +104,16 @@ object DtoWriter {
             is DateTimeGene -> "String"
             is RegexGene -> "String"
             is BooleanGene -> "Boolean"
-            is ObjectGene -> StringUtils.capitalization(fieldName)
+            is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName}")
         })
+    }
+
+    /**
+     * @return collected DTOs by the DTO writer. Only for testing, otherwise we're breaking encapsulation.
+     */
+    @VisibleForTesting
+    internal fun getCollectedDtos() : Map<String, DtoClass> {
+        return dtoCollector
     }
 }
