@@ -2,6 +2,7 @@ package org.evomaster.test.utils;
 
 import org.openqa.selenium.*;
 import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testcontainers.Testcontainers;
 
@@ -125,6 +126,29 @@ public class SeleniumEMUtils {
         try{Thread.sleep(50);} catch (Exception e){}
         waitForPageToLoad(driver, 2);
         //TODO will need to check if JS executing in background
+    }
+
+    public static void selectAndWaitPageLoad(WebDriver driver, String cssSelector, String value) {
+        Select element;
+        try {
+            WebElement el = driver.findElement(By.cssSelector(cssSelector));
+            element = new Select(el);
+        } catch (NoSuchElementException e) {
+            throw new RuntimeException("Cannot locate element with '" + cssSelector + "'." +
+                    "\nCurrent URL is: " + driver.getCurrentUrl() +
+                    "\nCurrent page is: " + driver.getPageSource());
+        }
+        try {
+            element.selectByValue(value);
+        } catch (NoSuchElementException e){
+            element.selectByVisibleText(value);
+        }
+
+        try {
+            Thread.sleep(50);
+        } catch (Exception e) {
+        }
+        waitForPageToLoad(driver, 2);
     }
 
     public static void goToPage(WebDriver driver, String pageURL, int timeoutSeconds){

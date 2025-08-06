@@ -18,19 +18,28 @@ class WebPageIdentifier {
 
     private var counter = 0
 
-    fun registerShape(shape: String) : String{
+    fun registerShape(html: String) : String{
 
+        val shape = html
+        //normalizeHtml(html); -> if needed, should go to HtmlUtils.computeIdentifyingShape
         var id = shapeToId[shape]
         if(id != null){
             //already registered
             return id
         }
-
+        // shape is new  -> generate id and update both maps
         id = "P$counter"
         counter++
         shapeToId[shape] = id
         idToShape[id] = shape
 
         return id
+    }
+
+    // normalize html -> remove white spaces and dynamic ids
+    private fun normalizeHtml(html: String): String {
+        return html
+            .replace(Regex("\\s+"), " ") // Collapse whitespace
+            .replace(Regex("id=\"[^\"]+\""), "id=\"*\"") // Remove dynamic IDs
     }
 }
