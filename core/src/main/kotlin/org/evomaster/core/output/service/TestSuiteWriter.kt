@@ -223,7 +223,7 @@ class TestSuiteWriter {
     fun writeDtos(solutionFilename: String) {
         val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
         val restSampler = sampler as AbstractRestSampler
-        DtoWriter.write(testSuitePath, config.outputFormat, restSampler.getActionDefinitions())
+        DtoWriter().write(testSuitePath, config.outputFormat, restSampler.getActionDefinitions())
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
