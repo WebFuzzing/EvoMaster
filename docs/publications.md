@@ -21,6 +21,11 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
+* A. Arcuri, O. Sahin, M. Zhang.
+  *Fuzzing for Detecting Access Policy Violations in REST APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2025_issre.pdf)]
+
 * O. Sahin, M. Zhang, A. Arcuri.
   *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
   Automated Software Engineering (AUSE).
