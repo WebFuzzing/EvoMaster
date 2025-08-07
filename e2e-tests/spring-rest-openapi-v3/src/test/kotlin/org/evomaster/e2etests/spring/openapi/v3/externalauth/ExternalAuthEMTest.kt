@@ -20,15 +20,15 @@ class ExternalAuthEMTest : SpringTestBase(){
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-                "ExternalAuthEM",
-                20
-        ) { args: List<String> ->
+            "ExternalAuthEM",
+            20
+        ){ args: List<String> ->
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/externalauth/check", "token1")
             assertNone(solution, HttpVerb.GET, 200, "/api/externalauth/check", "token2")
-        }
+      }
     }
 
     @Test
