@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.LinkedHashMap
 
 class DtoWriterTest {
 
@@ -160,6 +161,54 @@ class DtoWriterTest {
         assertEquals(childObjectDtoFields.size, 2)
         assertDtoFieldIn(childObjectDtoFields, "name", STRING)
         assertDtoFieldIn(childObjectDtoFields, "age", INTEGER)
+    }
+
+    @Test
+    fun testOneOf() {
+        val dtoWriter = DtoWriter()
+//        val chosenDto = "Components"
+//        val chosenDto = "Inline"
+        val chosenDto = "Mixed"
+        val actionCluster = initRestSchema("/swagger/dto-writer/oneOf$chosenDto.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 2)
+    }
+
+    @Test
+    fun testAnyOf() {
+        val dtoWriter = DtoWriter()
+        val chosenDto = "Components"
+//        val chosenDto = "Inline"
+//        val chosenDto = "Mixed"
+        val actionCluster = initRestSchema("/swagger/dto-writer/anyOf$chosenDto.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 2)
+    }
+
+    @Test
+    fun testAllOf() {
+        val dtoSpecs = listOf("Components", "Inline", "Mixed")
+        dtoSpecs.forEach { chosenDto ->
+            val dtoWriter = DtoWriter()
+            val actionCluster = initRestSchema("/swagger/dto-writer/allOf$chosenDto.yaml")
+
+            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+            val collectedDtos = dtoWriter.getCollectedDtos()
+            assertEquals(collectedDtos.size, 1)
+            val allOfDto = collectedDtos[collectedDtos.keys.first()]
+            assertNotNull(allOfDto)
+            val dtoFields = allOfDto?.fields?:emptyList()
+            assertEquals(dtoFields.size, 2)
+            assertDtoFieldIn(dtoFields, "name", STRING)
+            assertDtoFieldIn(dtoFields, "age", INTEGER)
+        }
     }
 
     private fun initRestSchema(openApiLocation: String) : Map<String, Action> {
