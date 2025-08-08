@@ -62,7 +62,7 @@ class EMConfig {
          */
         const val stringLengthHardLimit = 20_000
 
-        private const val defaultExternalServiceIP = "127.0.0.4"
+        private const val defaultExternalServiceIP = "127.0.0.5"
 
         //leading zeros are allowed
         private const val lz = "0*"
@@ -70,9 +70,9 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // first four numbers (127.0.0.0 to 127.0.0.4) are reserved
         // this is done with a negated lookahead ?!
-        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
+        private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[01234]$)"
 
         private const val externalServiceIPRegex = "$_eip_n$_eip_s$_eip_e"
 
@@ -589,6 +589,16 @@ class EMConfig {
 
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
+
+        if(!security && ssrf) {
+            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+        }
+
+        if (ssrf &&
+            vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
+            !languageModelConnector) {
+            throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
         }
 
         if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
@@ -2256,7 +2266,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
@@ -2406,6 +2416,32 @@ class EMConfig {
 
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = true
+
+    @Experimental
+    @Cfg("To apply SSRF detection as part of security testing.")
+    var ssrf = false
+
+    enum class VulnerableInputClassificationStrategy {
+        /**
+         * Uses the manual methods to select the vulnerable inputs.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerable inputs.
+         */
+        LLM,
+    }
+
+    @Experimental
+    @Cfg("HTTP callback verifier port.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var httpCallbackVerifierPort: Int = 19000
+
+    @Experimental
+    @Cfg("Potential vulnerability class associated with a endpoint classification strategy.")
+    var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
 
     @Experimental
     @Cfg("Enable language model connector")

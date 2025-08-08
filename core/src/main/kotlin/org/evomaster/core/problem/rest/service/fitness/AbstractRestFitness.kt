@@ -19,6 +19,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
@@ -39,6 +40,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -76,6 +78,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
+
+    @Inject
+    protected lateinit var SSRFAnalyser: SSRFAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -756,6 +761,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
+        if (config.security && config.ssrf) {
+            if (SSRFAnalyser.hasVulnerableInputs(a)) {
+                rcr.setVulnerableForSSRF(true)
+            }
+        }
+
         return handledSavedLocation
     }
 
@@ -1079,6 +1090,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
+        if (config.ssrf) {
+            handleVulnerabilities(individual, actionResults, fv)
+        }
+
         //TODO likely would need to consider SEEDED as well in future
         if(config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS){
             analyzeHttpSemantics(individual, actionResults, fv)
@@ -1154,6 +1169,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
+    }
+
+    private fun handleVulnerabilities(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+
+        individual.seeMainExecutableActions().forEach {
+            val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+
+            if (ar != null && ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)?.toBoolean() ?: false) {
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+
+                ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
+            }
+        }
     }
 
     private fun handleNotRecognizedAuthenticated(
