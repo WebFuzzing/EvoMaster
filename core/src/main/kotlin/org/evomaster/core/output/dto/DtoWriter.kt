@@ -8,6 +8,7 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -57,8 +58,16 @@ class DtoWriter {
             .let {
                 val primaryGene = GeneUtils.getWrappedValueGene((it as BodyParam).primaryGene())
                 // TODO: Payloads could also be json arrays, analyze ArrayGene
-                if (primaryGene is ObjectGene) {
-                    getDtoFromObject(primaryGene, action.getName())
+                when (primaryGene) {
+                    is ObjectGene -> {
+                        getDtoFromObject(primaryGene, action.getName())
+                    }
+                    is ArrayGene<*> -> {
+                        getDtoFromArray(primaryGene, action.getName())
+                    }
+                    else -> {
+                        throw IllegalStateException("Gene $primaryGene is not supported for DTO payloads")
+                    }
                 }
             }
         }
@@ -78,6 +87,9 @@ class DtoWriter {
                 if (wrappedGene is ObjectGene && !dtoCollector.contains(dtoField.type)) {
                     getDtoFromObject(wrappedGene, dtoField.type)
                 }
+                if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
+                    getDtoFromObject(wrappedGene.template, StringUtils.capitalization(wrappedGene.name))
+                }
             } catch (ex: Exception) {
                 log.warn("A failure has occurred when collecting DTOs. \n"
                         + "Exception: ${ex.localizedMessage} \n"
@@ -89,8 +101,21 @@ class DtoWriter {
         dtoCollector.put(dtoName, dtoClass)
     }
 
+    private fun getDtoFromArray(gene: ArrayGene<*>, actionName: String) {
+        val template = gene.template
+        // TODO consider ChoiceGene. Primitive types won't be considered, an array of strings should not be wrapped
+        //  into a DTO but just use List<String> for setting the payload.
+        if (template is ObjectGene) {
+            getDtoFromObject(template, actionName)
+        }
+    }
+
     private fun getDtoField(fieldName: String, field: Gene?): DtoField {
-        return DtoField(fieldName, when (field) {
+        return DtoField(fieldName, getDtoType(fieldName, field))
+    }
+
+    private fun getDtoType(fieldName: String, field: Gene?): String {
+        return when (field) {
             // TODO: handle nested arrays, objects and extend type system for dto fields
             is StringGene -> "String"
             is IntegerGene -> "Integer"
@@ -105,8 +130,9 @@ class DtoWriter {
             is RegexGene -> "String"
             is BooleanGene -> "Boolean"
             is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
+            is ArrayGene<*> -> "List<${getDtoType(field.name, field.template)}>"
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName}")
-        })
+        }
     }
 
     /**
