@@ -129,7 +129,11 @@ class SSRFAnalyser {
 
         action.parameters.forEach { param ->
             param.primaryGene().getViewOfChildren().forEach { gene ->
-                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+                // This checks whether the [Action] has any inputs with callback URL generated for this
+                // [Action] and any calls made to the verifier for this execution.
+                if (httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString()) && httpCallbackVerifier.verify(action.getName())) {
+                    hasCallbackURL = true
+                }
             }
         }
 
@@ -180,7 +184,7 @@ class SSRFAnalyser {
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
-                if (action is RestCallAction) {
+                if (action is RestCallAction && !actionVulnerabilityMapping.containsKey(action.getName())) {
                     val actionFaultMapping = ActionFaultMapping(action.getName())
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
                         extractBodyParameters(action.parameters)
@@ -277,7 +281,7 @@ class SSRFAnalyser {
                             val mapping = actionVulnerabilityMapping[action.getName()]
 
                             if (mapping != null) {
-                               handleVulnerableAction(evaluatedIndividual, action)
+                                handleVulnerableAction(evaluatedIndividual, action)
                             }
                         }
                     }
@@ -286,7 +290,10 @@ class SSRFAnalyser {
         }
     }
 
-    private fun handleVulnerableAction(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, action: RestCallAction) {
+    private fun handleVulnerableAction(
+        evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
+        action: RestCallAction
+    ) {
         val copy = evaluatedIndividual.individual.copy() as RestIndividual
         // TODO: Need individual callback URL for each param?
         val callbackURL = httpCallbackVerifier.generateCallbackLink(
@@ -306,13 +313,17 @@ class SSRFAnalyser {
         }
     }
 
-    private fun handleExecutedIndividual(action: RestCallAction, executedIndividual: EvaluatedIndividual<RestIndividual>, callbackURL: String) {
+    private fun handleExecutedIndividual(
+        action: RestCallAction,
+        executedIndividual: EvaluatedIndividual<RestIndividual>,
+        callbackURL: String
+    ) {
         actionVulnerabilityMapping.getValue(action.getName()).httpCallbackURL = callbackURL
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
             actionMapping.isExploitable = true
-            actionMapping.securityFaults[DefinedFaultCategory.SSRF] = true
+            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
             // Create a testing target
             archive.addIfNeeded(executedIndividual)
         }

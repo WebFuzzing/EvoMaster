@@ -73,6 +73,9 @@ class HttpCallbackVerifier {
         return pattern.matches(value)
     }
 
+    /**
+     * Method generates a unique callback link to be used as payload for SSRF.
+     */
     fun generateCallbackLink(name: String): String {
         val token = UUID.randomUUID().toString()
         val ssrfPath = "/sink/$token"
