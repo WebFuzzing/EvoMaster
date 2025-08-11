@@ -95,6 +95,9 @@ class AIGLMCheck : IntegrationTestRestBase() {
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
         val endpointToDimension = mutableMapOf<String, Int?>()
+        val endpointToCorrectPrediction = mutableMapOf<String, Int>()
+        val endpointToTotalExecution = mutableMapOf<String, Int>()
+        val endpointToAccuracy = mutableMapOf<String, Double>()
         for (action in actionList) {
             val name = action.getName()
 
@@ -114,6 +117,10 @@ class AIGLMCheck : IntegrationTestRestBase() {
 
             println("Endpoint: $name, dimension: $dimension")
             endpointToDimension[name] = dimension
+
+            endpointToCorrectPrediction[name] = 0
+            endpointToTotalExecution[name] = 0
+            endpointToAccuracy[name] = 0.0
         }
 
         /**
@@ -138,9 +145,9 @@ class AIGLMCheck : IntegrationTestRestBase() {
         // Execute the procedure for a period of time
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
-        var time = 1
-        val timeLimit = 200
-        while (time <= timeLimit) {
+        val startTime = System.currentTimeMillis()
+        val runDuration = 5_000L // Milliseconds
+        while (System.currentTimeMillis() - startTime < runDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
@@ -149,46 +156,81 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val classifier = endpointToClassifier[name]
             val dimension = endpointToDimension[name]
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+            var cp = endpointToCorrectPrediction[name]!!
+            var tot = endpointToTotalExecution[name]!!
+            var ac = endpointToAccuracy[name]!!
 
-            println("**********************************************")
-            println("Time         : $time")
+            println("*************************************************")
             println("Path         : $name")
-            println("Classifier   : ${if (classifier == null) "null" else "GLM"}")
+            println("Classifier   : ${if (classifier == null) "null" else "GAUSSIAN"}")
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Actual Genes : ${geneValues.size}")
+            println("cp, tot, ac  : $cp, $tot, $ac")
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
             val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
-            val result = executeRestCallAction(action,"$baseUrlOfSut")
-            println("Response     : ${result.getStatusCode()}")
 
-            // Skip classification for the endpoints with unsupported genes
+            // Execution without classification for the endpoints with unsupported genes
             if (classifier==null){
+                executeRestCallAction(action,"$baseUrlOfSut")
                 println("No classification as the classifier is null, i.e., the endpoint contains unsupported genes")
                 continue
             }
+            // Warmup cold classifiers by at least n request
+            val n = 2
+            val isCold = tot <= n
+            if (isCold) {
+                println("Warmup by at least $n request")
+                val result = executeRestCallAction(action, "$baseUrlOfSut")
+                classifier.updateModel(action, result)
+                tot += 1
+                endpointToTotalExecution[name] = tot
+                continue
+            }
 
-            // Update and classify
-            classifier.updateModel(action, result)
+            // Classification
             val classification = classifier.classify(action)
-
-            println("Probabilities: ${classification.probabilities}")
-            require(classification.probabilities.values.all { it in 0.0..1.0 } &&
-                    classification.probabilities.values.sum().let { abs(it - 1.0) < 1e-6 }) {
+            val p200 = classification.probabilities[200]!!
+            val p400 = classification.probabilities[400]!!
+            require(p200 in 0.0..1.0 && p400 in 0.0..1.0 && abs((p200 + p400) - 1.0) < 1e-6) {
                 "Probabilities must be in [0,1] and sum to 1"
             }
 
-            if (classifier != null) {
-                val weightsAndBias = classifier.getModelParams()
-                println("Weights and Bias = $weightsAndBias")
-                println("**********************************************")
-            } else {
-                println("The classifier is not a GLMOnlineClassifier")
+            // Prediction
+            val prediction: Int = if (p200 > p400) 200 else 400
+
+            // Probabilistic decision-making based on Bernoulli(prob = aci)
+            val sendOrNot: Boolean
+            if (prediction == 200) {
+                sendOrNot = true
+            }else{
+                sendOrNot = if(Math.random() > ac) true else false
             }
-            time++
+
+            // Execute the request and update
+            if (sendOrNot) {
+                val result = executeRestCallAction(action,"$baseUrlOfSut")
+                println("Response     : ${result.getStatusCode()}")
+
+                if (result.getStatusCode()==prediction) {
+                    cp = cp + 1
+                }
+                tot = tot + 1
+                ac = cp.toDouble() / tot
+
+                endpointToCorrectPrediction[name] = cp
+                endpointToTotalExecution[name] = tot
+                endpointToAccuracy[name] = ac
+
+                classifier.updateModel(action, result)
+            }
+
+            println("Weights and Bias = ${classifier.getModelParams()}")
+            println("**********************************************")
+
         }
     }
 }
