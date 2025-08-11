@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.0.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>

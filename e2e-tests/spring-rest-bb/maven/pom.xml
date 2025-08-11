@@ -13,7 +13,7 @@
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
         <!-- WARNING: the marker is used in the version.py script -->
-        <version>4.0.0-SNAPSHOT</version><!--MARKER-->
+        <version>4.0.1-SNAPSHOT</version><!--MARKER-->
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
