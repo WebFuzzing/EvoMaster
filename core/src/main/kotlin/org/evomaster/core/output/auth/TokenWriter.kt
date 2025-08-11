@@ -54,8 +54,7 @@ object TokenWriter {
             if(k.token!!.headerPrefix.isNotEmpty()) {
                 lines.append("\"${k.token!!.headerPrefix}\"")
             }else{
-                if (format.isJavaScript() || format.isPython())
-                    lines.append("\"\"")
+                lines.append("\"\"")
             }
 
             if (!format.isPython()) {
@@ -65,7 +64,6 @@ object TokenWriter {
                     lines.append(" + ")
                 }
             }
-
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
@@ -97,9 +95,12 @@ object TokenWriter {
                 lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});") }
             } else if (format.isPython()) {
                 lines.add("${tokenName(k)} = ${tokenName(k)} + ${responseName(k)}.json()$path")
-            }else
+            }else if (format.isJavaOrKotlin()) {
                 lines.add(".then().extract().response().path(\"$path\")")
-
+                if(format.isKotlin()) {
+                    lines.append("!!")
+                }
+            }
             lines.appendSemicolon()
             lines.addEmpty()
 
