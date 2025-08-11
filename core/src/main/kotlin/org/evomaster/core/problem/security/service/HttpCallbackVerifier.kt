@@ -28,7 +28,7 @@ class HttpCallbackVerifier {
 
     val isActive: Boolean get() = wireMockServer != null && wireMockServer!!.isRunning
 
-    private var counter = 0
+    private var counter: Long = 0
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
