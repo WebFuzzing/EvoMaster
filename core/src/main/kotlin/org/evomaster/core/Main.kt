@@ -138,7 +138,10 @@ class Main {
                     is NoRemoteConnectionException ->
                         logError(
                             "ERROR: ${cause.message}" +
-                                    "\n  Make sure the EvoMaster Driver for the system under test is running correctly."
+                                    "\n  For WHITE-BOX testing (e.g., for JVM applications, requiring to write a driver" +
+                                    " class) make sure the EvoMaster Driver for the system under test is running correctly." +
+                                    "\n  On the other hand, if you are doing BLACK-BOX testing (for any kind of programming language)" +
+                                    " without code analyses, remember to specify '--blackBox true' on the command-line."
                         )
 
                     is SutProblemException ->
