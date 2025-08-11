@@ -2437,7 +2437,7 @@ class EMConfig {
     @Cfg("Port to run HTTP server to verify HTTP callbacks related to SSRF.")
     @Min(0.0)
     @Max(maxTcpPort)
-    var httpCallbackVerifierPort: Int = 19000
+    var httpCallbackVerifierPort: Int = 19876
 
     @Experimental
     @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
