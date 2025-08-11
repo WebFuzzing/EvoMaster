@@ -57,10 +57,10 @@ They might not work when trying to use these installers on older operating syste
 As an open-source project, we have not paid tax to Microsoft and Apple.
 This means that, if you try to install _EvoMaster_ via its _.msi_ or _.dmg_ installer files,
 Microsoft/Apple will block it for "security" reasons.
-But you can bypass the block (you can search for latest instruction).
+But you can bypass the block (you can search for latest instructions specific for your OS).
 See for example instructions for Mac Sequoia:
 
-![](img/mac_tax.PNG)
+![](img/mac_tax.png)
 
 
 ## Driver Library
