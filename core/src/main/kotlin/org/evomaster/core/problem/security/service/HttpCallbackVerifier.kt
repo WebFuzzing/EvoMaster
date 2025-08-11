@@ -50,7 +50,6 @@ class HttpCallbackVerifier {
     fun initWireMockServer() {
         try {
             val config = WireMockConfiguration()
-//                .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
                 .port(config.httpCallbackVerifierPort)
 

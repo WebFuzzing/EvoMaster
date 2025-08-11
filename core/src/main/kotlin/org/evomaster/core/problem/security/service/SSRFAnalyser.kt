@@ -18,6 +18,11 @@ import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
@@ -132,13 +137,10 @@ class SSRFAnalyser {
         var hasCallbackURL = false
 
         action.parameters.forEach { param ->
-            param.seeGenes().forEach { gene ->
-                val wrappedGene = GeneUtils.getWrappedValueGene(gene)
-                if (wrappedGene != null) {
-                    // This checks whether the [Action] has any inputs with callback URL generated for this
-                    // [Action] and any calls made to the verifier for this execution.
-                    hasCallbackURL = httpCallbackVerifier.isCallbackURL(wrappedGene.getValueAsRawString())
-                }
+            val genes = getStringGenesFromParam(param.seeGenes())
+            // TODO: Handle param types
+            genes.forEach { gene ->
+                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
             }
         }
 
@@ -237,34 +239,40 @@ class SSRFAnalyser {
         parameters.forEach { param ->
             when (param) {
                 is BodyParam -> {
-                    param.seeGenes().filter { it.name == "body" }.forEach { gene ->
-                        gene.getViewOfChildren().forEach { g ->
-                            // At this point description is null if the gene wrapped inside another
-                            // TODO: Need to implement something similar to getValueAsRawString?
-                            output[g.name] = InputFaultMapping(
-                                g.name,
-                                g.description,
-                            )
+                    val genes = getStringGenesFromParam(param.seeGenes())
 
-                        }
+                    genes.forEach { gene ->
+                        output[gene.name] = InputFaultMapping(
+                            gene.name,
+                            gene.description,
+                        )
                     }
                 }
 
                 is HeaderParam -> {
-                    param.seeGenes().filter { it.name != "body" }.forEach { gene ->
+                    val genes = getStringGenesFromParam(param.seeGenes())
+
+                    genes.forEach { gene ->
                         output[gene.name] = InputFaultMapping(
                             gene.name,
-                            gene.description
+                            gene.description,
                         )
                     }
                 }
 
                 is QueryParam -> {
-                    // TODO: Need to create an example to handle this
+                    val genes = getStringGenesFromParam(param.seeGenes())
+
+                    genes.forEach { gene ->
+                        output[gene.name] = InputFaultMapping(
+                            gene.name,
+                            gene.description,
+                        )
+                    }
                 }
 
                 else -> {
-                    // Do nothing for now
+                    // Do nothing
                 }
             }
         }
@@ -347,5 +355,31 @@ class SSRFAnalyser {
                 }
             }
         }
+    }
+
+    private fun getStringGenesFromParam(genes: List<Gene>) : List<Gene> {
+        val output = mutableListOf<Gene>()
+
+        genes.forEach { gene ->
+            when (gene) {
+                is StringGene -> {
+                    output.add(gene)
+                }
+                is OptionalGene -> {
+                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
+                }
+                is ObjectGene -> {
+                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
+                }
+                is ChoiceGene<*> -> {
+                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
+                }
+                is CustomMutationRateGene<*> -> {
+                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
+                }
+            }
+        }
+
+        return output
     }
 }
