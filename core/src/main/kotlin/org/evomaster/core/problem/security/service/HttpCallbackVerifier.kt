@@ -7,7 +7,6 @@ import com.github.tomakehurst.wiremock.common.Metadata
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer
 import com.google.inject.Inject
-import org.evomaster.client.java.instrumentation.shared.SecuritySharedUtils
 import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -49,7 +48,7 @@ class HttpCallbackVerifier {
     fun initWireMockServer() {
         try {
             val config = WireMockConfiguration()
-                .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
+//                .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
                 .port(config.httpCallbackVerifierPort)
 
@@ -68,7 +67,7 @@ class HttpCallbackVerifier {
         // Regex pattern looks for URL contains [HTTP_CALLBACK_VERIFIER] address and [HTTPCallbackVerifier]
         // port, along with the path /sink/ and UUID as token generated to make the callback URL unique.
         val pattern =
-            """^http:\/\/${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${config.httpCallbackVerifierPort}\/sink\/.{36}""".toRegex()
+            """^http:\/\/localhost:${config.httpCallbackVerifierPort}\/sink\/.{36}""".toRegex()
 
         return pattern.matches(value)
     }
@@ -92,7 +91,7 @@ class HttpCallbackVerifier {
 
         )
 
-        val link = "http://${SecuritySharedUtils.HTTP_CALLBACK_VERIFIER}:${wireMockServer!!.port()}$ssrfPath"
+        val link = "http://localhost:${wireMockServer!!.port()}$ssrfPath"
 
         actionCallbackLinkMapping[name] = link
 

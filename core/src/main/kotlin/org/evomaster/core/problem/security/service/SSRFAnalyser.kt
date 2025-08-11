@@ -132,13 +132,11 @@ class SSRFAnalyser {
             param.primaryGene().getViewOfChildren().forEach { gene ->
                 // This checks whether the [Action] has any inputs with callback URL generated for this
                 // [Action] and any calls made to the verifier for this execution.
-                if (httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString()) && httpCallbackVerifier.verify(action.getName())) {
-                    hasCallbackURL = true
-                }
+                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
             }
         }
 
-        return hasCallbackURL
+        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())git
     }
 
     /**
