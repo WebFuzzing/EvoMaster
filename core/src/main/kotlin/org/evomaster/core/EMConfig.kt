@@ -1280,12 +1280,10 @@ class EMConfig {
     @Cfg("Learning rate for classifiers like GLM and NN.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
-    @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
-    var writeWFCReport = false
+    var writeWFCReport = true
 
-    @Experimental
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
             " the JSON report file will be created.")
     var writeWFCReportExcludeWebApp = false
