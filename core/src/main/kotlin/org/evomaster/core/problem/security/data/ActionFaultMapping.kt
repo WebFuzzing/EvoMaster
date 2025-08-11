@@ -26,12 +26,10 @@ class ActionFaultMapping (
 
     /**
      * Holds potential security faults for the [Action].
-     * Key contains the faults related to security, and value marks the exploitability
-     * using a [Boolean].
      */
-    var securityFaults: MutableMap<FaultCategory, Boolean> = mutableMapOf()
+    var securityFaults: MutableList<FaultCategory> = mutableListOf()
 
     fun addSecurityFaultCategory(faultCategory: FaultCategory) {
-        securityFaults[faultCategory] = false
+        securityFaults.add(faultCategory)
     }
 }
