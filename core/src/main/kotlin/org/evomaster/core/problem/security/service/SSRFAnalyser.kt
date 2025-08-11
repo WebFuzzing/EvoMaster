@@ -166,8 +166,37 @@ class SSRFAnalyser {
      * TODO: Need to rename the word manual to something meaningful later
      */
     private fun manualClassifier() {
-        // TODO: Can use the extracted CSV to map the parameter name
-        //  to the vulnerability class.
+        // TODO: Can use the extracted CSV to map the parameter name patterns.
+        individualsInSolution.forEach { evaluatedIndividual ->
+            evaluatedIndividual.evaluatedMainActions().forEach { a ->
+                val action = a.action
+                if (action is RestCallAction) {
+                    val actionFaultMapping = ActionFaultMapping(action.getName())
+                    val inputFaultMapping: MutableMap<String, InputFaultMapping> =
+                        extractBodyParameters(action.parameters)
+
+                    inputFaultMapping.forEach { paramName, paramMapping ->
+                        val answer = if (!paramMapping.description.isNullOrBlank()) {
+                            // TODO: Manual
+                            false
+                        } else {
+                            // TODO: Manual
+                            false
+                        }
+
+                        if (answer != null && answer) {
+                            paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+                            actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
+                            actionFaultMapping.isVulnerable = true
+                        }
+                    }
+
+                    // Assign the param mapping
+                    actionFaultMapping.params = inputFaultMapping
+                    actionVulnerabilityMapping[action.getName()] = actionFaultMapping
+                }
+            }
+        }
     }
 
 
@@ -210,7 +239,6 @@ class SSRFAnalyser {
 
                     // Assign the param mapping
                     actionFaultMapping.params = inputFaultMapping
-
                     actionVulnerabilityMapping[action.getName()] = actionFaultMapping
                 }
             }
