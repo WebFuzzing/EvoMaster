@@ -75,6 +75,8 @@ Once the command is executed, you can inspect the generated files under `generat
    Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
+   Also keep in mind we have not paid the [Microsoft/Apple Tax](docs/download.md). This means that your operating system by default will block the installation, stating it cannot verify it is not a malware. 
+   But the block [can be bypassed](docs/download.md).
 
 * _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
 

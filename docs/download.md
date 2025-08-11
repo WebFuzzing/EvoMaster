@@ -30,7 +30,7 @@ By default, _EvoMaster_ will get installed at:
 * On OSX: `/Applications/evomaster.app/Contents/MacOS/evomaster`
 * On Linux: `/opt/evomaster/bin/evomaster`
 
-On OSX and Linux, you can add to your `~/.bash_profile` file the following lines:
+On OSX and Linux, you can add to your `~/.zprofile` (recent Macs) or `~/.bash_profile` file the following lines:
 
 `export PATH="$PATH:/Applications/evomaster.app/Contents/MacOS"` (for OSX)
 
@@ -51,6 +51,16 @@ If you have not setup environment variables before, you can learn more by search
 Notice that these installer files are built with the latest versions
 of these operating systems on GitHub Actions.
 They might not work when trying to use these installers on older operating system versions.
+
+## Microsoft and Apple Tax
+
+As an open-source project, we have not paid tax to Microsoft and Apple.
+This means that, if you try to install _EvoMaster_ via its _.msi_ or _.dmg_ installer files,
+Microsoft/Apple will block it for "security" reasons.
+But you can bypass the block (you can search for latest instruction).
+See for example instructions for Mac Sequoia:
+
+![](img/mac_tax.PNG)
 
 
 ## Driver Library
