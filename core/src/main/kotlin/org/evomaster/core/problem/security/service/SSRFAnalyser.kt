@@ -118,7 +118,6 @@ class SSRFAnalyser {
     fun hasVulnerableInputs(
         action: RestCallAction,
     ): Boolean {
-        // TODO: Check the action has any vulnerabilities based on the classification
         /*
             WRONG: need to check that test call is using a URL, and that this trigger the fault.
             otherwise, any test with this action type would be marked as faulty
@@ -126,17 +125,24 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
+        if (!actionVulnerabilityMapping.containsKey(action.getName())) {
+            return false
+        }
+
         var hasCallbackURL = false
 
         action.parameters.forEach { param ->
-            param.primaryGene().getViewOfChildren().forEach { gene ->
-                // This checks whether the [Action] has any inputs with callback URL generated for this
-                // [Action] and any calls made to the verifier for this execution.
-                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+            param.seeGenes().forEach { gene ->
+                val wrappedGene = GeneUtils.getWrappedValueGene(gene)
+                if (wrappedGene != null) {
+                    // This checks whether the [Action] has any inputs with callback URL generated for this
+                    // [Action] and any calls made to the verifier for this execution.
+                    hasCallbackURL = httpCallbackVerifier.isCallbackURL(wrappedGene.getValueAsRawString())
+                }
             }
         }
 
-        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())git
+        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())
     }
 
     /**
