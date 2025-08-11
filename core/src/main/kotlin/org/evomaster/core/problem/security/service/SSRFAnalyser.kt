@@ -18,6 +18,7 @@ import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
@@ -117,7 +118,6 @@ class SSRFAnalyser {
     fun hasVulnerableInputs(
         action: RestCallAction,
     ): Boolean {
-        // TODO: Check the action has any vulnerabilities based on the classification
         /*
             WRONG: need to check that test call is using a URL, and that this trigger the fault.
             otherwise, any test with this action type would be marked as faulty
@@ -125,15 +125,24 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
+        if (!actionVulnerabilityMapping.containsKey(action.getName())) {
+            return false
+        }
+
         var hasCallbackURL = false
 
         action.parameters.forEach { param ->
-            param.primaryGene().getViewOfChildren().forEach { gene ->
-                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+            param.seeGenes().forEach { gene ->
+                val wrappedGene = GeneUtils.getWrappedValueGene(gene)
+                if (wrappedGene != null) {
+                    // This checks whether the [Action] has any inputs with callback URL generated for this
+                    // [Action] and any calls made to the verifier for this execution.
+                    hasCallbackURL = httpCallbackVerifier.isCallbackURL(wrappedGene.getValueAsRawString())
+                }
             }
         }
 
-        return hasCallbackURL
+        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())
     }
 
     /**
@@ -209,7 +218,7 @@ class SSRFAnalyser {
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
-                if (action is RestCallAction) {
+                if (action is RestCallAction && !actionVulnerabilityMapping.containsKey(action.getName())) {
                     val actionFaultMapping = ActionFaultMapping(action.getName())
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
                         extractBodyParameters(action.parameters)
@@ -257,11 +266,16 @@ class SSRFAnalyser {
             when (param) {
                 is BodyParam -> {
                     param.seeGenes().filter { it.name == "body" }.forEach { gene ->
-                        gene.getAllGenesInIndividual().forEach { geneInIndividual ->
-                            output[geneInIndividual.name] = InputFaultMapping(
-                                geneInIndividual.name,
-                                geneInIndividual.description
-                            )
+                        gene.getViewOfChildren().forEach { g ->
+                            val gn = GeneUtils.getWrappedValueGene(g)
+                            // At this point description is null if the gene wrapped inside another
+                            // TODO: Need to implement something similar to getValueAsRawString?
+                            if (gn != null) {
+                                output[gn.name] = InputFaultMapping(
+                                    gn.name,
+                                    gn.description,
+                                )
+                            }
                         }
                     }
                 }
@@ -305,7 +319,7 @@ class SSRFAnalyser {
                             val mapping = actionVulnerabilityMapping[action.getName()]
 
                             if (mapping != null) {
-                               handleVulnerableAction(evaluatedIndividual, action)
+                                handleVulnerableAction(evaluatedIndividual, action)
                             }
                         }
                     }
@@ -314,7 +328,10 @@ class SSRFAnalyser {
         }
     }
 
-    private fun handleVulnerableAction(evaluatedIndividual: EvaluatedIndividual<RestIndividual>, action: RestCallAction) {
+    private fun handleVulnerableAction(
+        evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
+        action: RestCallAction
+    ) {
         val copy = evaluatedIndividual.individual.copy() as RestIndividual
         // TODO: Need individual callback URL for each param?
         val callbackURL = httpCallbackVerifier.generateCallbackLink(
@@ -334,13 +351,17 @@ class SSRFAnalyser {
         }
     }
 
-    private fun handleExecutedIndividual(action: RestCallAction, executedIndividual: EvaluatedIndividual<RestIndividual>, callbackURL: String) {
+    private fun handleExecutedIndividual(
+        action: RestCallAction,
+        executedIndividual: EvaluatedIndividual<RestIndividual>,
+        callbackURL: String
+    ) {
         actionVulnerabilityMapping.getValue(action.getName()).httpCallbackURL = callbackURL
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
             actionMapping.isExploitable = true
-            actionMapping.securityFaults[DefinedFaultCategory.SSRF] = true
+            actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
             // Create a testing target
             archive.addIfNeeded(executedIndividual)
         }
