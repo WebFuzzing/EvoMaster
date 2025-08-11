@@ -15,7 +15,7 @@ In your local `~/.m2` Maven repository, you need to create a `settings.xml` file
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
 <servers>
 <server>
-      <id>ossrh</id>
+      <id>central</id>
       <username>???</username>
       <password>???</password>
     </server>

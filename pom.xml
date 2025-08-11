@@ -85,8 +85,8 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -1306,16 +1306,18 @@
                     </executions>
                 </plugin>
 
-                <!-- We deploy to SonaType, which then sync to Maven Central -->
+                <!-- To deploy to Maven Central
+                    https://central.sonatype.com/account
+                    https://central.sonatype.org/publish/publish-portal-maven/
+                -->
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>1.6.8</version>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.7.0</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <publishingServerId>central</publishingServerId>
+                        <autoPublish>true</autoPublish>
                     </configuration>
                 </plugin>
 
