@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>3.4.1-SNAPSHOT</version>
+    <version>4.0.0</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -1313,7 +1313,7 @@
                 <plugin>
                     <groupId>org.sonatype.central</groupId>
                     <artifactId>central-publishing-maven-plugin</artifactId>
-                    <version>0.7.0</version>
+                    <version>0.8.0</version>
                     <extensions>true</extensions>
                     <configuration>
                         <publishingServerId>central</publishingServerId>

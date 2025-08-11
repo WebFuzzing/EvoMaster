@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version 4.0.0
+
 ### Breaking Changes
 - The packages in the definition of auth information in the embedded/external drivers are changed. Now they use WFC declarations, with packages in `com.webfuzzing.commons.auth`. The DTOs are the same, though. However, some names have dropped the `Dto` suffix. If you set auth configurations with `AuthUtils`, then likely you do not need to change anything. Otherwise, if you built DTOs manually, you will need to update them.   
 

@@ -5,12 +5,13 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>3.4.1-SNAPSHOT</version>
+        <version>4.0.0</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
     <artifactId>evomaster-client-java-dependencies</artifactId>
     <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
         <dependency>
