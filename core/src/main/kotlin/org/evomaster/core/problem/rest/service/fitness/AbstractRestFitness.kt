@@ -1185,7 +1185,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-
+                // TODO: Name of the parameter can be used as the context
                 ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
             }
         }
