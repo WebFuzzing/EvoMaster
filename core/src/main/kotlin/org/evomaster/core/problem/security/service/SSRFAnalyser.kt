@@ -18,6 +18,7 @@ import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
@@ -233,11 +234,16 @@ class SSRFAnalyser {
             when (param) {
                 is BodyParam -> {
                     param.seeGenes().filter { it.name == "body" }.forEach { gene ->
-                        gene.getAllGenesInIndividual().forEach { geneInIndividual ->
-                            output[geneInIndividual.name] = InputFaultMapping(
-                                geneInIndividual.name,
-                                geneInIndividual.description
-                            )
+                        gene.getViewOfChildren().forEach { g ->
+                            val gn = GeneUtils.getWrappedValueGene(g)
+                            // At this point description is null if the gene wrapped inside another
+                            // TODO: Need to implement something similar to getValueAsRawString?
+                            if (gn != null) {
+                                output[gn.name] = InputFaultMapping(
+                                    gn.name,
+                                    gn.description,
+                                )
+                            }
                         }
                     }
                 }

@@ -18,7 +18,7 @@ class SsrfEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("WIP")
+//    @Disabled("WIP")
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
