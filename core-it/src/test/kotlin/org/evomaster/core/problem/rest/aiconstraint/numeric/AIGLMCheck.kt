@@ -162,7 +162,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
 
             println("*************************************************")
             println("Path         : $name")
-            println("Classifier   : ${if (classifier == null) "null" else "GAUSSIAN"}")
+            println("Classifier   : ${if (classifier == null) "null" else "GLM"}")
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Actual Genes : ${geneValues.size}")
