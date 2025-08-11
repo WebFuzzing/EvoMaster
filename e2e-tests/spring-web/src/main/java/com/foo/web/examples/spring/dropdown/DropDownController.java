@@ -11,6 +11,8 @@ public class DropDownController {
 
     @GetMapping("/")
     public String index0() {
+        System.out.println("Servlet API Version: " +
+                javax.servlet.ServletRequest.class.getPackage().getSpecificationVersion());
         return "/dropdown/index.html";
     }
 

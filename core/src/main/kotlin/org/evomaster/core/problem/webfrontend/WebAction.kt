@@ -48,36 +48,39 @@ class WebAction(
                 throw IllegalArgumentException("Missing info for input: $key")
             }
         }
+
         //TODO constraint checks on singleSelection and multiSelection
+        //SingleSelection
+        if (singleSelection.isNotEmpty()) {
+            for ((key, value) in singleSelection) {
+                val selectedValue = value.getValueAsRawString()
+                val allowedValues = value.values
 
-        for ((key, value) in singleSelection) {
-            val selectedValue = singleSelection.getValue(key).index
-            val allowedValues = singleSelection.getValue(key).values
+                //check for duplicated option values?
+                val duplicates = allowedValues
+                    .groupingBy { it }
+                    .eachCount()
+                    .filter { it.value > 1 }
+                    .keys
 
-            val duplicates = allowedValues
-                .groupingBy { it }
-                .eachCount()
-                .filter { it.value > 1 }
-                .keys
+                //Constraint: Empty option list
+                if (allowedValues.isNullOrEmpty()) {
+                    throw Exception("List is Empty")
+                }
+                //Constraint: duplicated values
+                if (duplicates.isNotEmpty()) {
+                    throw Exception("Selection contains duplicate values")
+                }
 
+                // Constraint: Selection Shouldnt be empty?  the first option can be- to be removed
+                /*if (selectedValue.isNullOrEmpty()) {
+                    throw Exception("Selection for '$selectedValue' is missing.")
+                }*/
 
-            //Constraint: Empty option list
-            if (allowedValues.isNullOrEmpty()) {
-                throw IllegalArgumentException("List is Empty")
-            }
-            //Constraint: No duplicate values
-            if (duplicates.isNotEmpty()) {
-                throw IllegalArgumentException("Selection contains duplicate values")
-            }
-
-            // Constraint: Selection must empty?
-//            if (selectedValue == 0) {
-//                throw IllegalArgumentException("Selection for '$selectedValue' is missing.")
-//            }
-
-            // Constraint: Selection must be in the allowed values
-            if (!allowedValues.contains(selectedValue.toString())) {
-                throw IllegalArgumentException("Invalid selection for '$selectedValue': '$selectedValue' is not among allowed values $allowedValues.")
+                // Constraint: Selection must be in the allowed values -> for autocomplete cases when the user can type the option
+                if (!allowedValues.contains(selectedValue.toString())) {
+                    throw Exception("Invalid selection for '$selectedValue': '$selectedValue' is not among allowed values $allowedValues.")
+                }
             }
         }
     }

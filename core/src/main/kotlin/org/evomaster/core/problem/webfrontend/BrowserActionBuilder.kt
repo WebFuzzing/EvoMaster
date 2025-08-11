@@ -15,6 +15,7 @@ object BrowserActionBuilder {
 
 
     /**
+     * Given the current page we need to see what can we do in the page, what kind of interactions we can have.
      */
     fun computePossibleUserInteractions(driver: RemoteWebDriver) : List<WebUserInteraction>{
 
