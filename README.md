@@ -3,7 +3,7 @@
 
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![Maven Central](https://img.shields.io/maven-central/v/org.evomaster/evomaster-client-java.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
