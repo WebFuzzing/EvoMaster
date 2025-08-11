@@ -239,15 +239,13 @@ class SSRFAnalyser {
                 is BodyParam -> {
                     param.seeGenes().filter { it.name == "body" }.forEach { gene ->
                         gene.getViewOfChildren().forEach { g ->
-                            val gn = GeneUtils.getWrappedValueGene(g)
                             // At this point description is null if the gene wrapped inside another
                             // TODO: Need to implement something similar to getValueAsRawString?
-                            if (gn != null) {
-                                output[gn.name] = InputFaultMapping(
-                                    gn.name,
-                                    gn.description,
-                                )
-                            }
+                            output[g.name] = InputFaultMapping(
+                                g.name,
+                                g.description,
+                            )
+
                         }
                     }
                 }
