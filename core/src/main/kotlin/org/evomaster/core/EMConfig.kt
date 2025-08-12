@@ -625,9 +625,16 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        if(writeWFCReport && !createTests){
-            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-        }
+        /*
+            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
+            like writeWFCReport.
+            TODO however, we should issue some WARN message.
+            ie. we should have a distinction between @Requires (which should crash) and something like
+            @DependOn that does not lead to a crash, but just a warning
+         */
+//        if(writeWFCReport && !createTests){
+//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1290,12 +1297,10 @@ class EMConfig {
     @Cfg("Learning rate for classifiers like GLM and NN.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
-    @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
-    var writeWFCReport = false
+    var writeWFCReport = true
 
-    @Experimental
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
             " the JSON report file will be created.")
     var writeWFCReportExcludeWebApp = false
