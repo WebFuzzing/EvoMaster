@@ -138,7 +138,6 @@ class SSRFAnalyser {
 
         action.parameters.forEach { param ->
             val genes = getStringGenesFromParam(param.seeGenes())
-            // TODO: Handle param types
             genes.forEach { gene ->
                 hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
             }
@@ -237,43 +236,13 @@ class SSRFAnalyser {
         val output = mutableMapOf<String, InputFaultMapping>()
 
         parameters.forEach { param ->
-            when (param) {
-                is BodyParam -> {
-                    val genes = getStringGenesFromParam(param.seeGenes())
+            val genes = getStringGenesFromParam(param.seeGenes())
 
-                    genes.forEach { gene ->
-                        output[gene.name] = InputFaultMapping(
-                            gene.name,
-                            gene.description,
-                        )
-                    }
-                }
-
-                is HeaderParam -> {
-                    val genes = getStringGenesFromParam(param.seeGenes())
-
-                    genes.forEach { gene ->
-                        output[gene.name] = InputFaultMapping(
-                            gene.name,
-                            gene.description,
-                        )
-                    }
-                }
-
-                is QueryParam -> {
-                    val genes = getStringGenesFromParam(param.seeGenes())
-
-                    genes.forEach { gene ->
-                        output[gene.name] = InputFaultMapping(
-                            gene.name,
-                            gene.description,
-                        )
-                    }
-                }
-
-                else -> {
-                    // Do nothing
-                }
+            genes.forEach { gene ->
+                output[gene.name] = InputFaultMapping(
+                    gene.name,
+                    gene.description,
+                )
             }
         }
 
@@ -376,6 +345,9 @@ class SSRFAnalyser {
                 }
                 is CustomMutationRateGene<*> -> {
                     output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
+                }
+                else -> {
+                    // Do nothing
                 }
             }
         }
