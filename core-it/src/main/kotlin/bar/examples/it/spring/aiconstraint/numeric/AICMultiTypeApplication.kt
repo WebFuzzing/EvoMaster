@@ -33,7 +33,7 @@ open class AICMultiTypeApplication {
     }
 
     @GetMapping("/petInfo")
-    open fun getString(
+    open fun getPetInfo(
 
         @RequestParam("category", required = true)
         @Parameter(required = true, description = "Pet category")
@@ -93,6 +93,11 @@ open class AICMultiTypeApplication {
 
     @GetMapping("/ownerInfo")
     open fun getOwnerInfo(
+
+        @RequestParam("name", required = true)
+        @Parameter(required = true, description = "Owner's name")
+        name: String,
+
         @RequestParam("id", required = true)
         @Parameter(required = true, description = "Owner's id")
         id: Int,
@@ -116,5 +121,62 @@ open class AICMultiTypeApplication {
         )
 
     }
+
+    @PostMapping("/petInfo")
+    open fun createPet(
+        @RequestParam("category", required = true)
+        @Parameter(required = true, description = "Pet category")
+        category: Category,
+
+        @RequestParam("gender", required = true)
+        @Parameter(required = true, description = "Pet gender")
+        gender: Gender,
+
+        @RequestParam("birthYear", required = true)
+        @Parameter(
+            required = true,
+            description = "Pet birth year"
+        )
+        birthYear: Int,
+
+        @RequestParam("vaccinationYear", required = true)
+        @Parameter(
+            required = true,
+            description = "Pet vaccination year"
+        )
+        vaccinationYear: Int,
+
+        @RequestParam("isAlive", required = true)
+        @Parameter(required = true, description = "Pet is alive?")
+        isAlive: Boolean,
+
+        @RequestParam("weight", required = true)
+        @Parameter(
+            required = true,
+            description = "Pet weight"
+        )
+        weight: Double
+    ): ResponseEntity<String> {
+
+        // Validation
+        if (birthYear <= 0) {
+            return ResponseEntity.status(400).body("Birth year must be a positive number.")
+        }
+        if (weight <= 0) {
+            return ResponseEntity.status(400).body("Weight must be a positive number.")
+        }
+        if (vaccinationYear <= 0) {
+            return ResponseEntity.status(400).body("Vaccination year must be a positive number.")
+        }
+        if (vaccinationYear < birthYear) {
+            return ResponseEntity.status(400).body("Vaccination year cannot be earlier than birth year.")
+        }
+
+        // Response
+        return ResponseEntity.status(200).body(
+            "Pet created successfully: Birth Year = $birthYear, Vaccination Year = $vaccinationYear, Gender = $gender, Is Alive = $isAlive, Weight = $weight, Category = $category"
+        )
+    }
+
 
 }

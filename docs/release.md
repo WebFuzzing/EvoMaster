@@ -15,7 +15,7 @@ In your local `~/.m2` Maven repository, you need to create a `settings.xml` file
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
 <servers>
 <server>
-      <id>ossrh</id>
+      <id>central</id>
       <username>???</username>
       <password>???</password>
     </server>
@@ -43,6 +43,11 @@ gpg --keyserver https://keys.openpgp.org --send-keys  ???
 where `???` needs to be replaced with the id of the generated public key.
 You can also read more details [here](https://central.sonatype.org/pages/working-with-pgp-signatures.html).
 
+
+## Release Notes
+
+Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version.
+
 ## Maven Central Release
 
 The Java client needs to be deployed on Maven Central. 
@@ -57,12 +62,7 @@ updated, manually...
 Given a current snapshot version `0.3.1-SNAPSHOT`, a new release could be `0.4.0`, i.e.,
 increase minor version `y` by 1, and reset patch version `z` to 0.
 
-To change the version on all `pom.xml` files at once, from project root folder run:
-```
-mvn versions:set -DnewVersion=x.y.z
-```
-
-where `x.y.z` should be substituted with the actual version number, e.g., `0.4.0`.
+To change the version on all `pom.xml` files at once, from project root folder run, could use the `mvn versions:set` command.
 However, there are other files besides the pom ones that need to be updated, like for example `makeExecutable.sh`.
 So, the update of versions should be done with the `version.py` script. E.g.,
 ```
@@ -83,9 +83,7 @@ However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
-## Release Notes
 
-Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version. 
 
 ## GitHub Release
 

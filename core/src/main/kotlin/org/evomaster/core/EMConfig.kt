@@ -615,9 +615,16 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        if(writeWFCReport && !createTests){
-            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-        }
+        /*
+            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
+            like writeWFCReport.
+            TODO however, we should issue some WARN message.
+            ie. we should have a distinction between @Requires (which should crash) and something like
+            @DependOn that does not lead to a crash, but just a warning
+         */
+//        if(writeWFCReport && !createTests){
+//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1280,12 +1287,10 @@ class EMConfig {
     @Cfg("Learning rate for classifiers like GLM and NN.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
-    @Experimental
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
-    var writeWFCReport = false
+    var writeWFCReport = true
 
-    @Experimental
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
             " the JSON report file will be created.")
     var writeWFCReportExcludeWebApp = false
@@ -1586,6 +1591,11 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_OPENSEARCH = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -2548,6 +2558,15 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Cfg("Override the value of externalEndpointURL in auth configurations." +
+            " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
+            " are run in parallel, to avoid creating/modifying auth configuration files." +
+            " If what provided is a URL starting with 'http', then full replacement will occur." +
+            " Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g.," +
+            " path element of the URL will not change).")
+    var overrideAuthExternalEndpointURL : String? = null
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -2601,6 +2620,7 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         return categories.joinToString(",")
     }
 

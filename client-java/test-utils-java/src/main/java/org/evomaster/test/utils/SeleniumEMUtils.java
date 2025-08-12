@@ -76,7 +76,7 @@ public class SeleniumEMUtils {
         if(modifyLocalHost && uri.getHost().equalsIgnoreCase( "localhost")) {
             try {
                 uri = new URI(
-                        uri.getScheme().toLowerCase(Locale.US),
+                        uri.getScheme().toLowerCase(),
                         uri.getUserInfo(),
                         TESTCONTAINERS_HOST,
                         uri.getPort(),

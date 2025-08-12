@@ -44,6 +44,17 @@ object InputEncoderUtils {
             }
         }
 
+        // TODO Normalization step should be defined in the config, as normalization may either
+        //  weaken or strengthen the classification performance
+        val mean = encodedFeatures.average()
+        val stdDev = kotlin.math.sqrt(encodedFeatures.map { (it - mean) * (it - mean) }.average())
+
+        return if (stdDev == 0.0) {
+            List(encodedFeatures.size) { 0.0 }
+        } else {
+            encodedFeatures.map { (it - mean) / stdDev }
+        }
+
         return encodedFeatures
     }
 }

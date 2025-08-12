@@ -29,7 +29,7 @@ object BlackBoxUtils {
 
 
     private fun isWindows(): Boolean {
-        return System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")
+        return System.getProperty("os.name").lowercase().contains("win")
     }
 
     private fun npm() = if (isWindows()) "npm.cmd" else "npm"

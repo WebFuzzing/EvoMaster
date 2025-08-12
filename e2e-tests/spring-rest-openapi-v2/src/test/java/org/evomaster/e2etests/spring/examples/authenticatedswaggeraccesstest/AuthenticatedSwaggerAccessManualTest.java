@@ -57,7 +57,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
         for(int i = 0; i < controller.getInfoForAuthentication().size() && !authenticatedRequestSuccessful; i++) {
             AuthenticationDto currentDto = controller.getInfoForAuthentication().get(i);
 
-            HttpWsAuthenticationInfo currentInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
+            HttpWsAuthenticationInfo currentInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto,null);
 
             OpenAPI swagger = OpenApiAccess.INSTANCE
                     .getOpenAPIFromLocation(baseUrlOfSut + "/v2/api-docs", currentInfo)
@@ -91,7 +91,7 @@ public class AuthenticatedSwaggerAccessManualTest extends SpringTestBase {
                 continue;
             }
 
-            unsuccessfulInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto);
+            unsuccessfulInfo = HttpWsAuthenticationInfo.Companion.fromDto(currentDto,null);
         }
 
         HttpWsAuthenticationInfo finalUnsuccessfulInfo = unsuccessfulInfo;

@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.notrecognized
 
 import com.foo.rest.examples.spring.openapi.v3.security.notrecognized.NotRecognizedController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
@@ -45,7 +46,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, faults.first())
+            assertEquals(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, faults.first())
         }
     }
 }

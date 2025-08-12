@@ -18,8 +18,10 @@ import kotlin.math.exp
  * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
  *
  * ## Internals:
- * - Maintains two `Density` instances: one for class 200 (successful responses) and one for class 400 (error responses).
- * - Computes log-likelihood under each distribution and classifies based on maximum likelihood with class priors.
+ * - Maintains two `Density` instances: one for class 200 and one for class 400.
+ * - Computes the log-likelihood of the input under each class-specific Gaussian.
+ * - Combines likelihoods with class priors using Bayes' rule to calculate normalized posterior probabilities.
+ * - Predicts based on the posterior probabilities (i.e., probabilities sum to 1).
  *
  * ## Assumptions:
  * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
@@ -76,16 +78,22 @@ class GaussianOnlineClassifier : AIModel {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logProbability200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
-        val logProbability400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
+        val logLikelihood200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
+        val logLikelihood400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
 
-        val probability200 = exp(logProbability200)
-        val probability400 = exp(logProbability400)
+        // ensure the outputs as positives
+        val likelihood200 = exp(logLikelihood200)
+        val likelihood400 = exp(logLikelihood400)
+
+        // Normalize posterior probabilities
+        val total = likelihood200 + likelihood400
+        val posterior200 = likelihood200 / total
+        val posterior400 = likelihood400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to probability200,
-                400 to probability400
+                200 to posterior200,
+                400 to posterior400
             )
         )
     }

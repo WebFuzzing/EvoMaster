@@ -2,7 +2,9 @@ package org.evomaster.core.problem.httpws.auth
 
 import com.webfuzzing.commons.auth.LoginEndpoint
 import com.webfuzzing.commons.auth.PayloadUsernamePassword
+import org.apache.http.client.utils.URIBuilder
 import org.evomaster.core.Lazy
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.problem.rest.data.HttpVerb
 import java.net.MalformedURLException
@@ -79,10 +81,43 @@ class EndpointCallLogin(
     }
 
     companion object {
-        fun fromDto(name: String, dto: LoginEndpoint) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpoint, externalEndpointURL: String? = null) = EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
-            externalEndpointURL = dto.externalEndpointURL,
+            externalEndpointURL = if(externalEndpointURL != null){
+                if(externalEndpointURL.startsWith("http")){
+                    externalEndpointURL
+                } else if(dto.externalEndpointURL == null){
+                    /*
+                        if we are doing a partial replacement with hostname:port, but there is no
+                        origin URL, then there is nothing to do.
+                     */
+                    null
+                } else {
+                    val tokens = externalEndpointURL.split(":")
+                    if(tokens.size != 2){
+                        throw ConfigProblemException("Invalid hostname:port pair -> $externalEndpointURL")
+                    }
+                    val hostname = tokens[0]
+                    val port = try{
+                        tokens[1].toInt()
+                    } catch (e: NumberFormatException){
+                        throw ConfigProblemException("Invalid port number in hostname:port pair " +
+                                "-> $externalEndpointURL -> ${e.message}")
+                    }
+
+                    val builder = try{
+                        URIBuilder(dto.externalEndpointURL)
+                    } catch (e: MalformedURLException){
+                        throw ConfigProblemException("Invalid dto.externalEndpointURL -> ${e.message}")
+                    }
+                    builder.setHost(hostname)
+                    builder.setPort(port)
+                    builder.build().toString()
+                }
+            } else {
+                dto.externalEndpointURL
+            },
             payload = dto.payloadRaw ?:
                 dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
             headers = dto.headers?.map { AuthenticationHeader(it.name, it.value) } ?: emptyList(),

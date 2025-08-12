@@ -423,6 +423,10 @@ public class ExecutionTracer {
             getCurrentAdditionalInfo().addMongoInfo(info);
     }
 
+    public static void addOpenSearchInfo(OpenSearchCommand info) {
+        getCurrentAdditionalInfo().addOpenSearchInfo(info);
+    }
+
     public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         if (!executingInitMongo) {
             getCurrentAdditionalInfo().addMongoCollectionType(mongoCollectionSchema);

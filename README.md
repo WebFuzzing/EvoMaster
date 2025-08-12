@@ -3,7 +3,7 @@
 
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![Maven Central](https://img.shields.io/maven-central/v/org.evomaster/evomaster-client-java.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
@@ -46,6 +46,11 @@ Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an
 
 Once the command is executed, you can inspect the generated files under `generated_tests` folder. 
 
+Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactive web report.
+
+![](docs/img/report_overview.png)
+
+![](docs/img/report_endpoints.png)
 
 ### Key features
 
@@ -75,6 +80,8 @@ Once the command is executed, you can inspect the generated files under `generat
    Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
+   Also keep in mind we have not paid the [Microsoft/Apple Tax](docs/download.md). This means that your operating system by default will block the installation, stating it cannot verify it is not a malware. 
+   But the block [can be bypassed](docs/download.md).
 
 * _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
 
@@ -92,18 +99,20 @@ Once the command is executed, you can inspect the generated files under `generat
   Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
   These will need to be setup in your projects, [see documentation](docs/library_dependencies.md).
 
+* _Web Report_: besides generating executable tests in different programming language, an interactive _index.html_ web report is created as well by default, visualizing and summarizing the results of the generated tests. 
+
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
-  Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas.
+  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas and access policy violations.
 
 * _Self-contained tests_: for white-box testing, the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
   of the application, and run with any build tool such as Maven and Gradle).
   For black-box testing, you will need to make sure the application is up and running before executing the tests. 
 
-* _SQL handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
+* _Database handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL and MongoDB databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests.
-  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.
+  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_, _H2_  and MongoDB  databases.
 
 * _Authentication_: we support auth based on authentication headers and cookies.
   Besides using fixed HTTP headers, 
@@ -130,8 +139,6 @@ Once the command is executed, you can inspect the generated files under `generat
 * _External services_: (e.g., other RESTful APIs) currently there is no support for them (e.g., to automatically mock them).
   It is work in progress.
 
-* _NoSQL databases_: (e.g., MongoDB) currently no support. It is work in progress.
-
 * _Failing tests_: the tests generated by _EvoMaster_ should all pass, and not fail, even when they detect a fault.
   In those cases, comments/test-names would point out that a test is revealing a possible fault, while still passing.
   However, in some cases the generated tests might fail. This is due to the so called _flaky_ tests, e.g., when
@@ -148,7 +155,7 @@ Once the command is executed, you can inspect the generated files under `generat
 
 Several enterprises use _EvoMaster_ to fuzz their Web APIs.
 We do few academia-industry collaborations ([see more info here](docs/contribute.md)), where we help test engineers to apply _EvoMaster_ on their systems, as long as we can then report on such experience.
-Example of Fortune 500 companies using _EvoMaster_ are:
+Examples of Fortune 500 companies using _EvoMaster_ are:
 
 * [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf), [SCP'25](docs/publications/2025_scp.pdf).
 

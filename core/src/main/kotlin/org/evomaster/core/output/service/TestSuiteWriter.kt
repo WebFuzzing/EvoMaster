@@ -10,6 +10,7 @@ import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
 import org.evomaster.core.output.dto.DtoClass
 import org.evomaster.core.output.dto.DtoField
+import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.output.dto.JavaDtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
@@ -221,9 +222,8 @@ class TestSuiteWriter {
     // TODO: take DTO extraction and writing to a different class
     fun writeDtos(solutionFilename: String) {
         val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
-        getDtos().forEach {
-            JavaDtoWriter.write(testSuitePath, config.outputFormat, it)
-        }
+        val restSampler = sampler as AbstractRestSampler
+        DtoWriter().write(testSuitePath, config.outputFormat, restSampler.getActionDefinitions())
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -1094,54 +1094,6 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
-    }
-
-    private fun getDtos(): List<DtoClass> {
-        val restSampler = sampler as AbstractRestSampler
-        val result = mutableListOf<DtoClass>()
-        restSampler.getActionDefinitions().forEach { action ->
-            action.getViewOfChildren().forEach { child ->
-                if (child is BodyParam) {
-                    val primaryGene = GeneUtils.getWrappedValueGene(child.primaryGene())
-                    // TODO: Payloads could also be json arrays, analyze ArrayGene
-                    if (primaryGene is ObjectGene) {
-                        // TODO: Determine strategy for objects that are not defined as a component and do not have a name
-                        val dtoClass = DtoClass(primaryGene.refType?:TestWriterUtils.safeVariableName(action.getName()))
-                        primaryGene.fixedFields.forEach { field ->
-                            try {
-                                dtoClass.addField(getDtoField(field))
-                            } catch (ex: Exception) {
-                                log.warn("A failure has occurred when collecting DTOs. \n"
-                                            + "Exception: ${ex.localizedMessage} \n"
-                                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-                                )
-                                assert(false)
-                            }
-                        }
-                        result.add(dtoClass)
-                    }
-                }
-            }
-        }
-        return result
-    }
-
-    private fun getDtoField(field: Gene): DtoField {
-        val wrappedGene = GeneUtils.getWrappedValueGene(field)
-        return DtoField(field.name, when (wrappedGene) {
-            // TODO: handle nested arrays, objects and extend type system for dto fields
-            is StringGene -> "String"
-            is IntegerGene -> "Integer"
-            is LongGene -> "Long"
-            is DoubleGene -> "Double"
-            is FloatGene -> "Float"
-            is Base64StringGene -> "String"
-            // Time and Date genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
-            is DateGene -> "String"
-            is TimeGene -> "String"
-            is BooleanGene -> "Boolean"
-            else -> throw Exception("Not supported gene at the moment: ${wrappedGene?.javaClass?.simpleName}")
-        })
     }
 
 }

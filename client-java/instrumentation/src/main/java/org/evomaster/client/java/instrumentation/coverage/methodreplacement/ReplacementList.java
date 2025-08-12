@@ -55,6 +55,7 @@ public class ReplacementList {
                     new MethodClassReplacement(),
                     new MongoCollectionClassReplacement(),
                     new MongoTemplateClassReplacement(),
+                    new OpenSearchClientClassReplacement(),
                     new MappingMongoEntityInformationClassReplacement(),
                     new OkHttpClient3BuilderClassReplacement(),
                     new OkHttpClient3ClassReplacement(),

@@ -13,7 +13,6 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
-import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
@@ -38,11 +37,11 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.*
-import org.evomaster.core.search.algorithms.*
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.genemutation.ArchiveImpactSelector
 import java.lang.reflect.InvocationTargetException
+import java.util.Locale
 import kotlin.system.exitProcess
 
 
@@ -59,10 +58,10 @@ class Main {
         fun main(args: Array<String>) {
 
             try {
+                Locale.setDefault(Locale.ENGLISH)
 
                 printLogo()
                 printVersion()
-
                 if (!JdkIssue.checkAddOpens()) {
                     return
                 }
@@ -139,7 +138,10 @@ class Main {
                     is NoRemoteConnectionException ->
                         logError(
                             "ERROR: ${cause.message}" +
-                                    "\n  Make sure the EvoMaster Driver for the system under test is running correctly."
+                                    "\n  For WHITE-BOX testing (e.g., for JVM applications, requiring to write a driver" +
+                                    " class) make sure the EvoMaster Driver for the system under test is running correctly." +
+                                    "\n  On the other hand, if you are doing BLACK-BOX testing (for any kind of programming language)" +
+                                    " without code analyses, remember to specify '--blackBox true' on the command-line."
                         )
 
                     is SutProblemException ->
