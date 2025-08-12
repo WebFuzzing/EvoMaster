@@ -14,13 +14,11 @@ import org.nd4j.linalg.lossfunctions.LossFunctions
 import java.util.*
 
 
-
 // === Main ===
 fun main() {
     val model = SimpleNeuralNetworkClassifier()
     val rand = Random(0)
 
-    // The real function
     fun targetFunction(r: SimpleNeuralNetworkClassifier.Request): Boolean = r.a > 0 && r.b > 0 && r.a < r.b
 
     fun uniformRandom(from: Double, to: Double): Double {
@@ -31,33 +29,33 @@ fun main() {
         return rand.nextInt(to - from + 1) + from
     }
 
-    // Train the model with unbiased data
-    repeat(1_000) {
-        val a = uniformRandom(-1_000_000.0, 1_000_000.0)
-        val b = uniformRandom(-1_000_000.0, 1_000_000.0)
-        val c = uniformRandomInt(-1_000_000, 1_000_000)
-        val d = rand.nextBoolean()
-
-        val req = SimpleNeuralNetworkClassifier.Request(a, b, c, d)
-        val res = targetFunction(req)
-        model.updateModel(req, res)
-    }
-
-    // Evaluation counters
     var tp = 0
     var tn = 0
     var fp = 0
     var fn = 0
 
-    repeat(500) {
-        val a = uniformRandom(-1_000_000.0, 1_000_000.0)
-        val b = uniformRandom(-1_000_000.0, 1_000_000.0)
-        val c = uniformRandomInt(-1_000_000, 1_000_000)
-        val d = rand.nextBoolean()
+    var accuracy = 0.0
+    var precision = 0.0
+    var recall = 0.0
+    var f1 = 0.0
+    for (i in 1..10_000) {
+        var a = uniformRandom(-10_000_000.0, 10_000_000.0)
+        var b = uniformRandom(-10_000_000.0, 10_000_000.0)
+        var c = uniformRandomInt(-10_000_000, 10_000_000)
+        var d = rand.nextBoolean()
+
+        if(i==1){
+            a = 2020.0
+            b= 2021.0
+            c = 42
+            d = true
+        }
 
         val req = SimpleNeuralNetworkClassifier.Request(a, b, c, d)
         val expected = targetFunction(req)
         val predicted = model.classify(req)
+
+        model.updateModel(req, expected)
 
         when {
             predicted && expected -> tp++
@@ -65,17 +63,19 @@ fun main() {
             predicted && !expected -> fp++
             !predicted && expected -> fn++
         }
+
+        if (i % 100 == 0) {
+            accuracy = (tp + tn).toDouble() / (tp + tn + fp + fn)
+            precision = if (tp + fp > 0) tp.toDouble() / (tp + fp) else 0.0
+            recall = if (tp + fn > 0) tp.toDouble() / (tp + fn) else 0.0
+            f1 = if (precision + recall > 0) 2 * precision * recall / (precision + recall) else 0.0
+
+            println("\n=== i=$i ===")
+            println("TP=$tp, TN=$tn, FP=$fp, FN=$fn")
+            println("Accuracy: %.4f".format(accuracy))
+            println("Precision: %.4f".format(precision))
+            println("Recall: %.4f".format(recall))
+            println("F1 Score: %.4f".format(f1))
+        }
     }
-
-    val accuracy = (tp + tn).toDouble() / (tp + tn + fp + fn)
-    val precision = if (tp + fp > 0) tp.toDouble() / (tp + fp) else 0.0
-    val recall = if (tp + fn > 0) tp.toDouble() / (tp + fn) else 0.0
-    val f1 = if (precision + recall > 0) 2 * precision * recall / (precision + recall) else 0.0
-
-    println("\n=== Evaluation ===")
-    println("TP=$tp, TN=$tn, FP=$fp, FN=$fn")
-    println("Accuracy: %.4f".format(accuracy))
-    println("Precision: %.4f".format(precision))
-    println("Recall: %.4f".format(recall))
-    println("F1 Score: %.4f".format(f1))
 }
