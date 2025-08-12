@@ -3,9 +3,11 @@ package org.evomaster.client.java.controller.internal.db;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import org.evomaster.client.java.instrumentation.MongoFindCommand;
+import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
+import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
+import org.evomaster.client.java.controller.opensearch.OpenSearchHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 public class OpenSearchHandler {
 
@@ -22,6 +24,8 @@ public class OpenSearchHandler {
     private final List<OpenSearchCommand> commands;
 
     private final boolean calculateHeuristics;
+
+    private final OpenSearchHeuristicsCalculator calculator = new OpenSearchHeuristicsCalculator();
 
     private Object openSearchClient = null;
 
@@ -57,12 +61,31 @@ public class OpenSearchHandler {
         List<String> indexName = command.getIndex();
         String methodName = command.getMethod();
 
-        Object documents = getDocuments(indexName);
+        List<?> documents = getDocuments(indexName);
 
-        return command.getQuery().toString().length();
+        double min = Double.MAX_VALUE;
+        int numberOfEvaluatedDocuments = 0;
+        for (Object doc : documents) {
+            numberOfEvaluatedDocuments += 1;
+            double findDistance;
+            try {
+                findDistance = calculator.computeExpression(command.getQuery(), doc);
+            } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed to compute find: " + command.getQuery() + " with data " + doc);
+                findDistance = Double.MAX_VALUE;
+            }
+
+            if (findDistance == 0) {
+                return 0;
+            } else if (findDistance < min) {
+                min = findDistance;
+            }
+        }
+
+        return (int)min;
     }
 
-    private Object getDocuments(List<String> indexNames) {
+    private List<Object> getDocuments(List<String> indexNames) {
         try {
             // Get the OpenSearchClient class
             Class<?> openSearchClientClass = openSearchClient.getClass();
@@ -95,7 +118,14 @@ public class OpenSearchHandler {
             Method hitsListMethod = hitsContainer.getClass().getMethod(OPENSEARCH_CLIENT_HITS_METHOD_NAME);
             Object hitsList = hitsListMethod.invoke(hitsContainer);
 
-            return hitsList; // Returns List<Hit<Object>>
+            // loop hitslist as if it was a list
+            List<Object> result = new ArrayList<>();
+            for (Object hit : (List<Object>)hitsList) {
+                Method hitSourceMethod = hit.getClass().getMethod("source");
+                result.add(hitSourceMethod.invoke(hit));
+            }
+
+            return result; // Returns List<Document>
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to retrieve documents from OpenSearch indices: " + indexNames, e);
