@@ -43,7 +43,7 @@ class DtoWriter {
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
     fun write(testSuitePath: Path, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
-        getDtos(actionDefinitions)
+        calculateDtos(actionDefinitions)
         dtoCollector.forEach {
             when {
                 outputFormat.isJava() -> JavaDtoWriter.write(testSuitePath, outputFormat, it.value)
@@ -52,7 +52,7 @@ class DtoWriter {
         }
     }
 
-    private fun getDtos(actionDefinitions: List<Action>) {
+    private fun calculateDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
             action.getViewOfChildren().find { it is BodyParam }
             .let {
@@ -60,10 +60,10 @@ class DtoWriter {
                 // TODO: Payloads could also be json arrays, analyze ArrayGene
                 when (primaryGene) {
                     is ObjectGene -> {
-                        getDtoFromObject(primaryGene, action.getName())
+                        calculateDtoFromObject(primaryGene, action.getName())
                     }
                     is ArrayGene<*> -> {
-                        getDtoFromArray(primaryGene, action.getName())
+                        calculateDtoFromArray(primaryGene, action.getName())
                     }
                     else -> {
                         throw IllegalStateException("Gene $primaryGene is not supported for DTO payloads")
@@ -73,7 +73,7 @@ class DtoWriter {
         }
     }
 
-    private fun getDtoFromObject(gene: ObjectGene, actionName: String) {
+    private fun calculateDtoFromObject(gene: ObjectGene, actionName: String) {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
         // TODO: consider an inline schema using more than one possible component: any/one/allOf[object,object]
         val dtoName = gene.refType?:TestWriterUtils.safeVariableName(actionName)
@@ -85,10 +85,10 @@ class DtoWriter {
                 val dtoField = getDtoField(field.name, wrappedGene)
                 dtoClass.addField(dtoField)
                 if (wrappedGene is ObjectGene && !dtoCollector.contains(dtoField.type)) {
-                    getDtoFromObject(wrappedGene, dtoField.type)
+                    calculateDtoFromObject(wrappedGene, dtoField.type)
                 }
                 if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
-                    getDtoFromObject(wrappedGene.template, StringUtils.capitalization(wrappedGene.name))
+                    calculateDtoFromObject(wrappedGene.template, StringUtils.capitalization(wrappedGene.name))
                 }
             } catch (ex: Exception) {
                 log.warn("A failure has occurred when collecting DTOs. \n"
@@ -101,12 +101,12 @@ class DtoWriter {
         dtoCollector.put(dtoName, dtoClass)
     }
 
-    private fun getDtoFromArray(gene: ArrayGene<*>, actionName: String) {
+    private fun calculateDtoFromArray(gene: ArrayGene<*>, actionName: String) {
         val template = gene.template
         // TODO consider ChoiceGene. Primitive types won't be considered, an array of strings should not be wrapped
         //  into a DTO but just use List<String> for setting the payload.
         if (template is ObjectGene) {
-            getDtoFromObject(template, actionName)
+            calculateDtoFromObject(template, actionName)
         }
     }
 
