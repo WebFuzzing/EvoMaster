@@ -21,3 +21,4 @@ public class OpenSearchQueryParser {
             .orElse(null);
     }
 }
+

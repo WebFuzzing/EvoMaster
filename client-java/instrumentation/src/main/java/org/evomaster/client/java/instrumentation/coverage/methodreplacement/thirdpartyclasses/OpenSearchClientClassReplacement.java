@@ -25,6 +25,7 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
     private static final String GET_METHOD = "get";
     private static final String SEARCH_METHOD = "search";
     private static final String INDEX_METHOD = "index";
+    private static final String GET_QUERY_METHOD = "query";
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
@@ -72,8 +73,19 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
     }
 
     private static void addOpenSearchInfo(String method, Object query, long executionTime) {
-        OpenSearchCommand info = new OpenSearchCommand(getIndex(query), method, query, executionTime);
+        OpenSearchCommand info = new OpenSearchCommand(getIndex(query), method, getQuery(query), executionTime);
         ExecutionTracer.addOpenSearchInfo(info);
+    }
+
+    private static Object getQuery(Object query) {
+        try {
+            Object result =  query.getClass().getMethod(GET_QUERY_METHOD).invoke(query);
+            if (result == null) {
+                return null;
+            }
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            return null;
+        }
     }
 
     private static List<String> getIndex(Object query) {
