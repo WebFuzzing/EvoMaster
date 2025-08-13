@@ -90,6 +90,9 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
         val endpointToDimension = mutableMapOf<String, Int?>()
+        val endpointToCorrectPrediction = mutableMapOf<String, Int>()
+        val endpointToTotalExecution = mutableMapOf<String, Int>()
+        val endpointToAccuracy = mutableMapOf<String, Double>()
         for (action in actionList) {
             val name = action.getName()
 
@@ -109,6 +112,10 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             println("Endpoint: $name, dimension: $dimension")
             endpointToDimension[name] = dimension
+
+            endpointToCorrectPrediction[name] = 0
+            endpointToTotalExecution[name] = 0
+            endpointToAccuracy[name] = 0.0
         }
 
         /**
@@ -133,9 +140,10 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         // Execute the procedure for a period of time
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
-        var time = 1
-        val timeLimit = 200
-        while (time <= timeLimit) {
+        val startTime = System.currentTimeMillis()
+        val runDuration = 5_000L // Milliseconds
+        println(" This is the start!!!!")
+        while (System.currentTimeMillis() - startTime < runDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
@@ -144,51 +152,91 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             val classifier = endpointToClassifier[name]
             val dimension = endpointToDimension[name]
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+            var cp = endpointToCorrectPrediction[name]!!
+            var tot = endpointToTotalExecution[name]!!
+            var ac = endpointToAccuracy[name]!!
 
             println("*************************************************")
-            println("Time         : $time")
             println("Path         : $name")
             println("Classifier   : ${if (classifier == null) "null" else "GAUSSIAN"}")
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Actual Genes : ${geneValues.size}")
+            println("cp, tot, ac  : $cp, $tot, $ac")
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
             val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
-            val result = executeRestCallAction(action,"$baseUrlOfSut")
-            println("Response     : ${result.getStatusCode()}")
 
-            // Skip classification for the endpoints with unsupported genes
+            // Execution without classification for the endpoints with unsupported genes
             if (classifier==null){
+                executeRestCallAction(action,"$baseUrlOfSut")
                 println("No classification as the classifier is null, i.e., the endpoint contains unsupported genes")
                 continue
             }
+            // Warmup cold classifiers by at least n request
+            val n = 2
+            val isCold = tot <= n
+            if (isCold) {
+                println("Warmup by at least $n request")
+                val result = executeRestCallAction(action, "$baseUrlOfSut")
+                classifier.updateModel(action, result)
+                tot += 1
+                endpointToTotalExecution[name] = tot
+                continue
+            }
 
-            // Update and classify
-            classifier.updateModel(action, result)
+            // Classification
             val classification = classifier.classify(action)
-
-            println("Probabilities: ${classification.probabilities}")
-            require(classification.probabilities.values.all { it in 0.0..1.0 } &&
-                    classification.probabilities.values.sum().let { abs(it - 1.0) < 1e-6 }) {
+            val p200 = classification.probabilities[200]!!
+            val p400 = classification.probabilities[400]!!
+            require(p200 in 0.0..1.0 && p400 in 0.0..1.0 && abs((p200 + p400) - 1.0) < 1e-6) {
                 "Probabilities must be in [0,1] and sum to 1"
             }
 
-            val d200 = classifier.getDensity200()
-            val d400 = classifier.getDensity400()
+            // Prediction
+            val prediction: Int = if (p200 > p400) 200 else 400
 
-            fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
-                val m = mean.map { "%.2f".format(it) }
-                val v = variance.map { "%.2f".format(it) }
-                println("$name: n=$n, mean=$m, variance=$v * I_${classifier.getDimension()}")
+            // Probabilistic decision-making based on Bernoulli(prob = aci)
+            val sendOrNot: Boolean
+            if (prediction == 200) {
+                sendOrNot = true
+            }else{
+                sendOrNot = if(Math.random() > ac) true else false
             }
 
-            formatStats("Density200", d200.mean, d200.variance, d200.n)
-            formatStats("Density400", d400.mean, d400.variance, d400.n)
+            // Execute the request and update
+            if (sendOrNot) {
+                val result = executeRestCallAction(action,"$baseUrlOfSut")
+                println("Response     : ${result.getStatusCode()}")
 
-            time++
+                if (result.getStatusCode()==prediction) {
+                    cp = cp + 1
+                }
+                tot = tot + 1
+                ac = cp.toDouble() / tot
+
+                endpointToCorrectPrediction[name] = cp
+                endpointToTotalExecution[name] = tot
+                endpointToAccuracy[name] = ac
+
+                classifier.updateModel(action, result)
+
+                val d200 = classifier.getDensity200()
+                val d400 = classifier.getDensity400()
+
+                fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
+                    val m = mean.map { "%.2f".format(it) }
+                    val v = variance.map { "%.2f".format(it) }
+                    println("$name: n=$n, mean=$m, variance=$v * I_${classifier.getDimension()}")
+                }
+
+                formatStats("Density200", d200.mean, d200.variance, d200.n)
+                formatStats("Density400", d400.mean, d400.variance, d400.n)
+
+            }
+
         }
     }
 
