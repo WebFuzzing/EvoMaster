@@ -288,7 +288,9 @@ class SSRFAnalyser {
         copy.seeMainExecutableActions().forEach { action ->
             action.parameters.forEach { param ->
                 // TODO: Do we need to only update the StringGene?
-                param.seeGenes().forEach { gene ->
+                // TODO: Tests are generated when only update the primaryGene,
+                //  when use seeGenes() nothing generated.
+                param.primaryGene().getViewOfChildren().forEach { gene ->
                     updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
                 }
             }

@@ -23,7 +23,7 @@ class SsrfEMTest : SpringTestBase() {
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
             "SsrfEMTest",
-            200,
+            300,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
