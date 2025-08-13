@@ -287,7 +287,10 @@ class SSRFAnalyser {
 
         copy.seeMainExecutableActions().forEach { action ->
             action.parameters.forEach { param ->
-                updateGeneWithCallbackURL(action.getName(), param.primaryGene(), callbackURL)
+                // TODO: Do we need to only update the StringGene?
+                param.seeGenes().forEach { gene ->
+                    updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
+                }
             }
         }
 
@@ -314,19 +317,20 @@ class SSRFAnalyser {
         }
     }
 
-    private fun updateGeneWithCallbackURL(actionName: String, primaryGene: Gene, callBackUrl: String) {
-        primaryGene.getViewOfChildren().forEach { gene ->
-            if (actionVulnerabilityMapping.containsKey(actionName)) {
-                val g = actionVulnerabilityMapping[actionName]!!.params[gene.name]
-                if (g!!.securityFaults.contains(DefinedFaultCategory.SSRF)) {
+    private fun updateGeneWithCallbackURL(actionName: String, gene: Gene, callBackUrl: String) {
+        if (actionVulnerabilityMapping.containsKey(actionName)) {
+            val g = actionVulnerabilityMapping[actionName]!!.params[gene.name]
+            if (g != null) {
+                if (g.securityFaults.contains(DefinedFaultCategory.SSRF)) {
                     // Only change the param marked for SSRF
+                    // This updates the children also recursively
                     gene.setFromStringValue(callBackUrl)
                 }
             }
         }
     }
 
-    private fun getStringGenesFromParam(genes: List<Gene>) : List<Gene> {
+    private fun getStringGenesFromParam(genes: List<Gene>): List<Gene> {
         val output = mutableListOf<Gene>()
 
         genes.forEach { gene ->
@@ -334,18 +338,23 @@ class SSRFAnalyser {
                 is StringGene -> {
                     output.add(gene)
                 }
+
                 is OptionalGene -> {
                     output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
                 }
+
                 is ObjectGene -> {
                     output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
                 }
+
                 is ChoiceGene<*> -> {
                     output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
                 }
+
                 is CustomMutationRateGene<*> -> {
                     output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
                 }
+
                 else -> {
                     // Do nothing
                 }

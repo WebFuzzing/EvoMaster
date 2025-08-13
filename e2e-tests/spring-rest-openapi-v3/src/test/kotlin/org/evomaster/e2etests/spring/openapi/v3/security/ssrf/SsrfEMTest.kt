@@ -22,16 +22,15 @@ class SsrfEMTest : SpringTestBase() {
     @Test
     fun testSsrfEM() {
         runTestHandlingFlakyAndCompilation(
-            "SsrfEM",
-            100,
+            "SsrfEMTest",
+            200,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
-            setOption(args, "externalServiceIP", "127.0.0.6")
+            setOption(args, "externalServiceIP", "127.0.0.4")
             setOption(args, "instrumentMR_NET", "true")
 
             setOption(args, "security", "true")
-
             setOption(args, "ssrf", "true")
             setOption(args, "vulnerableInputClassificationStrategy", "LLM")
 
