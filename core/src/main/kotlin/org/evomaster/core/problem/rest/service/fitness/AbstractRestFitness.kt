@@ -80,7 +80,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     @Inject
-    protected lateinit var SSRFAnalyser: SSRFAnalyser
+    protected lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -762,7 +762,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (config.security && config.ssrf) {
-            if (SSRFAnalyser.hasVulnerableInputs(a)) {
+            if (ssrfAnalyser.hasVulnerableInputs(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
         }
@@ -1180,7 +1180,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         individual.seeMainExecutableActions().forEach {
             val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
 
-            if (ar != null && ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)?.toBoolean() ?: false) {
+            if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)?.toBoolean() ?: false) {
                 val scenarioId = idMapper.handleLocalTarget(
                     idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                 )

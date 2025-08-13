@@ -126,20 +126,20 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
-        if (!actionVulnerabilityMapping.containsKey(action.getName())) {
-            return false
-        }
+//        var hasCallbackURL = false
 
-        var hasCallbackURL = false
+//        action.parameters.forEach { param ->
+//            val genes = getStringGenesFromParam(param.seeGenes())
+//            genes.forEach { gene ->
+//                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+//            }
+//        }
 
-        action.parameters.forEach { param ->
-            val genes = getStringGenesFromParam(param.seeGenes())
-            genes.forEach { gene ->
-                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
-            }
-        }
+        val d = action.parameters.any { it.genes.any { gene -> httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString()) } }
 
-        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())
+        val x = httpCallbackVerifier.verify(action.getName())
+
+        return httpCallbackVerifier.verify(action.getName())
     }
 
     /**
