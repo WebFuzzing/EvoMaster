@@ -1094,7 +1094,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (config.ssrf) {
-            handleSSRFFaults(individual, actionResults, fv)
+            handleSsrfFaults(individual, actionResults, fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1174,7 +1174,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
     }
 
-    private fun handleSSRFFaults(
+    private fun handleSsrfFaults(
         individual: RestIndividual,
         actionResults: List<ActionResult>,
         fv: FitnessValue
@@ -1187,8 +1187,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                    // TODO: Name of the parameter can be used as the context
-                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
+
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
                 }
             }
         }

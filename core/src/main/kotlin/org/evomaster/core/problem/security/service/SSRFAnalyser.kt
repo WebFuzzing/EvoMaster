@@ -170,6 +170,19 @@ class SSRFAnalyser {
         }
     }
 
+    fun getVulnerableParameterName(action: RestCallAction): String? {
+        if (actionVulnerabilityMapping.containsKey(action.getName())) {
+            val mapping = actionVulnerabilityMapping[action.getName()]
+            if (mapping != null) {
+                val param = mapping.params.filter { it.value.securityFaults.contains(
+                    DefinedFaultCategory.SSRF) }
+                return param.keys.first()
+            }
+        }
+
+        return null
+    }
+
     /**
      * TODO: Classify based on manual
      * TODO: Need to rename the word manual to something meaningful later
