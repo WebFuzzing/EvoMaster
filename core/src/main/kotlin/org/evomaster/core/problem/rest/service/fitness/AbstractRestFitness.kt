@@ -80,7 +80,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     @Inject
-    protected lateinit var SSRFAnalyser: SSRFAnalyser
+    protected lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -761,8 +761,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
+        // FIXME: Code never reach this when we recompute the fitness under SSRFAnalyser
+        //  So the faults never get marked.
+        //  ResourceRestFitness get invoked during the recompute
         if (config.security && config.ssrf) {
-            if (SSRFAnalyser.hasVulnerableInputs(a)) {
+            if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
         }
@@ -1091,7 +1094,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (config.ssrf) {
-            handleVulnerabilities(individual, actionResults, fv)
+            handleSSRFFaults(individual, actionResults, fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1171,22 +1174,22 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
     }
 
-    private fun handleVulnerabilities(
+    private fun handleSSRFFaults(
         individual: RestIndividual,
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-
         individual.seeMainExecutableActions().forEach {
-            val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-
-            if (ar != null && ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF)?.toBoolean() ?: false) {
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                // TODO: Name of the parameter can be used as the context
-                ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
+            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+            if (ar != null) {
+                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+                    // TODO: Name of the parameter can be used as the context
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), null))
+                }
             }
         }
     }

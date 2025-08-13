@@ -10,7 +10,6 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.UUID
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
@@ -37,14 +36,13 @@ class HttpCallbackVerifier {
     @PostConstruct
     fun init() {
         if (config.ssrf) {
-            // TODO: Nothing to do now
+            log.debug("Initializing {}", HttpCallbackVerifier::class.simpleName)
         }
     }
 
     @PreDestroy
     fun destroy() {
-        wireMockServer!!.stop()
-        wireMockServer = null
+        resetHTTPVerifier()
     }
 
     fun initWireMockServer() {
@@ -81,7 +79,7 @@ class HttpCallbackVerifier {
 
         wireMockServer!!.stubFor(
             WireMock.any(WireMock.urlEqualTo(ssrfPath))
-                .withMetadata(Metadata.metadata().attr("originalPath", name))
+                .withMetadata(Metadata.metadata().attr("ssrf", name))
                 .atPriority(1)
                 .willReturn(
                     WireMock.aResponse()
@@ -99,9 +97,9 @@ class HttpCallbackVerifier {
     }
 
     /**
-     * @param name represents the [Action] name
+     * @param name represents the Action name
      *
-     * During stub creation, stubs are tagged with [Action] name in the metadata.
+     * During stub creation, stubs are tagged with Action name in the metadata.
      */
     fun verify(name: String): Boolean {
         if (isActive) {
@@ -109,7 +107,7 @@ class HttpCallbackVerifier {
                 .filter { event -> event.wasMatched }
                 .forEach { e ->
                     val matched = e.stubMapping.metadata
-                    if (matched != null && matched.getString("originalPath") == name) {
+                    if (matched != null && matched.getString("ssrf") == name) {
                         return true
                     }
                 }
