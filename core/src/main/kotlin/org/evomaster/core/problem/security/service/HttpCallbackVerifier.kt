@@ -28,6 +28,8 @@ class HttpCallbackVerifier {
 
     val isActive: Boolean get() = wireMockServer != null && wireMockServer!!.isRunning
 
+    private var counter: Long = 0
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
     }
@@ -48,7 +50,6 @@ class HttpCallbackVerifier {
     fun initWireMockServer() {
         try {
             val config = WireMockConfiguration()
-//                .bindAddress(SecuritySharedUtils.HTTP_CALLBACK_VERIFIER)
                 .extensions(ResponseTemplateTransformer(false))
                 .port(config.httpCallbackVerifierPort)
 
@@ -76,8 +77,7 @@ class HttpCallbackVerifier {
      * Method generates a unique callback link to be used as payload for SSRF.
      */
     fun generateCallbackLink(name: String): String {
-        val token = UUID.randomUUID().toString()
-        val ssrfPath = "/sink/$token"
+        val ssrfPath = "/sink/${counter++}"
 
         wireMockServer!!.stubFor(
             WireMock.any(WireMock.urlEqualTo(ssrfPath))
@@ -122,9 +122,11 @@ class HttpCallbackVerifier {
         wireMockServer?.resetAll()
         wireMockServer?.stubFor(getDefaultStub())
         actionCallbackLinkMapping.clear()
+        counter = 0
     }
 
     fun reset() {
+        counter = 0
         wireMockServer?.stop()
         wireMockServer = null
         actionCallbackLinkMapping.clear()
