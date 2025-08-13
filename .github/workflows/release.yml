@@ -8,7 +8,7 @@ on:
       - "v*"
 
 env:
-  evomaster-version: 3.4.1
+  evomaster-version: 4.0.1
   jdk-jar: 1.8
   jdk-jpackage: 21
   retention-days: 1
