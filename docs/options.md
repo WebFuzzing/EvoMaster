@@ -257,6 +257,7 @@ There are 3 types of options:
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
+|`httpCallbackVerifierPort`| __Int__. Port to run HTTP server to verify HTTP callbacks related to SSRF. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `19876`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -287,6 +288,7 @@ There are 3 types of options:
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
+|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
@@ -297,5 +299,6 @@ There are 3 types of options:
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
+|`vulnerableInputClassificationStrategy`| __Enum__. Strategy to classify inputs for potential vulnerability classes related to an REST endpoint. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
