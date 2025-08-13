@@ -9,9 +9,6 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.security.data.ActionFaultMapping
 import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
@@ -23,7 +20,6 @@ import org.evomaster.core.search.gene.optional.ChoiceGene
 import org.evomaster.core.search.gene.optional.CustomMutationRateGene
 import org.evomaster.core.search.gene.optional.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
@@ -160,23 +156,6 @@ class SSRFAnalyser {
         //  Are we going mark potential vulnerability classes as one time
         //  job or going to evaluate each time (which is costly).
 
-        when (config.vulnerableInputClassificationStrategy) {
-            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
-                manualClassifier()
-            }
-
-            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
-                llmClassifier()
-            }
-        }
-    }
-
-    /**
-     * TODO: Classify based on manual
-     * TODO: Need to rename the word manual to something meaningful later
-     */
-    private fun manualClassifier() {
-        // TODO: Can use the extracted CSV to map the parameter name patterns.
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
@@ -186,15 +165,17 @@ class SSRFAnalyser {
                         extractBodyParameters(action.parameters)
 
                     inputFaultMapping.forEach { paramName, paramMapping ->
-                        val answer = if (!paramMapping.description.isNullOrBlank()) {
-                            // TODO: Manual
-                            false
-                        } else {
-                            // TODO: Manual
-                            false
+                        val answer = when (config.vulnerableInputClassificationStrategy) {
+                            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
+                                manualClassifier(paramName, paramMapping.description)
+                            }
+
+                            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
+                                llmClassifier(paramName, paramMapping.description)
+                            }
                         }
 
-                        if (answer != null && answer) {
+                        if (answer) {
                             paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionFaultMapping.isVulnerable = true
@@ -207,52 +188,40 @@ class SSRFAnalyser {
                 }
             }
         }
+
+    }
+
+    /**
+     * A private method to identify parameter is a potentially holds URL value
+     * using a Regex based approach.
+     */
+    private fun manualClassifier(name: String, description: String? = null): Boolean {
+        // TODO: Only regex or wordbag can be used from extracted parameter names.
+        return false
     }
 
 
     /**
-     * Private method to classify parameters using a large language model.
+     * Private method to identify parameter is a potentially holds URL value,
+     * using a large language model.
      */
-    private fun llmClassifier() {
-        // For now, we consider only the individuals selected from [Archive]
-        // TODO: This can be isolated to classify at the beginning of the search
-        individualsInSolution.forEach { evaluatedIndividual ->
-            evaluatedIndividual.evaluatedMainActions().forEach { a ->
-                val action = a.action
-                if (action is RestCallAction && !actionVulnerabilityMapping.containsKey(action.getName())) {
-                    val actionFaultMapping = ActionFaultMapping(action.getName())
-                    val inputFaultMapping: MutableMap<String, InputFaultMapping> =
-                        extractBodyParameters(action.parameters)
-
-                    inputFaultMapping.forEach { paramName, paramMapping ->
-                        val answer = if (!paramMapping.description.isNullOrBlank()) {
-                            languageModelConnector.query(
-                                SSRFUtil.Companion.getPromptWithNameAndDescription(
-                                    paramMapping.name,
-                                    paramMapping.description
-                                )
-                            )
-                        } else {
-                            languageModelConnector.query(
-                                SSRFUtil.Companion.getPromptWithNameOnly(
-                                    paramMapping.name
-                                )
-                            )
-                        }
-
-                        if (answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
-                            paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
-                            actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
-                            actionFaultMapping.isVulnerable = true
-                        }
-                    }
-
-                    // Assign the param mapping
-                    actionFaultMapping.params = inputFaultMapping
-                    actionVulnerabilityMapping[action.getName()] = actionFaultMapping
-                }
-            }
+    private fun llmClassifier(name: String, description: String? = null): Boolean {
+        val answer = if (!description.isNullOrBlank()) {
+            languageModelConnector.query(
+                SSRFUtil.Companion.getPromptWithNameAndDescription(
+                    name,
+                    description
+                )
+            )
+        } else {
+            languageModelConnector.query(
+                SSRFUtil.Companion.getPromptWithNameOnly(
+                    name
+                )
+            )
         }
+
+        return answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
     }
 
     /**
