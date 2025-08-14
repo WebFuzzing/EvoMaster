@@ -179,8 +179,20 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.AtomEscape() != null){
-            val char = ctx.AtomEscape().text[1].toString()
-            return VisitResult(CharacterClassEscapeRxGene(char))
+            val txt = ctx.AtomEscape().text
+            when {
+                txt[1] == 'x' -> {
+                    val hexValue =
+                        txt.subSequence(2, txt.length).toString().toInt(16)
+                    return VisitResult(
+                        PatternCharacterBlockGene(
+                            txt,
+                            hexValue.toChar().toString()
+                        )
+                    )
+                }
+                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
+            }
         }
 
         if(ctx.disjunction() != null){

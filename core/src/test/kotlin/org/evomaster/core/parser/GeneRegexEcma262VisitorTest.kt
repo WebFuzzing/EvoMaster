@@ -326,4 +326,9 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         // p = 1 / 2^6 = 1 / 64
         checkCanSample("^((a|A)(b|B)(c|C)123(e|E)(f|F)(d|D))$", "aBc123EFd", 10_000)
     }
+
+    @Test
+    fun testHexEscape(){
+        checkSameAsJava("""\x00\x0a\xba\xFF""")
+    }
 }

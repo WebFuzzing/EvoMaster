@@ -119,7 +119,7 @@ quoteChar
 ;
 
 //TODO
-//CharacterEscape
+CharacterEscape: HexEscapeSequence;
 // : ControlEscape
 // | 'c' ControlLetter
 // | HexEscapeSequence
@@ -230,7 +230,7 @@ AtomEscape
  : '\\' CharacterClassEscape
  //TODO
 // | '\\' DecimalEscape
-// | '\\' CharacterEscape
+ | '\\' CharacterEscape
  ;
 
 fragment CharacterClassEscape
@@ -268,10 +268,13 @@ BaseChar
  ;
 
 //TODO
-//HexEscapeSequence
-// : 'x' HexDigit HexDigit
-// ;
-//
+HexEscapeSequence
+ : 'x' HexDigit HexDigit
+ ;
+
+fragment HexDigit:
+ [a-fA-F0-9]
+ ;
 
 //TODO
 //DecimalIntegerLiteral
