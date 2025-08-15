@@ -11,6 +11,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
 
+//A test case or test suite (?)
 class WebIndividual(
     sampleType: SampleType,
     children: MutableList<out ActionComponent>,
@@ -25,7 +26,7 @@ class WebIndividual(
     childTypeVerifier = EnterpriseChildTypeVerifier(WebAction::class.java),
     groups = groups
 ) {
-
+    // to support genetic operation (?)
     override fun copyContent(): Individual {
         return WebIndividual(
             sampleType,
