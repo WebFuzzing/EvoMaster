@@ -4,6 +4,10 @@ import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.numeric.*
@@ -902,4 +906,52 @@ object GeneUtils {
 
     fun instantiateShortGene(name: String) =
         IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+
+
+
+    fun getAllStringFields(params: List<Param>) = getAllFields(params, StringGene::class.java)
+
+
+    fun <K:Gene> getAllFields(params: List<Param>, klass: Class<K>) : List<Gene>{
+
+        return params.flatMap { p ->
+            if(p is HeaderParam || p is QueryParam || p is BodyParam){
+                getAllFields(p.primaryGene(), klass)
+            } else {
+                // PathParam are explicitly excluded, as not really representing possible fields
+                listOf()
+            }
+        }
+    }
+
+    /**
+     * Check the leaf of this gene, and return this gene in case the leaf is matching [klass].
+     * If the leaf is an array or an object, this process is applied recursively on their content.
+     */
+    fun <K: Gene> getAllFields(gene: Gene, klass: Class<K>) : List<Gene>{
+
+        val fields = mutableListOf<Gene>()
+
+        val leaf = gene.getLeafGene()
+
+        if(klass.isAssignableFrom(leaf.javaClass)){
+            //we are adding the wrapper gene, not the leaf
+            fields.add(gene)
+        }
+
+        if(leaf is ObjectGene){
+            leaf.fields.forEach {
+                fields.addAll(getAllFields(it, klass))
+            }
+        }
+
+        if(leaf is ArrayGene<*> && !leaf.isEmpty()){
+            leaf.getViewOfElements().forEach {
+                fields.addAll(getAllFields(it, klass))
+            }
+        }
+
+        return fields
+    }
+
 }
