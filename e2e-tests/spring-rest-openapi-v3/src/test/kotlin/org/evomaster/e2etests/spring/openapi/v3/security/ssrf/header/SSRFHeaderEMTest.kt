@@ -18,7 +18,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
     @Disabled
     @Test
-    fun testSsrfHeader() {
+    fun testSSRFHeader() {
 
     }
 }

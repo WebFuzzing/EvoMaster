@@ -18,7 +18,7 @@ class SSRFQueryEMTest: SpringTestBase() {
 
     @Disabled
     @Test
-    fun testSsrfQuery() {
+    fun testSSRFQuery() {
 
     }
 }

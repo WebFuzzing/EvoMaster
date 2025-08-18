@@ -20,9 +20,9 @@ class SSRFBaseEMTest : SpringTestBase() {
 
     @Disabled("WIP")
     @Test
-    fun testSsrfEM() {
+    fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
-            "SsrfEMTest",
+            "SSRFEMTest",
             300,
         ) { args: MutableList<String> ->
 
