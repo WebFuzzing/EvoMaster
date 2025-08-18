@@ -908,7 +908,11 @@ object GeneUtils {
         IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
 
 
-
+    /**
+     * Return all the "fields" of type string in the params.
+     * The returned genes are not necessarily of type StringGene, as they could be wrapped (eg, in an OptionalGene).
+     * If objects and arrays are encountered, those are analyzed recursively.
+     */
     fun getAllStringFields(params: List<Param>) = getAllFields(params, StringGene::class.java)
 
 
