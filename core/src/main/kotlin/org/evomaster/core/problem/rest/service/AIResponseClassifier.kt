@@ -2,13 +2,9 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.*
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
-import org.evomaster.core.problem.rest.classifier.NeuralNetworkClassifier
 import javax.annotation.PostConstruct
 
 
@@ -27,6 +23,8 @@ class AIResponseClassifier : AIModel {
                 GaussianOnlineClassifier()
             EMConfig.AIResponseClassifierModel.GLM ->
                 GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+            EMConfig.AIResponseClassifierModel.NN ->
+                NeuralNetworkClassifier(config.aiResponseClassifierLearningRate)
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
