@@ -29,6 +29,8 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -236,7 +238,6 @@ class Main {
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
 
-
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
@@ -245,6 +246,8 @@ class Main {
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
+
+            resetHTTPCallbackVerifier(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -400,7 +403,16 @@ class Main {
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
-                    securityRest.applySecurityPhase()
+                    val solution = securityRest.applySecurityPhase()
+
+                    if (config.ssrf) {
+                        LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
+
+                        val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
+                        ssrfAnalyser.apply()
+                    } else {
+                        solution
+                    }
                 }
 
                 else -> {
@@ -991,6 +1003,11 @@ class Main {
         private fun resetExternalServiceHandler(injector: Injector) {
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
             externalServiceHandler.reset()
+        }
+
+        private fun resetHTTPCallbackVerifier(injector: Injector) {
+            val httpCallbackVerifier = injector.getInstance(HttpCallbackVerifier::class.java)
+            httpCallbackVerifier.reset()
         }
     }
 }
