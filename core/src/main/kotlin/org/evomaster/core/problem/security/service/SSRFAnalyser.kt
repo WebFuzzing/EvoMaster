@@ -142,8 +142,6 @@ class SSRFAnalyser {
             }
         }
 
-        val x = httpCallbackVerifier.verify(action.getName())
-
         return httpCallbackVerifier.verify(action.getName())
     }
 
