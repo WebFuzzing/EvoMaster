@@ -16,7 +16,7 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 abstract class SelectableWrapperGene(name: String,
                                      val gene: Gene,
                                      var isActive: Boolean = true
-): CompositeFixedGene(name, gene) {
+): CompositeFixedGene(name, gene), WrapperGene {
 
 
     /**
@@ -42,6 +42,11 @@ abstract class SelectableWrapperGene(name: String,
         }
         return gene.getWrappedGene(klass)
     }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
+    }
+
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 

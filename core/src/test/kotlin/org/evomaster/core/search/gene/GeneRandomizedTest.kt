@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 
+import org.evomaster.core.search.gene.wrapper.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -71,6 +72,11 @@ class GeneRandomizedTest : AbstractGeneTest(){
                 it.isLocallyValid()
             }
         )
+
+        if(gene !is WrapperGene){
+            val leaf = gene.getLeafGene() //should always return same gene
+            assertEquals(gene, leaf)
+        }
 
         //TODO add more invariants here
     }

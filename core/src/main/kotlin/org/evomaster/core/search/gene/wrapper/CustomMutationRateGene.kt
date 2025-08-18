@@ -31,7 +31,7 @@ class CustomMutationRateGene<out T>(
     val gene: T,
     var probability: Double,
     var searchPercentageActive: Double = 1.0
-) : CompositeFixedGene(name, gene)
+) : CompositeFixedGene(name, gene), WrapperGene
         where T : Gene {
 
     init {
@@ -62,6 +62,11 @@ class CustomMutationRateGene<out T>(
         }
         return gene.getWrappedGene(klass)
     }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
+    }
+
 
     fun preventMutation(){
         probability = 0.0

@@ -16,7 +16,7 @@ class NullableGene(name: String,
                     gene: Gene,
                     isActive: Boolean = true,
                    var nullLabel: String = "null"
-) : SelectableWrapperGene(name, gene, isActive) {
+) : SelectableWrapperGene(name, gene, isActive), WrapperGene {
 
 
 

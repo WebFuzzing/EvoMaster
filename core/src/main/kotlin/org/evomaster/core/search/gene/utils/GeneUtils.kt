@@ -757,32 +757,7 @@ object GeneUtils {
     }
 
 
-    /**
-     * Traverse the children of a wrapper gene, and return the leaf gene
-     *
-     * Return can only be null if [checkIfInUse] is true.
-     */
-    fun getWrappedValueGene(gene: Gene, checkIfInUse: Boolean = false): Gene? {
 
-        if(checkIfInUse && gene is SelectableWrapperGene && !gene.isActive){
-            return null
-        }
-
-        if (gene is OptionalGene) {
-            return getWrappedValueGene(gene.gene)
-        } else if (gene is CustomMutationRateGene<*>)
-            return getWrappedValueGene(gene.gene)
-        else if (gene is SqlPrimaryKeyGene) {
-            if (gene.gene is SqlAutoIncrementGene)
-                return gene
-            else return getWrappedValueGene(gene.gene)
-        } else if (gene is NullableGene) {
-            return getWrappedValueGene(gene.gene)
-        } else if (gene is FlexibleGene){
-            return getWrappedValueGene(gene.gene)
-        }
-        return gene
-    }
 
     fun getBasicGeneBasedOnJavaTypeBytecodeName(typeName: String, geneName: String) : Gene?{
 

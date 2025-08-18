@@ -278,7 +278,7 @@ class ParamUtil {
         @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
             replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
-           return GeneUtils.getWrappedValueGene(gene,false)!!
+           return gene.getLeafGene()!!
         }
 
         fun getObjectGene(gene: Gene): ObjectGene? {

@@ -30,7 +30,7 @@ class FlexibleGene(name: String,
                     */
                    val valueClasses : List<Class<*>>?,
                    private var replaceable: Boolean = true
-) : CompositeGene(name, mutableListOf(gene)) {
+) : CompositeGene(name, mutableListOf(gene)), WrapperGene {
 
     init {
         geneCheck(gene)
@@ -81,6 +81,10 @@ class FlexibleGene(name: String,
             return this as T
         }
         return gene.getWrappedGene(klass)
+    }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
     }
 
     override fun copyContent(): FlexibleGene {
