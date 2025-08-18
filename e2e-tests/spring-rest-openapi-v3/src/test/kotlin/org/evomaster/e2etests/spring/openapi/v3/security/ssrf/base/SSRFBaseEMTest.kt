@@ -1,20 +1,20 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.ssrf
+package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.base
 
-import com.foo.rest.examples.spring.openapi.v3.security.ssrf.SsrfController
+import com.foo.rest.examples.spring.openapi.v3.security.ssrf.base.SSRFBaseController
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class SsrfEMTest : SpringTestBase() {
+class SSRFBaseEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SsrfController())
+            initClass(SSRFBaseController())
         }
     }
 
@@ -39,7 +39,7 @@ class SsrfEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.isNotEmpty())
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
 
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/data", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/image", null)

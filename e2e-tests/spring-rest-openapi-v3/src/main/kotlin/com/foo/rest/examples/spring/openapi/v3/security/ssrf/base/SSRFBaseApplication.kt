@@ -1,5 +1,7 @@
-package com.foo.rest.examples.spring.openapi.v3.security.ssrf
+package com.foo.rest.examples.spring.openapi.v3.security.ssrf.base
 
+import com.foo.rest.examples.spring.openapi.v3.security.ssrf.RemoteDataDto
+import com.foo.rest.examples.spring.openapi.v3.security.ssrf.UserDto
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -17,12 +19,12 @@ import java.net.URL
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api"])
 @RestController
-open class SsrfApplication {
+open class SSRFBaseApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(SsrfApplication::class.java, *args)
+            SpringApplication.run(SSRFBaseApplication::class.java, *args)
         }
     }
 
