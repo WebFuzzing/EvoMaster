@@ -4,12 +4,10 @@ import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
-import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.*
+import org.evomaster.core.search.gene.wrapper.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene

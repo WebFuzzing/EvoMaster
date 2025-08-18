@@ -3,7 +3,7 @@ package org.evomaster.core.sql
 import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern
 

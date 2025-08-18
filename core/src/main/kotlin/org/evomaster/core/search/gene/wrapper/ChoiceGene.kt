@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.optional
+package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
