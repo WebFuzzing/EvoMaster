@@ -24,6 +24,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 
 class SSRFAnalyser {
@@ -66,6 +67,11 @@ class SSRFAnalyser {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
     }
 
+    @PostConstruct
+    fun init() {
+        log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
+    }
+
     @PreDestroy
     private fun preDestroy() {
         if (config.ssrf) {
@@ -90,18 +96,21 @@ class SSRFAnalyser {
             return archive.extractSolution()
         }
 
-        if (!httpCallbackVerifier.isActive) {
-            httpCallbackVerifier.initWireMockServer()
-        } else {
-            httpCallbackVerifier.resetHTTPVerifier()
-        }
-
         log.debug("Total individuals before vulnerability analysis: {}", individuals.size)
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
         // Classify endpoints with potential vulnerability classes
         classify()
+
+        if (actionVulnerabilityMapping.isNotEmpty()) {
+            if (httpCallbackVerifier.isActive) {
+                // Reset before execution
+                httpCallbackVerifier.resetHTTPVerifier()
+            } else {
+                httpCallbackVerifier.initWireMockServer()
+            }
+        }
 
         // execute
         analyse()
@@ -116,7 +125,7 @@ class SSRFAnalyser {
         return archive.extractSolution()
     }
 
-    fun hasVulnerableInputs(
+    fun anyCallsMadeToHTTPVerifier(
         action: RestCallAction,
     ): Boolean {
         /*
@@ -126,16 +135,12 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
-//        var hasCallbackURL = false
-
-//        action.parameters.forEach { param ->
-//            val genes = getStringGenesFromParam(param.seeGenes())
-//            genes.forEach { gene ->
-//                hasCallbackURL = httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
-//            }
-//        }
-
-        val d = action.parameters.any { it.genes.any { gene -> httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString()) } }
+        val hasCallbackURL = action.parameters.any { param ->
+            val genes = getStringGenesFromParam(param.seeGenes())
+            genes.any { gene ->
+                httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+            }
+        }
 
         val x = httpCallbackVerifier.verify(action.getName())
 
@@ -156,6 +161,46 @@ class SSRFAnalyser {
         //  Are we going mark potential vulnerability classes as one time
         //  job or going to evaluate each time (which is costly).
 
+        when (config.vulnerableInputClassificationStrategy) {
+            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
+                manualClassifier()
+            }
+
+            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
+                llmClassifier()
+            }
+        }
+    }
+
+    fun getVulnerableParameterName(action: RestCallAction): String? {
+        if (actionVulnerabilityMapping.containsKey(action.getName())) {
+            val mapping = actionVulnerabilityMapping[action.getName()]
+            if (mapping != null) {
+                val param = mapping.params.filter { it.value.securityFaults.contains(
+                    DefinedFaultCategory.SSRF) }
+                return param.keys.first()
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * TODO: Classify based on manual
+     * TODO: Need to rename the word manual to something meaningful later
+     */
+    private fun manualClassifier() {
+        // TODO: Can use the extracted CSV to map the parameter name
+        //  to the vulnerability class.
+    }
+
+
+    /**
+     * Private method to classify parameters using a large language model.
+     */
+    private fun llmClassifier() {
+        // For now, we consider only the individuals selected from [Archive]
+        // TODO: This can be isolated to classify at the beginning of the search
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
