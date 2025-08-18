@@ -12,7 +12,7 @@ import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.*
+import org.evomaster.core.search.gene.wrapper.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene

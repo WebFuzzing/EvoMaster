@@ -7,8 +7,8 @@ import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
-import org.evomaster.core.search.gene.optional.FlexibleGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
 import org.evomaster.core.search.gene.string.StringGene

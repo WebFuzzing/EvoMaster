@@ -56,7 +56,7 @@ class DtoWriter {
         actionDefinitions.forEach { action ->
             action.getViewOfChildren().find { it is BodyParam }
             .let {
-                val primaryGene = GeneUtils.getWrappedValueGene((it as BodyParam).primaryGene())
+                val primaryGene = (it as BodyParam).primaryGene().getLeafGene()
                 // TODO: Payloads could also be json arrays, analyze ArrayGene
                 when (primaryGene) {
                     is ObjectGene -> {
@@ -81,7 +81,7 @@ class DtoWriter {
         // TODO: add support for additionalFields
         gene.fixedFields.forEach { field ->
             try {
-                val wrappedGene = GeneUtils.getWrappedValueGene(field)
+                val wrappedGene = field.getLeafGene()
                 val dtoField = getDtoField(field.name, wrappedGene)
                 dtoClass.addField(dtoField)
                 if (wrappedGene is ObjectGene && !dtoCollector.contains(dtoField.type)) {
