@@ -161,46 +161,6 @@ class SSRFAnalyser {
         //  Are we going mark potential vulnerability classes as one time
         //  job or going to evaluate each time (which is costly).
 
-        when (config.vulnerableInputClassificationStrategy) {
-            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
-                manualClassifier()
-            }
-
-            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
-                llmClassifier()
-            }
-        }
-    }
-
-    fun getVulnerableParameterName(action: RestCallAction): String? {
-        if (actionVulnerabilityMapping.containsKey(action.getName())) {
-            val mapping = actionVulnerabilityMapping[action.getName()]
-            if (mapping != null) {
-                val param = mapping.params.filter { it.value.securityFaults.contains(
-                    DefinedFaultCategory.SSRF) }
-                return param.keys.first()
-            }
-        }
-
-        return null
-    }
-
-    /**
-     * TODO: Classify based on manual
-     * TODO: Need to rename the word manual to something meaningful later
-     */
-    private fun manualClassifier() {
-        // TODO: Can use the extracted CSV to map the parameter name
-        //  to the vulnerability class.
-    }
-
-
-    /**
-     * Private method to classify parameters using a large language model.
-     */
-    private fun llmClassifier() {
-        // For now, we consider only the individuals selected from [Archive]
-        // TODO: This can be isolated to classify at the beginning of the search
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
@@ -234,6 +194,28 @@ class SSRFAnalyser {
             }
         }
 
+//        when (config.vulnerableInputClassificationStrategy) {
+//            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
+//                manualClassifier()
+//            }
+//
+//            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
+//                llmClassifier()
+//            }
+//        }
+    }
+
+    fun getVulnerableParameterName(action: RestCallAction): String? {
+        if (actionVulnerabilityMapping.containsKey(action.getName())) {
+            val mapping = actionVulnerabilityMapping[action.getName()]
+            if (mapping != null) {
+                val param = mapping.params.filter { it.value.securityFaults.contains(
+                    DefinedFaultCategory.SSRF) }
+                return param.keys.first()
+            }
+        }
+
+        return null
     }
 
     /**
@@ -241,7 +223,7 @@ class SSRFAnalyser {
      * using a Regex based approach.
      */
     private fun manualClassifier(name: String, description: String? = null): Boolean {
-        // TODO: Only regex or wordbag can be used from extracted parameter names.
+        // TODO: Only regex or word bag can be used from extracted parameter names.
         return false
     }
 
