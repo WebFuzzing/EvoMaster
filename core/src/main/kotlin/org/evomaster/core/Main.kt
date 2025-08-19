@@ -173,7 +173,7 @@ class Main {
                 /*
                     Need to signal error status.
                     But this code can become problematic if reached by any test.
-                    Also in case of exceptions, must shutdown explicitely, otherwise running threads in
+                    Also in case of exceptions, must shutdown explicitly, otherwise running threads in
                     the background might keep the JVM alive.
                     See for example HarvestActualHttpWsResponseHandler
                  */
@@ -206,7 +206,7 @@ class Main {
 
         private fun printVersion() {
 
-            val version = this::class.java.`package`?.implementationVersion ?: "unknown"
+            val version = this::class.java.`package`?.implementationVersion ?: "SNAPSHOT"
 
             LoggingUtil.getInfoLogger().info("EvoMaster version: $version")
         }
@@ -215,6 +215,20 @@ class Main {
         fun initAndRun(args: Array<String>): Solution<*> {
 
             val injector = init(args)
+            val solution = runAndPostProcess(injector)
+            return solution
+        }
+
+        @JvmStatic
+        fun initAndDebug(args: Array<String>): Pair<Injector,Solution<*>> {
+
+            val injector = init(args)
+            val solution = runAndPostProcess(injector)
+
+            return Pair(injector,solution)
+        }
+
+        private fun runAndPostProcess(injector: Injector): Solution<*> {
 
             checkExperimentalSettings(injector)
 
