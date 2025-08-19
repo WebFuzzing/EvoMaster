@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.optional
+package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -28,7 +28,7 @@ class ChoiceGene<T>(
      */
     probabilities: List<Double>? = null
 
-) : CompositeFixedGene(name, geneChoices) where T : Gene {
+) : CompositeFixedGene(name, geneChoices), WrapperGene where T : Gene {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ChoiceGene::class.java)
@@ -102,6 +102,9 @@ class ChoiceGene<T>(
         return activeGene().getWrappedGene(klass)
     }
 
+    override fun getLeafGene(): Gene{
+        return activeGene().getLeafGene()
+    }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
 

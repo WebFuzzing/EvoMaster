@@ -3,7 +3,7 @@ package org.evomaster.core.problem.externalservice.param
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 /**
  * represent external service responses which contains

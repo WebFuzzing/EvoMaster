@@ -53,8 +53,8 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool

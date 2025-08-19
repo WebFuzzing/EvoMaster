@@ -2,7 +2,7 @@ package org.evomaster.core.problem.externalservice.rpc.parm
 
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 /**
  *

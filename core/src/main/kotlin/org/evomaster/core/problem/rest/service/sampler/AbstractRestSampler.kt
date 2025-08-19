@@ -32,8 +32,8 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
