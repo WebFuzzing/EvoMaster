@@ -1,11 +1,13 @@
 package org.evomaster.client.java.controller.problem.rpc.schema.params;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ParamDto;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.AccessibleSchema;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.PrimitiveOrWrapperType;
 import org.evomaster.client.java.controller.problem.rpc.schema.types.TypeSchema;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,9 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
 
 
     protected final static ObjectMapper objectMaper = new ObjectMapper();
+
+    protected final static ObjectMapper mapperAllowUnkownFields = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     /**
      * name of the instance, eg param name
@@ -225,7 +230,27 @@ public abstract class NamedTypedValue<T extends TypeSchema, V> {
     }
 
     public Object parseValueWithJson(String json) throws JsonProcessingException {
-        return objectMaper.readValue(json, getType().getClazz());
+        try{
+            return objectMaper.readValue(json, getType().getClazz());
+        }catch (JsonProcessingException e) {
+            /*
+                In the seeded tests of the industrial case study, there are cases where
+                unrecognized fields appear in the JSON input, such as:
+                {
+                    "setType": true // Note: there is no corresponding 'setType' field in the target class
+                }
+
+                To handle such cases while still capturing the error message,
+                attempt to parse the JSON again with a configuration that allows unknown fields.
+            */
+            if (e.getMessage().contains("Unrecognized field")) {
+                SimpleLogger.recordErrorMessage(
+                        String.format("Try once to fix issues in json: %s", e.getMessage()));
+                return mapperAllowUnkownFields.readValue(json, getType().getClazz());
+            }
+            throw e;
+        }
+
     }
 
     /**

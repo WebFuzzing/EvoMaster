@@ -2,7 +2,6 @@ package org.evomaster.core.output.naming
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.utils.StringUtils.capitalization
-import java.util.Locale.ENGLISH
 
 /**
  * Different programming languages have different conventions and style when defining variable names and other programming structures.
@@ -32,7 +31,7 @@ class LanguageConventionFormatter(
         which do not favour readability.
      */ 
     private fun formatCamelCase(testKeywords: List<String>): String {
-        return testKeywords.joinToString("") { testToken -> testToken.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ENGLISH) else it.toString() } }.decapitalize()
+        return testKeywords.joinToString("") { testToken -> testToken.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() } }.decapitalize()
     }
 
     private fun formatSnakeCase(testKeywords: List<String>): String {
