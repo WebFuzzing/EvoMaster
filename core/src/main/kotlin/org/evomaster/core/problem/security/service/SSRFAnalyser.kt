@@ -141,14 +141,13 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
-        val hasCallbackURL = action.parameters.any { param ->
-            val genes = getStringGenesFromParam(param.seeGenes())
-            genes.any { gene ->
-                httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
-            }
+        val genes = GeneUtils.getAllStringFields(action.parameters)
+
+        val hasCallBackURL = genes.any { gene ->
+            httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
         }
 
-        return httpCallbackVerifier.verify(action.getName())
+        return httpCallbackVerifier.verify(action.getName()) && hasCallBackURL
     }
 
     /**
