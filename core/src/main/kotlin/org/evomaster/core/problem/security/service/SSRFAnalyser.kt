@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
@@ -63,6 +64,10 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
+    private val urlRegexPattern: Regex = Regex("\\burl\\b")
+
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target")
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
     }
@@ -70,6 +75,7 @@ class SSRFAnalyser {
     @PostConstruct
     fun init() {
         log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
+        loadURLParamNamesFromFile()
     }
 
     @PreDestroy
@@ -167,7 +173,7 @@ class SSRFAnalyser {
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
                         extractBodyParameters(action.parameters)
 
-                    inputFaultMapping.forEach { paramName, paramMapping ->
+                    inputFaultMapping.forEach { (paramName, paramMapping) ->
                         val answer = when (config.vulnerableInputClassificationStrategy) {
                             EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
                                 manualClassifier(paramName, paramMapping.description)
@@ -191,16 +197,6 @@ class SSRFAnalyser {
                 }
             }
         }
-
-//        when (config.vulnerableInputClassificationStrategy) {
-//            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
-//                manualClassifier()
-//            }
-//
-//            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
-//                llmClassifier()
-//            }
-//        }
     }
 
     fun getVulnerableParameterName(action: RestCallAction): String? {
@@ -222,6 +218,23 @@ class SSRFAnalyser {
      */
     private fun manualClassifier(name: String, description: String? = null): Boolean {
         // TODO: Only regex or word bag can be used from extracted parameter names.
+        var value = 0.0
+
+        if (name.lowercase().matches(urlRegexPattern)) {
+            value += 0.5
+        }
+        if (description != null) {
+            if (description.lowercase().matches(urlRegexPattern)) {
+                value += 0.3
+            }
+        }
+        if (potentialUrlParamNames.contains(name)) {
+            value += 1.0
+        }
+        if (value > 0.5) {
+            return true
+        }
+
         return false
     }
 
@@ -257,15 +270,13 @@ class SSRFAnalyser {
     ): MutableMap<String, InputFaultMapping> {
         val output = mutableMapOf<String, InputFaultMapping>()
 
-        parameters.forEach { param ->
-            val genes = getStringGenesFromParam(param.seeGenes())
+        val genes = GeneUtils.getAllStringFields(parameters)
 
-            genes.forEach { gene ->
-                output[gene.name] = InputFaultMapping(
-                    gene.name,
-                    gene.description,
-                )
-            }
+        genes.forEach { gene ->
+            output[gene.name] = InputFaultMapping(
+                gene.name,
+                gene.description,
+            )
         }
 
         return output
@@ -386,5 +397,9 @@ class SSRFAnalyser {
         }
 
         return output
+    }
+
+    private fun loadURLParamNamesFromFile() {
+        // TODO
     }
 }
