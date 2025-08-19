@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.classifier
 
 import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
@@ -32,4 +33,15 @@ interface AIModel {
     fun classify(input: RestCallAction): AIResponseClassification
 
 
+    /**
+     *  Return a probability in [0,1] on how accurate the model is.
+     *  The model is learned dynamically throughout the search.
+     *  Especially at the beginning of the search, the model will be unreliable.
+     *  This accuracy estimate can then be used by EvoMaster to make a non-deterministic decision on whether
+     *  the model should be used or not yet for classification, or if it needs more training first.
+     *
+     *  An API can have many different endpoints.
+     *  Based on the training data, the accuracy might be different between endpoints.
+     */
+    fun estimateAccuracy(endpoint: Endpoint) : Double
 }
