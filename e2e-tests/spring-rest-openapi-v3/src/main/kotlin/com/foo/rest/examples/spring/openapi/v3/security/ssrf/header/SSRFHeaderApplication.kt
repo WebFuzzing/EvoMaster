@@ -8,8 +8,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import java.net.HttpURLConnection
+import java.net.URL
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api"])
@@ -24,15 +27,35 @@ open class SSRFHeaderApplication {
     }
 
 
-    @Operation(summary = "POST endpoint to fetch remote image", description = "Can be used to fetch remote profile image for user.")
-    @ApiResponses(value = [
-        ApiResponse(responseCode = "200", description = "Successful response"),
-        ApiResponse(responseCode = "201", description = "Successfully fetched remote image"),
-        ApiResponse(responseCode = "400", description = "Invalid request"),
-        ApiResponse(responseCode = "500", description = "Invalid server error")
-    ])
+    /**
+     * This is a blind SSRF-example.
+     */
+    @Operation(
+        summary = "POST endpoint to fetch remote image",
+        description = "Can be used to fetch remote profile image for user."
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(responseCode = "200", description = "Successful response"),
+            ApiResponse(responseCode = "500", description = "Invalid server error")
+        ]
+    )
     @PostMapping(path = ["/header"])
-    open fun headerValue(): ResponseEntity<String> {
+    open fun headerValue(@RequestHeader("Referer") referer: String): ResponseEntity<String> {
+        if (referer != null) {
+            try {
+                val url = URL(referer)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 1000
+
+                if (connection.responseCode == 200) {
+                    // Do nothing
+                }
+            } catch (e: Exception) {
+                // Do nothing
+            }
+        }
 
         return ResponseEntity.ok().build()
     }
