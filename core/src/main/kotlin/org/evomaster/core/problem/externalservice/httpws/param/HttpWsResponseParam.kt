@@ -4,7 +4,7 @@ import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.externalservice.param.ResponseParam
 import org.evomaster.core.problem.util.HttpWsUtil.getContentType
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 
 

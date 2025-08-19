@@ -13,8 +13,8 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 
@@ -278,7 +278,7 @@ class ParamUtil {
         @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
             replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
-           return GeneUtils.getWrappedValueGene(gene,false)!!
+           return gene.getLeafGene()!!
         }
 
         fun getObjectGene(gene: Gene): ObjectGene? {

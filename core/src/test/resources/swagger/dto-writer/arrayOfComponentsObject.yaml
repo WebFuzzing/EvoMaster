@@ -1,0 +1,50 @@
+openapi: 3.0.3
+info:
+  title: Array with Nested Objects Matching DTOs
+  version: 1.0.0
+
+paths:
+  /items-components:
+    post:
+      summary: Accepts an array of objects with numbers, labels, and wrappedStrings wrapper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [numbers, labels, wrappedStrings]
+                properties:
+                  numbers:
+                    type: array
+                    items:
+                      type: integer
+                  labels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Label'
+                  wrappedStrings:
+                    $ref: '#/components/schemas/WrappedString'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    Label:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: string
+
+    WrappedString:
+      type: object
+      required: [strings]
+      properties:
+        strings:
+          type: array
+          items:
+            type: string

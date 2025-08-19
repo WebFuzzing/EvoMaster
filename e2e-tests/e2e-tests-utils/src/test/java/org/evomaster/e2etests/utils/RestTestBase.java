@@ -1,5 +1,7 @@
 package org.evomaster.e2etests.utils;
 
+import com.google.inject.Injector;
+import kotlin.Pair;
 import kotlin.Unit;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.core.Main;
@@ -23,6 +25,11 @@ public abstract class RestTestBase  extends EnterpriseTestBase {
 
     protected Solution<RestIndividual> initAndRun(List<String> args){
         return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
+    }
+
+    protected Pair<Injector,Solution<RestIndividual>> initAndDebug(List<String> args){
+        Pair<Injector,Solution<?>>  tmp = Main.initAndDebug(args.toArray(new String[0]));
+        return new Pair<>(tmp.getFirst(), (Solution<RestIndividual>) tmp.getSecond());
     }
 
     protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){

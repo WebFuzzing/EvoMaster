@@ -162,6 +162,117 @@ class DtoWriterTest {
         assertDtoFieldIn(childObjectDtoFields, "age", INTEGER)
     }
 
+    @Test
+    fun arrayAsRootTypeCollectsASingleDto() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("/swagger/dto-writer/rootArrayWithComponents.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 1)
+        val userDto = collectedDtos["User"]
+        assertNotNull(userDto)
+        val dtoFields = userDto?.fields?:emptyList()
+        assertEquals(dtoFields.size, 2)
+        assertDtoFieldIn(dtoFields, "name", STRING)
+        assertDtoFieldIn(dtoFields, "age", INTEGER)
+    }
+
+    @Test
+    fun arrayOfInlineObjectUsesPropertyName() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("/swagger/dto-writer/arrayOfInlineObject.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 2)
+        val rootDto = collectedDtos["POST__items_inline"]
+        assertNotNull(rootDto)
+        val dtoFields = rootDto?.fields?:emptyList()
+        assertEquals(dtoFields.size, 2)
+        assertDtoFieldIn(dtoFields, "numbers", "List<Integer>")
+        assertDtoFieldIn(dtoFields, "labels", "List<Labels>")
+
+        val labelsDto = collectedDtos["Labels"]
+        assertNotNull(labelsDto)
+        val dtoLabelsFields = labelsDto?.fields?:emptyList()
+        assertEquals(dtoLabelsFields.size, 1)
+        assertDtoFieldIn(dtoLabelsFields, "value", "String")
+    }
+
+    @Test
+    fun arrayOfComponentsObjectUsesSchemaName() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("/swagger/dto-writer/arrayOfComponentsObject.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 3)
+        val rootDto = collectedDtos["POST__items_components"]
+        assertNotNull(rootDto)
+        val dtoFields = rootDto?.fields?:emptyList()
+        assertEquals(dtoFields.size, 3)
+        assertDtoFieldIn(dtoFields, "numbers", "List<Integer>")
+        assertDtoFieldIn(dtoFields, "labels", "List<Label>")
+        assertDtoFieldIn(dtoFields, "wrappedStrings", "WrappedString")
+
+        val labelsDto = collectedDtos["Label"]
+        assertNotNull(labelsDto)
+        val dtoLabelsFields = labelsDto?.fields?:emptyList()
+        assertEquals(dtoLabelsFields.size, 1)
+        assertDtoFieldIn(dtoLabelsFields, "value", "String")
+
+        val wrappedStringDto = collectedDtos["WrappedString"]
+        assertNotNull(wrappedStringDto)
+        val dtoWrappedStringFields = wrappedStringDto?.fields?:emptyList()
+        assertEquals(dtoWrappedStringFields.size, 1)
+        assertDtoFieldIn(dtoWrappedStringFields, "strings", "List<String>")
+    }
+
+    @Test
+    fun sameDtoInDifferentInlineEndpointsIsDuplicated() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("/swagger/dto-writer/duplicateInlineObject.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 2)
+        val createDto = collectedDtos["POST__create_user"]
+        assertNotNull(createDto)
+        val createDtoFields = createDto?.fields?:emptyList()
+        assertEquals(createDtoFields.size, 2)
+        assertDtoFieldIn(createDtoFields, "name", STRING)
+        assertDtoFieldIn(createDtoFields, "age", INTEGER)
+
+        val updateDto = collectedDtos["POST__create_user"]
+        assertNotNull(updateDto)
+        val updateDtoFields = updateDto?.fields?:emptyList()
+        assertEquals(updateDtoFields.size, 2)
+        assertDtoFieldIn(updateDtoFields, "name", STRING)
+        assertDtoFieldIn(updateDtoFields, "age", INTEGER)
+    }
+
+    @Test
+    fun whenUsingComponentsDtoIsCollectedOnce() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("/swagger/dto-writer/twoEndpointUsingSameComponent.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 1)
+        val userDto = collectedDtos["UserDto"]
+        assertNotNull(userDto)
+        val dtoFields = userDto?.fields?:emptyList()
+        assertEquals(dtoFields.size, 2)
+        assertDtoFieldIn(dtoFields, "name", STRING)
+        assertDtoFieldIn(dtoFields, "age", INTEGER)
+    }
+
     private fun initRestSchema(openApiLocation: String) : Map<String, Action> {
         val restSchema = RestSchema(OpenApiAccess.getOpenAPIFromResource(openApiLocation))
         val actionCluster = mutableMapOf<String, Action>()

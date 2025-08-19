@@ -15,7 +15,15 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
+import org.evomaster.core.search.gene.wrapper.SelectableWrapperGene
+import org.evomaster.core.search.gene.wrapper.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 
@@ -317,12 +325,31 @@ abstract class Gene(
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
     open fun <T, K> getWrappedGene(klass: Class<K>, strict: Boolean = false): T? where T : Gene, T : K {
 
+        if(this is WrapperGene){
+            throw RuntimeException("BUG: WrapperGene of type ${this::class.simpleName} dot not override getWrappedGene()")
+        }
+
         if (matchingClass(klass, strict)) {
             return this as T
         }
 
         return null
     }
+
+    /**
+     * Traverse the children of a wrapper gene, and return the leaf gene
+     *
+     * If [this] is not a [WrapperGene], then always return [this].
+     */
+    open fun getLeafGene(): Gene {
+
+        if (this is WrapperGene) {
+            throw RuntimeException("BUG: WrapperGene of type ${this::class.simpleName} dot not override getLeafGene()")
+        }
+        return this
+    }
+
+
 
     protected fun matchingClass(klass: Class<*>, strict: Boolean): Boolean {
         if (strict) {

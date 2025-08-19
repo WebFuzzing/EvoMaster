@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.optional
+package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
@@ -30,7 +30,7 @@ class FlexibleGene(name: String,
                     */
                    val valueClasses : List<Class<*>>?,
                    private var replaceable: Boolean = true
-) : CompositeGene(name, mutableListOf(gene)) {
+) : CompositeGene(name, mutableListOf(gene)), WrapperGene {
 
     init {
         geneCheck(gene)
@@ -81,6 +81,10 @@ class FlexibleGene(name: String,
             return this as T
         }
         return gene.getWrappedGene(klass)
+    }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
     }
 
     override fun copyContent(): FlexibleGene {

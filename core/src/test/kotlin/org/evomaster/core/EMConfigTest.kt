@@ -540,7 +540,7 @@ internal class EMConfigTest{
 
     @Test
     fun testLowestExternalServiceIP() {
-        val params = arrayOf("--externalServiceIP", "127.0.0.4")
+        val params = arrayOf("--externalServiceIP", "127.0.0.5")
         EMConfig.validateOptions(params)
     }
 

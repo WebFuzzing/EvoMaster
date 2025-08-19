@@ -2,8 +2,8 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.optional.FlexibleGene
-import org.evomaster.core.search.gene.optional.FlexibleGene.Companion.wrapWithFlexibleGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene.Companion.wrapWithFlexibleGene
 
 /**
  * This represents a MapGene whose values do not follow a specific gene type, ie [FlexibleGene],

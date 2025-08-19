@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

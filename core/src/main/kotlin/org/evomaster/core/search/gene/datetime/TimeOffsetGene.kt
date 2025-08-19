@@ -3,10 +3,9 @@ package org.evomaster.core.search.gene.datetime
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.impact.impactinfocollection.CompositeFixedGeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.date.TimeOffsetGeneImpact
 import org.evomaster.core.search.service.Randomness

@@ -29,6 +29,8 @@ import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -171,7 +173,7 @@ class Main {
                 /*
                     Need to signal error status.
                     But this code can become problematic if reached by any test.
-                    Also in case of exceptions, must shutdown explicitely, otherwise running threads in
+                    Also in case of exceptions, must shutdown explicitly, otherwise running threads in
                     the background might keep the JVM alive.
                     See for example HarvestActualHttpWsResponseHandler
                  */
@@ -204,7 +206,7 @@ class Main {
 
         private fun printVersion() {
 
-            val version = this::class.java.`package`?.implementationVersion ?: "unknown"
+            val version = this::class.java.`package`?.implementationVersion ?: "SNAPSHOT"
 
             LoggingUtil.getInfoLogger().info("EvoMaster version: $version")
         }
@@ -213,6 +215,20 @@ class Main {
         fun initAndRun(args: Array<String>): Solution<*> {
 
             val injector = init(args)
+            val solution = runAndPostProcess(injector)
+            return solution
+        }
+
+        @JvmStatic
+        fun initAndDebug(args: Array<String>): Pair<Injector,Solution<*>> {
+
+            val injector = init(args)
+            val solution = runAndPostProcess(injector)
+
+            return Pair(injector,solution)
+        }
+
+        private fun runAndPostProcess(injector: Injector): Solution<*> {
 
             checkExperimentalSettings(injector)
 
@@ -236,7 +252,6 @@ class Main {
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
 
-
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
@@ -245,6 +260,8 @@ class Main {
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
+
+            resetHTTPCallbackVerifier(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -400,7 +417,16 @@ class Main {
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
-                    securityRest.applySecurityPhase()
+                    val solution = securityRest.applySecurityPhase()
+
+                    if (config.ssrf) {
+                        LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
+
+                        val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
+                        ssrfAnalyser.apply()
+                    } else {
+                        solution
+                    }
                 }
 
                 else -> {
@@ -991,6 +1017,11 @@ class Main {
         private fun resetExternalServiceHandler(injector: Injector) {
             val externalServiceHandler = injector.getInstance(HttpWsExternalServiceHandler::class.java)
             externalServiceHandler.reset()
+        }
+
+        private fun resetHTTPCallbackVerifier(injector: Injector) {
+            val httpCallbackVerifier = injector.getInstance(HttpCallbackVerifier::class.java)
+            httpCallbackVerifier.reset()
         }
     }
 }

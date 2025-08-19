@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-class SsrfEMTest: SpringTestBase() {
+class SsrfEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -18,24 +18,34 @@ class SsrfEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Work in progress")
+    @Disabled("WIP")
     @Test
     fun testSsrfEM() {
-
         runTestHandlingFlakyAndCompilation(
-            "SsrfEM",
-            1000
+            "SsrfEMTest",
+            300,
         ) { args: MutableList<String> ->
 
+            setOption(args, "externalServiceIPSelectionStrategy", "USER")
+            setOption(args, "externalServiceIP", "127.0.0.4")
+            setOption(args, "instrumentMR_NET", "true")
+
             setOption(args, "security", "true")
+            setOption(args, "ssrf", "true")
+            setOption(args, "vulnerableInputClassificationStrategy", "LLM")
+
+            setOption(args, "languageModelConnector", "true")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/data", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/image", null)
+
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "Unable to fetch sensor data.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "Unable to fetch remote image.")
         }
     }
 }

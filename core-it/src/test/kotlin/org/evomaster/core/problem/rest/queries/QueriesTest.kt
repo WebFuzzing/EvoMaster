@@ -5,7 +5,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.Assert
 import org.junit.jupiter.api.Assertions.assertEquals

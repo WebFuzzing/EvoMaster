@@ -42,9 +42,9 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.FormatForDatesAndTimes
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -496,19 +496,6 @@ object RestActionBuilderV3 {
             val action = RestCallAction(actionId, verb, restPath, params, produces = produces,
                 operationId = operation.operationId, links = links
             )
-
-            //TODO update for new parser
-//                        /*This section collects information regarding the types of data that are
-//                        used in the response of an action (if such data references are provided in the
-//                        swagger definition
-//                        */
-//                        val responses = o.value.responses.filter { it.value.responseSchema != null }
-//
-//                        if (responses.isNotEmpty()) {
-//                            responses.filter { it.value.responseSchema is RefModel }.forEach { (k, v) ->
-//                                action.addRef(k, (v.responseSchema as RefModel).simpleRef)
-//                            }
-//                        }
 
             if (options.doParseDescription) {
                 var info = operation.description

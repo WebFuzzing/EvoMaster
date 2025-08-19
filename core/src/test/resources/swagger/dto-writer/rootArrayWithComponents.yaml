@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info:
+  title: Array of Objects (Components)
+  version: 1.0.0
+
+paths:
+  /users-components:
+    post:
+      summary: Accepts an array of user objects (component definition)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    User:
+      type: object
+      required: [name, age]
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
