@@ -28,6 +28,12 @@ open class SSRFHeaderApplication {
 
     /**
      * This is a blind SSRF-example.
+     * https://bugzilla.redhat.com/show_bug.cgi?id=2145254
+     * Referer header can be used to trace the user activity.
+     * In some cases, applications call the referer for some purposes.
+     * Shellshock is another example of such use.
+     * https://portswigger.net/web-security/ssrf/blind/lab-shellshock-exploitation
+     * https://medium.com/@muhammadosama0121/server-side-request-forgery-ssrf-41275201e79c
      */
     @Operation(
         summary = "POST endpoint to fetch remote image",
