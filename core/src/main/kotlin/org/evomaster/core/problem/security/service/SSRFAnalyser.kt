@@ -15,11 +15,6 @@ import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.wrapper.ChoiceGene
-import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
-import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
@@ -202,8 +197,11 @@ class SSRFAnalyser {
         if (actionVulnerabilityMapping.containsKey(action.getName())) {
             val mapping = actionVulnerabilityMapping[action.getName()]
             if (mapping != null) {
-                val param = mapping.params.filter { it.value.securityFaults.contains(
-                    DefinedFaultCategory.SSRF) }
+                val param = mapping.params.filter {
+                    it.value.securityFaults.contains(
+                        DefinedFaultCategory.SSRF
+                    )
+                }
                 return param.keys.first()
             }
         }
@@ -362,40 +360,6 @@ class SSRFAnalyser {
                 }
             }
         }
-    }
-
-    private fun getStringGenesFromParam(genes: List<Gene>): List<Gene> {
-        val output = mutableListOf<Gene>()
-
-        genes.forEach { gene ->
-            when (gene) {
-                is StringGene -> {
-                    output.add(gene)
-                }
-
-                is OptionalGene -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is ObjectGene -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is ChoiceGene<*> -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is CustomMutationRateGene<*> -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                else -> {
-                    // Do nothing
-                }
-            }
-        }
-
-        return output
     }
 
     private fun loadURLParamNamesFromFile() {
