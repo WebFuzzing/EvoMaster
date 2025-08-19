@@ -79,10 +79,7 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
 
     private static Object getQuery(Object query) {
         try {
-            Object result =  query.getClass().getMethod(GET_QUERY_METHOD).invoke(query);
-            if (result == null) {
-                return null;
-            }
+            return query.getClass().getMethod(GET_QUERY_METHOD).invoke(query);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }
@@ -96,8 +93,7 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
             }
 
             if (result instanceof List) {
-                List<String> indexList = (List<String>) result;
-                return indexList;
+                return (List<String>) result;
             } else if (result instanceof String) {
                 return Collections.singletonList((String) result);
             } else {

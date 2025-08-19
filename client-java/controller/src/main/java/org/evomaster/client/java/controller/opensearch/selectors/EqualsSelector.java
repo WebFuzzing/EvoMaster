@@ -16,6 +16,6 @@ public class EqualsSelector extends SingleConditionQuerySelector {
 
     @Override
     protected String operator() {
-        return "$eq";
+        return "Term";
     }
 }

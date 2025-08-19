@@ -1,6 +1,9 @@
 package org.evomaster.client.java.controller.opensearch.selectors;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractQueryKind;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractTermFieldName;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractTermFieldValue;
 
 import java.util.Map;
 import java.util.Set;
@@ -12,23 +15,15 @@ import org.evomaster.client.java.controller.opensearch.operations.*;
 abstract class SingleConditionQuerySelector extends QuerySelector {
     @Override
     public QueryOperation getOperation(Object query) {
-        String fieldName = extractFieldName(query);
-        Object innerDoc = getValue(query, fieldName);
-        if (!isUniqueEntry((Map<?, ?>) query) || !isDocument(innerDoc) || !hasTheExpectedOperator(query)) return null;
-        Object value = getValue(innerDoc, operator());
+        if (!hasTheExpectedOperator(query)) return null;
+        String fieldName = extractTermFieldName(query);
+        Object value = extractTermFieldValue(query);
         return parseValue(fieldName, value);
     }
 
     protected String extractOperator(Object query) {
-        String fieldName = extractFieldName(query);
-        Set<String> keys = documentKeys(getValue(query, fieldName));
-        return keys.stream().findFirst().orElse(null);
+        return extractQueryKind(query);
     }
 
     protected abstract QueryOperation parseValue(String fieldName, Object value);
-
-    private String extractFieldName(Object query) {
-        Set<String> keys = documentKeys(query);
-        return keys.stream().findFirst().orElse(null);
-    }
 }

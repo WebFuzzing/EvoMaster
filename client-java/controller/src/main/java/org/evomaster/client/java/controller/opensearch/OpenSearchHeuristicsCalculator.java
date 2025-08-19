@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.opensearch;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 import org.evomaster.client.java.controller.opensearch.operations.ComparisonOperation;
 import org.evomaster.client.java.controller.opensearch.operations.EqualsOperation;
@@ -48,7 +49,7 @@ public class OpenSearchHeuristicsCalculator {
         //    return operation instanceof NotEqualsOperation ? 0.0 : Double.MAX_VALUE;
         //}
 
-        Object actualValue = 0; // TODO getValue(doc, field);
+        Object actualValue = ((Map<?,?>) doc).get(field); // TODO getValue(doc, field);
         double dif = compareValues(actualValue, expectedValue);
 
         return calculateDistance.applyAsDouble(dif);
