@@ -26,7 +26,6 @@ open class SSRFQueryApplication {
         }
     }
 
-
     @Operation(
         summary = "GET endpoint to fetch data from remote source",
         description = "Can be used to fetch data from remote source."

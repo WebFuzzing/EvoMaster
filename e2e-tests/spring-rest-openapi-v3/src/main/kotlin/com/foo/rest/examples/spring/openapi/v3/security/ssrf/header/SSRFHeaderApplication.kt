@@ -26,7 +26,6 @@ open class SSRFHeaderApplication {
         }
     }
 
-
     /**
      * This is a blind SSRF-example.
      */
