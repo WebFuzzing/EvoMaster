@@ -8,16 +8,24 @@ import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
 import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
 
 
 class AIResponseClassifier : AIModel {
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(AIResponseClassifier::class.java)
+    }
+
     @Inject
     private lateinit var config: EMConfig
 
     private lateinit var delegate: AIModel
+
+    private var enabledLearning : Boolean = true
 
     @PostConstruct
     fun initModel() {
@@ -35,7 +43,11 @@ class AIResponseClassifier : AIModel {
 
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        delegate.updateModel(input, output)
+        if(enabledLearning) {
+            delegate.updateModel(input, output)
+        } else {
+            log.warn("Trying to update model, but learning is disabled. This should ONLY happen when running tests in EM")
+        }
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
@@ -52,5 +64,12 @@ class AIResponseClassifier : AIModel {
     fun attemptRepair(reference: RestCallAction){
 
         //TODO
+    }
+
+    /**
+     * Only needed during testing, to avoid modifying model while evaluating manually crafted actions
+     */
+    fun disableLearning(){
+        enabledLearning = false
     }
 }
