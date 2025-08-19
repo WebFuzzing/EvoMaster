@@ -36,7 +36,7 @@ open class SSRFHeaderApplication {
      * https://medium.com/@muhammadosama0121/server-side-request-forgery-ssrf-41275201e79c
      */
     @Operation(
-        summary = "POST endpoint to fetch remote image",
+        summary = "GET endpoint to fetch remote image",
         description = "Can be used to fetch remote profile image for user."
     )
     @ApiResponses(
