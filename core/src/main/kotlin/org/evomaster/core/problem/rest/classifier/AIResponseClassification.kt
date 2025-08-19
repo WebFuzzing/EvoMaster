@@ -11,7 +11,8 @@ class AIResponseClassification(
     init{
         probabilities.forEach {
             if(it.value !in 0.0..1.0){
-                throw IllegalArgumentException("Probability value must be between 0 and 1.")
+                throw IllegalArgumentException("Probability value must be between 0 and 1." +
+                        " But status code ${it.key} has probability value ${it.value}")
             }
         }
     }
