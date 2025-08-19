@@ -7,7 +7,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -39,7 +39,7 @@ open class SSRFHeaderApplication {
             ApiResponse(responseCode = "500", description = "Invalid server error")
         ]
     )
-    @PostMapping(path = ["/header"])
+    @GetMapping(path = ["/header"])
     open fun headerValue(@RequestHeader("Referer") referer: String): ResponseEntity<String> {
         if (referer != null) {
             try {
@@ -56,6 +56,6 @@ open class SSRFHeaderApplication {
             }
         }
 
-        return ResponseEntity.ok().build()
+        return ResponseEntity.status(200).body("OK")
     }
 }

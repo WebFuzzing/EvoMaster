@@ -48,7 +48,7 @@ open class SSRFQueryApplication {
                 connection.connectTimeout = 1000
 
                 if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).build()
+                    return ResponseEntity.status(200).body("OK")
                 }
                 ResponseEntity.status(204).build()
             } catch (e: Exception) {

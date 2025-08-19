@@ -1,7 +1,9 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.query
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.query.SSRFQueryController
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -19,6 +21,25 @@ class SSRFQueryEMTest: SpringTestBase() {
     @Disabled
     @Test
     fun testSSRFQuery() {
+        runTestHandlingFlakyAndCompilation(
+            "SSRFQueryEMTest",
+            300,
+        ) { args: MutableList<String> ->
 
+            setOption(args, "externalServiceIPSelectionStrategy", "USER")
+            setOption(args, "externalServiceIP", "127.0.0.8")
+            setOption(args, "instrumentMR_NET", "true")
+
+            setOption(args, "security", "true")
+            setOption(args, "ssrf", "true")
+            setOption(args, "vulnerableInputClassificationStrategy", "MANUAL")
+            setOption(args, "schemaOracles", "false")
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/query", "OK")
+        }
     }
 }

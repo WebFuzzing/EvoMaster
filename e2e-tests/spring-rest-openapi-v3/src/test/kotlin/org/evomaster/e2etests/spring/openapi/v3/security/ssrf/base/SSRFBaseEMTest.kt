@@ -22,7 +22,7 @@ class SSRFBaseEMTest : SpringTestBase() {
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFEMTest",
+            "SSRFBaseEMTest",
             300,
         ) { args: MutableList<String> ->
 
