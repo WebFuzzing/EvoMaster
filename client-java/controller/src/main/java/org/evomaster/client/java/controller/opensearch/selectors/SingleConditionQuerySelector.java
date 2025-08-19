@@ -2,8 +2,8 @@ package org.evomaster.client.java.controller.opensearch.selectors;
 
 import static org.evomaster.client.java.controller.mongo.utils.BsonHelper.*;
 import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractQueryKind;
-import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractTermFieldName;
-import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractTermFieldValue;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractFieldName;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractFieldValue;
 
 import java.util.Map;
 import java.util.Set;
@@ -16,8 +16,8 @@ abstract class SingleConditionQuerySelector extends QuerySelector {
     @Override
     public QueryOperation getOperation(Object query) {
         if (!hasTheExpectedOperator(query)) return null;
-        String fieldName = extractTermFieldName(query);
-        Object value = extractTermFieldValue(query);
+        String fieldName = extractFieldName(query, structure());
+        Object value = extractFieldValue(query, structure());
         return parseValue(fieldName, value);
     }
 

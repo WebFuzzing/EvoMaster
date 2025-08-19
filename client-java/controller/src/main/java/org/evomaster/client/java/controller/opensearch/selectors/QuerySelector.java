@@ -32,4 +32,6 @@ abstract public class QuerySelector {
      * The operator a query must have to be considered as an instance of the corresponding operation.
      */
     protected abstract String operator();
+
+    protected abstract String structure();
 }

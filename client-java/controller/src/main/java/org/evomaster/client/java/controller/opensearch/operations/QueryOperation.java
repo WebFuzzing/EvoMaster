@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.opensearch.operations;
 
 /**
- * Represents a MongoDB query operation.
+ * Represents an OpenSearch query operation.
  */
 abstract public class QueryOperation{}

@@ -3,8 +3,9 @@ package org.evomaster.client.java.controller.opensearch;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
+import org.evomaster.client.java.controller.mongo.operations.NotEqualsOperation;
 import org.evomaster.client.java.controller.opensearch.operations.ComparisonOperation;
-import org.evomaster.client.java.controller.opensearch.operations.EqualsOperation;
+import org.evomaster.client.java.controller.opensearch.operations.TermOperation;
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.sql.internal.TaintHandler;
@@ -30,14 +31,14 @@ public class OpenSearchHeuristicsCalculator {
     }
 
     private double calculateDistance(QueryOperation operation, Object doc) {
-        if (operation instanceof EqualsOperation<?>) {
-            return calculateDistanceForEquals((EqualsOperation<?>) operation, doc);
+        if (operation instanceof TermOperation<?>) {
+            return calculateDistanceForEquals((TermOperation<?>) operation, doc);
         }
 
         return 0;
     }
 
-    private double calculateDistanceForEquals(EqualsOperation<?> operation, Object doc) {
+    private double calculateDistanceForEquals(TermOperation<?> operation, Object doc) {
         return calculateDistanceForComparisonOperation(operation, doc, (Math::abs));
     }
 
@@ -45,11 +46,11 @@ public class OpenSearchHeuristicsCalculator {
         Object expectedValue = operation.getValue();
         String field = operation.getFieldName();
 
-        //if (!documentContainsField(doc, field)) {
-        //    return operation instanceof NotEqualsOperation ? 0.0 : Double.MAX_VALUE;
-        //}
+        if (!((Map<?,?>) doc).containsKey(field)) {
+            return Double.MAX_VALUE;
+        }
 
-        Object actualValue = ((Map<?,?>) doc).get(field); // TODO getValue(doc, field);
+        Object actualValue = ((Map<?,?>) doc).get(field);
         double dif = compareValues(actualValue, expectedValue);
 
         return calculateDistance.applyAsDouble(dif);
