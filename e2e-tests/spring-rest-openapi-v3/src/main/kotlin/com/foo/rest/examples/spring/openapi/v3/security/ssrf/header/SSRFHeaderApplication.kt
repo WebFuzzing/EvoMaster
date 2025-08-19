@@ -56,9 +56,11 @@ open class SSRFHeaderApplication {
 
                 if (connection.responseCode == 200) {
                     // Do nothing
+                    // Usually at this point, the fetched information will be processed
                 }
             } catch (e: Exception) {
                 // Do nothing
+                // Error from the remote service shouldn't impact this endpoint's response
             }
         }
 
