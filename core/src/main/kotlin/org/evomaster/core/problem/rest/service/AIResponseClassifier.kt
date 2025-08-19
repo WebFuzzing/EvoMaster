@@ -80,12 +80,43 @@ class AIResponseClassifier : AIModel {
             return
         }
 
-        val classification = classify(call)
+        val n = config.maxRepairAttemptsInResponseClassification
 
-        if(randomness.nextBoolean(classification.probabilityOf400())){
-            //TODO try repair
+        repeat(n) {
+            val classification = classify(call)
+
+            val p = classification.probabilityOf400()
+
+            val repair = when(config.aiClassifierRepairActivation){
+                EMConfig.AIClassificationRepairActivation.THRESHOLD ->
+                    p >= config.classificationRepairThreshold
+
+                EMConfig.AIClassificationRepairActivation.PROBABILITY ->
+                    randomness.nextBoolean(p)
+            }
+
+            if(repair){
+                repairAction(call, classification)
+            } else {
+                return
+            }
         }
         //TODO
+    }
+
+
+
+    private fun repairAction(
+        call: RestCallAction,
+        classification: AIResponseClassification
+    ) {
+        call.randomize(randomness, true)
+
+        /*
+            TODO: in the future we might want to only modify the variables that break the constraints.
+            This information might be available when using a Decision Tree, but likely not for a Neural Network.
+            Anyway, AIResponseClassification would need to be extended to handle this extra info, when available.
+         */
     }
 
     /**
