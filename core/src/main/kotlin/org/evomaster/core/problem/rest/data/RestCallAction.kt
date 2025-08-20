@@ -82,6 +82,8 @@ class RestCallAction(
         val CONFIG_POTENTIAL_VERB_FOR_CREATION = listOf(HttpVerb.PUT, HttpVerb.POST)
     }
 
+    val endpoint = Endpoint(verb,path)
+
     var saveCreatedResourceLocation : Boolean = saveLocation
         set(value) {
             if(value && !CONFIG_POTENTIAL_VERB_FOR_CREATION.contains(verb)){
