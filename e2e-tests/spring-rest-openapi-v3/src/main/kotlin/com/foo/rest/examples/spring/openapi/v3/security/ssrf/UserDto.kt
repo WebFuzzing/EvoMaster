@@ -7,6 +7,11 @@ class UserDto {
     @Schema(name = "userId", example = "12-abd", required = true, description = "User ID")
     var userId: String? = null
 
-    @Schema(name = "profileImageUrl", example = "http://example.com/profile.jpg", required = true, description = "Profile image remote URL")
+    @Schema(
+        name = "profileImageUrl",
+        example = "http://example.com/profile.jpg",
+        required = true,
+        description = "Profile image remote URL"
+    )
     var profileImageUrl: String? = null
 }
