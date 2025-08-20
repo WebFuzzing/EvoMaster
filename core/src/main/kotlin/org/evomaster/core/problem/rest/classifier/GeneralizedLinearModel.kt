@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.exp
@@ -59,6 +60,10 @@ class GLMOnlineClassifier(
                 400 to prob400
             )
         )
+    }
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        TODO("Not yet implemented")
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {

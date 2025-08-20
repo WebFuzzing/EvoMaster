@@ -1297,6 +1297,30 @@ class EMConfig {
     @Cfg("Learning rate for classifiers like GLM and NN.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
+
+    @Experimental
+    @Min(1.0)
+    @Cfg("When the Response Classifier determines an action is going to fail, specify how many attempts will" +
+            " be tried at fixing it.")
+    var maxRepairAttemptsInResponseClassification = 100
+
+    enum class AIClassificationRepairActivation{
+        /*
+            TODO we might think of other techniques as well... and then experiment with them
+         */
+        PROBABILITY, THRESHOLD
+    }
+
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
+            " All classifications with probability equal or above such threshold value will be accepted.")
+    var classificationRepairThreshold = 0.8
+
+    @Experimental
+    @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
+    var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
+
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
     var writeWFCReport = true
