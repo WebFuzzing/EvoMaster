@@ -1101,6 +1101,13 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(5.2)
+    @Cfg("Comma-separated list of endpoints for excluding endpoints." +
+            " This is useful for excluding endpoints that are not relevant for testing, " +
+            " such as those used for health checks or metrics. If no such endpoint is specified, " +
+            " then no endpoints are excluded from the search.")
+    var endpointExclude: String? = null
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -2725,6 +2732,8 @@ class EMConfig {
     fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 }
