@@ -1187,8 +1187,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
 
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
                     ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
                 }
             }

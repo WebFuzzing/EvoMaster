@@ -15,11 +15,7 @@ import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.wrapper.ChoiceGene
-import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
-import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
@@ -63,6 +59,10 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
+    private val urlRegexPattern: Regex = Regex("\\burl\\b")
+
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target")
+
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
     }
@@ -70,6 +70,7 @@ class SSRFAnalyser {
     @PostConstruct
     fun init() {
         log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
+        loadURLParamNamesFromFile()
     }
 
     @PreDestroy
@@ -135,14 +136,13 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
-        val hasCallbackURL = action.parameters.any { param ->
-            val genes = getStringGenesFromParam(param.seeGenes())
-            genes.any { gene ->
-                httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
-            }
+        val genes = GeneUtils.getAllStringFields(action.parameters)
+
+        val hasCallBackURL = genes.any { gene ->
+            httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
         }
 
-        return hasCallbackURL && httpCallbackVerifier.verify(action.getName())
+        return httpCallbackVerifier.verify(action.getName()) && hasCallBackURL
     }
 
     /**
@@ -159,71 +159,26 @@ class SSRFAnalyser {
         //  Are we going mark potential vulnerability classes as one time
         //  job or going to evaluate each time (which is costly).
 
-        when (config.vulnerableInputClassificationStrategy) {
-            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
-                manualClassifier()
-            }
-
-            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
-                llmClassifier()
-            }
-        }
-    }
-
-    fun getVulnerableParameterName(action: RestCallAction): String? {
-        if (actionVulnerabilityMapping.containsKey(action.getName())) {
-            val mapping = actionVulnerabilityMapping[action.getName()]
-            if (mapping != null) {
-                val param = mapping.params.filter { it.value.securityFaults.contains(
-                    DefinedFaultCategory.SSRF) }
-                return param.keys.first()
-            }
-        }
-
-        return null
-    }
-
-    /**
-     * TODO: Classify based on manual
-     * TODO: Need to rename the word manual to something meaningful later
-     */
-    private fun manualClassifier() {
-        // TODO: Can use the extracted CSV to map the parameter name
-        //  to the vulnerability class.
-    }
-
-
-    /**
-     * Private method to classify parameters using a large language model.
-     */
-    private fun llmClassifier() {
-        // For now, we consider only the individuals selected from [Archive]
-        // TODO: This can be isolated to classify at the beginning of the search
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
-                if (action is RestCallAction && !actionVulnerabilityMapping.containsKey(action.getName())) {
+                if (action is RestCallAction) {
                     val actionFaultMapping = ActionFaultMapping(action.getName())
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
                         extractBodyParameters(action.parameters)
 
-                    inputFaultMapping.forEach { paramName, paramMapping ->
-                        val answer = if (!paramMapping.description.isNullOrBlank()) {
-                            languageModelConnector.query(
-                                SSRFUtil.Companion.getPromptWithNameAndDescription(
-                                    paramMapping.name,
-                                    paramMapping.description
-                                )
-                            )
-                        } else {
-                            languageModelConnector.query(
-                                SSRFUtil.Companion.getPromptWithNameOnly(
-                                    paramMapping.name
-                                )
-                            )
+                    inputFaultMapping.forEach { (paramName, paramMapping) ->
+                        val answer = when (config.vulnerableInputClassificationStrategy) {
+                            EMConfig.VulnerableInputClassificationStrategy.MANUAL -> {
+                                manualClassifier(paramName, paramMapping.description)
+                            }
+
+                            EMConfig.VulnerableInputClassificationStrategy.LLM -> {
+                                llmClassifier(paramName, paramMapping.description)
+                            }
                         }
 
-                        if (answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY) {
+                        if (answer) {
                             paramMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionFaultMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
                             actionFaultMapping.isVulnerable = true
@@ -232,11 +187,76 @@ class SSRFAnalyser {
 
                     // Assign the param mapping
                     actionFaultMapping.params = inputFaultMapping
-
                     actionVulnerabilityMapping[action.getName()] = actionFaultMapping
                 }
             }
         }
+    }
+
+    fun getVulnerableParameterName(action: RestCallAction): String? {
+        if (actionVulnerabilityMapping.containsKey(action.getName())) {
+            val mapping = actionVulnerabilityMapping[action.getName()]
+            if (mapping != null) {
+                val param = mapping.params.filter {
+                    it.value.securityFaults.contains(
+                        DefinedFaultCategory.SSRF
+                    )
+                }
+                return param.keys.first()
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * A private method to identify parameter is a potentially holds URL value
+     * using a Regex based approach.
+     */
+    private fun manualClassifier(name: String, description: String? = null): Boolean {
+        // TODO: Only regex or word bag can be used from extracted parameter names.
+        var value = 0.0
+
+        if (name.lowercase().matches(urlRegexPattern)) {
+            value += 0.5
+        }
+        if (description != null) {
+            if (description.lowercase().matches(urlRegexPattern)) {
+                value += 0.3
+            }
+        }
+        if (potentialUrlParamNames.contains(name)) {
+            value += 1.0
+        }
+        if (value > 0.5) {
+            return true
+        }
+
+        return false
+    }
+
+
+    /**
+     * Private method to identify parameter is a potentially holds URL value,
+     * using a large language model.
+     */
+    private fun llmClassifier(name: String, description: String? = null): Boolean {
+        val answer = if (!description.isNullOrBlank()) {
+            languageModelConnector.query(
+                SSRFUtil.Companion.getPromptWithNameAndDescription(
+                    name,
+                    description
+                )
+            )
+        } else {
+            languageModelConnector.query(
+                SSRFUtil.Companion.getPromptWithNameOnly(
+                    name
+                )
+            )
+        }
+
+        return answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
     }
 
     /**
@@ -247,15 +267,13 @@ class SSRFAnalyser {
     ): MutableMap<String, InputFaultMapping> {
         val output = mutableMapOf<String, InputFaultMapping>()
 
-        parameters.forEach { param ->
-            val genes = getStringGenesFromParam(param.seeGenes())
+        val genes = GeneUtils.getAllStringFields(parameters)
 
-            genes.forEach { gene ->
-                output[gene.name] = InputFaultMapping(
-                    gene.name,
-                    gene.description,
-                )
-            }
+        genes.forEach { gene ->
+            output[gene.name] = InputFaultMapping(
+                gene.name,
+                gene.description,
+            )
         }
 
         return output
@@ -344,37 +362,7 @@ class SSRFAnalyser {
         }
     }
 
-    private fun getStringGenesFromParam(genes: List<Gene>): List<Gene> {
-        val output = mutableListOf<Gene>()
-
-        genes.forEach { gene ->
-            when (gene) {
-                is StringGene -> {
-                    output.add(gene)
-                }
-
-                is OptionalGene -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is ObjectGene -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is ChoiceGene<*> -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                is CustomMutationRateGene<*> -> {
-                    output.addAll(getStringGenesFromParam(gene.getViewOfChildren()))
-                }
-
-                else -> {
-                    // Do nothing
-                }
-            }
-        }
-
-        return output
+    private fun loadURLParamNamesFromFile() {
+        // TODO
     }
 }
