@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.ln
@@ -96,6 +97,10 @@ class GaussianOnlineClassifier : AIModel {
                 400 to posterior400
             )
         )
+    }
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        TODO("Not yet implemented")
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
