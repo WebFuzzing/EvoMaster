@@ -79,6 +79,14 @@ class Endpoint(
                 throw ConfigProblemException("The focus endpoint '$focus' does not match any endpoint in the schema")
             }
         }
+        fun validateExclude(excludeEndpoints: List<String>, schema: OpenAPI){
+            excludeEndpoints.forEach { ex ->
+                if(schema.paths.none { it.key == ex }){
+                    throw ConfigProblemException("The focus endpoint '$ex' does not match any endpoint in the schema")
+                }
+            }
+        }
+
     }
 
     fun getTags(schema: OpenAPI) : List<String>{
