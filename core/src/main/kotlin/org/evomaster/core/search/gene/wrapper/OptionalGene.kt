@@ -1,4 +1,4 @@
-package org.evomaster.core.search.gene.optional
+package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
@@ -33,7 +33,7 @@ class OptionalGene(name: String,
                    isActive: Boolean = true,
                    var requestSelection: Boolean = false,
                    var searchPercentageActive: Double = 1.0
-) : SelectableWrapperGene(name, gene, isActive) {
+) : SelectableWrapperGene(name, gene, isActive), WrapperGene {
 
 
     companion object{

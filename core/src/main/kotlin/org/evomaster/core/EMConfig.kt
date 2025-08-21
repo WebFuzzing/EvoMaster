@@ -70,7 +70,7 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // the first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
         private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
 
@@ -591,6 +591,16 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
+        if(!security && ssrf) {
+            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+        }
+
+        if (ssrf &&
+            vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
+            !languageModelConnector) {
+            throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
+        }
+
         if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
             throw ConfigProblemException("Language model server URL cannot be empty.")
         }
@@ -615,9 +625,16 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        if(writeWFCReport && !createTests){
-            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-        }
+        /*
+            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
+            like writeWFCReport.
+            TODO however, we should issue some WARN message.
+            ie. we should have a distinction between @Requires (which should crash) and something like
+            @DependOn that does not lead to a crash, but just a warning
+         */
+//        if(writeWFCReport && !createTests){
+//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1269,7 +1286,7 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN, GLM
+        NONE, GAUSSIAN, NN, GLM, DETERMINISTIC
     }
 
     @Experimental
@@ -1280,12 +1297,34 @@ class EMConfig {
     @Cfg("Learning rate for classifiers like GLM and NN.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
-    @Experimental
-    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
-            " This also includes a index.html web application to visualize such data.")
-    var writeWFCReport = false
 
     @Experimental
+    @Min(1.0)
+    @Cfg("When the Response Classifier determines an action is going to fail, specify how many attempts will" +
+            " be tried at fixing it.")
+    var maxRepairAttemptsInResponseClassification = 100
+
+    enum class AIClassificationRepairActivation{
+        /*
+            TODO we might think of other techniques as well... and then experiment with them
+         */
+        PROBABILITY, THRESHOLD
+    }
+
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
+            " All classifications with probability equal or above such threshold value will be accepted.")
+    var classificationRepairThreshold = 0.8
+
+    @Experimental
+    @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
+    var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
+
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
+            " This also includes a index.html web application to visualize such data.")
+    var writeWFCReport = true
+
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
             " the JSON report file will be created.")
     var writeWFCReportExcludeWebApp = false
@@ -2256,7 +2295,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
@@ -2408,6 +2447,32 @@ class EMConfig {
     var security = true
 
     @Experimental
+    @Cfg("To apply SSRF detection as part of security testing.")
+    var ssrf = false
+
+    enum class VulnerableInputClassificationStrategy {
+        /**
+         * Uses the manual methods to select the vulnerable inputs.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerable inputs.
+         */
+        LLM,
+    }
+
+    @Experimental
+    @Cfg("Port to run HTTP server to verify HTTP callbacks related to SSRF.")
+    @Min(0.0)
+    @Max(maxTcpPort)
+    var httpCallbackVerifierPort: Int = 19876
+
+    @Experimental
+    @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
+    var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
+
+    @Experimental
     @Cfg("Enable language model connector")
     var languageModelConnector = false
 
@@ -2552,6 +2617,15 @@ class EMConfig {
     @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
             "Only available for JVM languages")
     var dtoForRequestPayload = false
+
+    @Cfg("Override the value of externalEndpointURL in auth configurations." +
+            " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
+            " are run in parallel, to avoid creating/modifying auth configuration files." +
+            " If what provided is a URL starting with 'http', then full replacement will occur." +
+            " Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g.," +
+            " path element of the URL will not change).")
+    var overrideAuthExternalEndpointURL : String? = null
+
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){

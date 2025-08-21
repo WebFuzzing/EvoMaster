@@ -95,7 +95,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     private fun handleAuthInfo(i: AuthenticationDto) {
 
         val auth = try{
-            HttpWsAuthenticationInfo.fromDto(i)
+            HttpWsAuthenticationInfo.fromDto(i, config.overrideAuthExternalEndpointURL)
         }catch (e: Exception){
             throw SutProblemException("Failed to parse auth info: " + e.message!!)
         }

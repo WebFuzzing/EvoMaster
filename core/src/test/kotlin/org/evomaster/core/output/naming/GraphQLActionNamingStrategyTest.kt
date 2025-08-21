@@ -1,7 +1,6 @@
 package org.evomaster.core.output.naming
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.TestUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
@@ -16,7 +15,7 @@ import org.evomaster.core.problem.graphql.param.GQInputParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test

@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.seeding.AbstractParser
 import org.evomaster.core.problem.rest.seeding.postman.pojos.PostmanCollectionObject
 import org.evomaster.core.problem.rest.seeding.postman.pojos.Request
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
