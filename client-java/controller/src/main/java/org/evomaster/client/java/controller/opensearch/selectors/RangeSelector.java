@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.opensearch.operations.RangeOperation
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
 
 /**
- * { range: { field: value } }
+ * { range: { field: range_logic } }
  */
 public class RangeSelector extends SingleConditionQuerySelector {
 

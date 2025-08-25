@@ -408,7 +408,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
         return openSearchHandler.isCalculateHeuristics();
-        // return openSearchHandler.isCalculateHeuristics() || openSearchHandler.isExtractMongoExecution();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -505,7 +504,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 });
             }
 
-            List<Integer> oscd = openSearchHandler.getEvaluatedOpenSearchCommands();
+            openSearchHandler.getEvaluatedOpenSearchCommands().stream()
+                .map(p ->
+                    new ExtraHeuristicEntryDto(
+                        ExtraHeuristicEntryDto.Type.OPENSEARCH,
+                        ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                        p.getCommand().toString(),
+                        p.getDistanceWithMetrics().getDistance(),
+                        p.getDistanceWithMetrics().getNumberOfEvaluatedDocuments(),
+                        false
+                    ))
+                .forEach(h -> dto.heuristics.add(h));
         }
 
     }

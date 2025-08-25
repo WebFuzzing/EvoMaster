@@ -25,12 +25,18 @@ public class OpenSearchHandler {
 
     private final boolean calculateHeuristics;
 
+    /**
+     * The heuristics based on the OpenSearch execution
+     */
+    private final List<OpenSearchCommandWithDistance> commandsWithDistances;
+
     private final OpenSearchHeuristicsCalculator calculator = new OpenSearchHeuristicsCalculator();
 
     private Object openSearchClient = null;
 
     public OpenSearchHandler() {
-        this.commands = new ArrayList<>();;
+        this.commands = new ArrayList<>();
+        this.commandsWithDistances = new ArrayList<>();
         this.calculateHeuristics = true;
     }
 
@@ -42,25 +48,21 @@ public class OpenSearchHandler {
         commands.add(command);
     }
 
-    public List<Integer> getEvaluatedOpenSearchCommands() {
-        List<Integer> r = new ArrayList<>();
-
+    public List<OpenSearchCommandWithDistance> getEvaluatedOpenSearchCommands() {
         commands.stream()
             .filter(command -> command.getQuery() != null)
             .forEach(openSearchCommand -> {
-                Integer distance = computeCommandDistance(openSearchCommand);
-                r.add(distance);
+                OpenSearchDistanceWithMetrics distanceWithMetrics = computeCommandDistance(openSearchCommand);
+                commandsWithDistances.add(new OpenSearchCommandWithDistance(openSearchCommand, distanceWithMetrics));
         });
 
         commands.clear();
 
-        return r;
+        return commandsWithDistances;
     }
 
-    private Integer computeCommandDistance(OpenSearchCommand command) {
+    private OpenSearchDistanceWithMetrics computeCommandDistance(OpenSearchCommand command) {
         List<String> indexName = command.getIndex();
-        String methodName = command.getMethod();
-
         List<?> documents = getDocuments(indexName);
 
         double min = Double.MAX_VALUE;
@@ -76,13 +78,13 @@ public class OpenSearchHandler {
             }
 
             if (findDistance == 0) {
-                return 0;
+                return new OpenSearchDistanceWithMetrics(0, numberOfEvaluatedDocuments);
             } else if (findDistance < min) {
                 min = findDistance;
             }
         }
 
-        return (int)min;
+        return new OpenSearchDistanceWithMetrics(min, numberOfEvaluatedDocuments);
     }
 
     private List<Object> getDocuments(List<String> indexNames) {

@@ -34,8 +34,7 @@ public class OpenSearchQueryHelper {
     }
 
     /**
-     * Extracts the value from a term query by its type (Double, Long, Boolean, String, Null).
-     * The kind is found in query.term().value()._kind(), and the value in the corresponding getter.
+     * Extracts the value from a field by its type (Double, Long, Boolean, String, Null).
      */
     public static Object extractTypedFieldValue(Object value) {
         try {
