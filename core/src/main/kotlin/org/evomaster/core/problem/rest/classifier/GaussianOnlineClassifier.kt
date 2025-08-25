@@ -36,17 +36,36 @@ class GaussianOnlineClassifier : AIModel {
     private var density200: Density? = null
     private var density400: Density? = null
 
+    // classifier state
+    private var cp: Int = 0        // correct predictions
+    private var tot: Int = 1       // total requests
+    private var ac: Double = 0.0   // accuracy ratio
+
     fun setDimension(d: Int) {
         require(d > 0) { "Dimension must be positive." }
         this.dimension = d
         this.density200 = Density(d)
         this.density400 = Density(d)
+        this.cp = 0
+        this.tot = 1
+        this.ac = 0.0
     }
 
     fun getDimension(): Int {
         check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
         return this.dimension!!
     }
+
+    fun setCp(cp: Int) {
+        this.cp = cp
+    }
+    fun setTot(tot: Int){
+        this.tot = tot
+    }
+
+    fun getCorrectPredictions(): Int = cp
+    fun getTotalRequests(): Int = tot
+    fun getAccuracy(): Double = if (tot == 0) 0.0 else cp.toDouble() / tot
 
     fun getDensity200(): Density {
         check(this.density200 != null) { "Classifier not initialized. Call setDimension first." }
@@ -59,7 +78,7 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input)
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -73,7 +92,7 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val inputVector = InputEncoderUtils.encode(input)
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -100,7 +119,12 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        TODO("Not yet implemented")
+        // Strict accuracy
+        //TODO this accuracy can be dynamic for example based on the last 100 requests
+        if (this.tot == 0) {
+            return 0.0
+        }
+        return this.cp.toDouble() / this.tot
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {

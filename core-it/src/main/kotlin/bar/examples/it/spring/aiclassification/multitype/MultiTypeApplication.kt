@@ -1,4 +1,4 @@
-package bar.examples.it.spring.aiconstraint.numeric
+package bar.examples.it.spring.aiclassification.multitype
 
 import io.swagger.v3.oas.annotations.Parameter
 import org.springframework.boot.SpringApplication
@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.*
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/petShopApi"])
 @RestController
-open class AICMultiTypeApplication {
+open class MultiTypeApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(AICMultiTypeApplication::class.java, *args)
+            SpringApplication.run(MultiTypeApplication::class.java, *args)
         }
     }
 

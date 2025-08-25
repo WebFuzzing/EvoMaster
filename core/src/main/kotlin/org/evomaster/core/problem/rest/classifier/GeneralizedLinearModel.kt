@@ -26,12 +26,20 @@ class GLMOnlineClassifier(
     private var weights: MutableList<Double>? = null
     private var bias: Double = 0.0
 
+    // classifier state
+    private var cp: Int = 0        // correct predictions
+    private var tot: Int = 1       // total requests
+    private var ac: Double = 0.0   // accuracy ratio
+
     /** Must be called once to initialize model weights based on dimension */
     fun setDimension(d: Int) {
         require(d > 0) { "Dimension must be positive." }
         dimension = d
         weights = MutableList(d) { 0.0 }
         bias = 0.0
+        this.cp = 0
+        this.tot = 0
+        this.ac = 0.0
     }
 
     fun getModelParams(): List<Double> {
@@ -44,8 +52,19 @@ class GLMOnlineClassifier(
         return this.dimension!!
     }
 
+    fun setCp(cp: Int) {
+        this.cp = cp
+    }
+    fun setTot(tot: Int){
+        this.tot = tot
+    }
+
+    fun getCorrectPredictions(): Int = cp
+    fun getTotalRequests(): Int = tot
+    fun getAccuracy(): Double = if (tot == 0) 0.0 else cp.toDouble() / tot
+
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val x = InputEncoderUtils.encode(input)
+        val x = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
         if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
@@ -63,11 +82,16 @@ class GLMOnlineClassifier(
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        TODO("Not yet implemented")
+        // Strict accuracy
+        //TODO this accuracy can be dynamic for example based on the last 100 requests
+        if (this.tot == 0) {
+            return 0.0
+        }
+        return this.cp.toDouble() / this.tot
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val x = InputEncoderUtils.encode(input)
+        val x = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
         if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
