@@ -18,7 +18,15 @@ class DetectedFault(
      * For example, in WB for HTTP 500, the discriminating context could be based on last executed
      * line in the SUT.
      */
-    _context: String?
+    _context: String?,
+    /**
+     * In some cases, there could be extra useful information.
+     * For example, in a schema oracle, if a field is invalid, we can tell which value is invalid.
+     * however, this might depend on the content of the test case (eg "20-20-20" is not a valid date).
+     * And so, it CANNOT be used to uniquely identify a fault type.
+     * The same fault type with same context could appear in different tests having different localMessage
+     */
+    val localMessage: String? = null
 ) {
 
     //otherwise issues when printing in comments

@@ -17,7 +17,7 @@ import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
 
@@ -81,6 +81,8 @@ class RestCallAction(
          */
         val CONFIG_POTENTIAL_VERB_FOR_CREATION = listOf(HttpVerb.PUT, HttpVerb.POST)
     }
+
+    val endpoint = Endpoint(verb,path)
 
     var saveCreatedResourceLocation : Boolean = saveLocation
         set(value) {

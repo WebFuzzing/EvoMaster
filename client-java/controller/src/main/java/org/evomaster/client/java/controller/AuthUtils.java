@@ -142,12 +142,43 @@ public class AuthUtils {
             String extractFromField,
             String headerPrefix
     ){
+        return getForJsonToken(dtoName, postEndpoint, payload, extractFromField, headerPrefix,"application/json");
+    }
+
+    /**
+     * Creates an AuthenticationDto object configured to obtain a JSON token from a login endpoint.
+     * The postEndpoint parameter can be interpreted in two different ways:
+     * <ul>
+     *   <li>If postEndpoint starts with "http://" or "https://", it is treated as a full external URL</li>
+     *   <li>Otherwise, it is treated as a relative path that will be combined with a base URL</li>
+     * </ul>
+     * @param dtoName The name to assign to the AuthenticationDto
+     * @param postEndpoint The endpoint URL or path (see description above for interpretation)
+     * @param payload The request payload to send to the login endpoint
+     * @param extractFromField The field in the response that contains the token
+     * @param headerPrefix The prefix to add to the token (e.g., "Bearer ")
+     * @param contentType The content type to use for the request
+     * @return Configured AuthenticationDto object with login endpoint settings
+     */
+    public static AuthenticationDto getForJsonToken(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField,
+            String headerPrefix,
+            String contentType
+    ){
 
         LoginEndpoint le = new LoginEndpoint();
 
-        le.setEndpoint(postEndpoint);
+        if(postEndpoint.startsWith("http://") || postEndpoint.startsWith("https://")){
+            le.setExternalEndpointURL(postEndpoint);
+        } else {
+            le.setEndpoint(postEndpoint);
+        }
+
         le.setVerb(LoginEndpoint.HttpVerb.POST);
-        le.setContentType("application/json");
+        le.setContentType(contentType);
         le.setExpectCookies(false);
         le.setPayloadRaw(payload);
         le.setToken(new TokenHandling());

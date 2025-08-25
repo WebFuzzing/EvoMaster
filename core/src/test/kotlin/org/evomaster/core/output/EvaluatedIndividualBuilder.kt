@@ -21,7 +21,7 @@ import org.evomaster.core.problem.rpc.param.RPCParam
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 
 class EvaluatedIndividualBuilder {
