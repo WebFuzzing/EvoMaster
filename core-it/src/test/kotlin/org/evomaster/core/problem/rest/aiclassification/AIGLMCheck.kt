@@ -31,8 +31,8 @@ class AIGLMCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//            initClass(NCSController())
-            initClass(BasicController())
+            initClass(NCSController())
+//            initClass(BasicController())
 //            initClass(MultiTypeController())
         }
 
