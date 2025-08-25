@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.InputEncoderUtils
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -100,9 +101,6 @@ class AIGLMCheck : IntegrationTestRestBase() {
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
         val endpointToDimension = mutableMapOf<String, Int?>()
-        val endpointToCorrectPrediction = mutableMapOf<String, Int>()
-        val endpointToTotalExecution = mutableMapOf<String, Int>()
-        val endpointToAccuracy = mutableMapOf<String, Double>()
         for (action in actionList) {
             val name = action.getName()
 
@@ -123,9 +121,6 @@ class AIGLMCheck : IntegrationTestRestBase() {
             println("Endpoint: $name, dimension: $dimension")
             endpointToDimension[name] = dimension
 
-            endpointToCorrectPrediction[name] = 0
-            endpointToTotalExecution[name] = 0
-            endpointToAccuracy[name] = 0.0
         }
 
         /**
@@ -161,9 +156,6 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val classifier = endpointToClassifier[name]
             val dimension = endpointToDimension[name]
             val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
-            var cp = endpointToCorrectPrediction[name]!!
-            var tot = endpointToTotalExecution[name]!!
-            var ac = endpointToAccuracy[name]!!
 
             println("*************************************************")
             println("Path         : $name")
@@ -171,7 +163,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Genes Size   : ${geneValues.size}")
-            println("cp, tot, ac  : $cp, $tot, $ac")
+            println("cp, tot, ac  : ${classifier?.getCorrectPredictions()}, ${classifier?.getTotalRequests()}, ${classifier?.getAccuracy()}")
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
@@ -186,18 +178,19 @@ class AIGLMCheck : IntegrationTestRestBase() {
             }
             // Warmup cold classifiers by at least n request
             val n = 2
-            val isCold = tot <= n
+            val isCold = classifier.getTotalRequests() <= n
             if (isCold) {
                 println("Warmup by at least $n request")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
                 classifier.updateModel(action, result)
-                tot += 1
-                endpointToTotalExecution[name] = tot
+                classifier.setTot(classifier.getTotalRequests() + 1)
                 continue
             }
 
             // Classification
             println("Classifying!")
+            val rawEncodedFeatures = InputEncoderUtils.encode(sampledAction).rawEncodedFeatures
+            println("Raw encoded features are : ${rawEncodedFeatures.joinToString(", ")}")
             val classification = classifier.classify(action)
             val p200 = classification.probabilities[200]!!
             val p400 = classification.probabilities[400]!!
@@ -214,7 +207,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             if (prediction != 400) {
                 sendOrNot = true
             }else{
-                sendOrNot = if(Math.random() > ac) true else false
+                sendOrNot = if(Math.random() > classifier.getAccuracy()) true else false
             }
 
             // Execute the request and update
@@ -223,14 +216,9 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 println("Response     : ${result.getStatusCode()}")
 
                 if (result.getStatusCode()==prediction) {
-                    cp = cp + 1
+                    classifier.setCp(classifier.getCorrectPredictions() + 1)
                 }
-                tot = tot + 1
-                ac = cp.toDouble() / tot
-
-                endpointToCorrectPrediction[name] = cp
-                endpointToTotalExecution[name] = tot
-                endpointToAccuracy[name] = ac
+                classifier.setTot(classifier.getTotalRequests() + 1)
 
                 println("Updating the classifier!")
                 classifier.updateModel(action, result)
