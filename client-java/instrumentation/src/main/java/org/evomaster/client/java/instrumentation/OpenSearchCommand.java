@@ -1,12 +1,13 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class OpenSearchCommand implements Serializable {
     /**
      * Name of the index that the operation was applied to
      */
-    private final Object index;
+    private final List<String> index;
 
     /**
      * Name of the operation that was executed
@@ -23,7 +24,7 @@ public class OpenSearchCommand implements Serializable {
      */
     private final long executionTime;
 
-    public OpenSearchCommand(Object index, String method, Object query, long executionTime) {
+    public OpenSearchCommand(List<String> index, String method, Object query, long executionTime) {
         this.index = index;
         this.method = method;
         this.query = query;
@@ -38,7 +39,7 @@ public class OpenSearchCommand implements Serializable {
         return query;
     }
 
-    public Object getIndex() {
+    public List<String> getIndex() {
         return index;
     }
 

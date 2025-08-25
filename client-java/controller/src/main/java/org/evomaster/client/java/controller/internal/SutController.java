@@ -27,6 +27,8 @@ import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
+import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
+import org.evomaster.client.java.instrumentation.OpenSearchCommand;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -85,6 +87,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final SqlHandler sqlHandler = new SqlHandler(new TaintHandlerExecutionTracer());
 
     private final MongoHandler mongoHandler = new MongoHandler();
+
+    private final OpenSearchHandler openSearchHandler = new OpenSearchHandler();
 
     private Server controllerServer;
 
@@ -323,6 +327,17 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    public final void initOpenSearchHandler() {
+        // This is needed because the replacement use to get this info occurs during the start of the SUT.
+        Object connection = getOpenSearchConnection();
+        openSearchHandler.setOpenSearchClient(connection);
+
+        List<AdditionalInfo> list = getAdditionalInfoList();
+        if (!list.isEmpty()) {
+            AdditionalInfo last = list.get(list.size() - 1);
+            last.getOpenSearchInfoData().forEach(openSearchHandler::handle);
+        }
+    }
 
     /**
      * TODO further handle multiple connections
@@ -366,7 +381,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
-        if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()) {
+        if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed() || isOpenSearchHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -374,6 +389,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             }
             if (isMongoHeuristicsComputationAllowed()) {
                 computeMongoHeuristics(dto, additionalInfoList);
+            }
+
+            if (isOpenSearchHeuristicsComputationAllowed()) {
+                computeOpenSearchHeuristics(dto, additionalInfoList);
             }
         }
         return dto;
@@ -385,6 +404,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isMongoHeuristicsComputationAllowed() {
         return mongoHandler.isCalculateHeuristics() || mongoHandler.isExtractMongoExecution();
+    }
+
+    private boolean isOpenSearchHeuristicsComputationAllowed() {
+        return openSearchHandler.isCalculateHeuristics();
+        // return openSearchHandler.isCalculateHeuristics() || openSearchHandler.isExtractMongoExecution();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -467,6 +491,24 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    public final void computeOpenSearchHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList) {
+        if (openSearchHandler.isCalculateHeuristics()) {
+            if (!additionalInfoList.isEmpty()) {
+                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+                last.getOpenSearchInfoData().forEach(it -> {
+                    try {
+                        openSearchHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE OPENSEARCH COMMAND");
+                        assert false;
+                    }
+                });
+            }
+
+            List<Integer> oscd = openSearchHandler.getEvaluatedOpenSearchCommands();
+        }
+
+    }
 
     /**
      * handle specified init sql script after SUT is started.
