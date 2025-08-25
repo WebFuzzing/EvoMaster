@@ -1,6 +1,8 @@
-package org.evomaster.core.problem.rest.aiconstraint.numeric
+package org.evomaster.core.problem.rest.aiclassification
 
-import bar.examples.it.spring.aiconstraint.numeric.AICMultiTypeController
+import bar.examples.it.spring.aiclassification.basic.BasicController
+import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
+import bar.examples.it.spring.aiclassification.ncs.NCSController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -12,7 +14,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -20,20 +22,23 @@ import org.evomaster.core.search.service.Randomness
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
+import kotlin.collections.iterator
 import kotlin.math.abs
 
 
-class AIGaussianCheck : IntegrationTestRestBase() {
+class AIGLMCheck : IntegrationTestRestBase() {
 
     companion object {
         @JvmStatic
         fun init() {
-            initClass(AICMultiTypeController())
+//            initClass(NCSController())
+            initClass(BasicController())
+//            initClass(MultiTypeController())
         }
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AIGaussianCheck()
+            val test = AIGLMCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
@@ -41,7 +46,12 @@ class AIGaussianCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification", "GAUSSIAN"))
+        recreateInjectorForWhite(
+            listOf(
+                "--aiModelForResponseClassification", "GLM",
+                "--aiResponseClassifierLearningRate", "0.05"
+            )
+        )
     }
 
     fun executeRestCallAction(action: RestCallAction, baseUrlOfSut: String): RestCallResult {
@@ -76,7 +86,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         val restSchema = RestSchema(schema)
 
         val config = EMConfig().apply {
-            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.GAUSSIAN
+            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.GLM
             enableSchemaConstraintHandling = true
             allowInvalidData = false
             probRestDefault = 0.0
@@ -97,7 +107,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             val name = action.getName()
 
             val hasUnsupportedGene = action.parameters.any { p ->
-                val g = p.gene
+                val g = p.gene.getLeafGene()
                 g !is IntegerGene && g !is DoubleGene && g !is BooleanGene && g !is EnumGene<*>
             }
 
@@ -105,7 +115,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
                 null
             } else {
                 action.parameters.count { p ->
-                    val g = p.gene
+                    val g = p.gene.getLeafGene()
                     g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
                 }
             }
@@ -122,12 +132,12 @@ class AIGaussianCheck : IntegrationTestRestBase() {
          * Initialize a classifier for each endpoint
          * For an endpoint containing unsupported genes, the associated classifier is null
          */
-        val endpointToClassifier = mutableMapOf<String, GaussianOnlineClassifier?>()
+        val endpointToClassifier = mutableMapOf<String, GLMOnlineClassifier?>()
         for ((name, dimension) in endpointToDimension) {
             if(dimension==null){
                 endpointToClassifier[name] = null
             }else{
-                val model = GaussianOnlineClassifier()
+                val model = GLMOnlineClassifier()
                 model.setDimension(dimension)
                 endpointToClassifier[name] = model
             }
@@ -142,7 +152,6 @@ class AIGaussianCheck : IntegrationTestRestBase() {
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         val startTime = System.currentTimeMillis()
         val runDuration = 5_000L // Milliseconds
-        println(" This is the start!!!!")
         while (System.currentTimeMillis() - startTime < runDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
@@ -158,10 +167,10 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             println("*************************************************")
             println("Path         : $name")
-            println("Classifier   : ${if (classifier == null) "null" else "GAUSSIAN"}")
+            println("Classifier   : ${if (classifier == null) "null" else "GLM"}")
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
-            println("Actual Genes : ${geneValues.size}")
+            println("Genes Size   : ${geneValues.size}")
             println("cp, tot, ac  : $cp, $tot, $ac")
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
@@ -188,6 +197,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             }
 
             // Classification
+            println("Classifying!")
             val classification = classifier.classify(action)
             val p200 = classification.probabilities[200]!!
             val p400 = classification.probabilities[400]!!
@@ -197,10 +207,11 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             // Prediction
             val prediction: Int = if (p200 > p400) 200 else 400
+            println("Prediction is : $prediction")
 
             // Probabilistic decision-making based on Bernoulli(prob = aci)
             val sendOrNot: Boolean
-            if (prediction == 200) {
+            if (prediction != 400) {
                 sendOrNot = true
             }else{
                 sendOrNot = if(Math.random() > ac) true else false
@@ -221,23 +232,13 @@ class AIGaussianCheck : IntegrationTestRestBase() {
                 endpointToTotalExecution[name] = tot
                 endpointToAccuracy[name] = ac
 
+                println("Updating the classifier!")
                 classifier.updateModel(action, result)
-
-                val d200 = classifier.getDensity200()
-                val d400 = classifier.getDensity400()
-
-                fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
-                    val m = mean.map { "%.2f".format(it) }
-                    val v = variance.map { "%.2f".format(it) }
-                    println("$name: n=$n, mean=$m, variance=$v * I_${classifier.getDimension()}")
-                }
-
-                formatStats("Density200", d200.mean, d200.variance, d200.n)
-                formatStats("Density400", d400.mean, d400.variance, d400.n)
-
             }
+
+            println("Weights and Bias = ${classifier.getModelParams()}")
+            println("**********************************************")
 
         }
     }
-
 }
