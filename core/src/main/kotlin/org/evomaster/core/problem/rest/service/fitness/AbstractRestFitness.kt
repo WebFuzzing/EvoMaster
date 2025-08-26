@@ -737,6 +737,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //  ResourceRestFitness get invoked during the recompute
         if (config.security && config.ssrf) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
+                // Code reach this point during the search, which is unnecessary during search
                 rcr.setVulnerableForSSRF(true)
             }
         }

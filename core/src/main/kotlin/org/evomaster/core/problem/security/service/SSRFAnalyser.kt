@@ -142,6 +142,7 @@ class SSRFAnalyser {
             httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
         }
 
+        // To Andrea: Code reach this point during the search
         return httpCallbackVerifier.verify(action.getName()) && hasCallBackURL
     }
 
@@ -237,14 +238,14 @@ class SSRFAnalyser {
     private fun llmClassifier(name: String, description: String? = null): Boolean {
         val answer = if (!description.isNullOrBlank()) {
             languageModelConnector.query(
-                SSRFUtil.Companion.getPromptWithNameAndDescription(
+                SSRFUtil.getPromptWithNameAndDescription(
                     name,
                     description
                 )
             )
         } else {
             languageModelConnector.query(
-                SSRFUtil.Companion.getPromptWithNameOnly(
+                SSRFUtil.getPromptWithNameOnly(
                     name
                 )
             )
