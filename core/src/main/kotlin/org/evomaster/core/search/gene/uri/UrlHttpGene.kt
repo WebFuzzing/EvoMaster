@@ -109,7 +109,7 @@ class UrlHttpGene(
             scheme.setValueBasedOn(url.protocol)
             host.setValueBasedOn(url.host)
             port.setValueBasedOn(url.port.toString())
-            path.setValueBasedOn(url.path)
+            // TODO: handle path
             true
         } catch (e: java.lang.Exception) {
             false
