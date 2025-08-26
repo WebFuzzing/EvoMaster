@@ -90,7 +90,7 @@ class SSRFAnalyser {
         individualsInSolution =
             RestIndividualSelectorUtils.findIndividuals(
                 individuals,
-                statusCodes = listOf(200, 201)
+                statusCodes = listOf(200, 201, 204)
             )
 
         if (individualsInSolution.isEmpty()) {
@@ -119,7 +119,7 @@ class SSRFAnalyser {
         // TODO: This is for development, remove it later
         val individualsAfterExecution = RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(200, 201)
+            statusCodes = listOf(200, 201, 204)
         )
         log.debug("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
 

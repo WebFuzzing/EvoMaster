@@ -42,16 +42,15 @@ open class SSRFBaseApplication {
     )
     @PostMapping(path = ["/fetch/image"])
     open fun fetchUserImage(@RequestBody userInfo: UserDto): ResponseEntity<String> {
-        if (userInfo.userId!!.isNotEmpty() && userInfo.profileImageUrl!!.isNotEmpty()) {
+        if (userInfo.profileImageUrl!!.isNotEmpty()) {
             return try {
                 val url = URL(userInfo.profileImageUrl)
                 val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 1000
+                connection.setRequestProperty("accept", "application/json")
 
                 // Note: Here the saving file should exist
                 if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).build()
+                    return ResponseEntity.status(200).body("OK")
                 }
 
                 ResponseEntity.status(204).body("Unable to fetch remote image.")
@@ -81,11 +80,10 @@ open class SSRFBaseApplication {
             return try {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 1000
+                connection.setRequestProperty("accept", "application/json")
 
                 if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).build()
+                    return ResponseEntity.status(200).body("OK")
                 }
 
                 ResponseEntity.status(204).body("Unable to fetch sensor data.")

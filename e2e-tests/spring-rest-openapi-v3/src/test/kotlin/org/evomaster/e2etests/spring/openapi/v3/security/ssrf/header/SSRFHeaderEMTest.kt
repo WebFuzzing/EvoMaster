@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.header
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.header.SSRFHeaderController
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -14,7 +15,9 @@ class SSRFHeaderEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SSRFHeaderController())
+            val config = EMConfig()
+            config.instrumentMR_NET = true
+            initClass(SSRFHeaderController(), config)
         }
     }
 
@@ -28,7 +31,6 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             setOption(args, "externalServiceIPSelectionStrategy", "USER")
             setOption(args, "externalServiceIP", "127.0.0.6")
-            setOption(args, "instrumentMR_NET", "true")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
