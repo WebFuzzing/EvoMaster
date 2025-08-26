@@ -2,7 +2,6 @@ package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.basic.BasicController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
-import bar.examples.it.spring.aiclassification.ncs.NCSController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -32,8 +31,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-            initClass(NCSController())
-//            initClass(BasicController())
+            initClass(BasicController())
 //            initClass(MultiTypeController())
         }
 
@@ -67,7 +65,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             result.setBody(body)
-            result.setBodyType(MediaType.APPLICATION_JSON_TYPE) // or guess based on Content-Type header
+            result.setBodyType(MediaType.APPLICATION_JSON_TYPE) // or guess based on the Content-Type header
 
         } catch (e: Exception) {
             result.setTimedout(true)
