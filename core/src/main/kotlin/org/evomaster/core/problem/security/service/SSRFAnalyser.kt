@@ -214,24 +214,18 @@ class SSRFAnalyser {
      * using a Regex based approach.
      */
     private fun manualClassifier(name: String, description: String? = null): Boolean {
-        // TODO: Only regex or word bag can be used from extracted parameter names.
-        var value = 0.0
-
-        if (name.lowercase().matches(urlRegexPattern)) {
-            value += 0.5
-        }
-        if (description != null) {
-            if (description.lowercase().matches(urlRegexPattern)) {
-                value += 0.3
-            }
-        }
         if (potentialUrlParamNames.contains(name)) {
-            value += 1.0
-        }
-        if (value > 0.5) {
             return true
         }
 
+        if (name.lowercase().matches(urlRegexPattern)) {
+            return true
+        }
+        if (description != null) {
+            if (description.lowercase().matches(urlRegexPattern)) {
+                return true
+            }
+        }
         return false
     }
 

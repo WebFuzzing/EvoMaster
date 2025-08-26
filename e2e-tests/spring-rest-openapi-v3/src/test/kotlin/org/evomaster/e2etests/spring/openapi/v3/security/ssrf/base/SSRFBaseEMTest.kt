@@ -18,7 +18,7 @@ class SSRFBaseEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled("WIP")
+//    @Disabled("WIP")
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
@@ -32,9 +32,9 @@ class SSRFBaseEMTest : SpringTestBase() {
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
-            setOption(args, "vulnerableInputClassificationStrategy", "LLM")
+            setOption(args, "vulnerableInputClassificationStrategy", "MANUAL")
 
-            setOption(args, "languageModelConnector", "true")
+            setOption(args, "languageModelConnector", "false")
             setOption(args, "schemaOracles", "false")
 
             val solution = initAndRun(args)
