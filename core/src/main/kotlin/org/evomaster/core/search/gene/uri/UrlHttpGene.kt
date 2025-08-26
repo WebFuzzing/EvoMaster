@@ -103,6 +103,20 @@ class UrlHttpGene(
         return false
     }
 
+    override fun setValueBasedOn(value: String): Boolean {
+        try {
+            val url = URL(value)
+            scheme.setFromStringValue(url.protocol)
+            host.setFromStringValue(url.host)
+            port.setFromStringValue(url.port.toString())
+            path.setFromStringValue(url.path)
+            return true
+        } catch (e: java.lang.Exception) {
+            return false
+        }
+        return false
+    }
+
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,

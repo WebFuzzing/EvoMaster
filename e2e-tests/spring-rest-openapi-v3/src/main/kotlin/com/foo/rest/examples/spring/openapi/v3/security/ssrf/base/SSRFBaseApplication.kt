@@ -47,6 +47,7 @@ open class SSRFBaseApplication {
                 val url = URL(userInfo.profileImageUrl)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.setRequestProperty("accept", "application/json")
+                connection.connectTimeout = 1000
 
                 // Note: Here the saving file should exist
                 if (connection.responseCode == 200) {
@@ -81,6 +82,7 @@ open class SSRFBaseApplication {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.setRequestProperty("accept", "application/json")
+                connection.connectTimeout = 1000
 
                 if (connection.responseCode == 200) {
                     return ResponseEntity.status(200).body("OK")
