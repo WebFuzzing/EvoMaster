@@ -59,7 +59,7 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
-    private val urlRegexPattern: Regex = Regex("\\burl\\b")
+    private val urlRegexPattern: Regex = Regex("/url/ig")
 
     private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "dataSource")
 
@@ -219,11 +219,11 @@ class SSRFAnalyser {
             return true
         }
 
-        if (name.lowercase().matches(urlRegexPattern)) {
+        if (name.matches(urlRegexPattern)) {
             return true
         }
         if (description != null) {
-            if (description.lowercase().matches(urlRegexPattern)) {
+            if (description.matches(urlRegexPattern)) {
                 return true
             }
         }
