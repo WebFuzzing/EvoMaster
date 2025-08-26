@@ -295,6 +295,11 @@ class ArrayGene<T>(
         return false
     }
 
+    override fun setValueBasedOn(value: String): Boolean {
+
+        return false
+    }
+
     /**
      * remove an existing element [element] from [elements]
      */

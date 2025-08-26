@@ -104,17 +104,16 @@ class UrlHttpGene(
     }
 
     override fun setValueBasedOn(value: String): Boolean {
-        try {
+        return try {
             val url = URL(value)
-            scheme.setFromStringValue(url.protocol)
-            host.setFromStringValue(url.host)
-            port.setFromStringValue(url.port.toString())
-            path.setFromStringValue(url.path)
-            return true
+            scheme.setValueBasedOn(url.protocol)
+            host.setValueBasedOn(url.host)
+            port.setValueBasedOn(url.port.toString())
+            path.setValueBasedOn(url.path)
+            true
         } catch (e: java.lang.Exception) {
-            return false
+            false
         }
-        return false
     }
 
     override fun customShouldApplyShallowMutation(
