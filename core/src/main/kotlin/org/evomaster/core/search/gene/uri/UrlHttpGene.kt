@@ -106,10 +106,10 @@ class UrlHttpGene(
     override fun setValueBasedOn(value: String): Boolean {
         try {
             val url = URL(value)
-            scheme.setFromStringValue(url.protocol)
-            host.setFromStringValue(url.host)
-            port.setFromStringValue(url.port.toString())
-            path.setFromStringValue(url.path)
+            scheme.setValueBasedOn(url.protocol)
+            host.setValueBasedOn(url.host)
+            port.setValueBasedOn(url.port.toString())
+            path.setValueBasedOn(url.path)
             return true
         } catch (e: java.lang.Exception) {
             return false
