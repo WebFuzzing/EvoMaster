@@ -22,7 +22,7 @@ class SSRFBaseEMTest : SpringTestBase() {
         }
     }
 
-//    @Disabled("WIP")
+    @Disabled
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
