@@ -59,9 +59,9 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
-    private val urlRegexPattern: Regex = Regex("/url/ig")
+    private val urlRegexPattern: Regex = Regex("/url|source|remote|target/ig")
 
-    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "dataSource")
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
@@ -215,7 +215,7 @@ class SSRFAnalyser {
      * using a Regex based approach.
      */
     private fun manualClassifier(name: String, description: String? = null): Boolean {
-        if (potentialUrlParamNames.contains(name)) {
+        if (potentialUrlParamNames.contains(name.lowercase())) {
             return true
         }
 
