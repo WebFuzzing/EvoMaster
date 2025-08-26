@@ -110,6 +110,7 @@ class UrlHttpGene(
             host.setValueBasedOn(url.host)
             port.setValueBasedOn(url.port.toString())
             // TODO: handle path
+            path.setFromStringValue(url.path)
             true
         } catch (e: java.lang.Exception) {
             false
