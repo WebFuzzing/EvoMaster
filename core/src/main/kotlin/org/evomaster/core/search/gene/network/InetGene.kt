@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
 
 class InetGene(
         name: String,
@@ -61,6 +62,11 @@ class InetGene(
                 false
             }
         }
+    }
+
+    override fun setValueBasedOn(value: String): Boolean {
+        // TODO
+        return false
     }
 
     override fun copyValueFrom(other: Gene): Boolean {
