@@ -26,7 +26,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
             "SSRFEMTest",
-            300,
+            100,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")

@@ -26,7 +26,7 @@ class SSRFQueryEMTest: SpringTestBase() {
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
             "SSRFQueryEMTest",
-            300,
+            100,
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")

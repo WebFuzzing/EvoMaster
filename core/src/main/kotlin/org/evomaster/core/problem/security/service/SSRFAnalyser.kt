@@ -61,7 +61,7 @@ class SSRFAnalyser {
 
     private val urlRegexPattern: Regex = Regex("\\burl\\b")
 
-    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target")
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "dataSource")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
@@ -352,6 +352,8 @@ class SSRFAnalyser {
                     // Only change the param marked for SSRF
                     // This updates the children also recursively
                     gene.setFromStringValue(callBackUrl)
+                    // TODO: to Andrea: Fails with message,
+                    //  java.lang.IllegalStateException: setValueBasedOn() is not implemented for gene UrlHttpGene
                 }
             }
         }
