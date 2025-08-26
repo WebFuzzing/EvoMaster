@@ -55,7 +55,7 @@ open class SSRFBaseApplication {
 
                 ResponseEntity.status(204).body("Unable to fetch remote image.")
             } catch (e: Exception) {
-                ResponseEntity.internalServerError().body(e.message)
+                ResponseEntity.status(204).body("Unable to fetch remote image.")
             }
         }
 
@@ -88,7 +88,7 @@ open class SSRFBaseApplication {
 
                 ResponseEntity.status(204).body("Unable to fetch sensor data.")
             } catch (e: Exception) {
-                ResponseEntity.internalServerError().body(e.message)
+                ResponseEntity.status(204).body("Unable to fetch remote image.")
             }
         }
 

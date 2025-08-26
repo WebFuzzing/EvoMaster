@@ -52,7 +52,7 @@ open class SSRFQueryApplication {
                 }
                 ResponseEntity.status(204).build()
             } catch (e: Exception) {
-                ResponseEntity.internalServerError().body(e.message)
+                ResponseEntity.status(204).body("Unable to fetch remote image.")
             }
         }
 

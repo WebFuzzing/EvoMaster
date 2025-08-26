@@ -17,7 +17,7 @@ class SSRFBaseEMTest : SpringTestBase() {
         @JvmStatic
         fun init() {
             val config = EMConfig()
-            config.instrumentMR_NET = true
+            config.instrumentMR_NET = false
             initClass(SSRFBaseController(), config)
         }
     }
@@ -30,7 +30,9 @@ class SSRFBaseEMTest : SpringTestBase() {
             200,
         ) { args: MutableList<String> ->
 
-            setOption(args, "externalServiceIPSelectionStrategy", "USER")
+            // This will start spin new instances of mock services each time when a new URL is
+            // passed.
+            setOption(args, "externalServiceIPSelectionStrategy", "NONE")
             setOption(args, "externalServiceIP", "127.0.0.50")
 
             setOption(args, "security", "true")

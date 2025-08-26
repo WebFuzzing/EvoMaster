@@ -16,7 +16,7 @@ class SSRFQueryEMTest: SpringTestBase() {
         @JvmStatic
         fun init() {
             val config = EMConfig()
-            config.instrumentMR_NET = true
+            config.instrumentMR_NET = false
             initClass(SSRFQueryController(), config)
         }
     }
@@ -29,7 +29,7 @@ class SSRFQueryEMTest: SpringTestBase() {
             300,
         ) { args: MutableList<String> ->
 
-            setOption(args, "externalServiceIPSelectionStrategy", "USER")
+            setOption(args, "externalServiceIPSelectionStrategy", "NONE")
             setOption(args, "externalServiceIP", "127.0.0.8")
 
             setOption(args, "security", "true")
