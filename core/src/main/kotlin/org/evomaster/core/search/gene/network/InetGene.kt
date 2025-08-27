@@ -67,7 +67,8 @@ class InetGene(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
-     *
+     * Set value from a string of [InetAddress].
+     * If the string is valid, returns true, otherwise false.
      */
     override fun setValueBasedOn(value: String): Boolean {
         return try {
