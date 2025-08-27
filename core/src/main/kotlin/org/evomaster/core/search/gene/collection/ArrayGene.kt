@@ -296,7 +296,7 @@ class ArrayGene<T>(
     }
 
     override fun setValueBasedOn(value: String): Boolean {
-        val elements = value.split(",")
+        val elements = value.split(separatorTag)
         if (elements.isNotEmpty()) {
             killAllChildren()
             // TODO

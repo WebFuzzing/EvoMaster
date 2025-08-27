@@ -109,7 +109,8 @@ class UrlHttpGene(
             scheme.setValueBasedOn(url.protocol)
             host.setValueBasedOn(url.host)
             port.setValueBasedOn(url.port.toString())
-            val pathValues = url.path.replace("/", ",")
+            // This to make the String similar to what is expected in ArrayGene
+            val pathValues = url.path.replace("/", ", ")
             path.setValueBasedOn(pathValues)
             // TODO: handle path
             true
