@@ -105,7 +105,7 @@ class UrlHttpGene(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
-     * If the provided String is a valid, URL method will return
+     * If the provided string is a valid, URL method will return
      * true, otherwise false.
      */
     override fun setValueBasedOn(value: String): Boolean {
