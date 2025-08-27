@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: anyOf with Inline Schemas
+  version: 1.0.0
+
+paths:
+  /anyof:
+    post:
+      summary: Accepts either email or phone object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - type: object
+                  required: [email]
+                  properties:
+                    email:
+                      type: string
+                - type: object
+                  required: [phone]
+                  properties:
+                    phone:
+                      type: string
+      responses:
+        '200':
+          description: OK

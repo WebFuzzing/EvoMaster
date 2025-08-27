@@ -5,7 +5,7 @@ class DtoClass(
     val fields: MutableList<DtoField> = mutableListOf()) {
 
     fun addField(field: DtoField) {
-        fields.add(field)
+        if (field !in fields) fields.add(field)
     }
 
 }
