@@ -64,9 +64,21 @@ class InetGene(
         }
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * Set value from a string of [InetAddress].
+     * If the string is valid, returns true, otherwise false.
+     */
     override fun setValueBasedOn(value: String): Boolean {
-        // TODO
-        return false
+        return try {
+            var result = true
+            InetAddress.getByName(value).address.forEachIndexed { i, v ->
+                result = result && octets[i].setValueBasedOn(v.toInt().toString())
+            }
+            result
+        } catch (e: Exception) {
+            false
+        }
     }
 
     override fun copyValueFrom(other: Gene): Boolean {

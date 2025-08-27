@@ -298,8 +298,9 @@ class ArrayGene<T>(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
-     * To set the children from a String.
-     * Use comma (,) separated values as String.
+     * To set the Array children from a String.
+     * Use [template] to create child [Gene].
+     * Use comma (,) separated elements as String.
      */
     override fun setValueBasedOn(value: String): Boolean {
         val elements = value.split(",")
@@ -307,35 +308,26 @@ class ArrayGene<T>(
             killAllChildren()
             when(template) {
                 is StringGene -> {
-                    val es = mutableListOf<Gene>()
-                    elements.forEach {
-                        es.add(
-                            StringGene(
-                                name,
-                                it
-                            ).apply {
-                                doInitialize(getSearchGlobalState()?.randomness)
-                            })
-                    }
-                    addChildren(es)
+                    addChildren(
+                        elements.map {
+                            StringGene(name, it)
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
                 }
                 is BooleanGene -> {
-                    val es = mutableListOf<Gene>()
-                    elements.forEach {
-                        es.add(BooleanGene(name, it.toBoolean()).apply {
-                            doInitialize(getSearchGlobalState()?.randomness)
-                        })
-                    }
-                    addChildren(es)
+                    addChildren(
+                        elements.map {
+                            BooleanGene(name, it.toBoolean())
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
                 }
                 else -> {
-                    // TODO: Do nothing for now, handle other types
+                    // TODO: Handle other types
                 }
             }
-
             return true
-
-            // TODO
         }
         return false
     }
