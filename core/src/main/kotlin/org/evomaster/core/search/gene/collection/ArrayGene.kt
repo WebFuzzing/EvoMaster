@@ -295,6 +295,15 @@ class ArrayGene<T>(
         return false
     }
 
+    override fun setValueBasedOn(value: String): Boolean {
+        val elements = value.split(separatorTag)
+        if (elements.isNotEmpty()) {
+            killAllChildren()
+            // TODO
+        }
+        return false
+    }
+
     /**
      * remove an existing element [element] from [elements]
      */
