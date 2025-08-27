@@ -109,6 +109,8 @@ class UrlHttpGene(
             scheme.setValueBasedOn(url.protocol)
             host.setValueBasedOn(url.host)
             port.setValueBasedOn(url.port.toString())
+            val pathValues = url.path.replace("/", ",")
+            path.setValueBasedOn(pathValues)
             // TODO: handle path
             true
         } catch (e: java.lang.Exception) {
