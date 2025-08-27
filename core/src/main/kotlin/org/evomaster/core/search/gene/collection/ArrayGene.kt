@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -295,11 +296,37 @@ class ArrayGene<T>(
         return false
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * To set the children from a String.
+     * Use comma (,) separated values as String.
+     */
     override fun setValueBasedOn(value: String): Boolean {
-        val elements = value.split(separatorTag)
+        val elements = value.split(",")
         if (elements.isNotEmpty()) {
             killAllChildren()
-            // TODO
+            when(template) {
+                is StringGene -> {
+                    addChildren(
+                        elements.map {
+                            StringGene(name, it)
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                is BooleanGene -> {
+                    addChildren(
+                        elements.map {
+                            BooleanGene(name, it.toBoolean())
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                else -> {
+                    // TODO: Handle other types
+                }
+            }
+            return true
         }
         return false
     }
