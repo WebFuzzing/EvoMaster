@@ -298,8 +298,9 @@ class ArrayGene<T>(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
-     * To set the children from a String.
-     * Use comma (,) separated values as String.
+     * To set the Array children from a String.
+     * Use [template] to create child [Gene].
+     * Use comma (,) separated elements as String.
      */
     override fun setValueBasedOn(value: String): Boolean {
         val elements = value.split(",")
