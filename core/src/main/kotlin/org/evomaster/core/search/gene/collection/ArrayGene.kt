@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -295,10 +296,45 @@ class ArrayGene<T>(
         return false
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * To set the children from a String.
+     * Use comma (,) separated values as String.
+     */
     override fun setValueBasedOn(value: String): Boolean {
-        val elements = value.split(separatorTag)
+        val elements = value.split(",")
         if (elements.isNotEmpty()) {
             killAllChildren()
+            when(template) {
+                is StringGene -> {
+                    val es = mutableListOf<Gene>()
+                    elements.forEach {
+                        es.add(
+                            StringGene(
+                                name,
+                                it
+                            ).apply {
+                                doInitialize(getSearchGlobalState()?.randomness)
+                            })
+                    }
+                    addChildren(es)
+                }
+                is BooleanGene -> {
+                    val es = mutableListOf<Gene>()
+                    elements.forEach {
+                        es.add(BooleanGene(name, it.toBoolean()).apply {
+                            doInitialize(getSearchGlobalState()?.randomness)
+                        })
+                    }
+                    addChildren(es)
+                }
+                else -> {
+                    // TODO: Do nothing for now, handle other types
+                }
+            }
+
+            return true
+
             // TODO
         }
         return false
