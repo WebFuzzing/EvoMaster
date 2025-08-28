@@ -26,13 +26,11 @@ class SSRFBaseEMTest : SpringTestBase() {
             300,
         ) { args: MutableList<String> ->
 
-            setOption(args, "externalServiceIPSelectionStrategy", "USER")
-            setOption(args, "externalServiceIP", "127.0.0.4")
-            setOption(args, "instrumentMR_NET", "true")
+            setOption(args, "externalServiceIPSelectionStrategy", "NONE")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
-            setOption(args, "vulnerableInputClassificationStrategy", "LLM")
+            setOption(args, "vulnerableInputClassificationStrategy", "MANUAL")
 
             setOption(args, "languageModelConnector", "true")
             setOption(args, "schemaOracles", "false")
@@ -41,11 +39,11 @@ class SSRFBaseEMTest : SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/data", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/fetch/image", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "OK")
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "Unable to fetch sensor data.")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "Unable to fetch remote image.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch/data", "Unable to fetch sensor data.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch/image", "Unable to fetch remote image.")
         }
     }
 }
