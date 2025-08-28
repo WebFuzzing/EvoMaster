@@ -15,7 +15,6 @@ class UrlHttpGeneTest {
         assertTrue(gene.setValueBasedOn("https://localhost:8080/"))
 
         assertEquals("8080", gene.port.getValueAsRawString())
-        // TODO: This fails, need to investigate
-//        assertEquals("localhost", gene.host.getValueAsRawString())
+        assertEquals("localhost", gene.host.getValueAsRawString())
     }
 }

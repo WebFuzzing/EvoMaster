@@ -23,5 +23,6 @@ class InetGeneTest {
         assertEquals("0.0.0.0", gene.getValueAsRawString())
 
         assertFalse(gene.setValueBasedOn("a.0.0.e"))
+        assertFalse(gene.setValueBasedOn("localhost"))
     }
 }
