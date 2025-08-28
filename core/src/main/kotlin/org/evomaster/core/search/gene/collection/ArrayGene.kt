@@ -303,7 +303,11 @@ class ArrayGene<T>(
      * Use comma (,) separated elements as String.
      */
     override fun setValueBasedOn(value: String): Boolean {
-        val elements = value.split(",")
+        val elements = value
+            .removePrefix(openingTag)
+            .removeSuffix(closingTag)
+            .split(separatorTag)
+            .map { it.trim() }
         if (elements.isNotEmpty()) {
             killAllChildren()
             when(template) {
@@ -325,6 +329,7 @@ class ArrayGene<T>(
                 }
                 else -> {
                     // TODO: Handle other types
+                    log.warn("${template::class.java.simpleName} type is not supported in ArrayGene yet.")
                 }
             }
             return true
