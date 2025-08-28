@@ -76,7 +76,9 @@ class InetGene(
             val address = value.split(".")
             if (address.size == INET_SIZE) {
                 address.forEachIndexed { i, v ->
-                    result = result && octets[i].setValueBasedOn(v.toInt().toString())
+                    if (!octets[i].setValueBasedOn(v.toInt().toString())) {
+                        result = false
+                    }
                 }
             }
             result
