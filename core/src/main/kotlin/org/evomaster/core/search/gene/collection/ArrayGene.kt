@@ -300,7 +300,7 @@ class ArrayGene<T>(
     /**
      * To set the Array children from a String.
      * Use [template] to create child [Gene].
-     * Use comma (,) separated elements as String.
+     * Use comma (,) separated elements with a space in front of the values as String.
      */
     override fun setValueBasedOn(value: String): Boolean {
         val elements = value
