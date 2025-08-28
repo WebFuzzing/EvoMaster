@@ -29,6 +29,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
             100,
         ) { args: MutableList<String> ->
 
+            // If mocking enabled, it'll spin new services each time when there is a valid URL.
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")
 
             setOption(args, "security", "true")
