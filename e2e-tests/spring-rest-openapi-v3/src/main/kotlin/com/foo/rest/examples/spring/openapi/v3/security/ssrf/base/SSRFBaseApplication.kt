@@ -59,6 +59,9 @@ open class SSRFBaseApplication {
 
                 ResponseEntity.status(204).body("Unable to fetch remote image.")
             } catch (e: Exception) {
+                // There is no guarantee [userInfo.profileImageUrl] to exists
+                // Due to this, returns HTTP 204 to simulate the success, as we consider only the
+                // tests with HTTP 2XX codes.
                 ResponseEntity.status(204).body("Unable to fetch remote image.")
             }
         }
