@@ -30,10 +30,8 @@ class SSRFBaseEMTest : SpringTestBase() {
             200,
         ) { args: MutableList<String> ->
 
-            // This will start spin new instances of mock services each time when a new URL is
-            // passed.
+            // If mocking enabled, it'll spin new services each time when there is a valid URL.
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")
-            setOption(args, "externalServiceIP", "127.0.0.50")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")

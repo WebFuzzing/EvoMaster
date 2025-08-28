@@ -30,7 +30,6 @@ class SSRFHeaderEMTest: SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")
-            setOption(args, "externalServiceIP", "127.0.0.6")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
@@ -41,6 +40,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
+            // TODO: Need to modify this to test for executed calls inside [SSRFAnalyser]
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }

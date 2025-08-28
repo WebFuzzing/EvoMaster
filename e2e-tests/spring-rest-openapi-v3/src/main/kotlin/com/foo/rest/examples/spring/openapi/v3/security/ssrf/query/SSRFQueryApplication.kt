@@ -50,9 +50,9 @@ open class SSRFQueryApplication {
                 if (connection.responseCode == 200) {
                     return ResponseEntity.status(200).body("OK")
                 }
-                ResponseEntity.status(204).build()
+                ResponseEntity.status(204).body("Unable to fetch.")
             } catch (e: Exception) {
-                ResponseEntity.status(204).body("Unable to fetch remote image.")
+                ResponseEntity.status(204).body("Unable to fetch.")
             }
         }
 

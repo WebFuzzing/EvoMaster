@@ -30,7 +30,6 @@ class SSRFQueryEMTest: SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")
-            setOption(args, "externalServiceIP", "127.0.0.8")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
