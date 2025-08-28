@@ -21,6 +21,8 @@ import java.net.URL
 @RestController
 open class SSRFBaseApplication {
 
+    // TODO: Need to handle URL whitelist prevention in another case study
+
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
@@ -42,21 +44,25 @@ open class SSRFBaseApplication {
     )
     @PostMapping(path = ["/fetch/image"])
     open fun fetchUserImage(@RequestBody userInfo: UserDto): ResponseEntity<String> {
-        if (userInfo.userId!!.isNotEmpty() && userInfo.profileImageUrl!!.isNotEmpty()) {
+        if (userInfo.profileImageUrl!!.isNotEmpty()) {
             return try {
                 val url = URL(userInfo.profileImageUrl)
                 val connection = url.openConnection() as HttpURLConnection
+                connection.setRequestProperty("accept", "application/json")
                 connection.requestMethod = "GET"
                 connection.connectTimeout = 1000
 
                 // Note: Here the saving file should exist
                 if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).build()
+                    return ResponseEntity.status(200).body("OK")
                 }
 
                 ResponseEntity.status(204).body("Unable to fetch remote image.")
             } catch (e: Exception) {
-                ResponseEntity.internalServerError().body(e.message)
+                // There is no guarantee [userInfo.profileImageUrl] to exists
+                // Due to this, returns HTTP 204 to simulate the success, as we consider only the
+                // tests with HTTP 2XX codes.
+                ResponseEntity.status(204).body("Unable to fetch remote image.")
             }
         }
 
@@ -76,21 +82,22 @@ open class SSRFBaseApplication {
         ]
     )
     @PostMapping(path = ["/fetch/data"])
-    open fun fetchStockData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
+    open fun fetchSensorData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
         if (remoteData.sensorUrl!!.isNotEmpty()) {
             return try {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection
+                connection.setRequestProperty("accept", "application/json")
                 connection.requestMethod = "GET"
                 connection.connectTimeout = 1000
 
                 if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).build()
+                    return ResponseEntity.status(200).body("OK")
                 }
 
                 ResponseEntity.status(204).body("Unable to fetch sensor data.")
             } catch (e: Exception) {
-                ResponseEntity.internalServerError().body(e.message)
+                ResponseEntity.status(204).body("Unable to fetch sensor data.")
             }
         }
 
