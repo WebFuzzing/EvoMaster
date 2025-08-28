@@ -61,7 +61,7 @@ public class RedisCommand implements Serializable {
 
     /**
      * Keys or values used in query. Keys are used in most queries. Values are used in Set commands.
-     * Keys are wrapped in key<...> while values in value<...>
+     * Keys are wrapped in {@literal key<...>} while values in {@literal value<...>}
      */
     private final String[] args;
 
