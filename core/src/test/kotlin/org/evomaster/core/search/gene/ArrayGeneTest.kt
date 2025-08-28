@@ -117,7 +117,7 @@ class ArrayGeneTest {
 
         assertEquals(2, gene.getViewOfChildren().size)
 
-        gene.setValueBasedOn("baz,qux,quux")
+        gene.setValueBasedOn("baz, qux, quux")
 
         assertEquals(3, gene.getViewOfChildren().size)
         assertEquals("baz", gene.getViewOfChildren()[0].getValueAsRawString())
