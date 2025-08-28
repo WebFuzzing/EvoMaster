@@ -329,7 +329,7 @@ class ArrayGene<T>(
                 }
                 else -> {
                     // TODO: Handle other types
-                    log.warn("${template::class.java.simpleName} is not handled in ArrayGene.")
+                    log.warn("${template::class.java.simpleName} type is not supported in ArrayGene yet.")
                 }
             }
             return true
