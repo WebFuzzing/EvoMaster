@@ -73,15 +73,12 @@ class InetGene(
     override fun setValueBasedOn(value: String): Boolean {
         return try {
             val address = value.split(".")
-            if (address.size == INET_SIZE) {
-                var result = true
-                address.forEachIndexed { i, v ->
-                    result = result && octets[i].setValueBasedOn(v.toInt().toString())
-                }
-                result
-            } else {
-                false
+            if (address.size != INET_SIZE) return false
+            var result = true
+            address.forEachIndexed { i, v ->
+                result = result && octets[i].setValueBasedOn(v.toInt().toString())
             }
+            result
         } catch (e: Exception) {
             false
         }
