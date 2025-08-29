@@ -53,7 +53,7 @@ class HttpCallbackVerifier {
 
             wireMockServer = WireMockServer(config)
             wireMockServer!!.start()
-//            wireMockServer!!.stubFor(getDefaultStub())
+            wireMockServer!!.stubFor(getDefaultStub())
         } catch (e: Exception) {
             throw RuntimeException(
                 e.message +
@@ -98,7 +98,6 @@ class HttpCallbackVerifier {
 
     /**
      * @param name represents the Action name
-     *
      * During stub creation, stubs are tagged with Action name in the metadata.
      */
     fun verify(name: String): Boolean {

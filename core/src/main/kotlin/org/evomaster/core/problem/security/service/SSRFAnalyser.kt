@@ -143,8 +143,7 @@ class SSRFAnalyser {
         }
 
         if (hasCallBackURL) {
-            val s = httpCallbackVerifier.verify(action.getName())
-            return s
+            return httpCallbackVerifier.verify(action.getName())
         }
 
         return false
