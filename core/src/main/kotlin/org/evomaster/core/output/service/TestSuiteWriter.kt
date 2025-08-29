@@ -8,10 +8,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
-import org.evomaster.core.output.dto.DtoClass
-import org.evomaster.core.output.dto.DtoField
 import org.evomaster.core.output.dto.DtoWriter
-import org.evomaster.core.output.dto.JavaDtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
@@ -19,23 +16,11 @@ import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.TimeGene
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.FloatGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.string.Base64StringGene
-import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.test.utils.EMTestUtils
@@ -69,6 +54,7 @@ class TestSuiteWriter {
         private const val pythonUtilsFilenameNoExtension = "em_test_utils"
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
+        const val httpCallbackVerifierName = "httpCallbackVerifier"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
@@ -444,7 +430,8 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
+            if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
+                || (config.ssrf && solution.hasAnySSRFFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
@@ -630,6 +617,11 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                addStatement("private static WireMockServer $httpCallbackVerifierName", lines)
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
                 lines.indented {
@@ -654,6 +646,11 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                addStatement("private lateinit var ${httpCallbackVerifierName}: WireMockServer", lines)
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
                 lines.indented {
@@ -822,6 +819,33 @@ class TestSuiteWriter {
                 } else {
                     log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
                 }
+            }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                if (format.isJava()) {
+                    lines.add("$httpCallbackVerifierName = new WireMockServer(new WireMockConfiguration()")
+                }
+                if (format.isKotlin()) {
+                    lines.add("$httpCallbackVerifierName = WireMockServer(WireMockConfiguration()")
+                }
+
+                lines.indented {
+                    lines.add(".port(\"${config.httpCallbackVerifierPort}\")")
+                    if (format.isJava()) {
+                        addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                    }
+                    if (format.isKotlin()) {
+                        addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                    }
+                }
+                addStatement("${httpCallbackVerifierName}.start()", lines)
+                addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
+                // FIXME: Might not need the default stub
+                addStatement("${httpCallbackVerifierName}.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
+                addStatement(".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
+                        "            .willReturn(WireMock.aResponse()\n" +
+                        "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
+                        "            .withBody(${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY})\n)", lines)
             }
 
             testCaseWriter.addExtraInitStatement(lines)

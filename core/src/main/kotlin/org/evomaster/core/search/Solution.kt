@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.output.OutputFormat
@@ -58,6 +59,12 @@ where T : Individual {
 //        return individuals.any { ind ->
 //            ind.individual.seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE).isNotEmpty()
 //        }
+    }
+
+    fun hasAnySSRFFaults(): Boolean {
+        return DetectedFaultUtils.getDetectedFaultCategories(this).any {
+            it == DefinedFaultCategory.SSRF
+        }
     }
 
     private fun hasAnyHostnameResolutionAction(): Boolean {

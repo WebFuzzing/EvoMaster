@@ -733,10 +733,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         // FIXME: Code never reach this when we recompute the fitness under SSRFAnalyser
-        //  So the faults never get marked.
-        //  ResourceRestFitness get invoked during the recompute
+        //  When the execution reach this during recomputing fitness, [HttpCallbackVerifier]
+        //  WireMock seems to be [null].
+        //  Due to that the method will never return true if any calls made.
         if (config.security && config.ssrf) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
+                // Code reach this point during the search, which is unnecessary during search
                 rcr.setVulnerableForSSRF(true)
             }
         }
@@ -1205,8 +1207,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
 
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
                     ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
                 }
             }
