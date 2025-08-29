@@ -136,14 +136,17 @@ class SSRFAnalyser {
             should check the content of rcr result
          */
 
-        val genes = GeneUtils.getAllStringFields(action.parameters)
-
-        val hasCallBackURL = genes.any { gene ->
+        val hasCallBackURL = GeneUtils
+            .getAllStringFields(action.parameters)
+            .any { gene ->
             httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
         }
 
-        // To Andrea: Code reach this point during the search
-        return httpCallbackVerifier.verify(action.getName()) && hasCallBackURL
+        if (hasCallBackURL) {
+            return httpCallbackVerifier.verify(action.getName())
+        }
+
+        return false
     }
 
     /**
@@ -352,8 +355,6 @@ class SSRFAnalyser {
                     // Only change the param marked for SSRF
                     // This updates the children also recursively
                     gene.setFromStringValue(callBackUrl)
-                    // TODO: to Andrea: Fails with message,
-                    //  java.lang.IllegalStateException: setValueBasedOn() is not implemented for gene UrlHttpGene
                 }
             }
         }
