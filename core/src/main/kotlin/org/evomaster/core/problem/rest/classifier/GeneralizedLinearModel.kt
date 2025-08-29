@@ -4,6 +4,7 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.exp
+import kotlin.random.Random
 
 /**
  * An online binary classifier for REST API actions using a Generalized Linear Model (logistic regression).
@@ -34,10 +35,8 @@ class GLMOnlineClassifier(
         require(dimension > 0) { "Dimension must be positive." }
         this.dimension = dimension
         this.weights = MutableList(dimension) { 0.0 }
-        this.bias = 0.0
         require(warmup > 0 ) { "Warmup must be positive." }
         this.warmup = warmup
-        this.performance = ClassifierPerformance(0, 1)
     }
 
     fun getModelParams(): List<Double> {
@@ -87,11 +86,11 @@ class GLMOnlineClassifier(
 
         /**
          * Updating classifier performance based on its prediction
-         * The performance getting update only after the warmup procedure
+         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
         if (this.performance.totalSentRequests <= this.warmup) {
-            updatePerformance(predictionIsCorrect = false)
+            updatePerformance(predictionIsCorrect = Random.nextBoolean())
         }else{
             val predicted = classify(input).prediction()
             updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))

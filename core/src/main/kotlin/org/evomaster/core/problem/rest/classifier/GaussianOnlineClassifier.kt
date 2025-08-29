@@ -6,6 +6,8 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.ln
 import kotlin.math.PI
 import kotlin.math.exp
+import org.evomaster.core.search.service.Randomness
+import kotlin.random.Random
 
 /**
  * Gaussian classifier for REST API calls.
@@ -47,7 +49,6 @@ class GaussianOnlineClassifier : AIModel {
         this.density400 = Density(dimension)
         require(warmup > 0 ) { "Warmup must be positive." }
         this.warmup = warmup
-        this.performance = ClassifierPerformance(0, 1)
     }
 
     fun updatePerformance(predictionIsCorrect: Boolean) {
@@ -98,11 +99,11 @@ class GaussianOnlineClassifier : AIModel {
 
         /**
          * Updating classifier performance based on its prediction
-         * The performance getting update only after the warmup procedure
+         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
         if (this.performance.totalSentRequests <= this.warmup) {
-            updatePerformance(predictionIsCorrect = false)
+            updatePerformance(predictionIsCorrect = Random.nextBoolean())
         }else{
             val predicted = classify(input).prediction()
             updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))
