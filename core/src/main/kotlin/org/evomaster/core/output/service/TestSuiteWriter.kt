@@ -54,6 +54,7 @@ class TestSuiteWriter {
         private const val pythonUtilsFilenameNoExtension = "em_test_utils"
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
+        private const val httpCallbackVerifierName = "httpCallbackVerifier"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
@@ -618,7 +619,7 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                addStatement("private static WireMockServer httpCallbackVerifier", lines)
+                addStatement("private static WireMockServer $httpCallbackVerifierName", lines)
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -647,7 +648,7 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                addStatement("private lateinit var httpCallbackVerifier: WireMockServer", lines)
+                addStatement("private lateinit var ${httpCallbackVerifierName}: WireMockServer", lines)
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -822,10 +823,10 @@ class TestSuiteWriter {
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
                 if (format.isJava()) {
-                    lines.add("httpCallbackVerifier = new WireMockServer(new WireMockConfiguration()")
+                    lines.add("$httpCallbackVerifierName = new WireMockServer(new WireMockConfiguration()")
                 }
                 if (format.isKotlin()) {
-                    lines.add("httpCallbackVerifier = WireMockServer(WireMockConfiguration()")
+                    lines.add("$httpCallbackVerifierName = WireMockServer(WireMockConfiguration()")
                 }
 
                 lines.indented {
@@ -837,9 +838,9 @@ class TestSuiteWriter {
                         addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
                     }
                 }
-                addStatement("httpCallbackVerifier.start()", lines)
-                // TODO: assertion
-                addStatement("httpCallbackVerifier.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
+                addStatement("${httpCallbackVerifierName}.start()", lines)
+                addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
+                addStatement("${httpCallbackVerifierName}.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
                 addStatement(".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
                         "            .willReturn(WireMock.aResponse()\n" +
                         "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
