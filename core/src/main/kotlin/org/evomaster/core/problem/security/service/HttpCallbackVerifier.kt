@@ -67,8 +67,7 @@ class HttpCallbackVerifier {
         val pattern =
             """^http:\/\/localhost:${config.httpCallbackVerifierPort}\/EM_\d+$""".toRegex()
 
-        val x = pattern.matches(value)
-        return x
+        return pattern.matches(value)
     }
 
     /**
