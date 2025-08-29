@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.problem.rest.data.RestPath
 
