@@ -194,6 +194,10 @@ abstract class TestCaseWriter {
             }
     }
 
+    protected fun handleSSRFFaults(lines: Lines, action: Action) {
+
+    }
+
     /**
      * Before starting to make actions (e.g. HTTP calls in web apis), check if we need to declare any field, ie variable,
      * for this test, and other needed setups, like SQL insertions.

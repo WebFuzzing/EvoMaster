@@ -301,6 +301,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val call = evaluatedAction.action as HttpWsAction
         val res = evaluatedAction.result as HttpWsCallResult
 
+        if (res.getVulnerableForSSRF()) {
+            // TODO: Write the stub configuration
+        }
+
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
