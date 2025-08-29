@@ -42,18 +42,24 @@ class HttpCallbackVerifier {
 
     @PreDestroy
     fun destroy() {
-        resetHTTPVerifier()
+        stop()
     }
 
-    fun initWireMockServer() {
+    fun prepare() {
+        if (isActive) {
+            return
+        }
+
         try {
             val config = WireMockConfiguration()
                 .extensions(ResponseTemplateTransformer(false))
                 .port(config.httpCallbackVerifierPort)
 
-            wireMockServer = WireMockServer(config)
-            wireMockServer!!.start()
-            wireMockServer!!.stubFor(getDefaultStub())
+            val wm = WireMockServer(config)
+            wm.start()
+            wm.stubFor(getDefaultStub())
+
+            wireMockServer = wm
         } catch (e: Exception) {
             throw RuntimeException(
                 e.message +
@@ -102,7 +108,8 @@ class HttpCallbackVerifier {
      */
     fun verify(name: String): Boolean {
         if (isActive) {
-            wireMockServer!!.allServeEvents
+            wireMockServer!!
+                .allServeEvents
                 .filter { event -> event.wasMatched }
                 .forEach { e ->
                     val matched = e.stubMapping.metadata
@@ -115,14 +122,14 @@ class HttpCallbackVerifier {
         return false
     }
 
-    fun resetHTTPVerifier() {
+    fun reset() {
         wireMockServer?.resetAll()
         wireMockServer?.stubFor(getDefaultStub())
         actionCallbackLinkMapping.clear()
         counter = 0
     }
 
-    fun reset() {
+    fun stop() {
         counter = 0
         wireMockServer?.stop()
         wireMockServer = null

@@ -1021,7 +1021,7 @@ class Main {
 
         private fun resetHTTPCallbackVerifier(injector: Injector) {
             val httpCallbackVerifier = injector.getInstance(HttpCallbackVerifier::class.java)
-            httpCallbackVerifier.reset()
+            httpCallbackVerifier.stop()
         }
     }
 }

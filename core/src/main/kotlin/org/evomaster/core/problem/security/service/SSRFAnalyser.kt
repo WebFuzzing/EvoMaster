@@ -80,9 +80,8 @@ class SSRFAnalyser {
         }
     }
 
-
     fun apply(): Solution<RestIndividual> {
-        LoggingUtil.Companion.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
+        LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
         // extract individuals from the archive
         val individuals = this.archive.extractSolution().individuals
@@ -101,17 +100,15 @@ class SSRFAnalyser {
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
+        if (httpCallbackVerifier.isActive) {
+            // Reset before execution
+            httpCallbackVerifier.reset()
+        } else {
+            httpCallbackVerifier.prepare()
+        }
+
         // Classify endpoints with potential vulnerability classes
         classify()
-
-        if (actionVulnerabilityMapping.isNotEmpty()) {
-            if (httpCallbackVerifier.isActive) {
-                // Reset before execution
-                httpCallbackVerifier.resetHTTPVerifier()
-            } else {
-                httpCallbackVerifier.initWireMockServer()
-            }
-        }
 
         // execute
         analyse()
@@ -139,11 +136,19 @@ class SSRFAnalyser {
         val hasCallBackURL = GeneUtils
             .getAllStringFields(action.parameters)
             .any { gene ->
-            httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
-        }
+                httpCallbackVerifier.isCallbackURL(gene.getValueAsRawString())
+            }
 
         if (hasCallBackURL) {
-            return httpCallbackVerifier.verify(action.getName())
+            // FIXME: When the code reaches this point during SSRF phase
+            //  WireMock is null, due to that this will return false.
+            //  Which will not add the fault category.
+            //  However, I can see the WireMock get initiated even before
+            //  reaching this point.
+            //  I suspected something to do with the dependency injection.
+            //  I tried moving the WireMock inside this class, still the same.
+            val x = httpCallbackVerifier.verify(action.getName())
+            return x
         }
 
         return false
@@ -254,7 +259,7 @@ class SSRFAnalyser {
             )
         }
 
-        return answer != null && answer.answer == SSRFUtil.Companion.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
+        return answer != null && answer.answer == SSRFUtil.SSRF_PROMPT_ANSWER_FOR_POSSIBILITY
     }
 
     /**
