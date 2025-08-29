@@ -444,7 +444,8 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
+            if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
+                || (config.ssrf && solution.hasAnySSRFFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
