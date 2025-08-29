@@ -40,6 +40,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
@@ -81,6 +82,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
+    protected lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     @Inject
     protected lateinit var responsePool: DataPool
@@ -734,7 +738,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         // FIXME: Code never reach this when we recompute the fitness under SSRFAnalyser
         //  When the execution reach this during recomputing fitness, [HttpCallbackVerifier]
-        //  seems to be [null]. Due to that the method will never return true if any calls made.
+        //  WireMock seems to be [null].
+        //  Due to that the method will never return true if any calls made.
         if (config.security && config.ssrf) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 // Code reach this point during the search, which is unnecessary during search
