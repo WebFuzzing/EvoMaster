@@ -113,8 +113,8 @@ public abstract class OpenSearchController extends EmbeddedSutController {
                 .get("local.server.port");
     }
 
-//    @Override
-//    public OpenSearchClient getOpenSearchConnection() {
-//        return openSearchClient;
-//    }
+    @Override
+    public OpenSearchClient getOpenSearchConnection() {
+        return openSearchClient;
+    }
 }

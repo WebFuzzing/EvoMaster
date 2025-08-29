@@ -179,6 +179,7 @@ public interface SutHandler {
 
     default Object getMongoConnection() {return null;}
 
+    default Object getOpenSearchConnection() {return null;}
 
     /**
      * <p>
