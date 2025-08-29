@@ -7,11 +7,13 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
+import org.evomaster.core.output.service.TestSuiteWriter.Companion.httpCallbackVerifierName
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -194,8 +196,24 @@ abstract class TestCaseWriter {
             }
     }
 
+    /**
+     * Method to set up stub for HttpCallbackVerifier to the test case.
+     */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
+        lines.addStatement("assertNotNull(${TestSuiteWriter.httpCallbackVerifierName})")
+        lines.addEmpty(1)
 
+        val url = ""
+
+        // FIXME: check the WireMock method case
+        lines.addStatement("${httpCallbackVerifierName}.stubFor(WireMock.get(${url}))")
+        lines.addStatement(
+            ".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
+                    "            .willReturn(WireMock.aResponse()\n" +
+                    "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
+                    "            .withBody(${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY})\n)"
+        )
+        lines.addEmpty(1)
     }
 
     /**

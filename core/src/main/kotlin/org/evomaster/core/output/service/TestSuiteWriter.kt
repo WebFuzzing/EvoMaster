@@ -54,7 +54,7 @@ class TestSuiteWriter {
         private const val pythonUtilsFilenameNoExtension = "em_test_utils"
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
-        private const val httpCallbackVerifierName = "httpCallbackVerifier"
+        const val httpCallbackVerifierName = "httpCallbackVerifier"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
@@ -840,6 +840,7 @@ class TestSuiteWriter {
                 }
                 addStatement("${httpCallbackVerifierName}.start()", lines)
                 addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
+                // FIXME: Might not need the default stub
                 addStatement("${httpCallbackVerifierName}.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
                 addStatement(".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
                         "            .willReturn(WireMock.aResponse()\n" +
