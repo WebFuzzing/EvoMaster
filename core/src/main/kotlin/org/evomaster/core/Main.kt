@@ -261,7 +261,7 @@ class Main {
 
             resetExternalServiceHandler(injector)
 
-            resetHTTPCallbackVerifier(injector)
+            stopHTTPCallbackVerifier(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
             val data = statistics.getData(solution)
@@ -1019,7 +1019,7 @@ class Main {
             externalServiceHandler.reset()
         }
 
-        private fun resetHTTPCallbackVerifier(injector: Injector) {
+        private fun stopHTTPCallbackVerifier(injector: Injector) {
             val httpCallbackVerifier = injector.getInstance(HttpCallbackVerifier::class.java)
             httpCallbackVerifier.stop()
         }
