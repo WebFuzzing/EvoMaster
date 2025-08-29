@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.util
 
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
@@ -13,12 +13,8 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.FlexibleGene
-import org.evomaster.core.search.gene.optional.OptionalGene
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.optional.NullableGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 
@@ -104,7 +100,7 @@ class ParamUtil {
          */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
             val geneAWithGeneBType = geneB.copy()
-            geneAWithGeneBType.bindValueBasedOn(geneA)
+            geneAWithGeneBType.setFromDifferentGene(geneA)
             return when (geneB) {
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
                 is IntegerGene -> geneB.value == (geneAWithGeneBType as IntegerGene).value
@@ -282,7 +278,7 @@ class ParamUtil {
         @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
             replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
-           return GeneUtils.getWrappedValueGene(gene,false)!!
+           return gene.getLeafGene()!!
         }
 
         fun getObjectGene(gene: Gene): ObjectGene? {

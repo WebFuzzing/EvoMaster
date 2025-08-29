@@ -8,9 +8,9 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.resource.ExcludedResourceNode
 import org.evomaster.core.problem.rest.resource.ResourceCluster
@@ -19,6 +19,7 @@ import org.evomaster.core.problem.rest.resource.dependency.MutualResourcesRelati
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToResources
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestStructureMutator
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator

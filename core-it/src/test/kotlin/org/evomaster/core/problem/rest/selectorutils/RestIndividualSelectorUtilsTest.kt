@@ -4,6 +4,8 @@ import bar.examples.it.spring.multipleendpoints.MultipleEndpointsController
 import org.evomaster.core.problem.httpws.auth.AuthenticationHeader
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.junit.Assert
@@ -145,21 +147,24 @@ class RestIndividualSelectorUtilsTest : IntegrationTestRestBase() {
 
         // in the beginning all the individuals are selected since each has GET request
         val selectedIndividuals = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, null,
-            RestPath("/api/endpoint5/setStatus/{status}"))
+            RestPath("/api/endpoint5/setStatus/{status}")
+        )
 
         // Only 1 individual has a request with the path "/api/endpoint5/setStatus/{status}"
         Assertions.assertTrue(selectedIndividuals.size == 1)
 
         // now find all individuals with endpoint /api/endpoint2, this is none of the individuals
         val secondSelectedIndividuals = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, null,
-            RestPath("/api/endpoint2"))
+            RestPath("/api/endpoint2")
+        )
 
         // Only 1 individual has a request with the path "/api/endpoint2"
         Assertions.assertTrue(secondSelectedIndividuals.isEmpty())
 
         // now find all individuals with endpoint /api/endpoint3, this is one of the individuals
         val thirdSelectedIndividuals = RestIndividualSelectorUtils.findIndividuals(listOfIndividuals, null,
-            RestPath("/api/endpoint3"))
+            RestPath("/api/endpoint3")
+        )
 
         // Only 1 individual has a request with the path "/api/endpoint3",
         Assertions.assertTrue(thirdSelectedIndividuals.size == 1)

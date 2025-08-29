@@ -2,7 +2,9 @@ package org.evomaster.core.search
 
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.mongo.MongoDbAction
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
+import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.search.action.ActionFilter
@@ -32,16 +34,21 @@ where T : Individual {
         overall.setTargetsCoveredBySeeding(targetsDuringSeeding)
     }
 
-    fun getFileName() : String{
+    fun getFileRelativePath(format: OutputFormat): String{
+        return getFileName().getAsPath(format)
+    }
 
-        val name = testSuiteNamePrefix + termination.suffix
-        if(testSuiteNameSuffix.isBlank()){
-            return name
+    fun getFileName() : TestSuiteFileName {
+
+        val baseName = testSuiteNamePrefix + termination.suffix
+        val name = if(testSuiteNameSuffix.isBlank()){
+            baseName
+        } else if(testSuiteNameSuffix.startsWith("_")){
+            "$baseName$testSuiteNameSuffix"
+        } else {
+            "${baseName}_$testSuiteNameSuffix"
         }
-        if(testSuiteNameSuffix.startsWith("_")){
-            return "$name$testSuiteNameSuffix"
-        }
-        return  "${name}_$testSuiteNameSuffix"
+        return TestSuiteFileName(name)
     }
 
     fun needWireMockServers() : Boolean{
@@ -76,14 +83,6 @@ where T : Individual {
         return Solution(individualsDuringSeeding.toMutableList(), testSuiteNamePrefix, testSuiteNameSuffix, Termination.SEEDING, listOf(), listOf())
     }
 
-    /**
-     * Add a function which sets the termination criteria
-     */
-    fun convertSolutionToExecutiveSummary() : Solution<T> {
-        return Solution(individuals, testSuiteNamePrefix, testSuiteNameSuffix, Termination.FAULT_REPRESENTATIVES,
-            individualsDuringSeeding, targetsDuringSeeding)
-    }
-
     fun distinctDetectedFaultTypes(): Set<Int> {
         return DetectedFaultUtils.getDetectedFaultCategories(this)
             .map { it.code }
@@ -92,5 +91,13 @@ where T : Individual {
 
     fun totalNumberOfDetectedFaults() : Int {
         return DetectedFaultUtils.getDetectedFaults(this).size
+    }
+
+    fun detectedFaultsSummary() : String {
+        return DetectedFaultUtils.getDetectedFaults(this)
+            .groupBy { it.category.code }
+            .entries
+            .sortedBy { it.key }
+            .joinToString("|") { "${it.key}:${it.value.size}" }
     }
 }

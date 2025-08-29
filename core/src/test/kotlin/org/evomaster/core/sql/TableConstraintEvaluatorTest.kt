@@ -7,7 +7,7 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.dbconstraint.*
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

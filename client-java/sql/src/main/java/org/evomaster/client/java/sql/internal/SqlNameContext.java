@@ -126,6 +126,7 @@ public class SqlNameContext {
     private List<String> getTableNamesInFrom() {
 
         List<String> names = new ArrayList<>();
+
         if (hasFromItem()) {
             FromItem fromItem = getFromItem();
 
@@ -135,6 +136,34 @@ public class SqlNameContext {
                 names.add(table.getFullyQualifiedName().toLowerCase());
             }
         };
+            FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
+                @Override
+                public void visit(Table table) {
+                    names.add(table.getName().toLowerCase());
+                }
+
+                @Override
+                public void visit(ParenthesedSelect selectBody) {
+                    PlainSelect plainSelect = selectBody.getPlainSelect();
+                    SqlNameContext subContext = new SqlNameContext(plainSelect);
+                    tableAliases.putAll(subContext.tableAliases);
+                }
+
+                @Override
+                public void visit(LateralSubSelect lateralSubSelect) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
+                }
+
+                @Override
+                public void visit(TableFunction valuesList) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
+                }
+
+                @Override
+                public void visit(ParenthesedFromItem aThis) {
+                    throw new UnsupportedOperationException("Nested SELECTs not supported");
+                }
+            };
 
             fromItem.accept(visitor);
         }
@@ -213,6 +242,23 @@ public class SqlNameContext {
         public void visit(ParenthesedSelect selectBody) {
             handleAlias(aliases, selectBody.getPlainSelect());
         }
+
+        @Override
+        public void visit(LateralSubSelect lateralSubSelect) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void visit(TableFunction valuesList) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void visit(ParenthesedFromItem aThis) {
+            throw new UnsupportedOperationException();
+        }
+
+
     }
 
 

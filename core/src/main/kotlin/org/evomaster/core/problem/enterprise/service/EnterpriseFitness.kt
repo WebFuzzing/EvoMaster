@@ -92,13 +92,20 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
         val dto = try {
             SqlActionTransformer.transform(allSqlActions, sqlIdMap, previous)
-        }catch (e : IllegalArgumentException){
+        }catch (e : Exception){
             // the failure might be due to previous failure
             if (!allSuccessBefore){
                 previous.addAll(allSqlActions)
-                return false
-            } else
-                throw e
+            } else {
+                log.warn("Failed to create SQL command from internal representation: ${e.message}",e)
+                assert(false)
+            /*
+                shouldn't happen in tests... but don't crash EM either... as
+                support for SQL is still not fully
+                TODO check again once we fully support FKs
+             */
+            }
+            return false
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 

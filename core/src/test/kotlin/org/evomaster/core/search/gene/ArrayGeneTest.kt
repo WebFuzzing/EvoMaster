@@ -104,4 +104,23 @@ class ArrayGeneTest {
         assertThrows<IllegalArgumentException> {  enumArray.addElement((enumTemplate.copy() as EnumGene<String>).apply { index =1 })}
     }
 
+    @Test
+    fun testSetValueBasedOn(){
+        val gene = ArrayGene(
+            "array",
+            minSize = 1,
+            maxSize = 3,
+            template= StringGene("string"),
+            uniqueElements = true,
+            elements = mutableListOf(StringGene("foo_element", "foo"), StringGene("bar_element", "bar"))
+        )
+
+        assertEquals(2, gene.getViewOfChildren().size)
+
+        gene.setValueBasedOn("baz, qux, quux")
+
+        assertEquals(3, gene.getViewOfChildren().size)
+        assertEquals("baz", gene.getViewOfChildren()[0].getValueAsRawString())
+    }
+
 }

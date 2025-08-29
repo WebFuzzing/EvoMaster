@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -76,7 +75,7 @@ class FixedMapGene<K, V>(
     /*
         Note that value binding cannot be performed on the [elements]
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene is FixedMapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()

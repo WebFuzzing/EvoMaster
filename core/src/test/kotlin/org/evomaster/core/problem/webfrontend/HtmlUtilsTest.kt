@@ -14,7 +14,7 @@ internal class HtmlUtilsTest{
     fun testCheckLink(){
 
         assertTrue(HtmlUtils.checkLink(URL("http://www.google.com")))
-        assertTrue(HtmlUtils.checkLink(URL("https://github.com/EMResearch/EvoMaster")))
+        assertTrue(HtmlUtils.checkLink(URL("https://github.com/WebFuzzing/EvoMaster")))
 
         assertFalse(HtmlUtils.checkLink(URL("https://www.google.com/foo")))
     }

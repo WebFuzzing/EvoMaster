@@ -1,12 +1,14 @@
 package org.evomaster.e2etests.spring.examples.db.existingdata;
 
 import com.foo.rest.examples.spring.db.existingdata.ExistingDataWithSqlScriptController;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -18,19 +20,18 @@ public class ExistingDataWithSqlScriptControllerEMTest extends SpringTestBase {
     }
 
 
-    @Test
-    public void testRunEM() throws Throwable {
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void testRunEM(boolean heuristicsForSQLAdvanced) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "ExistingDataWithSqlScriptControllerEMTest",
-                "org.bar.db.ExistingDataWithSqlScriptControllerEMTest",
+                "org.bar.db.ExistingDataWithSqlScriptControllerEMTest" + (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
                 50,
                 (args) -> {
-
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("true");
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "true");
+                    setOption(args, "heuristicsForSQLAdvanced", heuristicsForSQLAdvanced ? "true" : "false");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

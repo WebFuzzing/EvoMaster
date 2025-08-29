@@ -1,6 +1,6 @@
 package org.evomaster.core.config
 
-import org.evomaster.client.java.controller.api.dto.auth.HttpVerb
+import com.webfuzzing.commons.auth.LoginEndpoint
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -71,7 +71,7 @@ class ConfigUtilTest{
         assertEquals(2, config.auth.size)
         for(a in config.auth){
             assertEquals("/login", a.loginEndpointAuth.endpoint)
-            assertEquals(HttpVerb.POST, a.loginEndpointAuth.verb)
+            assertEquals(LoginEndpoint.HttpVerb.POST, a.loginEndpointAuth.verb)
             assertEquals( "application/json", a.loginEndpointAuth.contentType)
             assertEquals(true, a.loginEndpointAuth.expectCookies)
         }

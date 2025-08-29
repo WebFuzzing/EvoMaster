@@ -2,6 +2,8 @@ package org.evomaster.core.problem.external.service
 
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.remote.service.RemoteController
@@ -58,6 +60,10 @@ class DummyController: RemoteController {
     }
 
     override fun close() {
+        TODO("Not yet implemented")
+    }
+
+    override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>): List<DeriveParamResponseDto> {
         TODO("Not yet implemented")
     }
 

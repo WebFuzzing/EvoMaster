@@ -1,7 +1,7 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestActionBuilderV3.createGeneForDTO
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3.createGeneForDTO
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene

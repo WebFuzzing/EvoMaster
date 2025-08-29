@@ -2,8 +2,8 @@ package org.evomaster.core.output.naming.rest
 
 import org.evomaster.core.output.naming.AmbiguitySolver
 import org.evomaster.core.output.naming.rest.RestNamingUtils.getPath
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.search.action.Action
 
 class PathAmbiguitySolver : AmbiguitySolver {
@@ -19,13 +19,22 @@ class PathAmbiguitySolver : AmbiguitySolver {
         val lastPath = restAction.path
         val lastPathQualifier = getPath(lastPath.nameQualifier)
 
+        val candidateTokens = mutableListOf<String>()
+
+        if (!lastPath.isRoot()) {
+            candidateTokens.add(getParentPath(lastPath))
+        }
+        candidateTokens.add(lastPathQualifier)
+
+        return if (canAddNameTokens(candidateTokens, remainingNameChars)) candidateTokens else listOf(lastPathQualifier)
+    }
+
+    private fun getParentPath(lastPath: RestPath): String {
         var parentPath = lastPath.parentPath()
         if (lastPath.isLastElementAParameter()) {
             parentPath = parentPath.parentPath()
         }
-        val candidateTokens = listOf(getParentPathQualifier(parentPath), lastPathQualifier)
-
-        return if (canAddNameTokens(candidateTokens, remainingNameChars)) candidateTokens else listOf(lastPathQualifier)
+        return getParentPathQualifier(parentPath)
     }
 
     /*

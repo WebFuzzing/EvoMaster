@@ -28,17 +28,14 @@ public class HeuristicsCalculator {
 
     private final TaintHandler taintHandler;
 
-    private final boolean advancedHeuristics;
-
-    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler, boolean advancedHeuristics) {
+    protected HeuristicsCalculator(SqlNameContext context, TaintHandler handler) {
         this.context = Objects.requireNonNull(context);
         this.taintHandler = handler;
-        this.advancedHeuristics = advancedHeuristics;
     }
 
     //only for tests
     protected static double computeDistance(String statement, QueryResult... data) {
-        return computeDistance(statement, null, null, false, data).sqlDistance;
+        return computeDistance(statement, null, null, data).sqlDistance;
     }
 
     public static SqlDistanceWithMetrics computeDistance(
@@ -48,17 +45,8 @@ public class HeuristicsCalculator {
             /**
              * Enable more advance techniques since first SQL support
              */
-            boolean advancedHeuristics,
             QueryResult... data
     ) {
-
-        /**
-         * This is not an ideal solution, but it will remain this way until config.heuristicsForSQLAdvanced remains
-         * experimental and it does not replace the "Plain" SqlHeuristicsCalculator
-         */
-        if (advancedHeuristics) {
-            return SqlHeuristicsCalculator.computeDistance(sqlCommand,schema,taintHandler,data);
-        }
 
         if (data.length == 0 || Arrays.stream(data).allMatch(QueryResult::isEmpty)){
             //if no data, we have no info whatsoever
@@ -76,7 +64,7 @@ public class HeuristicsCalculator {
         if (schema != null) {
             context.setSchema(schema);
         }
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler, advancedHeuristics);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context, taintHandler);
 
         double minSqlDistance = Double.MAX_VALUE;
         int rowCount = 0;

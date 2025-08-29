@@ -7,8 +7,8 @@ import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
-import org.evomaster.core.search.gene.optional.FlexibleGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -271,7 +271,7 @@ class ObjectGene(
         )
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is ObjectGene
                 && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
                 && isFixed == gene.isFixed
@@ -279,7 +279,7 @@ class ObjectGene(
 
             var result = true
             (fixedFields.indices).forEach {
-                val r = fixedFields[it].bindValueBasedOn(gene.fixedFields[it])
+                val r = fixedFields[it].setValueBasedOn(gene.fixedFields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
                 result = result && r

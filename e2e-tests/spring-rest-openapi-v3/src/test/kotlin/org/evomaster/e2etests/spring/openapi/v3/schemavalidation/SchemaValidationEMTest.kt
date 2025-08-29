@@ -1,10 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.schemavalidation
 
-import com.foo.rest.examples.spring.openapi.v3.schemavalidation.SchemaValidationApplication
 import com.foo.rest.examples.spring.openapi.v3.schemavalidation.SchemaValidationController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.evomaster.notinstrumented.Constants
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -43,7 +44,7 @@ class SchemaValidationEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(FaultCategory.SCHEMA_INVALID_RESPONSE, faults.first())
+            assertEquals(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, faults.first())
         }
     }
 
@@ -116,8 +117,8 @@ class SchemaValidationEMTest : SpringTestBase(){
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             //if 500 is not declared, should be a schema validation error as well
             assertEquals(2, faults.size)
-            assertTrue(faults.contains(FaultCategory.HTTP_STATUS_500))
-            assertTrue(faults.contains(FaultCategory.SCHEMA_INVALID_RESPONSE))
+            assertTrue(faults.contains(DefinedFaultCategory.HTTP_STATUS_500))
+            assertTrue(faults.contains(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE))
         }
     }
 

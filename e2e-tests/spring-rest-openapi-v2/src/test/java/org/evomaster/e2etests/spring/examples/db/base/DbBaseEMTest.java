@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.spring.examples.db.base;
 
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.data.HttpVerb;
+import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
 
@@ -19,10 +19,8 @@ public class DbBaseEMTest extends DbBaseTestBase {
                 10_000,
                 (args) -> {
 
-                    args.add("--heuristicsForSQL");
-                    args.add("true");
-                    args.add("--generateSqlDataWithSearch");
-                    args.add("false");
+                    setOption(args, "heuristicsForSQL", "true");
+                    setOption(args, "generateSqlDataWithSearch", "false");
 
                     /*
                         FIXME: need to study and fix the side effects of Taint here.

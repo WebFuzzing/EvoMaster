@@ -3,7 +3,7 @@
 
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![Maven Central](https://img.shields.io/maven-central/v/org.evomaster/evomaster-client-java.svg?label=Maven%20Central)](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java)
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
@@ -19,7 +19,7 @@ that automatically *generates* system-level test cases
 for web/enterprise applications.
 This is related to [Fuzzing](https://en.wikipedia.org/wiki/Fuzzing).
 In particular, _EvoMaster_ can fuzz APIs such as REST, GraphQL and RPC.
-Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JS and Java/Kotlin JUnit format) that can be used for _regression testing_.
+Not only _EvoMaster_ can generate inputs that find program crashes, but also it generates small effective test suites (e.g., in Python, JavaScript and Java/Kotlin JUnit format) that can be used for _regression testing_.
 
 _EvoMaster_ is an AI driven tool.
 In particular, internally it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm)
@@ -46,10 +46,21 @@ Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an
 
 Once the command is executed, you can inspect the generated files under `generated_tests` folder. 
 
+Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactive web report.
+
+![](docs/img/report_overview.png)
+
+![](docs/img/report_endpoints.png)
 
 ### Key features
 
 * _Web APIs_: At the moment, _EvoMaster_ can generate test cases for __REST__, __GraphQL__ and __RPC__ (e.g., __gRPC__ and __Thrift__) APIs.
+
+* _Free_: this is an open-source project, with funding from public research (e.g., professors, postdocs and PhD students).
+          There is no monetary cost involved in using this tool, or need to use any paid external services (e.g., external LLM APIs).
+          If you are a resident in EU, Norway, Argentina, China, or any associate country involved with ERC, thanks for your tax money supporting this project. 
+
+* _In-house, no telemetry_: currently there is no telemetry in use in _EvoMaster_, and it does not require to connect to any external service on internet, besides the tested application. AFAIK, it can be run in-house without any worry of leaking any IP to external parties (if not, please open a new issue to tell us how that could happen, and we will try to fix it). 
 
 * _Black-Box_ testing mode: can run on any API (regardless of its programming language, e.g., Python and Go).
   However, results for black-box testing will be worse than white-box testing (e.g., due to lack of code analysis).
@@ -69,10 +80,14 @@ Once the command is executed, you can inspect the generated files under `generat
    Whereas for the client library, needed for white-box testing, we will support JDK 8 likely for a long, long while, be warned that future versions of the executable JAR might start to require higher versions of the JDK in a non-so-distant future.
    If that is going to be higher than your current version of the JVM, if you cannot upgrade or have 2 different JDKs on your machine, then you should not use the uber-jar but rather one of the installers. 
    When you use one of the installers, keep in mind that currently they do not update the `PATH` variable. This needs to be done manually, [see documentation](docs/download.md). 
+   Also keep in mind we have not paid the [Microsoft/Apple Tax](docs/download.md). This means that your operating system by default will block the installation, stating it cannot verify it is not a malware. 
+   But the block [can be bypassed](docs/download.md).
 
 * _Docker_: _EvoMaster_ is now released via Docker as well, under [webfuzzing/evomaster](https://hub.docker.com/r/webfuzzing/evomaster) on Docker Hub. For more information on how to use _EvoMaster_ via Docker, [see documentation](docs/docker.md).
 
 * _GitHub Action_: it is possible to run _EvoMaster_ in GitHub Actions, as part of Continuous Integration, by using the [following custom action](https://github.com/WebFuzzing/evomaster-action) (which is in a different GitHub repository).
+
+* _Hardware_: although state-of-the-art AI techniques are used, there is no major hardware requirement to be able to run _EvoMaster_. It will work even on old laptops. The main computational bottleneck is running the tested applications, and making network calls to them. 
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
@@ -84,20 +99,20 @@ Once the command is executed, you can inspect the generated files under `generat
   Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
   These will need to be setup in your projects, [see documentation](docs/library_dependencies.md).
 
+* _Web Report_: besides generating executable tests in different programming language, an interactive _index.html_ web report is created as well by default, visualizing and summarizing the results of the generated tests. 
+
 * _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
-  Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas.
+  Different heuristics are employed, like checking for 500 status codes, mismatches from the API schemas and access policy violations.
 
 * _Self-contained tests_: for white-box testing, the generated tests do start/stop the application, binding to an ephemeral port.
   This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
   of the application, and run with any build tool such as Maven and Gradle).
   For black-box testing, you will need to make sure the application is up and running before executing the tests. 
 
-
-* _SQL handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
+* _Database handling_: for white-box testing, _EvoMaster_ can intercept and analyse all communications done with SQL and MongoDB databases, and use
   such information to generate higher code coverage test cases. Furthermore, it can generate data directly
   into the databases, and have such initialization automatically added in the generated tests.
-  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_ and _H2_  databases.
-
+  At the moment, _EvoMaster_ supports _Postgres_, _MySQL_, _H2_  and MongoDB  databases.
 
 * _Authentication_: we support auth based on authentication headers and cookies.
   Besides using fixed HTTP headers, 
@@ -124,8 +139,6 @@ Once the command is executed, you can inspect the generated files under `generat
 * _External services_: (e.g., other RESTful APIs) currently there is no support for them (e.g., to automatically mock them).
   It is work in progress.
 
-* _NoSQL databases_: (e.g., MongoDB) currently no support. It is work in progress.
-
 * _Failing tests_: the tests generated by _EvoMaster_ should all pass, and not fail, even when they detect a fault.
   In those cases, comments/test-names would point out that a test is revealing a possible fault, while still passing.
   However, in some cases the generated tests might fail. This is due to the so called _flaky_ tests, e.g., when
@@ -142,9 +155,9 @@ Once the command is executed, you can inspect the generated files under `generat
 
 Several enterprises use _EvoMaster_ to fuzz their Web APIs.
 We do few academia-industry collaborations ([see more info here](docs/contribute.md)), where we help test engineers to apply _EvoMaster_ on their systems, as long as we can then report on such experience.
-Example of Fortune 500 companies using _EvoMaster_ are:
+Examples of Fortune 500 companies using _EvoMaster_ are:
 
-* [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf).
+* [Meituan](https://www.meituan.com): see [TOSEM'23](docs/publications/2023_tosem_rpc.pdf), [ASE'24](docs/publications/2024_ase.pdf), [SCP'25](docs/publications/2025_scp.pdf).
 
 * [Volkswagen](https://www.volkswagen.com): see [AUSE'24](docs/publications/2024_ause_vw.pdf), [ICST'25](docs/publications/2025_icst.pdf).
 
@@ -172,14 +185,12 @@ Example of Fortune 500 companies using _EvoMaster_ are:
 In the last few years, several few tools have been proposed in the academic literature and in the open-source community.
 You can read more details in this [2023 survey](docs/publications/2023_tosem_survey.pdf) on REST API testing.
 
-Existing open-source tools for REST API fuzzing are for example (in alphabetic order):
+Existing open-source tools for REST API fuzzing, with at least 100 stars on GitHub, are for example (in alphabetic order):
 [CATS](https://github.com/Endava/cats),
 [Dredd](https://github.com/apiaryio/dredd),
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
-[RestCT](https://github.com/GIST-NJU/RestCT),
 [Restler](https://github.com/microsoft/restler-fuzzer),
-[RestTestGen](https://github.com/SeUniVr/RestTestGen),
 and
 [Schemathesis](https://github.com/schemathesis/schemathesis).
 
@@ -202,7 +213,7 @@ Current open positions: none.
 For questions on these positions, please contact Prof. Andrea Arcuri.
 
 < !---
-For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
+For more details on current vacancies, see our group page at [AISE Lab](https://WebFuzzing.github.io/).
 --->
 
 

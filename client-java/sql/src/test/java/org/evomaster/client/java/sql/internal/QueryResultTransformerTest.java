@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.QueryResultSet;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -64,10 +66,9 @@ public class QueryResultTransformerTest {
                 .d("barE", "25")
                 .dtos();
 
-
-        Map<String, Set<String>> columns = new HashMap<String, Set<String>>() {{
-            put("FooTable", new HashSet<>(Arrays.asList("fooA", "fooC")));
-            put("BarTable", new HashSet<>(Arrays.asList("barB", "barC", "barD", "barE")));
+        Map<SqlTableId, Set<SqlColumnId>> columns = new HashMap<SqlTableId, Set<SqlColumnId>>() {{
+            put(new SqlTableId("FooTable"), new HashSet<>(Arrays.asList(new SqlColumnId("fooA"), new SqlColumnId("fooC"))));
+            put(new SqlTableId("BarTable"), new HashSet<>(Arrays.asList(new SqlColumnId("barB"), new SqlColumnId("barC"), new SqlColumnId("barD"), new SqlColumnId("barE"))));
         }};
 
 
@@ -190,4 +191,179 @@ public class QueryResultTransformerTest {
         }
 
     }
+
+    private static ColumnDto createColumnDto(String tableName, String columnName, String typeName) {
+        ColumnDto columnDto = new ColumnDto();
+        columnDto.table = tableName;
+        columnDto.name = columnName;
+        columnDto.type = typeName;
+        return columnDto;
+    }
+
+    private static DbInfoDto createSchema() {
+        TableDto employeesTable = new TableDto();
+        employeesTable.name = "Employees";
+        employeesTable.columns.add(createColumnDto("employees", "id", "INTEGER"));
+        employeesTable.columns.add(createColumnDto("employees", "name", "VARCHAR"));
+        employeesTable.columns.add(createColumnDto("employees", "income", "INTEGER"));
+        employeesTable.columns.add(createColumnDto("employees", "department_id", "INTEGER"));
+
+        TableDto departmentsTable = new TableDto();
+        departmentsTable.name = "Departments";
+        departmentsTable.columns.add(createColumnDto("departments", "id", "INTEGER"));
+        departmentsTable.columns.add(createColumnDto("departments", "name", "VARCHAR"));
+        departmentsTable.columns.add(createColumnDto("departments", "location_id", "INTEGER"));
+
+        TableDto locationsTable = new TableDto();
+        locationsTable.name = "Locations";
+        locationsTable.columns.add(createColumnDto("locations", "id", "INTEGER"));
+        locationsTable.columns.add(createColumnDto("locations", "city", "VARCHAR"));
+
+        DbInfoDto schema = new DbInfoDto();
+        schema.tables.add(employeesTable);
+        schema.tables.add(departmentsTable);
+        schema.tables.add(locationsTable);
+
+        return schema;
+    }
+
+
+    @Test
+    public void testTranslateInsertionDtos() {
+
+        List<InsertionDto> insertionDtos = sql().insertInto("employees", 1L)
+                .d("id", "1")
+                .d("name", "John")
+                .d("income", "50000")
+                .d("department_id", "2")
+                .and()
+                .insertInto("employees", 2L)
+                .d("id", "2")
+                .d("name", "Jack")
+                .d("income", "40000")
+                .d("department_id", "2")
+                .and()
+                .insertInto("departments", 3L)
+                .d("id", "2")
+                .d("name", "Sales")
+                .d("location_id", null)
+                .dtos();
+
+        DbInfoDto schema = createSchema();
+
+        Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
+        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("income"),
+                new SqlColumnId("department_id"))));
+
+        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("location_id"))));
+
+        QueryResultSet queryResultSet = QueryResultTransformer.translateInsertionDtos(insertionDtos,columns, schema);
+        QueryResult employees = queryResultSet.getQueryResultForNamedTable("employees");
+        assertEquals(2, employees.seeRows().size());
+
+        assertEquals(1, employees.seeRows().get(0).getValueByName("id"));
+        assertEquals("John", employees.seeRows().get(0).getValueByName("name"));
+        assertEquals(50_000, employees.seeRows().get(0).getValueByName("income"));
+        assertEquals(2, employees.seeRows().get(0).getValueByName("department_id"));
+
+        assertEquals(2, employees.seeRows().get(1).getValueByName("id"));
+        assertEquals("Jack", employees.seeRows().get(1).getValueByName("name"));
+        assertEquals(40_000, employees.seeRows().get(1).getValueByName("income"));
+        assertEquals(2, employees.seeRows().get(1).getValueByName("department_id"));
+
+        QueryResult departments = queryResultSet.getQueryResultForNamedTable("departments");
+        assertEquals(1, departments.seeRows().size());
+        assertEquals(2, departments.seeRows().get(0).getValueByName("id"));
+        assertEquals("Sales", departments.seeRows().get(0).getValueByName("name"));
+        assertEquals(null, departments.seeRows().get(0).getValueByName("location_id"));
+    }
+
+    @Test
+    public void testTranslateInsertionDtosNoInsertions() {
+
+        List<InsertionDto> insertionDtos = Collections.emptyList();
+
+        DbInfoDto schema = createSchema();
+
+        Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
+        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("income"),
+                new SqlColumnId("department_id"))));
+
+        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("location_id"))));
+
+        QueryResultSet queryResultSet = QueryResultTransformer.translateInsertionDtos(insertionDtos,columns, schema);
+        QueryResult employees = queryResultSet.getQueryResultForNamedTable("employees");
+        assertEquals(4, employees.seeVariableDescriptors().size());
+        assertEquals(0, employees.seeRows().size());
+
+        QueryResult departments = queryResultSet.getQueryResultForNamedTable("departments");
+        assertEquals(3, departments.seeVariableDescriptors().size());
+        assertEquals(0, departments.seeRows().size());
+    }
+
+    @Test
+    public void testFillWithNull() {
+
+        List<InsertionDto> insertionDtos = sql().insertInto("employees", 1L)
+                .d("id", "1")
+                .d("name", "John")
+                .d("income", "50000")
+                .and()
+                .insertInto("employees", 2L)
+                .d("id", "2")
+                .d("name", "Jack")
+                .d("department_id", "2")
+                .and()
+                .insertInto("departments", 3L)
+                .d("id", "2")
+                .d("name", "Sales")
+                .dtos();
+
+        DbInfoDto schema = createSchema();
+
+        Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
+        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("income"),
+                new SqlColumnId("department_id"))));
+
+        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+                new SqlColumnId("id"),
+                new SqlColumnId("name"),
+                new SqlColumnId("location_id"))));
+
+        QueryResultSet queryResultSet = QueryResultTransformer.translateInsertionDtos(insertionDtos,columns, schema);
+        QueryResult employees = queryResultSet.getQueryResultForNamedTable("employees");
+        assertEquals(2, employees.seeRows().size());
+
+        assertEquals(1, employees.seeRows().get(0).getValueByName("id"));
+        assertEquals("John", employees.seeRows().get(0).getValueByName("name"));
+        assertEquals(50_000, employees.seeRows().get(0).getValueByName("income"));
+        assertEquals(null, employees.seeRows().get(0).getValueByName("department_id"));
+
+        assertEquals(2, employees.seeRows().get(1).getValueByName("id"));
+        assertEquals("Jack", employees.seeRows().get(1).getValueByName("name"));
+        assertEquals(null, employees.seeRows().get(1).getValueByName("income"));
+        assertEquals(2, employees.seeRows().get(1).getValueByName("department_id"));
+
+        QueryResult departments = queryResultSet.getQueryResultForNamedTable("departments");
+        assertEquals(1, departments.seeRows().size());
+        assertEquals(2, departments.seeRows().get(0).getValueByName("id"));
+        assertEquals("Sales", departments.seeRows().get(0).getValueByName("name"));
+        assertEquals(null, departments.seeRows().get(0).getValueByName("location_id"));
+    }
+
 }

@@ -1,12 +1,12 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.existenceleakage
 
 import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.ExistenceLeakageController
-import com.foo.rest.examples.spring.openapi.v3.security.forbiddendelete.SecurityForbiddenDeleteController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -46,7 +46,7 @@ class SecurityExistenceLeakageEMTest : SpringTestBase(){
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
-            assertEquals(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, faults.first())
+            assertEquals(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, faults.first())
         }
     }
 }

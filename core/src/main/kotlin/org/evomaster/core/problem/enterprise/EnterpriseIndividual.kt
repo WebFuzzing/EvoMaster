@@ -52,7 +52,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0),
 ) : Individual(
     trackOperator,
     index,
@@ -74,11 +74,12 @@ abstract class EnterpriseIndividual(
             sizeMongo: Int,
             sizeDNS: Int,
             sizeScheduleTasks: Int,
+            sizeCleanUp: Int,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain){
+            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
@@ -94,6 +95,9 @@ abstract class EnterpriseIndividual(
             }
             if(sizeMain < 0){
                 throw IllegalArgumentException("Negative size for sizeMain: $sizeMain")
+            }
+            if(sizeCleanUp < 0){
+                throw IllegalArgumentException("Negative size for sizeCleanUp: $sizeCleanUp")
             }
 
             /*
@@ -127,11 +131,16 @@ abstract class EnterpriseIndividual(
             )
 
             val initSize = sizeSQL+sizeMongo+sizeDNS+sizeScheduleTasks
+            val startIndexMain = initSize
+            val endIndexMain =  initSize + sizeMain - 1
 
             val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is EnvironmentAction },
-                if(sizeMain == 0) -1 else initSize, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
+                if(sizeMain == 0) -1 else startIndexMain, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main))
+            val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
+                if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
+
+            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main, cleanup))
         }
     }
 
@@ -180,6 +189,15 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
+        /*
+            FIXME There is some major bugs in Gene regarding
+            copyValueFrom() and setFromDifferentGene()
+            until fixed, this check will fail.
+            but the fix will require some major refactoring and testing... it will take time
+            TODO put back once fixed
+         */
+        //verifyValidity()
+
         return issues
     }
 
@@ -218,6 +236,11 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
             ActionFilter.ONLY_SCHEDULE_TASK -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
         }
+    }
+
+
+    fun seeCleanUpActions() : List<ActionComponent>{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.CLEANUP) as List<ActionComponent>
     }
 
     fun seeMainActionComponents() : List<ActionComponent>{
@@ -310,7 +333,8 @@ abstract class EnterpriseIndividual(
             if (log.isTraceEnabled)
                 log.trace("invoke GeneUtils.repairBrokenDbActionsList")
             val previous = sqlInitialization.toMutableList()
-            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
+            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
             resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
         }
@@ -399,6 +423,10 @@ abstract class EnterpriseIndividual(
         }
     }
 
+    fun addCleanUpAction(action: ActionComponent){
+        addChildToGroup(action, GroupsOfChildren.CLEANUP)
+    }
+
     private fun resetInitializingActions(actions: List<SqlAction>){
         killChildren { it is SqlAction }
         // TODO: Can be merged with DbAction later
@@ -428,5 +456,24 @@ abstract class EnterpriseIndividual(
 
     override fun seeTopGenes(filter: ActionFilter): List<Gene> {
         return seeActions(filter).flatMap { it.seeTopGenes() }
+    }
+
+
+    fun removeAllCleanUp(){
+        killAllInGroup(GroupsOfChildren.CLEANUP)
+    }
+
+    /**
+     * Initialize dynamically added cleanup actions.
+     * Recompute everything for whole individual might not be feasible,
+     * as usually this is needed in the middle of a fitness evaluation
+     */
+    fun initializeCleanUpActions(){
+
+        handleLocalIdsForAddition(seeCleanUpActions())
+
+        // TODO need to handle global initialization.
+        // this is just a temporary solution, would need to call full doGlobalInitialize(), but that
+        // needs refactoring to be applied to subset of actions.
     }
 }

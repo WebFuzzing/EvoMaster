@@ -162,6 +162,7 @@ abstract class ApiWsStructureMutator : StructureMutator() {
         addInitializingSqlActions(individual, mutatedGenes, sampler)
         addInitializingMongoDbActions(individual, mutatedGenes, sampler)
         addInitializingHostnameResolutionActions(individual, mutatedGenes, sampler)
+        // TODO if we handle schedule actions with structure mutator
     }
 
     private fun <T: ApiWsIndividual> addInitializingMongoDbActions(

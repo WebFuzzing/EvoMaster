@@ -1,14 +1,13 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -100,8 +99,28 @@ class UrlHttpGene(
                 && path.containsSameValueAs(other.path)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return false
+    }
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * If the provided string is a valid, URL method will return
+     * true, otherwise false.
+     */
+    override fun setValueBasedOn(value: String): Boolean {
+        return try {
+            val url = URL(value)
+            scheme.setValueBasedOn(url.protocol)
+            host.setValueBasedOn(url.host)
+            port.setValueBasedOn(url.port.toString())
+            // This to make the String similar to what is expected in ArrayGene
+            val pathValues = url.path.drop(1).replace("/", ",")
+            path.setValueBasedOn(pathValues)
+            true
+        } catch (e: java.lang.Exception) {
+            false
+        }
     }
 
     override fun customShouldApplyShallowMutation(

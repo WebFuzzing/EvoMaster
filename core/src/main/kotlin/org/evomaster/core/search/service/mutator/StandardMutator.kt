@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
@@ -13,17 +14,18 @@ import org.evomaster.core.problem.api.param.UpdateForParam
 import org.evomaster.core.problem.externalservice.rpc.RPCExternalServiceAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.graphql.GraphQLUtils
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
@@ -42,6 +44,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
     }
+
+    @Inject
+    protected lateinit var sampler : Sampler<T>
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
         if(!config.enableStructureMutation)
@@ -177,6 +182,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return toMutate
     }
 
+    private fun mutationPostProcessing(individual: T) {
+        sampler
+    }
+
+
     private fun mutationPreProcessing(individual: T) {
 
         val applyEvolve = config.taintAnalysisForMapsAndArrays
@@ -285,6 +295,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 )
 
         }
+
+        mutationPostProcessing(copy)
 
         if (config.trackingEnabled()) tag(copy, time.evaluatedIndividuals)
         return copy

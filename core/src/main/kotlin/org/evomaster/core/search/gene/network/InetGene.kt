@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.network
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -12,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
 
 class InetGene(
         name: String,
@@ -48,12 +48,12 @@ class InetGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is InetGene -> {
                 var result = true
                 repeat(octets.size) {
-                    result = result && octets[it].bindValueBasedOn(gene.octets[it])
+                    result = result && octets[it].setValueBasedOn(gene.octets[it])
                 }
                 result
             }
@@ -61,6 +61,26 @@ class InetGene(
                 LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
                 false
             }
+        }
+    }
+
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * Set value from a string of [InetAddress].
+     * If the string is valid, returns true, otherwise false.
+     */
+    override fun setValueBasedOn(value: String): Boolean {
+        return try {
+            val address = value.split(".")
+            if (address.size != INET_SIZE) return false
+            var result = true
+            address.forEachIndexed { i, v ->
+                result = result && octets[i].setValueBasedOn(v.toInt().toString())
+            }
+            result
+        } catch (e: Exception) {
+            false
         }
     }
 

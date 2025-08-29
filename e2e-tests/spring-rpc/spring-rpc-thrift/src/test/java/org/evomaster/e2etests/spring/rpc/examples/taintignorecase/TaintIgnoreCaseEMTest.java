@@ -1,10 +1,7 @@
 package org.evomaster.e2etests.spring.rpc.examples.taintignorecase;
 
-import com.foo.rpc.examples.spring.taint.TaintService;
 import com.foo.rpc.examples.spring.taintignorecase.TaintIgnoreCaseController;
 import com.foo.rpc.examples.spring.taintignorecase.TaintIgnoreCaseService;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rpc.RPCCallResultCategory;
 import org.evomaster.core.problem.rpc.RPCIndividual;
 import org.evomaster.core.search.Solution;

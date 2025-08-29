@@ -34,4 +34,19 @@ public class SqlStringUtils {
         return input.startsWith(str) && input.endsWith(str);
     }
 
- }
+    /**
+     * Compares two strings for equality, ignoring case considerations, and safely handles null values.
+     *
+     * @param a the first string to compare, may be null
+     * @param b the second string to compare, may be null
+     * @return {@code true} if both strings are equal ignoring case, or both are null;
+     *         {@code false} otherwise
+     */
+    public static boolean nullSafeEqualsIgnoreCase(String a, String b){
+        if (a==null) {
+            return b==null;
+        } else {
+            return a.equalsIgnoreCase(b);
+        }
+    }
+}

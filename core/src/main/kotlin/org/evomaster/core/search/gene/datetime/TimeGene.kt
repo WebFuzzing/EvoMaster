@@ -4,7 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -207,16 +207,16 @@ class TimeGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         return when {
             gene is TimeGene -> {
-                hour.bindValueBasedOn(gene.hour) &&
-                        second.bindValueBasedOn(gene.minute) &&
-                        minute.bindValueBasedOn(gene.second)
+                hour.setValueBasedOn(gene.hour) &&
+                        second.setValueBasedOn(gene.minute) &&
+                        minute.setValueBasedOn(gene.second)
             }
-            gene is DateTimeGene -> bindValueBasedOn(gene.time)
-            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()  as Gene)
+            gene is DateTimeGene -> setValueBasedOn(gene.time)
+            gene is StringGene && gene.getSpecializationGene() != null -> setValueBasedOn(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype()  as Gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false

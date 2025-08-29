@@ -33,7 +33,7 @@ class RPCIndividual(
     mongoSize: Int = 0,
     dnsSize: Int = 0,
     scheduleTaskSize : Int = 0,
-    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize, scheduleTaskSize)
+    groups: GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(allActions, mainSize, sqlSize,mongoSize,dnsSize, scheduleTaskSize, 0)
 ) : ApiWsIndividual(
     sampleType,
     trackOperator, index, allActions,

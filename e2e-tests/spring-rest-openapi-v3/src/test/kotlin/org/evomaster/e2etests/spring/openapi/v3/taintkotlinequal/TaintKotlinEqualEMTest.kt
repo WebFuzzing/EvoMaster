@@ -1,10 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.taintkotlinequal
 
 import com.foo.rest.examples.spring.openapi.v3.taintkotlinequal.TaintKotlinEqualController
-import org.evomaster.client.java.controller.InstrumentedSutStarter
-import org.evomaster.client.java.instrumentation.InputProperties
-import org.evomaster.client.java.instrumentation.InstrumentingAgent
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll

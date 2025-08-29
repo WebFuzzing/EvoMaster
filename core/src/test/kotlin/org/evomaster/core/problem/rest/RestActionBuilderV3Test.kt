@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.PathParam
@@ -22,8 +25,8 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -1995,7 +1998,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.setValueBasedOn(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2014,7 +2017,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.setValueBasedOn(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2077,4 +2080,21 @@ class RestActionBuilderV3Test{
         assertTrue(get.produces.any { it.contains("xml") })
         assertEquals(1, get.parameters.size)
     }
+
+    @Test
+    fun testPathItem(){
+        val map = loadAndAssertActions(
+            "/swagger/artificial/ref/pathitem.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val certain = map.values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("FOO", output)
+    }
+
 }

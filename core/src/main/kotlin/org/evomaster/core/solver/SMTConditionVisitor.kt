@@ -31,7 +31,7 @@ class SMTConditionVisitor(
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${columnName.uppercase(Locale.getDefault())} ${tableName.lowercase(Locale.getDefault())}$rowIndex)"
+        return "(${columnName.uppercase()} ${tableName.lowercase()}$rowIndex)"
     }
 
     /**
@@ -149,7 +149,11 @@ class SMTConditionVisitor(
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))
             }
-        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        return if (conditions.size == 1) {
+            conditions[0]
+        } else {
+            AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        }
     }
 
     private fun asLiteral(expression: SqlCondition?): String {

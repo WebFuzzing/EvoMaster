@@ -1,13 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.logintoken
 
 import com.foo.rest.examples.spring.openapi.v3.logintoken.LoginTokenController
-import org.evomaster.core.output.Termination
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.util.*
 
 class LoginTokenEMTest : SpringTestBase(){
 

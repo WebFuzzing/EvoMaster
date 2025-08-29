@@ -1,0 +1,12 @@
+auth:
+  - name: "logintokenheader"
+    loginEndpointAuth:
+      endpoint: "/api/logintokenheader/login"
+      verb: POST
+      headers:
+        - name: "Authorization"
+          value: "foo 123"
+      token:
+        headerPrefix: "Bearer "
+        extractFromField: "/token/authToken"
+        httpHeaderName: "Authorization"

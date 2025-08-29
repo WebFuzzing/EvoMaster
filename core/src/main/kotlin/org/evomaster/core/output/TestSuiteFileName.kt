@@ -17,7 +17,7 @@ class TestSuiteFileName(
         return name.substring(0, name.lastIndexOf('.'))
     }
 
-    fun hasPackage() = ! getPackage().isBlank()
+    fun hasPackage() = getPackage().isNotBlank()
 
 
     fun getClassName(): String{

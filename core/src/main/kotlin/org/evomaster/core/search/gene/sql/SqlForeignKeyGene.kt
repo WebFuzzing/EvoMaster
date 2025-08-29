@@ -230,7 +230,7 @@ class SqlForeignKeyGene(
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }

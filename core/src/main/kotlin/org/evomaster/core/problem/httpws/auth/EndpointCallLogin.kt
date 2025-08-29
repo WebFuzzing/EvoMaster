@@ -1,11 +1,12 @@
 package org.evomaster.core.problem.httpws.auth
 
-import org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto
-import org.evomaster.client.java.controller.api.dto.auth.PayloadUsernamePasswordDto
-import org.evomaster.client.java.controller.api.dto.auth.TokenHandlingDto
+import com.webfuzzing.commons.auth.LoginEndpoint
+import com.webfuzzing.commons.auth.PayloadUsernamePassword
+import org.apache.http.client.utils.URIBuilder
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.ContentType
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.config.ConfigProblemException
+import org.evomaster.core.problem.rest.data.ContentType
+import org.evomaster.core.problem.rest.data.HttpVerb
 import java.net.MalformedURLException
 import java.net.URL
 import java.net.URLEncoder
@@ -30,11 +31,11 @@ class EndpointCallLogin(
     val externalEndpointURL: String?,
 
     /**
-     * The raw payload to send, as a string
-     *
-     * TODO should this be nullable? eg, what about case of login based on GET with query params?
+     * The raw payload to send, as a string, if any
      */
-    val payload: String,
+    val payload: String?,
+
+    val headers: List<AuthenticationHeader>,
 
     /**
      * The verb used to connect to the login endpoint.
@@ -46,7 +47,7 @@ class EndpointCallLogin(
      * Specify the format in which the payload is sent to the login endpoint.
      * A common example is "application/json"
      */
-    val contentType: ContentType,
+    val contentType: ContentType?,
 
     val token: TokenHandling? = null
 ) {
@@ -74,33 +75,65 @@ class EndpointCallLogin(
                 throw IllegalArgumentException("'externalEndpointURL' is not a valid URL: ${e.message}")
             }
         }
-        if (payload.isEmpty()) {
-            throw IllegalArgumentException("Empty payload")
+        if( (payload != null && contentType==null) || (payload==null && contentType!=null)) {
+            throw IllegalArgumentException("Payload and contentType must be both specified, or none specified")
         }
     }
 
     companion object {
-        fun fromDto(name: String, dto: LoginEndpointDto) = EndpointCallLogin(
+        fun fromDto(name: String, dto: LoginEndpoint, externalEndpointURL: String? = null) = EndpointCallLogin(
             name = name,
             endpoint = dto.endpoint,
-            externalEndpointURL = dto.externalEndpointURL,
-            payload = dto.payloadRaw ?: computePayload(
-                dto.payloadUserPwd ?: throw IllegalArgumentException("Must specify a payload for auth info"),
-                ContentType.from(dto.contentType)
-            ),
+            externalEndpointURL = if(externalEndpointURL != null){
+                if(externalEndpointURL.startsWith("http")){
+                    externalEndpointURL
+                } else if(dto.externalEndpointURL == null){
+                    /*
+                        if we are doing a partial replacement with hostname:port, but there is no
+                        origin URL, then there is nothing to do.
+                     */
+                    null
+                } else {
+                    val tokens = externalEndpointURL.split(":")
+                    if(tokens.size != 2){
+                        throw ConfigProblemException("Invalid hostname:port pair -> $externalEndpointURL")
+                    }
+                    val hostname = tokens[0]
+                    val port = try{
+                        tokens[1].toInt()
+                    } catch (e: NumberFormatException){
+                        throw ConfigProblemException("Invalid port number in hostname:port pair " +
+                                "-> $externalEndpointURL -> ${e.message}")
+                    }
+
+                    val builder = try{
+                        URIBuilder(dto.externalEndpointURL)
+                    } catch (e: MalformedURLException){
+                        throw ConfigProblemException("Invalid dto.externalEndpointURL -> ${e.message}")
+                    }
+                    builder.setHost(hostname)
+                    builder.setPort(port)
+                    builder.build().toString()
+                }
+            } else {
+                dto.externalEndpointURL
+            },
+            payload = dto.payloadRaw ?:
+                dto.payloadUserPwd?.let { computePayload(it, ContentType.from(dto.contentType)) },
+            headers = dto.headers?.map { AuthenticationHeader(it.name, it.value) } ?: emptyList(),
             verb = HttpVerb.valueOf(dto.verb.toString()),
-            contentType = ContentType.from(dto.contentType),
+            contentType = dto.contentType?.let { ContentType.from(it)},
             token = if (dto.expectCookies!=null && dto.expectCookies) null else computeTokenHandling(dto.token)
         )
 
-        private fun computeTokenHandling(dto: TokenHandlingDto) = TokenHandling(
+        private fun computeTokenHandling(dto: com.webfuzzing.commons.auth.TokenHandling) = TokenHandling(
             extractFromField = dto.extractFromField,
             httpHeaderName = dto.httpHeaderName,
             headerPrefix = dto.headerPrefix
         )
 
 
-        private fun computePayload(dto: PayloadUsernamePasswordDto, contentType: ContentType): String {
+        private fun computePayload(dto: PayloadUsernamePassword, contentType: ContentType): String {
 
             return when (contentType) {
                 ContentType.X_WWW_FORM_URLENCODED ->

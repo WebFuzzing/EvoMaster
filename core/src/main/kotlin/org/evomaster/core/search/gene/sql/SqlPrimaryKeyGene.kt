@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -27,7 +28,7 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
+) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     @Deprecated("Rather use the one forcing TableId")
     constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
@@ -116,7 +117,7 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing
         return true
     }
@@ -130,4 +131,15 @@ class SqlPrimaryKeyGene(name: String,
         return false
     }
 
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
+    }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
+    }
 }

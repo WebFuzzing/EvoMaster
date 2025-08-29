@@ -58,7 +58,7 @@ public class FakeSutController extends EmbeddedSutController {
     public List<AuthenticationDto> getInfoForAuthentication() {
         return Arrays.asList(
                 new AuthenticationDto(){{
-                    name = "local";
+                    setName("local");
                     localAuthSetup = new LocalAuthenticationDto(){{
                         authenticationInfo = "local_foo";
                     }};

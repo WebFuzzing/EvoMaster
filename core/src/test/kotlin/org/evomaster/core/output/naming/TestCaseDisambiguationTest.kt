@@ -10,7 +10,7 @@ import org.evomaster.core.output.naming.RestActionTestCaseUtils.getPathParam
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getRestCallAction
 import org.evomaster.core.output.naming.RestActionTestCaseUtils.getStringQueryParam
 import org.evomaster.core.output.naming.rest.RestActionTestCaseNamingStrategy
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -286,6 +286,37 @@ class TestCaseDisambiguationTest {
         assertEquals(2, testCases.size)
         assertEquals("test_0_getOnLanguagesReturnsEmpty", testCases[0].name)
         assertEquals("test_1_getOnLanguagesWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun noDisambiguationWhenMoreThanOneIndividualAtRootLevel() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/"))
+        val emptyStringIndividual = getEvaluatedIndividualWith(getRestCallAction("/"))
+
+        val solution = Solution(mutableListOf(simpleIndividual, emptyStringIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val testCases = namingStrategy.getTestCases()
+
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnRootReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnRootReturnsEmpty", testCases[1].name)
+    }
+
+    @Test
+    fun onlyQueryParamsDisambiguationWhenBothInRootPath() {
+        val simpleIndividual = getEvaluatedIndividualWith(getRestCallAction("/"))
+        val emptyQPIndividual = getEvaluatedIndividualWith(getRestCallAction("/", parameters = mutableListOf(getStringQueryParam("name", false))))
+        ensureGeneValue(emptyQPIndividual, "name", "")
+
+        val solution = Solution(mutableListOf(simpleIndividual, emptyQPIndividual), "suitePrefix", "suiteSuffix", Termination.NONE, emptyList(), emptyList())
+
+        val namingStrategy = RestActionTestCaseNamingStrategy(solution, javaFormatter, QUERY_PARAMS_IN_NAME, MAX_NAME_LENGTH)
+        val testCases = namingStrategy.getTestCases()
+
+        assertEquals(2, testCases.size)
+        assertEquals("test_0_getOnRootReturnsEmpty", testCases[0].name)
+        assertEquals("test_1_getOnRootWithQueryParamEmptyNameReturnsEmpty", testCases[1].name)
     }
 
 }

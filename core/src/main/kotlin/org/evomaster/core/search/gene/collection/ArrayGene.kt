@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -270,7 +271,7 @@ class ArrayGene<T>(
 
         TODO might bind based on value instead of replacing them
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun setValueBasedOn(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
@@ -292,6 +293,47 @@ class ArrayGene<T>(
             log,
             "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
         )
+        return false
+    }
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * To set the Array children from a String.
+     * Use [template] to create child [Gene].
+     * Use comma (,) separated elements with a space in front of the values as String.
+     */
+    override fun setValueBasedOn(value: String): Boolean {
+        val elements = value
+            .removePrefix(openingTag)
+            .removeSuffix(closingTag)
+            .split(separatorTag)
+            .map { it.trim() }
+        if (elements.isNotEmpty()) {
+            killAllChildren()
+            when(template) {
+                is StringGene -> {
+                    addChildren(
+                        elements.map {
+                            StringGene(name, it)
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                is BooleanGene -> {
+                    addChildren(
+                        elements.map {
+                            BooleanGene(name, it.toBoolean())
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                else -> {
+                    // TODO: Handle other types
+                    log.warn("${template::class.java.simpleName} type is not supported in ArrayGene yet.")
+                }
+            }
+            return true
+        }
         return false
     }
 

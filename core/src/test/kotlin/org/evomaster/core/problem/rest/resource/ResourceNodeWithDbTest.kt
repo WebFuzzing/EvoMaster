@@ -7,7 +7,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecutor
 import org.evomaster.core.sql.SqlInsertBuilder
-import org.evomaster.core.problem.rest.RestActionBuilderV3
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.resource.dependency.BodyParamRelatedToTable
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionFilter

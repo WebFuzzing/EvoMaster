@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.webfrontend.service
 
-import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter

@@ -31,7 +31,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         return schemaDto;
     }
 
-    private final Map<String, Set<String>> selectWhereXofFoo = new HashMap<String, Set<String>>(){{put("Foo", Collections.singleton("x"));}};
+    private final Map<SqlTableId, Set<SqlColumnId>> selectWhereXofFoo = new HashMap<SqlTableId, Set<SqlColumnId>>(){{put(new SqlTableId("Foo"), Collections.singleton(new SqlColumnId("x")));}};
 
 
     @Test
@@ -56,7 +56,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
     private void checkIncreasingTillCovered(String name,
                                             List<Object> values,
                                             List<InsertionDto> insertionDtos,
-                                            Map<String, Set<String>> columns,
+                                            Map<SqlTableId, Set<SqlColumnId>> columns,
                                             DbInfoDto dto,
                                             String sql) {
 

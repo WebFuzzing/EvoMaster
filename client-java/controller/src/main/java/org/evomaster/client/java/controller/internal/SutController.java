@@ -149,6 +149,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private int actionIndex = -1;
 
     /**
+     * possible quotation marks used in SQL commands
+     */
+    private final List<String> possibleQuotationMarksInDb = Arrays.asList("\"","'","`");
+
+    /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
      * port and host.
@@ -237,6 +242,20 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.controllerHost = controllerHost;
     }
 
+
+    /**
+     * Function used to derived params from the other values in the same object.
+     * @param paramName the name of the parameter we need to derive
+     * @param jsonObject JSON representation of full object evolved in EM. You might need just a subset to derive needed param
+     * @param endpointPath the path of endpoint for this object, in case need to distinguish between same params in different endpoints
+     * @return a string representation of derived value for paramName
+     * @throws Exception
+     */
+    public String deriveObjectParameterData(String paramName, String jsonObject, String endpointPath) throws Exception{
+        throw new IllegalStateException("You must override deriveObjectParameterData method if you use derived param data");
+    }
+
+
     @Override
     public InsertionResultsDto execInsertionsIntoDatabase(List<InsertionDto> insertions, InsertionResultsDto... previous) {
 
@@ -279,7 +298,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             boolean advancedHeuristics){
         sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
-        sqlHandler.setAdvancedHeuristics(advancedHeuristics);
+        sqlHandler.setCompleteSqlHeuristics(advancedHeuristics);
     }
 
 
@@ -455,6 +474,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      * handle specified init sql script after SUT is started.
      */
     public final void registerOrExecuteInitSqlCommandsIfNeeded()  {
+        /*
+            extract SQL database schema and constraints
+            such info will be used in re-adding init data after smart db cleaner
+         */
+        extractSqlDbSchemaAndConstraints();
         registerOrExecuteInitSqlCommandsIfNeeded(false);
     }
 
@@ -506,6 +530,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
                     }
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+                    }else
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
@@ -517,12 +545,26 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    private boolean isSameTable(String tableA, String tableB) {
+        if (tableA.equalsIgnoreCase(tableB)) return true;
+        for (String qm : possibleQuotationMarksInDb){
+            if (wrapWithQuotationMarks(tableA, qm).equalsIgnoreCase(tableB)) return true;
+            if (wrapWithQuotationMarks(tableB, qm).equalsIgnoreCase(tableA)) return true;
+        }
+        return false;
+    }
+
+    private String wrapWithQuotationMarks(String wrap, String mark) {
+        return String.format("%s%s%s", mark, wrap, mark);
+    }
+
+
     private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
         if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
             tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> t.equalsIgnoreCase(a)).forEach(t->{
+                tableInitSqlMap.keySet().stream().filter(t-> isSameTable(t, a)).forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
@@ -668,8 +710,32 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             return schemaDto;
         }
 
+        boolean success = extractSqlDbSchemaAndConstraints();
+        if (!success) return null;
+
+        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
+        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
+        if( extra != null && !extra.isEmpty()) {
+            schemaDto.extraConstraintDtos = new ArrayList<>();
+            schemaDto.extraConstraintDtos.addAll(extra);
+        }
+
+        return schemaDto;
+    }
+
+    /**
+     * @return if the extraction of SQL schema and constraints with the given DbSpecification has been proceeded successfully
+     * Note that such extraction is only performed once. if the extraction has been performed, it returns false.
+     */
+    public final boolean extractSqlDbSchemaAndConstraints(){
+
+        if (schemaDto != null) {
+            SimpleLogger.info("Sql Database Schema and Constraints have been extracted and built.");
+            return false;
+        }
+
         if (getDbSpecifications() == null || getDbSpecifications().isEmpty()) {
-            return null;
+            return false;
         }
 
         try {
@@ -678,7 +744,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             schemaDto.employSmartDbClean = doEmploySmartDbClean();
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage(), e);
-            return null;
+            return false;
         }
 
         if (fkMap.isEmpty()){
@@ -692,14 +758,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             });
         }
 
-        UnitsInfoDto unitsInfoDto = getUnitsInfoDto();
-        List<ExtraConstraintsDto> extra = unitsInfoDto.extraDatabaseConstraintsDtos;
-        if( extra != null && !extra.isEmpty()) {
-            schemaDto.extraConstraintDtos = new ArrayList<>();
-            schemaDto.extraConstraintDtos.addAll(extra);
-        }
-
-        return schemaDto;
+        return true;
     }
 
     /**
@@ -941,6 +1000,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         this.actionIndex = dto.index;
 
         resetExtraHeuristics();
+
+        newScheduleActionSpecificHandler(dto);
     }
 
     public final void executeHandleLocalAuthenticationSetup(RPCActionDto dto, ActionResponseDto responseDto){
@@ -959,8 +1020,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 newScheduleAction(dto, queryFromDatabase);
                 invokeScheduleTask(dto, responseDto);
             }catch (Exception e){
-                // now we execute all schedule tasks
-                SimpleLogger.warn(e.getMessage());
+                // we stop executing the following schedule task
+                throw new RuntimeException(e);
             }
         }
         assert dtos.size() == responseDto.results.size();
@@ -1195,6 +1256,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void newActionSpecificHandler(ActionDto dto);
 
+    public abstract void newScheduleActionSpecificHandler(ScheduleTaskInvocationDto dto);
 
     /**
      * Check if bytecode instrumentation is on.
@@ -1257,7 +1319,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      *
      * <p>
      * What type of info to provide here depends on the auth mechanism, e.g.,
-     * Basic or cookie-based (using {@link org.evomaster.client.java.controller.api.dto.auth.LoginEndpointDto}).
+     * Basic or cookie-based (using LoginEndpoint).
      * To simplify the creation of these DTOs with auth info, you can look
      * at {@link org.evomaster.client.java.controller.AuthUtils}.
      * </p>

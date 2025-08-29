@@ -2,14 +2,13 @@ package org.evomaster.core.output
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.naming.TestCaseNamingStrategy
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.sorting.SortingStrategy
 import org.evomaster.core.problem.graphql.GraphQLAction
 import org.evomaster.core.problem.graphql.GraphQLIndividual
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rpc.RPCCallAction
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.webfrontend.WebIndividual
@@ -32,7 +31,6 @@ import kotlin.reflect.KFunction1
 class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
-    private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
 
@@ -41,12 +39,6 @@ class TestSuiteOrganizer {
         //TODO here in the future we will have something a bit smarter
         return sortingHelper.sort(solution, namingStrategy, testCaseSortingStrategy)
     }
-
-//    fun setPartialOracles(partialOracles: PartialOracles){
-//        this.partialOracles = partialOracles
-//        namingHelper.setPartialOracles(partialOracles)
-//    }
-
 }
 
 class NamingHelper {

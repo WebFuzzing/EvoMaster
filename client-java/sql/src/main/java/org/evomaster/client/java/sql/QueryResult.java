@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
+
 
 /**
  * The results of a SQL Select query, in a easy to parse/manipulate data structure
@@ -25,8 +27,6 @@ public class QueryResult {
         Objects.requireNonNull(variableDescriptorList);
         variableDescriptors.addAll(variableDescriptorList);
     }
-
-
 
     /**
      * WARNING: Constructor only needed for testing
@@ -120,7 +120,7 @@ public class QueryResult {
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor a = variableDescriptors.get(i);
             String b = columnNames.get(i);
-            if (!a.getColumnName().equalsIgnoreCase(b) && a.getTableName().equalsIgnoreCase(tableName)) {
+            if (!nullSafeEqualsIgnoreCase(a.getColumnName(),b) && nullSafeEqualsIgnoreCase(a.getTableName(),tableName)) {
                 return false;
             }
         }
