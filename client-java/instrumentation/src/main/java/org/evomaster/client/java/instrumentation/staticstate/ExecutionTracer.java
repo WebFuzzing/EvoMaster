@@ -35,6 +35,8 @@ public class ExecutionTracer {
 
     private static boolean executingInitMongo = false;
 
+    private static boolean executingInitRedis = false;
+
     /**
      * indicate whether now it is to execute action during the search
      */
@@ -193,6 +195,10 @@ public class ExecutionTracer {
 
     public static void setExecutingInitMongo(boolean executingInitMongo) {
         ExecutionTracer.executingInitMongo = executingInitMongo;
+    }
+
+    public static void setExecutingInitRedis(boolean executingInitRedis) {
+        ExecutionTracer.executingInitRedis = executingInitRedis;
     }
 
     public static boolean isExecutingAction() {
@@ -425,6 +431,11 @@ public class ExecutionTracer {
 
     public static void addOpenSearchInfo(OpenSearchCommand info) {
         getCurrentAdditionalInfo().addOpenSearchInfo(info);
+    }
+
+    public static void addRedisCommand(RedisCommand info){
+        if (!executingInitRedis)
+            getCurrentAdditionalInfo().addRedisCommand(info);
     }
 
     public static void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
