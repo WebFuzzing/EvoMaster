@@ -21,7 +21,7 @@ class SSRFQueryEMTest: SpringTestBase() {
         }
     }
 
-//    @Disabled
+    @Disabled
     @Test
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
@@ -41,7 +41,7 @@ class SSRFQueryEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
-//            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/query", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/query", "OK")
         }
     }
 }
