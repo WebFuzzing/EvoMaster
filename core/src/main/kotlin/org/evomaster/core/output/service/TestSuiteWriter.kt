@@ -841,7 +841,12 @@ class TestSuiteWriter {
                     }
                 }
                 addStatement("httpCallbackVerifier.start()", lines)
-                // TODO: Add the default stub
+                // TODO: assertion
+                addStatement("httpCallbackVerifier.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
+                addStatement(".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
+                        "            .willReturn(WireMock.aResponse()\n" +
+                        "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
+                        "            .withBody(${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY})\n)", lines)
             }
 
             testCaseWriter.addExtraInitStatement(lines)

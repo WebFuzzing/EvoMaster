@@ -32,9 +32,9 @@ class HttpCallbackVerifier {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
 
-        private const val DEFAULT_RESPONSE_CODE = 418
-        private const val DEFAULT_RESPONSE_BODY = "I'm a teapot"
-        private const val DEFAULT_RESPONSE_PRIORITY = 100
+        const val DEFAULT_RESPONSE_CODE = 418
+        const val DEFAULT_RESPONSE_BODY = "I'm a teapot"
+        const val DEFAULT_RESPONSE_PRIORITY = 100
     }
 
     @PostConstruct
