@@ -8,7 +8,7 @@ import kotlin.math.exp
 /**
  * An online binary classifier for REST API actions using a Generalized Linear Model (logistic regression).
  *
- * This model classifies between HTTP status codes 200 and 400, and updates its weights incrementally.
+ * This model classifies between HTTP status codes 200 and 400, and updates its weight incrementally.
  * It uses stochastic gradient descent (SGD) to learn the parameters.
  *
  * Assumes binary labels:
@@ -17,29 +17,27 @@ import kotlin.math.exp
  *
  * @param dimension the number of features (from input encoding)
  * @param learningRate learning rate for SGD updates
+ * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
 class GLMOnlineClassifier(
     private val learningRate: Double = 0.01
 ) : AIModel {
 
-    private var dimension: Int? = null
-    private var weights: MutableList<Double>? = null
-    private var bias: Double = 0.0
+    var warmup: Int = 10
+    var dimension: Int? = null
+    var weights: MutableList<Double>? = null
+    var bias: Double = 0.0
+    var performance: ClassifierPerformance = ClassifierPerformance(0, 1)
 
-    // classifier state
-    private var cp: Int = 0        // correct predictions
-    private var tot: Int = 1       // total requests
-    private var ac: Double = 0.0   // accuracy ratio
-
-    /** Must be called once to initialize model weights based on dimension */
-    fun setDimension(d: Int) {
-        require(d > 0) { "Dimension must be positive." }
-        dimension = d
-        weights = MutableList(d) { 0.0 }
-        bias = 0.0
-        this.cp = 0
-        this.tot = 0
-        this.ac = 0.0
+    /** Must be called once to initialize the model properties */
+    fun setup(dimension: Int, warmup: Int) {
+        require(dimension > 0) { "Dimension must be positive." }
+        this.dimension = dimension
+        this.weights = MutableList(dimension) { 0.0 }
+        this.bias = 0.0
+        require(warmup > 0 ) { "Warmup must be positive." }
+        this.warmup = warmup
+        this.performance = ClassifierPerformance(0, 1)
     }
 
     fun getModelParams(): List<Double> {
@@ -47,29 +45,24 @@ class GLMOnlineClassifier(
         return weights!!.toList() + bias
     }
 
-    fun getDimension(): Int {
-        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
-        return this.dimension!!
+    fun updatePerformance(predictionIsCorrect: Boolean) {
+        val totalCorrectPredictions = if (predictionIsCorrect) performance.correctPrediction + 1 else performance.correctPrediction
+        val totalSentRequests = performance.totalSentRequests + 1
+        this.performance = ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
     }
-
-    fun setCp(cp: Int) {
-        this.cp = cp
-    }
-    fun setTot(tot: Int){
-        this.tot = tot
-    }
-
-    fun getCorrectPredictions(): Int = cp
-    fun getTotalRequests(): Int = tot
-    fun getAccuracy(): Double = if (tot == 0) 0.0 else cp.toDouble() / tot
 
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val x = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+
+        if (performance.totalSentRequests< warmup) {
+            throw IllegalStateException("Classifier not ready as warmup is not completed.")
+        }
+
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
-        if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
+        if (inputVector.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${inputVector.size}")
 
-        val z = x.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
+        val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prob200 = sigmoid(z)
         val prob400 = 1.0 - prob200
 
@@ -82,32 +75,42 @@ class GLMOnlineClassifier(
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        // Strict accuracy
-        //TODO this accuracy can be dynamic for example based on the last 100 requests
-        if (this.tot == 0) {
-            return 0.0
-        }
-        return this.cp.toDouble() / this.tot
+        return this.performance.accuracy()
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val x = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
-        val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
-        if (x.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${x.size}")
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
+        }
 
-        val y = when (output.getStatusCode()) {
+        /**
+         * Updating classifier performance based on its prediction
+         * The performance getting update only after the warmup procedure
+         */
+        val trueStatusCode = output.getStatusCode()
+        if (this.performance.totalSentRequests <= this.warmup) {
+            updatePerformance(predictionIsCorrect = false)
+        }else{
+            val predicted = classify(input).prediction()
+            updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))
+        }
+
+        /**
+         * Updating model parameters
+         */
+        val y = when (trueStatusCode) {
             200 -> 1.0
             400 -> 0.0
             else -> throw IllegalArgumentException("Unsupported label: only 200 and 400 are handled")
         }
-
-        val z = x.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
+        val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prediction = sigmoid(z)
         val error = prediction - y
 
-        for (i in x.indices) {
-            weights!![i] -= learningRate * error * x[i]
+        for (i in inputVector.indices) {
+            weights!![i] -= learningRate * error * inputVector[i]
         }
         bias -= learningRate * error
     }

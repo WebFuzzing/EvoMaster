@@ -15,6 +15,13 @@ class AIResponseClassification(
                         " But status code ${it.key} has probability value ${it.value}")
             }
         }
+
+        val sum = probabilities.values.sum()
+        if (kotlin.math.abs(sum - 1.0) > 1e-6) {
+            throw IllegalArgumentException(
+                "Probabilities must sum to 1."
+            )
+        }
     }
 
     fun probabilityOf400() : Double{
@@ -23,5 +30,13 @@ class AIResponseClassification(
             return 0.0
         }
         return probabilities[400]!!
+    }
+
+    /**
+     * Returns the status code with the highest probability.
+     * @return the status code (key) with maximum probability
+     */
+    fun prediction(): Int {
+        return probabilities.maxByOrNull { it.value }?.key ?: -1
     }
 }

@@ -31,8 +31,8 @@ class AIGLMCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//            initClass(BasicController())
-            initClass(MultiTypeController())
+            initClass(BasicController())
+//            initClass(MultiTypeController())
         }
 
         @JvmStatic
@@ -103,7 +103,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val name = action.getName()
 
             val hasUnsupportedGene = action.parameters.any { p ->
-                val g = p.gene.getLeafGene()
+                val g = p.primaryGene().getLeafGene()
                 g !is IntegerGene && g !is DoubleGene && g !is BooleanGene && g !is EnumGene<*>
             }
 
@@ -111,7 +111,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 null
             } else {
                 action.parameters.count { p ->
-                    val g = p.gene.getLeafGene()
+                    val g = p.primaryGene().getLeafGene()
                     g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
                 }
             }
@@ -131,7 +131,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 endpointToClassifier[name] = null
             }else{
                 val model = GLMOnlineClassifier()
-                model.setDimension(dimension)
+                model.setup(dimension=dimension, warmup = 10)
                 endpointToClassifier[name] = model
             }
         }
@@ -153,7 +153,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val name = sampledAction.getName()
             val classifier = endpointToClassifier[name]
             val dimension = endpointToDimension[name]
-            val geneValues = sampledAction.parameters.map { it.gene.getValueAsRawString() }
+            val geneValues = sampledAction.parameters.map { it.primaryGene().getValueAsRawString() }
 
             println("*************************************************")
             println("Path         : $name")
@@ -161,7 +161,10 @@ class AIGLMCheck : IntegrationTestRestBase() {
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Genes Size   : ${geneValues.size}")
-            println("cp, tot, ac  : ${classifier?.getCorrectPredictions()}, ${classifier?.getTotalRequests()}, ${classifier?.getAccuracy()}")
+            println("Correct Predictions: ${classifier?.performance?.correctPrediction}")
+            println("Total Requests     : ${classifier?.performance?.totalSentRequests}")
+            println("Accuracy           : ${classifier?.performance?.accuracy()}")
+
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
@@ -175,13 +178,11 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 continue
             }
             // Warmup cold classifiers by at least n request
-            val n = 2
-            val isCold = classifier.getTotalRequests() <= n
+            val isCold = classifier.performance.totalSentRequests<classifier.warmup
             if (isCold) {
-                println("Warmup by at least $n request")
+                println("Warmup by at least ${classifier.warmup} request")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
                 classifier.updateModel(action, result)
-                classifier.setTot(classifier.getTotalRequests() + 1)
                 continue
             }
 
@@ -190,22 +191,17 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val rawEncodedFeatures = InputEncoderUtils.encode(sampledAction).rawEncodedFeatures
             println("Raw encoded features are : ${rawEncodedFeatures.joinToString(", ")}")
             val classification = classifier.classify(action)
-            val p200 = classification.probabilities[200]!!
-            val p400 = classification.probabilities[400]!!
-            require(p200 in 0.0..1.0 && p400 in 0.0..1.0 && abs((p200 + p400) - 1.0) < 1e-6) {
-                "Probabilities must be in [0,1] and sum to 1"
-            }
 
             // Prediction
-            val prediction: Int = if (p200 > p400) 200 else 400
-            println("Prediction is : $prediction")
+            val predictionOfStatusCode = classification.prediction()
+            println("Prediction is : $predictionOfStatusCode")
 
             // Probabilistic decision-making based on Bernoulli(prob = aci)
             val sendOrNot: Boolean
-            if (prediction != 400) {
+            if (predictionOfStatusCode != 400) {
                 sendOrNot = true
             }else{
-                sendOrNot = if(Math.random() > classifier.getAccuracy()) true else false
+                sendOrNot = if(Math.random() > classifier.performance.accuracy()) true else false
             }
 
             // Execute the request and update
@@ -213,10 +209,8 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 val result = executeRestCallAction(action,"$baseUrlOfSut")
                 println("Response     : ${result.getStatusCode()}")
 
-                if (result.getStatusCode()==prediction) {
-                    classifier.setCp(classifier.getCorrectPredictions() + 1)
-                }
-                classifier.setTot(classifier.getTotalRequests() + 1)
+                println("Updating the classifier!")
+                classifier.updateModel(action, result)
 
                 println("Updating the classifier!")
                 classifier.updateModel(action, result)

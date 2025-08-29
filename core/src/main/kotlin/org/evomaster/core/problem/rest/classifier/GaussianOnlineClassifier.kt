@@ -29,69 +29,40 @@ import kotlin.math.exp
  * - The only two supported classes are 200 and 400.
  *
  * @param dimension the fixed dimensionality of the input feature vectors.
+ * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
 class GaussianOnlineClassifier : AIModel {
 
-    private var dimension: Int? = null
-    private var density200: Density? = null
-    private var density400: Density? = null
+    var warmup: Int = 10
+    var dimension: Int? = null
+    var density200: Density? = null
+    var density400: Density? = null
+    var performance: ClassifierPerformance = ClassifierPerformance(0, 1)
 
-    // classifier state
-    private var cp: Int = 0        // correct predictions
-    private var tot: Int = 1       // total requests
-    private var ac: Double = 0.0   // accuracy ratio
-
-    fun setDimension(d: Int) {
-        require(d > 0) { "Dimension must be positive." }
-        this.dimension = d
-        this.density200 = Density(d)
-        this.density400 = Density(d)
-        this.cp = 0
-        this.tot = 1
-        this.ac = 0.0
+    /** Must be called once to initialize the model properties */
+    fun setup(dimension: Int, warmup: Int) {
+        require(dimension > 0 ) { "Dimension must be positive." }
+        this.dimension = dimension
+        this.density200 = Density(dimension)
+        this.density400 = Density(dimension)
+        require(warmup > 0 ) { "Warmup must be positive." }
+        this.warmup = warmup
+        this.performance = ClassifierPerformance(0, 1)
     }
 
-    fun getDimension(): Int {
-        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
-        return this.dimension!!
+    fun updatePerformance(predictionIsCorrect: Boolean) {
+        val totalCorrectPredictions = if (predictionIsCorrect) performance.correctPrediction + 1 else performance.correctPrediction
+        val totalSentRequests = performance.totalSentRequests + 1
+        this.performance = ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
     }
 
-    fun setCp(cp: Int) {
-        this.cp = cp
-    }
-    fun setTot(tot: Int){
-        this.tot = tot
-    }
-
-    fun getCorrectPredictions(): Int = cp
-    fun getTotalRequests(): Int = tot
-    fun getAccuracy(): Double = if (tot == 0) 0.0 else cp.toDouble() / tot
-
-    fun getDensity200(): Density {
-        check(this.density200 != null) { "Classifier not initialized. Call setDimension first." }
-        return this.density200!!
-    }
-
-    fun getDensity400(): Density {
-        check(this.density400 != null) { "Classifier not initialized. Call setDimension first." }
-        return this.density400!!
-    }
-
-    override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
-
-        if (inputVector.size != this.dimension) {
-            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
-        }
-
-        when (output.getStatusCode()) {
-            200 -> this.density200!!.update(inputVector)
-            400 -> this.density400!!.update(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
-        }
-    }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
+
+        if (performance.totalSentRequests < warmup) {
+            throw IllegalStateException("Classifier not ready as warmup is not completed.")
+        }
+
         val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         if (inputVector.size != this.dimension) {
@@ -118,13 +89,38 @@ class GaussianOnlineClassifier : AIModel {
         )
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        // Strict accuracy
-        //TODO this accuracy can be dynamic for example based on the last 100 requests
-        if (this.tot == 0) {
-            return 0.0
+    override fun updateModel(input: RestCallAction, output: RestCallResult) {
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
-        return this.cp.toDouble() / this.tot
+
+        /**
+         * Updating classifier performance based on its prediction
+         * The performance getting update only after the warmup procedure
+         */
+        val trueStatusCode = output.getStatusCode()
+        if (this.performance.totalSentRequests <= this.warmup) {
+            updatePerformance(predictionIsCorrect = false)
+        }else{
+            val predicted = classify(input).prediction()
+            updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))
+        }
+
+        /**
+         * Updating the density functions based on the real observation
+         */
+        when (trueStatusCode) {
+            200 -> this.density200!!.update(inputVector)
+            400 -> this.density400!!.update(inputVector)
+            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        }
+
+    }
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        return this.performance.accuracy()
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
