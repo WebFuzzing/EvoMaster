@@ -84,9 +84,6 @@ class TestSuiteWriter {
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    @Inject
-    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
-
 
     fun writeTests(testSuiteCode: TestSuiteCode){
         saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
