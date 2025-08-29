@@ -31,6 +31,10 @@ class HttpCallbackVerifier {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
+
+        private const val DEFAULT_RESPONSE_CODE = 418
+        private const val DEFAULT_RESPONSE_BODY = "I'm a teapot"
+        private const val DEFAULT_RESPONSE_PRIORITY = 100
     }
 
     @PostConstruct
@@ -138,11 +142,11 @@ class HttpCallbackVerifier {
 
     private fun getDefaultStub(): MappingBuilder {
         return WireMock.any(WireMock.anyUrl())
-            .atPriority(100)
+            .atPriority(DEFAULT_RESPONSE_PRIORITY)
             .willReturn(
                 WireMock.aResponse()
-                    .withStatus(418)
-                    .withBody("I'm a teapot")
+                    .withStatus(DEFAULT_RESPONSE_CODE)
+                    .withBody(DEFAULT_RESPONSE_BODY)
             )
     }
 }

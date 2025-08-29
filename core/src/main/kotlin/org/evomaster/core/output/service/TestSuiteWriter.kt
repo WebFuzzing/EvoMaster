@@ -18,6 +18,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -82,6 +83,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -615,6 +619,11 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                addStatement("private static WireMockServer httpCallbackVerifier", lines)
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
                 lines.indented {
@@ -639,6 +648,11 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                addStatement("private lateinit var httpCallbackVerifier: WireMockServer", lines)
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
                 lines.indented {
@@ -807,6 +821,27 @@ class TestSuiteWriter {
                 } else {
                     log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
                 }
+            }
+
+            if (config.ssrf && solution.hasAnySSRFFaults()) {
+                if (format.isJava()) {
+                    lines.add("httpCallbackVerifier = new WireMockServer(new WireMockConfiguration()")
+                }
+                if (format.isKotlin()) {
+                    lines.add("httpCallbackVerifier = WireMockServer(WireMockConfiguration()")
+                }
+
+                lines.indented {
+                    lines.add(".port(\"${config.httpCallbackVerifierPort}\")")
+                    if (format.isJava()) {
+                        addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                    }
+                    if (format.isKotlin()) {
+                        addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                    }
+                }
+                addStatement("httpCallbackVerifier.start()", lines)
+                // TODO: Add the default stub
             }
 
             testCaseWriter.addExtraInitStatement(lines)
