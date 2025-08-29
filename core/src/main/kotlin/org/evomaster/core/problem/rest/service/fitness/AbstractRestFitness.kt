@@ -84,9 +84,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
-    protected lateinit var httpCallbackVerifier: HttpCallbackVerifier
-
-    @Inject
     protected lateinit var responsePool: DataPool
 
     @Inject
