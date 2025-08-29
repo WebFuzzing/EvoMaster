@@ -519,9 +519,30 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try {
             setExecutingInitSql(true);
 
-            // clean accessed tables
+//            // clean accessed tables
+//            Set<String> tableDataToInit = null;
+//            if (!accessedTables.isEmpty()){
+//                List<String> tablesToClean = getTablesToClean(accessedTables);
+//                if (!tablesToClean.isEmpty()){
+//                    if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
+//                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
+//                    } else {
+//                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
+//                    }
+//                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+//                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+//                    }else
+//                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+//                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
+//
+//                handleInitSqlInDbClean(tableDataToInit, emDbClean);
+//
+//            }
+////            }
+
             Set<String> tableDataToInit = null;
             if (!accessedTables.isEmpty()){
+                //List<String> tablesToClean = new ArrayList<>();
                 List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
@@ -529,10 +550,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     } else {
                         DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
                     }
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
-                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
-                    }else
-                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
             }

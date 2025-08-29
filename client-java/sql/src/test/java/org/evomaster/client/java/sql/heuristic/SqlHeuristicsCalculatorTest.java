@@ -398,7 +398,7 @@ public class SqlHeuristicsCalculatorTest {
 
     private static TableDto createTableDto(String tableName) {
         TableDto table = new TableDto();
-        table.name = tableName;
+        table.id.name = tableName;
         return table;
     }
 

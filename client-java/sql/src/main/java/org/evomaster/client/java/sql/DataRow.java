@@ -144,8 +144,8 @@ public class DataRow {
             /*
                 We just specified the name without schema... if unique, we would be fine
              */
-            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
-                candidates.add(i);
+//            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
+//                candidates.add(i);
             if ((nullSafeEqualsIgnoreCase(n, desc.getColumnName()) || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) &&
                     (t == null || t.isEmpty()
                             || nullSafeEqualsIgnoreCase(t, desc.getTableName())

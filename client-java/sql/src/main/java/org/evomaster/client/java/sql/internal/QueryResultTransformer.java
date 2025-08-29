@@ -140,12 +140,14 @@ public class QueryResultTransformer {
                                                                 List<QueryResult> existingQueryResults) {
 
         List<String> relatedColumnNames = SqlDatabaseDtoUtils.extractColumnNamesUsedInTheInsertion(insertionDto, relatedColumns);
+//        List<String> relatedColumnNames = SqlDtoUtils.extractColumnNames(insertionDto, relatedColumns);
+//        if (!relatedColumnNames.isEmpty()) {
+        final QueryResult existingQueryResult;
+
+        //private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults){
+        //List<String> relatedColumnNames = SqlDtoUtils.extractColumnNames(insertionDto, relatedColumns);
         if (!relatedColumnNames.isEmpty()) {
-            final QueryResult existingQueryResult;
-    private static QueryResult convertInsertionDtoToQueryResult(InsertionDto insertionDto, String tableName, Set<String> relatedColumns, DbInfoDto dto, List<QueryResult> existingQueryResults){
-        List<String> relatedColumnNames = SqlDtoUtils.extractColumnNames(insertionDto, relatedColumns);
-        if (!relatedColumnNames.isEmpty()){
-            QueryResult found = null;
+            //QueryResult found = null;
             if (!existingQueryResults.isEmpty())
                 existingQueryResult = existingQueryResults.stream().filter(qr -> qr.sameVariableNames(relatedColumnNames, tableId.getTableId())).findAny().orElse(null);
             else
@@ -158,38 +160,38 @@ public class QueryResultTransformer {
                 queryResult = existingQueryResult;
 
             Optional<TableDto> foundTableSchema = dto.tables.stream()
-                    .filter(t-> SqlDtoUtils.matchByName(t,tableName))
+//                    .filter(t -> SqlDtoUtils.matchByName(t, tableName))
+                    .filter(t -> SqlDtoUtils.matchByName(t, tableId.getTableId()))
                     .findFirst();
 
-            if (foundTableSchema.isPresent()){
-            Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableId.getTableId())).findFirst();
-            if (foundTableSchema.isPresent()) {
-                TableDto tableDto = foundTableSchema.get();
+//            if (foundTableSchema.isPresent()) {
+               // Optional<TableDto> foundTableSchema = dto.tables.stream().filter(t -> t.id.name.equalsIgnoreCase(tableId.getTableId())).findFirst();
+                if (foundTableSchema.isPresent()) {
+                    TableDto tableDto = foundTableSchema.get();
 
-                List<String> printableValue = SqlDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
+                    List<String> printableValue = SqlDatabaseDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
+//                    List<String> printableValue = SqlDtoUtils.extractColumnPrintableValues(insertionDto, relatedColumns);
                 assert printableValue.size() == relatedColumnNames.size();
 
                 List<Object> values = new ArrayList<>();
 
+                //for (int i = 0; i < printableValue.size(); i++) {
+                //  ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
                 for (int i = 0; i < printableValue.size(); i++) {
-                    ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
-                for (int i = 0; i < printableValue.size(); i++){
                     ColumnDto columnDto = SqlDtoUtils.extractColumnInfo(tableDto, relatedColumnNames.get(i));
                     if (columnDto == null)
                         throw new IllegalArgumentException("Cannot find column schema of " + relatedColumnNames.get(i) + " in Table " + tableId);
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));
                 }
-
-
                 queryResult.addRow(relatedColumnNames, tableId.getTableId(), values);
-
             } else {
                 throw new IllegalArgumentException("Cannot find table schema of " + tableId);
             }
 
-            if (existingQueryResult != null) return null;
-
-            return queryResult;
+//                if (existingQueryResult != null) return null;
+//
+//                return queryResult;
+            //}
         }
         return null;
     }
@@ -251,7 +253,7 @@ public class QueryResultTransformer {
         QueryResultSet queryResultSet = new QueryResultSet();
         for (SqlTableId tableId : columns.keySet()) {
             TableDto tableDto = schema.tables.stream()
-                    .filter(t -> t.name.equalsIgnoreCase(tableId.getTableId()))
+                    .filter(t -> t.id.name.equalsIgnoreCase(tableId.getTableId()))
                     .findFirst().orElseThrow(() -> new IllegalArgumentException("Cannot find table schema of " + tableId));
 
             List<VariableDescriptor> variableDescriptors = tableDto.columns.stream()
@@ -281,7 +283,7 @@ public class QueryResultTransformer {
             if (entry.variableName.equalsIgnoreCase(columnName)) {
                 ColumnDto columnDto = SqlDatabaseDtoUtils.extractColumnInfo(tableDto, entry.variableName);
                 if (columnDto == null) {
-                    throw new IllegalArgumentException("Cannot find column schema of " + entry.variableName + " in Table " + tableDto.name);
+                    throw new IllegalArgumentException("Cannot find column schema of " + entry.variableName + " in Table " + tableDto.id.name);
                 }
                 return getColumnValueBasedOnPrintableValue(entry.printableValue, columnDto);
             }

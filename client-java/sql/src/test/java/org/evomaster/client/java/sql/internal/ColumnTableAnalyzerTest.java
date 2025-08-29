@@ -59,7 +59,7 @@ public class ColumnTableAnalyzerTest {
 
         DbInfoDto schema = new DbInfoDto();
         TableDto fooTableDto = new TableDto();
-        fooTableDto.name = "Foo";
+        fooTableDto.id.name = "Foo";
         schema.tables.add(fooTableDto);
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
 
@@ -74,7 +74,7 @@ public class ColumnTableAnalyzerTest {
 
         DbInfoDto schema = new DbInfoDto();
         TableDto tableDto = new TableDto();
-        tableDto.name = "v1.Foo";
+        tableDto.id.name = "v1.Foo";
         schema.tables.add(tableDto);
 
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);

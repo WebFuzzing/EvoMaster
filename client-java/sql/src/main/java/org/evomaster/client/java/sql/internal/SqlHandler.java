@@ -489,7 +489,7 @@ public class SqlHandler {
             public void visit(Column column) {
 
                 String tableName = context.getFullyQualifiedTableName(column);
-                String tableName = context.getTableName(column);
+//                String tableName = context.getTableName(column);
 
                 if (tableName.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
                     // TODO handle it properly when ll have support for sub-selects

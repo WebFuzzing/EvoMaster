@@ -130,13 +130,13 @@ public class SqlNameContext {
         if (hasFromItem()) {
             FromItem fromItem = getFromItem();
 
-        FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
-            @Override
-            public void visit(Table table) {
-                names.add(table.getFullyQualifiedName().toLowerCase());
-            }
-        };
-            FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
+//        FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
+//            @Override
+//            public void visit(Table table) {
+//                names.add(table.getFullyQualifiedName().toLowerCase());
+//            }
+//        };
+             FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
                 @Override
                 public void visit(Table table) {
                     names.add(table.getName().toLowerCase());
