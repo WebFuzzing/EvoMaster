@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.ln
 import kotlin.math.PI
 import kotlin.math.exp
-import org.evomaster.core.search.service.Randomness
 import kotlin.random.Random
 
 /**
@@ -44,17 +43,11 @@ class GaussianOnlineClassifier : AIModel {
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
         require(dimension > 0 ) { "Dimension must be positive." }
+        require(warmup > 0 ) { "Warmup must be positive." }
         this.dimension = dimension
         this.density200 = Density(dimension)
         this.density400 = Density(dimension)
-        require(warmup > 0 ) { "Warmup must be positive." }
         this.warmup = warmup
-    }
-
-    fun updatePerformance(predictionIsCorrect: Boolean) {
-        val totalCorrectPredictions = if (predictionIsCorrect) performance.correctPrediction + 1 else performance.correctPrediction
-        val totalSentRequests = performance.totalSentRequests + 1
-        this.performance = ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
     }
 
 
@@ -102,11 +95,11 @@ class GaussianOnlineClassifier : AIModel {
          * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (this.performance.totalSentRequests <= this.warmup) {
-            updatePerformance(predictionIsCorrect = Random.nextBoolean())
-        }else{
+        performance = if (performance.totalSentRequests < warmup) {
+            performance.updatePerformance(Random.nextBoolean())
+        } else {
             val predicted = classify(input).prediction()
-            updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))
+            performance.updatePerformance(predicted == trueStatusCode)
         }
 
         /**

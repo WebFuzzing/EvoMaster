@@ -22,4 +22,16 @@ class ClassifierPerformance(
             0.0
         }
     }
+
+    /**
+     * Returns a new ClassifierPerformance with updated counts
+     * based on whether the latest prediction was correct.
+     */
+    fun updatePerformance(predictionIsCorrect: Boolean): ClassifierPerformance {
+        val totalCorrectPredictions =
+            if (predictionIsCorrect) correctPrediction + 1 else correctPrediction
+        val totalSentRequests = totalSentRequests + 1
+        return ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
+    }
+
 }

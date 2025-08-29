@@ -44,12 +44,6 @@ class GLMOnlineClassifier(
         return weights!!.toList() + bias
     }
 
-    fun updatePerformance(predictionIsCorrect: Boolean) {
-        val totalCorrectPredictions = if (predictionIsCorrect) performance.correctPrediction + 1 else performance.correctPrediction
-        val totalSentRequests = performance.totalSentRequests + 1
-        this.performance = ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
-    }
-
     override fun classify(input: RestCallAction): AIResponseClassification {
 
         if (performance.totalSentRequests< warmup) {
@@ -89,11 +83,11 @@ class GLMOnlineClassifier(
          * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (this.performance.totalSentRequests <= this.warmup) {
-            updatePerformance(predictionIsCorrect = Random.nextBoolean())
-        }else{
+        performance = if (performance.totalSentRequests < warmup) {
+            performance.updatePerformance(Random.nextBoolean())
+        } else {
             val predicted = classify(input).prediction()
-            updatePerformance(predictionIsCorrect = (predicted == trueStatusCode))
+            performance.updatePerformance(predicted == trueStatusCode)
         }
 
         /**
