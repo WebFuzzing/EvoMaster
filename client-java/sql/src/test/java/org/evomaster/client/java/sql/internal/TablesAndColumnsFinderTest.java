@@ -25,34 +25,34 @@ class TablesAndColumnsFinderTest {
         DbInfoDto schema = new DbInfoDto();
 
         TableDto usersTable = new TableDto();
-        usersTable.name = "Users";
+        usersTable.id.name = "Users";
         usersTable.columns.add(createColumnDto("name", "Users"));
         usersTable.columns.add(createColumnDto("age", "Users"));
 
         TableDto employeesTable = new TableDto();
-        employeesTable.name = "Employees";
+        employeesTable.id.name = "Employees";
         employeesTable.columns.add(createColumnDto("name", "Employees"));
         employeesTable.columns.add(createColumnDto("department_id", "Employees"));
 
         TableDto departmentsTable = new TableDto();
-        departmentsTable.name = "Departments";
+        departmentsTable.id.name = "Departments";
         departmentsTable.columns.add(createColumnDto("id", "Departments"));
         departmentsTable.columns.add(createColumnDto("department_name", "Departments"));
 
 
         TableDto votingTable = new TableDto();
-        votingTable.name = "voting";
+        votingTable.id.name = "voting";
         votingTable.columns.add(createColumnDto("expired", "voting"));
         votingTable.columns.add(createColumnDto("created_at", "voting"));
         votingTable.columns.add(createColumnDto("group_id", "voting"));
 
         TableDto groupsTable = new TableDto();
-        groupsTable.name = "groups";
+        groupsTable.id.name = "groups";
         groupsTable.columns.add(createColumnDto("id", "groups"));
         groupsTable.columns.add(createColumnDto("voting_duration", "groups"));
 
         TableDto dbBaseTable = new TableDto();
-        dbBaseTable.name = "db_base";
+        dbBaseTable.id.name = "db_base";
         dbBaseTable.columns.add(createColumnDto("id", "db_base"));
         dbBaseTable.columns.add(createColumnDto("name", "db_base"));
 
@@ -622,7 +622,7 @@ class TablesAndColumnsFinderTest {
         DbInfoDto schema = createSchema();
 
         Assumptions.assumeTrue(schema.tables.stream()
-                .filter(t -> t.name.equals("Foo"))
+                .filter(t -> t.id.name.equals("Foo"))
                 .count()==0);
 
         String sql = "SELECT * FROM Foo";

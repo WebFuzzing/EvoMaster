@@ -138,7 +138,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
 
             this.schema.tables.stream()
-                    .filter(t -> new SqlTableId(t.name).equals(baseTableReference.getTableId()))
+                    .filter(t -> new SqlTableId(t.id.name).equals(baseTableReference.getTableId()))
                     .flatMap(t -> t.columns.stream())
                     .map(c -> new SqlColumnReference(baseTableReference, c.name))
                     .forEach(c -> addColumnReference(baseTableReference, c));
@@ -176,7 +176,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         Objects.requireNonNull(baseTableId);
 
         return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.name).equals(baseTableId))
+                .filter(t -> new SqlTableId(t.id.name).equals(baseTableId))
                 .flatMap(t -> t.columns.stream())
                 .map(c -> new SqlColumnReference(new SqlBaseTableReference(c.table), c.name))
                 .collect(Collectors.toSet());

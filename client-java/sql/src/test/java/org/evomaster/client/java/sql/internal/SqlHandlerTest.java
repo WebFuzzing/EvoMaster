@@ -176,20 +176,20 @@ public class SqlHandlerTest {
 
     private static @NotNull DbInfoDto createSchema() {
         TableDto employeesTable = new TableDto();
-        employeesTable.name = "Employees";
+        employeesTable.id.name = "Employees";
         employeesTable.columns.add(createColumnDto("employees", "id", "INTEGER"));
         employeesTable.columns.add(createColumnDto("employees", "name", "VARCHAR"));
         employeesTable.columns.add(createColumnDto("employees", "income", "INTEGER"));
         employeesTable.columns.add(createColumnDto("employees", "department_id", "INTEGER"));
 
         TableDto departmentsTable = new TableDto();
-        departmentsTable.name = "Departments";
+        departmentsTable.id.name = "Departments";
         departmentsTable.columns.add(createColumnDto("departments", "id", "INTEGER"));
         departmentsTable.columns.add(createColumnDto("departments", "name", "VARCHAR"));
         departmentsTable.columns.add(createColumnDto("departments", "location_id", "INTEGER"));
 
         TableDto locationsTable = new TableDto();
-        locationsTable.name = "Locations";
+        locationsTable.id.name = "Locations";
         locationsTable.columns.add(createColumnDto("locations", "id", "INTEGER"));
         locationsTable.columns.add(createColumnDto("locations", "city", "VARCHAR"));
 
