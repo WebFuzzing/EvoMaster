@@ -25,10 +25,13 @@ class AIResponseClassification(
     }
 
     fun probabilityOf400() : Double{
+        return getProbability(400)
+    }
 
-        if(probabilities[400] == null){
+    fun getProbability(statusCode: Int) : Double{
+        if(probabilities[statusCode] == null){
             return 0.0
         }
-        return probabilities[400]!!
+        return probabilities[statusCode]!!
     }
 }
