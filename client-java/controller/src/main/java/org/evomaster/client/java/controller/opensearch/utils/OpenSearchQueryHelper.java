@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.opensearch.utils;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.IllegalAccessException;
 import java.lang.NoSuchMethodException;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 /**
  * Helper class for working with OpenSearch queries.
@@ -34,7 +35,7 @@ public class OpenSearchQueryHelper {
     }
 
     /**
-     * Extracts the field value from a query object with its t.
+     * Extracts the field value from a query object.
      */
     public static Object extractFieldValue(Object query, String structure) {
         try {
@@ -79,6 +80,7 @@ public class OpenSearchQueryHelper {
                     return null;
             }
 
+            SimpleLogger.debug("[OpenSearch] [extractTypedFieldValue] found unknown kind: " + kindName);
             return value.getClass().getMethod("_get").invoke(value);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);

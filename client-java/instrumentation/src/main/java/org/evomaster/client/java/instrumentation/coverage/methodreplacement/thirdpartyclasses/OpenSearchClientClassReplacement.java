@@ -96,10 +96,10 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
             if (result instanceof String) {
                 return Collections.singletonList((String) result);
             } else if (result instanceof List) {
-                SimpleLogger.debug("OpenSearch getIndex returned list of length: " + ((List<?>) result).size());
+                SimpleLogger.debug("[OpenSearch] [getIndex] returned list of length: " + ((List<?>) result).size());
                 return (List<String>) result;
             } else {
-                SimpleLogger.debug("OpenSearch getIndex returned unknown type: " + result.getClass().getName());
+                SimpleLogger.debug("[OpenSearch] [getIndex] returned unknown type: " + result.getClass().getName());
                 return Collections.singletonList(result.toString());
             }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {

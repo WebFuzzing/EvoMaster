@@ -7,12 +7,14 @@ public class OpenSearchDistanceWithMetrics {
     private final int numberOfEvaluatedDocuments;
 
     public OpenSearchDistanceWithMetrics(double distance, int numberOfEvaluatedDocuments) {
-        if(distance < 0){
+        if (distance < 0) {
             throw new IllegalArgumentException("distance must be non-negative but value is " + distance);
         }
-        if(numberOfEvaluatedDocuments < 0){
+
+        if (numberOfEvaluatedDocuments < 0) {
             throw new IllegalArgumentException("numberOfEvaluatedDocuments must be non-negative but value is " + numberOfEvaluatedDocuments);
         }
+
         this.distance = distance;
         this.numberOfEvaluatedDocuments = numberOfEvaluatedDocuments;
     }
