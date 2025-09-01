@@ -26,9 +26,8 @@ class SSRFQueryEMTest: SpringTestBase() {
             300,
         ) { args: MutableList<String> ->
 
-            setOption(args, "externalServiceIPSelectionStrategy", "USER")
-            setOption(args, "externalServiceIP", "127.0.0.8")
-            setOption(args, "instrumentMR_NET", "true")
+            // If mocking enabled, it'll spin new services each time when there is a valid URL.
+            setOption(args, "externalServiceIPSelectionStrategy", "NONE")
 
             setOption(args, "security", "true")
             setOption(args, "ssrf", "true")
