@@ -155,8 +155,8 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Genes Size   : ${geneValues.size}")
-            println("Correct Predictions: ${classifier?.performance?.getCorrectPrediction}")
-            println("Total Requests     : ${classifier?.performance?.getTotalSentRequests}")
+            println("Correct Predictions: ${classifier?.performance?.correctPrediction}")
+            println("Total Requests     : ${classifier?.performance?.totalSentRequests}")
             println("Accuracy           : ${classifier?.performance?.accuracy()}")
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
@@ -172,7 +172,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
             }
 
             // Warmup cold classifiers by at least n request
-            val isCold = classifier.performance.getTotalSentRequests<classifier.warmup
+            val isCold = classifier.performance.totalSentRequests<classifier.warmup
             if (isCold) {
                 println("Warmup by at least ${classifier.warmup} request")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
@@ -192,7 +192,7 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             // Probabilistic decision-making based on Bernoulli(prob = aci)
             val sendOrNot: Boolean
-            if (predictionOfStatusCode !in 400..499) {
+            if (predictionOfStatusCode != 400) {
                 sendOrNot = true
             }else{
                 sendOrNot = if(Math.random() > classifier.performance.accuracy()) true else false

@@ -7,11 +7,10 @@ package org.evomaster.core.problem.rest.classifier
  */
 class ClassifierPerformance {
 
-    private var correctPrediction: Int = 0
-    private var totalSentRequests: Int = 1
-
-    val getCorrectPrediction: Int get() = correctPrediction
-    val getTotalSentRequests: Int get() = totalSentRequests
+    var correctPrediction: Int = 0
+        private set
+    var totalSentRequests: Int = 1
+        private set
 
     /**
      * Calculates the accuracy of the classifier.

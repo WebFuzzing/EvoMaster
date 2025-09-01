@@ -53,7 +53,7 @@ class GaussianOnlineClassifier : AIModel {
 
     override fun classify(input: RestCallAction): AIResponseClassification {
 
-        if (performance.getTotalSentRequests < warmup) {
+        if (performance.totalSentRequests < warmup) {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
@@ -95,7 +95,7 @@ class GaussianOnlineClassifier : AIModel {
          * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (performance.getTotalSentRequests < warmup) {
+        if (performance.totalSentRequests < warmup) {
             performance.updatePerformance(Random.nextBoolean())
         } else {
             val predicted = classify(input).prediction()
