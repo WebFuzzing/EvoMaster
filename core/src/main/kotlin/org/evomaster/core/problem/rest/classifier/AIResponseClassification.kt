@@ -5,7 +5,14 @@ class AIResponseClassification(
      * Map from HTTP Status Code to the probability of getting such code as response.
      * If code is not defined, then expect the probability to be 0.
      */
-    val probabilities : Map<Int, Double> = mapOf()
+    private val probabilities : Map<Int, Double> = mapOf(),
+
+    /**
+     * If the classification thinks the call will lead to a user error, it might provide some info
+     * on the offending inputs.
+     * However, as only few classifiers might be able to provide such info, such info is optional.
+     */
+    val invalidFields : Set<InputField> = setOf(),
 ) {
 
     init{
