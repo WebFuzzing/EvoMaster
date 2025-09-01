@@ -1,8 +1,7 @@
 package org.evomaster.e2etests.spring.multidb.separatedschemas
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.client.java.sql.SqlScriptRunner
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.driver.multidb.SpringController
 import org.evomaster.e2etests.spring.multidb.MultiDbParameterizedE2ETemplate
 import org.junit.jupiter.api.Assertions.assertTrue
