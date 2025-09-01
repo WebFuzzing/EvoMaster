@@ -28,7 +28,7 @@ class GLMOnlineClassifier(
     var dimension: Int? = null
     var weights: MutableList<Double>? = null
     var bias: Double = 0.0
-    var performance: ClassifierPerformance = ClassifierPerformance(0, 1)
+    var performance: ClassifierPerformance = ClassifierPerformance()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -46,7 +46,7 @@ class GLMOnlineClassifier(
 
     override fun classify(input: RestCallAction): AIResponseClassification {
 
-        if (performance.totalSentRequests< warmup) {
+        if (performance.getTotalSentRequests< warmup) {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
@@ -83,7 +83,7 @@ class GLMOnlineClassifier(
          * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        performance = if (performance.totalSentRequests < warmup) {
+        if (performance.getTotalSentRequests < warmup) {
             performance.updatePerformance(Random.nextBoolean())
         } else {
             val predicted = classify(input).prediction()
@@ -94,8 +94,8 @@ class GLMOnlineClassifier(
          * Updating model parameters
          */
         val y = when (trueStatusCode) {
-            200 -> 1.0
-            400 -> 0.0
+            in 200..299 -> 1.0
+            in 400..499 -> 0.0
             else -> throw IllegalArgumentException("Unsupported label: only 200 and 400 are handled")
         }
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias

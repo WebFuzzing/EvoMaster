@@ -2,14 +2,16 @@ package org.evomaster.core.problem.rest.classifier
 
 /**
  * Classifier state
- *
- * @param correctPrediction the number of correct predictions made by the classifier
- * @param totalSentRequests the total number of requests sent to the classifier
+ * @property correctPrediction the number of correct predictions made by the classifier
+ * @property totalSentRequests the total number of requests sent to the classifier
  */
-class ClassifierPerformance(
-    val correctPrediction: Int,
-    val totalSentRequests: Int
-) {
+class ClassifierPerformance {
+
+    private var correctPrediction: Int = 0
+    private var totalSentRequests: Int = 1
+
+    val getCorrectPrediction: Int get() = correctPrediction
+    val getTotalSentRequests: Int get() = totalSentRequests
 
     /**
      * Calculates the accuracy of the classifier.
@@ -27,11 +29,10 @@ class ClassifierPerformance(
      * Returns a new ClassifierPerformance with updated counts
      * based on whether the latest prediction was correct.
      */
-    fun updatePerformance(predictionIsCorrect: Boolean): ClassifierPerformance {
-        val totalCorrectPredictions =
-            if (predictionIsCorrect) correctPrediction + 1 else correctPrediction
-        val totalSentRequests = totalSentRequests + 1
-        return ClassifierPerformance(totalCorrectPredictions, totalSentRequests)
+    fun updatePerformance(predictionIsCorrect: Boolean) {
+        if (predictionIsCorrect) {
+            correctPrediction++
+        }
+        totalSentRequests++
     }
-
 }

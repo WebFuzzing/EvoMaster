@@ -38,7 +38,7 @@ class GaussianOnlineClassifier : AIModel {
     var dimension: Int? = null
     var density200: Density? = null
     var density400: Density? = null
-    var performance: ClassifierPerformance = ClassifierPerformance(0, 1)
+    var performance: ClassifierPerformance = ClassifierPerformance()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -53,7 +53,7 @@ class GaussianOnlineClassifier : AIModel {
 
     override fun classify(input: RestCallAction): AIResponseClassification {
 
-        if (performance.totalSentRequests < warmup) {
+        if (performance.getTotalSentRequests < warmup) {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
@@ -95,7 +95,7 @@ class GaussianOnlineClassifier : AIModel {
          * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        performance = if (performance.totalSentRequests < warmup) {
+        if (performance.getTotalSentRequests < warmup) {
             performance.updatePerformance(Random.nextBoolean())
         } else {
             val predicted = classify(input).prediction()
@@ -106,8 +106,8 @@ class GaussianOnlineClassifier : AIModel {
          * Updating the density functions based on the real observation
          */
         when (trueStatusCode) {
-            200 -> this.density200!!.update(inputVector)
-            400 -> this.density400!!.update(inputVector)
+            in 200..299 -> this.density200!!.update(inputVector)
+            in 400..499 -> this.density400!!.update(inputVector)
             else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
         }
 

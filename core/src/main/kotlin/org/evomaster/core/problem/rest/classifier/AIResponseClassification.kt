@@ -16,12 +16,6 @@ class AIResponseClassification(
             }
         }
 
-        val sum = probabilities.values.sum()
-        if (kotlin.math.abs(sum - 1.0) > 1e-6) {
-            throw IllegalArgumentException(
-                "Probabilities must sum to 1."
-            )
-        }
     }
 
     fun probabilityOf400() : Double{
