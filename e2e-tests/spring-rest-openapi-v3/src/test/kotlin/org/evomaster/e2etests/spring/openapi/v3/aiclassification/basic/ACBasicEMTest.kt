@@ -7,7 +7,6 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.spring.openapi.v3.aiclassification.AIClassificationEMTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
@@ -25,7 +24,6 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
         }
     }
 
-    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
