@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.opensearch.selectors;
 
-import java.util.Map;
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
 
 /**
@@ -13,10 +12,6 @@ abstract public class QuerySelector {
      * Returns the operation mapped to the selector if the query satisfy all syntax checks or null if not.
      */
     public abstract QueryOperation getOperation(Object query);
-
-    protected Boolean isUniqueEntry(Map<?, ?> map) {
-        return map.size() == 1;
-    }
 
     protected Boolean hasTheExpectedOperator(Object query) {
         String actualOperator = extractOperator(query);

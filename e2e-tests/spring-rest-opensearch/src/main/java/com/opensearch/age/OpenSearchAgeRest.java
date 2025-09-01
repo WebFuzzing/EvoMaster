@@ -26,6 +26,7 @@ public class OpenSearchAgeRest {
         return ageRepo.findByAge(age);
     }
 
+    // TODO: Update mappings once we have added support for range queries
 //    @GetMapping("gte/{gte}")
 //    public List<Age> findGteAge(@PathVariable("gte") Integer gte) throws IOException {
 //        return ageRepo.findGteAge(gte);

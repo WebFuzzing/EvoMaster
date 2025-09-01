@@ -3,8 +3,6 @@ package org.evomaster.client.java.controller.internal.db;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
-import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
-import org.evomaster.client.java.controller.mongo.MongoHeuristicsCalculator;
 import org.evomaster.client.java.controller.opensearch.OpenSearchHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
 import org.evomaster.client.java.utils.SimpleLogger;

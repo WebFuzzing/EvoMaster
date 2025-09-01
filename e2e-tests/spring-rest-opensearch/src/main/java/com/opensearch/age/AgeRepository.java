@@ -1,7 +1,6 @@
 package com.opensearch.age;
 
 import com.opensearch.config.OpenSearchRepository;
-import com.opensearch.students.Student;
 import java.io.IOException;
 import java.util.List;
 import org.opensearch.client.json.JsonData;

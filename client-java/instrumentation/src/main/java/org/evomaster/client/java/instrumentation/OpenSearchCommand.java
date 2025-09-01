@@ -5,7 +5,8 @@ import java.util.List;
 
 public class OpenSearchCommand implements Serializable {
     /**
-     * Name of the index that the operation was applied to
+     * Comma-separated list of index names to search; <code>_all</code> or
+     * empty string to performs operations on all indices
      */
     private final List<String> index;
 

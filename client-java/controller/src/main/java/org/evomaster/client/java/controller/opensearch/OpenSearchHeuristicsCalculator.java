@@ -3,7 +3,6 @@ package org.evomaster.client.java.controller.opensearch;
 import java.util.List;
 import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
-import org.evomaster.client.java.controller.mongo.operations.NotEqualsOperation;
 import org.evomaster.client.java.controller.opensearch.operations.ComparisonOperation;
 import org.evomaster.client.java.controller.opensearch.operations.TermOperation;
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
@@ -35,7 +34,7 @@ public class OpenSearchHeuristicsCalculator {
             return calculateDistanceForEquals((TermOperation<?>) operation, doc);
         }
 
-        return 0;
+        return Double.MAX_VALUE;
     }
 
     private double calculateDistanceForEquals(TermOperation<?> operation, Object doc) {

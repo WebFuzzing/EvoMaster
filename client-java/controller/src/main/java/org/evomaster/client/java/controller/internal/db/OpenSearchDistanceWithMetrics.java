@@ -2,9 +2,9 @@ package org.evomaster.client.java.controller.internal.db;
 
 public class OpenSearchDistanceWithMetrics {
 
-    public final double distance;
+    private final double distance;
 
-    public final int numberOfEvaluatedDocuments;
+    private final int numberOfEvaluatedDocuments;
 
     public OpenSearchDistanceWithMetrics(double distance, int numberOfEvaluatedDocuments) {
         if(distance < 0){

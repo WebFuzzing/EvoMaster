@@ -28,7 +28,6 @@ import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
-import org.evomaster.client.java.instrumentation.OpenSearchCommand;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -327,6 +326,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    // TODO: Refactor this initialization methods once Redis and OpenSearch implementations are done
     public final void initOpenSearchHandler() {
         // This is needed because the replacement use to get this info occurs during the start of the SUT.
         Object connection = getOpenSearchConnection();
@@ -498,7 +498,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     try {
                         openSearchHandler.handle(it);
                     } catch (Exception e){
-                        SimpleLogger.error("FAILED TO HANDLE OPENSEARCH COMMAND");
+                        SimpleLogger.error("FAILED TO HANDLE OPENSEARCH COMMAND", e);
                         assert false;
                     }
                 });

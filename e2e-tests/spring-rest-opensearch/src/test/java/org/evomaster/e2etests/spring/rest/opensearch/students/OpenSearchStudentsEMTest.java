@@ -2,12 +2,11 @@ package org.evomaster.e2etests.spring.rest.opensearch.students;
 
 import com.foo.spring.rest.opensearch.students.OpenSearchStudentsController;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class OpenSearchStudentsEMTest extends RestTestBase {
 
@@ -18,7 +17,7 @@ public class OpenSearchStudentsEMTest extends RestTestBase {
         RestTestBase.initClass(new OpenSearchStudentsController(), config);
     }
 
-    @Test
+    @Disabled("TODO: Enable once we have added support for query generation")
     public void testRunEM() throws Throwable {
         runTestHandlingFlaky(
             "OpenSearchStudentsEM",

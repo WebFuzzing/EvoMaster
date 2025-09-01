@@ -13,6 +13,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 /**
  * Class responsible to handle method calls to the OpenSearchClient and intercepting
@@ -92,11 +93,13 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
                 return null;
             }
 
-            if (result instanceof List) {
-                return (List<String>) result;
-            } else if (result instanceof String) {
+            if (result instanceof String) {
                 return Collections.singletonList((String) result);
+            } else if (result instanceof List) {
+                SimpleLogger.debug("OpenSearch getIndex returned list of length: " + ((List<?>) result).size());
+                return (List<String>) result;
             } else {
+                SimpleLogger.debug("OpenSearch getIndex returned unknown type: " + result.getClass().getName());
                 return Collections.singletonList(result.toString());
             }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {

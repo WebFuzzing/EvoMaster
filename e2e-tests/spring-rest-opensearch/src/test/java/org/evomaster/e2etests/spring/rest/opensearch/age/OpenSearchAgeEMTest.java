@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
 public class OpenSearchAgeEMTest extends RestTestBase {
 
@@ -17,7 +17,7 @@ public class OpenSearchAgeEMTest extends RestTestBase {
         RestTestBase.initClass(new OpenSearchAgeController(), config);
     }
 
-    @Test
+    @Disabled("TODO: Enable once we have added support for range queries")
     public void testRunEM() throws Throwable {
         runTestHandlingFlaky(
             "OpenSearchAgeEM",

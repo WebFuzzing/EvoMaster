@@ -4,7 +4,7 @@ public abstract class ComparisonOperation<V> extends QueryOperation {
     private final String fieldName;
     private final V value;
 
-    ComparisonOperation(String fieldName, V value) {
+    protected ComparisonOperation(String fieldName, V value) {
         this.fieldName = fieldName;
         this.value = value;
     }
