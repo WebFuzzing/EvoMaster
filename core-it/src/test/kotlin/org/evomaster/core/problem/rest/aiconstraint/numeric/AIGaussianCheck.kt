@@ -189,8 +189,8 @@ class AIGaussianCheck : IntegrationTestRestBase() {
 
             // Classification
             val classification = classifier.classify(action)
-            val p200 = classification.probabilities[200]!!
-            val p400 = classification.probabilities[400]!!
+            val p200 = classification.getProbability(200)
+            val p400 = classification.getProbability(400)
             require(p200 in 0.0..1.0 && p400 in 0.0..1.0 && abs((p200 + p400) - 1.0) < 1e-6) {
                 "Probabilities must be in [0,1] and sum to 1"
             }
