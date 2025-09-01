@@ -125,11 +125,14 @@ public class DataRow {
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
 
-            if (!n.equalsIgnoreCase(desc.getColumnName())){
+            boolean matchColumnName = nullSafeEqualsIgnoreCase(n, desc.getColumnName())
+                    || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName());
+
+            if (!matchColumnName){
                 continue;
             }
             //no defined table, or exact match
-            if(t == null || t.isEmpty() || t.equalsIgnoreCase(desc.getTableName())){
+            if(t == null || t.isEmpty() || nullSafeEqualsIgnoreCase(t, desc.getTableName()) ){
                 return getValue(i);
             }
             /*
@@ -138,29 +141,15 @@ public class DataRow {
                 with same column names. At this moment, we would not
                 be able to distinguish them
              */
-            if(t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
+            if(nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)){
                 candidates.add(i);
             }
-            /*
-                We just specified the name without schema... if unique, we would be fine
-             */
-//            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
-//                candidates.add(i);
-            if ((nullSafeEqualsIgnoreCase(n, desc.getColumnName()) || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) &&
-                    (t == null || t.isEmpty()
-                            || nullSafeEqualsIgnoreCase(t, desc.getTableName())
-                            /*
-                                TODO: this does not cover all possible cases, as in theory
-                                there can be many unnamed tables (eg results of sub-selects)
-                                with same column names. At this moment, we would not
-                                be able to distinguish them
-                             */
-                            || nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)
-                    )
-            ) {
-                return getValue(i);
+
+            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
+                candidates.add(i);
             }
         }
+
         if(candidates.size() > 1){
             SimpleLogger.uniqueWarn("More than one table candidate for: " + t);
         }

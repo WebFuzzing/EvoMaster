@@ -6,6 +6,7 @@ import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.heuristic.SqlColumnReference;
 import org.evomaster.client.java.sql.heuristic.SqlBaseTableReference;
 import org.jetbrains.annotations.NotNull;
@@ -25,33 +26,39 @@ class TablesAndColumnsFinderTest {
         DbInfoDto schema = new DbInfoDto();
 
         TableDto usersTable = new TableDto();
+        usersTable.id = new TableIdDto();
         usersTable.id.name = "Users";
         usersTable.columns.add(createColumnDto("name", "Users"));
         usersTable.columns.add(createColumnDto("age", "Users"));
 
         TableDto employeesTable = new TableDto();
+        employeesTable.id = new TableIdDto();
         employeesTable.id.name = "Employees";
         employeesTable.columns.add(createColumnDto("name", "Employees"));
         employeesTable.columns.add(createColumnDto("department_id", "Employees"));
 
         TableDto departmentsTable = new TableDto();
+        departmentsTable.id = new TableIdDto();
         departmentsTable.id.name = "Departments";
         departmentsTable.columns.add(createColumnDto("id", "Departments"));
         departmentsTable.columns.add(createColumnDto("department_name", "Departments"));
 
 
         TableDto votingTable = new TableDto();
+        votingTable.id = new TableIdDto();
         votingTable.id.name = "voting";
         votingTable.columns.add(createColumnDto("expired", "voting"));
         votingTable.columns.add(createColumnDto("created_at", "voting"));
         votingTable.columns.add(createColumnDto("group_id", "voting"));
 
         TableDto groupsTable = new TableDto();
+        groupsTable.id = new TableIdDto();
         groupsTable.id.name = "groups";
         groupsTable.columns.add(createColumnDto("id", "groups"));
         groupsTable.columns.add(createColumnDto("voting_duration", "groups"));
 
         TableDto dbBaseTable = new TableDto();
+        dbBaseTable.id = new TableIdDto();
         dbBaseTable.id.name = "db_base";
         dbBaseTable.columns.add(createColumnDto("id", "db_base"));
         dbBaseTable.columns.add(createColumnDto("name", "db_base"));
