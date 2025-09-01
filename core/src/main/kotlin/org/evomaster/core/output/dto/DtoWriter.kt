@@ -1,6 +1,7 @@
 package org.evomaster.core.output.dto
 
 import com.google.common.annotations.VisibleForTesting
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -90,7 +91,7 @@ class DtoWriter {
             is ObjectGene -> calculateDtoFromObject(gene, actionName)
             is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
             else -> {
-                throw IllegalStateException("Gene $gene is not supported for DTO payloads")
+                throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
         }
     }
@@ -111,7 +112,7 @@ class DtoWriter {
         if (template is ObjectGene) {
             calculateDtoFromObject(template, actionName)
         } else {
-            log.debug("Arrays of non custom objects are not collected as DTOs")
+            LoggingUtil.uniqueWarn(log, "Arrays of non custom objects are not collected as DTOs. Attempted at $actionName")
         }
     }
 
@@ -158,7 +159,7 @@ class DtoWriter {
             is BooleanGene -> "Boolean"
             is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
             is ArrayGene<*> -> "List<${getDtoType(field.name, field.template)}>"
-            else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName}")
+            else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
         }
     }
 
