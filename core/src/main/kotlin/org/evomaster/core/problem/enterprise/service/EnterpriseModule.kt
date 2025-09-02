@@ -16,10 +16,10 @@ abstract class EnterpriseModule : AbstractModule() {
         bind(LanguageModelConnector::class.java)
             .asEagerSingleton()
 
-        bind(SSRFAnalyser::class.java)
+        bind(HttpCallbackVerifier::class.java)
             .asEagerSingleton()
 
-        bind(HttpCallbackVerifier::class.java)
+        bind(SSRFAnalyser::class.java)
             .asEagerSingleton()
     }
 }

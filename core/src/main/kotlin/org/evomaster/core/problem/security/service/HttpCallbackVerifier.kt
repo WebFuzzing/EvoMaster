@@ -41,8 +41,10 @@ class HttpCallbackVerifier {
     }
 
     @PreDestroy
-    fun destroy() {
-        resetHTTPVerifier()
+    private fun destroy() {
+        if (config.ssrf) {
+            reset()
+        }
     }
 
     fun initWireMockServer() {
