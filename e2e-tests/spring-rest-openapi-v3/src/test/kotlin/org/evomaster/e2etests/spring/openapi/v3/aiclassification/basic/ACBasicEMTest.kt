@@ -40,7 +40,6 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACBasicEM",
-            "org.foo.ACBasicEM",
             100
         ) { args: MutableList<String> ->
 

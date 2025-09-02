@@ -1,6 +1,7 @@
-package org.evomaster.e2etests.spring.openapi.v3.aiclassification.or
+package org.evomaster.e2etests.spring.openapi.v3.aiclassification.onlyone
 
 import com.foo.rest.examples.spring.openapi.v3.aiclassification.basic.ACBasicController
+import com.foo.rest.examples.spring.openapi.v3.aiclassification.onlyone.ACOnlyOneController
 import com.foo.rest.examples.spring.openapi.v3.aiclassification.or.ACOrController
 import com.foo.rest.examples.spring.openapi.v3.aiclassification.required.ACRequiredController
 import com.google.inject.Injector
@@ -16,13 +17,13 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 
-class ACOrEMTest : AIClassificationEMTestBase() {
+class ACOnlyOneEMTest : AIClassificationEMTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(ACOrController())
+            initClass(ACOnlyOneController())
         }
     }
 
@@ -41,7 +42,7 @@ class ACOrEMTest : AIClassificationEMTestBase() {
     private fun testRunEM(model: AIResponseClassifierModel) {
 
         runTestHandlingFlakyAndCompilation(
-            "ACOrEM",
+            "ACOnlyOneEM",
             500
         ) { args: MutableList<String> ->
 
@@ -51,10 +52,10 @@ class ACOrEMTest : AIClassificationEMTestBase() {
             val (injector, solution) = initAndDebug(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/or", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/or", null)
-            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/or", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/or", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/onlyone", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/onlyone", null)
+            assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/onlyone", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/onlyone", null)
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
