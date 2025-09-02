@@ -17,7 +17,7 @@ import org.evomaster.core.seeding.service.rest.PirToRest
 open class RestBaseModule : EnterpriseModule() {
 
     override fun configure() {
-//        super.configure()
+        super.configure()
 
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)
