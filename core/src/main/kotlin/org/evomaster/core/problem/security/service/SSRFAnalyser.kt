@@ -29,10 +29,6 @@ import javax.annotation.PreDestroy
 
 class SSRFAnalyser {
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
-    }
-
     @Inject
     private lateinit var config: EMConfig
 
@@ -67,11 +63,13 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
+    }
+
     @PostConstruct
     fun init() {
-        if (config.ssrf) {
-            log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
-        }
+        log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
     }
 
 //    FIXME: PreDestroy case out of memory problems in RestIndividualResourceTest
@@ -87,7 +85,7 @@ class SSRFAnalyser {
         LoggingUtil.Companion.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
         // extract individuals from the archive
-        val individuals = archive.extractSolution().individuals
+        val individuals = this.archive.extractSolution().individuals
 
         individualsInSolution =
             RestIndividualSelectorUtils.findIndividuals(
@@ -120,7 +118,7 @@ class SSRFAnalyser {
 
         // TODO: This is for development, remove it later
         val individualsAfterExecution = RestIndividualSelectorUtils.findIndividuals(
-            archive.extractSolution().individuals,
+            this.archive.extractSolution().individuals,
             statusCodes = listOf(200, 201)
         )
         log.debug("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
