@@ -9,7 +9,7 @@ class ClassifierPerformance {
 
     var correctPrediction: Int = 0
         private set
-    var totalSentRequests: Int = 1
+    var totalSentRequests: Int = 0
         private set
 
     /**
