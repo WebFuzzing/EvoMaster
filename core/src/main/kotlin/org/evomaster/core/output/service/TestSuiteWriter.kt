@@ -841,11 +841,18 @@ class TestSuiteWriter {
                 addStatement("${httpCallbackVerifierName}.start()", lines)
                 addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
                 // FIXME: Might not need the default stub
-                addStatement("${httpCallbackVerifierName}.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
-                addStatement("\t.atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
-                        "\t.willReturn(WireMock.aResponse()\n" +
-                        "\t\t.withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
-                        "\t\t.withBody(\"${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY}\"))\n", lines)
+                addStatement("${httpCallbackVerifierName}.stubFor(any(anyUrl())", lines)
+                lines.indented {
+                    addStatement(".atPriority(100)", lines)
+                    addStatement(".willReturn(", lines)
+                   lines.indented {
+                       addStatement("aResponse()", lines)
+                       addStatement(".withStatus(418)", lines)
+                       addStatement(".withBody(\"I'm a teapot\")", lines)
+                   }
+                    addStatement(")", lines)
+                }
+                addStatement(")", lines)
             }
 
             testCaseWriter.addExtraInitStatement(lines)
