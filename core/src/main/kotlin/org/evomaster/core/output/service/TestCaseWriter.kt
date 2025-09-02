@@ -206,12 +206,12 @@ abstract class TestCaseWriter {
         val url = ""
 
         // FIXME: check the WireMock method case
-        lines.addStatement("${httpCallbackVerifierName}.stubFor(WireMock.get(${url}))")
+        lines.addStatement("${httpCallbackVerifierName}.stubFor(WireMock.get(\"${url}\"))")
         lines.addStatement(
-            ".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
-                    "            .willReturn(WireMock.aResponse()\n" +
-                    "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
-                    "            .withBody(${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY})\n)"
+            "\t.atPriority(1)\n" +
+                    "\t.willReturn(WireMock.aResponse()\n" +
+                    "\t\t.withStatus(200)\n" +
+                    "\t\t.withBody(\"\"))\n"
         )
         lines.addEmpty(1)
     }

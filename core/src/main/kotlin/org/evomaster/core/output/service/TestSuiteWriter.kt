@@ -830,7 +830,7 @@ class TestSuiteWriter {
                 }
 
                 lines.indented {
-                    lines.add(".port(\"${config.httpCallbackVerifierPort}\")")
+                    lines.add(".port(${config.httpCallbackVerifierPort})")
                     if (format.isJava()) {
                         addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
                     }
@@ -842,10 +842,10 @@ class TestSuiteWriter {
                 addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
                 // FIXME: Might not need the default stub
                 addStatement("${httpCallbackVerifierName}.stubFor(WireMock.any(WireMock.anyUrl()))", lines)
-                addStatement(".atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
-                        "            .willReturn(WireMock.aResponse()\n" +
-                        "            .withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
-                        "            .withBody(${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY})\n)", lines)
+                addStatement("\t.atPriority(${HttpCallbackVerifier.DEFAULT_RESPONSE_PRIORITY})\n" +
+                        "\t.willReturn(WireMock.aResponse()\n" +
+                        "\t\t.withStatus(${HttpCallbackVerifier.DEFAULT_RESPONSE_CODE})\n" +
+                        "\t\t.withBody(\"${HttpCallbackVerifier.DEFAULT_RESPONSE_BODY}\"))\n", lines)
             }
 
             testCaseWriter.addExtraInitStatement(lines)
