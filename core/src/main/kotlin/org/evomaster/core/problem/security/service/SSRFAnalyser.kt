@@ -74,12 +74,13 @@ class SSRFAnalyser {
         loadURLParamNamesFromFile()
     }
 
-    @PreDestroy
-    private fun preDestroy() {
-        if (config.ssrf) {
-            actionVulnerabilityMapping.clear()
-        }
-    }
+//    FIXME: PreDestroy case out of memory problems in RestIndividualResourceTest
+//    @PreDestroy
+//    private fun preDestroy() {
+//        if (config.ssrf) {
+//            actionVulnerabilityMapping.clear()
+//        }
+//    }
 
     fun apply(): Solution<RestIndividual> {
         LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
