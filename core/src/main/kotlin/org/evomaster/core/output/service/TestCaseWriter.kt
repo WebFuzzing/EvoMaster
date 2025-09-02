@@ -14,6 +14,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.param.HttpWsResponseParam
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -27,6 +28,9 @@ abstract class TestCaseWriter {
 
     @Inject
     protected lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
 
     /**
@@ -200,25 +204,27 @@ abstract class TestCaseWriter {
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
-        lines.addStatement("assertNotNull(${TestSuiteWriter.httpCallbackVerifierName})")
-        lines.addEmpty(1)
+        val url = ssrfAnalyser.getCallbackURL(action.getName())
 
-        val url = ""
+       if (url != null) {
+           lines.addStatement("assertNotNull(${TestSuiteWriter.httpCallbackVerifierName})")
+           lines.addEmpty(1)
 
-        // FIXME: check the WireMock method case
-        lines.addStatement("${httpCallbackVerifierName}.stubFor(any(anyUrl())")
-        lines.indented {
-            lines.addStatement(".atPriority(1)")
-            lines.addStatement(".willReturn(")
-            lines.indented {
-                lines.addStatement("aResponse()")
-                lines.addStatement(".withStatus(200)")
-                lines.addStatement(".withBody(\"I'm a teapot\")")
-            }
-            lines.addStatement(")")
-        }
-        lines.addStatement(")")
-        lines.addEmpty(1)
+           // FIXME: check the WireMock method cas
+           lines.addStatement("${httpCallbackVerifierName}.stubFor(get(\"${url}\")")
+           lines.indented {
+               lines.addStatement(".atPriority(1)")
+               lines.addStatement(".willReturn(")
+               lines.indented {
+                   lines.addStatement("aResponse()")
+                   lines.addStatement(".withStatus(200)")
+                   lines.addStatement(".withBody(\"OK\")")
+               }
+               lines.addStatement(")")
+           }
+           lines.addStatement(")")
+           lines.addEmpty(1)
+       }
     }
 
     /**

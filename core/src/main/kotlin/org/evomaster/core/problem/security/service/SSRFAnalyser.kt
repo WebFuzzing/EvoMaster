@@ -14,6 +14,7 @@ import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
@@ -215,6 +216,16 @@ class SSRFAnalyser {
             }
         }
 
+        return null
+    }
+
+    fun getCallbackURL(name: String): String? {
+        if (actionVulnerabilityMapping.containsKey(name)) {
+            val mapping = actionVulnerabilityMapping[name]
+            if (mapping != null) {
+                return mapping.httpCallbackURL
+            }
+        }
         return null
     }
 
