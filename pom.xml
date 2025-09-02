@@ -186,6 +186,7 @@
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
         <org.opensearch.version>3.1.0</org.opensearch.version>
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
+        <org.springframework.data.version>2.6.6</org.springframework.data.version>
     </properties>
 
 
@@ -640,7 +641,16 @@
                 <artifactId>spring-boot-starter-data-mongodb</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-redis</artifactId>
+                <version>${org.springframework.data.version}</version>
+            </dependency>
 
             <!--  SpringFox: Swagger documentation for SpringBoot-->
             <dependency>

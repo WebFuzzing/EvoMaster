@@ -103,6 +103,26 @@ class UrlHttpGene(
         return false
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * If the provided string is a valid, URL method will return
+     * true, otherwise false.
+     */
+    override fun setValueBasedOn(value: String): Boolean {
+        return try {
+            val url = URL(value)
+            scheme.setValueBasedOn(url.protocol)
+            host.setValueBasedOn(url.host)
+            port.setValueBasedOn(url.port.toString())
+            // This to make the String similar to what is expected in ArrayGene
+            val pathValues = url.path.drop(1).replace("/", ",")
+            path.setValueBasedOn(pathValues)
+            true
+        } catch (e: java.lang.Exception) {
+            false
+        }
+    }
+
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,
