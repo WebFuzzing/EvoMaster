@@ -8,7 +8,7 @@ paths:
     post:
       summary: Accepts either an email (component) or phone (inline)
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:

@@ -293,7 +293,7 @@ class DtoWriterTest {
 
     @Test
     fun testAnyOfMergesDtosIntoASingleOne() {
-        val dtoSpecs = listOf("Components", "Inline", "Mixed")
+        val dtoSpecs = listOf("Components", "Inline", "MixedOptional")
         dtoSpecs.forEach { chosenDto ->
             val dtoWriter = DtoWriter()
             val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")

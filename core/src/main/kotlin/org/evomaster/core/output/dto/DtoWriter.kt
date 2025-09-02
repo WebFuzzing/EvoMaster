@@ -58,8 +58,9 @@ class DtoWriter {
             action.getViewOfChildren().find { it is BodyParam }
             .let {
                 val primaryGene = (it as BodyParam).primaryGene()
-                if (primaryGene is ChoiceGene<*>) {
-                    calculateDtoFromChoice(primaryGene, action.getName())
+                val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
+                if (choiceGene != null) {
+                    calculateDtoFromChoice(choiceGene, action.getName())
                 } else {
                     calculateDtoFromNonChoiceGene(primaryGene.getLeafGene(), action.getName())
                 }
