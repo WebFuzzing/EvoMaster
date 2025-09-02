@@ -4,6 +4,8 @@ import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputField
+import org.evomaster.core.problem.rest.classifier.ModelAccuracy
+import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -18,11 +20,22 @@ class Deterministic400EndpointModel(
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
+    private val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+
     override fun updateModel(
         input: RestCallAction,
         output: RestCallResult
     ) {
         verifyEndpoint(input.endpoint)
+
+        if(initialized){
+            /*
+                We need to verify the accuracy of the model.
+                Before using these data points for the new learning, would the current
+                model be able to correctly classify them?
+             */
+            TODO
+        }
 
         if(!StatusGroup.G_2xx.isInGroup(output.getStatusCode())){
             /*
@@ -69,8 +82,12 @@ class Deterministic400EndpointModel(
     override fun estimateAccuracy(endpoint: Endpoint): Double {
         verifyEndpoint(endpoint)
 
-        //TODO  based on actual experience
-        return if(initialized) 1.0 else 0.0
+        if(!initialized){
+            //hasn't learned anything yet
+            return 0.0
+        }
+
+        return modelAccuracy.estimateAccuracy()
     }
 
     private fun verifyEndpoint(inputEndpoint: Endpoint){

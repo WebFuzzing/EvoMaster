@@ -379,8 +379,8 @@
             <!-- Misc -->
             <dependency>
                 <!--
-                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
-                    by different libraries, we force a specific version here to avoid conflicts (which for
+                   it brought in transitively by few
+                    different libraries, we force a specific version here to avoid conflicts (which for
                     example happened when updating Guice)
                 -->
                 <groupId>com.google.guava</groupId>
