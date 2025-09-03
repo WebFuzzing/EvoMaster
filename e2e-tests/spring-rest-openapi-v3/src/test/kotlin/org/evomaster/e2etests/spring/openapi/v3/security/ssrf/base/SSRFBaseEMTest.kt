@@ -21,7 +21,7 @@ class SSRFBaseEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
+//    @Disabled
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
