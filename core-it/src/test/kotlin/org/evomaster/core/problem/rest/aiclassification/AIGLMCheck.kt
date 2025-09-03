@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.basic.BasicController
-import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -23,7 +22,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
 import kotlin.collections.iterator
-import kotlin.math.abs
 
 
 class AIGLMCheck : IntegrationTestRestBase() {
@@ -163,7 +161,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             println("Genes Size   : ${geneValues.size}")
             println("Correct Predictions: ${classifier?.performance?.correctPrediction}")
             println("Total Requests     : ${classifier?.performance?.totalSentRequests}")
-            println("Accuracy           : ${classifier?.performance?.accuracy()}")
+            println("Accuracy           : ${classifier?.performance?.estimateAccuracy()}")
 
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
@@ -201,7 +199,7 @@ class AIGLMCheck : IntegrationTestRestBase() {
             if (predictionOfStatusCode != 400) {
                 sendOrNot = true
             }else{
-                sendOrNot = if(Math.random() > classifier.performance.accuracy()) true else false
+                sendOrNot = if(Math.random() > classifier.performance.estimateAccuracy()) true else false
             }
 
             // Execute the request and update
