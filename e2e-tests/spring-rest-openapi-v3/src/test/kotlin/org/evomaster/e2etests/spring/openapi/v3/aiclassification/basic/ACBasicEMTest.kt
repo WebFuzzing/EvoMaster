@@ -40,7 +40,7 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACBasicEM",
-            100
+            200
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
