@@ -21,7 +21,7 @@ class SSRFQueryEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+//    @Disabled
     @Test
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
