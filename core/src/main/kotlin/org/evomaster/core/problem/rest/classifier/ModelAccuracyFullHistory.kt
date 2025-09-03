@@ -5,7 +5,7 @@ package org.evomaster.core.problem.rest.classifier
  * @property correctPrediction the number of correct predictions made by the classifier
  * @property totalSentRequests the total number of requests sent to the classifier
  */
-class ClassifierPerformance {
+class ModelAccuracyFullHistory : ModelAccuracy {
 
     var correctPrediction: Int = 0
         private set
@@ -16,7 +16,7 @@ class ClassifierPerformance {
      * Calculates the accuracy of the classifier.
      * @return the ratio of correct predictions to total requests.
      */
-    fun accuracy(): Double {
+    override fun estimateAccuracy(): Double {
         return if (totalSentRequests > 0) {
             correctPrediction.toDouble() / totalSentRequests
         } else {
@@ -28,8 +28,8 @@ class ClassifierPerformance {
      * Returns a new ClassifierPerformance with updated counts
      * based on whether the latest prediction was correct.
      */
-    fun updatePerformance(predictionIsCorrect: Boolean) {
-        if (predictionIsCorrect) {
+    override fun updatePerformance(predictionWasCorrect: Boolean) {
+        if (predictionWasCorrect) {
             correctPrediction++
         }
         totalSentRequests++

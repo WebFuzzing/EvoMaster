@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.aiclassification
 
 import com.google.inject.Injector
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -42,14 +43,16 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         injector: Injector,
         ok2xx: List<RestCallAction>,
         fail400: List<RestCallAction>,
-        //TODO later on, might want to have it in EMConfig
-        threshold: Double = 0.9
+        threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
+        minimalAccuracy: Double = 0.5
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
-       //TODO should verify overall accuracy here
+        val accuracy = model.estimateOverallAccuracy()
+        assertTrue(accuracy >= minimalAccuracy, "Too low accuracy $accuracy." +
+                " Minimal accepted is $minimalAccuracy")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)
