@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: oneOf with Mixed Schemas
+  version: 1.0.0
+
+paths:
+  /oneof:
+    post:
+      summary: Accepts either a Cat (component) or Dog (inline)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CatSchema'
+                - type: object
+                  required: [dog]
+                  properties:
+                    dog:
+                      type: string
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    CatSchema:
+      type: object
+      required: [cat]
+      properties:
+        cat:
+          type: string
