@@ -41,7 +41,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
-            // TODO: Need to modify this to test for executed calls inside [SSRFAnalyser]
+            // TODO: Need to modify this to test to check for SSRF faults
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }
