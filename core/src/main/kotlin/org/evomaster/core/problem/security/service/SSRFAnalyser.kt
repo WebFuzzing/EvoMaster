@@ -162,15 +162,6 @@ class SSRFAnalyser {
      * potential security classes scope
      */
     fun classify() {
-        // TODO: We need to store word bag of potential input names
-        //  if we are going to classify using the variable names.
-        //  Other approach is to rely on the API doc with explicit
-        //  definitions of potential vulnerability classes.
-        //  This is for SSRF.
-        //  For SQLi we can consider individuals with SQL actions.
-        //  Are we going mark potential vulnerability classes as one time
-        //  job or going to evaluate each time (which is costly).
-
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
@@ -323,9 +314,6 @@ class SSRFAnalyser {
 
         copy.seeMainExecutableActions().forEach { action ->
             action.parameters.forEach { param ->
-                // TODO: Do we need to only update the StringGene?
-                // TODO: Tests are generated when only update the primaryGene,
-                //  when use seeGenes() nothing generated.
                 param.primaryGene().getViewOfChildren().forEach { gene ->
                     updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
                 }
