@@ -60,8 +60,6 @@ class SSRFAnalyser {
 
     /**
      * Regex pattern to match if the given string has these words.
-     * i - case-insensitive
-     * g - global, find all the matches not the first one
      */
     private val urlRegexPattern: Regex = "\\w*(url|source|remote|target|href|uri|link|endpoint|api|path|host)\\w*"
         .toRegex(RegexOption.IGNORE_CASE)
