@@ -21,7 +21,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled("Fails to capture SSRF test, need to investigate.")
+//    @Disabled("Fails to capture SSRF test, need to investigate.")
     @Test
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
