@@ -131,11 +131,17 @@ class HttpCallbackVerifier {
         return link
     }
 
-    fun getVerifiers(): List<ActionStubMapping> {
+    /**
+     * Get all the [ActionStubMapping] as [List].
+     */
+    fun getActionVerifierMappings(): List<ActionStubMapping> {
         return actionStubMapping.values.toList()
     }
 
-    fun getVerifier(name: String): ActionStubMapping? {
+    /**
+     * Return the [ActionStubMapping] for the [Action] name.
+     */
+    fun getActionVerifierMapping(name: String): ActionStubMapping? {
         if (actionStubMapping.containsKey(name)) {
             return actionStubMapping[name]
         }
@@ -172,6 +178,7 @@ class HttpCallbackVerifier {
     }
 
     fun stop() {
+        reset()
         if (isActive) {
             wireMockServer?.stop()
             wireMockServer = null

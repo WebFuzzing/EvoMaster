@@ -9,7 +9,6 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
-import org.evomaster.core.output.service.TestSuiteWriter.Companion.httpCallbackVerifierName
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -728,17 +727,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     /**
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
-    protected fun handleSSRFFaults(lines: Lines, action: Action) {
-        val verifier = httpCallbackVerifier.getVerifier(action.getName())
+    private fun handleSSRFFaults(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
 
         if (verifier != null) {
-            val wireMockName = "${httpCallbackVerifierName}_${verifier.id}"
-
-            lines.addStatement("assertNotNull(${wireMockName})")
+            lines.addStatement("assertNotNull(${verifier.getVerifierName()})")
             lines.addEmpty(1)
 
-            // FIXME: check the WireMock method cas
-            lines.addStatement("${wireMockName}.stubFor(get(\"${verifier.stub}\")")
+            lines.addStatement("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")
             lines.indented {
                 lines.addStatement(".atPriority(1)")
                 lines.addStatement(".willReturn(")

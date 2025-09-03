@@ -7,4 +7,8 @@ class ActionStubMapping (
     val port: Int,
     val url: String
 ) {
+
+    fun getVerifierName(): String {
+        return "httpCallbackVerifier_${id.toString()}"
+    }
 }

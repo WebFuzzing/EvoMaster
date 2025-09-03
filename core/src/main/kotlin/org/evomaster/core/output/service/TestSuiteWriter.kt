@@ -622,8 +622,8 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                httpCallbackVerifier.getVerifiers().forEach { verifiers ->
-                    addStatement("private static WireMockServer ${httpCallbackVerifierName}_${verifiers.id}", lines)
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
                 }
             }
 
@@ -653,8 +653,8 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                httpCallbackVerifier.getVerifiers().forEach { verifiers ->
-                    addStatement("private lateinit var ${httpCallbackVerifierName}_${verifiers.id}: WireMockServer", lines)
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
                 }
             }
 
@@ -829,13 +829,12 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                httpCallbackVerifier.getVerifiers().forEach { v ->
-                    val wireMockName = "${httpCallbackVerifierName}_${v.id}"
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     if (format.isJava()) {
-                        lines.add("$wireMockName = new WireMockServer(new WireMockConfiguration()")
+                        lines.add("${v.getVerifierName()} = new WireMockServer(new WireMockConfiguration()")
                     }
                     if (format.isKotlin()) {
-                        lines.add("$wireMockName = WireMockServer(WireMockConfiguration()")
+                        lines.add("${v.getVerifierName()} = WireMockServer(WireMockConfiguration()")
                     }
 
                     lines.indented {
@@ -847,8 +846,8 @@ class TestSuiteWriter {
                             addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
                         }
                     }
-                    addStatement("${wireMockName}.start()", lines)
-                    addStatement("assertNotNull(${wireMockName})", lines)
+                    addStatement("${v.getVerifierName()}.start()", lines)
+                    addStatement("assertNotNull(${v.getVerifierName()})", lines)
 
                     lines.addEmpty(1)
                 }
