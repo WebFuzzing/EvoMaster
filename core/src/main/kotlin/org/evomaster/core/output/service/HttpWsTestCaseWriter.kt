@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -8,16 +9,20 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.output.service.TestSuiteWriter.Companion.httpCallbackVerifierName
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -29,6 +34,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
     }
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
 
@@ -717,4 +725,42 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> throw IllegalStateException("Unsupported format $format")
         }
     }
+
+    /**
+     * Method to set up stub for HttpCallbackVerifier to the test case.
+     */
+    protected fun handleSSRFFaults(lines: Lines, action: Action) {
+        // FIXME: Get the used URL for this
+        var url = null
+
+        action.seeTopGenes().filter { it is StringGene }.forEach {
+            val x = it.getValueAsRawString()
+            val y = it.getVariableName()
+            val z = it.getLeafGene()
+        }
+
+        // TODO: The same action name can be in various individual, so the value get
+        //  overrides.
+
+        if (url != null) {
+            lines.addStatement("assertNotNull(${httpCallbackVerifierName})")
+            lines.addEmpty(1)
+
+            // FIXME: check the WireMock method cas
+            lines.addStatement("${httpCallbackVerifierName}.stubFor(get(\"${url}\")")
+            lines.indented {
+                lines.addStatement(".atPriority(1)")
+                lines.addStatement(".willReturn(")
+                lines.indented {
+                    lines.addStatement("aResponse()")
+                    lines.addStatement(".withStatus(200)")
+                    lines.addStatement(".withBody(\"OK\")")
+                }
+                lines.addStatement(")")
+            }
+            lines.addStatement(")")
+            lines.addEmpty(1)
+        }
+    }
+
 }
