@@ -6,7 +6,6 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SSRFBaseEMTest : SpringTestBase() {
@@ -21,7 +20,6 @@ class SSRFBaseEMTest : SpringTestBase() {
         }
     }
 
-//    @Disabled
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(

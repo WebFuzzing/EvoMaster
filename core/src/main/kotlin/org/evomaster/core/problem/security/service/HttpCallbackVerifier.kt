@@ -64,7 +64,7 @@ class HttpCallbackVerifier {
         try {
             val config = WireMockConfiguration()
                 .extensions(ResponseTemplateTransformer(false))
-//                .port(config.httpCallbackVerifierPort)
+                .dynamicPort()
 
             val wm = WireMockServer(config)
             wm.start()
@@ -164,14 +164,14 @@ class HttpCallbackVerifier {
 
     fun reset() {
         counter = 0
-        wireMockServer?.resetAll()
-        wireMockServer?.stubFor(getDefaultStub())
         actionStubMapping.clear()
+        if (isActive) {
+            wireMockServer?.resetAll()
+            wireMockServer?.stubFor(getDefaultStub())
+        }
     }
 
     fun stop() {
-        counter = 0
-        actionStubMapping.clear()
         if (isActive) {
             wireMockServer?.stop()
             wireMockServer = null
