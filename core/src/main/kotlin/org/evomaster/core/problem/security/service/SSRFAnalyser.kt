@@ -207,16 +207,6 @@ class SSRFAnalyser {
         return null
     }
 
-    fun getCallbackURL(name: String): String? {
-        if (actionVulnerabilityMapping.containsKey(name)) {
-            val mapping = actionVulnerabilityMapping[name]
-            if (mapping != null) {
-                return mapping.httpCallbackURL
-            }
-        }
-        return null
-    }
-
     /**
      * A private method to identify parameter is a potentially holds URL value
      * using a Regex based approach.
