@@ -199,12 +199,7 @@ class SSRFAnalyser {
         if (actionVulnerabilityMapping.containsKey(action.getName())) {
             val mapping = actionVulnerabilityMapping[action.getName()]
             if (mapping != null) {
-                val param = mapping.params.filter {
-                    it.value.securityFaults.contains(
-                        DefinedFaultCategory.SSRF
-                    )
-                }
-                return param.keys.first()
+                return mapping.getVulnerableParameterName()
             }
         }
 
@@ -331,7 +326,6 @@ class SSRFAnalyser {
         executedIndividual: EvaluatedIndividual<RestIndividual>,
         callbackURL: String
     ) {
-        actionVulnerabilityMapping.getValue(action.getName()).httpCallbackURL = callbackURL
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())

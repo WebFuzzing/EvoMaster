@@ -18,17 +18,20 @@ class ActionFaultMapping(
     var isVulnerable = false
 
     /**
-     * TODO: This is temporary to use it in the test cases.
-     */
-    var httpCallbackURL: String? = null
-
-    /**
      * Holds potential security faults for the [Action].
      */
     var securityFaults: MutableList<FaultCategory> = mutableListOf()
 
     fun addSecurityFaultCategory(faultCategory: FaultCategory) {
         securityFaults.add(faultCategory)
+    }
+
+    fun getVulnerableParameterName(): String? {
+        val params = params.filter { it.value.hasSSRFFaults() }
+        if (params.isNotEmpty()) {
+            return params.keys.first()
+        }
+        return null
     }
 
 }
