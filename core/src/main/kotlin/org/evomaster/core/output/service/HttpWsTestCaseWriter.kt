@@ -17,13 +17,11 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
-import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -33,7 +31,7 @@ import javax.ws.rs.core.MediaType
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     @Inject
-    private lateinit var ssrfAnalyser: SSRFAnalyser
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
@@ -732,7 +730,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
         // FIXME: Get the used URL for this
-        var url = ssrfAnalyser.getCallbackURL(action.getName())
+        var url = httpCallbackVerifier.getStubForAction(action.getName())
 
         // TODO: The same action name can be in various individual, so the value get
         //  overrides.

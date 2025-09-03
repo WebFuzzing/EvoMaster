@@ -25,6 +25,8 @@ class HttpCallbackVerifier {
      */
     private var actionCallbackLinkMapping: MutableMap<String, String> = mutableMapOf()
 
+    private var actionStubMapping: MutableMap<String, String> = mutableMapOf()
+
     val isActive: Boolean get() = wireMockServer != null && wireMockServer!!.isRunning
 
     private var counter: Long = 0
@@ -113,8 +115,17 @@ class HttpCallbackVerifier {
         val link = "http://localhost:${wireMockServer!!.port()}$ssrfPath"
 
         actionCallbackLinkMapping[name] = link
+        actionStubMapping[name] = ssrfPath
 
         return link
+    }
+
+    fun getStubForAction(name: String): String? {
+        if (actionStubMapping.containsKey(name)) {
+            return actionStubMapping[name]
+        }
+
+        return null
     }
 
     /**
