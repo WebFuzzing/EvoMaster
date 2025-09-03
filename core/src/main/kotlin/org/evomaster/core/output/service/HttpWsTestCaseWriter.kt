@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -16,6 +17,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.Action
@@ -29,6 +31,9 @@ import javax.ws.rs.core.MediaType
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
@@ -732,7 +737,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         action.seeTopGenes().filter { it is StringGene }.forEach {
             val x = it.getValueAsRawString()
             val y = it.getVariableName()
-            val z = it.getLeafGene()
+
+            val f = ssrfAnalyser.isVulnerableParameter(action.getName(), it.getVariableName())
         }
 
         // TODO: The same action name can be in various individual, so the value get
