@@ -40,7 +40,7 @@ class SSRFBaseEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
-            assertTrue { solution.hasAnySSRFFaults() }
+            assertTrue { solution.hasSsrfFaults() }
 
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch", "OK")
         }

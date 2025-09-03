@@ -434,7 +434,7 @@ class TestSuiteWriter {
             }
 
             if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
-                || (config.ssrf && solution.hasAnySSRFFaults())) {
+                || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
@@ -621,7 +621,7 @@ class TestSuiteWriter {
                     }
             }
 
-            if (config.ssrf && solution.hasAnySSRFFaults()) {
+            if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
                 }
@@ -652,7 +652,7 @@ class TestSuiteWriter {
                     }
             }
 
-            if (config.ssrf && solution.hasAnySSRFFaults()) {
+            if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
                 }
@@ -828,7 +828,7 @@ class TestSuiteWriter {
                 }
             }
 
-            if (config.ssrf && solution.hasAnySSRFFaults()) {
+            if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     if (format.isJava()) {
                         lines.add("${v.getVerifierName()} = new WireMockServer(new WireMockConfiguration()")

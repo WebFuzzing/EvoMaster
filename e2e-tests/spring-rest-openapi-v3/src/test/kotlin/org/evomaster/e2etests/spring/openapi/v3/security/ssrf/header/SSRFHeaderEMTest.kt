@@ -38,7 +38,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
-            assertTrue{ solution.hasAnySSRFFaults() }
+            assertTrue{ solution.hasSsrfFaults() }
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }

@@ -8,7 +8,6 @@ import org.evomaster.core.output.Termination
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.search.action.ActionFilter
 
 
 class Solution<T>(
@@ -61,7 +60,7 @@ where T : Individual {
 //        }
     }
 
-    fun hasAnySSRFFaults(): Boolean {
+    fun hasSsrfFaults(): Boolean {
         return DetectedFaultUtils.getDetectedFaultCategories(this).any {
             it == DefinedFaultCategory.SSRF
         }
