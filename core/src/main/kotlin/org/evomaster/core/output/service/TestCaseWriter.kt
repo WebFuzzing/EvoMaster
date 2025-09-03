@@ -200,11 +200,6 @@ abstract class TestCaseWriter {
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
-        action.seeTopGenes().forEach {
-            val x = it.getValueAsRawString()
-            val y = it.getVariableName()
-        }
-
         // FIXME: Get the used URL for this
         val url = null
 
