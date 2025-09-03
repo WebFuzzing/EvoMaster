@@ -729,18 +729,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
-        // FIXME: Get the used URL for this
-        var url = httpCallbackVerifier.getStubForAction(action.getName())
+        var stub = httpCallbackVerifier.getStubForAction(action.getName())
 
-        // TODO: The same action name can be in various individual, so the value get
-        //  overrides.
-
-        if (url != null) {
+        if (stub != null) {
             lines.addStatement("assertNotNull(${httpCallbackVerifierName})")
             lines.addEmpty(1)
 
             // FIXME: check the WireMock method cas
-            lines.addStatement("${httpCallbackVerifierName}.stubFor(get(\"${url}\")")
+            lines.addStatement("${httpCallbackVerifierName}.stubFor(get(\"${stub}\")")
             lines.indented {
                 lines.addStatement(".atPriority(1)")
                 lines.addStatement(".willReturn(")
