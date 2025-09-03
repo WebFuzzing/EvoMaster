@@ -43,7 +43,7 @@ open class SSRFBaseApplication {
     )
     @PostMapping(path = ["/fetch/data"])
     open fun fetchSensorData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
-        if (remoteData.sensorUrl!!.isNotEmpty()) {
+        if (remoteData.sensorUrl != null) {
             return try {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection
