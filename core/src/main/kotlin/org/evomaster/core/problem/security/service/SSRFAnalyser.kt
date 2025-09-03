@@ -58,8 +58,17 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
+    /**
+     * Regex pattern to match if the given string has these words.
+     * i - case-insensitive
+     * g - global, find all the matches not the first one
+     */
     private val urlRegexPattern: Regex = Regex("/url|source|remote|target/ig")
 
+    /**
+     * Possible URL variable names.
+     * TODO: Can load from a file.
+     */
     private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource")
 
     companion object {
