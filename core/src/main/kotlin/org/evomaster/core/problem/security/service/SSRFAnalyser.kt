@@ -60,9 +60,7 @@ class SSRFAnalyser {
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
     /**
-     * Regex pattern to match if the given string has these words.
-     * i - case-insensitive
-     * g - global, find all the matches not the first one
+     * Regex pattern to match if the given string has these words anywhere on the string.
      */
     private val urlRegexPattern: Regex = "\\w*(url|source|remote|target|href|uri|link|endpoint|api|path|host)\\w*"
         .toRegex(RegexOption.IGNORE_CASE)
