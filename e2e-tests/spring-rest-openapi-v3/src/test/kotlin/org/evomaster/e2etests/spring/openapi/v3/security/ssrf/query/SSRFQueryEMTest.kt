@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -24,7 +25,7 @@ class SSRFQueryEMTest: SpringTestBase() {
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
             "SSRFQueryEMTest",
-            80,
+            30,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
@@ -37,7 +38,8 @@ class SSRFQueryEMTest: SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
+            assertTrue(solution.individuals.isNotEmpty())
+            assertTrue(solution.hasAnySSRFFaults())
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/query", "OK")
         }

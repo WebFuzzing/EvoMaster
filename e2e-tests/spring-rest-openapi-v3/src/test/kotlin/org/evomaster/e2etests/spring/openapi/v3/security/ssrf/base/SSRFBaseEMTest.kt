@@ -25,7 +25,7 @@ class SSRFBaseEMTest : SpringTestBase() {
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
             "SSRFBaseEMTest",
-            100,
+            50,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
@@ -41,8 +41,9 @@ class SSRFBaseEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
+            assertTrue { solution.hasAnySSRFFaults() }
 
-//            assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch", "Unable to fetch sensor data.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch", "OK")
         }
     }
 }
