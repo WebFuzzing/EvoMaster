@@ -117,6 +117,11 @@ class GaussianOnlineClassifier : AIModel {
         return this.performance.estimateAccuracy()
     }
 
+    override fun estimateOverallAccuracy(): Double {
+        //TODO might need updating
+        return this.performance.estimateAccuracy()
+    }
+
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
         return x.indices.sumOf { i ->
             val mu = stats.mean[i]

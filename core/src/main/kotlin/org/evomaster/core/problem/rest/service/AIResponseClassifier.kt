@@ -46,6 +46,7 @@ class AIResponseClassifier : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
                 override fun estimateAccuracy(endpoint: Endpoint): Double  = 0.0
+                override fun estimateOverallAccuracy(): Double = 0.0
             }
         }
     }
@@ -65,6 +66,10 @@ class AIResponseClassifier : AIModel {
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
         return delegate.estimateAccuracy(endpoint)
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+        return delegate.estimateOverallAccuracy()
     }
 
     fun viewInnerModel(): AIModel = delegate

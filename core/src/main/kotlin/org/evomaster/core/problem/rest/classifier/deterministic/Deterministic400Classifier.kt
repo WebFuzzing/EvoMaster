@@ -35,4 +35,13 @@ class Deterministic400Classifier(
 
         return m.estimateAccuracy(endpoint)
     }
+
+    override fun estimateOverallAccuracy(): Double {
+
+        //average over all internal models
+        val n = models.size.toDouble()
+        val sum = models.values.sumOf { it.estimateOverallAccuracy() }
+
+        return sum / n
+    }
 }

@@ -19,5 +19,8 @@ class NeuralNetworkClassifier : AIModel {
     override fun estimateAccuracy(endpoint: Endpoint): Double {
         TODO("Not yet implemented")
     }
+    override fun estimateOverallAccuracy(): Double {
+        TODO("Not yet implemented")
+    }
 
 }

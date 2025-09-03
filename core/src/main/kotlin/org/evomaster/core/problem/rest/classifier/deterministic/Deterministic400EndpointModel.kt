@@ -104,6 +104,11 @@ class Deterministic400EndpointModel(
     override fun estimateAccuracy(endpoint: Endpoint): Double {
         verifyEndpoint(endpoint)
 
+        return estimateOverallAccuracy()
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+
         if(!initialized){
             //hasn't learned anything yet
             return 0.0

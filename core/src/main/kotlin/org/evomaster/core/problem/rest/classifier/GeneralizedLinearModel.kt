@@ -71,6 +71,11 @@ class GLMOnlineClassifier(
         return this.performance.estimateAccuracy()
     }
 
+    override fun estimateOverallAccuracy(): Double {
+        //TODO might need updating
+        return this.performance.estimateAccuracy()
+    }
+
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
