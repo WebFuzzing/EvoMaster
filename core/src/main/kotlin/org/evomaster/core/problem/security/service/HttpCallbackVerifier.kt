@@ -46,7 +46,9 @@ class HttpCallbackVerifier {
 
     @PreDestroy
     fun destroy() {
-        stop()
+        if (config.ssrf) {
+            stop()
+        }
     }
 
     fun prepare() {

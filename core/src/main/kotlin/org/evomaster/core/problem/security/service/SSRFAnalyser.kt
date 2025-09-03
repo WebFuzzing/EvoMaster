@@ -22,7 +22,6 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 
 class SSRFAnalyser {
 
@@ -60,8 +59,17 @@ class SSRFAnalyser {
      */
     private lateinit var individualsInSolution: List<EvaluatedIndividual<RestIndividual>>
 
+    /**
+     * Regex pattern to match if the given string has these words.
+     * i - case-insensitive
+     * g - global, find all the matches not the first one
+     */
     private val urlRegexPattern: Regex = Regex("/url|source|remote|target/ig")
 
+    /**
+     * Possible URL variable names.
+     * TODO: Can load from a file.
+     */
     private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource")
 
     companion object {
@@ -70,8 +78,9 @@ class SSRFAnalyser {
 
     @PostConstruct
     fun init() {
-        log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
-        loadURLParamNamesFromFile()
+        if (config.ssrf) {
+            log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
+        }
     }
 
 //    FIXME: PreDestroy case out of memory problems in RestIndividualResourceTest
@@ -142,13 +151,6 @@ class SSRFAnalyser {
             }
 
         if (hasCallBackURL) {
-            // FIXME: When the code reaches this point during SSRF phase
-            //  WireMock is null, due to that this will return false.
-            //  Which will not add the fault category.
-            //  However, I can see the WireMock get initiated even before
-            //  reaching this point.
-            //  I suspected something to do with the dependency injection.
-            //  I tried moving the WireMock inside this class, still the same.
             val x = httpCallbackVerifier.verify(action.getName())
             return x
         }
@@ -161,15 +163,6 @@ class SSRFAnalyser {
      * potential security classes scope
      */
     fun classify() {
-        // TODO: We need to store word bag of potential input names
-        //  if we are going to classify using the variable names.
-        //  Other approach is to rely on the API doc with explicit
-        //  definitions of potential vulnerability classes.
-        //  This is for SSRF.
-        //  For SQLi we can consider individuals with SQL actions.
-        //  Are we going mark potential vulnerability classes as one time
-        //  job or going to evaluate each time (which is costly).
-
         individualsInSolution.forEach { evaluatedIndividual ->
             evaluatedIndividual.evaluatedMainActions().forEach { a ->
                 val action = a.action
@@ -332,9 +325,6 @@ class SSRFAnalyser {
 
         copy.seeMainExecutableActions().forEach { action ->
             action.parameters.forEach { param ->
-                // TODO: Do we need to only update the StringGene?
-                // TODO: Tests are generated when only update the primaryGene,
-                //  when use seeGenes() nothing generated.
                 param.primaryGene().getViewOfChildren().forEach { gene ->
                     updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
                 }
@@ -375,9 +365,5 @@ class SSRFAnalyser {
                 }
             }
         }
-    }
-
-    private fun loadURLParamNamesFromFile() {
-        // TODO
     }
 }
