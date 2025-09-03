@@ -63,7 +63,8 @@ class SSRFAnalyser {
      * i - case-insensitive
      * g - global, find all the matches not the first one
      */
-    private val urlRegexPattern: Regex = Regex("/url|source|remote|target/ig")
+    private val urlRegexPattern: Regex = "\\w*(url|source|remote|target|href|uri|link|endpoint|api|path|host)\\w*"
+        .toRegex(RegexOption.IGNORE_CASE)
 
     /**
      * Possible URL variable names.
@@ -213,12 +214,11 @@ class SSRFAnalyser {
         if (potentialUrlParamNames.contains(name.lowercase())) {
             return true
         }
-
-        if (name.matches(urlRegexPattern)) {
+        if (urlRegexPattern.containsMatchIn(name)) {
             return true
         }
         if (description != null) {
-            if (description.matches(urlRegexPattern)) {
+            if (urlRegexPattern.containsMatchIn(description)) {
                 return true
             }
         }
