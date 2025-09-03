@@ -29,10 +29,6 @@ abstract class TestCaseWriter {
     @Inject
     protected lateinit var config: EMConfig
 
-    @Inject
-    private lateinit var ssrfAnalyser: SSRFAnalyser
-
-
     /**
      * In the tests, we might need to generate new variables.
      * We must guarantee that no 2 variables have the same name.
@@ -204,7 +200,13 @@ abstract class TestCaseWriter {
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
-        val url = ssrfAnalyser.getCallbackURL(action.getName())
+        action.seeTopGenes().forEach {
+            val x = it.getValueAsRawString()
+            val y = it.getVariableName()
+        }
+
+        // FIXME: Get the used URL for this
+        val url = null
 
        if (url != null) {
            lines.addStatement("assertNotNull(${TestSuiteWriter.httpCallbackVerifierName})")
