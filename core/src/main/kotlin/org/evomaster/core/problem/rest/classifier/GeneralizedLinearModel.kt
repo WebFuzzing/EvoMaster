@@ -28,7 +28,7 @@ class GLMOnlineClassifier(
     var dimension: Int? = null
     var weights: MutableList<Double>? = null
     var bias: Double = 0.0
-    var performance: ClassifierPerformance = ClassifierPerformance()
+    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -68,7 +68,12 @@ class GLMOnlineClassifier(
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.accuracy()
+        return this.performance.estimateAccuracy()
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+        //TODO might need updating
+        return this.performance.estimateAccuracy()
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
