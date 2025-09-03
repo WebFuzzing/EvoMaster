@@ -18,6 +18,7 @@ import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalS
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
@@ -83,6 +84,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -618,7 +622,9 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                addStatement("private static WireMockServer $httpCallbackVerifierName", lines)
+                httpCallbackVerifier.getVerifiers().forEach { verifiers ->
+                    addStatement("private static WireMockServer ${httpCallbackVerifierName}_${verifiers.id}", lines)
+                }
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -647,7 +653,9 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                addStatement("private lateinit var ${httpCallbackVerifierName}: WireMockServer", lines)
+                httpCallbackVerifier.getVerifiers().forEach { verifiers ->
+                    addStatement("private lateinit var ${httpCallbackVerifierName}_${verifiers.id}: WireMockServer", lines)
+                }
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -821,37 +829,29 @@ class TestSuiteWriter {
             }
 
             if (config.ssrf && solution.hasAnySSRFFaults()) {
-                if (format.isJava()) {
-                    lines.add("$httpCallbackVerifierName = new WireMockServer(new WireMockConfiguration()")
-                }
-                if (format.isKotlin()) {
-                    lines.add("$httpCallbackVerifierName = WireMockServer(WireMockConfiguration()")
-                }
-
-                lines.indented {
-                    lines.add(".port(${config.httpCallbackVerifierPort})")
+                httpCallbackVerifier.getVerifiers().forEach { v ->
+                    val wireMockName = "${httpCallbackVerifierName}_${v.id}"
                     if (format.isJava()) {
-                        addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                        lines.add("$wireMockName = new WireMockServer(new WireMockConfiguration()")
                     }
                     if (format.isKotlin()) {
-                        addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                        lines.add("$wireMockName = WireMockServer(WireMockConfiguration()")
                     }
+
+                    lines.indented {
+                        lines.add(".port(${v.port})")
+                        if (format.isJava()) {
+                            addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                        }
+                        if (format.isKotlin()) {
+                            addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                        }
+                    }
+                    addStatement("${wireMockName}.start()", lines)
+                    addStatement("assertNotNull(${wireMockName})", lines)
+
+                    lines.addEmpty(1)
                 }
-                addStatement("${httpCallbackVerifierName}.start()", lines)
-                addStatement("assertNotNull(${httpCallbackVerifierName})", lines)
-                // FIXME: Might not need the default stub
-                addStatement("${httpCallbackVerifierName}.stubFor(any(anyUrl())", lines)
-                lines.indented {
-                    addStatement(".atPriority(100)", lines)
-                    addStatement(".willReturn(", lines)
-                   lines.indented {
-                       addStatement("aResponse()", lines)
-                       addStatement(".withStatus(418)", lines)
-                       addStatement(".withBody(\"I'm a teapot\")", lines)
-                   }
-                    addStatement(")", lines)
-                }
-                addStatement(")", lines)
             }
 
             testCaseWriter.addExtraInitStatement(lines)
