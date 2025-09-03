@@ -1,9 +1,8 @@
 package org.evomaster.core.problem.security.data
 
-import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 
-class InputFaultMapping (
+class InputFaultMapping(
     val name: String,
     val description: String?
 ) {
@@ -16,9 +15,4 @@ class InputFaultMapping (
     fun addSecurityFaultCategory(faultCategory: FaultCategory) {
         securityFaults.add(faultCategory)
     }
-
-    fun isVulnerableForSSRF(): Boolean {
-        return securityFaults.contains(DefinedFaultCategory.SSRF)
-    }
-
 }

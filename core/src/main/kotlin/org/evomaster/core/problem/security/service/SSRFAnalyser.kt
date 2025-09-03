@@ -212,18 +212,6 @@ class SSRFAnalyser {
     }
 
     /**
-     * To check whether [Action] has any faults for SSRF.
-     */
-    fun isVulnerableParameter(action: String, param: String): Boolean {
-        if (actionVulnerabilityMapping.containsKey(action)) {
-            if (actionVulnerabilityMapping[action]!!.hasVulnerableParameterForSSRF(param)) {
-                return true
-            }
-        }
-        return false
-    }
-
-    /**
      * A private method to identify parameter is a potentially holds URL value
      * using a Regex based approach.
      */
