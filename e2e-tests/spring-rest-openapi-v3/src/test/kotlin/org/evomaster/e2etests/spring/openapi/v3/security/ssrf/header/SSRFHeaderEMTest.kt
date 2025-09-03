@@ -22,8 +22,8 @@ class SSRFHeaderEMTest: SpringTestBase() {
     @Test
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFEMTest",
-            300,
+            "SSRFHeaderEMTest",
+            80,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
@@ -38,7 +38,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
-            // TODO: Need to modify this to test for executed calls inside [SSRFAnalyser]
+            // TODO: Need to modify this to test to check for SSRF faults
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }
