@@ -87,6 +87,12 @@ class HttpCallbackVerifier {
     fun generateCallbackLink(name: String): String {
         // FIXME: sink/EM_0 <- slash get replaced with a comma at some point, which fails
         //  the verification based on the metadata
+        if (actionCallbackLinkMapping.containsKey(name)) {
+            if (actionCallbackLinkMapping[name] != null) {
+                return actionCallbackLinkMapping[name]!!
+            }
+        }
+
         val ssrfPath = "/EM_SSRF_${counter++}"
 
         wireMockServer!!.stubFor(
