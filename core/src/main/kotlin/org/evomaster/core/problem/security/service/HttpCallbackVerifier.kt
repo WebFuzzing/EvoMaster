@@ -32,8 +32,8 @@ class HttpCallbackVerifier {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(HttpCallbackVerifier::class.java)
 
-        const val DEFAULT_RESPONSE_STATUS_CODE = 200
-        const val DEFAULT_RESPONSE_BODY = "Gotcha!"
+        const val SSRF_RESPONSE_STATUS_CODE = 200
+        const val SSRF_RESPONSE_BODY = "SSRF"
     }
 
     @PostConstruct
@@ -95,8 +95,8 @@ class HttpCallbackVerifier {
                 .atPriority(1)
                 .willReturn(
                     WireMock.aResponse()
-                        .withStatus(DEFAULT_RESPONSE_STATUS_CODE)
-                        .withBody(DEFAULT_RESPONSE_BODY)
+                        .withStatus(SSRF_RESPONSE_STATUS_CODE)
+                        .withBody(SSRF_RESPONSE_BODY)
                 )
         )
 
