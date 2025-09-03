@@ -1,6 +1,5 @@
 package org.evomaster.core.output.service
 
-import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -34,9 +33,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
     }
-
-    @Inject
-    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     abstract fun getAcceptHeader(call: HttpWsAction, res: HttpWsCallResult): String
 
@@ -753,8 +749,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.addStatement(".willReturn(")
                 lines.indented {
                     lines.addStatement("aResponse()")
-                    lines.addStatement(".withStatus(200)")
-                    lines.addStatement(".withBody(\"OK\")")
+                    lines.addStatement(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                    lines.addStatement(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
                 }
                 lines.addStatement(")")
             }
