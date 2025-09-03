@@ -22,6 +22,7 @@ class AIResponseClassification(
                         " But status code ${it.key} has probability value ${it.value}")
             }
         }
+
     }
 
     fun probabilityOf400() : Double{
@@ -33,5 +34,13 @@ class AIResponseClassification(
             return 0.0
         }
         return probabilities[statusCode]!!
+    }
+
+    /**
+     * Returns the status code with the highest probability.
+     * @return the status code (key) with maximum probability
+     */
+    fun prediction(): Int {
+        return probabilities.maxByOrNull { it.value }?.key ?: -1
     }
 }
