@@ -731,7 +731,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
 
         if (verifier != null) {
-            lines.addStatement("assertNotNull(${verifier.getVerifierName()})")
+            if (format.isJava()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning())")
+            }
+            if (format.isKotlin()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
+            }
+
             lines.addEmpty(1)
 
             lines.addStatement("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")

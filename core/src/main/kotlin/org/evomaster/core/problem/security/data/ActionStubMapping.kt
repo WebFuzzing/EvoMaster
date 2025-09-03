@@ -9,6 +9,6 @@ class ActionStubMapping (
 ) {
 
     fun getVerifierName(): String {
-        return "httpCallbackVerifier_${id.toString()}"
+        return "httpCallbackVerifier${id.toString()}"
     }
 }
