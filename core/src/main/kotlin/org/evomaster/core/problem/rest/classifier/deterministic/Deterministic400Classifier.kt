@@ -6,7 +6,9 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
-class Deterministic400Classifier : AIModel {
+class Deterministic400Classifier(
+    private val thresholdForClassification : Double = 0.8
+) : AIModel {
 
     private val models: MutableMap<Endpoint, Deterministic400EndpointModel> = mutableMapOf()
 
@@ -14,7 +16,9 @@ class Deterministic400Classifier : AIModel {
         input: RestCallAction,
         output: RestCallResult
     ) {
-        val m = models.getOrPut(input.endpoint) { Deterministic400EndpointModel(input.endpoint) }
+        val m = models.getOrPut(input.endpoint) {
+            Deterministic400EndpointModel(input.endpoint, thresholdForClassification)
+        }
         m.updateModel(input, output)
     }
 

@@ -13,7 +13,8 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
 class Deterministic400EndpointModel(
-    val endpoint: Endpoint
+    val endpoint: Endpoint,
+    private val thresholdForClassification : Double = 0.8
 ) : AIModel {
 
     private var initialized = false
@@ -28,16 +29,37 @@ class Deterministic400EndpointModel(
     ) {
         verifyEndpoint(input.endpoint)
 
+        val code = output.getStatusCode()
+
         if(initialized){
             /*
                 We need to verify the accuracy of the model.
                 Before using these data points for the new learning, would the current
                 model be able to correctly classify them?
+
+                WARNING: little inefficiency here. we might call this twice with same input.
+                however, as repairs are done within loops in which classification is done each iteration,
+                this little inefficiency here should likely be minor (and better than passing classification
+                objects around between classes)
              */
-            TODO
+            val classification = classify(input)
+            val expectViolatedConstraint = classification.probabilityOf400() >= thresholdForClassification
+
+            if(expectViolatedConstraint) {
+                modelAccuracy.updatePerformance(code == 400)
+            } else {
+                /*
+                    This is potentially tricky.
+                    If there is no violated constraints, the call can still fail for any kind of
+                    reasons, eg, including database state and other constraints we don't handle.
+                    as no decision is made there in those cases, the accuracy of the model
+                    should not be updated.
+                    ie, we are interested in the false positives, not the true negatives.
+                 */
+            }
         }
 
-        if(!StatusGroup.G_2xx.isInGroup(output.getStatusCode())){
+        if(!StatusGroup.G_2xx.isInGroup(code)){
             /*
                 Nothing to do.
                 We can only "learn" from successful 2xx calls

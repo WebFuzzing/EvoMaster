@@ -38,7 +38,7 @@ class GaussianOnlineClassifier : AIModel {
     var dimension: Int? = null
     var density200: Density? = null
     var density400: Density? = null
-    var performance: ClassifierPerformance = ClassifierPerformance()
+    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -114,7 +114,7 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.accuracy()
+        return this.performance.estimateAccuracy()
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {

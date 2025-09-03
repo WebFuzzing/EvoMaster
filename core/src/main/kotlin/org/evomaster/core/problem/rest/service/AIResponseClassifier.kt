@@ -41,7 +41,7 @@ class AIResponseClassifier : AIModel {
             EMConfig.AIResponseClassifierModel.GLM ->
                 GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
-                Deterministic400Classifier()
+                Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
