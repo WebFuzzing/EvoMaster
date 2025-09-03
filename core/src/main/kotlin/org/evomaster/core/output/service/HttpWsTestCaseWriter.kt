@@ -732,14 +732,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
      */
     protected fun handleSSRFFaults(lines: Lines, action: Action) {
         // FIXME: Get the used URL for this
-        var url = null
-
-        action.seeTopGenes().filter { it is StringGene }.forEach {
-            val x = it.getValueAsRawString()
-            val y = it.getVariableName()
-
-            val f = ssrfAnalyser.isVulnerableParameter(action.getName(), it.getVariableName())
-        }
+        var url = ssrfAnalyser.getCallbackURL(action.getName())
 
         // TODO: The same action name can be in various individual, so the value get
         //  overrides.
