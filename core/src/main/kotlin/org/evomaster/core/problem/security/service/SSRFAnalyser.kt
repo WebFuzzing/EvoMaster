@@ -69,7 +69,7 @@ class SSRFAnalyser {
      * Possible URL variable names.
      * TODO: Can load from a file.
      */
-    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource")
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource", "referer")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
@@ -149,8 +149,7 @@ class SSRFAnalyser {
             }
 
         if (hasCallBackURL) {
-            val x = httpCallbackVerifier.verify(action.getName())
-            return x
+            return httpCallbackVerifier.verify(action.getName())
         }
 
         return false
