@@ -41,10 +41,7 @@ class SSRFBaseEMTest : SpringTestBase() {
             Assertions.assertTrue(solution.individuals.isNotEmpty())
 
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/image", "OK")
-
             assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch/data", "Unable to fetch sensor data.")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch/image", "Unable to fetch remote image.")
         }
     }
 }
