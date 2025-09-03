@@ -26,7 +26,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
             "SSRFHeaderEMTest",
-            80,
+            30,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
