@@ -21,7 +21,6 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import javax.annotation.PreDestroy
 
 class SSRFAnalyser {
 
@@ -69,8 +68,9 @@ class SSRFAnalyser {
 
     @PostConstruct
     fun init() {
-        log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
-        loadURLParamNamesFromFile()
+        if (config.ssrf) {
+            log.debug("Initializing {}", SSRFAnalyser::class.simpleName)
+        }
     }
 
 //    FIXME: PreDestroy case out of memory problems in RestIndividualResourceTest
@@ -141,13 +141,6 @@ class SSRFAnalyser {
             }
 
         if (hasCallBackURL) {
-            // FIXME: When the code reaches this point during SSRF phase
-            //  WireMock is null, due to that this will return false.
-            //  Which will not add the fault category.
-            //  However, I can see the WireMock get initiated even before
-            //  reaching this point.
-            //  I suspected something to do with the dependency injection.
-            //  I tried moving the WireMock inside this class, still the same.
             val x = httpCallbackVerifier.verify(action.getName())
             return x
         }
@@ -364,9 +357,5 @@ class SSRFAnalyser {
                 }
             }
         }
-    }
-
-    private fun loadURLParamNamesFromFile() {
-        // TODO
     }
 }
