@@ -14,13 +14,18 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
  */
 object InputEncoderUtils {
 
-    /** Encodes `IntegerGene`, `DoubleGene`, `EnumGene`, and `BooleanGene` of a `RestCallAction` into a vector of `Double` elements */
-    fun encode(input: RestCallAction): List<Double> {
+    data class EncodedFeatures(
+        val rawEncodedFeatures: List<Double>,
+        val normalizedEncodedFeatures: List<Double>
+    )
 
-        // Create enum encodings
+    /** Encodes `IntegerGene`, `DoubleGene`, `EnumGene`, and `BooleanGene` of a `RestCallAction` into a vector of `Double` elements */
+    fun encode(action: RestCallAction): EncodedFeatures {
+
+        // Encoding enum genes as a mapping string -> int
         val enumEncoding = mutableMapOf<String, Map<String, Int>>()
-        for (parameter in input.parameters.filterIsInstance<QueryParam>().sortedBy { it.name }) {
-            val gene = parameter.primaryGene()
+        for (parameter in action.parameters.filterIsInstance<QueryParam>().sortedBy { it.name }) {
+            val gene = parameter.gene.getLeafGene()
             if (gene is EnumGene<*>) {
                 val values = gene.values
                     .map { it.toString() }
@@ -29,32 +34,48 @@ object InputEncoderUtils {
             }
         }
         //TODO: We need to handle other types, eg, OptionalGene, and other types of numerics (eg Long and Float)
-        val encodedFeatures = mutableListOf<Double>()
-        for (gene in input.seeTopGenes()) {
+        /**
+         * The null handling is based on considering null values as -1e6
+         */
+        val rawEncodedFeatures = mutableListOf<Double>()
+        for (gene in action.seeTopGenes()) {
+            if(gene.getValueAsRawString()==""){
+                rawEncodedFeatures.add(-1e6)
+                continue
+            }
+            val gene=gene.getLeafGene()
             when (gene) {
-                is IntegerGene -> encodedFeatures.add(gene.value.toDouble())
-                is DoubleGene -> encodedFeatures.add(gene.value)
-                is BooleanGene -> encodedFeatures.add(if (gene.getValueAsRawString().toBoolean()) 1.0 else 0.0)
+                is IntegerGene -> rawEncodedFeatures.add(gene.value.toDouble() ?: -1e6)
+                is DoubleGene -> rawEncodedFeatures.add(gene.value ?: -1e6)
+                is BooleanGene -> {
+                    val raw = gene.getValueAsRawString()
+                    rawEncodedFeatures.add(if (raw != "" && raw.toBoolean()) 1.0 else 0.0 ?: -1e6)
+                }
                 is EnumGene<*> -> {
                     val paramName = gene.name
                     val rawValue = gene.getValueAsRawString()
-                    val encoded = enumEncoding[paramName]?.get(rawValue) ?: -1
-                    encodedFeatures.add(encoded.toDouble())
+                    val encoded = enumEncoding[paramName]?.get(rawValue) ?: -1e6
+                    rawEncodedFeatures.add(encoded.toDouble())
                 }
             }
         }
 
         // TODO Normalization step should be defined in the config, as normalization may either
         //  weaken or strengthen the classification performance
-        val mean = encodedFeatures.average()
-        val stdDev = kotlin.math.sqrt(encodedFeatures.map { (it - mean) * (it - mean) }.average())
+        val mean = rawEncodedFeatures.average()
+        val stdDev = kotlin.math.sqrt(rawEncodedFeatures.map { (it - mean) * (it - mean) }.average())
 
-        return if (stdDev == 0.0) {
-            List(encodedFeatures.size) { 0.0 }
-        } else {
-            encodedFeatures.map { (it - mean) / stdDev }
-        }
+        val normalizedEncodedFeatures: List<Double> =
+            if (stdDev == 0.0) {
+                List(rawEncodedFeatures.size) { 0.0 }
+            } else {
+                rawEncodedFeatures.map { (it - mean) / stdDev }
+            }
 
-        return encodedFeatures
+        return EncodedFeatures(
+            rawEncodedFeatures = rawEncodedFeatures,
+            normalizedEncodedFeatures = normalizedEncodedFeatures
+        )
+
     }
 }
