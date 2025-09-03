@@ -143,7 +143,6 @@ class SSRFAnalyser {
 
             should check the content of rcr result
          */
-
         val hasCallBackURL = GeneUtils
             .getAllStringFields(action.parameters)
             .any { gene ->
@@ -221,6 +220,18 @@ class SSRFAnalyser {
             }
         }
         return null
+    }
+
+    /**
+     * To check whether [Action] has any faults for SSRF.
+     */
+    fun isVulnerableParameter(action: String, param: String): Boolean {
+        if (actionVulnerabilityMapping.containsKey(action)) {
+            if (actionVulnerabilityMapping[action]!!.hasVulnerableParameterForSSRF(param)) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -347,7 +358,6 @@ class SSRFAnalyser {
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
             val actionMapping = actionVulnerabilityMapping.getValue(action.getName())
-            actionMapping.isExploitable = true
             actionMapping.addSecurityFaultCategory(DefinedFaultCategory.SSRF)
             // Create a testing target
             archive.addIfNeeded(executedIndividual)

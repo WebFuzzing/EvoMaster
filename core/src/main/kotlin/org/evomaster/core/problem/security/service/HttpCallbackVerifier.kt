@@ -35,6 +35,9 @@ class HttpCallbackVerifier {
         const val DEFAULT_RESPONSE_CODE = 418
         const val DEFAULT_RESPONSE_BODY = "I'm a teapot"
         const val DEFAULT_RESPONSE_PRIORITY = 100
+
+        const val SSRF_RESPONSE_STATUS_CODE = 200
+        const val SSRF_RESPONSE_BODY = "Gotcha!"
     }
 
     @PostConstruct
@@ -96,8 +99,8 @@ class HttpCallbackVerifier {
                 .atPriority(1)
                 .willReturn(
                     WireMock.aResponse()
-                        .withStatus(200)
-                        .withBody("OK")
+                        .withStatus(SSRF_RESPONSE_STATUS_CODE)
+                        .withBody(SSRF_RESPONSE_BODY)
                 )
         )
 
