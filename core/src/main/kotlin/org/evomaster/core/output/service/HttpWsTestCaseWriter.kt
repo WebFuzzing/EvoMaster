@@ -118,6 +118,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if (bodyParam != null && bodyParam.isJson()) {
             val dto = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.DTO, targetFormat = format)
             dto.split("\n").forEach { lines.add(it) }
+            lines.addEmpty()
         }
     }
 
