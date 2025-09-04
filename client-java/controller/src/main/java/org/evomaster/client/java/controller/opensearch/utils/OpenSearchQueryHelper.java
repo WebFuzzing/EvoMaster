@@ -80,7 +80,7 @@ public class OpenSearchQueryHelper {
                     return null;
             }
 
-            SimpleLogger.debug("[OpenSearch] [extractTypedFieldValue] found unknown kind: " + kindName);
+            SimpleLogger.warn("[OpenSearch] [extractTypedFieldValue] found unknown kind: " + kindName);
             return value.getClass().getMethod("_get").invoke(value);
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
