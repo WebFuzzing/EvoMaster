@@ -2,7 +2,10 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.output.dto.DtoClass
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
@@ -21,6 +24,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URLEncoder
@@ -388,6 +392,30 @@ class ObjectGene(
             handleInputSelection(buffer, includedFields, previousGenes, mode, targetFormat)
         } else if (mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE) {
             handleInputArraySelection(buffer, includedFields, previousGenes, mode, targetFormat)
+        } else if (mode == GeneUtils.EscapeMode.DTO) {
+
+            if (targetFormat?.isJava() ?: false) {
+
+                val dtoName = StringUtils.capitalization(refType?: "TODO_DETERMINE_DTO_NAME")
+
+                buffer.append("$dtoName var_$dtoName = new $dtoName();\n")
+
+                // fixedFields or includedFields?
+                includedFields.joinTo(buffer, ";\n") {
+                    "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
+                        it.getValueAsPrintableString(
+                            previousGenes,
+                            mode,
+                            targetFormat
+                        )
+                    })"
+                }
+            } else {
+                throw IllegalArgumentException("Unrecognized format for writing DTO payload: $targetFormat")
+            }
+
+
+
         } else {
             throw IllegalArgumentException("Unrecognized mode: $mode")
         }

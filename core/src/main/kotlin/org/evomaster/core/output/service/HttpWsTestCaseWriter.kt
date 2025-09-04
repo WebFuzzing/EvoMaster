@@ -22,6 +22,7 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+import kotlin.math.PI
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -83,6 +84,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         handlePreCallSetup(call, lines, res)
 
+        // TODO add support for kotlin
+        if (config.dtoForRequestPayload && format.isJava()) {
+            writeDto(call, lines)
+        }
+
         if (needsResponseVariable(call, res) && !res.failedCall()) {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
@@ -104,6 +110,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             // in JS, the Accept must be after the verb
             // in C# and Python, must be before the call
             lines.append(getAcceptHeader(call, res))
+        }
+    }
+
+    private fun writeDto(call: HttpWsAction, lines: Lines) {
+        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+        if (bodyParam != null && bodyParam.isJson()) {
+            val dto = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.DTO, targetFormat = format)
+            dto.split("\n").forEach { lines.add(it) }
         }
     }
 
