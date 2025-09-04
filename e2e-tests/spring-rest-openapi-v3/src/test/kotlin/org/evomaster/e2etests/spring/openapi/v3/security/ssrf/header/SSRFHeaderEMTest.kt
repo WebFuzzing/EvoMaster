@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.header
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.header.SSRFHeaderController
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -14,7 +15,9 @@ class SSRFHeaderEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SSRFHeaderController())
+            val config = EMConfig()
+            config.instrumentMR_NET = false
+            initClass(SSRFHeaderController(), config)
         }
     }
 
@@ -23,7 +26,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
             "SSRFHeaderEMTest",
-            80,
+            30,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.

@@ -732,9 +732,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        // FIXME: Code never reach this when we recompute the fitness under SSRFAnalyser
-        //  So the faults never get marked.
-        //  ResourceRestFitness get invoked during the recompute
         if (config.security && config.ssrf) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
@@ -1205,8 +1202,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
 
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
                     ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
                 }
             }
