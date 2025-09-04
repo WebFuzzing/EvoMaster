@@ -329,7 +329,7 @@ class ObjectGene(
             throw IllegalStateException("do not support getValueAsPrintableString with mode ($mode) for non-fixed ObjectGene")
         val buffer = StringBuffer()
 
-        val includedFields = fields.filter {
+        val includedFields = fixedFields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         } .filter { it.isPrintable() }
 
@@ -639,8 +639,41 @@ class ObjectGene(
                 val input = GeneUtils.removeEnclosedQuotationMarks(text)
                 ok = ok && it.setValueBasedOn(input)
             }
+        }
 
-            //TODO additional
+        val names = this.fixedFields.map { it.name }
+        val extraInputs = fields.filter { !names.contains(it.key) }
+
+        if(isFixed && extraInputs.isNotEmpty()) {
+            /*
+                TODO: Refactor. do we really need to have boolean returned in this function?
+                ie, need to distinguish between "must" make modifications exactly as asked, and when
+                a "best-effort" is enough
+             */
+            //return false
+        }
+
+        if(!isFixed){
+            //first remove all
+            val extra = additionalFields!!
+            extra.forEach {
+                killChild(it)
+            }
+
+            extraInputs.forEach {
+                val x = template!!.copy() as PairGene<StringGene, Gene>
+                /*
+                    WARNING: as we do not have access to randomness here, there is no guarantee
+                    that, if any entry was not fully specified, the resulting copied gene will be
+                    locally valid
+                 */
+                if(this.initialized){
+                    x.markAllAsInitialized()
+                }
+                x.first.setValueBasedOn(it.key)
+                x.second.setValueBasedOn(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
+                addChild(x)
+            }
         }
 
         return ok

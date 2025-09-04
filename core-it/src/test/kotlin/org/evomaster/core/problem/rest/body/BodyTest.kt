@@ -144,4 +144,44 @@ class BodyTest : IntegrationTestRestBase(){
         assertEquals(200, res.getStatusCode())
         assertEquals("D", res.getBody())
     }
+
+
+    @Test
+    fun testAdditionalFields() {
+
+        val pirTest = getPirToRest()
+
+        val post = pirTest.fromVerbPath("post", "/api/body",
+            jsonBodyPayload = """
+                {
+                    "s": "hello",
+                    "extra_string": "world",
+                    "extra_int": 77
+                }
+            """.trimIndent())!!
+
+        val x = createIndividual(listOf(post))
+        val res = x.evaluatedMainActions()[0].result as RestCallResult
+
+        //there is chance randomized get right values for a E
+        //assertEquals(400, res.getStatusCode())
+        val payload = post.parameters.find { it is BodyParam } as BodyParam
+
+        val data = payload.primaryGene()
+        assertTrue(data is ObjectGene)
+        val text = data.getValueAsRawString()
+
+        val mapper = ObjectMapper()
+        val tree = mapper.readTree(text)
+
+        assertEquals(5, tree.size())
+        // required fields
+        assertTrue(tree.fields().asSequence().any{it.key == "rb"})
+        assertTrue(tree.fields().asSequence().any{it.key == "ri"})
+        //basic field
+        assertTrue(tree.fields().asSequence().any{it.key == "s"})
+        //extra fields
+        assertTrue(tree.fields().asSequence().any{it.key == "extra_string"})
+        assertTrue(tree.fields().asSequence().any{it.key == "extra_int"})
+    }
 }

@@ -1025,25 +1025,32 @@ object RestActionBuilderV3 {
          */
 
         var additionalFieldTemplate : PairGene<StringGene, Gene>? = null
-        /*
-            Can be either a boolean or a Schema
-         */
+        var valueTemplate : Gene? = null
+
+        //    Can be either a boolean or a Schema
         val additional = schema.additionalProperties
 
-        if (additional is Boolean) {
+        if (additional == null || (additional is Boolean && additional)) {
             /*
                 if 'false', no other fields besides the specified ones can be added.
-                Default is 'true'.
+                if 'true', then any kind of extra field can be added
+                Default is 'true' if not specified.
               */
-            //TODO could add extra fields for robustness testing
+               val name = "valueTemplate"
+               valueTemplate = ChoiceGene(name, listOf(
+                   StringGene(name),
+                   BooleanGene(name),
+                   IntegerGene(name),
+                   DoubleGene(name),
+               ))
         }
-        if (additional is Schema<*>) {
 
+        if (additional is Schema<*>) {
             /*
                support additionalProperties with schema
             */
             if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference(
+                valueTemplate = createObjectFromReference(
                     "valueTemplate",
                     additional.`$ref`,
                     schemaHolder,
@@ -1052,12 +1059,9 @@ object RestActionBuilderV3 {
                     options = options,
                     examples = examples,
                     messages = messages)
-                additionalFieldTemplate= PairGene(
-                    "template",
-                    StringGene("keyTemplate"),
-                    valueTemplate.copy())
+
             }else if(!additional.type.isNullOrBlank() || additional.types?.isNotEmpty() == true){
-                val valueTemplate = getGene(
+                valueTemplate = getGene(
                     "valueTemplate",
                     additional,
                     schemaHolder,
@@ -1066,26 +1070,18 @@ object RestActionBuilderV3 {
                     null,
                     options = options,
                     messages = messages)
-                additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
+        }
+        /*
+            TODO could add extra fields for robustness testing,
+            with and without following the given schema for their type
+         */
 
-            /*
-               TODO could add extra fields for robustness testing,
-               with and without following the given schema for their type
-             */
-
-            /*
-                TODO proper handling.
-                Using a map is just a temp solution
-             */
-
-//            if (fields.isEmpty()) {
-//                if (additionalFieldTemplate != null)
-//                    return FixedMapGene(name, additionalFieldTemplate)
-//
-//                // here, the first of pairgene should not be mutable
-//                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
-//            }
+        if(valueTemplate != null){
+            additionalFieldTemplate= PairGene(
+                "template",
+                StringGene("keyTemplate"),
+                valueTemplate.copy())
         }
 
         return assembleObjectGeneWithConstraints(
