@@ -67,4 +67,81 @@ class BodyTest : IntegrationTestRestBase(){
         assertEquals(200, res.getStatusCode())
         assertEquals("E", res.getBody())
     }
+
+    @Test
+    fun testString(){
+
+        val pirTest = getPirToRest()
+
+        val post = pirTest.fromVerbPath("post", "/api/body",
+            jsonBodyPayload = """ 
+                {
+                    "s": "foo"
+                }
+            """.trimIndent())!!
+
+        val x = createIndividual(listOf(post))
+        val res = x.evaluatedMainActions()[0].result as RestCallResult
+
+        assertEquals(200, res.getStatusCode())
+        assertEquals("A", res.getBody())
+    }
+
+
+    @Test
+    fun testDouble(){
+
+        val pirTest = getPirToRest()
+
+        val post = pirTest.fromVerbPath("post", "/api/body",
+            jsonBodyPayload = """ 
+                {
+                    "d": -5
+                }
+            """.trimIndent())!!
+
+        val x = createIndividual(listOf(post))
+        val res = x.evaluatedMainActions()[0].result as RestCallResult
+
+        assertEquals(200, res.getStatusCode())
+        assertEquals("B", res.getBody())
+    }
+
+    @Test
+    fun testArray(){
+
+        val pirTest = getPirToRest()
+
+        val post = pirTest.fromVerbPath("post", "/api/body",
+            jsonBodyPayload = """ 
+                {
+                    "l": ["a","b"]
+                }
+            """.trimIndent())!!
+
+        val x = createIndividual(listOf(post))
+        val res = x.evaluatedMainActions()[0].result as RestCallResult
+
+        assertEquals(200, res.getStatusCode())
+        assertEquals("C", res.getBody())
+    }
+
+    @Test
+    fun testNestedObject(){
+
+        val pirTest = getPirToRest()
+
+        val post = pirTest.fromVerbPath("post", "/api/body",
+            jsonBodyPayload = """ 
+                {
+                    "o": {"s": "bar"}
+                }
+            """.trimIndent())!!
+
+        val x = createIndividual(listOf(post))
+        val res = x.evaluatedMainActions()[0].result as RestCallResult
+
+        assertEquals(200, res.getStatusCode())
+        assertEquals("D", res.getBody())
+    }
 }

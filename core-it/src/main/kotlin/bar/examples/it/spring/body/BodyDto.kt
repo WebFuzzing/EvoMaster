@@ -21,5 +21,5 @@ class BodyDto(
 
     var l: List<String>? = null,
 
-    var o: BodyDto? = null
+    var o: BodyOtherDto? = null
 )

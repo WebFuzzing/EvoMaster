@@ -304,10 +304,12 @@ class ArrayGene<T>(
      */
     override fun setValueBasedOn(value: String): Boolean {
         val elements = value
+            .trim()
             .removePrefix(openingTag)
             .removeSuffix(closingTag)
-            .split(separatorTag)
+            .split(separatorTag.trim())
             .map { it.trim() }
+
         if (elements.isNotEmpty()) {
             killAllChildren()
             when(template) {

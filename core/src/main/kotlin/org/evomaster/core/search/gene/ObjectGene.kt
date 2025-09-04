@@ -632,7 +632,12 @@ class ObjectGene(
 
             if(matchingEntry != null) {
                 val text = matchingEntry.value.toString()
-                ok = ok && it.setValueBasedOn(text)
+                /*
+                    TODO unsure if this should be handled here, or rather as part of setValueBasedOn.
+                    but, in this latter case, it would need quite a bit of refactoring
+                 */
+                val input = GeneUtils.removeEnclosedQuotationMarks(text)
+                ok = ok && it.setValueBasedOn(input)
             }
 
             //TODO additional
