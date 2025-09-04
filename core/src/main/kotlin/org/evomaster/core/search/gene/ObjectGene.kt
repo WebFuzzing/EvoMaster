@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -77,6 +78,8 @@ class ObjectGene(
         private const val PROB_MODIFY_SIZE_ADDITIONAL_FIELDS = 0.1
         // the default maximum size for additional fields
         private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
+
+        private val mapper = ObjectMapper()
     }
 
     val fields : List<out Gene>
@@ -605,5 +608,37 @@ class ObjectGene(
     private fun closeXml(tagName: String) = "</$tagName>"
 
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun setValueBasedOn(value: String): Boolean {
+
+        val tree = mapper.readTree(value)
+
+        if(! tree.isObject){
+            return false
+        }
+
+        val fields = tree.fields().asSequence().toList()
+
+        var ok = true
+
+        this.fixedFields.forEach {
+
+            val optional = it.getWrappedGene(OptionalGene::class.java)
+            val matchingEntry = fields.find { f -> f.key == it.name }
+
+            if(optional != null && matchingEntry == null) {
+                optional.isActive = false
+            }
+
+            if(matchingEntry != null) {
+                val text = matchingEntry.value.toString()
+                ok = ok && it.setValueBasedOn(text)
+            }
+
+            //TODO additional
+        }
+
+        return ok
+    }
 
 }
