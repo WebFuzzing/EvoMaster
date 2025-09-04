@@ -54,7 +54,6 @@ class TestSuiteWriter {
         private const val pythonUtilsFilenameNoExtension = "em_test_utils"
         const val pythonUtilsFilename = "$pythonUtilsFilenameNoExtension.py"
         const val javascriptUtilsFilename = "EMTestUtils.js"
-        const val httpCallbackVerifierName = "httpCallbackVerifier"
 
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
