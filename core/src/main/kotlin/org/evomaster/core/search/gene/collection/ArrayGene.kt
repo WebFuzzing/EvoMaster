@@ -307,7 +307,12 @@ class ArrayGene<T>(
             .trim()
             .removePrefix(openingTag)
             .removeSuffix(closingTag)
-            .split(separatorTag.trim())
+            /*
+                the separator tag might have spaces for readability.
+                those should be ignored.
+                however, if the tag itself is just empty spaces, then cannot ignore them.
+             */
+            .split(if(separatorTag.isBlank()) separatorTag else separatorTag.trim())
             .map { it.trim() }
 
         if (elements.isNotEmpty()) {
