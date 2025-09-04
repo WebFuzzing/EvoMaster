@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: allOf with Inline Schemas
+  version: 1.0.0
+
+paths:
+  /allof:
+    post:
+      summary: Requires both name and age (defined inline)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - type: object
+                  required: [name]
+                  properties:
+                    name:
+                      type: string
+                - type: object
+                  required: [age]
+                  properties:
+                    age:
+                      type: integer
+      responses:
+        '200':
+          description: OK

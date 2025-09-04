@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.query
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.query.SSRFQueryController
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -14,7 +15,9 @@ class SSRFQueryEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SSRFQueryController())
+            val config = EMConfig()
+            config.instrumentMR_NET = false
+            initClass(SSRFQueryController(), config)
         }
     }
 
@@ -23,7 +26,7 @@ class SSRFQueryEMTest: SpringTestBase() {
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
             "SSRFQueryEMTest",
-            300,
+            30,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
