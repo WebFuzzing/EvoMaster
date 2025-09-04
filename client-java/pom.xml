@@ -5,12 +5,13 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>3.4.1-SNAPSHOT</version>
+        <version>4.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
     <artifactId>evomaster-client-java</artifactId>
     <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
 
     <modules>
         <module>controller</module>
@@ -25,6 +26,14 @@
         <module>distance-heuristics</module>
         <module>test-utils-java</module>
     </modules>
+
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License (LGPL), version 3</name>
+            <url>http://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
 
     <dependencyManagement>
         <dependencies>

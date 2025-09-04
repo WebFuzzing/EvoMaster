@@ -40,6 +40,11 @@ public enum ReplacementCategory {
     /**
      * Replacements to handle OPENSEARCH command interceptions
      */
-    OPENSEARCH
+    OPENSEARCH,
 
+    /**
+     * Replacements to handle REDIS command interceptions
+     */
+    REDIS
 }
+

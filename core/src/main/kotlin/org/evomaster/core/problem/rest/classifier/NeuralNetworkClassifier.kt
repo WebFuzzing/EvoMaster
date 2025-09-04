@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.classifier
 
 import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
@@ -13,6 +14,13 @@ class NeuralNetworkClassifier : AIModel {
     override fun classify(input: RestCallAction): AIResponseClassification {
         // NN classification
         return AIResponseClassification()
+    }
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        TODO("Not yet implemented")
+    }
+    override fun estimateOverallAccuracy(): Double {
+        TODO("Not yet implemented")
     }
 
 }

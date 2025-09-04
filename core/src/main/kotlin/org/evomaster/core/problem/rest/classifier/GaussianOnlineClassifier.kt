@@ -1,10 +1,12 @@
 package org.evomaster.core.problem.rest.classifier
 
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.ln
 import kotlin.math.PI
 import kotlin.math.exp
+import kotlin.random.Random
 
 /**
  * Gaussian classifier for REST API calls.
@@ -18,76 +20,106 @@ import kotlin.math.exp
  * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
  *
  * ## Internals:
- * - Maintains two `Density` instances: one for class 200 (successful responses) and one for class 400 (error responses).
- * - Computes log-likelihood under each distribution and classifies based on maximum likelihood with class priors.
+ * - Maintains two `Density` instances: one for class 200 and one for class 400.
+ * - Computes the log-likelihood of the input under each class-specific Gaussian.
+ * - Combines likelihoods with class priors using Bayes' rule to calculate normalized posterior probabilities.
+ * - Predicts based on the posterior probabilities (i.e., probabilities sum to 1).
  *
  * ## Assumptions:
  * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
  * - The only two supported classes are 200 and 400.
  *
  * @param dimension the fixed dimensionality of the input feature vectors.
+ * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
 class GaussianOnlineClassifier : AIModel {
 
-    private var dimension: Int? = null
-    private var density200: Density? = null
-    private var density400: Density? = null
+    var warmup: Int = 10
+    var dimension: Int? = null
+    var density200: Density? = null
+    var density400: Density? = null
+    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
-    fun setDimension(d: Int) {
-        require(d > 0) { "Dimension must be positive." }
-        this.dimension = d
-        this.density200 = Density(d)
-        this.density400 = Density(d)
+    /** Must be called once to initialize the model properties */
+    fun setup(dimension: Int, warmup: Int) {
+        require(dimension > 0 ) { "Dimension must be positive." }
+        require(warmup > 0 ) { "Warmup must be positive." }
+        this.dimension = dimension
+        this.density200 = Density(dimension)
+        this.density400 = Density(dimension)
+        this.warmup = warmup
     }
 
-    fun getDimension(): Int {
-        check(this.dimension != null) { "Classifier not initialized. Call setDimension first." }
-        return this.dimension!!
-    }
-
-    fun getDensity200(): Density {
-        check(this.density200 != null) { "Classifier not initialized. Call setDimension first." }
-        return this.density200!!
-    }
-
-    fun getDensity400(): Density {
-        check(this.density400 != null) { "Classifier not initialized. Call setDimension first." }
-        return this.density400!!
-    }
-
-    override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input)
-
-        if (inputVector.size != this.dimension) {
-            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
-        }
-
-        when (output.getStatusCode()) {
-            200 -> this.density200!!.update(inputVector)
-            400 -> this.density400!!.update(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
-        }
-    }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
-        val inputVector = InputEncoderUtils.encode(input)
+
+        if (performance.totalSentRequests < warmup) {
+            throw IllegalStateException("Classifier not ready as warmup is not completed.")
+        }
+
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logProbability200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
-        val logProbability400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
+        val logLikelihood200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
+        val logLikelihood400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
 
-        val probability200 = exp(logProbability200)
-        val probability400 = exp(logProbability400)
+        // ensure the outputs as positives
+        val likelihood200 = exp(logLikelihood200)
+        val likelihood400 = exp(logLikelihood400)
+
+        // Normalize posterior probabilities
+        val total = likelihood200 + likelihood400
+        val posterior200 = likelihood200 / total
+        val posterior400 = likelihood400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to probability200,
-                400 to probability400
+                200 to posterior200,
+                400 to posterior400
             )
         )
+    }
+
+    override fun updateModel(input: RestCallAction, output: RestCallResult) {
+        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
+        }
+
+        /**
+         * Updating classifier performance based on its prediction
+         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
+         */
+        val trueStatusCode = output.getStatusCode()
+        if (performance.totalSentRequests < warmup) {
+            performance.updatePerformance(Random.nextBoolean())
+        } else {
+            val predicted = classify(input).prediction()
+            performance.updatePerformance(predicted == trueStatusCode)
+        }
+
+        /**
+         * Updating the density functions based on the real observation
+         */
+        when (trueStatusCode) {
+            in 200..299 -> this.density200!!.update(inputVector)
+            in 400..499 -> this.density400!!.update(inputVector)
+            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        }
+
+    }
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        return this.performance.estimateAccuracy()
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+        //TODO might need updating
+        return this.performance.estimateAccuracy()
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {

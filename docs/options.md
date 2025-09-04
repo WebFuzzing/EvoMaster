@@ -165,6 +165,7 @@ There are 3 types of options:
 |`nameWithQueryParameters`| __Boolean__. Specify if true boolean query parameters are included in the test case name. Used for test case naming disambiguation. Only valid for Action based naming strategy. *Default value*: `true`.|
 |`namingStrategy`| __Enum__. Specify the naming strategy for test cases. *Valid values*: `NUMBERED, ACTION`. *Default value*: `ACTION`.|
 |`outputExecutedSQL`| __Enum__. Whether to output executed sql info. *DEBUG option*. *Valid values*: `NONE, ALL_AT_END, ONCE_EXECUTED`. *Default value*: `NONE`.|
+|`overrideAuthExternalEndpointURL`| __String__. Override the value of externalEndpointURL in auth configurations. This is useful when the auth server is running locally on an ephemeral port, or when several instances are run in parallel, to avoid creating/modifying auth configuration files. If what provided is a URL starting with 'http', then full replacement will occur. Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g., path element of the URL will not change). *Default value*: `null`.|
 |`populationSize`| __Int__. Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
 |`probOfApplySQLActionToCreateResources`| __Double__. Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
 |`probOfArchiveMutation`| __Double__. Specify a probability to enable archive-based mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
@@ -224,6 +225,8 @@ There are 3 types of options:
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `true`.|
 |`writeExtraHeuristicsFile`| __Boolean__. Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
 |`writeStatistics`| __Boolean__. Whether or not writing statistics of the search process. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
+|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Default value*: `true`.|
+|`writeWFCReportExcludeWebApp`| __Boolean__. If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only the JSON report file will be created. *Default value*: `false`.|
 |`xoverProbability`| __Double__. Probability of applying crossover operation (if any is used in the search algorithm). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.7`.|
 
 ## Experimental Command-Line Options
@@ -231,10 +234,12 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
-|`aiModelForResponseClassification`| __Enum__. Model used to learn input constraints and infer response status before making request. *Valid values*: `NONE, GAUSSIAN, NN, GLM`. *Default value*: `NONE`.|
+|`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
+|`aiModelForResponseClassification`| __Enum__. Model used to learn input constraints and infer response status before making request. *Valid values*: `NONE, GAUSSIAN, NN, GLM, DETERMINISTIC`. *Default value*: `NONE`.|
 |`aiResponseClassifierLearningRate`| __Double__. Learning rate for classifiers like GLM and NN. *Default value*: `0.01`.|
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
 |`dpcTargetTestSize`| __Int__. Specify a max size of a test to be targeted when either DPC_INCREASING or DPC_DECREASING is enabled. *Default value*: `1`.|
@@ -254,6 +259,7 @@ There are 3 types of options:
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
+|`httpCallbackVerifierPort`| __Int__. Port to run HTTP server to verify HTTP callbacks related to SSRF. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `19876`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
@@ -262,6 +268,7 @@ There are 3 types of options:
 |`languageModelConnectorNumberOfThreads`| __Int__. Number of threads for language model connector. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`languageModelName`| __String__. Large-language model name as listed in Ollama. *Default value*: `llama3.2:latest`.|
 |`languageModelServerURL`| __String__. Large-language model external service URL. Default is set to Ollama local instance URL. *Default value*: `http://localhost:11434/`.|
+|`maxRepairAttemptsInResponseClassification`| __Int__. When the Response Classifier determines an action is going to fail, specify how many attempts will be tried at fixing it. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxResourceSize`| __Int__. Specify a max size of resources in a test. 0 means the there is no specified restriction on a number of resources. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeDataPool`| __Int__. How much data elements, per key, can be stored in the Data Pool. Once limit is reached, new old will replace old data. *Constraints*: `min=1.0`. *Default value*: `100`.|
 |`maxSizeOfExistingDataToSample`| __Int__. Specify a maximum number of existing data in the database to sample in a test when SQL handling is enabled. Note that a negative number means all existing data would be sampled. *Default value*: `-1`.|
@@ -286,6 +293,7 @@ There are 3 types of options:
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
+|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
@@ -297,7 +305,6 @@ There are 3 types of options:
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|
 |`useWeightedSampling`| __Boolean__. When sampling from archive based on targets, decide whether to use weights based on properties of the targets (e.g., a target likely leading to a flag will be sampled less often). *Default value*: `false`.|
+|`vulnerableInputClassificationStrategy`| __Enum__. Strategy to classify inputs for potential vulnerability classes related to an REST endpoint. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
-|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Default value*: `false`.|
-|`writeWFCReportExcludeWebApp`| __Boolean__. If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only the JSON report file will be created. *Default value*: `false`.|
