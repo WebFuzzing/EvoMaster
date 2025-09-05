@@ -277,7 +277,7 @@ class RestActionBuilderV3Test{
         (gene as ObjectGene).apply {
             assertEquals(4, fixedFields.size)
             //assertTrue(template!!.second is FixedMapGene<*, *>)
-            assertTrue(template!!.second is TaintedMapGene)
+            assertTrue(template!!.second is TaintedMapGene, "Template is of type ${template!!.second::class.simpleName}")
         }
     }
 

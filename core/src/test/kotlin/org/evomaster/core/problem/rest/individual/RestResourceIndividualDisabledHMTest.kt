@@ -27,6 +27,7 @@ import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
@@ -313,7 +314,8 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             val allGene = call.seeActions(ActionFilter.ALL)
                 .flatMap { it.seeTopGenes() }
                 .filter { !isExtraTaintParam(it.name) && it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
-                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
+                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }
+                .filter { it.getViewOfChildren().isEmpty() }
 
             allGene.groupBy { it.name }.forEach { (t, u) ->
                 if (u.size > 1){

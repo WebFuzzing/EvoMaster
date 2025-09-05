@@ -15,6 +15,7 @@ paths:
           application/json:
             schema:
               type: object
+              additionalProperties: false
               properties:
                 id:
                   type: integer
