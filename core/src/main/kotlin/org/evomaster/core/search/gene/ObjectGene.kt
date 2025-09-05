@@ -197,6 +197,12 @@ class ObjectGene(
         if (other.isFixed != isFixed)
             throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
 
+        if (!isFixed && !template!!.possiblySame(other.template!!))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
+        //TODO what if they have a different number of fields, or name not match???
+        // semantic of this function is unclear, really need TODO refactoring
+
         val updateOk = updateValueOnlyIfValid(
             {
                 var ok = true
@@ -204,21 +210,19 @@ class ObjectGene(
                 for (i in fixedFields.indices) {
                     ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
                 }
+
+                if(!isFixed){
+                    //TODO what if there is a mismatch here? semantic of this function is unclear
+                    for (i in additionalFields!!.indices){
+                        ok = ok && this.additionalFields!![i].copyValueFrom(other.additionalFields!![i])
+                    }
+                }
+
                 ok
             }, true
         )
 
-        if (!updateOk) return updateOk
-
-        if (isFixed) return true
-
-        if (!template!!.possiblySame(other.template!!))
-            throw IllegalArgumentException("different template ${other.template.javaClass}")
-
-
-        //TODO for additional fields
-
-        return true
+        return updateOk
     }
 
 
@@ -287,10 +291,16 @@ class ObjectGene(
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
                 result = result && r
             }
+            if(!isFixed){
+                (additionalFields!!.indices).forEach {
+                    val r = additionalFields!![it].setValueBasedOn(gene.additionalFields!![it])
+                    if (!r)
+                        LoggingUtil.uniqueWarn(log, "cannot bind the field ${additionalFields!![it].name}")
+                    result = result && r
+                }
+            }
             if (!result)
                 LoggingUtil.uniqueWarn(log, "fail to fully bind field values with the ObjectGene")
-
-            //TODO bind additional fields
 
             return result
         }

@@ -1046,10 +1046,10 @@ object RestActionBuilderV3 {
               */
                val name = "valueTemplate"
                valueTemplate = ChoiceGene(name, listOf(
-                   StringGene(name),
-                   BooleanGene(name),
-                   IntegerGene(name),
-                   DoubleGene(name),
+                   StringGene("${name}_string"),
+                   BooleanGene("${name}_boolean"),
+                   IntegerGene("${name}_integer"),
+                   DoubleGene("${name}_double"),
                ))
         }
 
