@@ -28,6 +28,7 @@ open class RestFitness : AbstractRestFitness() {
     ): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
+        goingToStartExecutingNewTest()
 
         val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
         val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
@@ -72,6 +73,7 @@ open class RestFitness : AbstractRestFitness() {
                 )
             }
 
+            reportActionIndex(i)
             registerNewAction(a, i)
 
             val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)

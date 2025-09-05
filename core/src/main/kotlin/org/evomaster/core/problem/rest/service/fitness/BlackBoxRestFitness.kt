@@ -57,8 +57,12 @@ class BlackBoxRestFitness : RestFitness() {
         val chainState = mutableMapOf<String, String>()
         val mainActions = individual.seeMainExecutableActions()
 
+        goingToStartExecutingNewTest()
+
         //run the test, one action at a time
         for (i in mainActions.indices) {
+
+            reportActionIndex(i)
             val a = mainActions[i]
             val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)
             actionResults[i].stopping = !ok
@@ -73,6 +77,8 @@ class BlackBoxRestFitness : RestFitness() {
         if(config.blackBoxCleanUp) {
             handleCleanUpActions(individual, actionResults, chainState, cookies, tokens, fv)
         }
+
+        handleFurtherFitnessFunctions(fv)
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }

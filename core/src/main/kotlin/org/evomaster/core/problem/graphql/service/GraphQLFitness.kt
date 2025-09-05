@@ -40,6 +40,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
+        goingToStartExecutingNewTest()
+
         val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
         val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
@@ -56,6 +58,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val a = actions[i]
 
+            reportActionIndex(i)
             registerNewAction(a, i)
 
             val ok = handleGraphQLCall(a, actionResults, cookies, tokens)
@@ -87,6 +90,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
         handleResponseTargets(fv, actions, graphQLActionResults, dto.additionalInfoList)
+
+        handleFurtherFitnessFunctions(fv)
 
         if(epc.isInSearch()) {
             if (config.isEnabledTaintAnalysis()) {
