@@ -130,7 +130,9 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
     }
 
     open fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
+        if (infoDto.sqlSchemaDto != null
+            //&& config.shouldGenerateSqlData() //might need even if no insertion, eg, for table names
+            ) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
