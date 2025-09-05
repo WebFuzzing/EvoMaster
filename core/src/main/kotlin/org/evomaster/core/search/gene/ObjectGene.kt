@@ -264,7 +264,7 @@ class ObjectGene(
 
         if (other.isFixed != isFixed) return false
 
-        if (!isFixed && template!!.possiblySame(other.template!!))
+        if (!isFixed && ! template!!.possiblySame(other.template!!))
             throw IllegalArgumentException("different template ${other.template.javaClass}")
 
         return this.fixedFields.size == other.fixedFields.size

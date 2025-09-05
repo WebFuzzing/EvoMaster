@@ -102,13 +102,21 @@ object RestActionBuilderV3 {
 
         val probUseDefault: Double = 0.0,
 
-        val probUseExamples: Double = 0.0
+        val probUseExamples: Double = 0.0,
+
+        /**
+            If we are doing white-box testing, we might use advance techniques like taint analysis,
+            which might impact how we design the chromosome.
+            but, for black-box, they would not be useful
+         */
+        val usingWhiteBox: Boolean = true
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
             invalidData = config.allowInvalidData,
             probUseDefault = config.probRestDefault,
-            probUseExamples = config.probRestExamples
+            probUseExamples = config.probRestExamples,
+            usingWhiteBox = !config.blackBox
         )
 
         init {
@@ -1228,20 +1236,22 @@ object RestActionBuilderV3 {
         messages: MutableList<String>
     ) : Gene{
         if (fields.isEmpty()) {
-            if (additionalFieldTemplate != null)
+
+            if(options.usingWhiteBox &&
+                schema.additionalProperties == null
+                || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+                //default is true
+                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            }
+
+            if (additionalFieldTemplate != null){
                 return FixedMapGene(name, additionalFieldTemplate)
+            }
 
             messages.add("No fields for object definition: $name")
 
-            return if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
-                //default is true
-                TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
-            } else {
-                /*
-                            If we get here, it is really something wrong with the schema...
-                         */
-                FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
-            }
+            //If we get here, it is really something wrong with the schema...
+            return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
         val mainGene = if (additionalFieldTemplate!=null){
