@@ -1038,6 +1038,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
+        handleFurtherFitnessFunctions(fv)
 
         val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
         if(wmStarted){

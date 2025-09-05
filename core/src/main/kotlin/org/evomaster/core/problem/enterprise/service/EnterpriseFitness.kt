@@ -53,16 +53,25 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         //TODO populate additionalTargetCollectors based on config
     }
 
-    fun goingToStartExecutingNewTest(testId: String){
-        additionalTargetCollectors.forEach {it.goingToStartExecutingNewTest(testId)}
+    fun goingToStartExecutingNewTest(){
+        additionalTargetCollectors.forEach {it.goingToStartExecutingNewTest()}
     }
 
-    fun reportActionIndex(testId: String, actionIndex: Int){
-        additionalTargetCollectors.forEach {it.reportActionIndex(testId, actionIndex)}
+    fun reportActionIndex(actionIndex: Int){
+        additionalTargetCollectors.forEach {it.reportActionIndex(actionIndex)}
     }
 
-    fun testFinishedHandleFurtherFitnessFunctions(testId: String) : List<TargetInfo>{
-        return additionalTargetCollectors.flatMap { it.testFinishedCollectResult(testId) }
+    fun handleFurtherFitnessFunctions(fv: FitnessValue){
+
+        val targets = additionalTargetCollectors.flatMap { it.testFinishedCollectResult() }
+        if (targets.isEmpty()){
+            return
+        }
+
+        targets.forEach {
+            val id = idMapper.handleLocalTarget(it.descriptiveId)
+            fv.updateTarget(id, it.value, it.actionIndex)
+        }
     }
 
 
