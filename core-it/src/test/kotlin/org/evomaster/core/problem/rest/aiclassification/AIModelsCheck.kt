@@ -48,12 +48,12 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     // define which model you want to use
-    val modelName = "KNN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
+    val modelName = "GAUSSIAN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
     val warmupRep = when(modelName){
         "NN" -> 1000  //NN needs significant numbers of training samples to warm-up
         else -> 10
     }
-    val encoderType4Test =when(modelName){
+    val encoderType4Test = when(modelName){
         "KNN" -> EncoderType.RAW
         "GLM" -> EncoderType.RAW
         else -> EncoderType.NORMAL
