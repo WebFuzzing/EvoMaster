@@ -5,6 +5,7 @@ import org.evomaster.core.output.service.RPCTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
@@ -22,9 +23,12 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RPCModule : EnterpriseModule(){
 
     override fun configure() {
+        bind(object : TypeLiteral<EnterpriseSampler<RPCIndividual>>() {})
+            .to(RPCSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RPCIndividual>>() {})
-                .to(RPCSampler::class.java)
-                .asEagerSingleton()
+            .to(RPCSampler::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(RPCSampler::class.java)

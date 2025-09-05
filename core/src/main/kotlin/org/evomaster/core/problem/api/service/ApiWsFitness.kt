@@ -30,8 +30,6 @@ abstract class ApiWsFitness<T> : EnterpriseFitness<T>() where T : Individual {
     @Inject
     protected lateinit var writer: TestSuiteWriter
 
-    @Inject
-    protected lateinit var sampler: Sampler<T>
 
     lateinit var infoDto: SutInfoDto
 

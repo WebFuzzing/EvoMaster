@@ -119,23 +119,43 @@ public class DataRow {
             }
         }
 
+        List<Integer> candidates = new ArrayList<>();
+
         //if none, then check column names
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
-            if ((nullSafeEqualsIgnoreCase(n, desc.getColumnName()) || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName())) &&
-                    (t == null || t.isEmpty()
-                            || nullSafeEqualsIgnoreCase(t, desc.getTableName())
-                            /*
-                                TODO: this does not cover all possible cases, as in theory
-                                there can be many unnamed tables (eg results of sub-selects)
-                                with same column names. At this moment, we would not
-                                be able to distinguish them
-                             */
-                            || nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)
-                    )
-            ) {
+
+            boolean matchColumnName = nullSafeEqualsIgnoreCase(n, desc.getColumnName())
+                    || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName());
+
+            if (!matchColumnName){
+                continue;
+            }
+            //no defined table, or exact match
+            if(t == null || t.isEmpty() || nullSafeEqualsIgnoreCase(t, desc.getTableName()) ){
                 return getValue(i);
             }
+            /*
+                TODO: this does not cover all possible cases, as in theory
+                there can be many unnamed tables (eg results of sub-selects)
+                with same column names. At this moment, we would not
+                be able to distinguish them
+             */
+            if(nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)){
+                candidates.add(i);
+            }
+
+            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
+                candidates.add(i);
+            }
+        }
+
+        if(candidates.size() > 1){
+            SimpleLogger.uniqueWarn("More than one table candidate for: " + t);
+        }
+
+        if(candidates.size() >= 1){
+            return getValue(candidates.get(0));
         }
 
         throw new IllegalArgumentException("No variable called '" + name + "' for table '" + table + "'");

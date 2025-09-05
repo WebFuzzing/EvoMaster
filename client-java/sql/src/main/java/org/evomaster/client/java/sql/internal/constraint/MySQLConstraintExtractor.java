@@ -42,8 +42,8 @@ public class MySQLConstraintExtractor extends TableConstraintExtractor{
         List<DbTableConstraint> constraints = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables){
-            String tableSchema = tableDto.schema;
-            String tableName = tableDto.name;
+            String tableSchema = tableDto.id.schema;
+            String tableName = tableDto.id.name;
             try (Statement statement = connectionToMySQL.createStatement()) {
                 String query = String.format("SELECT *\n" +
                         "       FROM information_schema.table_constraints\n" +

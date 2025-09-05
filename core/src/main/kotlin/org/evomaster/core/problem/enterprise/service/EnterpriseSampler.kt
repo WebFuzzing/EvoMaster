@@ -14,6 +14,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlInsertBuilder
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -92,7 +93,7 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         }
     }
 
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<SqlAction> {
+    fun sampleSqlInsertion(tableName: TableId, columns: Set<String>): List<SqlAction> {
 
         val extraConstraints = randomness.nextBoolean(apc.getExtraSqlDbConstraintsProbability())
         val enableSingleInsertionForTable = randomness.nextBoolean(config.probOfEnablingSingleInsertionForTable)
@@ -123,19 +124,21 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         return action
     }
 
-    fun canInsertInto(tableName: String) : Boolean {
+    fun canInsertInto(tableName: TableId) : Boolean {
         //TODO might need to refactor/remove once we deal with VIEWs
         return sqlInsertBuilder?.isTable(tableName) ?: false
     }
 
     open fun initSqlInfo(infoDto: SutInfoDto) {
-        if (infoDto.sqlSchemaDto != null && config.shouldGenerateSqlData()) {
+        if (infoDto.sqlSchemaDto != null
+            //&& config.shouldGenerateSqlData() //might need even if no insertion, eg, for table names
+            ) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
     }
 
-    override fun extractFkTables(tables: Set<String>): Set<String> {
+    fun extractFkTables(tables: Set<TableId>): Set<TableId> {
         if(sqlInsertBuilder == null || tables.isEmpty()) return tables
 
         return sqlInsertBuilder!!.extractFkTable(tables)

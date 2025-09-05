@@ -28,8 +28,8 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
-        assertTrue(schema.tables.any { it.name.equals("people".lowercase()) })
-        val peopleTable = schema.tables.find { it.name.equals("people".lowercase()) }
+        assertTrue(schema.tables.any { it.id.name.equals("people".lowercase()) })
+        val peopleTable = schema.tables.find { it.id.name.equals("people".lowercase()) }
 
         val idColumn = peopleTable!!.columns[0]
         val nameColumn = peopleTable.columns[1]

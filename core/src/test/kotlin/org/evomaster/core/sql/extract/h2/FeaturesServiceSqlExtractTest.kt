@@ -22,15 +22,15 @@ class FeaturesServiceSqlExtractTest : ExtractTestBaseH2() {
         assertAll(Executable { assertEquals("db_test", schema.name.toLowerCase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(6, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONSTRAINT_EXCLUDES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONSTRAINT_REQUIRES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "FEATURE" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT_CONFIGURATION" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }) }
+                Executable { assertTrue(schema.tables.any { it.id.name == "CONSTRAINT_EXCLUDES" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "CONSTRAINT_REQUIRES" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "FEATURE" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PRODUCT" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PRODUCT_CONFIGURATION" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }) }
         )
 
-        assertEquals(listOf("IN_CONFIGURATIONS_ID", "ACTIVED_FEATURES_ID"), schema.tables.filter { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }.first().primaryKeySequence)
+        assertEquals(listOf("IN_CONFIGURATIONS_ID", "ACTIVED_FEATURES_ID"), schema.tables.filter { it.id.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }.first().primaryKeySequence)
     }
 
 
