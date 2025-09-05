@@ -26,13 +26,13 @@ public class DbCleaner {
 
         for(String t : fullyQualifyingTableNames) {
             if(! t.contains(".")){
-                Set<String> x = schemaToNames.getOrDefault(defaultSchema, new HashSet<>());
+                Set<String> x = schemaToNames.computeIfAbsent(defaultSchema, it -> new HashSet<>());
                 x.add(t);
             } else {
                 String[] tokens = t.split("\\.");
                 String name = tokens[tokens.length - 1];
                 String schema = tokens[tokens.length - 2];
-                Set<String> x = schemaToNames.getOrDefault(schema, new HashSet<>());
+                Set<String> x = schemaToNames.computeIfAbsent(schema, it -> new HashSet<>());
                 x.add(name);
             }
         }
