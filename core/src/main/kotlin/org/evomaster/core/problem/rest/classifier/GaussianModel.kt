@@ -104,10 +104,10 @@ class GaussianModel : AbstractAIModel() {
         /**
          * Updating the density functions based on the real observation
          */
-        when (trueStatusCode) {
-            in 200..299 -> this.density200!!.update(inputVector)
-            in 400..499 -> this.density400!!.update(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        if (trueStatusCode == 400) {
+            this.density400!!.update(inputVector)
+        } else {
+            this.density200!!.update(inputVector)
         }
 
     }

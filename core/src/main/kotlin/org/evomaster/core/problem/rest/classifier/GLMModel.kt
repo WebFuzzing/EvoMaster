@@ -97,11 +97,8 @@ class GLMModel(
         /**
          * Updating model parameters
          */
-        val y = when (trueStatusCode) {
-            in 200..299 -> 1.0
-            in 400..499 -> 0.0
-            else -> throw IllegalArgumentException("Unsupported label: only 200 and 400 are handled")
-        }
+        val y = if (trueStatusCode == 400) 0.0 else 1.0
+
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prediction = sigmoid(z)
         val error = prediction - y

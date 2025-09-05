@@ -15,8 +15,8 @@ import kotlin.math.*
  */
 class KDEModel : AbstractAIModel() {
 
-    var densityKDE200: KDE? = null
-    var densityKDE400: KDE? = null
+    var density200: KDE? = null
+    var density400: KDE? = null
 
     /**
      * Optional cap on stored samples per class (0 = unlimited).
@@ -30,8 +30,8 @@ class KDEModel : AbstractAIModel() {
         require(warmup > 0) { "Warmup must be positive." }
         require(maxSamplesPerClass >= 0) { "maxSamplesPerClass must be >= 0" }
         this.dimension = dimension
-        this.densityKDE200 = KDE(dimension, maxSamplesPerClass)
-        this.densityKDE400 = KDE(dimension, maxSamplesPerClass)
+        this.density200 = KDE(dimension, maxSamplesPerClass)
+        this.density400 = KDE(dimension, maxSamplesPerClass)
         this.warmup = warmup
         this.maxSamplesPerClass = maxSamplesPerClass
     }
@@ -46,8 +46,8 @@ class KDEModel : AbstractAIModel() {
         val inputVector = encoder.encode()
         require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 
-        val ll200 = ln((densityKDE200!!.weight()).coerceAtLeast(1.0)) + densityKDE200!!.logLikelihood(inputVector)
-        val ll400 = ln((densityKDE400!!.weight()).coerceAtLeast(1.0)) + densityKDE400!!.logLikelihood(inputVector)
+        val ll200 = ln((density200!!.weight()).coerceAtLeast(1.0)) + density200!!.logLikelihood(inputVector)
+        val ll400 = ln((density400!!.weight()).coerceAtLeast(1.0)) + density400!!.logLikelihood(inputVector)
 
         // log-space normalization
         val m = max(ll200, ll400)
@@ -69,20 +69,22 @@ class KDEModel : AbstractAIModel() {
         require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 
         // Update performance estimate (prediction made before seeing the label)
-        val trueStatus = output.getStatusCode()
+        val trueStatusCode = output.getStatusCode()
         if (performance.totalSentRequests < warmup) {
             performance.updatePerformance(kotlin.random.Random.nextBoolean())
         } else {
             val predicted = classify(input).prediction()
-            performance.updatePerformance(predicted == trueStatus)
+            performance.updatePerformance(predicted == trueStatusCode)
         }
 
         // Update class-specific KDE with the true observation
-        when (trueStatus) {
-            in 200..299 -> densityKDE200!!.add(inputVector)
-            in 400..499 -> densityKDE400!!.add(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        if (trueStatusCode == 400) {
+            density400!!.add(inputVector)
+        } else {
+            density200!!.add(inputVector)
         }
+
+
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double = performance.estimateAccuracy()

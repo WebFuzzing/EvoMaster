@@ -20,10 +20,10 @@ import kotlin.random.Random
  * @param dimension the fixed dimensionality of the input feature vectors.
  * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
-class GaussianMixtureModel : AbstractAIModel() {
+class GMMModel : AbstractAIModel() {
 
-    var densityGMM200: GMM? = null
-    var densityGMM400: GMM? = null
+    var density200: GMM? = null
+    var density400: GMM? = null
 
     /** number of mixture components per class */
     var kComponents: Int = 3
@@ -34,8 +34,8 @@ class GaussianMixtureModel : AbstractAIModel() {
         require(warmup > 0 ) { "Warmup must be positive." }
         require(kComponents > 0) { "kComponents must be positive." }
         this.dimension = dimension
-        this.densityGMM200 = GMM(dimension, kComponents)
-        this.densityGMM400 = GMM(dimension, kComponents)
+        this.density200 = GMM(dimension, kComponents)
+        this.density400 = GMM(dimension, kComponents)
         this.warmup = warmup
         this.kComponents = kComponents
     }
@@ -54,8 +54,8 @@ class GaussianMixtureModel : AbstractAIModel() {
             throw IllegalArgumentException("Expected input vector of size $d but got ${inputVector.size}")
         }
 
-        val ll200 = ln(densityGMM200!!.weight()) + densityGMM200!!.logLikelihood(inputVector)
-        val ll400 = ln(densityGMM400!!.weight()) + densityGMM400!!.logLikelihood(inputVector)
+        val ll200 = ln(density200!!.weight()) + density200!!.logLikelihood(inputVector)
+        val ll400 = ln(density400!!.weight()) + density400!!.logLikelihood(inputVector)
 
         // work in log-space then exponentiate normalized posteriors
         val m = max(ll200, ll400)
@@ -92,11 +92,12 @@ class GaussianMixtureModel : AbstractAIModel() {
         }
 
         // Update the corresponding class-conditional GMM with online EM step
-        when (trueStatusCode) {
-            in 200..299 -> this.densityGMM200!!.update(inputVector)
-            in 400..499 -> this.densityGMM400!!.update(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        if (trueStatusCode == 400) {
+            this.density400!!.update(inputVector)
+        } else {
+            this.density200!!.update(inputVector)
         }
+
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {

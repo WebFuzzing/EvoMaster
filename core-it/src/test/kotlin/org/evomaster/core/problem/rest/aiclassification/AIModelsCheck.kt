@@ -16,6 +16,8 @@ import org.evomaster.core.problem.rest.classifier.GLMModel
 import org.evomaster.core.problem.rest.classifier.GaussianModel
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtils
 import org.evomaster.core.problem.rest.classifier.KDEModel
+import org.evomaster.core.problem.rest.classifier.KNNModel
+import org.evomaster.core.problem.rest.classifier.NNModel
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -31,8 +33,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//            initClass(BasicController())
-            initClass(MultiTypeController())
+            initClass(BasicController())
+//            initClass(MultiTypeController())
 //            initClass(AllOrNoneController())
         }
 
@@ -46,8 +48,16 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     // define which model you want to use
-    val modelName = "GAUSSIAN" // change to "GAUSSIAN", "GLM", "KDE", "GM", "NN", etc.
-    val warmupRep = 10
+    val modelName = "KNN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
+    val warmupRep = when(modelName){
+        "NN" -> 1000  //NN needs significant numbers of training samples to warm-up
+        else -> 10
+    }
+    val encoderType4Test =when(modelName){
+        "KNN" -> EncoderType.RAW
+        "GLM" -> EncoderType.RAW
+        else -> EncoderType.NORMAL
+    }
 
     fun initializeTest() {
         recreateInjectorForWhite(listOf("--aiModelForResponseClassification", modelName))
@@ -83,9 +93,26 @@ class AIModelsCheck : IntegrationTestRestBase() {
     // Factory for models
     private fun createModel(modelName: String, dimension: Int, warmup: Int): AbstractAIModel =
         when (modelName.uppercase()) {
-            "GAUSSIAN" -> GaussianModel().apply { setup(dimension, warmup) }
-            "GLM"      -> GLMModel().apply { setup(dimension, warmup) }
-            "KDE"      -> KDEModel().apply { setup(dimension, warmup) }
+            "GAUSSIAN" -> GaussianModel().apply {
+                setup(dimension, warmup)
+                encoderType = encoderType4Test
+            }
+            "GLM" -> GLMModel().apply {
+                setup(dimension, warmup)
+                encoderType = encoderType4Test
+            }
+            "KDE" -> KDEModel().apply {
+                setup(dimension, warmup)
+                encoderType = encoderType4Test
+            }
+            "KNN" -> KNNModel(k = 3).apply {
+                setup(dimension, warmup)
+                encoderType = encoderType4Test
+            }
+            "NN" -> NNModel().apply {
+                setup(dimension, warmup)
+                encoderType = encoderType4Test
+            }
             else -> throw IllegalArgumentException("Unknown model type: $modelName")
         }
 
@@ -112,7 +139,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         for (action in actionList) {
             val name = action.getName()
-            val encoder = InputEncoderUtils(action,encoderType = EncoderType.NORMAL)
+            val encoder = InputEncoderUtils(action,encoderType = encoderType4Test)
             val listGenes = encoder.endPointToGeneList()
             listGenes.forEach { println("Gene: ${it::class.simpleName}") }
 
@@ -185,7 +212,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
             // Classification
             println("Classifying by $modelName model!")
-            val encoderTemp = InputEncoderUtils(action, encoderType = EncoderType.NORMAL)
+            val encoderTemp = InputEncoderUtils(action, encoderType = encoderType4Test)
             val inputVector = encoderTemp.encode()
             println("Encoded features are : ${inputVector.joinToString(", ")}")
             val classification = classifier.classify(action)
