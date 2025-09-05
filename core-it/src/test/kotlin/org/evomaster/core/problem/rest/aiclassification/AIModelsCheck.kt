@@ -1,19 +1,21 @@
 package org.evomaster.core.problem.rest.aiclassification
 
+import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
 import bar.examples.it.spring.aiclassification.basic.BasicController
+import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.AbstractAIModel
+import org.evomaster.core.problem.rest.classifier.EncoderType
+import org.evomaster.core.problem.rest.classifier.GLMModel
+import org.evomaster.core.problem.rest.classifier.GaussianModel
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtils
+import org.evomaster.core.problem.rest.classifier.KDEModel
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -24,31 +26,31 @@ import javax.ws.rs.core.MediaType
 import kotlin.collections.iterator
 
 
-class AIGLMCheck : IntegrationTestRestBase() {
+class AIModelsCheck : IntegrationTestRestBase() {
 
     companion object {
         @JvmStatic
         fun init() {
-            initClass(BasicController())
-//            initClass(MultiTypeController())
+//            initClass(BasicController())
+            initClass(MultiTypeController())
+//            initClass(AllOrNoneController())
         }
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AIGLMCheck()
+            val test = AIModelsCheck()
             init()
             test.initializeTest()
             test.runClassifierExample()
         }
     }
 
+    // define which model you want to use
+    val modelName = "GAUSSIAN" // change to "GAUSSIAN", "GLM", "KDE", "GM", "NN", etc.
+    val warmupRep = 10
+
     fun initializeTest() {
-        recreateInjectorForWhite(
-            listOf(
-                "--aiModelForResponseClassification", "GLM",
-                "--aiResponseClassifierLearningRate", "0.05"
-            )
-        )
+        recreateInjectorForWhite(listOf("--aiModelForResponseClassification", modelName))
     }
 
     fun executeRestCallAction(action: RestCallAction, baseUrlOfSut: String): RestCallResult {
@@ -78,12 +80,22 @@ class AIGLMCheck : IntegrationTestRestBase() {
         return result
     }
 
+    // Factory for models
+    private fun createModel(modelName: String, dimension: Int, warmup: Int): AbstractAIModel =
+        when (modelName.uppercase()) {
+            "GAUSSIAN" -> GaussianModel().apply { setup(dimension, warmup) }
+            "GLM"      -> GLMModel().apply { setup(dimension, warmup) }
+            "KDE"      -> KDEModel().apply { setup(dimension, warmup) }
+            else -> throw IllegalArgumentException("Unknown model type: $modelName")
+        }
+
+
     fun runClassifierExample() {
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
         val restSchema = RestSchema(schema)
 
         val config = EMConfig().apply {
-            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.GLM
+            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.valueOf(modelName)
             enableSchemaConstraintHandling = true
             allowInvalidData = false
             probRestDefault = 0.0
@@ -97,45 +109,31 @@ class AIGLMCheck : IntegrationTestRestBase() {
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
         val endpointToDimension = mutableMapOf<String, Int?>()
+
         for (action in actionList) {
             val name = action.getName()
+            val encoder = InputEncoderUtils(action,encoderType = EncoderType.NORMAL)
+            val listGenes = encoder.endPointToGeneList()
+            listGenes.forEach { println("Gene: ${it::class.simpleName}") }
 
-            val hasUnsupportedGene = action.parameters.any { p ->
-                val g = p.primaryGene().getLeafGene()
-                g !is IntegerGene && g !is DoubleGene && g !is BooleanGene && g !is EnumGene<*>
-            }
+            val hasUnsupportedGene = !encoder.areAllGenesSupported()
+            println("Has unsupported gene: $hasUnsupportedGene")
 
-            val dimension = if (hasUnsupportedGene) {
-                null
-            } else {
-                action.parameters.count { p ->
-                    val g = p.primaryGene().getLeafGene()
-                    g is IntegerGene || g is DoubleGene || g is BooleanGene || g is EnumGene<*>
-                }
-            }
-
+            val dimension = if (hasUnsupportedGene) null else listGenes.size
             println("Endpoint: $name, dimension: $dimension")
-            endpointToDimension[name] = dimension
 
+            endpointToDimension[name] = dimension
         }
 
-        /**
-         * Initialize a classifier for each endpoint
-         * For an endpoint containing unsupported genes, the associated classifier is null
-         */
-        val endpointToClassifier = mutableMapOf<String, GLMOnlineClassifier?>()
+        // Initialize classifiers
+        val endpointToClassifier = mutableMapOf<String, AbstractAIModel?>()
         for ((name, dimension) in endpointToDimension) {
-            if(dimension==null){
-                endpointToClassifier[name] = null
-            }else{
-                val model = GLMOnlineClassifier()
-                model.setup(dimension=dimension, warmup = 10)
-                endpointToClassifier[name] = model
-            }
+            endpointToClassifier[name] =
+                if (dimension == null) null else createModel(modelName, dimension, warmupRep)
         }
 
         for ((name, expectedDimension) in endpointToDimension) {
-            println("Expected dimension for $name: $expectedDimension")
+            println("The model is $modelName  for $name: with Eexpected dimension $expectedDimension")
         }
 
         // Execute the procedure for a period of time
@@ -151,18 +149,14 @@ class AIGLMCheck : IntegrationTestRestBase() {
             val name = sampledAction.getName()
             val classifier = endpointToClassifier[name]
             val dimension = endpointToDimension[name]
-            val geneValues = sampledAction.parameters.map { it.primaryGene().getValueAsRawString() }
+            val geneValues = sampledAction.parameters.map { it.primaryGene().getValueAsRawString()}
 
             println("*************************************************")
             println("Path         : $name")
-            println("Classifier   : ${if (classifier == null) "null" else "GLM"}")
+            println("Classifier   : ${classifier?.javaClass?.simpleName ?: "null"}")
             println("Dimension    : $dimension")
             println("Input Genes  : ${geneValues.joinToString(", ")}")
             println("Genes Size   : ${geneValues.size}")
-            println("Correct Predictions: ${classifier?.performance?.correctPrediction}")
-            println("Total Requests     : ${classifier?.performance?.totalSentRequests}")
-            println("Accuracy           : ${classifier?.performance?.estimateAccuracy()}")
-
 
             //  executeRestCallAction is replaced with createIndividual to avoid override error
             //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
@@ -175,19 +169,25 @@ class AIGLMCheck : IntegrationTestRestBase() {
                 println("No classification as the classifier is null, i.e., the endpoint contains unsupported genes")
                 continue
             }
+
+            println("Correct Predictions: ${classifier.performance.correctPrediction}")
+            println("Total Requests: ${classifier.performance.totalSentRequests}")
+            println("Accuracy: ${classifier.performance.estimateAccuracy()}")
+
             // Warmup cold classifiers by at least n request
-            val isCold = classifier.performance.totalSentRequests<classifier.warmup
+            val isCold = classifier.performance.totalSentRequests < classifier.warmup
+
             if (isCold) {
-                println("Warmup by at least ${classifier.warmup} request")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
                 classifier.updateModel(action, result)
                 continue
             }
 
             // Classification
-            println("Classifying!")
-            val rawEncodedFeatures = InputEncoderUtils.encode(sampledAction).rawEncodedFeatures
-            println("Raw encoded features are : ${rawEncodedFeatures.joinToString(", ")}")
+            println("Classifying by $modelName model!")
+            val encoderTemp = InputEncoderUtils(action, encoderType = EncoderType.NORMAL)
+            val inputVector = encoderTemp.encode()
+            println("Encoded features are : ${inputVector.joinToString(", ")}")
             val classification = classifier.classify(action)
 
             // Prediction
@@ -206,17 +206,31 @@ class AIGLMCheck : IntegrationTestRestBase() {
             if (sendOrNot) {
                 val result = executeRestCallAction(action,"$baseUrlOfSut")
                 println("Response     : ${result.getStatusCode()}")
-
-                println("Updating the classifier!")
+                println("Updating the $modelName classifier!")
                 classifier.updateModel(action, result)
 
-                println("Updating the classifier!")
-                classifier.updateModel(action, result)
+                if (classifier is GaussianModel) {
+
+                    val d200 = classifier.density200!!
+                    val d400 = classifier.density400!!
+
+                    fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
+                        val m = mean.map { "%.2f".format(it) }
+                        val v = variance.map { "%.2f".format(it) }
+                        println("$name: n=$n, mean=$m, variance=$v * I_${classifier.dimension}")
+                    }
+
+                    formatStats("Density200", d200.mean, d200.variance, d200.n)
+                    formatStats("Density400", d400.mean, d400.variance, d400.n)
+
+                }else if (classifier is GLMModel){
+                    println("Updating the $modelName classifier!")
+                    println("Weights and Bias = ${classifier.getModelParams()}")
+                }
+
             }
-
-            println("Weights and Bias = ${classifier.getModelParams()}")
-            println("**********************************************")
 
         }
     }
+
 }

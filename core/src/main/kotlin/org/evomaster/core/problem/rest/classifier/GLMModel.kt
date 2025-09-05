@@ -20,22 +20,19 @@ import kotlin.random.Random
  * @param learningRate learning rate for SGD updates
  * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
-class GLMOnlineClassifier(
+class GLMModel(
     private val learningRate: Double = 0.01
-) : AIModel {
+) : AbstractAIModel() {
 
-    var warmup: Int = 10
-    var dimension: Int? = null
     var weights: MutableList<Double>? = null
     var bias: Double = 0.0
-    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
         require(dimension > 0) { "Dimension must be positive." }
+        require(warmup > 0 ) { "Warmup must be positive." }
         this.dimension = dimension
         this.weights = MutableList(dimension) { 0.0 }
-        require(warmup > 0 ) { "Warmup must be positive." }
         this.warmup = warmup
     }
 
@@ -50,7 +47,8 @@ class GLMOnlineClassifier(
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         val dim = dimension ?: throw IllegalStateException("Dimension not set. Call setDimension() first.")
         if (inputVector.size != dim) throw IllegalArgumentException("Expected input vector of size $dim but got ${inputVector.size}")
@@ -77,7 +75,8 @@ class GLMOnlineClassifier(
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")

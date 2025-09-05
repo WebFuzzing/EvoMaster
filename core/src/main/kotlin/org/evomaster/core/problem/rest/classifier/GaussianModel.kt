@@ -32,13 +32,10 @@ import kotlin.random.Random
  * @param dimension the fixed dimensionality of the input feature vectors.
  * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
-class GaussianOnlineClassifier : AIModel {
+class GaussianModel : AbstractAIModel() {
 
-    var warmup: Int = 10
-    var dimension: Int? = null
     var density200: Density? = null
     var density400: Density? = null
-    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -57,7 +54,8 @@ class GaussianOnlineClassifier : AIModel {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -84,7 +82,8 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
