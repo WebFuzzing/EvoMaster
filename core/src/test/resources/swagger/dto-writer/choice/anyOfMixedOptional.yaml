@@ -1,0 +1,33 @@
+openapi: 3.0.3
+info:
+  title: anyOf with Mixed Schemas
+  version: 1.0.0
+
+paths:
+  /anyof:
+    post:
+      summary: Accepts either an email (component) or phone (inline)
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/EmailPayload'
+                - type: object
+                  required: [phone]
+                  properties:
+                    phone:
+                      type: string
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    EmailPayload:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string

@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: oneOf with Inline Schemas
+  version: 1.0.0
+
+paths:
+  /oneof:
+    post:
+      summary: Accepts either cat or dog object (but not both)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [cat]
+                  properties:
+                    cat:
+                      type: string
+                - type: object
+                  required: [dog]
+                  properties:
+                    dog:
+                      type: string
+      responses:
+        '200':
+          description: OK

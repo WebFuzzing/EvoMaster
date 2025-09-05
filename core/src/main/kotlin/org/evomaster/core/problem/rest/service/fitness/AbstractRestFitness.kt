@@ -724,36 +724,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
-            val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
-
-            val onePerType = report.messages
-                                    .groupBy { it.key }
-                                    .filter {
-                                        /*
-                                            FIXME this is due to bug in library.
-                                            see disabled test in [RestSchemaOraclesTest]
-                                         */
-                                        it.key !=  "validation.response.body.schema.additionalProperties"
-                                    }
-                                    .map { (key, value) -> value.first() }
-
-            onePerType.forEach {
-
-                val discriminant = a.getName() + " -> " + it.key
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
-                )
-                fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                val fault = DetectedFault(
-                    DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
-                    a.getName(),
-                    "Type: ${it.key}",
-                    it.message?.replace("\n"," ")
-                )
-                rcr.addFault(fault)
-            }
-        }
+        handleSchemaOracles(a, rcr, fv)
 
         val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
 
@@ -761,9 +732,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        // FIXME: Code never reach this when we recompute the fitness under SSRFAnalyser
-        //  So the faults never get marked.
-        //  ResourceRestFitness get invoked during the recompute
         if (config.security && config.ssrf) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
@@ -771,6 +739,53 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         return handledSavedLocation
+    }
+
+    private fun handleSchemaOracles(
+        a: RestCallAction,
+        rcr: RestCallResult,
+        fv: FitnessValue
+    ) {
+        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+            return
+        }
+
+        val report = try{
+            schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
+        }catch (e:Exception){
+            log.warn("Failed to handle response validation for ${a.getName()}." +
+                    " This might be a bug in EvoMaster, or in one of the third-party libraries it uses." +
+                    " Error: ${e.message}")
+            return
+        }
+
+        val onePerType = report.messages
+            .groupBy { it.key }
+            .filter {
+                /*
+                  FIXME this is due to bug in library.
+                  see disabled test in [RestSchemaOraclesTest]
+                 */
+                it.key != "validation.response.body.schema.additionalProperties"
+            }
+            .map { (key, value) -> value.first() }
+
+        onePerType.forEach {
+
+            val discriminant = a.getName() + " -> " + it.key
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+            )
+            fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
+            val fault = DetectedFault(
+                DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                a.getName(),
+                "Type: ${it.key}",
+                it.message?.replace("\n", " ")
+            )
+            rcr.addFault(fault)
+        }
+
     }
 
 
@@ -1187,8 +1202,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
                     )
                     fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
 
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
                     ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
                 }
             }

@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
 import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -39,10 +40,13 @@ class AIResponseClassifier : AIModel {
                 GaussianOnlineClassifier()
             EMConfig.AIResponseClassifierModel.GLM ->
                 GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+            EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
+                Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
                 override fun estimateAccuracy(endpoint: Endpoint): Double  = 0.0
+                override fun estimateOverallAccuracy(): Double = 0.0
             }
         }
     }
@@ -62,6 +66,10 @@ class AIResponseClassifier : AIModel {
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
         return delegate.estimateAccuracy(endpoint)
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+        return delegate.estimateOverallAccuracy()
     }
 
     fun viewInnerModel(): AIModel = delegate

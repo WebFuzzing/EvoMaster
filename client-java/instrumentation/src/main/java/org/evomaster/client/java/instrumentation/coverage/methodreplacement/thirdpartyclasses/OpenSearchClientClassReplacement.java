@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.thi
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -12,6 +13,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Usag
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 /**
  * Class responsible to handle method calls to the OpenSearchClient and intercepting
@@ -24,6 +26,7 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
     private static final String GET_METHOD = "get";
     private static final String SEARCH_METHOD = "search";
     private static final String INDEX_METHOD = "index";
+    private static final String GET_QUERY_METHOD = "query";
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
@@ -71,13 +74,34 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
     }
 
     private static void addOpenSearchInfo(String method, Object query, long executionTime) {
-        OpenSearchCommand info = new OpenSearchCommand(getIndex(query), method, query, executionTime);
+        OpenSearchCommand info = new OpenSearchCommand(getIndex(query), method, getQuery(query), executionTime);
         ExecutionTracer.addOpenSearchInfo(info);
     }
 
-    private static Object getIndex(Object query) {
+    private static Object getQuery(Object query) {
         try {
-            return query.getClass().getMethod(INDEX_METHOD).invoke(query);
+            return query.getClass().getMethod(GET_QUERY_METHOD).invoke(query);
+        } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    private static List<String> getIndex(Object query) {
+        try {
+            Object result = query.getClass().getMethod(INDEX_METHOD).invoke(query);
+            if (result == null) {
+                return null;
+            }
+
+            if (result instanceof String) {
+                return Collections.singletonList((String) result);
+            } else if (result instanceof List) {
+                SimpleLogger.warn("[OpenSearch] [getIndex] returned list of length: " + ((List<?>) result).size());
+                return (List<String>) result;
+            } else {
+                SimpleLogger.warn("[OpenSearch] [getIndex] returned unknown type: " + result.getClass().getName());
+                return Collections.singletonList(result.toString());
+            }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
         }

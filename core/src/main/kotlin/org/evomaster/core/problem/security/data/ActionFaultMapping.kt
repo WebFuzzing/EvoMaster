@@ -6,7 +6,7 @@ import com.webfuzzing.commons.faults.FaultCategory
  * [ActionFaultMapping] represents the [Action] and related [Param] with security faults.
  * This used in [SSRFAnalyser].
  */
-class ActionFaultMapping (
+class ActionFaultMapping(
     val name: String,
 ) {
 
@@ -17,13 +17,6 @@ class ActionFaultMapping (
 
     var isVulnerable = false
 
-    var isExploitable = false
-
-    /**
-     * TODO: This is temporary to use it in the test cases.
-     */
-    var httpCallbackURL: String? = null
-
     /**
      * Holds potential security faults for the [Action].
      */
@@ -32,4 +25,13 @@ class ActionFaultMapping (
     fun addSecurityFaultCategory(faultCategory: FaultCategory) {
         securityFaults.add(faultCategory)
     }
+
+    fun getVulnerableParameterName(): String? {
+        val params = params.filter { it.value.hasSSRFFaults() }
+        if (params.isNotEmpty()) {
+            return params.keys.first()
+        }
+        return null
+    }
+
 }
