@@ -11,10 +11,12 @@ import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.TargetInfo
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -25,6 +27,7 @@ import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual {
 
@@ -40,6 +43,27 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     @Inject
     protected lateinit var searchTimeController: SearchTimeController
+
+
+    private val additionalTargetCollectors = mutableListOf<AdditionalTargetCollector>()
+
+    @PostConstruct
+    private fun initialize(){
+
+        //TODO populate additionalTargetCollectors based on config
+    }
+
+    fun goingToStartExecutingNewTest(testId: String){
+        additionalTargetCollectors.forEach {it.goingToStartExecutingNewTest(testId)}
+    }
+
+    fun reportActionIndex(testId: String, actionIndex: Int){
+        additionalTargetCollectors.forEach {it.reportActionIndex(testId, actionIndex)}
+    }
+
+    fun testFinishedHandleFurtherFitnessFunctions(testId: String) : List<TargetInfo>{
+        return additionalTargetCollectors.flatMap { it.testFinishedCollectResult(testId) }
+    }
 
 
     /**

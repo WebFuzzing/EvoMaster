@@ -24,7 +24,7 @@ interface AdditionalTargetCollector {
     /**
      * The test case execution has been completed, and now its results can be collected.
      * Note: there is no need whatsoever to collect [TargetInfo] values for target that have
-     * heuristic scores of 0, as those will be always ignored by EvoMaster's internal search engine.
+     * heuristic scores of 0, as those will always be ignored by EvoMaster's internal search engine.
      */
     fun testFinishedCollectResult(testId: String) : List<TargetInfo>
 
