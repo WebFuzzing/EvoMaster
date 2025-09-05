@@ -260,7 +260,7 @@ class Main {
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
-
+            // Stop the WM before test execution
             stopHTTPCallbackVerifier(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)

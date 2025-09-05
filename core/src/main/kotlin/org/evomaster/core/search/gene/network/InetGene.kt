@@ -64,6 +64,7 @@ class InetGene(
         }
     }
 
+
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**
      * Set value from a string of [InetAddress].
