@@ -48,7 +48,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     // define which model you want to use
-    val modelName = "GAUSSIAN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
+    val modelName = "KNN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
     val warmupRep = when(modelName){
         "NN" -> 1000  //NN needs significant numbers of training samples to warm-up
         else -> 10
@@ -139,9 +139,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         for (action in actionList) {
             val name = action.getName()
-            val encoder = InputEncoderUtils(action,encoderType = encoderType4Test)
-            val listGenes = encoder.endPointToGeneList()
-            listGenes.forEach { println("Gene: ${it::class.simpleName}") }
+            val encoder = InputEncoderUtils(action, encoderType = encoderType4Test)
+            val listGenes = encoder.endPointToGeneList().map { gene -> gene.getLeafGene() }
+            listGenes.forEach {println("Gene: ${it::class.simpleName}") }
 
             val hasUnsupportedGene = !encoder.areAllGenesSupported()
             println("Has unsupported gene: $hasUnsupportedGene")
@@ -160,14 +160,14 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
 
         for ((name, expectedDimension) in endpointToDimension) {
-            println("The model is $modelName  for $name: with Eexpected dimension $expectedDimension")
+            println("The model is $modelName for $name with expected dimension as $expectedDimension")
         }
 
         // Execute the procedure for a period of time
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         val startTime = System.currentTimeMillis()
-        val runDuration = 5_000L // Milliseconds
+        val runDuration = 1_000L // Milliseconds
         while (System.currentTimeMillis() - startTime < runDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
@@ -190,6 +190,12 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
 
+            val encoderTemp = InputEncoderUtils(action, encoderType = encoderType4Test)
+            val inputVector = encoderTemp.encode()
+            println("Encoded features are: ${inputVector.joinToString(", ")}")
+
+            println("Input vector size: ${inputVector.size}")
+
             // Execution without classification for the endpoints with unsupported genes
             if (classifier==null){
                 executeRestCallAction(action,"$baseUrlOfSut")
@@ -197,24 +203,25 @@ class AIModelsCheck : IntegrationTestRestBase() {
                 continue
             }
 
-            println("Correct Predictions: ${classifier.performance.correctPrediction}")
-            println("Total Requests: ${classifier.performance.totalSentRequests}")
-            println("Accuracy: ${classifier.performance.estimateAccuracy()}")
-
             // Warmup cold classifiers by at least n request
             val isCold = classifier.performance.totalSentRequests < classifier.warmup
 
+            println("Corresponding model for the endpoint is cold: $isCold")
+
             if (isCold) {
+                println("Warmup the endpoint corresponding $modelName model!")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
                 classifier.updateModel(action, result)
                 continue
             }
 
+            println("Correct Predictions: ${classifier.performance.correctPrediction}")
+            println("Total Requests: ${classifier.performance.totalSentRequests}")
+            println("Accuracy: ${classifier.performance.estimateAccuracy()}")
+
+
             // Classification
             println("Classifying by $modelName model!")
-            val encoderTemp = InputEncoderUtils(action, encoderType = encoderType4Test)
-            val inputVector = encoderTemp.encode()
-            println("Encoded features are : ${inputVector.joinToString(", ")}")
             val classification = classifier.classify(action)
 
             // Prediction

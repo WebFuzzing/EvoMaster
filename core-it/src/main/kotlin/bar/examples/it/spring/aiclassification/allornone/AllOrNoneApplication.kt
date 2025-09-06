@@ -64,7 +64,7 @@ open class AllOrNoneApplication {
             return ResponseEntity.status(400).build()
         }
 
-        return ResponseEntity.status(201).body("OK")
+        return ResponseEntity.status(200).body("OK")
     }
 
 
