@@ -7,7 +7,6 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import kotlin.reflect.KClass
 
@@ -26,11 +25,8 @@ class InputEncoderUtils(
         DoubleGene::class,
         BooleanGene::class,
         EnumGene::class,
-        StringGene::class,
-        LongGene::class
+        StringGene::class
     )
-
-    fun geneTypes(): Set<KClass<out Gene>> = supportedGeneTypes
 
     fun isSupported(g: Gene): Boolean =
         supportedGeneTypes.any { it.isInstance(g) }
@@ -82,13 +78,10 @@ class InputEncoderUtils(
                     rawEncodedFeatures.add(leaf.value.toDouble())
                 }
                 is DoubleGene -> {
-                    rawEncodedFeatures.add(leaf.value?: sentinel)
-                }
-                is LongGene -> {
-                    rawEncodedFeatures.add(leaf.value?.toDouble() ?: sentinel)
+                    rawEncodedFeatures.add(leaf.value)
                 }
                 is StringGene -> {
-                    rawEncodedFeatures.add(if (leaf.value.isNullOrEmpty()) sentinel else 1.0)
+                    rawEncodedFeatures.add(if (leaf.value.isEmpty()) sentinel else 1.0)
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)

@@ -21,7 +21,7 @@ open class AllOrNoneApplication {
 
         var b : String? = null,
 
-        var c : Long? = null,
+        var c : Double? = null,
 
         var d : ACAllOrNoneEnum? = null,
 

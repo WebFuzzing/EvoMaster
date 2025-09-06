@@ -33,9 +33,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-            initClass(BasicController())
+//            initClass(BasicController())
 //            initClass(MultiTypeController())
-//            initClass(AllOrNoneController())
+            initClass(AllOrNoneController())
         }
 
         @JvmStatic
@@ -167,7 +167,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         val startTime = System.currentTimeMillis()
-        val runDuration = 1_000L // Milliseconds
+        val runDuration = 5_000L // Milliseconds
         while (System.currentTimeMillis() - startTime < runDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
