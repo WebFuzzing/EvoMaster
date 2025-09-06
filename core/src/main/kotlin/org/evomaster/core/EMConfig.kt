@@ -1286,19 +1286,23 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
+        /**
+         * AI models for response status classification
+         *
+         * "NONE: No Classification"
+         * "GAUSSIAN: Gaussian"
+         * "GM: Gaussian Mixture"
+         * "KDE: Kernel Density Estimation"
+         * "KNN: K-Nearest Neighbors"
+         * "NN: Neural Network"
+         * "GLM: Generalized Linear Model"
+         * "DETERMINISTIC: Rule-Based Deterministic Model
+         */
         NONE, GAUSSIAN, GM, KDE, KNN, NN, GLM, DETERMINISTIC
     }
 
     @Experimental
-    @Cfg("Model to be used to learn input constraints and infer response status before making request."+
-            "NONE: No Classification"+
-            "GAUSSIAN: Gaussian"+
-            "GM: Gaussian Mixture"+
-            "KDE: Kernel Density Estimation"+
-            "KNN: k-Nearest Neighbors"+
-            "NN: Neural Network"+
-            "GLM: Generalized Linear Model"+
-            "DETERMINISTIC: Rule-based Deterministic Model")
+    @Cfg("Model used to learn input constraints and infer response status before making request.")
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
