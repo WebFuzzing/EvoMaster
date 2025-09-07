@@ -689,4 +689,9 @@ class ObjectGene(
         return ok
     }
 
+
+    fun isAdditionalField(gene: Gene) : Boolean{
+        if (gene !is PairGene<*,*>) return false
+        return additionalFields?.contains(gene) ?: false
+    }
 }
