@@ -313,7 +313,12 @@ class ObjectGene(
 
         if (additionalGeneMutationInfo.impact != null
                 && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
-            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fixedFields.getValue(it.name) }
+            val impacts = internalGenes.map {
+                /*
+                  TODO here we need to consider genes which belongs to fixedFiled or not
+                 */
+                additionalGeneMutationInfo.impact.fixedFields.getValue(it.name)
+            }
             val selected = mwc.selectSubGene(
                     internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
