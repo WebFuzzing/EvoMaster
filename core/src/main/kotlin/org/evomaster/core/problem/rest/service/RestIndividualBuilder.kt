@@ -145,7 +145,7 @@ class RestIndividualBuilder {
                     "${template.path} vs ${target.path}")
         }
 
-        val res = template.copy() as RestCallAction
+        val res = template.copyKeepingSameWeakRef()
 
         res.resetLocalIdRecursively()
 
@@ -180,7 +180,7 @@ class RestIndividualBuilder {
                     "${previous.path} vs ${template.path}")
         }
 
-        val res = template.copy() as RestCallAction
+        val res = template.copyKeepingSameWeakRef()
 
         res.resetLocalIdRecursively()
 

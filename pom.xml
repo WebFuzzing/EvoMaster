@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>3.4.1-SNAPSHOT</version>
+    <version>4.0.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -29,18 +29,17 @@
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
-        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 
@@ -86,8 +85,8 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -122,6 +121,7 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.8.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <wfc.version>0.0.6</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
         <dropwizard.version>1.3.7</dropwizard.version>
@@ -184,6 +184,9 @@
         <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
+        <org.opensearch.version>3.1.0</org.opensearch.version>
+        <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
+        <org.springframework.data.version>2.6.6</org.springframework.data.version>
     </properties>
 
 
@@ -283,6 +286,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>commons</artifactId>
+                <version>${wfc.version}</version>
+            </dependency>
+
 
             <!-- Kotlin -->
             <dependency>
@@ -370,8 +379,8 @@
             <!-- Misc -->
             <dependency>
                 <!--
-                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
-                    by different libraries, we force a specific version here to avoid conflicts (which for
+                   it brought in transitively by few
+                    different libraries, we force a specific version here to avoid conflicts (which for
                     example happened when updating Guice)
                 -->
                 <groupId>com.google.guava</groupId>
@@ -632,7 +641,16 @@
                 <artifactId>spring-boot-starter-data-mongodb</artifactId>
                 <version>${springboot.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-redis</artifactId>
+                <version>${org.springframework.data.version}</version>
+            </dependency>
 
             <!--  SpringFox: Swagger documentation for SpringBoot-->
             <dependency>
@@ -706,7 +724,7 @@
             <dependency>
                 <groupId>com.atlassian.oai</groupId>
                 <artifactId>swagger-request-validator-core</artifactId>
-                <version>2.42.0</version>
+                <version>2.44.9</version>
             </dependency>
 
             <!-- databases -->
@@ -765,6 +783,20 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <!-- OpenSearch -->
+            <dependency>
+                <groupId>org.opensearch.client</groupId>
+                <artifactId>opensearch-java</artifactId>
+                <version>${org.opensearch.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch-testcontainers</artifactId>
+                <version>${org.opensearch.testcontainers.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!--   XML  -->
@@ -1129,7 +1161,7 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <!--  Commented out, as no longer using CircleCI-->
                         <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
@@ -1284,16 +1316,18 @@
                     </executions>
                 </plugin>
 
-                <!-- We deploy to SonaType, which then sync to Maven Central -->
+                <!-- To deploy to Maven Central
+                    https://central.sonatype.com/account
+                    https://central.sonatype.org/publish/publish-portal-maven/
+                -->
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>1.6.8</version>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.8.0</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <publishingServerId>central</publishingServerId>
+                        <autoPublish>true</autoPublish>
                     </configuration>
                 </plugin>
 

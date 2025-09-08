@@ -3,7 +3,7 @@ package org.evomaster.core.problem.graphql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.graphql.param.GQInputParam
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull

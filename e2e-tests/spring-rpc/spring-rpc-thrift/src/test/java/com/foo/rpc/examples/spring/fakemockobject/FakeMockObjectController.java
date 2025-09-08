@@ -181,7 +181,30 @@ public class FakeMockObjectController extends SpringController {
                                 descriptiveInfo = "a scheduled task for invoking executeFlag";
                             }}
                     );
+                }},
+                new SeededRPCTestDto() {{
+                    testName = "test_7";
+                    rpcFunctions = Arrays.asList(
+                            new SeededRPCActionDto() {{
+                                interfaceName = FakeMockObjectService.Iface.class.getName();
+                                functionName = "getFooFromExternalService";
+                                inputParams = Arrays.asList("0");
+                                inputParamTypes = Arrays.asList(int.class.getName());
+                                mockRPCExternalServiceDtos = Arrays.asList(
+                                        new MockRPCExternalServiceDto() {{
+                                            appKey = "fake.app";
+                                            interfaceFullName = "com.foo.rpc.examples.spring.fakemockobject.external.fake.api.GetApiData";
+                                            functionName = "one";
+                                            responses = Arrays.asList("{\"exName\":\"abc\",\"exId\":0,\"exInfo\":[\"2025-05-28\"],\"unknownField\":\"unknown\"}");
+                                            responseTypes = Arrays.asList(
+                                                    "com.foo.rpc.examples.spring.fakemockobject.external.fake.api.ExApiDto"
+                                            );
+                                        }}
+                                );
+                            }}
+                    );
                 }}
+
         );
     }
 

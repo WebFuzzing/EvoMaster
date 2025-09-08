@@ -13,6 +13,7 @@ import org.evomaster.core.problem.externalservice.ExternalService
 import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
+import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.service.HttpWsSampler
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
@@ -27,11 +28,12 @@ import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.action.Action
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.tracer.Traceable
 import org.slf4j.Logger
@@ -55,6 +57,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
+
+    @Inject
+    protected lateinit var responseClassifier: AIResponseClassifier
 
     protected val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
 
@@ -147,6 +152,18 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         log.debug("Done initializing {}", AbstractRestSampler::class.simpleName)
     }
+
+    override fun sampleRandomAction(noAuthP: Double): HttpWsAction {
+
+        val action = super.sampleRandomAction(noAuthP)
+
+        if(config.isEnabledAIModelForResponseClassification()) {
+            responseClassifier.attemptRepair(action as RestCallAction)
+        }
+
+        return action
+    }
+
 
     private fun addExtraQueryParam(actionCluster: Map<String, Action>){
 

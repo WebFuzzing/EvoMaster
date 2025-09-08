@@ -47,7 +47,7 @@ public class ColumnTypeParserTest {
     @Test
     public void testValidCustomDateFormat() {
         String customDate = "22-Feb-25"; // Custom date format
-        Instant expected = LocalDate.parse(customDate, DateTimeFormatter.ofPattern("dd-MMM-yy", Locale.ENGLISH))
+        Instant expected = LocalDate.parse(customDate, DateTimeFormatter.ofPattern("dd-MMM-yy"))
                 .atStartOfDay().toInstant(ZoneOffset.UTC);
         Instant result = ColumnTypeParser.getAsInstant(customDate);
         assertEquals(expected, result, "Should parse the custom date format correctly.");

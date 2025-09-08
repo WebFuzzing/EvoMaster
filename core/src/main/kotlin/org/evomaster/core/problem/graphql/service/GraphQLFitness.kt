@@ -1,10 +1,12 @@
 package org.evomaster.core.problem.graphql.service
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.graphql.*
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
@@ -38,6 +40,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
+        goingToStartExecutingNewTest()
+
         val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
         val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
@@ -54,6 +58,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val a = actions[i]
 
+            reportActionIndex(i)
             registerNewAction(a, i)
 
             val ok = handleGraphQLCall(a, actionResults, cookies, tokens)
@@ -85,6 +90,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
         handleResponseTargets(fv, actions, graphQLActionResults, dto.additionalInfoList)
+
+        handleFurtherFitnessFunctions(fv)
 
         if(epc.isInSearch()) {
             if (config.isEnabledTaintAnalysis()) {
@@ -181,7 +188,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         val last = additionalInfoList[indexOfAction].lastExecutedStatement ?: DEFAULT_FAULT_CODE
         result.setLastStatementWhenGQLErrors(last)
         // shall we add additional target with last?
-        return idMapper.getFaultDescriptiveId(FaultCategory.GQL_ERROR_FIELD, "${name}_$last")
+        return idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.GQL_ERROR_FIELD, "${name}_$last")
     }
 
     private fun handleAdditionalStatusTargetDescription(
@@ -227,7 +234,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
                 So, we create new targets for it.
             */
             val postfix = if(location5xx==null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 

@@ -58,7 +58,7 @@ them independent, and then finally _stop_ the SUT after all tests are completed.
 
 We explain [how to write such script/class in this other document](write_driver.md).
 To check it out before spending time writing one, you can look at the
-[EMB repository](https://github.com/EMResearch/EMB) and search for classes called
+[EMB repository](https://github.com/WebFuzzing/EMB) and search for classes called
 `EmbeddedEvoMasterController`.
 Start one of those directly from your IDE.
 This will start the controller server (binding by default on port `40100`) for one of the SUTs in the

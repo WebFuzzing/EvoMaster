@@ -18,7 +18,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

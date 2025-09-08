@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service.fitness
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.ActionDto
@@ -10,6 +11,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
@@ -17,6 +19,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
@@ -33,9 +36,11 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -48,8 +53,8 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
@@ -75,10 +80,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     @Inject
+    protected lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
     protected lateinit var responsePool: DataPool
 
     @Inject
     protected lateinit var builder: RestIndividualBuilder
+
+    @Inject
+    protected lateinit var responseClassifier: AIResponseClassifier
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -539,11 +550,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             Lazy.assert { location5xx != null || config.blackBox }
 
             val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(FaultCategory.HTTP_STATUS_500,postfix)
+            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(FaultCategory.HTTP_STATUS_500, postfix))
+            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
         }
     }
 
@@ -692,7 +703,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                         internal classes in JVM can throw this error directly, like
                         jdk.internal.util.ArraysSupport.hugeLength(...)
                         see:
-                        https://github.com/EMResearch/EvoMaster/issues/449
+                        https://github.com/WebFuzzing/EvoMaster/issues/449
                      */
                     LoggingUtil.uniqueWarn(
                         log,
@@ -713,24 +724,68 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
-            val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
+        handleSchemaOracles(a, rcr, fv)
 
-            report.messages.forEach {
-                val discriminant = a.getName() + " -> " + it.message
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
-                )
-                fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                rcr.addFault(DetectedFault(FaultCategory.SCHEMA_INVALID_RESPONSE, discriminant))
+        val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
+
+        if(config.isEnabledAIModelForResponseClassification()) {
+            responseClassifier.updateModel(a, rcr)
+        }
+
+        if (config.security && config.ssrf) {
+            if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
+                rcr.setVulnerableForSSRF(true)
             }
         }
 
-        if (!handleSaveLocation(a, rcr, chainState)){
-            return false
+        return handledSavedLocation
+    }
+
+    private fun handleSchemaOracles(
+        a: RestCallAction,
+        rcr: RestCallResult,
+        fv: FitnessValue
+    ) {
+        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+            return
         }
 
-        return true
+        val report = try{
+            schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
+        }catch (e:Exception){
+            log.warn("Failed to handle response validation for ${a.getName()}." +
+                    " This might be a bug in EvoMaster, or in one of the third-party libraries it uses." +
+                    " Error: ${e.message}")
+            return
+        }
+
+        val onePerType = report.messages
+            .groupBy { it.key }
+            .filter {
+                /*
+                  FIXME this is due to bug in library.
+                  see disabled test in [RestSchemaOraclesTest]
+                 */
+                it.key != "validation.response.body.schema.additionalProperties"
+            }
+            .map { (key, value) -> value.first() }
+
+        onePerType.forEach {
+
+            val discriminant = a.getName() + " -> " + it.key
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+            )
+            fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
+            val fault = DetectedFault(
+                DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                a.getName(),
+                "Type: ${it.key}",
+                it.message?.replace("\n", " ")
+            )
+            rcr.addFault(fault)
+        }
+
     }
 
 
@@ -983,6 +1038,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
+        handleFurtherFitnessFunctions(fv)
 
         val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
         if(wmStarted){
@@ -1053,6 +1109,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
+        if (config.ssrf) {
+            handleSsrfFaults(individual, actionResults, fv)
+        }
+
         //TODO likely would need to consider SEEDED as well in future
         if(config.httpOracles && individual.sampleType == SampleType.HTTP_SEMANTICS){
             analyzeHttpSemantics(individual, actionResults, fv)
@@ -1079,14 +1139,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val put = individual.seeMainExecutableActions().last()
 
-        val category = FaultCategory.HTTP_REPEATED_CREATE_PUT
+        val category = ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT
         val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, put.getName())
         )
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
         val ar = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
             ?: return
-        ar.addFault(DetectedFault(category, put.getName()))
+        ar.addFault(DetectedFault(category, put.getName(), null))
     }
 
     private fun handleDeleteShouldDelete(
@@ -1103,7 +1163,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if(res.nonWorking) {
-            val category = FaultCategory.HTTP_NONWORKING_DELETE
+            val category = ExperimentalFaultCategory.HTTP_NONWORKING_DELETE
             val scenarioId = idMapper.handleLocalTarget(
                 idMapper.getFaultDescriptiveId(category, res.name)
             )
@@ -1112,7 +1172,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val delete = individual.seeMainExecutableActions()[res.index]
             val ar = actionResults.find { it.sourceLocalId == delete.getLocalId() } as RestCallResult?
                 ?: return
-            ar.addFault(DetectedFault(category, res.name))
+            ar.addFault(DetectedFault(category, res.name, null))
         }
     }
 
@@ -1123,12 +1183,33 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ){
         //TODO the other cases
 
-        handleForbiddenOperation(HttpVerb.DELETE, FaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, FaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, FaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
+    }
+
+    private fun handleSsrfFaults(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        individual.seeMainExecutableActions().forEach {
+            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+            if (ar != null) {
+                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
+                }
+            }
+        }
     }
 
     private fun handleNotRecognizedAuthenticated(
@@ -1160,11 +1241,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         notRecognized.forEach {
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName()))
+            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
         }
     }
 
@@ -1189,10 +1270,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(FaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName()))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
             }
         }
     }
@@ -1246,7 +1327,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 idMapper.getFaultDescriptiveId(faultCategory, action.getName())
             )
             fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory, action.getName()))
+            result.addFault(DetectedFault(faultCategory, action.getName(), null))
         }
     }
 

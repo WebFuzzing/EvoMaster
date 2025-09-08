@@ -1,0 +1,14 @@
+auth:
+  - name: "foo"
+    loginEndpointAuth:
+      payloadRaw: "{\"username\": \"foo\", \"password\": \"123\"}"
+
+authTemplate:
+  loginEndpointAuth:
+    verb: POST
+    externalEndpointURL: "http://localhost:8080/api/externalauth/login1"
+    contentType: application/json
+    token:
+      extractFromField: /access_token
+      httpHeaderName: Authorization
+      headerPrefix: ""

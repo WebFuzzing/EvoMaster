@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.BootTimeInfoDto
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoFailedQuery
@@ -7,6 +8,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
 import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.search.service.IdMapper
@@ -305,7 +307,7 @@ class FitnessValue(
     fun gqlErrors(idMapper: IdMapper): List<String>{
         // GQLErrors would be >0 when it is initialed, so we count it when it is covered.
         return getCoveredTargetKeys()
-                .filter { idMapper.isSpecifiedFault(it, FaultCategory.GQL_ERROR_FIELD) }
+                .filter { idMapper.isSpecifiedFault(it, ExperimentalFaultCategory.GQL_ERROR_FIELD) }
                 .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -326,7 +328,7 @@ class FitnessValue(
 
     fun potential500Faults(idMapper: IdMapper): List<String>{
         return getCoveredTargetKeys()
-                .filter{ idMapper.isSpecifiedFault(it,FaultCategory.HTTP_STATUS_500)}
+                .filter{ idMapper.isSpecifiedFault(it,DefinedFaultCategory.HTTP_STATUS_500)}
                 .map{idMapper.getDescriptiveId(it)}
     }
 
@@ -337,7 +339,7 @@ class FitnessValue(
      */
     fun rpcInternalError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isSpecifiedFault(it,FaultCategory.RPC_INTERNAL_ERROR)}
+            .filter { idMapper.isSpecifiedFault(it,ExperimentalFaultCategory.RPC_INTERNAL_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -346,7 +348,7 @@ class FitnessValue(
      */
     fun rpcUnexpectedException(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_UNEXPECTED_EXCEPTION)}
+            .filter { idMapper.isSpecifiedFault(it, ExperimentalFaultCategory.RPC_UNEXPECTED_EXCEPTION)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -355,7 +357,7 @@ class FitnessValue(
      */
     fun rpcDeclaredException(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_DECLARED_EXCEPTION)}
+            .filter { idMapper.isSpecifiedFault(it, ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -365,7 +367,7 @@ class FitnessValue(
     fun rpcException(idMapper: IdMapper) : List<String>{
         return targets.keys
             .filter { idMapper.isAnySpecifiedFault(it,
-                listOf(FaultCategory.RPC_DECLARED_EXCEPTION, FaultCategory.RPC_UNEXPECTED_EXCEPTION))}
+                listOf(ExperimentalFaultCategory.RPC_DECLARED_EXCEPTION, ExperimentalFaultCategory.RPC_UNEXPECTED_EXCEPTION))}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -395,7 +397,7 @@ class FitnessValue(
      */
     fun rpcHandledButError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isSpecifiedFault(it,FaultCategory.RPC_HANDLED_ERROR)}
+            .filter { idMapper.isSpecifiedFault(it,ExperimentalFaultCategory.RPC_HANDLED_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 
@@ -405,7 +407,7 @@ class FitnessValue(
      */
     fun rpcServiceError(idMapper: IdMapper) : List<String>{
         return targets.keys
-            .filter { idMapper.isSpecifiedFault(it, FaultCategory.RPC_SERVICE_ERROR)}
+            .filter { idMapper.isSpecifiedFault(it, ExperimentalFaultCategory.RPC_SERVICE_ERROR)}
             .map { idMapper.getDescriptiveId(it) }
     }
 

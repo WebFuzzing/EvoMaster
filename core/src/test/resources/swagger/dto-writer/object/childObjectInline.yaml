@@ -1,0 +1,38 @@
+openapi: 3.0.0
+info:
+  title: Child Object DTO API
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+paths:
+  /example:
+    post:
+      summary: Example with a simple nested object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aString:
+                  type: string
+                  example: "some value"
+                anObject:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      example: "Alice"
+                    age:
+                      type: integer
+                      example: 30
+                  required:
+                    - name
+                    - age
+              required:
+                - aString
+                - anObject
+      responses:
+        '200':
+          description: OK

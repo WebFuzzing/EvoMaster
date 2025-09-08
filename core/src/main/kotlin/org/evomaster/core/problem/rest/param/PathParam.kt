@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.param
 
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 
 
 class PathParam (name: String, gene: CustomMutationRateGene<*>) : Param(name, gene){

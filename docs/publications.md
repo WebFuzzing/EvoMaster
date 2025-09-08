@@ -13,21 +13,32 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-  
+* O. Sahin, M. Zhang, A. Arcuri. 
+  *WFC/WFD: Web Fuzzing Commons, Dataset and Guidelines to Support Experimentation in REST API Fuzzing*. 
+  [[arxiv](https://arxiv.org/abs/2509.01612)]
 
-* O. Sahin, M. Zhang, A. Arcuri.
-  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
-  [[arXiv](https://arxiv.org/abs/2502.00169)]
-
+* H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
+  *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
+  [[arxiv](https://arxiv.org/abs/2507.20848)]
 
 ## Peer-Reviewed Publications
 
 ### 2025
 
+* A. Arcuri, O. Sahin, M. Zhang.
+  *Fuzzing for Detecting Access Policy Violations in REST APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2025_issre.pdf)]
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2025_ause.pdf)]
+
 * M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
   Science of Computer Programming (SCP).
-  _(to appear)_ [[arXiv](https://arxiv.org/abs/2208.03988)]
+  [[PDF](publications/2025_scp.pdf)]
 
 * S. Seran, M. Zhang, O. Duman, A. Arcuri.
   *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.

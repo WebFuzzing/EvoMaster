@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
 
 class InetGene(
         name: String,
@@ -60,6 +61,26 @@ class InetGene(
                 LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
                 false
             }
+        }
+    }
+
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * Set value from a string of [InetAddress].
+     * If the string is valid, returns true, otherwise false.
+     */
+    override fun setValueBasedOn(value: String): Boolean {
+        return try {
+            val address = value.split(".")
+            if (address.size != INET_SIZE) return false
+            var result = true
+            address.forEachIndexed { i, v ->
+                result = result && octets[i].setValueBasedOn(v.toInt().toString())
+            }
+            result
+        } catch (e: Exception) {
+            false
         }
     }
 

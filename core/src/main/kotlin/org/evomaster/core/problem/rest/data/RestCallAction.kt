@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.data
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
@@ -16,7 +17,7 @@ import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import java.net.URLEncoder
 
@@ -71,7 +72,7 @@ class RestCallAction(
      *
      * TODO check if it could be used to handle issue in BackwardLinkReference
      */
-    private var weakReference: RestCallAction? = null
+     private var weakReference: RestCallAction? = null
 ) : HttpWsAction(auth, isCleanUp, parameters) {
 
     companion object{
@@ -80,6 +81,8 @@ class RestCallAction(
          */
         val CONFIG_POTENTIAL_VERB_FOR_CREATION = listOf(HttpVerb.PUT, HttpVerb.POST)
     }
+
+    val endpoint = Endpoint(verb,path)
 
     var saveCreatedResourceLocation : Boolean = saveLocation
         set(value) {
@@ -367,6 +370,8 @@ class RestCallAction(
             return true // nothing to do
         }
         if(weakReference!!.isMounted()) {
+            //make sure both actions are in the same individual
+            Lazy.assert { this.getRoot() == weakReference!!.getRoot() }
             usePreviousLocationId = weakReference!!.creationLocationId()
             weakReference = null
             return true
@@ -408,5 +413,23 @@ class RestCallAction(
         //TODO check backward links
 
         return true
+    }
+
+    /**
+     * a copy() on an unresolved action with a weakref will crash.
+     * this is as intended, as weakref would be meaningless when action mounted in a new individual.
+     * however, there are cases in which we need to "duplicate" an action in an individual.
+     * in those cases, we must keep the weakref
+     */
+    fun copyKeepingSameWeakRef() : RestCallAction{
+        if(weakReference == null){
+            return copy() as RestCallAction
+        }
+        val wr = weakReference
+        weakReference = null
+        val copy = this.copy() as RestCallAction
+        copy.weakReference = wr
+        this.weakReference = wr
+        return copy
     }
 }
