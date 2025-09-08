@@ -37,8 +37,9 @@ class ObjectGeneImpact  (
         if (gc.current !is ObjectGene)
             throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
         if (gc.previous == null){
-            gc.current.fields.forEach {
-                val fImpact = fixedFields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+            gc.current.fixedFields.forEach {
+                val fImpact = fixedFields.getValue(it.name) as? GeneImpact
+                    ?:throw IllegalArgumentException("impact should be gene impact")
                 val mutatedGeneWithContext = MutatedGeneWithContext(
                     current =  it,
                     actionName = "none",
