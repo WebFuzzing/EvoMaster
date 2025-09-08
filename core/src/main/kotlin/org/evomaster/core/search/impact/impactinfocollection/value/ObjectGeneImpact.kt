@@ -54,7 +54,15 @@ class ObjectGeneImpact  (
             throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
 
 
-        val mutatedFields = gc.current.fields.zip(gc.previous.fields) { cf, pf ->
+//        val mutatedFields = gc.current.fields.zip(gc.previous.fields) { cf, pf ->
+//            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+//        }.filter { !it.second }.map { it.first }
+
+        /*
+            impact is only applied to fixed field
+            how to handle additional properties needs to support in the future
+         */
+        val mutatedFields = gc.current.fixedFields.zip(gc.previous.fixedFields) { cf, pf ->
             Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
         }.filter { !it.second }.map { it.first }
 
@@ -92,14 +100,19 @@ class ObjectGeneImpact  (
     override fun syncImpact(previous: Gene?, current: Gene) {
         check(previous,current)
 
-        (current as ObjectGene).fields.forEach { f ->
+        /*
+            impact for field of ObjectGene is only applied for fixed field
+            how to handle flexible genes is considered in the future.
+         */
+        (current as ObjectGene).fixedFields.forEach { f ->
             if (!fixedFields.containsKey(f.name)){
                 fixedFields.putIfAbsent(f.name, ImpactUtils.createGeneImpact(f, f.name))
             }
         }
 
         fixedFields.forEach { (t, u) ->
-            val c = current.fields.find { it.name == t }?: throw IllegalArgumentException("the matched field for impact cannot be found")
+            val c = current.fields.find { it.name == t }
+                ?: throw IllegalArgumentException("the matched field for impact cannot be found")
             val p = (previous as? ObjectGene)?.fields?.find { it.name == t }
             (u as GeneImpact).syncImpact(p, c)
         }
