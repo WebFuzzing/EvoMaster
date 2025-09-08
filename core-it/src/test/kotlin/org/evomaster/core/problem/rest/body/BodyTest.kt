@@ -9,6 +9,7 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class BodyTest : IntegrationTestRestBase(){
@@ -146,6 +147,7 @@ class BodyTest : IntegrationTestRestBase(){
     }
 
 
+    @Disabled("Need to fix additionalProperties in RestActionBuilderV3")
     @Test
     fun testAdditionalFields() {
 

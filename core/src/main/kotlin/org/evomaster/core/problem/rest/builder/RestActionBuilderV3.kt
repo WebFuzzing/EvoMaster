@@ -1044,13 +1044,18 @@ object RestActionBuilderV3 {
                 if 'true', then any kind of extra field can be added
                 Default is 'true' if not specified.
               */
-               val name = "valueTemplate"
-               valueTemplate = ChoiceGene(name, listOf(
-                   StringGene("${name}_string"),
-                   BooleanGene("${name}_boolean"),
-                   IntegerGene("${name}_integer"),
-                   DoubleGene("${name}_double"),
-               ))
+            /*
+                FIXME need to fix few things in ObjectGene before we can have this.
+                TODO once fixed, put this back, and reenable failing test in
+                core-it/src/test/kotlin/org/evomaster/core/problem/rest/body/BodyTest.kt
+             */
+//               val name = "valueTemplate"
+//               valueTemplate = ChoiceGene(name, listOf(
+//                   StringGene("${name}_string"),
+//                   BooleanGene("${name}_boolean"),
+//                   IntegerGene("${name}_integer"),
+//                   DoubleGene("${name}_double"),
+//               ))
         }
 
         if (additional is Schema<*>) {
