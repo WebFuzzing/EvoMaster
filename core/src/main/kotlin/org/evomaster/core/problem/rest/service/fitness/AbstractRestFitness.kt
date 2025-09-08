@@ -1217,11 +1217,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
 
             if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName()))
+//                val scenarioId = idMapper.handleLocalTarget(
+//                    idMapper.getFaultDescriptiveId(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
+//                )
+//                fv.updateTarget(scenarioId, 1.0, index)
+//                r.addFault(DetectedFault(FaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName()))
+//TODO must be forgotten auth
             }
         }
     }
