@@ -117,7 +117,7 @@ jobs:
       # Make test report accessible from GitHub Actions (as Maven logs are long)
       - name: Publish Test Report
         if: success() || failure()
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v5
         env:
           NODE_OPTIONS: "--max_old_space_size=8000"
         with:
