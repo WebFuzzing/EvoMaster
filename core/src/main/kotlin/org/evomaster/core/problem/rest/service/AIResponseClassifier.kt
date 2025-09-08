@@ -6,8 +6,8 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.GLMModel
+import org.evomaster.core.problem.rest.classifier.GaussianModel
 import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
@@ -37,9 +37,9 @@ class AIResponseClassifier : AIModel {
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
             EMConfig.AIResponseClassifierModel.GAUSSIAN ->
-                GaussianOnlineClassifier()
+                GaussianModel()
             EMConfig.AIResponseClassifierModel.GLM ->
-                GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+                GLMModel(config.aiResponseClassifierLearningRate)
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
                 Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
