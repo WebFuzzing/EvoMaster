@@ -14,7 +14,7 @@ import org.evomaster.core.problem.rest.classifier.AbstractAIModel
 import org.evomaster.core.problem.rest.classifier.EncoderType
 import org.evomaster.core.problem.rest.classifier.GLMModel
 import org.evomaster.core.problem.rest.classifier.GaussianModel
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtils
+import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.KDEModel
 import org.evomaster.core.problem.rest.classifier.KNNModel
 import org.evomaster.core.problem.rest.classifier.NNModel
@@ -33,9 +33,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//            initClass(BasicController())
+            initClass(BasicController())
 //            initClass(MultiTypeController())
-            initClass(AllOrNoneController())
+//            initClass(AllOrNoneController())
         }
 
         @JvmStatic
@@ -139,7 +139,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         for (action in actionList) {
             val name = action.getName()
-            val encoder = InputEncoderUtils(action, encoderType = encoderType4Test)
+            val encoder = InputEncoderUtilWrapper(action, encoderType = encoderType4Test)
             val listGenes = encoder.endPointToGeneList().map { gene -> gene.getLeafGene() }
             listGenes.forEach {println("Gene: ${it::class.simpleName}") }
 
@@ -190,7 +190,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
 
-            val encoderTemp = InputEncoderUtils(action, encoderType = encoderType4Test)
+            val encoderTemp = InputEncoderUtilWrapper(action, encoderType = encoderType4Test)
             val inputVector = encoderTemp.encode()
             println("Encoded features are: ${inputVector.joinToString(", ")}")
 

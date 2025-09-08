@@ -46,7 +46,7 @@ class GMMModel : AbstractAIModel() {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
         val d = this.dimension ?: error("Model not setup")
 
@@ -74,7 +74,7 @@ class GMMModel : AbstractAIModel() {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
         val d = this.dimension ?: error("Model not setup")
 

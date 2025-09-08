@@ -37,7 +37,7 @@ class NNModel(
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val d = requireNotNull(dimension) { "Model not initialized. Call setup(d, warmup)." }
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode().map { it.toDouble() }.toDoubleArray()
         require(inputVector.size == d) { "Encoded input size ${inputVector.size} != expected dimension $d" }
 
@@ -62,7 +62,7 @@ class NNModel(
 
     override fun classify(input: RestCallAction): AIResponseClassification {
         val d = requireNotNull(dimension) { "Model not initialized. Call setup(d, warmup)." }
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode().map { it.toDouble() }.toDoubleArray()
         require(inputVector.size == d) { "Encoded input size ${inputVector.size} != expected dimension $d" }
 

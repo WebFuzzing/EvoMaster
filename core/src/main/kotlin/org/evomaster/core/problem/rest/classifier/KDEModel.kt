@@ -42,7 +42,7 @@ class KDEModel : AbstractAIModel() {
         }
 
         val d = this.dimension ?: error("Model not setup")
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
         require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 
@@ -64,7 +64,7 @@ class KDEModel : AbstractAIModel() {
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val d = this.dimension ?: error("Model not setup")
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
         require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 

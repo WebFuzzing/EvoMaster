@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
  * This is primarily used in AI-based models that require fixed-length numeric feature vectors
  * as input.
  */
-class InputEncoderUtils(
+class InputEncoderUtilWrapper(
     private val action: RestCallAction,
     private val encoderType: EncoderType
 ) {

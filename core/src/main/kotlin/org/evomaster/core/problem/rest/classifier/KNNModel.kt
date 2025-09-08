@@ -28,7 +28,7 @@ class KNNModel(private val k: Int = 3) : AbstractAIModel() {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
@@ -56,7 +56,7 @@ class KNNModel(private val k: Int = 3) : AbstractAIModel() {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val encoder = InputEncoderUtils(input, encoderType = encoderType)
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
