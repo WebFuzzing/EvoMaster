@@ -36,10 +36,7 @@ class GLMModel(
         this.warmup = warmup
     }
 
-    fun getModelParams(): List<Double> {
-        check(weights != null) { "Classifier not initialized. Call setDimension first." }
-        return weights!!.toList() + bias
-    }
+    private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
 
     override fun classify(input: RestCallAction): AIResponseClassification {
 
@@ -63,15 +60,6 @@ class GLMModel(
                 400 to prob400
             )
         )
-    }
-
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.estimateAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-        //TODO might need updating
-        return this.performance.estimateAccuracy()
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
@@ -109,5 +97,10 @@ class GLMModel(
         bias -= learningRate * error
     }
 
-    private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
+    fun getModelParams(): List<Double> {
+        check(weights != null) { "Classifier not initialized. Call setDimension first." }
+        return weights!!.toList() + bias
+    }
+
+
 }

@@ -87,9 +87,6 @@ class KDEModel : AbstractAIModel() {
 
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double = performance.estimateAccuracy()
-    override fun estimateOverallAccuracy(): Double = performance.estimateAccuracy()
-
     /**
      * Represents a Kernel Density Estimator (KDE) that approximates the distribution of a dataset
      * using Gaussian kernels with diagonal bandwidth.
@@ -186,4 +183,5 @@ class KDEModel : AbstractAIModel() {
             return m + ln(sumExp) - ln(n.toDouble())
         }
     }
+
 }

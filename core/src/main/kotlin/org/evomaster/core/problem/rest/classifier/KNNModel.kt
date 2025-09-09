@@ -23,6 +23,11 @@ class KNNModel(private val k: Int = 3) : AbstractAIModel() {
         this.warmup = warmup
     }
 
+    // Euclidean distance between two points in the feature space
+    private fun distance(a: List<Double>, b: List<Double>): Double {
+        return sqrt(a.zip(b).sumOf { (ai, bi) -> (ai - bi) * (ai - bi) })
+    }
+
     override fun classify(input: RestCallAction): AIResponseClassification {
         if (performance.totalSentRequests < warmup) {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
@@ -83,16 +88,4 @@ class KNNModel(private val k: Int = 3) : AbstractAIModel() {
 
     }
 
-
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return performance.estimateAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-        return performance.estimateAccuracy()
-    }
-
-    private fun distance(a: List<Double>, b: List<Double>): Double {
-        return sqrt(a.zip(b).sumOf { (ai, bi) -> (ai - bi) * (ai - bi) })
-    }
 }
