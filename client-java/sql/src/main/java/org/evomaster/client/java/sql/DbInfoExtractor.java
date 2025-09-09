@@ -816,7 +816,7 @@ public class DbInfoExtractor {
     /**
      * @return a table DTO for a particular table name
      */
-    private static TableDto getTable(DbInfoDto schema, String tableName) {
+    public static TableDto getTable(DbInfoDto schema, String tableName) {
         return schema.tables.stream()
                 .filter(t -> t.name.equalsIgnoreCase(tableName))
                 .findFirst().orElse(null);
