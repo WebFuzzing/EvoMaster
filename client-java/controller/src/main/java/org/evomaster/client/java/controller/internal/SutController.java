@@ -101,6 +101,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * track all tables accessed in a test
+     *
+     * FIXME shouldn't use strings
      */
     private final List<String> accessedTables = new CopyOnWriteArrayList<>();
 
@@ -112,12 +114,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * a map of table to fk target tables
+     *
+     * FIXME shouldn't use strings
      */
     private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
 
 
     /**
      * a map of table to a set of commands which are to insert data into the db
+     *
+     * FIXME shouldn't use strings
      */
     private final Map<String, List<String>> tableInitSqlMap = new ConcurrentHashMap<>();
 
@@ -545,10 +551,18 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 //List<String> tablesToClean = new ArrayList<>();
                 List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
+                    /*
+                        TODO should emDbClean.schemaNames be deprecated/removed?
+                     */
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
                     } else {
-                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
+                        //FIXME ignoring schema here
+                        List<String> names = tablesToClean.stream().map(it -> {
+                            String [] tokens = it.split("\\.");
+                            return tokens[tokens.length - 1];
+                        }).collect(Collectors.toList());
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, names, emDbClean.dbType, true);
                     }
                     tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
                 }
@@ -766,10 +780,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (fkMap.isEmpty()){
             schemaDto.tables.forEach(t->{
-                fkMap.putIfAbsent(t.id.name, new ArrayList<>());
+                String id = SqlDtoUtils.getId(t);
+                fkMap.putIfAbsent(id, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
                     t.foreignKeys.forEach(f->{
-                        fkMap.get(t.id.name).add(f.targetTable.toUpperCase());
+                        fkMap.get(id).add(f.targetTable.toUpperCase());
                     });
                 }
             });
