@@ -4,9 +4,8 @@ import com.foo.rest.examples.spring.openapi.v3.security.ssrf.header.SSRFHeaderCo
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SSRFHeaderEMTest: SpringTestBase() {
@@ -21,7 +20,6 @@ class SSRFHeaderEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
     @Test
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
@@ -39,9 +37,8 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
-
-            // TODO: Need to modify this to test to check for SSRF faults
+            assertTrue(solution.individuals.isNotEmpty())
+            assertTrue{ solution.hasSsrfFaults() }
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }

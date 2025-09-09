@@ -1286,8 +1286,59 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN, GLM, DETERMINISTIC
+        /**
+         * No classification is performed.
+         */
+        NONE,
+
+        /**
+         * Gaussian Model.
+         * Assumes the data follows a bell-shaped curve, parameterized by mean and variance.
+         */
+        GAUSSIAN,
+
+        /**
+         * Gaussian Mixture Model (GMM).
+         * Represents the data as a mixture of multiple Gaussian distributions.
+         */
+        GM,
+
+        /**
+         * Kernel Density Estimation (KDE).
+         * A non-parametric method for estimating the probability density function.
+         */
+        KDE,
+
+        /**
+         * K-Nearest Neighbors (KNN).
+         * Classifies a point based on the majority label among its k closest neighbors.
+         */
+        KNN,
+
+        /**
+         * Neural Network (NN).
+         * A computational model inspired by biological neural systems, consisting of layers of interconnected neurons.
+         * Neural networks learn patterns from data to capture underlying nonlinear relationships
+         * and to perform flexible classification
+         */
+        NN,
+
+        /**
+         * Generalized Linear Model (GLM).
+         * Extends linear regression to handle non-normal response distributions.
+         */
+        GLM,
+
+        /**
+         * Rule-Based Deterministic Model.
+         * Uses predefined, fixed rules for classification,
+         * providing clear and structured decision logic as an
+         * alternative to probabilistic or statistical methods.
+         */
+        DETERMINISTIC
     }
+
+
 
     @Experimental
     @Cfg("Model used to learn input constraints and infer response status before making request.")
@@ -2479,12 +2530,6 @@ class EMConfig {
          */
         LLM,
     }
-
-    @Experimental
-    @Cfg("Port to run HTTP server to verify HTTP callbacks related to SSRF.")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var httpCallbackVerifierPort: Int = 19876
 
     @Experimental
     @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
