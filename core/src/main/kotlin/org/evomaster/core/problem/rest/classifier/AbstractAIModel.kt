@@ -9,11 +9,11 @@ abstract class AbstractAIModel: AIModel {
     var encoderType: EncoderType = EncoderType.NORMAL
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.estimateAccuracy()
+        return performance.estimateAccuracy()
     }
 
     override fun estimateOverallAccuracy(): Double {
-        return this.performance.estimateAccuracy()
+        return performance.estimateAccuracy()
     }
 
 }
