@@ -311,6 +311,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
      */
     public final void initSqlHandler() {
         sqlHandler.setConnection(getConnectionIfExist());
+        sqlHandler.setHarvestConnection(getHarvestConnectionIfExist());
         sqlHandler.setSchema(getSqlDatabaseSchema());
     }
 
@@ -346,6 +347,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final Connection getConnectionIfExist(){
         return (getDbSpecifications() == null
                 || getDbSpecifications().isEmpty())? null: getDbSpecifications().get(0).connection;
+    }
+
+
+    public final Connection getHarvestConnectionIfExist(){
+        return (getDbSpecifications() == null
+                || getDbSpecifications().isEmpty())? null: getDbSpecifications().get(0).harvestConnection;
     }
 
     /**

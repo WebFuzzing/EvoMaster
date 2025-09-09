@@ -61,6 +61,8 @@ public class SqlHandler {
 
     private volatile Connection connection;
 
+    private volatile Connection harvestConnection;
+
     private volatile boolean calculateHeuristics;
 
     private volatile boolean extractSqlExecution;
@@ -107,6 +109,10 @@ public class SqlHandler {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void setHarvestConnection(Connection harvestConnection) {
+        this.harvestConnection = harvestConnection;
     }
 
     public void setSchema(DbInfoDto schema) {
