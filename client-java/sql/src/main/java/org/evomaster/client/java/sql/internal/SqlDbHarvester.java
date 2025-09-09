@@ -14,7 +14,8 @@ public class SqlDbHarvester {
 
 
     /**
-     * get topology of the tables in the schema
+     *  Sorts a list of tables from the schema in topological order based on their foreign key dependencies.
+     *  This ensures that parent tables (referenced by foreign keys) are ordered before their child tables.
      * @param schema the sql schema for databases
      * @return a sequence of tables
      */
@@ -80,14 +81,18 @@ public class SqlDbHarvester {
 
 
     private static String getTableKey(TableDto table) {
-        return (table.catalog != null ? table.catalog + "." : "") +
-               (table.schema != null ? table.schema + "." : "") +
-               table.name;
+        return getTableKey(table.catalog, table.schema, table.name);
     }
 
-    private static String getTableKey(String catalog, String schema, String name) {
-        return (catalog != null ? catalog + "." : "") +
-               (schema != null ? schema + "." : "") +
-               name;
+    private static String getTableKey(String catalog, String schema, String tableName) {
+        StringBuilder key = new StringBuilder();
+        if (catalog != null && !catalog.isEmpty()) {
+            key.append(catalog).append(".");
+        }
+        if (schema != null && !schema.isEmpty()) {
+            key.append(schema).append(".");
+        }
+        key.append(tableName);
+        return key.toString();
     }
 }
