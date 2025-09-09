@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.classifier
 
-import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import kotlin.math.exp
@@ -35,10 +34,12 @@ class NNModel(
         weightsHiddenOutput = Array(hiddenSize) { DoubleArray(outputSize) { Random.nextDouble(-0.1, 0.1) } }
     }
 
+    private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
+
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         val d = requireNotNull(dimension) { "Model not initialized. Call setup(d, warmup)." }
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode().map { it.toDouble() }.toDoubleArray()
+        val inputVector = encoder.encode().toDoubleArray()
         require(inputVector.size == d) { "Encoded input size ${inputVector.size} != expected dimension $d" }
 
         val trueStatusCode = output.getStatusCode()
@@ -63,7 +64,7 @@ class NNModel(
     override fun classify(input: RestCallAction): AIResponseClassification {
         val d = requireNotNull(dimension) { "Model not initialized. Call setup(d, warmup)." }
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode().map { it.toDouble() }.toDoubleArray()
+        val inputVector = encoder.encode().toDoubleArray()
         require(inputVector.size == d) { "Encoded input size ${inputVector.size} != expected dimension $d" }
 
         val (_, outputProbs) = forward(inputVector)
@@ -75,9 +76,6 @@ class NNModel(
             )
         )
     }
-
-    override fun estimateAccuracy(endpoint: Endpoint): Double = performance.estimateAccuracy()
-    override fun estimateOverallAccuracy(): Double = performance.estimateAccuracy()
 
     // Internal helper functions
     private fun forward(x: DoubleArray): Pair<DoubleArray, DoubleArray> {
@@ -130,5 +128,4 @@ class NNModel(
         }
     }
 
-    private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
 }

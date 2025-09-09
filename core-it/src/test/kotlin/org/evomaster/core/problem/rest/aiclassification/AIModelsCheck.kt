@@ -1,8 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
-import bar.examples.it.spring.aiclassification.basic.BasicController
-import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -33,9 +31,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-            initClass(BasicController())
+//            initClass(BasicController())
 //            initClass(MultiTypeController())
-//            initClass(AllOrNoneController())
+            initClass(AllOrNoneController())
         }
 
         @JvmStatic
@@ -48,13 +46,15 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     // define which model you want to use
-    val modelName = "KNN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
+    val modelName = "NN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
+    val runTimeDuration = 5_000L // Milliseconds
     val warmupRep = when(modelName){
         "NN" -> 1000  //NN needs significant numbers of training samples to warm-up
         else -> 10
     }
     val encoderType4Test = when(modelName){
         "KNN" -> EncoderType.RAW
+        "NN" -> EncoderType.RAW
         "GLM" -> EncoderType.RAW
         else -> EncoderType.NORMAL
     }
@@ -167,8 +167,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         val startTime = System.currentTimeMillis()
-        val runDuration = 5_000L // Milliseconds
-        while (System.currentTimeMillis() - startTime < runDuration) {
+        while (System.currentTimeMillis() - startTime < runTimeDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
