@@ -5,11 +5,20 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
@@ -18,6 +27,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -255,6 +265,45 @@ class ArrayGene<T>(
                     }
                 }.joinToString(separatorTag) +
                 closingTag
+    }
+
+    override fun getDtoCall(dtoName: String, counter: Integer): List<String> {
+        val varName = "list_${dtoName}_${counter}"
+
+        val result = mutableListOf<String>()
+
+        if (template is ObjectGene) {
+            val childDtoName = StringUtils.capitalization(template.refType?: it.name)
+            result.add("List<$dtoName> $varName = new ArrayList<$dtoName>();")
+            result.addAll(leafGene.getDtoCall(childDtoName, counter))
+            result.add("$varName.set${childDtoName}(list_${childDtoName}_${counter})")
+        } else {
+            result.addAll(leafGene.getDtoCall(it.name, counter))
+            result.add("$varName.set${StringUtils.capitalization(it.name)}(list_${it.name}_${counter})")
+        }
+
+
+        return result
+    }
+
+    private fun getDtoType(fieldName: String, field: Gene?): String {
+        return when (field) {
+            is StringGene -> "String"
+            is IntegerGene -> "Integer"
+            is LongGene -> "Long"
+            is DoubleGene -> "Double"
+            is FloatGene -> "Float"
+            is Base64StringGene -> "String"
+            // Time, Date, DateTime and Regex genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
+            is DateGene -> "String"
+            is TimeGene -> "String"
+            is DateTimeGene -> "String"
+            is RegexGene -> "String"
+            is BooleanGene -> "Boolean"
+            is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
+            is ArrayGene<*> -> "List<${getDtoType(field.name, field.template)}>"
+            else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
+        }
     }
 
 

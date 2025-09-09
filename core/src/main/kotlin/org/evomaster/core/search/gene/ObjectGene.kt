@@ -7,6 +7,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.dto.DtoClass
 import org.evomaster.core.problem.graphql.GqlConst
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
@@ -392,35 +393,49 @@ class ObjectGene(
             handleInputSelection(buffer, includedFields, previousGenes, mode, targetFormat)
         } else if (mode == GeneUtils.EscapeMode.GQL_INPUT_ARRAY_MODE) {
             handleInputArraySelection(buffer, includedFields, previousGenes, mode, targetFormat)
-        } else if (mode == GeneUtils.EscapeMode.DTO) {
-
-            if (targetFormat?.isJava() ?: false) {
-
-                val dtoName = StringUtils.capitalization(refType?: "TODO_DETERMINE_DTO_NAME")
-
-                buffer.append("$dtoName var_$dtoName = new $dtoName();\n")
-
-                // fixedFields or includedFields?
-                includedFields.joinTo(buffer, ";\n") {
-                    "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
-                        it.getValueAsPrintableString(
-                            previousGenes,
-                            mode,
-                            targetFormat
-                        )
-                    })"
-                }
-            } else {
-                throw IllegalArgumentException("Unrecognized format for writing DTO payload: $targetFormat")
-            }
-
-
-
         } else {
             throw IllegalArgumentException("Unrecognized mode: $mode")
         }
 
         return buffer.toString()
+    }
+
+    override fun getDtoCall(dtoName: String, counter: Integer): List<String> {
+//        val dtoName = StringUtils.capitalization(refType?: actionName)
+        val varName = "dto_${dtoName}_${counter}"
+
+        val result = mutableListOf<String>()
+        result.add("$dtoName $varName = new $dtoName();")
+
+        val includedFields = fields.filter {
+            it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
+        } .filter { it.isPrintable() }
+
+        includedFields.forEach {
+            val leafGene = it.getLeafGene()
+            if (leafGene is ObjectGene) {
+                val childDtoName = StringUtils.capitalization(leafGene.refType?: it.name)
+                result.addAll(leafGene.getDtoCall(childDtoName, counter))
+                result.add("$varName.set${childDtoName}(dto_${childDtoName}_${counter})")
+            } else if (leafGene is ArrayGene<*>) {
+                val template = leafGene.template
+                if (template is ObjectGene) {
+                    val childDtoName = StringUtils.capitalization(template.refType?: it.name)
+                    result.addAll(leafGene.getDtoCall(childDtoName, counter))
+                    result.add("$varName.set${childDtoName}(list_${childDtoName}_${counter})")
+                } else {
+                    result.addAll(leafGene.getDtoCall(it.name, counter))
+                    result.add("$varName.set${StringUtils.capitalization(it.name)}(list_${it.name}_${counter})")
+                }
+            } else {
+                "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
+                    it.getValueAsPrintableString(targetFormat = null)
+                })"
+            }
+        }
+
+
+        return result
     }
 
     private fun handleInputArraySelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {

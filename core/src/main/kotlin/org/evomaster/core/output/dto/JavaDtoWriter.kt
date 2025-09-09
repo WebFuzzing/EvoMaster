@@ -3,6 +3,7 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.utils.StringUtils
 import java.nio.file.Files
 import java.nio.file.Path
@@ -84,6 +85,27 @@ object JavaDtoWriter {
                 lines.add("}")
             }
             lines.addEmpty()
+        }
+    }
+
+    private fun useSetters(lines: Lines, dtoClass: DtoClass, dtoVar: String) {
+        dtoClass.fields.forEach {
+            val varName = it.name
+            val capitalizedVarName = StringUtils.capitalization(varName)
+            val g = it.gene
+            if (it.isStringOrPrimitive) {
+                lines.add("$dtoVar.set$capitalizedVarName(${g.getValueAsPrintableString()})")
+            } else if (it.isObject){
+                /*
+                 DtoCall(varName: String, dtoInit: List<String>)
+                 */
+                val fieldValue = g.getDtoCall()
+                lines.addAll(fieldValue.dtoInit())
+                lines.add("$dtoVar.set$capitalizedVarName(${fieldValue.varName()})")
+            } else {
+                //is array
+                
+            }
         }
     }
 

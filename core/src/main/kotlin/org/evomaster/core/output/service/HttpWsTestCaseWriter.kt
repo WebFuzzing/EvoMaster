@@ -18,7 +18,11 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
@@ -116,9 +120,59 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     private fun writeDto(call: HttpWsAction, lines: Lines) {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson()) {
-            val dto = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.DTO, targetFormat = format)
-            dto.split("\n").forEach { lines.add(it) }
-            lines.addEmpty()
+
+            val primaryGene = bodyParam.primaryGene()
+            val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
+            val actionName = call.getName()
+            if (choiceGene != null) {
+//                calculateDtoFromChoice(choiceGene, call.getName())
+            } else {
+                val leafGene = primaryGene.getLeafGene()
+                if (format.isJava()) {
+                    var dto = ""
+                    if (leafGene is ObjectGene) {
+                        dto = leafGene.refType?:TestWriterUtils.safeVariableName(actionName)
+                    } else if (leafGene is ArrayGene<*>) {
+                        val template = leafGene.template
+                        if (template is ObjectGene) {
+                            dto = template.refType?:TestWriterUtils.safeVariableName(actionName)
+                        } else {
+                            LoggingUtil.uniqueWarn(log, "Arrays of non custom objects are not collected as DTOs. Attempted at $actionName")
+                        }
+                    }
+                    val dtoName = StringUtils.capitalization(dto)
+                    lines.add("$dtoName var_$dtoName = new $dtoName();")
+
+                    if (leafGene is ObjectGene) {
+                        leafGene.fixedFields
+                    }
+                }
+            }
+
+//            if (targetFormat?.isJava() ?: false) {
+//
+//                val dtoName = StringUtils.capitalization(refType?: "TODO_DETERMINE_DTO_NAME")
+//
+//                buffer.append("$dtoName var_$dtoName = new $dtoName();\n")
+//
+//                // fixedFields or includedFields?
+//                includedFields.joinTo(buffer, ";\n") {
+//                    "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
+//                        it.getValueAsPrintableString(
+//                            previousGenes,
+//                            mode,
+//                            targetFormat
+//                        )
+//                    })"
+//                }
+//            } else {
+//                throw IllegalArgumentException("Unrecognized format for writing DTO payload: $targetFormat")
+//            }
+
+
+//            val dto = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.DTO, targetFormat = format)
+//            dto.split("\n").forEach { lines.add(it) }
+//            lines.addEmpty()
         }
     }
 

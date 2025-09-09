@@ -74,8 +74,7 @@ object GeneUtils {
         BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_MODE,
         BOOLEAN_SELECTION_UNION_INTERFACE_OBJECT_FIELDS_MODE,
         GQL_STR_VALUE,
-        GQL_NONE_MODE,
-        DTO
+        GQL_NONE_MODE
     }
 
     fun getDelta(
@@ -182,7 +181,6 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON, EscapeMode.EJSON-> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.DTO,
             EscapeMode.NONE,
             EscapeMode.X_WWW_FORM_URLENCODED,
             EscapeMode.BOOLEAN_SELECTION_MODE,
