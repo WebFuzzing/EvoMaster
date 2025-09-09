@@ -1770,6 +1770,11 @@ class EMConfig {
     var probOfHarvestingDbRecords  = 0.0
 
     @Experimental
+    @Cfg("Specify a maximum number of harvested records per table as seeds at the beginning of the search")
+    @Min(0.0)
+    var maxSizeOfInitHarvestedDbRecordsPerTable = 0
+
+    @Experimental
     @Cfg("Specify a maximum number of harvested records per table")
     @Min(0.0)
     var maxSizeOfHarvestedDbRecordsPerTable = 0
