@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -14,8 +15,10 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.ObjectGene
@@ -29,6 +32,9 @@ import javax.ws.rs.core.MediaType
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
@@ -341,6 +347,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val call = evaluatedAction.action as HttpWsAction
         val res = evaluatedAction.result as HttpWsCallResult
+
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaults(lines, call)
+        }
 
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
@@ -770,4 +780,37 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> throw IllegalStateException("Unsupported format $format")
         }
     }
+
+    /**
+     * Method to set up stub for HttpCallbackVerifier to the test case.
+     */
+    private fun handleSSRFFaults(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            if (format.isJava()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning())")
+            }
+            if (format.isKotlin()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
+            }
+
+            lines.addEmpty(1)
+
+            lines.addStatement("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")
+            lines.indented {
+                lines.addStatement(".atPriority(1)")
+                lines.addStatement(".willReturn(")
+                lines.indented {
+                    lines.addStatement("aResponse()")
+                    lines.addStatement(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                    lines.addStatement(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                }
+                lines.addStatement(")")
+            }
+            lines.addStatement(")")
+            lines.addEmpty(1)
+        }
+    }
+
 }

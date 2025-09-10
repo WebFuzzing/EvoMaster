@@ -1157,6 +1157,10 @@ abstract class Gene(
      * WARNING: There is no guarantee that constraints are kept satisfied.
      * As such, should not call this method directly, but rather use [setFromStringValue]
      *
+     * TODO: Refactor. do we really need to have boolean returned in this function?
+     *                 ie, need to distinguish between "must" make modifications exactly as asked, and when
+     *                 a "best-effort" is enough
+     *
      * TODO @PackagePrivate
      */
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")

@@ -11,8 +11,8 @@ import kotlin.random.Random
 /**
  * Gaussian classifier for REST API calls.
  *
- * This classifier builds two independent multivariate Gaussian distributions (one for HTTP 200 responses,
- * and one for HTTP 400 responses) based on numeric feature encodings of `RestCallAction` instances.
+ * This classifier builds two independent multivariate Gaussian distributions (for 400 responses or not 400)
+ * based on numeric feature encodings of `RestCallAction` instances.
  *
  * ## Features:
  * - Learns in an *online* fashion: it updates its parameters incrementally as new samples arrive.
@@ -32,13 +32,10 @@ import kotlin.random.Random
  * @param dimension the fixed dimensionality of the input feature vectors.
  * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
  */
-class GaussianOnlineClassifier : AIModel {
+class GaussianModel : AbstractAIModel() {
 
-    var warmup: Int = 10
-    var dimension: Int? = null
     var density200: Density? = null
     var density400: Density? = null
-    var performance: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
 
     /** Must be called once to initialize the model properties */
     fun setup(dimension: Int, warmup: Int) {
@@ -57,7 +54,8 @@ class GaussianOnlineClassifier : AIModel {
             throw IllegalStateException("Classifier not ready as warmup is not completed.")
         }
 
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -84,7 +82,8 @@ class GaussianOnlineClassifier : AIModel {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val inputVector = InputEncoderUtils.encode(input).normalizedEncodedFeatures
+        val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
+        val inputVector = encoder.encode()
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -105,21 +104,12 @@ class GaussianOnlineClassifier : AIModel {
         /**
          * Updating the density functions based on the real observation
          */
-        when (trueStatusCode) {
-            in 200..299 -> this.density200!!.update(inputVector)
-            in 400..499 -> this.density400!!.update(inputVector)
-            else -> throw IllegalArgumentException("Label must be G_2xx or G_4xx")
+        if (trueStatusCode == 400) {
+            this.density400!!.update(inputVector)
+        } else {
+            this.density200!!.update(inputVector)
         }
 
-    }
-
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.estimateAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-        //TODO might need updating
-        return this.performance.estimateAccuracy()
     }
 
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
@@ -151,4 +141,5 @@ class GaussianOnlineClassifier : AIModel {
 
         fun weight() = n.toDouble()
     }
+
 }

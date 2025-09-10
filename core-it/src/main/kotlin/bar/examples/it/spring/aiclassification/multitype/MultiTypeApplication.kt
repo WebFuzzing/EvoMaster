@@ -94,7 +94,7 @@ open class MultiTypeApplication {
     @GetMapping("/ownerInfo")
     open fun getOwnerInfo(
 
-        @RequestParam("name", required = true)
+        @RequestParam("name", required = false)
         @Parameter(required = true, description = "Owner's name")
         name: String,
 
@@ -124,6 +124,7 @@ open class MultiTypeApplication {
 
     @PostMapping("/petInfo")
     open fun createPet(
+
         @RequestParam("category", required = true)
         @Parameter(required = true, description = "Pet category")
         category: Category,
