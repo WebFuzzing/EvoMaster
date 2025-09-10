@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import kotlin.math.max
 
 
 class ACArithmeticEMTest : AIClassificationEMTestBase() {
@@ -30,7 +31,7 @@ class ACArithmeticEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -62,9 +63,46 @@ class ACArithmeticEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            // query
+            // x >= y
+            // if z&&k then z>=k
+            // body
+            // x!=y && z>=k
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET","/api/arithmetic",
+                    queryParams = mapOf("x" to "42", "y" to "-4")
+                )!!,
+                ptr.fromVerbPath("GET","/api/arithmetic",
+                    queryParams = mapOf("x" to "42", "y" to "-4", "z" to "5", "k" to "5")
+                )!!,
+                ptr.fromVerbPath("POST","/api/arithmetic",
+                    jsonBodyPayload = """
+                        {"x":7, "y":6, "z":5, "k":-2}    
+                    """.trimIndent()
+                )!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET","/api/arithmetic",
+                    queryParams = mapOf("x" to "-42", "y" to "+4")
+                )!!,
+                ptr.fromVerbPath("GET","/api/arithmetic",
+                    queryParams = mapOf("x" to "42", "y" to "-4", "z" to "-5", "k" to "45")
+                )!!,
+                ptr.fromVerbPath("POST","/api/arithmetic",
+                    jsonBodyPayload = """
+                        {"x":6, "y":6, "z":5, "k":-2}    
+                    """.trimIndent()
+                )!!,
+                ptr.fromVerbPath("POST","/api/arithmetic",
+                    jsonBodyPayload = """
+                        {"x":7, "y":6, "z":5, "k":23}    
+                    """.trimIndent()
+                )!!
+            )
+
+            verifyModel(injector,ok,fail)
         }
     }
 }
