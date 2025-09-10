@@ -9,7 +9,9 @@ enum class ExperimentalFaultCategory(
     private val fullDescription: String,
 ) : FaultCategory {
 
-
+    SECURITY_FORGOTTEN_AUTHENTICATION(207, "A Protected Resource Is Accessible Without Providing Any Authentication",
+        "forgottenAuthentication",
+        "TODO"),
     //9xx for experimental, work-in-progress oracles
 
     HTTP_INVALID_PAYLOAD_SYNTAX(901, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
