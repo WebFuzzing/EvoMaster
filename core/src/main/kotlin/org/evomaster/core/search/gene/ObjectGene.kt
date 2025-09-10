@@ -2,10 +2,9 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.dto.DtoClass
+import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -400,12 +399,11 @@ class ObjectGene(
         return buffer.toString()
     }
 
-    override fun getDtoCall(dtoName: String, counter: Integer): List<String> {
-//        val dtoName = StringUtils.capitalization(refType?: actionName)
-        val varName = "dto_${dtoName}_${counter}"
+    override fun getDtoCall(dtoName: String, counter: Int): DtoCall {
+        val dtoVarName = "dto_${dtoName}_${counter}"
 
         val result = mutableListOf<String>()
-        result.add("$dtoName $varName = new $dtoName();")
+        result.add("$dtoName $dtoVarName = new $dtoName();")
 
         val includedFields = fields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
@@ -413,29 +411,29 @@ class ObjectGene(
 
         includedFields.forEach {
             val leafGene = it.getLeafGene()
-            if (leafGene is ObjectGene) {
-                val childDtoName = StringUtils.capitalization(leafGene.refType?: it.name)
-                result.addAll(leafGene.getDtoCall(childDtoName, counter))
-                result.add("$varName.set${childDtoName}(dto_${childDtoName}_${counter})")
-            } else if (leafGene is ArrayGene<*>) {
-                val template = leafGene.template
-                if (template is ObjectGene) {
-                    val childDtoName = StringUtils.capitalization(template.refType?: it.name)
-                    result.addAll(leafGene.getDtoCall(childDtoName, counter))
-                    result.add("$varName.set${childDtoName}(list_${childDtoName}_${counter})")
-                } else {
-                    result.addAll(leafGene.getDtoCall(it.name, counter))
-                    result.add("$varName.set${StringUtils.capitalization(it.name)}(list_${it.name}_${counter})")
+            val attributeName = StringUtils.capitalization(it.name)
+            when (leafGene) {
+                is ObjectGene -> {
+                    val childDtoCall = leafGene.getDtoCall(attributeName, counter)
+
+                    result.addAll(childDtoCall.objectCalls)
+                    result.add("$dtoVarName.set${attributeName}(${childDtoCall.varName});")
                 }
-            } else {
-                "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
-                    it.getValueAsPrintableString(targetFormat = null)
-                })"
+                is ArrayGene<*> -> {
+                    val childDtoCall = leafGene.getDtoCall(attributeName, counter)
+
+                    result.addAll(childDtoCall.objectCalls)
+                    result.add("$dtoVarName.set${attributeName}(${childDtoCall.varName});")
+                }
+                else -> {
+                    result.add("$dtoVarName.set${attributeName}(${
+                        it.getValueAsPrintableString(targetFormat = null)
+                    });")
+                }
             }
         }
 
-
-        return result
+        return DtoCall(dtoVarName, result)
     }
 
     private fun handleInputArraySelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {

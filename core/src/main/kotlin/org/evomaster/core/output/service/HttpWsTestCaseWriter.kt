@@ -26,7 +26,6 @@ import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
-import kotlin.math.PI
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -88,11 +87,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         handlePreCallSetup(call, lines, res)
 
-        // TODO add support for kotlin
-        if (config.dtoForRequestPayload && format.isJava()) {
-            writeDto(call, lines)
-        }
-
         if (needsResponseVariable(call, res) && !res.failedCall()) {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
@@ -117,7 +111,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    private fun writeDto(call: HttpWsAction, lines: Lines) {
+    private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson()) {
 
@@ -125,55 +119,33 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
             if (choiceGene != null) {
-//                calculateDtoFromChoice(choiceGene, call.getName())
+                throw IllegalStateException("Choice genes not yet supported for dto payload")
             } else {
                 val leafGene = primaryGene.getLeafGene()
                 if (format.isJava()) {
-                    var dto = ""
-                    if (leafGene is ObjectGene) {
-                        dto = leafGene.refType?:TestWriterUtils.safeVariableName(actionName)
-                    } else if (leafGene is ArrayGene<*>) {
-                        val template = leafGene.template
-                        if (template is ObjectGene) {
-                            dto = template.refType?:TestWriterUtils.safeVariableName(actionName)
-                        } else {
-                            LoggingUtil.uniqueWarn(log, "Arrays of non custom objects are not collected as DTOs. Attempted at $actionName")
+                    val dtoName = when (leafGene) {
+                        is ObjectGene -> leafGene.refType?:TestWriterUtils.safeVariableName(actionName)
+                        is ArrayGene<*> -> {
+                            val template = leafGene.template
+                            if (template is ObjectGene) {
+                                 template.refType?:TestWriterUtils.safeVariableName(actionName)
+                            } else {
+                                throw IllegalStateException("Arrays of non custom objects are not collected as DTOs for root level. Attempted at $actionName")
+                            }
                         }
+                        else -> throw IllegalStateException("Gene $leafGene is not supported for DTO payloads for action: $actionName")
                     }
-                    val dtoName = StringUtils.capitalization(dto)
-                    lines.add("$dtoName var_$dtoName = new $dtoName();")
-
-                    if (leafGene is ObjectGene) {
-                        leafGene.fixedFields
+                    val dtoCall = leafGene.getDtoCall(dtoName, 1)
+                    dtoCall.objectCalls.forEach {
+                        lines.add(it)
                     }
+                    lines.addEmpty()
+                    return dtoCall.varName
                 }
             }
 
-//            if (targetFormat?.isJava() ?: false) {
-//
-//                val dtoName = StringUtils.capitalization(refType?: "TODO_DETERMINE_DTO_NAME")
-//
-//                buffer.append("$dtoName var_$dtoName = new $dtoName();\n")
-//
-//                // fixedFields or includedFields?
-//                includedFields.joinTo(buffer, ";\n") {
-//                    "var_$dtoName.set${StringUtils.capitalization(it.name)}(${
-//                        it.getValueAsPrintableString(
-//                            previousGenes,
-//                            mode,
-//                            targetFormat
-//                        )
-//                    })"
-//                }
-//            } else {
-//                throw IllegalArgumentException("Unrecognized format for writing DTO payload: $targetFormat")
-//            }
-
-
-//            val dto = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.DTO, targetFormat = format)
-//            dto.split("\n").forEach { lines.add(it) }
-//            lines.addEmpty()
         }
+        return ""
     }
 
 
@@ -402,13 +374,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
+        // TODO add support for kotlin
+        var dtoVar = ""
+        if (config.dtoForRequestPayload && format.isJava()) {
+            dtoVar = writeDto(call, lines)
+        }
+
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
             format.isJavaOrKotlin() -> {
                 lines.indent(2)
                 handleHeaders(call, lines)
-                handleBody(call, lines)
+                handleBody(call, lines, dtoVar)
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
             }
 
@@ -453,7 +431,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    protected open fun handleBody(call: HttpWsAction, lines: Lines) {
+    protected open fun handleBody(call: HttpWsAction, lines: Lines, dtoVar: String = "") {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
@@ -480,7 +458,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
                 val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                printSendJsonBody(json, lines)
+                printSendJsonBody(json, lines, dtoVar)
 
             } else if (bodyParam.isTextPlain()) {
 
@@ -536,7 +514,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines) {
+    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String = "") {
 
         if(json.isEmpty()){
             //nothing is sent
@@ -555,7 +533,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
                 }
-                else -> lines.add(".$send(${bodyLines.first()})")
+                else -> {
+                    if (config.dtoForRequestPayload && format.isJava()) {
+                        lines.add(".$send(${dtoVar})")
+                    } else {
+                        lines.add(".$send(${bodyLines.first()})")
+                    }
+                }
             }
         } else {
             when {
@@ -580,12 +564,16 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                 }
                 else -> {
-                    lines.add(".$send(${bodyLines.first()} + ")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
+                    if (config.dtoForRequestPayload && format.isJava()) {
+                        lines.add(".$send(${dtoVar})")
+                    } else {
+                        lines.add(".$send(${bodyLines.first()} + ")
+                        lines.indented {
+                            (1 until bodyLines.lastIndex).forEach { i ->
+                                lines.add("${bodyLines[i]} + ")
+                            }
+                            lines.add("${bodyLines.last()})")
                         }
-                        lines.add("${bodyLines.last()})")
                     }
                 }
             }

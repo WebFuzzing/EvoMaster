@@ -14,8 +14,4 @@ abstract class CompositeGene(
 
     constructor(name: String, child: Gene) : this(name, mutableListOf(child))
 
-    open fun getDtoCall(actionName: String, counter: Integer): List<String> {
-        throw RuntimeException("BUG: Gene $name (with type ${this::class.java.simpleName}) should not be creating DTOs")
-    }
-
 }

@@ -12,17 +12,11 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
-import org.evomaster.core.search.gene.wrapper.FlexibleGene
-import org.evomaster.core.search.gene.wrapper.NullableGene
-import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.wrapper.SelectableWrapperGene
 import org.evomaster.core.search.gene.wrapper.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -1235,6 +1229,10 @@ abstract class Gene(
         if (!children.contains(child)) {
             throw IllegalArgumentException("Not a child of current gene: $child - $this")
         }
+    }
+
+    open fun getDtoCall(actionName: String, counter: Int): DtoCall {
+        throw RuntimeException("BUG: Gene $name (with type ${this::class.java.simpleName}) should not be creating DTOs")
     }
 }
 

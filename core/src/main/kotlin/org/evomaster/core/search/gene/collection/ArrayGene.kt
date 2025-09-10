@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -267,27 +268,33 @@ class ArrayGene<T>(
                 closingTag
     }
 
-    override fun getDtoCall(dtoName: String, counter: Integer): List<String> {
-        val varName = "list_${dtoName}_${counter}"
-
+    override fun getDtoCall(dtoName: String, counter: Int): DtoCall {
         val result = mutableListOf<String>()
 
+        val listType = getListType(dtoName,template)
+        val listVarName = "list_${listType}_${counter}"
+        result.add("List<$listType> $listVarName = new ArrayList<$listType>();")
+
         if (template is ObjectGene) {
-            val childDtoName = StringUtils.capitalization(template.refType?: it.name)
-            result.add("List<$dtoName> $varName = new ArrayList<$dtoName>();")
-            result.addAll(leafGene.getDtoCall(childDtoName, counter))
-            result.add("$varName.set${childDtoName}(list_${childDtoName}_${counter})")
+            val childDtoName = StringUtils.capitalization(template.refType?: name)
+            var listCounter = 1
+            elements.forEach {
+                val childDtoCall = it.getDtoCall(childDtoName, listCounter++)
+                result.addAll(childDtoCall.objectCalls)
+                result.add("$listVarName.add(${childDtoCall.varName});")
+            }
         } else {
-            result.addAll(leafGene.getDtoCall(it.name, counter))
-            result.add("$varName.set${StringUtils.capitalization(it.name)}(list_${it.name}_${counter})")
+            elements.forEach {
+                result.add("$listVarName.add(${it.getValueAsPrintableString(targetFormat = null)});")
+            }
         }
 
-
-        return result
+        return DtoCall(listVarName, result)
     }
 
-    private fun getDtoType(fieldName: String, field: Gene?): String {
-        return when (field) {
+    // this should actually be something we can ask the gene, like gene.getDtoType()
+    private fun getListType(fieldName: String, gene: Gene): String {
+        return when (gene) {
             is StringGene -> "String"
             is IntegerGene -> "Integer"
             is LongGene -> "Long"
@@ -300,9 +307,9 @@ class ArrayGene<T>(
             is DateTimeGene -> "String"
             is RegexGene -> "String"
             is BooleanGene -> "Boolean"
-            is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
-            is ArrayGene<*> -> "List<${getDtoType(field.name, field.template)}>"
-            else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
+            is ObjectGene -> gene.refType?:StringUtils.capitalization(fieldName)
+            is ArrayGene<*> -> "List<${getListType(gene.name, gene.template)}>"
+            else -> throw Exception("Not supported gene at the moment: ${gene?.javaClass?.simpleName} for field $fieldName")
         }
     }
 
