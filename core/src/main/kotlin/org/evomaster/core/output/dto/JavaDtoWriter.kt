@@ -3,7 +3,6 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.utils.StringUtils
 import java.nio.file.Files
 import java.nio.file.Path
