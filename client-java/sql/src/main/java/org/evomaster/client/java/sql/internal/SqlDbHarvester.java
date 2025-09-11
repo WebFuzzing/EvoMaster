@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.sql.DbInfoExtractor.getTable;
 
@@ -79,6 +80,42 @@ public class SqlDbHarvester {
         return result;
     }
 
+
+    public static Map<String, String> generateSelectSqls(List<TableDto> tables, int limit) {
+        Map<String, String> selectSqls = new LinkedHashMap<>();
+
+        for (TableDto table : tables) {
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT ");
+
+            String columns = table.columns.stream()
+                    .map(c -> quoteIdentifier(table.name)+"."+quoteIdentifier(c.name))
+                    .collect(Collectors.joining(", "));
+            sql.append(columns).append(" ");
+
+            sql.append("FROM ").append(quoteIdentifier(table.name));
+
+            for (ForeignKeyDto fk : table.foreignKeys) {
+                sql.append(" JOIN ").append(quoteIdentifier(fk.targetTable)).append(" ON ");
+                for (int i = 0; i < fk.sourceColumns.size(); i++) {
+                    if (i > 0) sql.append(" AND ");
+                    sql.append(quoteIdentifier(table.name)).append(".").append(quoteIdentifier(fk.sourceColumns.get(i)))
+                            .append(" = ")
+                            .append(quoteIdentifier(fk.targetTable)).append(".").append(quoteIdentifier(fk.sourceColumns.get(i)));
+                }
+            }
+
+            sql.append(" LIMIT ").append(limit).append(";");
+
+            selectSqls.put(table.name, sql.toString());
+        }
+
+        return selectSqls;
+    }
+
+    private static String quoteIdentifier(String identifier) {
+        return "`" + identifier.replace("`", "``") + "`";
+    }
 
     private static String getTableKey(TableDto table) {
         return getTableKey(table.catalog, table.schema, table.name);
