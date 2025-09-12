@@ -13,8 +13,12 @@ import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.problem.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
+import org.evomaster.core.problem.util.StringSimilarityComparator.stringSimilarityScore
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.sql.SqlActionUtils.SCHEMA_TABLE_SEPARATOR
+import org.evomaster.core.sql.schema.TableId
+import kotlin.math.max
 
 /**
  * process inference related to resource
@@ -28,7 +32,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      *          i.e., the action under the resource may manipulate data from the table
      * e.g., /A/{a}/B{b}, the resource is related to two resource A and B
      */
-    override fun deriveResourceToTable(resourceCluster: MutableList<RestResourceNode>, allTables : Map<String, Table>){
+    override fun deriveResourceToTable(resourceCluster: MutableList<RestResourceNode>, allTables : Map<TableId, Table>){
         resourceCluster.forEach { r->
             deriveResourceToTable(r, allTables)
         }
@@ -37,33 +41,44 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     /**
      * derive a relationship between a resource and a table
      */
-    override fun deriveResourceToTable(resourceNode: RestResourceNode, allTables : Map<String, Table>){
+    override fun deriveResourceToTable(resourceNode: RestResourceNode, allTables : Map<TableId, Table>){
         //1. derive resource to table
 
         //1.1 derive resource to tables based on segments
         if(allTables.isNotEmpty()){
             resourceNode.getAllSegments(flatten = true).forEach { seg ->
                 ParamUtil.parseParams(seg).forEachIndexed stop@{ sindex, token ->
-                    //check whether any table name matches token
-                    val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token)) }.asSequence().sortedBy { e->e.second }
+                    /*
+                        check whether any table name matches token
+                        table name might contain schema,
+                     */
+                    val matchedMap = allTables.keys.map {
+                        Pair(it, calculateStringSimilarityScoreWithTableName(it.getFullQualifyingTableName(), token))
+                    }.asSequence().sortedBy { e->e.second }
 
                     if(matchedMap.lastOrNull()!= null && matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
-                            }.add(MatchedInfo(seg, it.first, similarity = it.second, inputIndicator = sindex, outputIndicator = 0))
+                            }.add(MatchedInfo(seg, it.first.getFullQualifyingTableName(), similarity = it.second, inputIndicator = sindex, outputIndicator = 0))
                         }
                         return@stop
                     }
 
-                    val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
-                        .map { p-> Pair(p.first, Pair(p.second,StringSimilarityComparator.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
+                    val matchedPropertyMap = allTables
+                        .flatMap { t->t.value.columns
+                            .filter { c-> !ParamUtil.isGeneralName(c.name) }
+                            .map { c->Pair(t.value.id, c.name) }
+                        }
+                        .map { p-> Pair(p.first,
+                            Pair(p.second, calculateStringSimilarityScoreWithTableName(p.second, token)
+                        )) }.asSequence().sortedBy { e->e.second.second }
 
                     if(matchedPropertyMap.lastOrNull() != null && matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
-                            }.add(MatchedInfo(seg, it.first, similarity = it.second.second, inputIndicator = sindex, outputIndicator = 1))
+                            }.add(MatchedInfo(seg, it.first.getFullQualifyingTableName(), similarity = it.second.second, inputIndicator = sindex, outputIndicator = 1))
                         }
                         return@stop
                     }
@@ -78,12 +93,12 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
                 if(!resourceNode.isPartOfStaticTokens(type) && allTables.isNotEmpty()){
-                    val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
+                    val matchedMap = allTables.keys.map { Pair(it, calculateStringSimilarityScoreWithTableName(it.getFullQualifyingTableName(), type)) }.asSequence().sortedBy { e->e.second }
                     if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
-                            }.add(MatchedInfo(type, it.first, similarity = it.second, inputIndicator = 0, outputIndicator = 0))
+                            }.add(MatchedInfo(type, it.first.getFullQualifyingTableName(), similarity = it.second, inputIndicator = 0, outputIndicator = 0))
                         }
                     }
                 }
@@ -92,12 +107,12 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         //1.3 derive resource to tables based on tokens on POST action
         resourceNode.actions.filter {it.verb == HttpVerb.POST }.forEach { post->
             post.tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
-                val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
+                val matchedMap = allTables.keys.map { Pair(it, calculateStringSimilarityScoreWithTableName(it.getFullQualifyingTableName(), atoken.getKey())) }.asSequence().sortedBy { e->e.second }
                 matchedMap.last().apply {
                     if(second >= StringSimilarityComparator.SimilarityThreshold){
                         resourceNode.resourceToTable.derivedMap.getOrPut(first){
                             mutableListOf()
-                        }.add(MatchedInfo(atoken.getKey(), first, similarity = second, inputIndicator = 1, outputIndicator = 0))
+                        }.add(MatchedInfo(atoken.getKey(), first.getFullQualifyingTableName(), similarity = second, inputIndicator = 1, outputIndicator = 0))
                     }
                 }
             }
@@ -107,14 +122,34 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         deriveParamsToTable(resourceNode.paramsInfo, resourceNode, allTables)
     }
 
+    /**
+     * compare [content] with given [tableName]
+     * tableName can contain info of schema,
+     * in this case we also calculate similarity with the last segment
+     * then return the higher similarity
+     */
+    private fun calculateStringSimilarityScoreWithTableName(tableName: String, content: String): Double{
+        var score = stringSimilarityScore(tableName, content) // full A vs full B
+        val shortContent = if (content.contains(SCHEMA_TABLE_SEPARATOR)) content.split(SCHEMA_TABLE_SEPARATOR).last() else null
+        val shortTable = if (tableName.contains(SCHEMA_TABLE_SEPARATOR)) tableName.split(SCHEMA_TABLE_SEPARATOR).last() else null
+        if (shortContent == null && shortTable == null) return score
 
-    fun deriveParamsToTable(mapParamInfo : Map<String, ParamInfo>, r: RestResourceNode, allTables : Map<String, Table>){
+        if (shortContent != null)
+            score = max(score, stringSimilarityScore(tableName, shortContent)) // full A vs short B
+        if (shortTable != null)
+            score = max(score, stringSimilarityScore(shortTable, content)) // short A vs full B
+        if (shortTable != null && shortContent != null)
+            score = max(score, stringSimilarityScore(shortTable, shortContent))
+        return score
+    }
+
+    fun deriveParamsToTable(mapParamInfo : Map<String, ParamInfo>, r: RestResourceNode, allTables : Map<TableId, Table>){
         mapParamInfo.forEach { (paramId, paramInfo) ->
             deriveParamsToTable(paramId, paramInfo, r, allTables)
         }
     }
 
-    fun deriveParamsToTable(paramId : String, paramInfo : ParamInfo, r: RestResourceNode, allTables : Map<String, Table>){
+    fun deriveParamsToTable(paramId : String, paramInfo : ParamInfo, r: RestResourceNode, allTables : Map<TableId, Table>){
 
         val inputIndicator = paramInfo.segmentLevel
 
@@ -131,7 +166,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                 r.resourceToTable.derivedMap.filter { it.value.any { m-> m.input == (ParamUtil.getObjectGene(paramInfo.referParam.gene))!!.refType!!} }.keys.toHashSet()
             } else null
 
-            if(tables == null || tables.isEmpty()) tables = relatedTables
+            if(tables.isNullOrEmpty()) tables = relatedTables
             created = deriveRelatedTable(r, paramId, paramInfo, tables, isBodyParam, inputIndicator, alltables = allTables )
         }
 
@@ -140,11 +175,19 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         }
     }
 
-    fun deriveRelatedTable(r : RestResourceNode, paramId: String, paramInfo: ParamInfo, relatedToTables: Set<String>, isBodyParam : Boolean, inputIndicator: Int, alltables : Map<String, Table>) : Boolean{
+    fun deriveRelatedTable(
+        r : RestResourceNode,
+        paramId: String,
+        paramInfo: ParamInfo,
+        relatedToTables: Set<TableId>,
+        isBodyParam : Boolean,
+        inputIndicator: Int,
+        alltables : Map<TableId, Table>
+    ) : Boolean{
         if(isBodyParam){
             val pToTable = BodyParamRelatedToTable(paramId, paramInfo.referParam)
             ParamUtil.getObjectGene(paramInfo.referParam.gene)?.fields?.forEach { f->
-                val matchedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
+                val matchedMap : MutableMap<TableId, MatchedInfo> = mutableMapOf()
                 deriveParamWithTable(f.name, relatedToTables, matchedMap, inputIndicator, alltables)
                 if(matchedMap.isNotEmpty()){
                     val fToTable = ParamFieldRelatedToTable(f.name)
@@ -157,7 +200,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
                 return true
             }
         }else{
-            val matchedMap : MutableMap<String, MatchedInfo> = mutableMapOf()
+            val matchedMap : MutableMap<TableId, MatchedInfo> = mutableMapOf()
             deriveParamWithTable(paramInfo.name, relatedToTables, matchedMap, inputIndicator, alltables)
             if(matchedMap.isNotEmpty()){
                 val pToTable = SimpleParamRelatedToTable(paramId, paramInfo.referParam)
@@ -175,31 +218,43 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      *
      * Note that same parameter (e.g., id) may related to multiple related tables.
      */
-    private fun deriveParamWithTable(paramName : String, candidateTables : Set<String>, pToTable : MutableMap<String, MatchedInfo>, inputlevel: Int, tables : Map<String, Table>){
+    private fun deriveParamWithTable(
+        paramName : String,
+        candidateTables : Set<TableId>,
+        pToTable : MutableMap<TableId, MatchedInfo>,
+        inputlevel: Int,
+        tables : Map<TableId, Table>){
         candidateTables.forEach { tableName ->
             deriveParamWithTable(paramName, tableName, pToTable, inputlevel, tables)
         }
     }
 
-    private fun deriveParamWithTable(paramName : String, tableName: String, pToTable : MutableMap<String, MatchedInfo>, inputlevel: Int, tables : Map<String, Table>){
+    private fun deriveParamWithTable(
+        paramName : String,
+        tableName: TableId,
+        pToTable : MutableMap<TableId, MatchedInfo>,
+        inputlevel: Int,
+        tables : Map<TableId, Table>
+    ){
         /*
             paramName might be \w+id or \w+name, in this case, we compare paramName with table name of current or referred table + column name
          */
-        getTable(tableName, tables)?.let { t->
+        //getTable(tableName, tables)?
+        tables[tableName]?.let { t->
             val matchedMap = t.columns
                     .map {
                         Pair(it.name,
                                 if(ParamUtil.isGeneralName(it.name))
-                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore(paramName, "${f.targetTable}${it.name}")}
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, "$tableName${it.name}"))
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName(paramName, "${f.targetTableId.name}${it.name}")}
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, "${tableName.name}${it.name}"))
                                             .asSequence().sorted().last()
                                 else if(ParamUtil.isGeneralName(paramName))
-                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore("${f.targetTable}$paramName", it.name)}
-                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
-                                            .plus(StringSimilarityComparator.stringSimilarityScore("$tableName$paramName", it.name))
+                                    t.foreignKeys.map { f-> calculateStringSimilarityScoreWithTableName("${f.targetTableId.name}$paramName", it.name)}
+                                            .plus(calculateStringSimilarityScoreWithTableName(paramName, it.name))
+                                            .plus(calculateStringSimilarityScoreWithTableName("${tableName.name}$paramName", it.name))
                                             .asSequence().sorted().last()
-                                else StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
+                                else calculateStringSimilarityScoreWithTableName(paramName, it.name))
                     }.asSequence().sortedBy { e->e.second }
             if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                 matchedMap.filter { it.second == matchedMap.last().second }.forEach {
@@ -219,14 +274,18 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
      * @param sqlActions specifies the tables to be analyzed.
      *          if [dbActions] is empty, the tables would be all related tables extracted from its resource node
      */
-    override fun generateRelatedTables(paramsInfo: List<ParamInfo>, calls: RestResourceCalls, sqlActions : List<SqlAction>): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
+    override fun generateRelatedTables(
+        paramsInfo: List<ParamInfo>,
+        calls: RestResourceCalls,
+        sqlActions : List<SqlAction>
+    ): MutableMap<RestCallAction, MutableList<ParamGeneBindMap>> {
 
         val result = mutableMapOf<RestCallAction, MutableList<ParamGeneBindMap>>()
 
         val missingParams = paramsInfo.map { it.key }
         val resource = calls.getResourceNode()
 
-        val relatedTables = sqlActions.map { it.table.name }.toHashSet()
+        val relatedTables = sqlActions.map { it.table.id }.toHashSet()
 
         val list = if(relatedTables.isEmpty())
             getBindMap(missingParams.toSet(), resource.resourceToTable)
@@ -266,7 +325,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         return result
     }
 
-    private fun getBindMap(paramIds : Set<String>, resourceToTable: ResourceRelatedToTable, tables: Set<String>) : MutableList<ParamGeneBindMap>{
+    private fun getBindMap(paramIds : Set<String>, resourceToTable: ResourceRelatedToTable, tables: Set<TableId>) : MutableList<ParamGeneBindMap>{
         val result = mutableListOf<ParamGeneBindMap>()
         paramIds.forEach { p->
             resourceToTable.paramToTable[p]?.let {pToTable->
@@ -277,7 +336,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
     }
 
 
-    private fun getBindMap(paramId: String, pToTable : ParamRelatedToTable, tables : Set<String>, resourceToTable: ResourceRelatedToTable, result :  MutableList<ParamGeneBindMap>) : Boolean{
+    private fun getBindMap(paramId: String, pToTable : ParamRelatedToTable, tables : Set<TableId>, resourceToTable: ResourceRelatedToTable, result :  MutableList<ParamGeneBindMap>) : Boolean{
         if(pToTable is SimpleParamRelatedToTable){
             resourceToTable.findBestTableForParam(tables, pToTable)?.let {pair->
                 val target = pair.first.toList()[(0..(pair.first.size-1)).shuffled().first()]

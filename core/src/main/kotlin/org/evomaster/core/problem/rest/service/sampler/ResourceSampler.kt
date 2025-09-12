@@ -42,7 +42,9 @@ open class ResourceSampler : AbstractRestSampler() {
 
     override fun initSqlInfo(infoDto: SutInfoDto) {
         //when ResourceDependency is enabled, SQL info is required to identify dependency
-        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.isEnabledResourceDependency())) {
+        if (infoDto.sqlSchemaDto != null
+            //&& (configuration.shouldGenerateSqlData() || config.isEnabledResourceDependency())//might need even if no insertion, eg, for table names
+            ) {
 
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()

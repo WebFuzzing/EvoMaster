@@ -55,7 +55,7 @@ public class DatabaseFakeMySQLSutController extends EmbeddedSutController {
     public String startSut() {
         running = true;
 
-        DbCleaner.clearDatabase(sqlConnection, DB_NAME,null, DatabaseType.MYSQL);
+        DbCleaner.clearDatabase_MySQL(sqlConnection, DB_NAME,null, null);
         return "foo";
     }
 
