@@ -133,7 +133,6 @@ class GeneToDto(outputFormat: OutputFormat) {
         return DtoCall(listVarName, result)
     }
 
-    // this should actually be something we can ask the gene, like gene.getDtoType()
     private fun getListType(fieldName: String, gene: Gene): String {
         return when (gene) {
             is StringGene -> "String"

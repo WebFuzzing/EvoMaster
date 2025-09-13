@@ -700,4 +700,3 @@ class ObjectGene(
         return additionalFields?.contains(gene) ?: false
     }
 }
-

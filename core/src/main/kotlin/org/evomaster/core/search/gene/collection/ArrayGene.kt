@@ -257,6 +257,7 @@ class ArrayGene<T>(
                 closingTag
     }
 
+
     /**
      * 1 is for 'remove' or 'add' element
      */
