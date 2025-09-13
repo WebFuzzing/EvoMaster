@@ -4,10 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.TestWriterUtils
-import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.problem.graphql.GqlConst
-import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
@@ -25,7 +22,6 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
-import org.evomaster.core.utils.StringUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URLEncoder
@@ -415,43 +411,6 @@ class ObjectGene(
         }
 
         return buffer.toString()
-    }
-
-    override fun getDtoCall(dtoName: String, counter: Int): DtoCall {
-        val dtoVarName = "dto_${dtoName}_${counter}"
-
-        val result = mutableListOf<String>()
-        result.add("$dtoName $dtoVarName = new $dtoName();")
-
-        val includedFields = fields.filter {
-            it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
-        } .filter { it.isPrintable() }
-
-        includedFields.forEach {
-            val leafGene = it.getLeafGene()
-            val attributeName = StringUtils.capitalization(it.name)
-            when (leafGene) {
-                is ObjectGene -> {
-                    val childDtoCall = leafGene.getDtoCall(attributeName, counter)
-
-                    result.addAll(childDtoCall.objectCalls)
-                    result.add("$dtoVarName.set${attributeName}(${childDtoCall.varName});")
-                }
-                is ArrayGene<*> -> {
-                    val childDtoCall = leafGene.getDtoCall(attributeName, counter)
-
-                    result.addAll(childDtoCall.objectCalls)
-                    result.add("$dtoVarName.set${attributeName}(${childDtoCall.varName});")
-                }
-                else -> {
-                    result.add("$dtoVarName.set${attributeName}(${
-                        it.getValueAsPrintableString(targetFormat = null)
-                    });")
-                }
-            }
-        }
-
-        return DtoCall(dtoVarName, result)
     }
 
     private fun handleInputArraySelection(buffer: StringBuffer, includedFields: List<Gene>, previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) {

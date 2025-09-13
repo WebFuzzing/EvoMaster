@@ -12,7 +12,6 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
-import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
@@ -1235,8 +1234,5 @@ abstract class Gene(
         }
     }
 
-    open fun getDtoCall(actionName: String, counter: Int): DtoCall {
-        throw RuntimeException("BUG: Gene $name (with type ${this::class.java.simpleName}) should not be creating DTOs")
-    }
 }
 

@@ -418,6 +418,10 @@ class TestSuiteWriter {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
             addImport("java.util.Arrays", lines)
+            if (config.dtoForRequestPayload) {
+                addImport("dto.*", lines)
+                addImport("java.util.ArrayList", lines)
+            }
         }
 
         if (format.isJavaOrKotlin()) {
