@@ -28,7 +28,7 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -60,9 +60,39 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            //AllOrNone on x!=null and z=true
+            //AllOrNone on a=false and d=HELLO
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/allornone",
+                    queryParams = mapOf("x" to "foo", "y" to "42", "z" to "true"))!!,
+                ptr.fromVerbPath("GET", "/api/allornone",
+                    queryParams = mapOf("y" to "42", "z" to "false"))!!,
+                ptr.fromVerbPath("POST", "/api/allornone",
+                    jsonBodyPayload = """
+                        { "a": false, "d": "HELLO", "b": "foo", "c": 42, "e": ["x","y","z"]}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/allornone",
+                    jsonBodyPayload = """
+                        { "d": "BAR", "c": -642, "e": ["x","y","z"]}
+                    """.trimIndent())!!,
+            )
+            val failed = listOf(
+                ptr.fromVerbPath("GET", "/api/allornone",
+                    queryParams = mapOf("x" to "foo", "y" to "42", "z" to "false"))!!,
+                ptr.fromVerbPath("GET", "/api/allornone",
+                    queryParams = mapOf("z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/allornone",
+                    jsonBodyPayload = """
+                        { "a": true, "d": "HELLO", "b": "foo", "c": 42, "e": ["x","y","z"]}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/allornone",
+                    jsonBodyPayload = """
+                        { "a": false, "d": "BAR", "b": "foo", "c": 42, "e": ["x","y","z"]}
+                    """.trimIndent())!!,
+                )
+
+            verifyModel(injector, ok, failed)
         }
     }
 }

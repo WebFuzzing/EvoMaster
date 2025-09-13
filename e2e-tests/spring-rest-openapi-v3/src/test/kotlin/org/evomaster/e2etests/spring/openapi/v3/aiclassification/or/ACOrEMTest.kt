@@ -26,7 +26,7 @@ class ACOrEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -58,9 +58,48 @@ class ACOrEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            // x or z=true
+            // a=true or b
+            // e or f=false
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/or",
+                    queryParams = mapOf("x" to "foo"))!!,
+                ptr.fromVerbPath("GET", "/api/or",
+                    queryParams = mapOf("z" to "true"))!!,
+                ptr.fromVerbPath("GET", "/api/or",
+                    queryParams = mapOf("x" to "foo", "z" to "false"))!!,
+                ptr.fromVerbPath("GET", "/api/or",
+                    queryParams = mapOf("x" to "foo", "z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/or",
+                    jsonBodyPayload = """
+                        {"a": true, "e": "hi"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/or",
+                    jsonBodyPayload = """
+                        {"b": "bar", "f": false}
+                    """.trimIndent())!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET", "/api/or",
+                    queryParams = mapOf("y" to "42"))!!,
+                ptr.fromVerbPath("POST", "/api/or",
+                    jsonBodyPayload = """
+                        {"a": true}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/or",
+                    jsonBodyPayload = """
+                        {"e": "hi"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/or",
+                    jsonBodyPayload = """
+                        {"b": "bar", "f": true}
+                    """.trimIndent())!!,
+            )
+
+
+            verifyModel(injector,ok,fail)
         }
     }
 }

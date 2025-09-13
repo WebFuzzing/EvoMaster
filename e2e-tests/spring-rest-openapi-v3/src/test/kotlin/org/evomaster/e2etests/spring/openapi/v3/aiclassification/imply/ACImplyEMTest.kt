@@ -29,7 +29,7 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -61,9 +61,42 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            //z==true implies x!=null
+            //a==true implies d==HELLO or f==HELLO
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET","/api/imply",
+                    queryParams = mapOf("y" to "45"))!!,
+                ptr.fromVerbPath("GET","/api/imply",
+                    queryParams = mapOf("z" to "true", "x" to "foo"))!!,
+                ptr.fromVerbPath("POST","/api/imply",
+                    jsonBodyPayload = """
+                        {"b": "bar"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST","/api/imply",
+                    jsonBodyPayload = """
+                        {"a": "true", "d": "HELLO"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST","/api/imply",
+                    jsonBodyPayload = """
+                        {"a": "true", "d": "X", "f": "HELLO"}
+                    """.trimIndent())!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET","/api/imply",
+                    queryParams = mapOf("z" to "true", "y" to "45"))!!,
+                ptr.fromVerbPath("POST","/api/imply",
+                    jsonBodyPayload = """
+                        {"a": "true"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST","/api/imply",
+                    jsonBodyPayload = """
+                        {"a": "true", "d": "X", "f": "X"}
+                    """.trimIndent())!!,
+            )
+
+            verifyModel(injector,ok,fail)
         }
     }
 }

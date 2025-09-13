@@ -100,14 +100,6 @@ class GMMModel : AbstractAIModel() {
 
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.estimateAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-        return this.performance.estimateAccuracy()
-    }
-
     // GMM (diagonal covariance)
     class GMM(private val dimension: Int, private val k: Int) {
 
@@ -240,4 +232,5 @@ class GMMModel : AbstractAIModel() {
             private fun kFakeTotal(): Double = 1.0
         }
     }
+
 }

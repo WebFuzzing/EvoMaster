@@ -11,8 +11,8 @@ import kotlin.random.Random
 /**
  * Gaussian classifier for REST API calls.
  *
- * This classifier builds two independent multivariate Gaussian distributions (one for HTTP 200 responses,
- * and one for HTTP 400 responses) based on numeric feature encodings of `RestCallAction` instances.
+ * This classifier builds two independent multivariate Gaussian distributions (for 400 responses or not 400)
+ * based on numeric feature encodings of `RestCallAction` instances.
  *
  * ## Features:
  * - Learns in an *online* fashion: it updates its parameters incrementally as new samples arrive.
@@ -112,15 +112,6 @@ class GaussianModel : AbstractAIModel() {
 
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return this.performance.estimateAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-        //TODO might need updating
-        return this.performance.estimateAccuracy()
-    }
-
     private fun logLikelihood(x: List<Double>, stats: Density): Double {
         return x.indices.sumOf { i ->
             val mu = stats.mean[i]
@@ -150,4 +141,5 @@ class GaussianModel : AbstractAIModel() {
 
         fun weight() = n.toDouble()
     }
+
 }
