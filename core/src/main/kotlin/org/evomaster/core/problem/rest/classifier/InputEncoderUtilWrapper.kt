@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
@@ -8,6 +9,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import kotlin.math.*
 import kotlin.reflect.KClass
 
 /**
@@ -17,7 +19,7 @@ import kotlin.reflect.KClass
  */
 class InputEncoderUtilWrapper(
     private val action: RestCallAction,
-    private val encoderType: EncoderType
+    private val encoderType: EMConfig.EncoderType?
 ) {
 
     private val supportedGeneTypes: Set<KClass<out Gene>> = setOf(
@@ -59,7 +61,7 @@ class InputEncoderUtilWrapper(
 
 
     fun encode(): List<Double> {
-        val sentinel = -1e6
+        val sentinel = -1e6 // for null handling
         val listGenes = endPointToGeneList()
         val rawEncodedFeatures = mutableListOf<Double>()
 
@@ -81,7 +83,7 @@ class InputEncoderUtilWrapper(
                     rawEncodedFeatures.add(leaf.value)
                 }
                 is StringGene -> {
-                    rawEncodedFeatures.add(if (leaf.value.isEmpty()) sentinel else 1.0)
+                    rawEncodedFeatures.add(if (leaf.value.isBlank()) sentinel else 1.0)
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)
@@ -102,17 +104,19 @@ class InputEncoderUtilWrapper(
         val stdDev = kotlin.math.sqrt(rawEncodedFeatures.map { (it - mean) * (it - mean) }.average())
 
         return when (encoderType) {
-            EncoderType.RAW -> rawEncodedFeatures
-            EncoderType.NORMAL ->
+            EMConfig.EncoderType.RAW -> rawEncodedFeatures
+            EMConfig.EncoderType.NORMAL ->
                 if (stdDev == 0.0) List(rawEncodedFeatures.size) { 0.0 }
                 else rawEncodedFeatures.map { (it - mean) / stdDev }
-            EncoderType.UNIT_NORMAL ->
+            EMConfig.EncoderType.UNIT_NORMAL ->
                 if (rawEncodedFeatures.all { it == 0.0 })
                     List(rawEncodedFeatures.size) { i -> if (i == 0) 1.0 else 0.0 }
                 else {
-                    val norm = kotlin.math.sqrt(rawEncodedFeatures.sumOf { it * it })
+                    val norm = sqrt(rawEncodedFeatures.sumOf { it * it })
                     rawEncodedFeatures.map { it / norm }
                 }
+
+            null -> throw IllegalArgumentException("Unsupported encoder type: $encoderType")
         }
     }
 

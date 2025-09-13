@@ -1,12 +1,20 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.gaussian
 
+import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.AIModel
+import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.ModelAccuracy
+import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
+import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import kotlin.math.ln
 import kotlin.math.PI
 import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.random.Random
+
 
 /**
  * Gaussian classifier for REST API calls.
@@ -23,46 +31,70 @@ import kotlin.random.Random
  * - Maintains two `Density` instances: one for class 200 and one for class 400.
  * - Computes the log-likelihood of the input under each class-specific Gaussian.
  * - Combines likelihoods with class priors using Bayes' rule to calculate normalized posterior probabilities.
- * - Predicts based on the posterior probabilities (i.e., probabilities sum to 1).
+ * - Predicts based on the posterior probabilities.
  *
  * ## Assumptions:
  * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
- * - The only two supported classes are 200 and 400.
- *
- * @param dimension the fixed dimensionality of the input feature vectors.
- * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
- */
-class GaussianModel : AbstractAIModel() {
+  */
+class Gaussian400EndpointModel (
+    val endpoint: Endpoint,
+    var warmup: Int = 10,
+    var dimension: Int? = null,
+    val encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL
+): AIModel {
+
+    private var initialized = false
+
+    val performance = ModelAccuracyFullHistory()
+    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
 
     var density200: Density? = null
     var density400: Density? = null
 
     /** Must be called once to initialize the model properties */
-    fun setup(dimension: Int, warmup: Int) {
-        require(dimension > 0 ) { "Dimension must be positive." }
-        require(warmup > 0 ) { "Warmup must be positive." }
-        this.dimension = dimension
-        this.density200 = Density(dimension)
-        this.density400 = Density(dimension)
-        this.warmup = warmup
+    private fun initializeIfNeeded(inputVector: List<Double>) {
+        if (dimension == null) {
+            require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
+            require(warmup > 0) { "Warmup must be positive" }
+            dimension = inputVector.size
+        } else {
+            require(inputVector.size == dimension) {
+                "Expected input vector of size $dimension but got ${inputVector.size}"
+            }
+        }
+        if(density200 == null) {
+            density200 = Density(dimension!!)
+        }
+        if(density400 == null) {
+            density400 = Density(dimension!!)
+        }
+        initialized = true
     }
 
-
     override fun classify(input: RestCallAction): AIResponseClassification {
-
-        if (performance.totalSentRequests < warmup) {
-            throw IllegalStateException("Classifier not ready as warmup is not completed.")
-        }
+        verifyEndpoint(input.endpoint)
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (inputVector.size != this.dimension) {
+        initializeIfNeeded(inputVector)
+
+        if (performance.totalSentRequests < warmup) {
+            // Return equal probabilities during warmup
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
+        if (inputVector.size != dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logLikelihood200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
-        val logLikelihood400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
+        val logLikelihood200 = ln(density200!!.weight()) + logLikelihood(inputVector, density200!!)
+        val logLikelihood400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
 
         // ensure the outputs as positives
         val likelihood200 = exp(logLikelihood200)
@@ -70,6 +102,17 @@ class GaussianModel : AbstractAIModel() {
 
         // Normalize posterior probabilities
         val total = likelihood200 + likelihood400
+
+        // Handle the case when both likelihoods are zero
+        if (total == 0.0) {
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
         val posterior200 = likelihood200 / total
         val posterior400 = likelihood400 / total
 
@@ -82,8 +125,13 @@ class GaussianModel : AbstractAIModel() {
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
+
+        verifyEndpoint(input.endpoint)
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
+
+        initializeIfNeeded(inputVector)
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -95,19 +143,24 @@ class GaussianModel : AbstractAIModel() {
          */
         val trueStatusCode = output.getStatusCode()
         if (performance.totalSentRequests < warmup) {
-            performance.updatePerformance(Random.nextBoolean())
+            val guess = Random.nextBoolean()
+            performance.updatePerformance(guess)
+            modelAccuracy.updatePerformance(guess)
         } else {
+            val classification = classify(input)
             val predicted = classify(input).prediction()
-            performance.updatePerformance(predicted == trueStatusCode)
+            val predictIsCorrect = (predicted == trueStatusCode)
+            performance.updatePerformance(predictIsCorrect)
+            modelAccuracy.updatePerformance(predictIsCorrect)
         }
 
         /**
          * Updating the density functions based on the real observation
          */
         if (trueStatusCode == 400) {
-            this.density400!!.update(inputVector)
+            density400!!.update(inputVector)
         } else {
-            this.density200!!.update(inputVector)
+            density200!!.update(inputVector)
         }
 
     }
@@ -142,4 +195,26 @@ class GaussianModel : AbstractAIModel() {
         fun weight() = n.toDouble()
     }
 
+
+    override fun estimateAccuracy(endpoint: Endpoint): Double {
+        verifyEndpoint(endpoint)
+
+        return estimateOverallAccuracy()
+    }
+
+    override fun estimateOverallAccuracy(): Double {
+
+        if(!initialized){
+            //hasn't learned anything yet
+            return 0.5
+        }
+
+        return modelAccuracy.estimateAccuracy()
+    }
+
+    private fun verifyEndpoint(inputEndpoint: Endpoint){
+        if(inputEndpoint != endpoint){
+            throw IllegalArgumentException("inout endpoint $inputEndpoint is not the same as the model endpoint $endpoint")
+        }
+    }
 }

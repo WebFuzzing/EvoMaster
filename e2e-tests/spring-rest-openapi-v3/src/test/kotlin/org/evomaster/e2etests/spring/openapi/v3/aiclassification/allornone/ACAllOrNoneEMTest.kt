@@ -40,6 +40,12 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
     }
 
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
     private fun testRunEM(model: AIResponseClassifierModel) {
 
         runTestHandlingFlakyAndCompilation(
