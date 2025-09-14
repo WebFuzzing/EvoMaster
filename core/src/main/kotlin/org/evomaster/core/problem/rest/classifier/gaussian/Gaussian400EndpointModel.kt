@@ -147,7 +147,6 @@ class Gaussian400EndpointModel (
             performance.updatePerformance(guess)
             modelAccuracy.updatePerformance(guess)
         } else {
-            val classification = classify(input)
             val predicted = classify(input).prediction()
             val predictIsCorrect = (predicted == trueStatusCode)
             performance.updatePerformance(predictIsCorrect)
