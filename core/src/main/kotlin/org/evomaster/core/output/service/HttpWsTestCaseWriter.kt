@@ -578,9 +578,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     (1 until bodyLines.lastIndex).forEach { i ->
                         lines.add("${bodyLines[i]} + ")
                     }
-                    lines.add("${bodyLines.last()})")
+                    lines.add("${bodyLines.last()}")
                 }
             }
+            lines.append(")")
         }
     }
 
