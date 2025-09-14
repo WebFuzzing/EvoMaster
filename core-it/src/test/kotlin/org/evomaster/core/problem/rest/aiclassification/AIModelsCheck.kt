@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
 import bar.examples.it.spring.aiclassification.basic.BasicController
+import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -13,8 +14,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.gaussian.Gaussian400EndpointModel
+import org.evomaster.core.problem.rest.classifier.glm.GLM400Classifier
+import org.evomaster.core.problem.rest.classifier.glm.GLM400EndpointModel
 import org.evomaster.core.problem.rest.classifier.knn.KNN400Classifier
 import org.evomaster.core.problem.rest.classifier.knn.KNN400EndpointModel
+import org.evomaster.core.problem.rest.classifier.nn.NN400Classifier
+import org.evomaster.core.problem.rest.classifier.nn.NN400EndpointModel
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -48,9 +53,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KNN"
+    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "NN", etc.
     val runTimeDuration = 5_000L
-    val encoderType4Test = EMConfig.EncoderType.RAW
+    val encoderType4Test = EMConfig.EncoderType.NORMAL
     val warmUpRep = when (modelName) {
         "NN" -> 1000
         else -> 10
@@ -113,6 +118,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
         val globalClassifier = when(modelName){
             "GAUSSIAN" -> Gaussian400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup)
             "KNN" -> KNN400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, k = 3)
+            "GLM" -> GLM400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, learningRate = config.aiResponseClassifierLearningRate)
+            "NN" -> NN400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, learningRate = config.aiResponseClassifierLearningRate)
             else -> throw IllegalArgumentException("Unsupported model: $modelName")
         }
 
@@ -158,14 +165,26 @@ class AIModelsCheck : IntegrationTestRestBase() {
             // warmup detection
             val endpointModel: Any? = when(modelName){
                 "GAUSSIAN" -> {
-                    val m = (globalClassifier as Gaussian400Classifier).models[endPoint] as? Gaussian400EndpointModel
-                    val isCold = m?.performance?.totalSentRequests ?: 0 < config.aiResponseClassifierWarmup
+                    val m = (globalClassifier as Gaussian400Classifier).models[endPoint]
+                    val isCold = (m?.performance?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding GAUSSIAN model is cold: $isCold")
                     m
                 }
+                "GLM" -> {
+                    val m = (globalClassifier as GLM400Classifier).models[endPoint]
+                    val isCold = (m?.performance?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding GLM model is cold: $isCold")
+                    m
+                }
+                "NN" -> {
+                    val m = (globalClassifier as NN400Classifier).models[endPoint]
+                    val isCold = (m?.performance?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding NN model is cold: $isCold")
+                    m
+                }
                 "KNN" -> {
-                    val m = (globalClassifier as KNN400Classifier).models[endPoint] as? KNN400EndpointModel
-                    val isCold = m?.performance?.totalSentRequests ?: 0 < config.aiResponseClassifierWarmup
+                    val m = (globalClassifier as KNN400Classifier).models[endPoint]
+                    val isCold = (m?.performance?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding KNN model is cold: $isCold")
                     m
                 }
@@ -174,6 +193,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
             val isCold = when(endpointModel){
                 is Gaussian400EndpointModel -> endpointModel.performance.totalSentRequests < config.aiResponseClassifierWarmup
+                is GLM400EndpointModel -> endpointModel.performance.totalSentRequests < config.aiResponseClassifierWarmup
+                is NN400EndpointModel -> endpointModel.performance.totalSentRequests < config.aiResponseClassifierWarmup
                 is KNN400EndpointModel -> endpointModel.performance.totalSentRequests < config.aiResponseClassifierWarmup
                 else -> true
             }
@@ -189,6 +210,18 @@ class AIModelsCheck : IntegrationTestRestBase() {
             when (endpointModel) {
                 is Gaussian400EndpointModel -> {
                     println("The model is a Gaussian400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.performance.correctPrediction}")
+                    println("Total Requests: ${endpointModel.performance.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.performance.estimateAccuracy()}")
+                }
+                is GLM400EndpointModel -> {
+                    println("The model is a GLM400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.performance.correctPrediction}")
+                    println("Total Requests: ${endpointModel.performance.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.performance.estimateAccuracy()}")
+                }
+                is NN400EndpointModel -> {
+                    println("The model is a NN400EndpointModel")
                     println("Correct Predictions: ${endpointModel.performance.correctPrediction}")
                     println("Total Requests: ${endpointModel.performance.totalSentRequests}")
                     println("Accuracy: ${endpointModel.performance.estimateAccuracy()}")
@@ -235,8 +268,10 @@ class AIModelsCheck : IntegrationTestRestBase() {
                 } else if (endpointModel is KNN400EndpointModel) {
                     println("KNN stats: stored ${endpointModel.samples.size} samples")
                     // you could also print neighbors, votes, etc if useful
+                }else if (endpointModel is GLM400EndpointModel) {
+                    println("Updating the $modelName classifier!")
+                    println("Weights and Bias = ${endpointModel.getModelParams()}")
                 }
-
             }
         }
     }

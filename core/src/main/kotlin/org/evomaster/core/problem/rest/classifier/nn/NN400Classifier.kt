@@ -1,20 +1,18 @@
-package org.evomaster.core.problem.rest.classifier.knn
+package org.evomaster.core.problem.rest.classifier.nn
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
-import org.evomaster.core.problem.rest.classifier.knn.KNN400EndpointModel
+import org.evomaster.core.problem.rest.classifier.nn.NN400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import kotlin.Int
 
-
-class KNN400Classifier(
+class NN400Classifier(
     private val warmup: Int = 10,
-    private val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.RAW,
-    private val k: Int = 3
+    private val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    private val learningRate: Double = 0.01
 ) : AIModel {
 
     /**
@@ -22,7 +20,7 @@ class KNN400Classifier(
      * - If all genes of the endpoint are supported, the value is an AIModel instance.
      * - If the endpoint contains unsupported genes, the value is null, meaning no classifier is used.
      */
-    val models: MutableMap<Endpoint, KNN400EndpointModel?> = mutableMapOf()
+    val models: MutableMap<Endpoint, NN400EndpointModel?> = mutableMapOf()
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
 
@@ -40,12 +38,12 @@ class KNN400Classifier(
             val dimension = listGenes.size
 
             // create a classifier if the key doesn't exist otherwise null
-            KNN400EndpointModel(
+            NN400EndpointModel(
                 input.endpoint,
                 warmup,
                 dimension,
                 encoderType,
-                k = k)
+                learningRate)
         }
 
         m?.updateModel(input, output)

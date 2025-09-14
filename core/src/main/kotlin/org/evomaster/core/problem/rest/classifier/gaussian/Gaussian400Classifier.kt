@@ -9,9 +9,9 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
 class Gaussian400Classifier(
-    private val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    private val warmup: Int = 10
-) : AIModel {
+    private val warmup: Int = 10,
+    private val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL
+    ) : AIModel {
 
     /**
      * Maps each API endpoint to its corresponding AIModel.

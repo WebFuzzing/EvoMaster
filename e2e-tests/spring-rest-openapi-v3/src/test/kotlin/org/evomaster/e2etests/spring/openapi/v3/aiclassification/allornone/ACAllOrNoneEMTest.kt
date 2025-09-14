@@ -42,6 +42,13 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
 
     @Disabled
     @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+    
+
+    @Disabled
+    @Test
     fun testRunKNN(){
         testRunEM(AIResponseClassifierModel.KNN)
     }

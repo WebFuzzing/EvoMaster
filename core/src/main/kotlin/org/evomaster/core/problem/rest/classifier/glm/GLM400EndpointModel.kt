@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.classifier.knn
+package org.evomaster.core.problem.rest.classifier.glm
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
@@ -10,35 +10,31 @@ import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import kotlin.collections.map
-import kotlin.math.sqrt
+import kotlin.math.exp
 import kotlin.random.Random
 
+
 /**
- * K-Nearest Neighbors (KNN) classifier for REST API calls.
+ * An online binary classifier for REST API actions using a Generalized Linear Model (logistic regression).
  *
- * Keeps past observations (feature vector + label).
- * Classifies a new input based on the majority class of the k nearest stored samples.
+ * This model classifies between HTTP status codes 200 and 400, and updates its weight incrementally.
+ * It uses stochastic gradient descent (SGD) to learn the parameters.
  */
-class KNN400EndpointModel (
+class GLM400EndpointModel (
     val endpoint: Endpoint,
     var warmup: Int = 10,
     var dimension: Int? = null,
-    val encoderType: EMConfig.EncoderType= EMConfig.EncoderType.RAW,
-    val k: Int = 3
+    val encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    val learningRate: Double = 0.01
 ): AIModel {
 
     private var initialized = false
 
-    val samples = mutableListOf<Pair<List<Double>, Int>>()  // (features, statusCode)
+    var weights: MutableList<Double>? = null
+    var bias: Double = 0.0
 
     val performance = ModelAccuracyFullHistory()
     val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
-
-    // Euclidean distance between two points in the feature space
-    private fun distance(a: List<Double>, b: List<Double>): Double {
-        return sqrt(a.zip(b).sumOf { (ai, bi) -> (ai - bi) * (ai - bi) })
-    }
 
     /** Must be called once to initialize the model properties */
     private fun initializeIfNeeded(inputVector: List<Double>) {
@@ -46,13 +42,21 @@ class KNN400EndpointModel (
             require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
             require(warmup > 0) { "Warmup must be positive" }
             dimension = inputVector.size
+            // Initialize weights with zeros
+            weights = MutableList(inputVector.size) { 0.0 }
         } else {
             require(inputVector.size == dimension) {
                 "Expected input vector of size $dimension but got ${inputVector.size}"
             }
+            // Initialize weights if they haven't been initialized yet
+            if (weights == null) {
+                weights = MutableList(dimension!!) { 0.0 }
+            }
         }
         initialized = true
     }
+
+    private fun sigmoid(z: Double): Double = 1.0 / (1.0 + exp(-z))
 
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
@@ -76,19 +80,17 @@ class KNN400EndpointModel (
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        // Find k nearest neighbors
-        val neighbors = samples
-            .map { (x, label) -> distance(inputVector, x) to label }
-            .sortedBy { it.first }
-            .take(k)
+        val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
+        val prob200 = sigmoid(z)
+        val prob400 = 1.0 - prob200
 
-        // Majority vote
-        val votes = neighbors.groupingBy { it.second }.eachCount()
+        return AIResponseClassification(
+            probabilities = mapOf(
+                200 to prob200,
+                400 to prob400
+            )
+        )
 
-        // Convert to pseudo probabilities (votes / k)
-        val probabilities = votes.mapValues { it.value.toDouble() / k }
-
-        return AIResponseClassification(probabilities = probabilities)
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
@@ -122,14 +124,24 @@ class KNN400EndpointModel (
         }
 
         /**
-         * Store only classes of interest (i.e., 200 and 400 groups)
+         * Updating model parameters
          */
-        if (trueStatusCode == 400) {
-            samples.add(inputVector to 400)
-        } else {
-            samples.add(inputVector to 200)
-        }
+        val y = if (trueStatusCode == 400) 0.0 else 1.0
 
+        val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
+        val prediction = sigmoid(z)
+        val error = prediction - y
+
+        for (i in inputVector.indices) {
+            weights!![i] -= learningRate * error * inputVector[i]
+        }
+        bias -= learningRate * error
+
+    }
+
+    fun getModelParams(): List<Double> {
+        check(weights != null) { "Classifier not initialized. Call setDimension first." }
+        return weights!!.toList() + bias
     }
 
     override fun estimateAccuracy(endpoint: Endpoint): Double {
