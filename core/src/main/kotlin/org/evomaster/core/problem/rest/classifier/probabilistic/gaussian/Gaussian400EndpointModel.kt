@@ -40,22 +40,22 @@ class Gaussian400EndpointModel (
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private var densityNot400: Density? = null
     private var density400: Density? = null
+    private var densityNot400: Density? = null
 
-    fun getDensityNot400(): Density? = densityNot400
     fun getDensity400(): Density? = density400
+    fun getDensityNot400(): Density? = densityNot400
 
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
      */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
-        if(densityNot400 == null) {
-            densityNot400 = Density(dimension!!)
-        }
         if(density400 == null) {
             density400 = Density(dimension!!)
+        }
+        if(densityNot400 == null) {
+            densityNot400 = Density(dimension!!)
         }
     }
 
@@ -81,12 +81,12 @@ class Gaussian400EndpointModel (
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logLikelihoodNot400 = ln(densityNot400!!.weight()) + logLikelihood(inputVector, densityNot400!!)
         val logLikelihood400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
+        val logLikelihoodNot400 = ln(densityNot400!!.weight()) + logLikelihood(inputVector, densityNot400!!)
 
         // ensure the outputs as positives
-        val likelihoodNot400 = exp(logLikelihoodNot400)
         val likelihood400 = exp(logLikelihood400)
+        val likelihoodNot400 = exp(logLikelihoodNot400)
 
         // Normalize posterior probabilities
         val total = likelihoodNot400 + likelihood400

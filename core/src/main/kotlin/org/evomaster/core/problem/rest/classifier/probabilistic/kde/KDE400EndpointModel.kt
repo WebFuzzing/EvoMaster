@@ -30,8 +30,8 @@ class KDE400EndpointModel (
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private var densityNot400: KDE? = null
     private var density400: KDE? = null
+    private var densityNot400: KDE? = null
 
     /**
      * Optional cap on stored samples per class (0 = unlimited).
@@ -42,11 +42,11 @@ class KDE400EndpointModel (
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
-        if(densityNot400 == null) {
-            densityNot400 = KDE(dimension!!, maxSamplesPerClass)
-        }
         if(density400 == null) {
             density400 = KDE(dimension!!, maxSamplesPerClass)
+        }
+        if(densityNot400 == null) {
+            densityNot400 = KDE(dimension!!, maxSamplesPerClass)
         }
         initialized = true
     }
@@ -73,13 +73,14 @@ class KDE400EndpointModel (
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val llNot400 = ln((densityNot400!!.weight()).coerceAtLeast(1.0)) + densityNot400!!.logLikelihood(inputVector)
         val ll400 = ln((density400!!.weight()).coerceAtLeast(1.0)) + density400!!.logLikelihood(inputVector)
+        val llNot400 = ln((densityNot400!!.weight()).coerceAtLeast(1.0)) + densityNot400!!.logLikelihood(inputVector)
 
         // log-space normalization
         val m = max(llNot400, ll400)
-        val likelihoodNot400 = exp(llNot400 - m)
         val likelihood400 = exp(ll400 - m)
+        val likelihoodNot400 = exp(llNot400 - m)
+
         val total = likelihoodNot400 + likelihood400
 
         // Handle the case when both likelihoods are zero
@@ -92,8 +93,8 @@ class KDE400EndpointModel (
             )
         }
 
-        val posteriorNot400 = likelihoodNot400 / total
         val posterior400 = likelihood400 / total
+        val posteriorNot400 = likelihoodNot400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
