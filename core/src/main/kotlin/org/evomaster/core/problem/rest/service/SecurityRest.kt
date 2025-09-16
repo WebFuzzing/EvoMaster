@@ -10,6 +10,7 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
@@ -648,7 +649,11 @@ class SecurityRest {
                 // we need to fix this.
 
                 val first = i403or401.minBy { it.individual.size() }
-                val second = i2xx.minBy { it.individual.size() }
+                val second = i2xx.minBy { it.individual.size() }.copy()
+
+                second.individual.removeHostnameResolutionAction(first.individual.seeAllActions().filter {
+                    it is HostnameResolutionAction
+                } as List<HostnameResolutionAction>)
 
                 val finalIndividual = RestIndividualBuilder.merge(
                     first.individual,
