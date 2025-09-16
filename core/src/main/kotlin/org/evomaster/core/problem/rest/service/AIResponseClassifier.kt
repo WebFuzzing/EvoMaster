@@ -6,15 +6,12 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.AbstractAIModel
-import org.evomaster.core.problem.rest.classifier.GMMModel
-import org.evomaster.core.problem.rest.classifier.KDEModel
 import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
-import org.evomaster.core.problem.rest.classifier.gaussian.Gaussian400Classifier
-import org.evomaster.core.problem.rest.classifier.gaussian.Gaussian400EndpointModel
-import org.evomaster.core.problem.rest.classifier.glm.GLM400Classifier
-import org.evomaster.core.problem.rest.classifier.knn.KNN400Classifier
-import org.evomaster.core.problem.rest.classifier.nn.NN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -43,15 +40,17 @@ class AIResponseClassifier : AIModel {
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
             EMConfig.AIResponseClassifierModel.GAUSSIAN ->
-                Gaussian400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType)
+                Gaussian400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
             EMConfig.AIResponseClassifierModel.GLM ->
                 GLM400Classifier(config.aiResponseClassifierWarmup,
-                    config.aiEncoderType, config.aiResponseClassifierLearningRate)
+                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
             EMConfig.AIResponseClassifierModel.NN ->
                 NN400Classifier(config.aiResponseClassifierWarmup,
-                    config.aiEncoderType, config.aiResponseClassifierLearningRate)
+                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
             EMConfig.AIResponseClassifierModel.KNN ->
-                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3)
+                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3, randomness)
+            EMConfig.AIResponseClassifierModel.KDE ->
+                KDE400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
                 Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {

@@ -1298,12 +1298,6 @@ class EMConfig {
         GAUSSIAN,
 
         /**
-         * Gaussian Mixture Model (GMM).
-         * Represents the data as a mixture of multiple Gaussian distributions.
-         */
-        GM,
-
-        /**
          * Kernel Density Estimation (KDE).
          * A non-parametric method for estimating the probability density function.
          */
@@ -1372,7 +1366,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
-    var aiEncoderType = EncoderType.RAW
+    var aiEncoderType = EncoderType.NORMAL
 
 
     @Experimental

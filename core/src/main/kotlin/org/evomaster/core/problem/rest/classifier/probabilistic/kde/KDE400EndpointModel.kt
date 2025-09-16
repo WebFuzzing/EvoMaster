@@ -1,21 +1,37 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.probabilistic.kde
 
+import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import kotlin.math.*
+import org.evomaster.core.search.service.Randomness
+import kotlin.math.exp
+import kotlin.math.ln
+import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * Kernel Density Estimation (KDE) classifier for REST API calls.
  *
- * - Two class-conditional KDEs: one for 2xx and one for 4xx.
+ * - Two class-conditional KDEs: one for 400 and one for not 400.
  * - Product Gaussian kernels with diagonal bandwidths per dimension.
  * - Online updates: we store samples and maintain running mean/variance to compute bandwidths.
  * - Class priors inferred from sample counts in each class.
  */
-class KDEModel : AbstractAIModel() {
+class KDE400EndpointModel (
+    endpoint: Endpoint,
+    warmup: Int = 10,
+    dimension: Int? = null,
+    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    randomness: Randomness
+): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    var density200: KDE? = null
-    var density400: KDE? = null
+    private var densityNot400: KDE? = null
+    private var density400: KDE? = null
 
     /**
      * Optional cap on stored samples per class (0 = unlimited).
@@ -24,65 +40,106 @@ class KDEModel : AbstractAIModel() {
     var maxSamplesPerClass: Int = 0
 
     /** Must be called once to initialize the model properties */
-    fun setup(dimension: Int, warmup: Int, maxSamplesPerClass: Int = 0) {
-        require(dimension > 0) { "Dimension must be positive." }
-        require(warmup > 0) { "Warmup must be positive." }
-        require(maxSamplesPerClass >= 0) { "maxSamplesPerClass must be >= 0" }
-        this.dimension = dimension
-        this.density200 = KDE(dimension, maxSamplesPerClass)
-        this.density400 = KDE(dimension, maxSamplesPerClass)
-        this.warmup = warmup
-        this.maxSamplesPerClass = maxSamplesPerClass
+    override fun initializeIfNeeded(inputVector: List<Double>) {
+        super.initializeIfNeeded(inputVector)
+        if(densityNot400 == null) {
+            densityNot400 = KDE(dimension!!, maxSamplesPerClass)
+        }
+        if(density400 == null) {
+            density400 = KDE(dimension!!, maxSamplesPerClass)
+        }
+        initialized = true
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
-        if (performance.totalSentRequests < warmup) {
-            throw IllegalStateException("Classifier not ready as warmup is not completed.")
-        }
+        verifyEndpoint(input.endpoint)
 
-        val d = this.dimension ?: error("Model not setup")
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
-        require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 
-        val ll200 = ln((density200!!.weight()).coerceAtLeast(1.0)) + density200!!.logLikelihood(inputVector)
+        initializeIfNeeded(inputVector)
+
+        if (performance.totalSentRequests < warmup) {
+            // Return equal probabilities during warmup
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
+        if (inputVector.size != dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
+        }
+
+        val llNot400 = ln((densityNot400!!.weight()).coerceAtLeast(1.0)) + densityNot400!!.logLikelihood(inputVector)
         val ll400 = ln((density400!!.weight()).coerceAtLeast(1.0)) + density400!!.logLikelihood(inputVector)
 
         // log-space normalization
-        val m = max(ll200, ll400)
-        val p200 = exp(ll200 - m)
-        val p400 = exp(ll400 - m)
-        val z = p200 + p400
-        val post200 = p200 / z
-        val post400 = p400 / z
+        val m = max(llNot400, ll400)
+        val likelihoodNot400 = exp(llNot400 - m)
+        val likelihood400 = exp(ll400 - m)
+        val total = likelihoodNot400 + likelihood400
+
+        // Handle the case when both likelihoods are zero
+        if (total == 0.0) {
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
+        val posteriorNot400 = likelihoodNot400 / total
+        val posterior400 = likelihood400 / total
 
         return AIResponseClassification(
-            probabilities = mapOf(200 to post200, 400 to post400)
+            probabilities = mapOf(
+                200 to posteriorNot400,
+                400 to posterior400
+            )
         )
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        val d = this.dimension ?: error("Model not setup")
+
+        verifyEndpoint(input.endpoint)
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
-        require(inputVector.size == d) { "Expected input vector of size $d but got ${inputVector.size}" }
 
-        // Update performance estimate (prediction made before seeing the label)
-        val trueStatusCode = output.getStatusCode()
-        if (performance.totalSentRequests < warmup) {
-            performance.updatePerformance(kotlin.random.Random.nextBoolean())
-        } else {
-            val predicted = classify(input).prediction()
-            performance.updatePerformance(predicted == trueStatusCode)
+        initializeIfNeeded(inputVector)
+
+        if (inputVector.size != this.dimension) {
+            throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        // Update class-specific KDE with the true observation
+        /**
+         * Updating classifier performance based on its prediction
+         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
+         */
+        val trueStatusCode = output.getStatusCode()
+        if (performance.totalSentRequests < warmup) {
+            val guess = randomness.nextBoolean()
+            performance.updatePerformance(guess)
+            modelAccuracy.updatePerformance(guess)
+        } else {
+            val predicted = classify(input).prediction()
+            val predictIsCorrect = (predicted == trueStatusCode)
+            performance.updatePerformance(predictIsCorrect)
+            modelAccuracy.updatePerformance(predictIsCorrect)
+        }
+
+        /**
+         * Updating the KDEs based on the real observation
+         */
         if (trueStatusCode == 400) {
             density400!!.add(inputVector)
         } else {
-            density200!!.add(inputVector)
+            densityNot400!!.add(inputVector)
         }
-
 
     }
 

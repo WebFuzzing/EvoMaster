@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.classifier.knn
+package org.evomaster.core.problem.rest.classifier.probabilistic.knn
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
@@ -7,12 +7,13 @@ import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.ModelAccuracy
 import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
 import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.search.service.Randomness
 import kotlin.collections.map
 import kotlin.math.sqrt
-import kotlin.random.Random
 
 /**
  * K-Nearest Neighbors (KNN) classifier for REST API calls.
@@ -21,38 +22,23 @@ import kotlin.random.Random
  * Classifies a new input based on the majority class of the k nearest stored samples.
  */
 class KNN400EndpointModel (
-    val endpoint: Endpoint,
-    var warmup: Int = 10,
-    var dimension: Int? = null,
-    val encoderType: EMConfig.EncoderType= EMConfig.EncoderType.RAW,
-    val k: Int = 3
-): AIModel {
+    endpoint: Endpoint,
+    warmup: Int = 10,
+    dimension: Int? = null,
+    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.RAW,
+    private val k: Int = 3,
+    randomness: Randomness
+): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private var initialized = false
+    private val samples = mutableListOf<Pair<List<Double>, Int>>()  // (features, statusCode)
 
-    val samples = mutableListOf<Pair<List<Double>, Int>>()  // (features, statusCode)
-
-    val performance = ModelAccuracyFullHistory()
-    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    fun getSamples(): List<Pair<List<Double>, Int>> = samples
 
     // Euclidean distance between two points in the feature space
     private fun distance(a: List<Double>, b: List<Double>): Double {
         return sqrt(a.zip(b).sumOf { (ai, bi) -> (ai - bi) * (ai - bi) })
     }
 
-    /** Must be called once to initialize the model properties */
-    private fun initializeIfNeeded(inputVector: List<Double>) {
-        if (dimension == null) {
-            require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
-            require(warmup > 0) { "Warmup must be positive" }
-            dimension = inputVector.size
-        } else {
-            require(inputVector.size == dimension) {
-                "Expected input vector of size $dimension but got ${inputVector.size}"
-            }
-        }
-        initialized = true
-    }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
@@ -110,7 +96,7 @@ class KNN400EndpointModel (
          */
         val trueStatusCode = output.getStatusCode()
         if (performance.totalSentRequests < warmup) {
-            val guess = Random.nextBoolean()
+            val guess = randomness.nextBoolean()
             performance.updatePerformance(guess)
             modelAccuracy.updatePerformance(guess)
         } else {
@@ -121,7 +107,7 @@ class KNN400EndpointModel (
         }
 
         /**
-         * Store only classes of interest (i.e., 200 and 400 groups)
+         * Store only classes of interest (i.e., 400 and not 400 groups)
          */
         if (trueStatusCode == 400) {
             samples.add(inputVector to 400)
@@ -131,25 +117,4 @@ class KNN400EndpointModel (
 
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        verifyEndpoint(endpoint)
-
-        return estimateOverallAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-
-        if(!initialized){
-            //hasn't learned anything yet
-            return 0.5
-        }
-
-        return modelAccuracy.estimateAccuracy()
-    }
-
-    private fun verifyEndpoint(inputEndpoint: Endpoint){
-        if(inputEndpoint != endpoint){
-            throw IllegalArgumentException("inout endpoint $inputEndpoint is not the same as the model endpoint $endpoint")
-        }
-    }
 }

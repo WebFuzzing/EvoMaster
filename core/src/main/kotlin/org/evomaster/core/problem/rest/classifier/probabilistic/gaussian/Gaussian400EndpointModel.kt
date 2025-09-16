@@ -1,20 +1,16 @@
-package org.evomaster.core.problem.rest.classifier.gaussian
+package org.evomaster.core.problem.rest.classifier.probabilistic.gaussian
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
-import org.evomaster.core.problem.rest.classifier.ModelAccuracy
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.search.service.Randomness
 import kotlin.math.PI
 import kotlin.math.exp
 import kotlin.math.ln
-import kotlin.random.Random
-
 
 /**
  * Gaussian classifier for REST API calls.
@@ -37,38 +33,30 @@ import kotlin.random.Random
  * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
   */
 class Gaussian400EndpointModel (
-    val endpoint: Endpoint,
-    var warmup: Int = 10,
-    var dimension: Int? = null,
-    val encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL
-): AIModel {
+    endpoint: Endpoint,
+    warmup: Int = 10,
+    dimension: Int? = null,
+    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    randomness: Randomness
+): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private var initialized = false
+    private var densityNot400: Density? = null
+    private var density400: Density? = null
 
-    val performance = ModelAccuracyFullHistory()
-    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    fun getDensityNot400(): Density? = densityNot400
+    fun getDensity400(): Density? = density400
 
-    var density200: Density? = null
-    var density400: Density? = null
-
-    /** Must be called once to initialize the model properties */
-    private fun initializeIfNeeded(inputVector: List<Double>) {
-        if (dimension == null) {
-            require(inputVector.isNotEmpty()) { "Input vector cannot be empty" }
-            require(warmup > 0) { "Warmup must be positive" }
-            dimension = inputVector.size
-        } else {
-            require(inputVector.size == dimension) {
-                "Expected input vector of size $dimension but got ${inputVector.size}"
-            }
-        }
-        if(density200 == null) {
-            density200 = Density(dimension!!)
+    /** Must be called once to initialize the model properties
+     * Initialize dimension and weights if needed
+     */
+    override fun initializeIfNeeded(inputVector: List<Double>) {
+        super.initializeIfNeeded(inputVector)
+        if(densityNot400 == null) {
+            densityNot400 = Density(dimension!!)
         }
         if(density400 == null) {
             density400 = Density(dimension!!)
         }
-        initialized = true
     }
 
     override fun classify(input: RestCallAction): AIResponseClassification {
@@ -93,15 +81,15 @@ class Gaussian400EndpointModel (
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logLikelihood200 = ln(density200!!.weight()) + logLikelihood(inputVector, density200!!)
+        val logLikelihoodNot400 = ln(densityNot400!!.weight()) + logLikelihood(inputVector, densityNot400!!)
         val logLikelihood400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
 
         // ensure the outputs as positives
-        val likelihood200 = exp(logLikelihood200)
+        val likelihoodNot400 = exp(logLikelihoodNot400)
         val likelihood400 = exp(logLikelihood400)
 
         // Normalize posterior probabilities
-        val total = likelihood200 + likelihood400
+        val total = likelihoodNot400 + likelihood400
 
         // Handle the case when both likelihoods are zero
         if (total == 0.0) {
@@ -113,12 +101,12 @@ class Gaussian400EndpointModel (
             )
         }
 
-        val posterior200 = likelihood200 / total
+        val posteriorNot400 = likelihoodNot400 / total
         val posterior400 = likelihood400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posterior200,
+                200 to posteriorNot400,
                 400 to posterior400
             )
         )
@@ -143,7 +131,7 @@ class Gaussian400EndpointModel (
          */
         val trueStatusCode = output.getStatusCode()
         if (performance.totalSentRequests < warmup) {
-            val guess = Random.nextBoolean()
+            val guess = randomness.nextBoolean()
             performance.updatePerformance(guess)
             modelAccuracy.updatePerformance(guess)
         } else {
@@ -159,7 +147,7 @@ class Gaussian400EndpointModel (
         if (trueStatusCode == 400) {
             density400!!.update(inputVector)
         } else {
-            density200!!.update(inputVector)
+            densityNot400!!.update(inputVector)
         }
 
     }
@@ -194,26 +182,4 @@ class Gaussian400EndpointModel (
         fun weight() = n.toDouble()
     }
 
-
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        verifyEndpoint(endpoint)
-
-        return estimateOverallAccuracy()
-    }
-
-    override fun estimateOverallAccuracy(): Double {
-
-        if(!initialized){
-            //hasn't learned anything yet
-            return 0.5
-        }
-
-        return modelAccuracy.estimateAccuracy()
-    }
-
-    private fun verifyEndpoint(inputEndpoint: Endpoint){
-        if(inputEndpoint != endpoint){
-            throw IllegalArgumentException("inout endpoint $inputEndpoint is not the same as the model endpoint $endpoint")
-        }
-    }
 }

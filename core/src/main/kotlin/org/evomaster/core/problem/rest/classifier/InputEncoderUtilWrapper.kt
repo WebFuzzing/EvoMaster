@@ -116,7 +116,7 @@ class InputEncoderUtilWrapper(
                     rawEncodedFeatures.map { it / norm }
                 }
 
-            null -> throw IllegalArgumentException("Unsupported encoder type: $encoderType")
+            else -> throw IllegalArgumentException("Unsupported encoder type: $encoderType")
         }
     }
 
