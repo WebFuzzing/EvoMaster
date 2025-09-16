@@ -27,8 +27,8 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "SecurityNotRecognizedEM",
-                200
+            "SecurityNotRecognizedEM",
+            200
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
@@ -44,7 +44,7 @@ class SecurityNotRecognizedEMTest : SpringTestBase(){
             assertHasAtLeastOne(solution, HttpVerb.POST, 401, "/api/resources/", null)
 
 
-            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution).filter { it.name == FaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.name }
+            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
             assertEquals(1, faults.size)
             assertEquals(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, faults.first())
         }
