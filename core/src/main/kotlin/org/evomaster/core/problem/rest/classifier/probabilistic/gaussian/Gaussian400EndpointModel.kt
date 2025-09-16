@@ -67,7 +67,7 @@ class Gaussian400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (performance.totalSentRequests < warmup) {
+        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -127,19 +127,10 @@ class Gaussian400EndpointModel (
 
         /**
          * Updating classifier performance based on its prediction
-         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (performance.totalSentRequests < warmup) {
-            val guess = randomness.nextBoolean()
-            performance.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
-        } else {
-            val predicted = classify(input).prediction()
-            val predictIsCorrect = (predicted == trueStatusCode)
-            performance.updatePerformance(predictIsCorrect)
-            modelAccuracy.updatePerformance(predictIsCorrect)
-        }
+        updatePerformance(input, trueStatusCode)
+
 
         /**
          * Updating the density functions based on the real observation

@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.classifier.ModelAccuracy
 import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
 import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -25,8 +26,11 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
-    val performance = ModelAccuracyFullHistory()
-    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    private val modelAccuracyFullHistory: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
+    private val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+
+    fun getModelAccuracyFullHistory(): ModelAccuracyFullHistory = modelAccuracyFullHistory
+    fun getModelAccuracy(): ModelAccuracy = modelAccuracy
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -48,6 +52,26 @@ abstract class AbstractProbabilistic400EndpointModel(
         }
         initialized = true
     }
+
+    /**
+     * Updating classifier performance based on its prediction
+     * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
+     */
+    protected fun updatePerformance(input: RestCallAction, outputStatusCode: Int?) {
+
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+            val guess = randomness.nextBoolean()
+            modelAccuracyFullHistory.updatePerformance(guess)
+            modelAccuracy.updatePerformance(guess)
+        } else {
+            val predicted = classify(input).prediction()
+            val predictIsCorrect = (predicted == outputStatusCode)
+            modelAccuracyFullHistory.updatePerformance(predictIsCorrect)
+            modelAccuracy.updatePerformance(predictIsCorrect)
+        }
+
+    }
+
 
     /** Default accuracy estimates */
     override fun estimateAccuracy(endpoint: Endpoint): Double {

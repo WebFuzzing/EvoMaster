@@ -70,7 +70,7 @@ class NN400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (performance.totalSentRequests < warmup) {
+        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -98,10 +98,12 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
+        val modelAccuracyFullHistory = getModelAccuracyFullHistory()
+        val modelAccuracy = getModelAccuracy()
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
             val guess = randomness.nextBoolean()
-            performance.updatePerformance(guess)
+            modelAccuracyFullHistory.updatePerformance(guess)
             modelAccuracy.updatePerformance(guess)
             return
         }
@@ -112,17 +114,12 @@ class NN400EndpointModel(
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
+        /**
+         * Updating classifier performance based on its prediction
+         */
         val trueStatusCode = output.getStatusCode()
-        if (performance.totalSentRequests < warmup) {
-            val guess = randomness.nextBoolean()
-            performance.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
-        } else {
-            val predicted = classify(input).prediction()
-            val predictIsCorrect = (predicted == trueStatusCode)
-            performance.updatePerformance(predictIsCorrect)
-            modelAccuracy.updatePerformance(predictIsCorrect)
-        }
+        updatePerformance(input, trueStatusCode)
+
 
         val yIndex = if (trueStatusCode == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }

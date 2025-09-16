@@ -1,12 +1,8 @@
 package org.evomaster.core.problem.rest.classifier.probabilistic.knn
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
-import org.evomaster.core.problem.rest.classifier.ModelAccuracy
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -48,7 +44,7 @@ class KNN400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (performance.totalSentRequests < warmup) {
+        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -92,19 +88,9 @@ class KNN400EndpointModel (
 
         /**
          * Updating classifier performance based on its prediction
-         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (performance.totalSentRequests < warmup) {
-            val guess = randomness.nextBoolean()
-            performance.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
-        } else {
-            val predicted = classify(input).prediction()
-            val predictIsCorrect = (predicted == trueStatusCode)
-            performance.updatePerformance(predictIsCorrect)
-            modelAccuracy.updatePerformance(predictIsCorrect)
-        }
+        updatePerformance(input, trueStatusCode)
 
         /**
          * Store only classes of interest (i.e., 400 and not 400 groups)
