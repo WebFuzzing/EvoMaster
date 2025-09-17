@@ -649,16 +649,42 @@ class SecurityRest {
                 // we need to fix this.
 
                 val first = ind403or401.minBy { it.individual.size() }
-                val second = i2xx.minBy { it.individual.size() }.copy()
 
-                second.individual.removeHostnameResolutionAction(first.individual.seeAllActions().filter {
+                val actionIndexFirst = RestIndividualSelectorUtils.findIndexOfAction(
+                    first,
+                    op.verb,
+                    op.path,
+                    statusCodes = listOf(401,403)
+                )
+
+                val firstSliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    first.individual,
+                    actionIndexFirst
+                )
+
+
+                val second = i2xx.minBy { it.individual.size() }.copy()
+                val actionIndexSecond = RestIndividualSelectorUtils.findIndexOfAction(
+                    second,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticated = false
+                )
+                val secondSliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    second.individual,
+                    actionIndexSecond
+                )
+
+                secondSliced.removeHostnameResolutionAction(firstSliced.seeAllActions().filter {
                     it is HostnameResolutionAction
                 } as List<HostnameResolutionAction>)
 
                 val finalIndividual = RestIndividualBuilder.merge(
-                    first.individual,
-                    second.individual
+                    firstSliced,
+                    secondSliced
                 )
+
                 finalIndividual.modifySampleType(SampleType.SECURITY)
                 finalIndividual.ensureFlattenedStructure()
                 org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
@@ -683,13 +709,23 @@ class SecurityRest {
                 return@forEach
             }
 
-            candidates.map {
-                it.individual.copy()
-            }.forEach { ind ->
+            candidates.forEach { ind ->
 
                 // we have a candidate individual with a 2xx on the same path/verb
                 // we need to copy the last action, which is the one that returns 2xx
-                val copyLast = ind.seeMainExecutableActions().last().copy() as RestCallAction
+                val action2xx = RestIndividualSelectorUtils.findIndexOfAction(
+                    ind,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx,
+                )
+
+                val slicedIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    ind.individual,
+                    action2xx
+                )
+
+                val copyLast = slicedIndividual.seeMainExecutableActions().last().copy() as RestCallAction
                 val copyNoAuthLast = copyLast.copy() as RestCallAction
 
                 copyLast.resetLocalIdRecursively()
@@ -699,7 +735,7 @@ class SecurityRest {
                 val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
 
                 otherUsers.forEach { other ->
-                    val finalIndividual = ind.copy() as RestIndividual
+                    val finalIndividual = slicedIndividual.copy() as RestIndividual
 
                     // we need to set the auth for the last action to the other user
                     copyLast.auth = other
