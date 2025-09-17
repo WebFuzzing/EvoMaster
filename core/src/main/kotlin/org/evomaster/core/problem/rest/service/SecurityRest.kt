@@ -651,10 +651,6 @@ class SecurityRest {
                 val first = ind403or401.minBy { it.individual.size() }
                 val second = i2xx.minBy { it.individual.size() }.copy()
 
-                second.individual.removeHostnameResolutionAction(first.individual.seeAllActions().filter {
-                    it is HostnameResolutionAction
-                } as List<HostnameResolutionAction>)
-
                 val finalIndividual = RestIndividualBuilder.merge(
                     first.individual,
                     second.individual
