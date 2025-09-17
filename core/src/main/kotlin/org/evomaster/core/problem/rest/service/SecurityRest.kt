@@ -621,14 +621,14 @@ class SecurityRest {
      */
     private fun handleForgottenAuthentication() {
         actionDefinitions.forEach { op ->
-            val i403or401 = RestIndividualSelectorUtils.findIndividuals(
+            val ind403or401 = RestIndividualSelectorUtils.findIndividuals(
                 individualsInSolution,
                 op.verb,
                 op.path,
                 statusCodes = listOf(401,403)
             )
 
-            if (i403or401.isEmpty()) {
+            if (ind403or401.isEmpty()) {
                 return@forEach //there is not any protected resource for this path/verb.
             }
 
@@ -644,11 +644,11 @@ class SecurityRest {
                 // we have a 2xx without auth, so we can create a test case
                 // we can just take the smallest 403 or 401 and the smallest 2xx
 
-                // note: mocked external services might return 401/403 or 2xx without auth.
+                // FIXME: mocked external services might return 401/403 or 2xx without auth.
                 // in this case, we couldn't merge them because of "child already present" error.
                 // we need to fix this.
 
-                val first = i403or401.minBy { it.individual.size() }
+                val first = ind403or401.minBy { it.individual.size() }
                 val second = i2xx.minBy { it.individual.size() }.copy()
 
                 second.individual.removeHostnameResolutionAction(first.individual.seeAllActions().filter {
