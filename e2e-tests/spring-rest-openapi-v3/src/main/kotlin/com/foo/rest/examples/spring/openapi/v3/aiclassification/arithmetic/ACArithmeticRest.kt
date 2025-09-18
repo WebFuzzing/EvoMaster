@@ -1,15 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.aiclassification.arithmetic
 
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.allornone.ACAllOrNoneDto
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.allornone.ACAllOrNoneEnum
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.onlyone.ACOnlyOneEnum
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping(path = ["/api/arithmetic"])
@@ -19,38 +11,40 @@ class ACArithmeticRest {
     open fun get(
         @RequestParam("x") x: Int?,
         @RequestParam("y") y: Int?,
-        @RequestParam("z" )z: Double?,
-        @RequestParam("k" )k: Double?,
+        @RequestParam("z") z: Double?,
+        @RequestParam("k") k: Double?,
         @RequestParam("s") s: String?,
-    ) : ResponseEntity<String> {
+    ): ResponseEntity<String> {
 
-        if(! (x!! < y!!)){
+        // Check if required parameters are present
+        if (x == null || y == null) {
+            return ResponseEntity.badRequest().build()
+        }
+
+        // Compare x and y
+        if (x >= y) {
             return ResponseEntity.status(400).build()
         }
 
-        if(z != null && k != null) {
-            if (!(z >= k)) {
-                return ResponseEntity.status(400).build()
-            }
+        // Check z and k comparison only if both are present
+        if (z != null && k != null && z < k) {
+            return ResponseEntity.status(400).build()
         }
 
         return ResponseEntity.ok().body("OK")
     }
 
     @PostMapping
-    open fun post(@RequestBody(required = true) body : ACArithmeticDto) : ResponseEntity<String> {
+    open fun post(@RequestBody(required = true) body: ACArithmeticDto): ResponseEntity<String> {
+        // Validate required fields
+        if (body.c == null || body.e == null || body.f == null || body.g == null) {
+            return ResponseEntity.badRequest().build()
+        }
 
-        val x = body.c!!
-        val y = body.e!!
-        val z = body.f!!
-        val k = body.g!!
-
-        if(x == y || z < k ){
+        if (body.c == body.e || body.f!! < body.g!!) {
             return ResponseEntity.status(400).build()
         }
 
         return ResponseEntity.status(201).body("OK")
     }
-
-
 }

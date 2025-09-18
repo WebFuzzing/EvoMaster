@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
+import bar.examples.it.spring.aiclassification.basic.BasicController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
@@ -9,7 +10,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier
@@ -34,8 +35,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//             initClass(BasicController())
-            initClass(MultiTypeController())
+             initClass(BasicController())
+//            initClass(MultiTypeController())
 //             initClass(AllOrNoneController())
         }
 
@@ -53,15 +54,15 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "GAUSSIAN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runTimeDuration = 5_000L
+    val modelName = "NN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
+    val runTimeDuration = 10_000L
     val encoderType4Test = EMConfig.EncoderType.NORMAL
 
     @Inject
     lateinit var randomness: Randomness
 
     val warmUpRep = when (modelName) {
-        "NN" -> 1000
+        "NN" -> 10
         else -> 10
     }
 

@@ -22,18 +22,11 @@ open class BasicApplication {
         }
     }
 
-    enum class Alphabet {
-        A,
-        B,
-        C,
-        D
-    }
-
     @GetMapping
     open fun getData(
-        @RequestParam("x", required = false) x: Alphabet?,
-        @RequestParam("y", required = false) y: Int?,
-        @RequestParam("z", required = false) z: Boolean?,
+        @RequestParam("x") x: String?,
+        @RequestParam("y") y: Int?,
+        @RequestParam("z") z: Boolean?,
     ): ResponseEntity<String> {
 
         // No dependency, just constraint on a single variable

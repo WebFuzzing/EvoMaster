@@ -51,24 +51,27 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         model.disableLearning() // no side-effects
 
         val accuracy = model.estimateOverallAccuracy()
+        println("DEBUG Accuracy: $accuracy")
         assertTrue(accuracy >= minimalAccuracy, "Too low accuracy $accuracy." +
                 " Minimal accepted is $minimalAccuracy")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)
+            println("DEBUG OK ${ok.getName()} status=${resOK.getStatusCode()}")
             assertTrue(resOK.getStatusCode() in 200..299)
             val mOK= model.classify(ok)
+            println("DEBUG OK prob400=${mOK.probabilityOf400()} threshold=$threshold")
             assertTrue(
                 mOK.probabilityOf400() < threshold,
                 "Too high probability of 400 for OK ${ok.getName()}: ${mOK.probabilityOf400()}")
         }
 
-
         for(fail in fail400) {
             val resFail = evaluateAction(injector, fail)
+            println("DEBUG Fail ${fail.getName()} status=${resFail.getStatusCode()}")
             assertEquals(400, resFail.getStatusCode())
-
             val mFail = model.classify(fail)
+            println("DEBUG Fail prob400=${mFail.probabilityOf400()} thresholdFail=$threshold")
             assertTrue(
                 mFail.probabilityOf400() >= threshold,
                 "Too low probability of 400 for Fail ${fail.getName()}: ${mFail.probabilityOf400()}"

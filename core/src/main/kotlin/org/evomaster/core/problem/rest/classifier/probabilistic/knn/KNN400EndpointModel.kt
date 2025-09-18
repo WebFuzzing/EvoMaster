@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.knn
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -35,9 +35,13 @@ class KNN400EndpointModel (
         return sqrt(a.zip(b).sumOf { (ai, bi) -> (ai - bi) * (ai - bi) })
     }
 
-
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
+
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
@@ -77,8 +81,13 @@ class KNN400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        val inputVector = encoder.encode()
+        var inputVector = encoder.encode()
 
         initializeIfNeeded(inputVector)
 

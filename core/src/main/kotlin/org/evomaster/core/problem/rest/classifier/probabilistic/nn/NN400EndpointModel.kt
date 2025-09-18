@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.nn
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -60,12 +60,21 @@ class NN400EndpointModel(
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
 
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
+        if (!encoder.areAllGenesSupported()) {
             // skip classification/training if unsupported
-            return AIResponseClassification(probabilities = mapOf(200 to 0.5, 400 to 0.5))
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5)
+            )
         }
 
         initializeIfNeeded(inputVector)
@@ -94,6 +103,11 @@ class NN400EndpointModel(
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
 
         verifyEndpoint(input.endpoint)
+
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()

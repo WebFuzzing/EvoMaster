@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.glm
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -42,6 +42,11 @@ class GLM400EndpointModel(
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
 
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
@@ -62,8 +67,8 @@ class GLM400EndpointModel(
         }
 
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
-        val probNot400 = sigmoid(z)
-        val prob400 = 1.0 - probNot400
+        val prob400 = 1 - sigmoid(z)
+        val probNot400 = 1.0 - prob400
 
         return AIResponseClassification(
             probabilities = mapOf(
@@ -78,6 +83,11 @@ class GLM400EndpointModel(
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
@@ -89,10 +99,10 @@ class GLM400EndpointModel(
 
         /**
          * Updating classifier performance based on its prediction
+         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
         updatePerformance(input, trueStatusCode)
-
 
         /**
          * Updating model parameters

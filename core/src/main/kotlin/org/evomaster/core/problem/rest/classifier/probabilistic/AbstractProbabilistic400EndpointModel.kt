@@ -59,7 +59,7 @@ abstract class AbstractProbabilistic400EndpointModel(
      */
     protected fun updatePerformance(input: RestCallAction, outputStatusCode: Int?) {
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+        if (modelAccuracyFullHistory.totalSentRequests < warmup || input.parameters.isEmpty()) {
             val guess = randomness.nextBoolean()
             modelAccuracyFullHistory.updatePerformance(guess)
             modelAccuracy.updatePerformance(guess)

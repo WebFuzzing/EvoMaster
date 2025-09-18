@@ -64,6 +64,10 @@ class AIResponseClassifier : AIModel {
 
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
+        // Skip empty action
+        if (input.shouldSkipAssertionsOnResponseBody() || input.parameters.isEmpty()) {
+            return
+        }
         if(enabledLearning) {
             delegate.updateModel(input, output)
         } else {
@@ -71,7 +75,12 @@ class AIResponseClassifier : AIModel {
         }
     }
 
+
     override fun classify(input: RestCallAction): AIResponseClassification {
+        // treat empty action as "unknown", avoid touching the model
+        if (input.shouldSkipAssertionsOnResponseBody() || input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
         return delegate.classify(input)
     }
 
@@ -86,7 +95,7 @@ class AIResponseClassifier : AIModel {
     fun viewInnerModel(): AIModel = delegate
 
     /**
-     * If the model thinks this call will lead to a user error (eg 400), then try to repair
+     * If the model thinks this call will lead to a user error (e.g., 400), then try to repair
      * the action to be able to solve the input constraints, aiming for a 2xx.
      * There is no guarantee that this will work.
      */
@@ -124,7 +133,6 @@ class AIResponseClassifier : AIModel {
     }
 
 
-
     private fun repairAction(
         call: RestCallAction,
         classification: AIResponseClassification
@@ -139,9 +147,10 @@ class AIResponseClassifier : AIModel {
     }
 
     /**
-     * Only needed during testing, to avoid modifying model while evaluating manually crafted actions
+     * Only needed during testing to avoid modifying the model while evaluating manually crafted actions
      */
     fun disableLearning(){
         enabledLearning = false
     }
+
 }

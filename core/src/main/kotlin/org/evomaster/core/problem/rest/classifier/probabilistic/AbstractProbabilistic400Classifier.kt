@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult

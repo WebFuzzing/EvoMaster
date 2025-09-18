@@ -1,17 +1,10 @@
 package org.evomaster.e2etests.spring.openapi.v3.aiclassification.allornone
 
 import com.foo.rest.examples.spring.openapi.v3.aiclassification.allornone.ACAllOrNoneController
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.basic.ACBasicController
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.onlyone.ACOnlyOneController
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.or.ACOrController
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.required.ACRequiredController
-import com.google.inject.Injector
 import org.evomaster.core.EMConfig.AIResponseClassifierModel
 import org.evomaster.core.problem.rest.data.HttpVerb
-import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.spring.openapi.v3.aiclassification.AIClassificationEMTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
@@ -68,7 +61,7 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACAllOrNoneEM",
-            500
+            5000
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")

@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.kde
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -54,6 +54,11 @@ class KDE400EndpointModel (
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
 
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
@@ -84,7 +89,7 @@ class KDE400EndpointModel (
         val total = likelihoodNot400 + likelihood400
 
         // Handle the case when both likelihoods are zero
-        if (total == 0.0) {
+        if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
                     200 to 0.5,
@@ -107,6 +112,11 @@ class KDE400EndpointModel (
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
 
         verifyEndpoint(input.endpoint)
+
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()

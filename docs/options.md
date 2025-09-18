@@ -235,7 +235,7 @@ There are 3 types of options:
 |---|---|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
-|`aiEncoderType`| __Enum__. The encoding strategy applied to transform raw data to the encoded version. *Valid values*: `RAW, NORMAL, UNIT_NORMAL`. *Default value*: `NORMAL`.|
+|`aiEncoderType`| __Enum__. The encoding strategy applied to transform raw data to the encoded version. *Valid values*: `RAW, NORMAL, UNIT_NORMAL`. *Default value*: `RAW`.|
 |`aiModelForResponseClassification`| __Enum__. Model used to learn input constraints and infer response status before making request. *Valid values*: `NONE, GAUSSIAN, KDE, KNN, NN, GLM, DETERMINISTIC`. *Default value*: `NONE`.|
 |`aiResponseClassifierLearningRate`| __Double__. Learning rate controlling the step size during parameter updates in classifiers. Relevant for gradient-based models such as GLM and neural networks. A smaller value ensures stable but slower convergence, while a larger value speeds up training but may cause instability. *Default value*: `0.01`.|
 |`aiResponseClassifierWarmup`| __Int__. Number of training iterations required to update classifier parameters. For example, in the Gaussian model this affects mean and variance updates. For neural network (NN) models, the warm-up should typically be larger than 1000. *Default value*: `10`.|

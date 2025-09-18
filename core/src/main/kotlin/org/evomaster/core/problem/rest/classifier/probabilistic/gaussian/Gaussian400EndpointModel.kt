@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic.gaussian
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -24,7 +24,7 @@ import kotlin.math.ln
  * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
  *
  * ## Internals:
- * - Maintains two `Density` instances: one for class 200 and one for class 400.
+ * - Maintains two `Density` instances: one for class 400 and one for class not-400.
  * - Computes the log-likelihood of the input under each class-specific Gaussian.
  * - Combines likelihoods with class priors using Bayes' rule to calculate normalized posterior probabilities.
  * - Predicts based on the posterior probabilities.
@@ -62,6 +62,11 @@ class Gaussian400EndpointModel (
     override fun classify(input: RestCallAction): AIResponseClassification {
         verifyEndpoint(input.endpoint)
 
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
@@ -92,7 +97,7 @@ class Gaussian400EndpointModel (
         val total = likelihoodNot400 + likelihood400
 
         // Handle the case when both likelihoods are zero
-        if (total == 0.0) {
+        if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
                     200 to 0.5,
@@ -101,8 +106,8 @@ class Gaussian400EndpointModel (
             )
         }
 
-        val posteriorNot400 = likelihoodNot400 / total
         val posterior400 = likelihood400 / total
+        val posteriorNot400 = likelihoodNot400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
@@ -115,6 +120,11 @@ class Gaussian400EndpointModel (
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
 
         verifyEndpoint(input.endpoint)
+
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()

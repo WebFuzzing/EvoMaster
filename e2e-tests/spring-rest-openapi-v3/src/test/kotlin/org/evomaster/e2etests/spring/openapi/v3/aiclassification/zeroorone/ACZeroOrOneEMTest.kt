@@ -41,11 +41,35 @@ class ACZeroOrOneEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
     }
 
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
+    }
+
     private fun testRunEM(model: AIResponseClassifierModel) {
 
         runTestHandlingFlakyAndCompilation(
             "ACZeroOrOneEM",
-            500
+            5000
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")

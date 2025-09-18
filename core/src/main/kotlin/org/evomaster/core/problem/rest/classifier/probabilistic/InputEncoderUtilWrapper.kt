@@ -1,5 +1,6 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.probabilistic
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.gene.BooleanGene
@@ -9,11 +10,11 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
-import kotlin.math.*
+import kotlin.math.sqrt
 import kotlin.reflect.KClass
 
 /**
- * Utility object for encoding the genes of a [RestCallAction] into a numerical representation.
+ * Utility object for encoding the genes of a [org.evomaster.core.problem.rest.data.RestCallAction] into a numerical representation.
  * This is primarily used in AI-based models that require fixed-length numeric feature vectors
  * as input.
  */
@@ -52,10 +53,16 @@ class InputEncoderUtilWrapper(
 
     fun endPointToGeneList(): List<Gene> {
         val listGenes = mutableListOf<Gene>()
-        action.parameters.forEach { p ->
-            val g = p.primaryGene()
-            listGenes.addAll(expandGene(g))
-        }
+        action.parameters
+            .filter { p ->
+                val name = p.name
+                name != TaintInputName.EXTRA_PARAM_TAINT &&
+                        name != TaintInputName.EXTRA_HEADER_TAINT
+            }
+            .forEach { p ->
+                val g = p.primaryGene()
+                listGenes.addAll(expandGene(g))
+            }
         return listGenes
     }
 
@@ -99,9 +106,18 @@ class InputEncoderUtilWrapper(
             }
         }
 
+        println("Param name: " + listGenes.joinToString(", ") { it.getVariableName().toString() })
+        println("Param values: " + listGenes.joinToString(", ") { it.getValueAsPrintableString() })
+        println("rawEncodedFeatures: $rawEncodedFeatures")
+
+        if (rawEncodedFeatures.isEmpty()) {
+            // Avoid crash when the input is empty by returning an empty list
+            return emptyList()
+        }
+
         // Normalization step
         val mean = rawEncodedFeatures.average()
-        val stdDev = kotlin.math.sqrt(rawEncodedFeatures.map { (it - mean) * (it - mean) }.average())
+        val stdDev = sqrt(rawEncodedFeatures.map { (it - mean) * (it - mean) }.average())
 
         return when (encoderType) {
             EMConfig.EncoderType.RAW -> rawEncodedFeatures
