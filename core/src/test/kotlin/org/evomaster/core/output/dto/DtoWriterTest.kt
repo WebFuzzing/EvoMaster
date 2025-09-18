@@ -343,6 +343,17 @@ class DtoWriterTest {
         }
     }
 
+    @Test
+    fun nonObj() {
+        val dtoWriter = DtoWriter()
+        val actionCluster = initRestSchema("non-obj-arr/rootPrimitives.yaml")
+
+        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+
+        val collectedDtos = dtoWriter.getCollectedDtos()
+        assertEquals(collectedDtos.size, 0)
+    }
+
     private fun initRestSchema(openApiLocation: String) : Map<String, Action> {
         val restSchema = RestSchema(OpenApiAccess.getOpenAPIFromResource("/swagger/dto-writer/$openApiLocation"))
         val actionCluster = mutableMapOf<String, Action>()

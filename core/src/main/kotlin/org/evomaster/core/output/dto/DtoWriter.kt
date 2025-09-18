@@ -69,28 +69,31 @@ class DtoWriter {
     }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        val dtoName = TestWriterUtils.safeVariableName(actionName)
-        val dtoClass = DtoClass(dtoName)
-        val children = gene.getViewOfChildren()
-        // merge options into a single DTO
-        children.forEach { childGene ->
-            when (childGene) {
-                is ObjectGene -> populateDtoClass(dtoClass, childGene)
-                is ArrayGene<*> -> {
-                    val template = childGene.template
-                    if (template is ObjectGene) {
-                        populateDtoClass(dtoClass, template)
+        if (gene.getLeafGene() is ObjectGene) {
+            val dtoName = TestWriterUtils.safeVariableName(actionName)
+            val dtoClass = DtoClass(dtoName)
+            val children = gene.getViewOfChildren()
+            // merge options into a single DTO
+            children.forEach { childGene ->
+                when (childGene) {
+                    is ObjectGene -> populateDtoClass(dtoClass, childGene)
+                    is ArrayGene<*> -> {
+                        val template = childGene.template
+                        if (template is ObjectGene) {
+                            populateDtoClass(dtoClass, template)
+                        }
                     }
                 }
             }
+            dtoCollector.put(dtoName, dtoClass)
         }
-        dtoCollector.put(dtoName, dtoClass)
     }
 
     private fun calculateDtoFromNonChoiceGene(gene: Gene, actionName: String) {
         when (gene) {
             is ObjectGene -> calculateDtoFromObject(gene, actionName)
             is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
