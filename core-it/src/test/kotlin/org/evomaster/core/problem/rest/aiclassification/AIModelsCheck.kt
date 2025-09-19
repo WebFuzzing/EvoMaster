@@ -282,7 +282,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
                     formatStats("Density400", d400.mean, d400.variance, d400.n)
 
                 } else if (endpointModel is KNN400EndpointModel) {
-                    println("KNN stats: stored ${endpointModel.getSamples().size} samples")
+                    println("KNN stats: stored ${endpointModel.samples.size} samples")
                     // you could also print neighbors, votes, etc if useful
                 }else if (endpointModel is GLM400EndpointModel) {
                     println("Updating the $modelName classifier!")

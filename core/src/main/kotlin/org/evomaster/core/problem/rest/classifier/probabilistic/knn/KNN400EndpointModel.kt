@@ -33,12 +33,10 @@ class KNN400EndpointModel (
     /**
      * Stores the training samples for this endpoint model.
      * Each element is a pair of:
-     *  - List<Double> : the encoded feature vector
-     *  - Int          : the corresponding status code (e.g., HTTP response)
+     *  - List<Double>: the encoded feature vector
+     *  - Int         : the corresponding status code (i.e., HTTP response)
      */
-    private val samples = mutableListOf<Pair<List<Double>, Int>>()
-
-    fun getSamples(): List<Pair<List<Double>, Int>> = samples
+    val samples = mutableListOf<Pair<List<Double>, Int>>()
 
     // Euclidean distance between two points in the feature space
     private fun distance(a: List<Double>, b: List<Double>): Double {
