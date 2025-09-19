@@ -47,7 +47,7 @@ class DtoWriter {
         calculateDtos(actionDefinitions)
         dtoCollector.forEach {
             when {
-                outputFormat.isJava() -> JavaDtoWriter.write(testSuitePath, outputFormat, it.value)
+                outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, outputFormat, it.value)
                 else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
             }
         }
