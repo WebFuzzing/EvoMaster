@@ -85,34 +85,34 @@ class ACArithmeticEMTest : AIClassificationEMTestBase() {
 
             val ok = listOf(
                 ptr.fromVerbPath("GET","/api/arithmetic",
-                    queryParams = mapOf("x" to "42", "y" to "-4")
+                    queryParams = mapOf("x" to "-42", "y" to "4")
                 )!!,
 
                 ptr.fromVerbPath("GET","/api/arithmetic",
-                    queryParams = mapOf("x" to "42", "y" to "-4", "z" to "5", "k" to "5")
+                    queryParams = mapOf("x" to "-42", "y" to "4", "z" to "5", "k" to "5")
                 )!!,
                 ptr.fromVerbPath("POST","/api/arithmetic",
                     jsonBodyPayload = """
-                        {"x":7, "y":6, "z":5, "k":-2}    
+                        {"c":7, "e":6, "f":5, "g":-2}
                     """.trimIndent()
                 )!!,
             )
 
             val fail = listOf(
                 ptr.fromVerbPath("GET","/api/arithmetic",
-                    queryParams = mapOf("x" to "-42", "y" to "+4")
+                    queryParams = mapOf("x" to "42", "y" to "-4")
                 )!!,
                 ptr.fromVerbPath("GET","/api/arithmetic",
                     queryParams = mapOf("x" to "42", "y" to "-4", "z" to "-5", "k" to "45")
                 )!!,
                 ptr.fromVerbPath("POST","/api/arithmetic",
                     jsonBodyPayload = """
-                        {"x":6, "y":6, "z":5, "k":-2}    
+                        {"c":6, "e":6, "f":5, "g":-2}    
                     """.trimIndent()
                 )!!,
                 ptr.fromVerbPath("POST","/api/arithmetic",
                     jsonBodyPayload = """
-                        {"x":7, "y":6, "z":5, "k":23}    
+                        {"c":7, "e":6, "f":5, "g":23}    
                     """.trimIndent()
                 )!!
             )
