@@ -38,7 +38,8 @@ class AIResponseClassification(
 
     /**
      * Returns the status code with the highest probability.
-     * @return the status code (key) with the maximum probability
+     * @return the status code (key) with the maximum probability if it is higher than the threshold
+     * otherwise returns a negative value
      *
      * The decisionThreshold of 0.5 is used to ensure that the chosen class
      * has at least 50% posterior probability as in the binary case
