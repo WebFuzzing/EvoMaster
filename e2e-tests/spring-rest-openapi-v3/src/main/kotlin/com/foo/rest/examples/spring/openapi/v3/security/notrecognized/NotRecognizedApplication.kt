@@ -74,11 +74,11 @@ open class NotRecognizedApplication {
     @PostMapping(path = ["/"])
     open fun onlyBar(@RequestHeader("Authorization") auth: String?): ResponseEntity<String> {
 
-        if(auth == null || auth == "FOO"){
+        if(auth == null || auth != "BAR"){ //because of the schema definition, auth can be random string value.
             // wrong, as FOO should be recognized, and possibly return 403 if no access
             return ResponseEntity.status(401).build()
         }
-
+        //we return 204 only if the auth is "BAR"
         return ResponseEntity.status(204).build()
     }
 }
