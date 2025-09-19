@@ -10,7 +10,9 @@ import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.externalservice.HostnameResolutionAction
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
+import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
@@ -224,9 +226,7 @@ class SecurityRest {
                     }
                 }
             }
-
     }
-
 
     private fun addForAccessControl() {
 
@@ -261,6 +261,7 @@ class SecurityRest {
         //authenticated, but wrongly getting 401 (eg instead of 403)
         handleNotRecognizedAuthenticated()
 
+        handleForgottenAuthentication()
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -603,6 +604,170 @@ class SecurityRest {
             assert(added)
         }
     }
+
+
+    /**
+     * Check if there is a test case with a 403 and another one with a 200 without authentication.
+     * To check this, there must be a resource. It can either be newly created or already exist,
+     * such as during initialization. While the user who created this
+     * resource can access it (200), the other user cannot (403). However, if a 200 status code is
+     * returned when attempting to access the same resource without sending the authorization header,
+     * it indicates that authorization checks are wrongly ignored if no auth info is set.
+     * Example:
+     * POST /resources/ AUTH1 -> 201 (location header: /resources/42/)
+     * GET /resources/42/ AUTH1 -> 200
+     * GET /resources/42/ AUTH2 -> 403
+     * GET /resources/42/ NOAUTH -> 200
+     */
+    private fun handleForgottenAuthentication() {
+        actionDefinitions.forEach { op ->
+            val ind403or401 = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusCodes = listOf(401,403)
+            )
+
+            if (ind403or401.isEmpty()) {
+                return@forEach //there is not any protected resource for this path/verb.
+            }
+
+            val i2xx = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(i2xx.isNotEmpty()){
+                // we have a 2xx without auth, so we can create a test case
+                // we can just take the smallest 403 or 401 and the smallest 2xx
+
+                // FIXME: mocked external services might return 401/403 or 2xx without auth.
+                // in this case, we couldn't merge them because of "child already present" error.
+                // we need to fix this.
+
+                val first = ind403or401.minBy { it.individual.size() }
+
+                val actionIndexFirst = RestIndividualSelectorUtils.findIndexOfAction(
+                    first,
+                    op.verb,
+                    op.path,
+                    statusCodes = listOf(401,403)
+                )
+
+                val firstSliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    first.individual,
+                    actionIndexFirst
+                )
+
+
+                val second = i2xx.minBy { it.individual.size() }.copy()
+                val actionIndexSecond = RestIndividualSelectorUtils.findIndexOfAction(
+                    second,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx,
+                    authenticated = false
+                )
+                val secondSliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    second.individual,
+                    actionIndexSecond
+                )
+
+                secondSliced.removeHostnameResolutionAction(firstSliced.seeAllActions().filter {
+                    it is HostnameResolutionAction
+                } as List<HostnameResolutionAction>)
+
+                val finalIndividual = RestIndividualBuilder.merge(
+                    firstSliced,
+                    secondSliced
+                )
+
+                finalIndividual.modifySampleType(SampleType.SECURITY)
+                finalIndividual.ensureFlattenedStructure()
+                org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                if (ei != null) {
+                    val added = archive.addIfNeeded(ei)
+                    assert(added)
+                }
+
+                return@forEach
+            }
+
+            // if we arrive here, we have a 403 or 401, but no 2xx without auth. Now, we can try to create one
+            val candidates = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                op.verb,
+                op.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = true
+            )
+            if (candidates.isEmpty()) {
+                return@forEach
+            }
+
+            candidates.forEach { ind ->
+
+                // we have a candidate individual with a 2xx on the same path/verb
+                // we need to copy the last action, which is the one that returns 2xx
+                val action2xx = RestIndividualSelectorUtils.findIndexOfAction(
+                    ind,
+                    op.verb,
+                    op.path,
+                    statusGroup = StatusGroup.G_2xx,
+                )
+
+                val slicedIndividual = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    ind.individual,
+                    action2xx
+                )
+
+                val copyLast = slicedIndividual.seeMainExecutableActions().last().copy() as RestCallAction
+                val copyNoAuthLast = copyLast.copy() as RestCallAction
+
+                copyLast.resetLocalIdRecursively()
+                copyNoAuthLast.resetLocalIdRecursively()
+
+
+                val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
+
+                otherUsers.forEach { other ->
+                    val finalIndividual = slicedIndividual.copy() as RestIndividual
+
+                    // we need to set the auth for the last action to the other user
+                    copyLast.auth = other
+                    // and for the no auth one, we set it to NoAuth
+                    copyNoAuthLast.auth = HttpWsNoAuth()
+
+                    finalIndividual.addResourceCall(
+                        restCalls = RestResourceCalls(
+                            actions = mutableListOf(copyLast, copyNoAuthLast),
+                            sqlActions = listOf()
+                        )
+                    )
+                    finalIndividual.seeMainExecutableActions()
+                        .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
+                        it.saveCreatedResourceLocation = true
+                    }
+                    finalIndividual.fixResourceForwardLinks()
+
+                    finalIndividual.modifySampleType(SampleType.SECURITY)
+                    finalIndividual.ensureFlattenedStructure()
+                    org.evomaster.core.Lazy.assert { finalIndividual.verifyValidity(); true }
+
+                    val ei = fitness.computeWholeAchievedCoverageForPostProcessing(finalIndividual)
+                    if (ei != null) {
+                        archive.addIfNeeded(ei)
+                    }
+                }
+            }
+        }
+    }
+
+
 
     /**
      * @return a test where last action is for given path and verb returning 403.

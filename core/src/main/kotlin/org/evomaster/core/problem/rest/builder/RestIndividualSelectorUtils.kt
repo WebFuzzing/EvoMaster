@@ -25,7 +25,7 @@ object RestIndividualSelectorUtils {
                                                  status: Int? = null,
                                                  statusGroup: StatusGroup? = null,
                                                  statusCodes: Collection<Int>? = null,
-                                                 mustBeAuthenticated : Boolean? = null,
+                                                 authenticated : Boolean? = null,
                                                  authenticatedWith: String? = null
                                          ) : Boolean {
 
@@ -58,9 +58,14 @@ object RestIndividualSelectorUtils {
             return false
         }
 
-        // authenticated or not
-        if(mustBeAuthenticated == true && action.auth is NoAuth){
-            return false
+        if(authenticated != null) {
+            // authenticated or not
+            if (authenticated == true && action.auth is NoAuth) {
+                return false
+            }
+            if(authenticated == false && action.auth !is NoAuth) {
+                return false
+            }
         }
 
         if(authenticatedWith != null && action.auth.name != authenticatedWith){
@@ -76,7 +81,7 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        authenticated: Boolean? = null
     ): RestCallAction? {
 
         return findEvaluatedAction(individualsInSolution,verb,path,status,statusGroup,authenticated)
@@ -90,7 +95,7 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        authenticated: Boolean? = null
     ): EvaluatedAction? {
 
         val actions = findEvaluatedActions(individualsInSolution,verb,path,status,statusGroup,authenticated)
@@ -109,7 +114,7 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        authenticated: Boolean? = null
     ): List<EvaluatedAction> {
 
         if(status != null && statusGroup!= null){
@@ -137,7 +142,7 @@ object RestIndividualSelectorUtils {
         path: RestPath? = null,
         status: Int? = null,
         statusGroup: StatusGroup? = null,
-        authenticated: Boolean = false
+        authenticated: Boolean? = null
     ): List<EvaluatedAction> {
 
         if(status != null && statusGroup!= null){
