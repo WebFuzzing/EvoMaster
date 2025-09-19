@@ -9,9 +9,12 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.slf4j.Logger
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
+import org.slf4j.LoggerFactory
 
 /**
  * Utility object for encoding the genes of a [org.evomaster.core.problem.rest.data.RestCallAction] into a numerical representation.
@@ -30,6 +33,8 @@ class InputEncoderUtilWrapper(
         EnumGene::class,
         StringGene::class
     )
+
+    private val log : Logger = LoggerFactory.getLogger(InputEncoderUtilWrapper::class.java)
 
     fun isSupported(g: Gene): Boolean =
         supportedGeneTypes.any { it.isInstance(g) }
@@ -74,8 +79,6 @@ class InputEncoderUtilWrapper(
 
         for (g in listGenes) {
 
-//            println("g.getValueAsPrintableString(): ${g.getValueAsPrintableString()}")
-
             if(g.getValueAsPrintableString()==""){
                 rawEncodedFeatures.add(sentinel)
                 continue
@@ -106,9 +109,9 @@ class InputEncoderUtilWrapper(
             }
         }
 
-        println("Param name: " + listGenes.joinToString(", ") { it.getVariableName().toString() })
-        println("Param values: " + listGenes.joinToString(", ") { it.getValueAsPrintableString() })
-        println("rawEncodedFeatures: $rawEncodedFeatures")
+        log.info("Param name: ${listGenes.joinToString(", ") { it.getVariableName().toString() }}")
+        log.info("Param values: ${listGenes.joinToString(", ") { it.getValueAsPrintableString() }}")
+        log.info("rawEncodedFeatures: $rawEncodedFeatures")
 
         if (rawEncodedFeatures.isEmpty()) {
             // Avoid crash when the input is empty by returning an empty list

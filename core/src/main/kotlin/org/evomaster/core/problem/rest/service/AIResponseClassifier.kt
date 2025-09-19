@@ -65,7 +65,7 @@ class AIResponseClassifier : AIModel {
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
         // Skip empty action
-        if (input.shouldSkipAssertionsOnResponseBody() || input.parameters.isEmpty()) {
+        if (input.parameters.isEmpty()) {
             return
         }
         if(enabledLearning) {
@@ -78,7 +78,7 @@ class AIResponseClassifier : AIModel {
 
     override fun classify(input: RestCallAction): AIResponseClassification {
         // treat empty action as "unknown", avoid touching the model
-        if (input.shouldSkipAssertionsOnResponseBody() || input.parameters.isEmpty()) {
+        if (input.parameters.isEmpty()) {
             return AIResponseClassification()
         }
         return delegate.classify(input)

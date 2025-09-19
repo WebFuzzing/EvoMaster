@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.openapi.v3.aiclassification
 import com.google.inject.Injector
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.SampleType
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -13,8 +14,12 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 abstract class AIClassificationEMTestBase : SpringTestBase(){
+
+    private val log : Logger = LoggerFactory.getLogger(InputEncoderUtilWrapper::class.java)
 
     fun evaluateAction(injector: Injector, action: RestCallAction) : RestCallResult{
 
@@ -51,16 +56,16 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         model.disableLearning() // no side-effects
 
         val accuracy = model.estimateOverallAccuracy()
-        println("DEBUG Accuracy: $accuracy")
+        log.info("DEBUG Accuracy: $accuracy")
         assertTrue(accuracy >= minimalAccuracy, "Too low accuracy $accuracy." +
                 " Minimal accepted is $minimalAccuracy")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)
-            println("DEBUG OK ${ok.getName()} status=${resOK.getStatusCode()}")
+            log.info("DEBUG OK ${ok.getName()} status=${resOK.getStatusCode()}")
             assertTrue(resOK.getStatusCode() in 200..299)
             val mOK= model.classify(ok)
-            println("DEBUG OK prob400=${mOK.probabilityOf400()} threshold=$threshold")
+            log.info("DEBUG OK prob400=${mOK.probabilityOf400()} threshold=$threshold")
             assertTrue(
                 mOK.probabilityOf400() < threshold,
                 "Too high probability of 400 for OK ${ok.getName()}: ${mOK.probabilityOf400()}")
@@ -68,10 +73,10 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
 
         for(fail in fail400) {
             val resFail = evaluateAction(injector, fail)
-            println("DEBUG Fail ${fail.getName()} status=${resFail.getStatusCode()}")
+            log.info("DEBUG Fail ${fail.getName()} status=${resFail.getStatusCode()}")
             assertEquals(400, resFail.getStatusCode())
             val mFail = model.classify(fail)
-            println("DEBUG Fail prob400=${mFail.probabilityOf400()} thresholdFail=$threshold")
+            log.info("DEBUG Fail prob400=${mFail.probabilityOf400()} thresholdFail=$threshold")
             assertTrue(
                 mFail.probabilityOf400() >= threshold,
                 "Too low probability of 400 for Fail ${fail.getName()}: ${mFail.probabilityOf400()}"

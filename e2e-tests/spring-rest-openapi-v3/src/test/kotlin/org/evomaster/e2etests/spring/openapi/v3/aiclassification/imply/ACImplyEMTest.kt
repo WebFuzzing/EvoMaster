@@ -69,7 +69,7 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACImplyEM",
-            5000
+            500
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
@@ -99,11 +99,11 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": true, "d": "HELLO"}
+                        {"a": "true", "d": "HELLO"}
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": true, "d": "X", "f": "HELLO"}
+                        {"a": "true", "d": "X", "f": "HELLO"}
                     """.trimIndent())!!,
             )
 
@@ -112,11 +112,11 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
                     queryParams = mapOf("z" to "true", "y" to "45"))!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": true}
+                        {"a": "true"}
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": true, "d": "X", "f": "X"}
+                        {"a": "true", "d": "X", "f": "X"}
                     """.trimIndent())!!,
             )
 

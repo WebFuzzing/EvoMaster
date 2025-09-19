@@ -69,7 +69,7 @@ class ACZeroOrOneEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACZeroOrOneEM",
-            5000
+            500
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")

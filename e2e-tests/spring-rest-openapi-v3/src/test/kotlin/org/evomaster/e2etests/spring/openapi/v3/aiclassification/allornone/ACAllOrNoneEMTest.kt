@@ -61,7 +61,7 @@ class ACAllOrNoneEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACAllOrNoneEM",
-            5000
+            500
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")

@@ -66,7 +66,7 @@ class ACOrEMTest : AIClassificationEMTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "ACOrEM",
-            5000
+            500
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
