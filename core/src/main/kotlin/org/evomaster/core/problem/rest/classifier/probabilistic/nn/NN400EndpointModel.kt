@@ -79,7 +79,7 @@ class NN400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -112,8 +112,6 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        val modelAccuracyFullHistory = getModelAccuracyFullHistory()
-        val modelAccuracy = getModelAccuracy()
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
             val guess = randomness.nextBoolean()

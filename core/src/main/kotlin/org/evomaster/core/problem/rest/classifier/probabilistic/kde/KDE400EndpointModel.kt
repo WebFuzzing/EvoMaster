@@ -64,7 +64,7 @@ class KDE400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(

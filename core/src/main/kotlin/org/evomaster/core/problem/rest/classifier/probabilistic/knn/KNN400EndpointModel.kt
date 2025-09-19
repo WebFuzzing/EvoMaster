@@ -26,7 +26,17 @@ class KNN400EndpointModel (
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private val samples = mutableListOf<Pair<List<Double>, Int>>()  // (features, statusCode)
+    companion object {
+        private const val NOT_400 = 200
+    }
+
+    /**
+     * Stores the training samples for this endpoint model.
+     * Each element is a pair of:
+     *  - List<Double> : the encoded feature vector
+     *  - Int          : the corresponding status code (e.g., HTTP response)
+     */
+    private val samples = mutableListOf<Pair<List<Double>, Int>>()
 
     fun getSamples(): List<Pair<List<Double>, Int>> = samples
 
@@ -48,7 +58,7 @@ class KNN400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -107,7 +117,7 @@ class KNN400EndpointModel (
         if (trueStatusCode == 400) {
             samples.add(inputVector to 400)
         } else {
-            samples.add(inputVector to 200)
+            samples.add(inputVector to NOT_400)
         }
 
     }

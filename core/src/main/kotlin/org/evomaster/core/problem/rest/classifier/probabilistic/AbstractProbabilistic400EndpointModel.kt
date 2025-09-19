@@ -26,11 +26,8 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
-    private val modelAccuracyFullHistory: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
-    private val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
-
-    fun getModelAccuracyFullHistory(): ModelAccuracyFullHistory = modelAccuracyFullHistory
-    fun getModelAccuracy(): ModelAccuracy = modelAccuracy
+    val modelAccuracyFullHistory: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
+    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {

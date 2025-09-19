@@ -54,7 +54,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "NN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
+    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
     val runTimeDuration = 10_000L
     val encoderType4Test = EMConfig.EncoderType.NORMAL
 
@@ -170,31 +170,31 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val endpointModel: Any? = when(modelName){
                 "GAUSSIAN" -> {
                     val m = (globalClassifier as Gaussian400Classifier).getModel(endPoint)
-                    val isCold = (m?.getModelAccuracyFullHistory()?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding GAUSSIAN model is cold: $isCold")
                     m
                 }
                 "GLM" -> {
                     val m = (globalClassifier as GLM400Classifier).getModel(endPoint)
-                    val isCold = (m?.getModelAccuracyFullHistory()?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding GLM model is cold: $isCold")
                     m
                 }
                 "KDE" -> {
                     val m = (globalClassifier as KDE400Classifier).getModel(endPoint)
-                    val isCold = (m?.getModelAccuracyFullHistory()?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding KDE model is cold: $isCold")
                     m
                 }
                 "NN" -> {
                     val m = (globalClassifier as NN400Classifier).getModel(endPoint)
-                    val isCold = (m?.getModelAccuracyFullHistory()?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding NN model is cold: $isCold")
                     m
                 }
                 "KNN" -> {
                     val m = (globalClassifier as KNN400Classifier).getModel(endPoint)
-                    val isCold = (m?.getModelAccuracyFullHistory()?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding KNN model is cold: $isCold")
                     m
                 }
@@ -202,11 +202,11 @@ class AIModelsCheck : IntegrationTestRestBase() {
             }
 
             val isCold = when(endpointModel){
-                is Gaussian400EndpointModel -> endpointModel.getModelAccuracyFullHistory().totalSentRequests < config.aiResponseClassifierWarmup
-                is GLM400EndpointModel -> endpointModel.getModelAccuracyFullHistory().totalSentRequests < config.aiResponseClassifierWarmup
-                is KDE400EndpointModel -> endpointModel.getModelAccuracyFullHistory().totalSentRequests < config.aiResponseClassifierWarmup
-                is NN400EndpointModel -> endpointModel.getModelAccuracyFullHistory().totalSentRequests < config.aiResponseClassifierWarmup
-                is KNN400EndpointModel -> endpointModel.getModelAccuracyFullHistory().totalSentRequests < config.aiResponseClassifierWarmup
+                is Gaussian400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is GLM400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KDE400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is NN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KNN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
                 else -> true
             }
 
@@ -220,33 +220,33 @@ class AIModelsCheck : IntegrationTestRestBase() {
             when (endpointModel) {
                 is Gaussian400EndpointModel -> {
                     println("The model is a Gaussian400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.getModelAccuracyFullHistory().correctPrediction}")
-                    println("Total Requests: ${endpointModel.getModelAccuracyFullHistory().totalSentRequests}")
-                    println("Accuracy: ${endpointModel.getModelAccuracyFullHistory().estimateAccuracy()}")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
                 }
                 is GLM400EndpointModel -> {
                     println("The model is a GLM400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.getModelAccuracyFullHistory().correctPrediction}")
-                    println("Total Requests: ${endpointModel.getModelAccuracyFullHistory().totalSentRequests}")
-                    println("Accuracy: ${endpointModel.getModelAccuracyFullHistory().estimateAccuracy()}")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
                 }
                 is KDE400EndpointModel -> {
                     println("The model is a KDE400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.getModelAccuracyFullHistory().correctPrediction}")
-                    println("Total Requests: ${endpointModel.getModelAccuracyFullHistory().totalSentRequests}")
-                    println("Accuracy: ${endpointModel.getModelAccuracyFullHistory().estimateAccuracy()}")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
                 }
                 is NN400EndpointModel -> {
                     println("The model is a NN400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.getModelAccuracyFullHistory().correctPrediction}")
-                    println("Total Requests: ${endpointModel.getModelAccuracyFullHistory().totalSentRequests}")
-                    println("Accuracy: ${endpointModel.getModelAccuracyFullHistory().estimateAccuracy()}")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
                 }
                 is KNN400EndpointModel -> {
                     println("The model is a KNN400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.getModelAccuracyFullHistory().correctPrediction}")
-                    println("Total Requests: ${endpointModel.getModelAccuracyFullHistory().totalSentRequests}")
-                    println("Accuracy: ${endpointModel.getModelAccuracyFullHistory().estimateAccuracy()}")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
                 }
                 else -> println("No performance info available")
             }
@@ -269,8 +269,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
                 globalClassifier.updateModel(action, result)
 
                 if (endpointModel is Gaussian400EndpointModel) {
-                    val dNot400 = endpointModel.getDensityNot400()!!
-                    val d400 = endpointModel.getDensity400()!!
+                    val d400 = endpointModel.density400!!
+                    val dNot400 = endpointModel.densityNot400!!
 
                     fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
                         val m = mean.map { "%.2f".format(it) }

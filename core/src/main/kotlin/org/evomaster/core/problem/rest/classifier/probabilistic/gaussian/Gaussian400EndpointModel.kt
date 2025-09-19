@@ -40,11 +40,12 @@ class Gaussian400EndpointModel (
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    private var density400: Density? = null
-    private var densityNot400: Density? = null
+    var density400: Density? = null
+    private set
 
-    fun getDensity400(): Density? = density400
-    fun getDensityNot400(): Density? = densityNot400
+    var densityNot400: Density? = null
+        private set
+
 
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
@@ -72,7 +73,7 @@ class Gaussian400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (getModelAccuracyFullHistory().totalSentRequests < warmup) {
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
