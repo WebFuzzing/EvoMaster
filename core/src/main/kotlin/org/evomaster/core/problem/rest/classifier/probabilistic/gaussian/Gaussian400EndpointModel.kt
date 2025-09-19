@@ -1,12 +1,16 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.probabilistic.gaussian
 
+import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
-import kotlin.math.ln
+import org.evomaster.core.search.service.Randomness
 import kotlin.math.PI
 import kotlin.math.exp
-import kotlin.random.Random
+import kotlin.math.ln
 
 /**
  * Gaussian classifier for REST API calls.
@@ -20,70 +24,113 @@ import kotlin.random.Random
  * - Assumes *diagonal covariance*, i.e., each feature dimension is treated independently.
  *
  * ## Internals:
- * - Maintains two `Density` instances: one for class 200 and one for class 400.
+ * - Maintains two `Density` instances: one for class 400 and one for class not-400.
  * - Computes the log-likelihood of the input under each class-specific Gaussian.
  * - Combines likelihoods with class priors using Bayes' rule to calculate normalized posterior probabilities.
- * - Predicts based on the posterior probabilities (i.e., probabilities sum to 1).
+ * - Predicts based on the posterior probabilities.
  *
  * ## Assumptions:
  * - The input encoding (`InputEncoderUtils.encode`) produces consistent-length numeric vectors.
- * - The only two supported classes are 200 and 400.
- *
- * @param dimension the fixed dimensionality of the input feature vectors.
- * @param warmup the number of warmup updates to familiarize the classifier with at least a few true observations
- */
-class GaussianModel : AbstractAIModel() {
+  */
+class Gaussian400EndpointModel (
+    endpoint: Endpoint,
+    warmup: Int = 10,
+    dimension: Int? = null,
+    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    randomness: Randomness
+): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    var density200: Density? = null
     var density400: Density? = null
+    private set
 
-    /** Must be called once to initialize the model properties */
-    fun setup(dimension: Int, warmup: Int) {
-        require(dimension > 0 ) { "Dimension must be positive." }
-        require(warmup > 0 ) { "Warmup must be positive." }
-        this.dimension = dimension
-        this.density200 = Density(dimension)
-        this.density400 = Density(dimension)
-        this.warmup = warmup
+    var densityNot400: Density? = null
+        private set
+
+
+    /** Must be called once to initialize the model properties
+     * Initialize dimension and weights if needed
+     */
+    override fun initializeIfNeeded(inputVector: List<Double>) {
+        super.initializeIfNeeded(inputVector)
+        if(density400 == null) {
+            density400 = Density(dimension!!)
+        }
+        if(densityNot400 == null) {
+            densityNot400 = Density(dimension!!)
+        }
     }
 
-
     override fun classify(input: RestCallAction): AIResponseClassification {
+        verifyEndpoint(input.endpoint)
 
-        if (performance.totalSentRequests < warmup) {
-            throw IllegalStateException("Classifier not ready as warmup is not completed.")
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
         }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (inputVector.size != this.dimension) {
+        initializeIfNeeded(inputVector)
+
+        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+            // Return equal probabilities during warmup
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
+        if (inputVector.size != dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
-        val logLikelihood200 = ln(this.density200!!.weight()) + logLikelihood(inputVector, this.density200!!)
-        val logLikelihood400 = ln(this.density400!!.weight()) + logLikelihood(inputVector, this.density400!!)
+        val logLikelihood400 = ln(density400!!.weight()) + logLikelihood(inputVector, density400!!)
+        val logLikelihoodNot400 = ln(densityNot400!!.weight()) + logLikelihood(inputVector, densityNot400!!)
 
         // ensure the outputs as positives
-        val likelihood200 = exp(logLikelihood200)
         val likelihood400 = exp(logLikelihood400)
+        val likelihoodNot400 = exp(logLikelihoodNot400)
 
         // Normalize posterior probabilities
-        val total = likelihood200 + likelihood400
-        val posterior200 = likelihood200 / total
+        val total = likelihoodNot400 + likelihood400
+
+        // Handle the case when both likelihoods are zero
+        if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
+            return AIResponseClassification(
+                probabilities = mapOf(
+                    200 to 0.5,
+                    400 to 0.5
+                )
+            )
+        }
+
         val posterior400 = likelihood400 / total
+        val posteriorNot400 = likelihoodNot400 / total
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posterior200,
+                200 to posteriorNot400,
                 400 to posterior400
             )
         )
     }
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
+
+        verifyEndpoint(input.endpoint)
+
+        // Ignore empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
+
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
+
+        initializeIfNeeded(inputVector)
 
         if (inputVector.size != this.dimension) {
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
@@ -91,23 +138,18 @@ class GaussianModel : AbstractAIModel() {
 
         /**
          * Updating classifier performance based on its prediction
-         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
          */
         val trueStatusCode = output.getStatusCode()
-        if (performance.totalSentRequests < warmup) {
-            performance.updatePerformance(Random.nextBoolean())
-        } else {
-            val predicted = classify(input).prediction()
-            performance.updatePerformance(predicted == trueStatusCode)
-        }
+        updatePerformance(input, trueStatusCode)
+
 
         /**
          * Updating the density functions based on the real observation
          */
         if (trueStatusCode == 400) {
-            this.density400!!.update(inputVector)
+            density400!!.update(inputVector)
         } else {
-            this.density200!!.update(inputVector)
+            densityNot400!!.update(inputVector)
         }
 
     }

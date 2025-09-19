@@ -1,14 +1,10 @@
 package org.evomaster.e2etests.spring.openapi.v3.aiclassification.basic
 
 import com.foo.rest.examples.spring.openapi.v3.aiclassification.basic.ACBasicController
-import com.google.inject.Injector
 import org.evomaster.core.EMConfig.AIResponseClassifierModel
 import org.evomaster.core.problem.rest.data.HttpVerb
-import org.evomaster.core.problem.rest.data.RestCallAction
-import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.seeding.service.rest.PirToRest
 import org.evomaster.e2etests.spring.openapi.v3.aiclassification.AIClassificationEMTestBase
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
@@ -36,11 +32,35 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
     }
 
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
+    }
+
     private fun testRunEM(model: AIResponseClassifierModel) {
 
         runTestHandlingFlakyAndCompilation(
             "ACBasicEM",
-            200
+            500
         ) { args: MutableList<String> ->
 
             args.add("--aiModelForResponseClassification")
