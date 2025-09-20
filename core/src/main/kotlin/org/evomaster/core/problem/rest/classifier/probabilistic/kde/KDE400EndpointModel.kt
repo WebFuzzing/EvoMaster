@@ -128,15 +128,14 @@ class KDE400EndpointModel (
         }
 
         /**
-         * Updating classifier performance based on its prediction
+         * Updating classifier model accuracy based on its prediction
          */
-        val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
-
+        updateModelAccuracy(input, result = output)
 
         /**
          * Updating the KDEs based on the real observation
          */
+        val trueStatusCode = output.getStatusCode()
         if (trueStatusCode == 400) {
             density400!!.add(inputVector)
         } else {

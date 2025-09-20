@@ -46,7 +46,7 @@ class Deterministic400EndpointModel(
             val expectViolatedConstraint = classification.probabilityOf400() >= thresholdForClassification
 
             if(expectViolatedConstraint) {
-                modelAccuracy.updatePerformance(code == 400)
+                modelAccuracy.updatePerformance(400, code)
             } else {
                 /*
                     This is potentially tricky.

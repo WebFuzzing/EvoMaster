@@ -136,16 +136,17 @@ class Gaussian400EndpointModel (
             throw IllegalArgumentException("Expected input vector of size ${this.dimension} but got ${inputVector.size}")
         }
 
+
         /**
-         * Updating classifier performance based on its prediction
+         * Updating classifier model accuracy based on its prediction
          */
-        val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
+        updateModelAccuracy(input, result = output)
 
 
         /**
          * Updating the density functions based on the real observation
          */
+        val trueStatusCode = output.getStatusCode()
         if (trueStatusCode == 400) {
             density400!!.update(inputVector)
         } else {

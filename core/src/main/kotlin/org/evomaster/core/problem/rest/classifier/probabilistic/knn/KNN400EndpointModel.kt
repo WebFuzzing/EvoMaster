@@ -104,14 +104,14 @@ class KNN400EndpointModel (
         }
 
         /**
-         * Updating classifier performance based on its prediction
+         * Updating classifier model accuracy based on its prediction
          */
-        val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
+        updateModelAccuracy(input, result = output)
 
         /**
          * Store only classes of interest (i.e., 400 and not 400 groups)
          */
+        val trueStatusCode = output.getStatusCode()
         if (trueStatusCode == 400) {
             samples.add(inputVector to 400)
         } else {

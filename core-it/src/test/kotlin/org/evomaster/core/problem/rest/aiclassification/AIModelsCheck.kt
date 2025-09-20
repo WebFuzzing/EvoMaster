@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
+import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
 import bar.examples.it.spring.aiclassification.basic.BasicController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
@@ -54,7 +55,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
+    val modelName = "GAUSSIAN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
     val runTimeDuration = 10_000L
     val encoderType4Test = EMConfig.EncoderType.NORMAL
 
@@ -223,33 +224,39 @@ class AIModelsCheck : IntegrationTestRestBase() {
                     println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
                     println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
                     println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                    println("Precision400: ${endpointModel.modelAccuracyFullHistory.estimatePrecision400()}")
                 }
                 is GLM400EndpointModel -> {
                     println("The model is a GLM400EndpointModel")
                     println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
                     println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
                     println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                    println("Precision400: ${endpointModel.modelAccuracyFullHistory.estimatePrecision400()}")
                 }
                 is KDE400EndpointModel -> {
                     println("The model is a KDE400EndpointModel")
                     println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
                     println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
                     println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                    println("Precision400: ${endpointModel.modelAccuracyFullHistory.estimatePrecision400()}")
                 }
                 is NN400EndpointModel -> {
                     println("The model is a NN400EndpointModel")
                     println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
                     println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
                     println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                    println("Precision400: ${endpointModel.modelAccuracyFullHistory.estimatePrecision400()}")
                 }
                 is KNN400EndpointModel -> {
                     println("The model is a KNN400EndpointModel")
                     println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
                     println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
                     println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                    println("Precision400: ${endpointModel.modelAccuracyFullHistory.estimatePrecision400()}")
                 }
                 else -> println("No performance info available")
             }
+
 
             println("Overall Accuracy Global: ${globalClassifier.estimateOverallAccuracy()}")
 
