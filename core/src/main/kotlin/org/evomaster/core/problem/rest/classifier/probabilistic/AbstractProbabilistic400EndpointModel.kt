@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
 import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -54,17 +55,17 @@ abstract class AbstractProbabilistic400EndpointModel(
      * Updating classifier performance based on its prediction
      * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
      */
-    protected fun updatePerformance(input: RestCallAction, outputStatusCode: Int?) {
+    protected fun updateModelAccuracy(action: RestCallAction, result: RestCallResult) {
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup || input.parameters.isEmpty()) {
-            val guess = randomness.nextBoolean()
-            modelAccuracyFullHistory.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
+        val outputStatusCode= result.getStatusCode()
+        if (modelAccuracyFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
+            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode)
+            modelAccuracy.updatePerformance(predictedStatusCode, outputStatusCode)
         } else {
-            val predicted = classify(input).prediction()
-            val predictIsCorrect = (predicted == outputStatusCode)
-            modelAccuracyFullHistory.updatePerformance(predictIsCorrect)
-            modelAccuracy.updatePerformance(predictIsCorrect)
+            val predictedStatusCode = classify(action).prediction()
+            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode)
+            modelAccuracy.updatePerformance(predictedStatusCode, outputStatusCode)
         }
 
     }

@@ -14,25 +14,25 @@ class ModelAccuracyWithTimeWindowTest {
 
         assertEquals(0.0, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(true)
+        ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 200) //true
         assertEquals(1.0, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(true)
+        ma.updatePerformance(predictedStatusCode = 400, actualStatusCode = 400) //true
         assertEquals(1.0, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(false)
+        ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 400) //false
         assertEquals(0.6666666666666666, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(false)
+        ma.updatePerformance(predictedStatusCode = 400, actualStatusCode = 200) //false
         assertEquals(0.50, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(false)
+        ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 400) //false
         assertEquals(0.25, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(false)
+        ma.updatePerformance(predictedStatusCode = 400, actualStatusCode = 200) //false
         assertEquals(0.00, ma.estimateAccuracy(), delta)
 
-        ma.updatePerformance(true)
+        ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 200) //true
         assertEquals(0.25, ma.estimateAccuracy(), delta)
     }
 

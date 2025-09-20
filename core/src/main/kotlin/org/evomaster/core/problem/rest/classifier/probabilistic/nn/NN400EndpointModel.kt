@@ -114,9 +114,9 @@ class NN400EndpointModel(
 
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
-            val guess = randomness.nextBoolean()
-            modelAccuracyFullHistory.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
+            modelAccuracyFullHistory.updatePerformance(predictedStatusCode,output.getStatusCode())
+            modelAccuracy.updatePerformance(predictedStatusCode, output.getStatusCode())
             return
         }
 
@@ -127,12 +127,11 @@ class NN400EndpointModel(
         }
 
         /**
-         * Updating classifier performance based on its prediction
+         * Updating classifier model accuracy based on its prediction
          */
+        updateModelAccuracy(input, result = output)
+
         val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
-
-
         val yIndex = if (trueStatusCode == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }
 
