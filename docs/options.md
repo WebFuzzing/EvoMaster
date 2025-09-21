@@ -85,6 +85,7 @@ There are 3 types of options:
 |`customNaming`| __Boolean__. Enable custom naming and sorting criteria. *Default value*: `true`.|
 |`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *DEBUG option*. *Default value*: `dependencies.csv`.|
+|`disabledSecurityOracleCodes`| __String__. Disable security oracles. Provide a comma-separated list of codes to disable. Available codes: 204 = SECURITY_EXISTENCE_LEAKAGE, 205 = SECURITY_NOT_RECOGNIZED_AUTHENTICATED, 206 = SECURITY_WRONG_AUTHORIZATION. By default, all oracles are enabled. *Default value*: `""`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *DEBUG option*. *Default value*: `false`.|
 |`doesApplyNameMatching`| __Boolean__. Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `true`.|
 |`e_u1f984`| __Boolean__. QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==. *Default value*: `false`.|

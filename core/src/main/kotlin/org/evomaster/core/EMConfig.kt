@@ -2502,8 +2502,13 @@ class EMConfig {
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
 
-    @Cfg("Disable security oracles. Comma separated list of codes to disable." +
-            " By default, all oracles are enabled.")
+    @Cfg("Disable security oracles. Provide a comma-separated list of codes to disable. " +
+                "Available codes: " +
+                "204 = SECURITY_EXISTENCE_LEAKAGE, " +
+                "205 = SECURITY_NOT_RECOGNIZED_AUTHENTICATED, " +
+                "206 = SECURITY_WRONG_AUTHORIZATION. " +
+                "By default, all oracles are enabled."
+    )
     var disabledSecurityOracleCodes = ""
 
     enum class VulnerableInputClassificationStrategy {
