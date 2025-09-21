@@ -1,5 +1,6 @@
 package org.evomaster.core
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
@@ -2501,6 +2502,10 @@ class EMConfig {
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
 
+    @Cfg("Disable security oracles. Comma separated list of codes to disable." +
+            " By default, all oracles are enabled.")
+    var disabledSecurityOracleCodes = ""
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2772,4 +2777,16 @@ class EMConfig {
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+
+    fun getDisabledSecurityOracleCodesList() = disabledSecurityOracleCodes
+        .split(",")
+        .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+        .map { str ->
+            val code = str.toIntOrNull()
+                ?: throw IllegalArgumentException("Invalid number: $str")
+
+            DefinedFaultCategory.values()
+                .firstOrNull { it.code == code && code in 200..299 }
+                ?: throw IllegalArgumentException("Invalid or non-2xx (security) fault code: $code")
+        }
 }
