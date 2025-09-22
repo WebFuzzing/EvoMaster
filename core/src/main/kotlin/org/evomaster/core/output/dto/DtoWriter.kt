@@ -69,11 +69,7 @@ class DtoWriter {
     }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        /*
-         If the spec has an example defined for primitive types, these are parsed as a ChoiceGene in which
-         one gene is the primitive type and the other an EnumGene. Order in the genes is not a guarantee.
-         */
-        if (!hasAnyPrimitiveGene(gene)) {
+        if (hasObjectOrArrayGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
             val dtoClass = DtoClass(dtoName)
             val children = gene.getViewOfChildren()
@@ -93,16 +89,8 @@ class DtoWriter {
         }
     }
 
-    // should this be the check? Or should we actually check if any child gene is an object/array gene?
-    private fun hasAnyPrimitiveGene(gene: ChoiceGene<*>): Boolean {
-        return gene.getViewOfChildren().any { isPrimitiveGene(it) }
-    }
-
-    private fun isPrimitiveGene(gene: Gene): Boolean {
-        return when (gene) {
-            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> true
-            else -> false
-        }
+    private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { it is ObjectGene || it is ArrayGene<*> }
     }
 
     private fun calculateDtoFromNonChoiceGene(gene: Gene, actionName: String) {
@@ -113,6 +101,13 @@ class DtoWriter {
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
+        }
+    }
+
+    private fun isPrimitiveGene(gene: Gene): Boolean {
+        return when (gene) {
+            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> true
+            else -> false
         }
     }
 

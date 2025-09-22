@@ -126,7 +126,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             val actionName = call.getName()
             if (choiceGene != null) {
                 // TODO add support for payloads from choice genes
-                if (choiceGene.getLeafGene() is ObjectGene) {
+                if (hasObjectOrArrayGene(choiceGene)) {
                     // this because when using `format`, integer and number genes are being represented as ChoiceGene
                     throw IllegalStateException("Choice genes not yet supported for dto payload")
                 }
@@ -148,6 +148,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         }
         return ""
+    }
+
+    private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { it is ObjectGene || it is ArrayGene<*> }
     }
 
     protected fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
