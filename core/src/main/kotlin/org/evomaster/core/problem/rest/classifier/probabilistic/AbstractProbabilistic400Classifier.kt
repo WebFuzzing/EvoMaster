@@ -74,6 +74,18 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         return sum / n
     }
 
+    override fun estimatePrecision400(endpoint: Endpoint): Double {
+        val m = models[endpoint] ?: return 0.5
+        return m.estimatePrecision400(endpoint)
+    }
+
+    override fun estimateOverallPrecision400(): Double {
+        if (models.isEmpty()) return 0.5
+        val n = models.size.toDouble()
+        val sum = models.values.sumOf { it?.estimateOverallPrecision400() ?: 0.5 }
+        return sum / n
+    }
+
     /**
      * Subclasses must implement how to create a concrete endpoint model.
      */

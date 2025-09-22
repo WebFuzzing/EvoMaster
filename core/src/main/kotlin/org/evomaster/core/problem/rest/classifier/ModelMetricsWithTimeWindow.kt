@@ -1,11 +1,10 @@
 package org.evomaster.core.problem.rest.classifier
 
 import com.google.common.collect.EvictingQueue
-import org.evomaster.core.problem.rest.data.RestCallResult
 
-class ModelAccuracyWithTimeWindow(
+class ModelMetricsWithTimeWindow(
     bufferSize: Int
-) : ModelAccuracy {
+) : ModelMetrics {
 
     private val queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
     private val truePositive400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
@@ -34,17 +33,20 @@ class ModelAccuracyWithTimeWindow(
     /**
      * Update performance based on prediction vs actual result.
      */
-    override fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int?) {
+    override fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int) {
 
         val predictionWasCorrect = predictedStatusCode == actualStatusCode
 
         queue.add(predictionWasCorrect)
 
-        if (actualStatusCode == 400) {
-            truePositive400Queue.add(predictionWasCorrect)
-        } else {
-            falsePositive400Queue.add(!predictionWasCorrect)
+        if (predictedStatusCode == 400) {
+            if (actualStatusCode == 400) {
+                truePositive400Queue.add(true)
+            } else {
+                falsePositive400Queue.add(true)
+            }
         }
+
     }
 
 }

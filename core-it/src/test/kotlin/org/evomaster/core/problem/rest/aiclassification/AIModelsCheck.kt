@@ -259,6 +259,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
 
             println("Overall Accuracy Global: ${globalClassifier.estimateOverallAccuracy()}")
+            println("Overall Precision 400 Global: ${globalClassifier.estimateOverallPrecision400()}")
 
             val classification = globalClassifier.classify(action)
             val predictionOfStatusCode = classification.prediction()

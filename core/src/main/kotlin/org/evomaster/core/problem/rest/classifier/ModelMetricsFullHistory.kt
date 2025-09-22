@@ -1,13 +1,11 @@
 package org.evomaster.core.problem.rest.classifier
 
-import org.evomaster.core.problem.rest.data.RestCallResult
-
 /**
  * Classifier state
  * @property correctPrediction the number of correct predictions made by the classifier
  * @property totalSentRequests the total number of requests sent to the classifier
  */
-class ModelAccuracyFullHistory : ModelAccuracy {
+class ModelMetricsFullHistory : ModelMetrics {
 
     var correctPrediction: Int = 0
         private set
@@ -51,7 +49,7 @@ class ModelAccuracyFullHistory : ModelAccuracy {
      * @param predictedStatusCode the predicted HTTP response
      * @param result the result of the executed action
      */
-    override fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int?) {
+    override fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int) {
 
         val predictionWasCorrect = predictedStatusCode == actualStatusCode
         if (predictionWasCorrect) {

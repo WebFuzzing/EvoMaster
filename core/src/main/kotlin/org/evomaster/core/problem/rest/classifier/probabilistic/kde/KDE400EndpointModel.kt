@@ -128,9 +128,9 @@ class KDE400EndpointModel (
         }
 
         /**
-         * Updating classifier model accuracy based on its prediction
+         * Updating classifier metrics such as accuracy and precision based on its prediction
          */
-        updateModelAccuracy(input, result = output)
+        updateModelMetrics(input, result = output)
 
         /**
          * Updating the KDEs based on the real observation

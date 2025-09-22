@@ -2,9 +2,9 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.problem.rest.classifier.ModelAccuracy
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -27,8 +27,8 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
-    val modelAccuracyFullHistory: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
-    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    val modelAccuracyFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
+    val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -55,21 +55,20 @@ abstract class AbstractProbabilistic400EndpointModel(
      * Updating classifier performance based on its prediction
      * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
      */
-    protected fun updateModelAccuracy(action: RestCallAction, result: RestCallResult) {
+    protected fun updateModelMetrics(action: RestCallAction, result: RestCallResult) {
 
         val outputStatusCode= result.getStatusCode()
         if (modelAccuracyFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
-            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode)
-            modelAccuracy.updatePerformance(predictedStatusCode, outputStatusCode)
+            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
             val predictedStatusCode = classify(action).prediction()
-            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode)
-            modelAccuracy.updatePerformance(predictedStatusCode, outputStatusCode)
+            modelAccuracyFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
     }
-
 
     /** Default accuracy estimates */
     override fun estimateAccuracy(endpoint: Endpoint): Double {
@@ -82,6 +81,21 @@ abstract class AbstractProbabilistic400EndpointModel(
             // hasn’t learned anything yet
             return 0.5
         }
-        return modelAccuracy.estimateAccuracy()
+        return modelMetrics.estimateAccuracy()
     }
+
+    /** Default precision estimates */
+    override fun estimatePrecision400(endpoint: Endpoint): Double {
+        verifyEndpoint(endpoint)
+        return estimateOverallPrecision400()
+    }
+
+    override fun estimateOverallPrecision400(): Double {
+        if (!initialized) {
+            // hasn’t learned anything yet
+            return 0.5
+        }
+        return modelMetrics.estimatePrecision400()
+    }
+
 }

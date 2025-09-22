@@ -4,8 +4,8 @@ import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputField
-import org.evomaster.core.problem.rest.classifier.ModelAccuracy
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -21,7 +21,7 @@ class Deterministic400EndpointModel(
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
-    private val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    private val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
 
     override fun updateModel(
         input: RestCallAction,
@@ -46,7 +46,7 @@ class Deterministic400EndpointModel(
             val expectViolatedConstraint = classification.probabilityOf400() >= thresholdForClassification
 
             if(expectViolatedConstraint) {
-                modelAccuracy.updatePerformance(400, code)
+                modelMetrics.updatePerformance(400, code?: -1)
             } else {
                 /*
                     This is potentially tricky.
@@ -114,8 +114,22 @@ class Deterministic400EndpointModel(
             return 0.0
         }
 
-        return modelAccuracy.estimateAccuracy()
+        return modelMetrics.estimateAccuracy()
     }
+
+    override fun estimatePrecision400(endpoint: Endpoint): Double {
+        verifyEndpoint(endpoint)
+        return estimateOverallPrecision400()
+    }
+
+    override fun estimateOverallPrecision400(): Double {
+        if (!initialized) {
+            // hasn’t learned anything yet
+            return 0.5
+        }
+        return modelMetrics.estimatePrecision400()
+    }
+
 
     private fun verifyEndpoint(inputEndpoint: Endpoint){
         if(inputEndpoint != endpoint){

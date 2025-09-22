@@ -44,4 +44,20 @@ class Deterministic400Classifier(
 
         return sum / n
     }
+
+    override fun estimatePrecision400(endpoint: Endpoint): Double {
+        val m = models[endpoint] ?:
+        return 0.0
+
+        return m.estimatePrecision400(endpoint)
+    }
+
+    override fun estimateOverallPrecision400(): Double {
+
+        //average over all internal models
+        val n = models.size.toDouble()
+        val sum = models.values.sumOf { it.estimateOverallPrecision400() }
+
+        return sum / n
+    }
 }

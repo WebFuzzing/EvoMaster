@@ -49,7 +49,28 @@ interface AIModel {
      * Return a probability in [0,1] on how accurate the model is.
      * This is based on all endpoints.
      * If the model internally stores separated submodels for each endpoint,
-     * then this could be simply the average accuracy.
+     * then this could be seen as the average accuracy.
      */
     fun estimateOverallAccuracy() : Double
+
+    /**
+     * Return a probability in [0,1] representing the precision of the model
+     * when predicting HTTP 400 (Bad Request) responses for a given endpoint.
+     * Precision for 400 is defined as TP / (TP + FP), where:
+     *  - TP (true positives): number of times the model predicted 400 and the actual result was 400.
+     *  - FP (false positives): number of times the model predicted 400 but the actual result was not 400.
+     *
+     *  An API can have many different endpoints.
+     *  Based on the training data, the precision might be different between endpoints.
+     */
+    fun estimatePrecision400(endpoint: Endpoint) : Double
+
+    /**
+     * Return a value in [0,1] representing the overall precision of the model.
+     * This is based on all endpoints.
+     * If the model internally stores separated submodels for each endpoint,
+     * then this could be seen as the average precision.
+     */
+    fun estimateOverallPrecision400() : Double
+
 }

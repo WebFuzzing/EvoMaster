@@ -44,15 +44,20 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         ok2xx: List<RestCallAction>,
         fail400: List<RestCallAction>,
         threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
-        minimalAccuracy: Double = 0.5
+        minimalOverallAccuracy: Double = 0.5,
+        minimalOverallPrecision400: Double = 0.5
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
-        val accuracy = model.estimateOverallAccuracy()
-        assertTrue(accuracy >= minimalAccuracy, "Too low accuracy $accuracy." +
-                " Minimal accepted is $minimalAccuracy")
+        val overallAccuracy = model.estimateOverallAccuracy()
+        assertTrue(overallAccuracy >= minimalOverallAccuracy, "Too low accuracy $overallAccuracy." +
+                " Minimal accepted is $minimalOverallAccuracy")
+
+        val overallPrecision400 = model.estimateOverallPrecision400()
+        assertTrue(overallPrecision400 >= minimalOverallPrecision400, "Too low accuracy $overallPrecision400." +
+                " Minimal accepted is $minimalOverallPrecision400")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)
