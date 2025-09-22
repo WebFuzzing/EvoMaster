@@ -7,6 +7,7 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.SecurityRest
@@ -58,5 +59,7 @@ open class RestBaseModule : EnterpriseModule() {
         bind(AIResponseClassifier::class.java)
             .asEagerSingleton()
 
+        bind(CallGraphService::class.java)
+            .asEagerSingleton()
     }
 }
