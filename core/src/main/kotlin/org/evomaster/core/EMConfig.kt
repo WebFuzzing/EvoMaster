@@ -1286,16 +1286,87 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN, GLM, DETERMINISTIC
+        /**
+         * No classification is performed.
+         */
+        NONE,
+
+        /**
+         * Gaussian Model.
+         * Assumes the data follows a bell-shaped curve, parameterized by mean and variance.
+         */
+        GAUSSIAN,
+
+        /**
+         * Kernel Density Estimation (KDE).
+         * A non-parametric method for estimating the probability density function.
+         */
+        KDE,
+
+        /**
+         * K-Nearest Neighbors (KNN).
+         * Classifies a point based on the majority label among its k closest neighbors.
+         */
+        KNN,
+
+        /**
+         * Neural Network (NN).
+         * A computational model inspired by biological neural systems, consisting of layers of interconnected neurons.
+         * Neural networks learn patterns from data to capture underlying nonlinear relationships
+         * and to perform flexible classification
+         */
+        NN,
+
+        /**
+         * Generalized Linear Model (GLM).
+         * Extends linear regression to handle non-normal response distributions.
+         */
+        GLM,
+
+        /**
+         * Rule-Based Deterministic Model.
+         * Uses predefined, fixed rules for classification,
+         * providing clear and structured decision logic as an
+         * alternative to probabilistic or statistical methods.
+         */
+        DETERMINISTIC
     }
+
+
 
     @Experimental
     @Cfg("Model used to learn input constraints and infer response status before making request.")
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
-    @Cfg("Learning rate for classifiers like GLM and NN.")
+    @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
+            "Relevant for gradient-based models such as GLM and neural networks. " +
+            "A smaller value ensures stable but slower convergence, while a larger value speeds up " +
+            "training but may cause instability.")
     var aiResponseClassifierLearningRate: Double = 0.01
+
+    @Experimental
+    @Cfg("Number of training iterations required to update classifier parameters. " +
+                "For example, in the Gaussian model this affects mean and variance updates. " +
+                "For neural network (NN) models, the warm-up should typically be larger than 1000.")
+    var aiResponseClassifierWarmup : Int = 10
+
+
+    enum class EncoderType {
+
+        /** Use raw values without any transformation. */
+        RAW,
+
+        /** Normalize values to a standard scale (e.g., zero mean and unit variance). */
+        NORMAL,
+
+        /** Scale the vector to have unit length, making it a point on the unit sphere. */
+        UNIT_NORMAL
+    }
+
+    @Experimental
+    @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -2461,12 +2532,6 @@ class EMConfig {
          */
         LLM,
     }
-
-    @Experimental
-    @Cfg("Port to run HTTP server to verify HTTP callbacks related to SSRF.")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var httpCallbackVerifierPort: Int = 19876
 
     @Experimental
     @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")

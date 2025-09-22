@@ -22,11 +22,14 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
@@ -239,10 +242,13 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                     assertEquals((postBody1 as ObjectGene).refType, (postBody2 as ObjectGene).refType)
 
                     (postBody1 as ObjectGene).fields.forEachIndexed { index, g->
-                        val gene1 = ParamUtil.getValueGene(g)
-                        val gene2 = ParamUtil.getValueGene((postBody2 as ObjectGene).fields[index])
-                        assertTrue(gene1.isDirectBoundWith(gene2))
-                        assertTrue(gene2.isDirectBoundWith(gene1))
+                        if(!postBody1.isAdditionalField(g)){
+                            val gene1 = ParamUtil.getValueGene(g)
+                            val gene2 = ParamUtil.getValueGene((postBody2 as ObjectGene).fields[index])
+                            assertTrue(gene1.isDirectBoundWith(gene2))
+                            assertTrue(gene2.isDirectBoundWith(gene1))
+                        }
+
                     }
 
                 }
@@ -313,7 +319,11 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             val allGene = call.seeActions(ActionFilter.ALL)
                 .flatMap { it.seeTopGenes() }
                 .filter { !isExtraTaintParam(it.name) && it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
-                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
+                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }
+                .filter {
+                    it.getViewOfChildren().isEmpty() &&
+                            (it is CompositeConditionalFixedGene && it.isFixed) // skip flexible gene
+                }
 
             allGene.groupBy { it.name }.forEach { (t, u) ->
                 if (u.size > 1){

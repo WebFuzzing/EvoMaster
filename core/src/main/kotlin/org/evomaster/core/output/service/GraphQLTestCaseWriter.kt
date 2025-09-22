@@ -44,7 +44,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         handleResponseAfterTheCall(call, result, responseVariableName, lines)
     }
 
-    override fun handleBody(call: HttpWsAction, lines: Lines) {
+    override fun handleBody(call: HttpWsAction, lines: Lines, dtoVar: String?) {
 
         /*
             TODO: when/if we are going to deal with GET, then we will need to update/refactor this code

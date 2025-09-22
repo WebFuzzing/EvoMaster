@@ -2,8 +2,11 @@ package com.opensearch.config;
 
 import java.util.List;
 import org.opensearch.client.opensearch.OpenSearchClient;
+import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch.core.GetRequest;
 import org.opensearch.client.opensearch.core.GetResponse;
+import org.opensearch.client.opensearch.core.IndexRequest;
+import org.opensearch.client.opensearch.core.IndexResponse;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +37,24 @@ public class OpenSearchRepository {
         SearchRequest searchRequest = new SearchRequest.Builder()
             .index(openSearchProperties.getIndexName())
             .q(wrapIntoDoubleQuotes(q))
+            // query example which matches 2 random field names with query string random
+            .query(
+                query -> query
+                    .match(matcher -> matcher.field("title").query(value -> value.stringValue(q)))
+            )
             .build();
 
         SearchResponse<T> response = openSearchClient.search(searchRequest, clazz);
         return !response.documents().isEmpty() ? response.documents() : null;
+    }
+
+    public <T> List<T> search(SearchRequest search, Class<T> clazz) throws IOException {
+        SearchResponse<T> response = openSearchClient.search(search, clazz);
+        return !response.documents().isEmpty() ? response.documents() : null;
+    }
+
+    public <T> IndexResponse index(IndexRequest<T> request) throws IOException, OpenSearchException {
+        return openSearchClient.index(request);
     }
 
     private static String wrapIntoDoubleQuotes(String q) {

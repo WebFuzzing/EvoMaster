@@ -299,6 +299,8 @@ abstract class EnterpriseIndividual(
 
     fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
 
+    fun seeHostnameActions() : List<HostnameResolutionAction> = seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
+
     /**
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions among the main actions
@@ -371,8 +373,14 @@ abstract class EnterpriseIndividual(
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
 
 
-
-    fun addInitializingActions(actions: List<EnvironmentAction>){
+    /**
+     * Add all input initializing actions to the current ones in this individual.
+     *
+     * At time, some actions must be "unique".
+     * In those cases, we don't crash this function, but rather return the number of
+     * unneeded actions that are ignored
+     */
+    fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
         val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
@@ -382,8 +390,17 @@ abstract class EnterpriseIndividual(
 
         addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
-        addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
+
+        //we don't need duplicates in hostname actions
+        val hostnameActions = actions
+            .filterIsInstance<HostnameResolutionAction>()
+        val uniqueHostnames = hostnameActions
+            .filter { dns -> this.seeHostnameActions().none { it.hostname == dns.hostname } }
+
+        addInitializingHostnameResolutionActions(actions = uniqueHostnames)
+
+        return  hostnameActions.size - uniqueHostnames.size
     }
 
 

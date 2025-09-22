@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -8,23 +9,30 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
@@ -105,6 +113,34 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             // in C# and Python, must be before the call
             lines.append(getAcceptHeader(call, res))
         }
+    }
+
+    private fun writeDto(call: HttpWsAction, lines: Lines): String {
+        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+        if (bodyParam != null && bodyParam.isJson()) {
+
+            val primaryGene = bodyParam.primaryGene()
+            val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
+            val actionName = call.getName()
+            if (choiceGene != null) {
+                // TODO add support for payloads from choice genes
+                throw IllegalStateException("Choice genes not yet supported for dto payload")
+            } else {
+                val leafGene = primaryGene.getLeafGene()
+                val geneToDto = GeneToDto(format)
+
+                val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
+                val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
+
+                dtoCall.objectCalls.forEach {
+                    lines.add(it)
+                }
+                lines.addEmpty()
+                return dtoCall.varName
+            }
+
+        }
+        return ""
     }
 
 
@@ -301,6 +337,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val call = evaluatedAction.action as HttpWsAction
         val res = evaluatedAction.result as HttpWsCallResult
 
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaults(lines, call)
+        }
+
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
@@ -333,13 +373,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
+        // TODO add support for kotlin
+        var dtoVar: String? = null
+        if (config.dtoForRequestPayload && format.isJava()) {
+            dtoVar = writeDto(call, lines)
+        }
+
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
             format.isJavaOrKotlin() -> {
                 lines.indent(2)
                 handleHeaders(call, lines)
-                handleBody(call, lines)
+                handleBody(call, lines, dtoVar)
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
             }
 
@@ -384,7 +430,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    protected open fun handleBody(call: HttpWsAction, lines: Lines) {
+    protected open fun handleBody(call: HttpWsAction, lines: Lines, dtoVar: String? = null) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
@@ -411,7 +457,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
                 val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                printSendJsonBody(json, lines)
+                printSendJsonBody(json, lines, dtoVar)
 
             } else if (bodyParam.isTextPlain()) {
 
@@ -467,7 +513,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines) {
+    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
 
         if(json.isEmpty()){
             //nothing is sent
@@ -486,7 +532,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
                 }
-                else -> lines.add(".$send(${bodyLines.first()})")
+                else -> {
+                    writeJvmJavaScriptJsonBody(lines, send, bodyLines, dtoVar, false)
+                }
             }
         } else {
             when {
@@ -511,15 +559,29 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                 }
                 else -> {
-                    lines.add(".$send(${bodyLines.first()} + ")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()})")
-                    }
+                    writeJvmJavaScriptJsonBody(lines, send, bodyLines, dtoVar, true)
                 }
             }
+        }
+    }
+
+    private fun writeJvmJavaScriptJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+        // TODO: When performing robustness testing, we'll need to check the individual type and send data
+        //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
+        if (config.dtoForRequestPayload && format.isJava()) {
+            lines.add(".$send(${dtoVar})")
+        } else {
+            lines.add(".$send(${bodyLines.first()}")
+            if (isMultiLine) {
+                lines.append(" + ")
+                lines.indented {
+                    (1 until bodyLines.lastIndex).forEach { i ->
+                        lines.add("${bodyLines[i]} + ")
+                    }
+                    lines.add("${bodyLines.last()}")
+                }
+            }
+            lines.append(")")
         }
     }
 
@@ -713,4 +775,37 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> throw IllegalStateException("Unsupported format $format")
         }
     }
+
+    /**
+     * Method to set up stub for HttpCallbackVerifier to the test case.
+     */
+    private fun handleSSRFFaults(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            if (format.isJava()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning())")
+            }
+            if (format.isKotlin()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
+            }
+
+            lines.addEmpty(1)
+
+            lines.addStatement("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")
+            lines.indented {
+                lines.addStatement(".atPriority(1)")
+                lines.addStatement(".willReturn(")
+                lines.indented {
+                    lines.addStatement("aResponse()")
+                    lines.addStatement(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                    lines.addStatement(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                }
+                lines.addStatement(")")
+            }
+            lines.addStatement(")")
+            lines.addEmpty(1)
+        }
+    }
+
 }

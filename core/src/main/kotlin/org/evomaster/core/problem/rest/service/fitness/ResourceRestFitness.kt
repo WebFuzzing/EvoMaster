@@ -87,6 +87,8 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         val allServedHttpRequests = mutableListOf<HttpExternalServiceRequest>()
 
+        goingToStartExecutingNewTest()
+
         val fv = if(individual.getResourceCalls().isNotEmpty())
             computeFitnessForEachResource(individual, sqlIdMap, executedSqlActions, failureBefore, chainState, cookies, tokens, allServedHttpRequests, actionResults)
         else
@@ -177,6 +179,7 @@ class ResourceRestFitness : AbstractRestFitness() {
 
         //TODO handling of inputVariables
         registerNewAction(restCallAction, indexOfAction)
+        reportActionIndex(indexOfAction)
 
         val ok = handleRestCall(restCallAction, mainActions, actionResults, chainState, cookies, tokens, fv)
         // update creation of resources regarding response status

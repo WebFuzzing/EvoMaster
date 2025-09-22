@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.openapi.v3.security.ssrf.base
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.RemoteDataDto
-import com.foo.rest.examples.spring.openapi.v3.security.ssrf.UserDto
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -31,45 +30,6 @@ open class SSRFBaseApplication {
     }
 
     @Operation(
-        summary = "POST endpoint to fetch remote image",
-        description = "Can be used to fetch remote profile image for user."
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Successful response"),
-            ApiResponse(responseCode = "204", description = "Unable to fetch the remote image"),
-            ApiResponse(responseCode = "400", description = "Invalid request"),
-            ApiResponse(responseCode = "500", description = "Invalid server error")
-        ]
-    )
-    @PostMapping(path = ["/fetch/image"])
-    open fun fetchUserImage(@RequestBody userInfo: UserDto): ResponseEntity<String> {
-        if (userInfo.profileImageUrl!!.isNotEmpty()) {
-            return try {
-                val url = URL(userInfo.profileImageUrl)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.setRequestProperty("accept", "application/json")
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 1000
-
-                // Note: Here the saving file should exist
-                if (connection.responseCode == 200) {
-                    return ResponseEntity.status(200).body("OK")
-                }
-
-                ResponseEntity.status(204).body("Unable to fetch remote image.")
-            } catch (e: Exception) {
-                // There is no guarantee [userInfo.profileImageUrl] to exists
-                // Due to this, returns HTTP 204 to simulate the success, as we consider only the
-                // tests with HTTP 2XX codes.
-                ResponseEntity.status(204).body("Unable to fetch remote image.")
-            }
-        }
-
-        return ResponseEntity.badRequest().body("Invalid request")
-    }
-
-    @Operation(
         summary = "POST endpoint to fetch sensor data",
         description = "Can be used to fetch sensor data from remote source"
     )
@@ -81,9 +41,9 @@ open class SSRFBaseApplication {
             ApiResponse(responseCode = "500", description = "Invalid server error")
         ]
     )
-    @PostMapping(path = ["/fetch/data"])
+    @PostMapping(path = ["/fetch"])
     open fun fetchSensorData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
-        if (remoteData.sensorUrl!!.isNotEmpty()) {
+        if (remoteData.sensorUrl != null) {
             return try {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection
@@ -97,6 +57,9 @@ open class SSRFBaseApplication {
 
                 ResponseEntity.status(204).body("Unable to fetch sensor data.")
             } catch (e: Exception) {
+                // There is no guarantee [remoteDate.sensorUrl] to exists
+                // Due to this, returns HTTP 204 to simulate the success, as we consider only the
+                // tests with HTTP 2XX codes.
                 ResponseEntity.status(204).body("Unable to fetch sensor data.")
             }
         }

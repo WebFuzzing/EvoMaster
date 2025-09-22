@@ -1,11 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.ssrf.header
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.header.SSRFHeaderController
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SSRFHeaderEMTest: SpringTestBase() {
@@ -14,16 +14,17 @@ class SSRFHeaderEMTest: SpringTestBase() {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SSRFHeaderController())
+            val config = EMConfig()
+            config.instrumentMR_NET = false
+            initClass(SSRFHeaderController(), config)
         }
     }
 
-    @Disabled
     @Test
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFEMTest",
-            300,
+            "SSRFHeaderEMTest",
+            30,
         ) { args: MutableList<String> ->
 
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
@@ -36,9 +37,8 @@ class SSRFHeaderEMTest: SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
-
-            // TODO: Need to modify this to test for executed calls inside [SSRFAnalyser]
+            assertTrue(solution.individuals.isNotEmpty())
+            assertTrue{ solution.hasSsrfFaults() }
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/header", "OK")
         }
     }

@@ -6,8 +6,12 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.GLMOnlineClassifier
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
+import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -36,19 +40,34 @@ class AIResponseClassifier : AIModel {
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
             EMConfig.AIResponseClassifierModel.GAUSSIAN ->
-                GaussianOnlineClassifier()
+                Gaussian400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
             EMConfig.AIResponseClassifierModel.GLM ->
-                GLMOnlineClassifier(config.aiResponseClassifierLearningRate)
+                GLM400Classifier(config.aiResponseClassifierWarmup,
+                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
+            EMConfig.AIResponseClassifierModel.NN ->
+                NN400Classifier(config.aiResponseClassifierWarmup,
+                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
+            EMConfig.AIResponseClassifierModel.KNN ->
+                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3, randomness)
+            EMConfig.AIResponseClassifierModel.KDE ->
+                KDE400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
+            EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
+                Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
                 override fun estimateAccuracy(endpoint: Endpoint): Double  = 0.0
+                override fun estimateOverallAccuracy(): Double = 0.0
             }
         }
     }
 
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
+        // Skip empty action
+        if (input.parameters.isEmpty()) {
+            return
+        }
         if(enabledLearning) {
             delegate.updateModel(input, output)
         } else {
@@ -56,7 +75,12 @@ class AIResponseClassifier : AIModel {
         }
     }
 
+
     override fun classify(input: RestCallAction): AIResponseClassification {
+        // treat empty action as "unknown", avoid touching the model
+        if (input.parameters.isEmpty()) {
+            return AIResponseClassification()
+        }
         return delegate.classify(input)
     }
 
@@ -64,10 +88,14 @@ class AIResponseClassifier : AIModel {
         return delegate.estimateAccuracy(endpoint)
     }
 
+    override fun estimateOverallAccuracy(): Double {
+        return delegate.estimateOverallAccuracy()
+    }
+
     fun viewInnerModel(): AIModel = delegate
 
     /**
-     * If the model thinks this call will lead to a user error (eg 400), then try to repair
+     * If the model thinks this call will lead to a user error (e.g., 400), then try to repair
      * the action to be able to solve the input constraints, aiming for a 2xx.
      * There is no guarantee that this will work.
      */
@@ -105,7 +133,6 @@ class AIResponseClassifier : AIModel {
     }
 
 
-
     private fun repairAction(
         call: RestCallAction,
         classification: AIResponseClassification
@@ -120,9 +147,10 @@ class AIResponseClassifier : AIModel {
     }
 
     /**
-     * Only needed during testing, to avoid modifying model while evaluating manually crafted actions
+     * Only needed during testing to avoid modifying the model while evaluating manually crafted actions
      */
     fun disableLearning(){
         enabledLearning = false
     }
+
 }

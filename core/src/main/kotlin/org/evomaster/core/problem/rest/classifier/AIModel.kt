@@ -44,4 +44,12 @@ interface AIModel {
      *  Based on the training data, the accuracy might be different between endpoints.
      */
     fun estimateAccuracy(endpoint: Endpoint) : Double
+
+    /**
+     * Return a probability in [0,1] on how accurate the model is.
+     * This is based on all endpoints.
+     * If the model internally stores separated submodels for each endpoint,
+     * then this could be simply the average accuracy.
+     */
+    fun estimateOverallAccuracy() : Double
 }
