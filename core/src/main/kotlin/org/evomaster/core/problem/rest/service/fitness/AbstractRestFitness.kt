@@ -1188,6 +1188,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
+        handleForgottenAuthentication(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1273,6 +1274,35 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
                 r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleForgottenAuthentication(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val endpoints = individual.seeMainExecutableActions()
+            .map { it.getName() }
+            .toSet()
+
+        val faultyEndpoints = endpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
+
+        if(faultyEndpoints.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName(), null))
             }
         }
     }

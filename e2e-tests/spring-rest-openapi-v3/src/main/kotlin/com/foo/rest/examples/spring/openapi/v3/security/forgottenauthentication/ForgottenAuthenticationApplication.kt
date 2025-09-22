@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.security.notrecognized
+package com.foo.rest.examples.spring.openapi.v3.security.forgottenauthentication
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -10,12 +10,12 @@ import org.springframework.web.bind.annotation.*
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api/resources"])
 @RestController
-open class NotRecognizedApplication {
+open class ForgottenAuthenticationApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(NotRecognizedApplication::class.java, *args)
+            SpringApplication.run(ForgottenAuthenticationApplication::class.java, *args)
         }
 
         private val data = mutableMapOf<Int, String>()
@@ -26,6 +26,9 @@ open class NotRecognizedApplication {
     }
 
     private fun checkAuth(auth: String?) = auth != null && (auth == "FOO" || auth == "BAR")
+
+    // this is the wrong check, it should be the same as checkAuth
+    private fun checkAuthWrongly(auth: String?) =  auth == null || (auth == "FOO" || auth == "BAR")
 
 
     @PutMapping(path = ["/{id}"])
@@ -55,7 +58,8 @@ open class NotRecognizedApplication {
         @RequestHeader("Authorization") auth: String?,
         @PathVariable("id") id: Int): ResponseEntity<String> {
 
-        if(!checkAuth(auth)) {
+        if(!checkAuthWrongly(auth)) {
+            // wrong, leaking forgotten authentication. should return 401
             return ResponseEntity.status(401).build()
         }
 
@@ -64,21 +68,11 @@ open class NotRecognizedApplication {
         }
 
         val source = data.getValue(id)
-        if(source != auth){
+
+        if(auth != null && source != auth){
             return ResponseEntity.status(403).build()
         }
 
         return ResponseEntity.status(200).body(source)
-    }
-
-    @PostMapping(path = ["/"])
-    open fun onlyBar(@RequestHeader("Authorization") auth: String?): ResponseEntity<String> {
-
-        if(auth == null || auth != "BAR"){ //because of the schema definition, auth can be random string value.
-            // wrong, as FOO should be recognized, and possibly return 403 if no access
-            return ResponseEntity.status(401).build()
-        }
-        //we return 204 only if the auth is "BAR"
-        return ResponseEntity.status(204).build()
     }
 }

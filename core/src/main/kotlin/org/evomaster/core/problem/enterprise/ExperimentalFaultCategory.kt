@@ -9,7 +9,6 @@ enum class ExperimentalFaultCategory(
     private val fullDescription: String,
 ) : FaultCategory {
 
-
     //9xx for experimental, work-in-progress oracles
 
     HTTP_INVALID_PAYLOAD_SYNTAX(901, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
@@ -49,10 +48,12 @@ enum class ExperimentalFaultCategory(
     //6xx: mobile
 
     //security
-
     //Likely this one is not really viable
     //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
       //  "TODO")
+    SECURITY_FORGOTTEN_AUTHENTICATION(980, "A Protected Resource Is Accessible Without Providing Any Authentication",
+        "forgottenAuthentication",
+        "TODO"),
     ;
 
     override fun getCode(): Int {
