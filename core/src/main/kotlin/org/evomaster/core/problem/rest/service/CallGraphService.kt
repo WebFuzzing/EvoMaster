@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.rest.IdLocationValue
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -60,6 +61,66 @@ class CallGraphService {
                 deleteDependencies[it.endpoint] = del
             }
         }
+    }
+
+    /**
+     * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
+     */
+    fun hasParameterChild(a: RestCallAction): Boolean {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .map { it.path }
+            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
+    }
+
+    fun getSimilarSiblingWithParameterChild(a: RestCallAction): RestCallAction? {
+
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .find{ isSimilarDescendant(it.path, a.path) && it.path.isLastElementAParameter()}
+    }
+
+    fun resolveLocationForParentOfChildOperationUsingCreatedResource(create: RestCallAction): String? {
+
+        if(hasParameterChild(create)) {
+            //simple case
+            return create.resolvedPath()
+        }
+
+        /*
+            TODO algorithm and data structures would need to improve.
+            eg, although it is a horrible design, we could have cases like:
+
+            POST   /users
+            GET    /users/get/{id}
+            DELETE /users/delete/{id}
+
+            this would imply that a create action might end up be used on different paths.
+            this is currently not handle in EM, and would require quite a bit of refactoring.
+            TODO would need to check how serious the issue is in practice
+         */
+
+        val sibling = getSimilarSiblingWithParameterChild(create)
+        if(sibling != null) {
+            val path = sibling.path.parentPath()
+            return path.resolveOnlyPath(create.parameters)
+        }
+
+        return null
+
+    }
+
+
+    fun resolveLocationForChildOperationUsingCreatedResource(create: RestCallAction, id: String): String? {
+
+        val parentLocation = resolveLocationForParentOfChildOperationUsingCreatedResource(create)
+
+        if(parentLocation != null) {
+            //simple case
+            return "$parentLocation/$id"
+        }
+
+        return null
     }
 
     /**

@@ -339,14 +339,4 @@ class RestIndividualBuilder {
         return true
     }
 
-
-    /**
-     * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
-     */
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
 }

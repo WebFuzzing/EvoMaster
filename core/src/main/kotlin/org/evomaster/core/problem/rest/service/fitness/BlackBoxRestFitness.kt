@@ -23,9 +23,6 @@ import javax.ws.rs.core.NewCookie
 
 class BlackBoxRestFitness : RestFitness() {
 
-    @Inject
-    private lateinit var callGraphService: CallGraphService
-
     companion object {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
