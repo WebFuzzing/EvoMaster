@@ -142,6 +142,7 @@ class RestIndividualBuilder {
      */
     fun createBoundActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
 
+        //TODO might need to relax this constraint
         if (!template.path.isSameOrAncestorOf(target.path)) {
             throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
                     "${template.path} vs ${target.path}")
@@ -177,10 +178,11 @@ class RestIndividualBuilder {
             throw IllegalArgumentException("'previous' is not a create operation: ${previous.verb}")
         }
 
-        if (!previous.path.isSameOrAncestorOf(template.path)) {
-            throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
-                    "${previous.path} vs ${template.path}")
-        }
+        //We have relaxed this constraint to be able to handle real-world APIs
+//        if (!previous.path.isSameOrAncestorOf(template.path)) {
+//            throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
+//                    "${previous.path} vs ${template.path}")
+//        }
 
         val res = template.copyKeepingSameWeakRef()
 

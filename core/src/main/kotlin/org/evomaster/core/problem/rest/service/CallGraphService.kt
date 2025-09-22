@@ -1,14 +1,66 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import javax.annotation.PostConstruct
+import kotlin.math.abs
 
+/**
+ * Utility service used to detect and analyse dependencies between REST operations
+ * defined in the OpenAPI schema of the API
+ */
 class CallGraphService {
 
     @Inject
     private lateinit var sampler: AbstractRestSampler
+
+    /**
+     * Map of create POST/PUT endpoints and possible DELETE operations for them.
+     * This linking is created dynamically based on heuristics.
+     */
+    private val deleteDependencies = mutableMapOf<Endpoint, RestCallAction>()
+
+
+    @PostConstruct
+    private fun init() {
+
+        val calls = sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+
+        val deletes = calls.filter { it.verb == HttpVerb.DELETE }
+        val creates = calls.filter { it.verb == HttpVerb.POST || it.verb == HttpVerb.PUT }
+
+        val noExactMatch = mutableListOf<RestCallAction>()
+        creates.forEach {
+            val del = computeDeleteExactMatch(it, deletes)
+            if(del != null) {
+                deleteDependencies[it.endpoint] = del
+            } else {
+                noExactMatch.add(it)
+            }
+        }
+
+        val noPartialMatch = mutableListOf<RestCallAction>()
+        noExactMatch.forEach {
+            val del = computeDeletePartialMatch(it, deletes)
+            if(del != null) {
+                deleteDependencies[it.endpoint] = del
+            } else {
+                noPartialMatch.add(it)
+            }
+        }
+
+        noPartialMatch.forEach {
+            val del = computeDeleteLastResort(it, deletes)
+            if(del != null) {
+                deleteDependencies[it.endpoint] = del
+            }
+        }
+    }
 
     /**
      * Among all the endpoints declared in the schema, find if there is any DELETE
@@ -16,8 +68,116 @@ class CallGraphService {
      * Note: the matching is based "best-practices" in REST API design.
      */
     fun findDeleteFor(action: RestCallAction) : RestCallAction?{
-        if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.POST){
+        return deleteDependencies[action.endpoint]?.copy() as RestCallAction?
+    }
+
+    private fun isSimilarPath(a: RestPath, b: RestPath) : Boolean {
+
+        if(a.levels() != b.levels()) {
+            return false
+        }
+
+        if(a.isRoot() || b.isRoot()) {
+            return false
+        }
+
+        if(a.parentPath() != b.parentPath()) {
+            return false
+        }
+
+        if(a.isLastElementAParameter() && b.isLastElementAParameter()) {
+            //same ancestor path, and just different name for the param?
+            //then it is ok
+            return true
+        }
+
+        val distance = org.apache.commons.text.similarity.LevenshteinDistance(2)
+
+        if(!a.isLastElementAParameter() && !b.isLastElementAParameter()) {
+            val x = a.lastElement()
+            val y = b.lastElement()
+            val d = distance.apply(x,y)
+            if(d >= 0){
+                // a negative value means it was greater than the threshold
+                return true
+            }
+        }
+
+        return false
+    }
+
+    private fun isSimilarDescendant(child: RestPath, parent: RestPath) : Boolean {
+
+        if(child.levels() != parent.levels() + 1) {
+            return false
+        }
+        if(parent.isRoot()){
+            return true
+        }
+
+        return isSimilarPath(child.parentPath(), parent)
+    }
+
+    private fun computeDeleteLastResort(action: RestCallAction, deletes: List<RestCallAction>) : RestCallAction?{
+
+        val usedDeletes = deleteDependencies.values
+
+        val unusedDeletes = deletes.filter{ d ->  usedDeletes.none { d.endpoint == it.endpoint } }
+
+        if(unusedDeletes.isEmpty()){
             return null
+        }
+
+        /*
+            sort the option.
+            the one with the longest shared ancestor paths come first (note the - for descending order).
+            then, in case of ties, look at closest element level values
+         */
+        return unusedDeletes.sortedWith(
+            compareBy<RestCallAction>{  -it.path.lengthSharedAncestors(action.path) }
+                .thenBy { abs(it.path.levels() - action.path.levels()) }
+        ).first()
+    }
+
+    private fun computeDeletePartialMatch(action: RestCallAction, deletes: List<RestCallAction>) : RestCallAction?{
+
+        if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.POST){
+            throw IllegalArgumentException("Only PUT or POST are supported")
+        }
+
+        /*
+            follow same algorithm as exact match, but allow some name mismatches
+         */
+
+        val samePath = deletes.find { isSimilarPath(it.path,action.path) }
+
+        val directDescendant = deletes.find { isSimilarDescendant(it.path,action.path)}
+
+        if(samePath != null){
+
+            if(action.verb == HttpVerb.PUT){
+                return samePath
+            }
+            assert(action.verb == HttpVerb.POST)
+
+            if(directDescendant != null && directDescendant.path.isLastElementAParameter()
+                && !action.path.isLastElementAParameter()){
+                return directDescendant
+            }
+            return samePath
+        }
+
+        if(directDescendant != null){
+            return directDescendant
+        }
+
+        return null
+    }
+
+
+    private fun computeDeleteExactMatch(action: RestCallAction, deletes: List<RestCallAction>) : RestCallAction?{
+        if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.POST){
+            throw IllegalArgumentException("Only PUT or POST are supported")
         }
 
         /*
@@ -68,10 +228,6 @@ class CallGraphService {
             – DELETE /data/delete/{id}
 
          */
-
-        val deletes = sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .filter { it.verb == HttpVerb.DELETE }
 
         val samePath = deletes.find { it.path == action.path }
 
