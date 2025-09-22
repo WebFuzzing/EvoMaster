@@ -209,9 +209,10 @@ class TestSuiteWriter {
 
     // TODO: take DTO extraction and writing to a different class
     fun writeDtos(solutionFilename: String) {
-        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
+        val testSuiteFileName = TestSuiteFileName(solutionFilename)
+        val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
         val restSampler = sampler as AbstractRestSampler
-        DtoWriter().write(testSuitePath, config.outputFormat, restSampler.getActionDefinitions())
+        DtoWriter().write(testSuitePath, testSuiteFileName.getPackage(), config.outputFormat, restSampler.getActionDefinitions())
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -419,7 +420,8 @@ class TestSuiteWriter {
             addImport("java.util.Map", lines)
             addImport("java.util.Arrays", lines)
             if (config.dtoForRequestPayload) {
-                addImport("dto.*", lines)
+                val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
+                addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
             }
         }

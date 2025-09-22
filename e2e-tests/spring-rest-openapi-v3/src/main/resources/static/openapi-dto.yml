@@ -1,0 +1,146 @@
+openapi: 3.0.0
+info:
+  title: Simple DTO API
+  version: 1.0.0
+#servers:
+#  - url: http://localhost:8080
+paths:
+  /object:
+    post:
+      summary: Receives a Person object
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Person"
+      responses:
+        "200":
+          description: Successfully received object
+  /array:
+    post:
+      summary: Receives an array of Person objects
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Person"
+      responses:
+        "200":
+          description: Successfully received array
+
+  /array-of-string:
+    post:
+      summary: Receives an array of strings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        "200":
+          description: Successfully received array
+
+  /string:
+    post:
+      summary: Receives a string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Successfully received string
+
+  /number:
+    post:
+      summary: Receives a number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: number
+              format: double
+              example: 1234.56
+      responses:
+        "200":
+          description: Received number successfully
+
+  /integer:
+    post:
+      summary: Receives an integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+              format: int64
+              example: 42
+      responses:
+        "200":
+          description: Received integer successfully
+
+  /integer-no-format:
+    post:
+      summary: Receives an integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: integer
+      responses:
+        "200":
+          description: Received integer successfully
+
+  /boolean:
+    post:
+      summary: Receives a boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: boolean
+              example: true
+      responses:
+        "200":
+          description: Received boolean successfully
+
+components:
+  schemas:
+    Person:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+        address:
+          $ref: "#/components/schemas/Address"
+      required:
+        - name
+        - age
+        - address
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        country:
+          type: string
+        voted:
+          type: boolean
+      required:
+        - street
+        - country

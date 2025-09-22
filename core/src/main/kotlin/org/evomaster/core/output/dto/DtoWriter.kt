@@ -43,11 +43,11 @@ class DtoWriter {
      */
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
-    fun write(testSuitePath: Path, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
+    fun write(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
         calculateDtos(actionDefinitions)
         dtoCollector.forEach {
             when {
-                outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, outputFormat, it.value)
+                outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
                 else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
             }
         }
@@ -69,7 +69,11 @@ class DtoWriter {
     }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        if (gene.getLeafGene() is ObjectGene) {
+        /*
+         If the spec has an example defined for primitive types, these are parsed as a ChoiceGene in which
+         one gene is the primitive type and the other an EnumGene. Order in the genes is not a guarantee.
+         */
+        if (!hasAnyPrimitiveGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
             val dtoClass = DtoClass(dtoName)
             val children = gene.getViewOfChildren()
@@ -89,11 +93,23 @@ class DtoWriter {
         }
     }
 
+    // should this be the check? Or should we actually check if any child gene is an object/array gene?
+    private fun hasAnyPrimitiveGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { isPrimitiveGene(it) }
+    }
+
+    private fun isPrimitiveGene(gene: Gene): Boolean {
+        return when (gene) {
+            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> true
+            else -> false
+        }
+    }
+
     private fun calculateDtoFromNonChoiceGene(gene: Gene, actionName: String) {
-        when (gene) {
-            is ObjectGene -> calculateDtoFromObject(gene, actionName)
-            is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
-            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> return
+        when {
+            gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
+            gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+            isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
