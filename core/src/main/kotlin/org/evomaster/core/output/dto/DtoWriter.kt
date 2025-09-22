@@ -69,6 +69,7 @@ class DtoWriter {
     }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
+        // TODO: should we handle EnumGene?
         if (hasObjectOrArrayGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
             val dtoClass = DtoClass(dtoName)
