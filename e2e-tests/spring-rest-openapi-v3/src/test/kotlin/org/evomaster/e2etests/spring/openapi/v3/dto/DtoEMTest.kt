@@ -27,7 +27,6 @@ class DtoEMTest : SpringTestBase(){
             true
         ) { args: MutableList<String> ->
 
-            //make sure enums are actually used, and not constraints solved with TT
             args.add("--dtoForRequestPayload")
             args.add("true")
 
