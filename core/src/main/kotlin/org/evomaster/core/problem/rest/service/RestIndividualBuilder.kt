@@ -28,9 +28,6 @@ class RestIndividualBuilder {
     @Inject
     private lateinit var randomness: Randomness
 
-    @Inject
-    private lateinit var callGraphService: CallGraphService
-
     companion object{
 
         fun sliceAllCallsInIndividualAfterAction(
