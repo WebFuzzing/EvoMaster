@@ -1,8 +1,5 @@
 package com.foo.rest.examples.spring.openapi.v3.aiclassification.arithmetic
 
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.allornone.ACAllOrNoneDto
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.allornone.ACAllOrNoneEnum
-import com.foo.rest.examples.spring.openapi.v3.aiclassification.onlyone.ACOnlyOneEnum
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -14,7 +11,6 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping(path = ["/api/arithmetic"])
 class ACArithmeticRest {
-
     @GetMapping
     open fun get(
         @RequestParam("x") x: Int?,

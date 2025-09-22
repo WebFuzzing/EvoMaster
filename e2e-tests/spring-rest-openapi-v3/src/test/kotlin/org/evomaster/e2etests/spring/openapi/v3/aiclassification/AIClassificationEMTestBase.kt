@@ -63,11 +63,9 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
                 "Too high probability of 400 for OK ${ok.getName()}: ${mOK.probabilityOf400()}")
         }
 
-
         for(fail in fail400) {
             val resFail = evaluateAction(injector, fail)
             assertEquals(400, resFail.getStatusCode())
-
             val mFail = model.classify(fail)
             assertTrue(
                 mFail.probabilityOf400() >= threshold,

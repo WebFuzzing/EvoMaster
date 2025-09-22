@@ -1,8 +1,8 @@
 package org.evomaster.core.problem.rest.aiclassification
 
-import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
 import bar.examples.it.spring.aiclassification.basic.BasicController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
+import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -10,14 +10,17 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.AbstractAIModel
-import org.evomaster.core.problem.rest.classifier.EncoderType
-import org.evomaster.core.problem.rest.classifier.GLMModel
-import org.evomaster.core.problem.rest.classifier.GaussianModel
-import org.evomaster.core.problem.rest.classifier.InputEncoderUtilWrapper
-import org.evomaster.core.problem.rest.classifier.KDEModel
-import org.evomaster.core.problem.rest.classifier.KNNModel
-import org.evomaster.core.problem.rest.classifier.NNModel
+import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
+import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400EndpointModel
+import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.kde.KDE400EndpointModel
+import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400EndpointModel
+import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
+import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400EndpointModel
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
@@ -25,7 +28,6 @@ import org.evomaster.core.search.service.Randomness
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
-import kotlin.collections.iterator
 
 
 class AIModelsCheck : IntegrationTestRestBase() {
@@ -33,9 +35,9 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-//            initClass(BasicController())
-            initClass(MultiTypeController())
-//            initClass(AllOrNoneController())
+             initClass(BasicController())
+//            initClass(MultiTypeController())
+//             initClass(AllOrNoneController())
         }
 
         @JvmStatic
@@ -43,26 +45,42 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val test = AIModelsCheck()
             init()
             test.initializeTest()
+
+            test.injector.injectMembers(test)
+
+            test.setup(test.modelName)
+
             test.runClassifierExample()
         }
     }
 
-    // define which model you want to use
-    val modelName = "KNN" // change to "GAUSSIAN", "GLM", "KNN", "KDE", "GM", "NN", etc.
-    val runTimeDuration = 5_000L // Milliseconds
-    val warmupRep = when(modelName){
-        "NN" -> 1000  //NN needs significant numbers of training samples to warm-up
+    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
+    val runTimeDuration = 10_000L
+    val encoderType4Test = EMConfig.EncoderType.NORMAL
+
+    @Inject
+    lateinit var randomness: Randomness
+
+    val warmUpRep = when (modelName) {
+        "NN" -> 10
         else -> 10
-    }
-    val encoderType4Test = when(modelName){
-        "KNN" -> EncoderType.RAW
-        "NN" -> EncoderType.RAW
-        "GLM" -> EncoderType.RAW
-        else -> EncoderType.NORMAL
     }
 
     fun initializeTest() {
         recreateInjectorForWhite(listOf("--aiModelForResponseClassification", modelName))
+    }
+
+    @Inject
+    lateinit var config: EMConfig
+
+    fun setup(modelName: String) {
+        config.aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.valueOf(modelName)
+        config.aiResponseClassifierWarmup = warmUpRep
+        config.aiEncoderType = encoderType4Test
+        config.enableSchemaConstraintHandling = true
+        config.allowInvalidData = false
+        config.probRestDefault = 0.0
+        config.probRestExamples = 0.0
     }
 
     fun executeRestCallAction(action: RestCallAction, baseUrlOfSut: String): RestCallResult {
@@ -82,7 +100,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
             val body = connection.inputStream.bufferedReader().use { it.readText() }
             result.setBody(body)
-            result.setBodyType(MediaType.APPLICATION_JSON_TYPE) // or guess based on the Content-Type header
+            result.setBodyType(MediaType.APPLICATION_JSON_TYPE)
 
         } catch (e: Exception) {
             result.setTimedout(true)
@@ -92,180 +110,185 @@ class AIModelsCheck : IntegrationTestRestBase() {
         return result
     }
 
-    // Factory for models
-    private fun createModel(modelName: String, dimension: Int, warmup: Int): AbstractAIModel =
-        when (modelName.uppercase()) {
-            "GAUSSIAN" -> GaussianModel().apply {
-                setup(dimension, warmup)
-                encoderType = encoderType4Test
-            }
-            "GLM" -> GLMModel().apply {
-                setup(dimension, warmup)
-                encoderType = encoderType4Test
-            }
-            "KDE" -> KDEModel().apply {
-                setup(dimension, warmup)
-                encoderType = encoderType4Test
-            }
-            "KNN" -> KNNModel(k = 3).apply {
-                setup(dimension, warmup)
-                encoderType = encoderType4Test
-            }
-            "NN" -> NNModel().apply {
-                setup(dimension, warmup)
-                encoderType = encoderType4Test
-            }
-            else -> throw IllegalArgumentException("Unknown model type: $modelName")
-        }
-
-
     fun runClassifierExample() {
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
         val restSchema = RestSchema(schema)
 
-        val config = EMConfig().apply {
-            aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.valueOf(modelName)
-            enableSchemaConstraintHandling = true
-            allowInvalidData = false
-            probRestDefault = 0.0
-            probRestExamples = 0.0
-        }
-
         val options = RestActionBuilderV3.Options(config)
         val actionCluster = mutableMapOf<String, Action>()
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
-
         val actionList = actionCluster.values.filterIsInstance<RestCallAction>()
 
-        val endpointToDimension = mutableMapOf<String, Int?>()
-
-        for (action in actionList) {
-            val name = action.getName()
-            val encoder = InputEncoderUtilWrapper(action, encoderType = encoderType4Test)
-            val listGenes = encoder.endPointToGeneList().map { gene -> gene.getLeafGene() }
-            listGenes.forEach {println("Gene: ${it::class.simpleName}") }
-
-            val hasUnsupportedGene = !encoder.areAllGenesSupported()
-            println("Has unsupported gene: $hasUnsupportedGene")
-
-            val dimension = if (hasUnsupportedGene) null else listGenes.size
-            println("Endpoint: $name, dimension: $dimension")
-
-            endpointToDimension[name] = dimension
+        // Use Gaussian400Classifier wrapper
+        val globalClassifier = when(modelName){
+            "GAUSSIAN" -> Gaussian400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, randomness = randomness)
+            "KNN" -> KNN400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, k = 3, randomness = randomness)
+            "GLM" -> GLM400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, learningRate = config.aiResponseClassifierLearningRate, randomness = randomness)
+            "KDE" -> KDE400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, randomness = randomness)
+            "NN" -> NN400Classifier(encoderType = config.aiEncoderType, warmup = config.aiResponseClassifierWarmup, learningRate = config.aiResponseClassifierLearningRate, randomness = randomness)
+            else -> throw IllegalArgumentException("Unsupported model: $modelName")
         }
 
-        // Initialize classifiers
-        val endpointToClassifier = mutableMapOf<String, AbstractAIModel?>()
-        for ((name, dimension) in endpointToDimension) {
-            endpointToClassifier[name] =
-                if (dimension == null) null else createModel(modelName, dimension, warmupRep)
-        }
-
-        for ((name, expectedDimension) in endpointToDimension) {
-            println("The model is $modelName for $name with expected dimension as $expectedDimension")
-        }
-
-        // Execute the procedure for a period of time
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
         val startTime = System.currentTimeMillis()
+
         while (System.currentTimeMillis() - startTime < runTimeDuration) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
 
-            val name = sampledAction.getName()
-            val classifier = endpointToClassifier[name]
-            val dimension = endpointToDimension[name]
-            val geneValues = sampledAction.parameters.map { it.primaryGene().getValueAsRawString()}
+            val endPoint = sampledAction.endpoint
 
             println("*************************************************")
-            println("Path         : $name")
-            println("Classifier   : ${classifier?.javaClass?.simpleName ?: "null"}")
-            println("Dimension    : $dimension")
-            println("Input Genes  : ${geneValues.joinToString(", ")}")
-            println("Genes Size   : ${geneValues.size}")
+            println("Path: $endPoint")
 
-            //  executeRestCallAction is replaced with createIndividual to avoid override error
-            //  val individual = createIndividual(listOf(sampledAction), SampleType.RANDOM)
-            val individual = sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
+            val geneValues = sampledAction.parameters
+                .map { it.primaryGene().getValueAsRawString().replace("EVOMASTER", "") }
+            println("Input Genes: ${geneValues.joinToString(", ")}")
+            println("Genes Size: ${geneValues.size}")
+
+            val individual =
+                sampler.createIndividual(SampleType.RANDOM, listOf(sampledAction).toMutableList())
             val action = individual.seeMainExecutableActions()[0]
 
-            val encoderTemp = InputEncoderUtilWrapper(action, encoderType = encoderType4Test)
-            val inputVector = encoderTemp.encode()
-            println("Encoded features are: ${inputVector.joinToString(", ")}")
+            val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
 
+            val hasUnsupportedGene = !encoderTemp.areAllGenesSupported()
+            if (hasUnsupportedGene) {
+                println("Skipping classification for $endPoint as it has unsupported genes")
+                // still execute the action if you want, but don’t encode or classify
+                val result = executeRestCallAction(action, "$baseUrlOfSut")
+                continue
+            }
+
+            val inputVector = encoderTemp.encode()
+            println("Encoded features: ${inputVector.joinToString(", ")}")
             println("Input vector size: ${inputVector.size}")
 
-            // Execution without classification for the endpoints with unsupported genes
-            if (classifier==null){
-                executeRestCallAction(action,"$baseUrlOfSut")
-                println("No classification as the classifier is null, i.e., the endpoint contains unsupported genes")
-                continue
+            // warmup detection
+            val endpointModel: Any? = when(modelName){
+                "GAUSSIAN" -> {
+                    val m = (globalClassifier as Gaussian400Classifier).getModel(endPoint)
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding GAUSSIAN model is cold: $isCold")
+                    m
+                }
+                "GLM" -> {
+                    val m = (globalClassifier as GLM400Classifier).getModel(endPoint)
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding GLM model is cold: $isCold")
+                    m
+                }
+                "KDE" -> {
+                    val m = (globalClassifier as KDE400Classifier).getModel(endPoint)
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding KDE model is cold: $isCold")
+                    m
+                }
+                "NN" -> {
+                    val m = (globalClassifier as NN400Classifier).getModel(endPoint)
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding NN model is cold: $isCold")
+                    m
+                }
+                "KNN" -> {
+                    val m = (globalClassifier as KNN400Classifier).getModel(endPoint)
+                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    println("Corresponding KNN model is cold: $isCold")
+                    m
+                }
+                else -> throw IllegalArgumentException("Unsupported model: $modelName")
             }
 
-            // Warmup cold classifiers by at least n request
-            val isCold = classifier.performance.totalSentRequests < classifier.warmup
-
-            println("Corresponding model for the endpoint is cold: $isCold")
+            val isCold = when(endpointModel){
+                is Gaussian400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is GLM400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KDE400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is NN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KNN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                else -> true
+            }
 
             if (isCold) {
-                println("Warmup the endpoint corresponding $modelName model!")
+                println("Warmup for endpoint $endPoint")
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
-                classifier.updateModel(action, result)
+                globalClassifier.updateModel(action, result)
                 continue
             }
 
-            println("Correct Predictions: ${classifier.performance.correctPrediction}")
-            println("Total Requests: ${classifier.performance.totalSentRequests}")
-            println("Accuracy: ${classifier.performance.estimateAccuracy()}")
-
-
-            // Classification
-            println("Classifying by $modelName model!")
-            val classification = classifier.classify(action)
-
-            // Prediction
-            val predictionOfStatusCode = classification.prediction()
-            println("Prediction is : $predictionOfStatusCode")
-
-            // Probabilistic decision-making based on Bernoulli(prob = aci)
-            val sendOrNot: Boolean
-            if (predictionOfStatusCode != 400) {
-                sendOrNot = true
-            }else{
-                sendOrNot = if(Math.random() > classifier.performance.estimateAccuracy()) true else false
+            when (endpointModel) {
+                is Gaussian400EndpointModel -> {
+                    println("The model is a Gaussian400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                }
+                is GLM400EndpointModel -> {
+                    println("The model is a GLM400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                }
+                is KDE400EndpointModel -> {
+                    println("The model is a KDE400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                }
+                is NN400EndpointModel -> {
+                    println("The model is a NN400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                }
+                is KNN400EndpointModel -> {
+                    println("The model is a KNN400EndpointModel")
+                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
+                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
+                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
+                }
+                else -> println("No performance info available")
             }
 
-            // Execute the request and update
+            println("Overall Accuracy Global: ${globalClassifier.estimateOverallAccuracy()}")
+
+            val classification = globalClassifier.classify(action)
+            val predictionOfStatusCode = classification.prediction()
+            println("Prediction is: $predictionOfStatusCode")
+
+            val sendOrNot =
+                predictionOfStatusCode != 400 ||
+                        Math.random() > globalClassifier.estimateAccuracy(endPoint)
+            println("Send the request or not: $sendOrNot")
+
             if (sendOrNot) {
-                val result = executeRestCallAction(action,"$baseUrlOfSut")
-                println("Response     : ${result.getStatusCode()}")
-                println("Updating the $modelName classifier!")
-                classifier.updateModel(action, result)
+                val result = executeRestCallAction(action, "$baseUrlOfSut")
+                println("True Response: ${result.getStatusCode()}")
+                println("Updating the classifier!")
+                globalClassifier.updateModel(action, result)
 
-                if (classifier is GaussianModel) {
-
-                    val d200 = classifier.density200!!
-                    val d400 = classifier.density400!!
+                if (endpointModel is Gaussian400EndpointModel) {
+                    val d400 = endpointModel.density400!!
+                    val dNot400 = endpointModel.densityNot400!!
 
                     fun formatStats(name: String, mean: List<Double>, variance: List<Double>, n: Int) {
                         val m = mean.map { "%.2f".format(it) }
                         val v = variance.map { "%.2f".format(it) }
-                        println("$name: n=$n, mean=$m, variance=$v * I_${classifier.dimension}")
+                        println("$name: n=$n, mean=$m, variance=$v * I_${endpointModel.dimension}")
                     }
 
-                    formatStats("Density200", d200.mean, d200.variance, d200.n)
+                    formatStats("DensityNot400", dNot400.mean, dNot400.variance, dNot400.n)
                     formatStats("Density400", d400.mean, d400.variance, d400.n)
 
-                }else if (classifier is GLMModel){
+                } else if (endpointModel is KNN400EndpointModel) {
+                    println("KNN stats: stored ${endpointModel.samples.size} samples")
+                    // you could also print neighbors, votes, etc if useful
+                }else if (endpointModel is GLM400EndpointModel) {
                     println("Updating the $modelName classifier!")
-                    println("Weights and Bias = ${classifier.getModelParams()}")
+                    println("Weights and Bias = ${endpointModel.getModelParams()}")
                 }
-
             }
-
         }
     }
-
 }

@@ -41,6 +41,30 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
     }
 
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
+    }
+
     private fun testRunEM(model: AIResponseClassifierModel) {
 
         runTestHandlingFlakyAndCompilation(
@@ -75,11 +99,11 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": "true", "d": "HELLO"}
+                        {"a": true, "d": "HELLO"}
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": "true", "d": "X", "f": "HELLO"}
+                        {"a": true, "d": "X", "f": "HELLO"}
                     """.trimIndent())!!,
             )
 
@@ -88,11 +112,11 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
                     queryParams = mapOf("z" to "true", "y" to "45"))!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": "true"}
+                        {"a": true}
                     """.trimIndent())!!,
                 ptr.fromVerbPath("POST","/api/imply",
                     jsonBodyPayload = """
-                        {"a": "true", "d": "X", "f": "X"}
+                        {"a": true, "d": "X", "f": "X"}
                     """.trimIndent())!!,
             )
 
