@@ -103,7 +103,7 @@ class RestIndividualBuilder {
                 .forEach { it.revertToWeakReference() }
             other.resetLocalIdRecursively()
 
-            base.addInitializingActions(other.seeInitializingActions())
+            val duplicates = base.addInitializingActions(other.seeInitializingActions())
 
             other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
                 base.addMainEnterpriseActionGroup(group)
@@ -118,7 +118,7 @@ class RestIndividualBuilder {
 
             val after = base.seeAllActions().size
             //merge shouldn't lose any actions
-            assert(before == after) { "$after!=$before" }
+            assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
 
             base.verifyValidity()
 
