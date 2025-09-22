@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
-import javax.ws.rs.QueryParam
 
 @RestController
 @RequestMapping(path = ["/api/basic"])
@@ -18,7 +17,7 @@ class ACBasicRest {
         @RequestParam("z" )z: Boolean?
     ) : ResponseEntity<String> {
 
-        //no dependency, just constraint on single variable
+        //no dependency, just constraint on a single variable
 
         if(y == null){
             return ResponseEntity.status(400).build()

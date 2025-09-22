@@ -38,9 +38,21 @@ class AIResponseClassification(
 
     /**
      * Returns the status code with the highest probability.
-     * @return the status code (key) with maximum probability
+     * @return the status code (key) with the maximum probability if it is higher than the threshold
+     * otherwise returns a negative value
+     *
+     * The decisionThreshold of 0.5 is used to ensure that the chosen class
+     * has at least 50% posterior probability as in the binary case
+     * (e.g., {400, not-400}); this follows from the fact that:
+     * posteriorProb400 + posteriorProbNot400 = 1
+     * which means if posteriorProb400 > posteriorProbNot400 so posteriorProb400 >= 0.5
      */
-    fun prediction(): Int {
-        return probabilities.maxByOrNull { it.value }?.key ?: -1
+    fun prediction(decisionThreshold: Double = 0.5): Int {
+        val best = probabilities.maxByOrNull { it.value }
+        return if (best != null && best.value >= decisionThreshold) {
+            best.key
+        } else {
+            -1
+        }
     }
 }
