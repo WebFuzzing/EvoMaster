@@ -2538,6 +2538,10 @@ class EMConfig {
     var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
 
     @Experimental
+    @Cfg("HTTP callback URL hostname")
+    var callbackURLHostname = "localhost"
+
+    @Experimental
     @Cfg("Enable language model connector")
     var languageModelConnector = false
 

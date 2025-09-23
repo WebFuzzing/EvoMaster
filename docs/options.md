@@ -241,6 +241,7 @@ There are 3 types of options:
 |`aiResponseClassifierWarmup`| __Int__. Number of training iterations required to update classifier parameters. For example, in the Gaussian model this affects mean and variance updates. For neural network (NN) models, the warm-up should typically be larger than 1000. *Default value*: `10`.|
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`callbackURLHostname`| __String__. HTTP callback URL hostname. *Default value*: `localhost`.|
 |`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|
