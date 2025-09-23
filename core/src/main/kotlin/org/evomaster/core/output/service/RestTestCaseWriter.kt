@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -33,6 +34,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     @Inject
     private lateinit var partialOracles: PartialOracles
+
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
 
     constructor() : super()
 
@@ -420,7 +425,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
-                    "\"${call.path.resolveOnlyPath(call.parameters)}\""
+                    val path = callGraphService.resolveLocationForParentOfChildOperationUsingCreatedResource(call)
+                    "\"$path\""
                 }
 
                 val idPointer = res.getResourceId()?.pointer ?: "/id"
@@ -431,9 +437,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isJavaScript() -> lines.add("const ")
                     format.isJava() -> lines.add("String ")
                     format.isKotlin() -> lines.add("val ")
-                    format.isPython()  -> { /* nothing to do in Python */}
+                    format.isPython()  -> lines.add("")/* nothing to do in Python */
                 }
-                lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
+                lines.append("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }
