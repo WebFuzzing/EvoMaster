@@ -1,6 +1,9 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.AbstractModule
+import com.google.inject.Guice
+import com.google.inject.Injector
+import com.google.inject.Provider
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
@@ -8,6 +11,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.Termination
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.Solution
 import org.evomaster.test.utils.py.PyLoader
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -36,16 +40,31 @@ class TestSuiteWriterTest{
 
             bind(PartialOracles::class.java)
                     .asEagerSingleton()
+
+            //will crash if methods called on it
+            bind(CallGraphService::class.java)
+                // avoid dependency injection on the instance, as it would require Sampler and 30+ other dependencies
+                .toProvider(object : Provider<CallGraphService> {
+                    override fun get(): CallGraphService {
+                        return CallGraphService() // Created without Guice injection
+                    }
+                })
         }
     }
 
+    private fun getInjector() : Injector {
+        //Issue with @PostConstruct in CallGraphService
+        //        val injector = LifecycleInjector.builder()
+//                .withModules(BaseModule(), ReducedModule())
+//                .build().createInjector()
+        val injector = Guice.createInjector(BaseModule(), ReducedModule())
+        return injector
+    }
 
     @Test
     fun testEmptySuite(){
 
-        val injector = LifecycleInjector.builder()
-                .withModules(BaseModule(), ReducedModule())
-                .build().createInjector()
+        val injector = getInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true
@@ -103,9 +122,7 @@ class TestSuiteWriterTest{
     @Test
     fun testPythonCreatesPythonUtilsFile(){
 
-        val injector = LifecycleInjector.builder()
-            .withModules(BaseModule(), ReducedModule())
-            .build().createInjector()
+        val injector = getInjector()
 
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true

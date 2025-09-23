@@ -109,7 +109,14 @@ object BlackBoxUtils {
     fun runNpmTests(folderRelativePath: String) {
         runNpmInstall()
 
-        val command = listOf(npm(), "test", folderRelativePath)
+        val path = if(folderRelativePath.endsWith("/")){
+            folderRelativePath
+        } else {
+            //need to handle extremely annoying behavior of Jest using path as prefix by default
+            "$folderRelativePath/"
+        }
+
+        val command = listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
         runTestsCommand(command, JS_BASE_PATH, "NPM")
     }
 
