@@ -9,10 +9,10 @@ import java.nio.file.Path
 
 class JavaDtoOutput: DtoOutput {
 
-    override fun writeClass(testSuitePath: Path, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
-        setPackage(lines)
+        setPackage(lines, testSuitePackage)
         addImports(lines)
         initClass(lines, dtoFilename.getClassName())
         addClassContent(lines, dtoClass)
@@ -36,8 +36,9 @@ class JavaDtoOutput: DtoOutput {
         return "$listVarName.add($value);"
     }
 
-    private fun setPackage(lines: Lines) {
-        lines.add("package dto;")
+    private fun setPackage(lines: Lines, suitePackage: String) {
+        val pkgPrefix = if (suitePackage.isNotEmpty()) "$suitePackage." else ""
+        lines.add("package ${pkgPrefix}dto;")
         lines.addEmpty()
     }
 
