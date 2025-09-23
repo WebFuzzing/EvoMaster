@@ -127,7 +127,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (choiceGene != null) {
                 // TODO add support for payloads from choice genes
                 if (hasObjectOrArrayGene(choiceGene)) {
-                    // this because when using `format`, integer and number genes are being represented as ChoiceGene
+                    // this because when using `example` and `default` entries, "primitive" genes are represented as ChoiceGene with
+                    // an EnumGene and the actual String/Integer/Number/etc gene
                     throw IllegalStateException("Choice genes not yet supported for dto payload")
                 }
             } else {
