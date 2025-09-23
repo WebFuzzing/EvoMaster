@@ -223,7 +223,7 @@ public class DbCleaner {
             throw new IllegalStateException("Could not find any table");
         }
 
-        final List<String> tableToHandle;
+        List<String> tableToHandle;
         boolean toskip = tableToSkip != null;
         if (tableToClean != null) {
             tableToHandle = tableToClean;
@@ -231,6 +231,17 @@ public class DbCleaner {
             tableToHandle = tableToSkip;
         }
 
+        /*
+            FIXME need refactoring, this is a dirty hack
+         */
+        if(tableToHandle != null) {
+            tableToHandle = tableToHandle.stream()
+                    .map(t -> {
+                        String[] tokens = t.split("\\.");
+                        return tokens[tokens.length - 1];
+                    })
+                    .collect(Collectors.toList());
+        }
 
         if (tableToHandle != null) {
             for (String skip : tableToHandle) {
@@ -252,10 +263,11 @@ public class DbCleaner {
             rst.close();
         }
 
+        final List<String> tth = tableToHandle;
         List<String> tablesToClear = tables.stream()
-                .filter(n -> tableToHandle == null ||
-                        (toskip && (tableToHandle.isEmpty() || tableToHandle.stream().noneMatch(skip -> skip.equalsIgnoreCase(n)))) ||
-                        (!toskip && tableToHandle.stream().anyMatch(clean -> clean.equalsIgnoreCase(n)))
+                .filter(n -> tth == null ||
+                        (toskip && (tth.isEmpty() || tth.stream().noneMatch(skip -> skip.equalsIgnoreCase(n)))) ||
+                        (!toskip && tth.stream().anyMatch(clean -> clean.equalsIgnoreCase(n)))
                 )
                 .collect(Collectors.toList());
 

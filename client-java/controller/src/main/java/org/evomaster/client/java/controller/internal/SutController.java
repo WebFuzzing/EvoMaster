@@ -105,7 +105,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * track all tables accessed in a test
      *
-     * FIXME shouldn't use strings
+     * FIXME shouldn't use string SqlTableId
      */
     private final List<String> accessedTables = new CopyOnWriteArrayList<>();
 
@@ -118,7 +118,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * a map of table to fk target tables
      *
-     * FIXME shouldn't use strings
+     * FIXME shouldn't use string but SqlTableId
      */
     private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
 
@@ -126,7 +126,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     /**
      * a map of table to a set of commands which are to insert data into the db
      *
-     * FIXME shouldn't use strings
+     * FIXME shouldn't use string SqlTableId
      */
     private final Map<String, List<String>> tableInitSqlMap = new ConcurrentHashMap<>();
 
@@ -457,6 +457,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (sqlExecutionsDto != null) {
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            //TODO should accessedTables be renamed into modifiedTables???
             //accessedTables.addAll(executionDto.queriedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
@@ -716,20 +717,33 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return tablesToClean;
     }
 
-    private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
-        for (String t: accessedTables){
-            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
-                if (findInMapIgnoreCase(t, fkMap).isPresent()){
-                    tablesToClean.add(t);
-                    List<String> fk = fkMap.entrySet().stream().filter(e->
-                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
-                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
-                    if (!fk.isEmpty())
-                        fillTablesToClean(fk, tablesToClean);
-                }else {
-                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
-                }
 
+    private boolean hasTableNameDirtyHack(String name, Collection<String> tableIds){
+        //FIXME when refactoring datastructures in this class, remove
+        return tableIds.stream().anyMatch(i-> i.toLowerCase().endsWith(name.toLowerCase()));
+    }
+
+    private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
+        for (String t : accessedTables) {
+            if (findInCollectionIgnoreCase(t, tablesToClean).isPresent()) {
+                continue;
+            }
+            //if (findInMapIgnoreCase(t, fkMap).isPresent()) {
+            if(hasTableNameDirtyHack(t,fkMap.keySet())){
+                tablesToClean.add(t);
+                List<String> fk = fkMap.entrySet().stream()
+                        .filter(e ->
+                                        hasTableNameDirtyHack(t, e.getValue())
+                                    && !hasTableNameDirtyHack(e.getKey(), tablesToClean)
+//                                findInCollectionIgnoreCase(t, e.getValue()).isPresent()
+//                                        && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent())
+                        )
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                if (!fk.isEmpty())
+                    fillTablesToClean(fk, tablesToClean);
+            } else {
+                SimpleLogger.uniqueWarn("Cannot find the table " + t + " in [" + String.join(",", fkMap.keySet()) + "]");
             }
         }
     }
