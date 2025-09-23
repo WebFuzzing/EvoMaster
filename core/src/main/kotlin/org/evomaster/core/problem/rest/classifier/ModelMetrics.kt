@@ -1,39 +1,99 @@
 package org.evomaster.core.problem.rest.classifier
 
 /**
- * Interface for tracking and estimating performance metrics such as accuracy
- * and precision of a model that predicts HTTP response status codes for REST calls.
- * Metrics are updated incrementally as new predictions are made
- * and evaluated against actual execution results.
+ * Interface for tracking and estimating performance metrics of a model
+ * that predicts HTTP response status codes for REST calls.
+ *
+ * Implementations are expected to maintain internal counters for the confusion matrix:
+ * - TP (True Positives): predicted 400 and actual 400
+ * - TN (True Negatives): predicted not-400 and actual not-400
+ * - FP (False Positives): predicted 400 but actual not-400
+ * - FN (False Negatives): predicted not-400 but actual 400
+ *
+ * From these values, various metrics can be derived, such as:
+ * - Accuracy
+ * - Precision (for 400s)
+ * - Recall (for 400s)
+ * - F1 score (for 400s)
+ * - MCC (Matthews Correlation Coefficient, for 400 vs. not-400 classification)
  */
 interface ModelMetrics {
 
     /**
-     * Estimate the overall accuracy of the model.
-     * Accuracy is defined as the ratio of correct predictions
-     * over the total number of evaluated predictions.
+     * Return a bundle of all key performance metrics as a [ModelEvaluation].
+     *
+     * This is the preferred way to query the model’s performance,
+     * as it provides a single unified object instead of calling
+     * individual metric methods.
      */
-    fun estimateAccuracy() : Double
+    fun estimateMetrics(): ModelEvaluation
 
+    /**
+     * Estimate the overall accuracy of the model.
+     *
+     * Accuracy = (TP + TN) / (TP + TN + FP + FN)
+     *
+     * The proportion of correct predictions
+     * (both positives and negatives) out of all evaluated predictions.
+     */
+    fun estimateAccuracy(): Double
 
     /**
      * Estimate the precision of the model when predicting HTTP 400 responses.
-     * Precision is defined as the ratio of correctly predicted 400 responses
-     * over all predictions where the model predicted 400.
+     *
+     * Precision(400) = TP / (TP + FP)
+     *
+     * Of all the requests predicted as 400,
+     * how many were truly 400.
      */
     fun estimatePrecision400(): Double
 
     /**
-     * Update the internal metrics after a new prediction.
+     * Estimate the recall of the model when predicting HTTP 400 responses.
+     *
+     * Recall(400) = TP / (TP + FN)
+     *
+     * Of all the requests that were actually 400,
+     * how many the model correctly predicted as 400.
+     */
+    fun estimateRecall400(): Double
+
+    /**
+     * Estimate the F1 score of the model when predicting HTTP 400 responses.
+     *
+     * F1(400) = 2 * (Precision(400) * Recall(400)) / (Precision(400) + Recall(400))
+     *
+     * Harmonic mean of precision and recall,
+     * balancing false positives and false negatives.
+     */
+    fun estimateF1Score400(): Double
+
+    /**
+     * Estimate the Matthews Correlation Coefficient (MCC) for 400 prediction.
+     *
+     * MCC(400) = (TP*TN - FP*FN) /
+     *            sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))
+     *
+     * Ranges from -1 to 1:
+     * - +1 → perfect prediction
+     * -  0 → no better than random
+     * - -1 → total disagreement
+     *
+     * Considered one of the best single-value metrics
+     * for binary classification, especially with imbalanced data.
+     */
+    fun estimateMCC400(): Double
+
+    /**
+     * Update the internal performance counters after a new prediction.
      *
      * @param predictedStatusCode the status code predicted by the model
-     * @param actualStatusCode the true status code obtained after executing the test case
+     * @param actualStatusCode    the true status code obtained after executing the request
      *
      * Notes:
-     * - Accuracy and precision can only be updated if the actual status code is known
-     *   (i.e., after executing the test case).
-     * - If a prediction leads to rejecting an input without execution, no update can be made,
-     *   since the correctness of the prediction is unknown.
+     * - Accuracy, precision, recall, etc., can only be updated if the actual status code is known.
+     * - If a prediction leads to rejecting an input without execution,
+     *   no update can be made since the correctness of the prediction is unknown.
      */
     fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int)
 }

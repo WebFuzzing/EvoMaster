@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -62,28 +63,40 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         return m.classify(input)
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        val m = models[endpoint] ?: return 0.5
-        return m.estimateAccuracy(endpoint)
+    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
+        val m = models[endpoint] ?: return ModelEvaluation(
+            accuracy = 0.5,
+            precision400 = 0.5,
+            recall400 = 0.0,
+            f1Score400 = 0.0,
+            mcc = 0.0
+        )
+        return m.estimateMetrics(endpoint)
     }
 
-    override fun estimateOverallAccuracy(): Double {
-        if (models.isEmpty()) return 0.5
+    override fun estimateOverallMetrics(): ModelEvaluation {
+        if (models.isEmpty()) {
+            return ModelEvaluation(
+                accuracy = 0.5,
+                precision400 = 0.5,
+                recall400 = 0.0,
+                f1Score400 = 0.0,
+                mcc = 0.0
+            )
+        }
+
         val n = models.size.toDouble()
-        val sum = models.values.sumOf { it?.estimateOverallAccuracy() ?: 0.5 }
-        return sum / n
-    }
+        val total = models.values.map {
+            it?.estimateOverallMetrics() ?: ModelEvaluation(0.5, 0.5, 0.0, 0.0, 0.0)
+        }
 
-    override fun estimatePrecision400(endpoint: Endpoint): Double {
-        val m = models[endpoint] ?: return 0.5
-        return m.estimatePrecision400(endpoint)
-    }
-
-    override fun estimateOverallPrecision400(): Double {
-        if (models.isEmpty()) return 0.5
-        val n = models.size.toDouble()
-        val sum = models.values.sumOf { it?.estimateOverallPrecision400() ?: 0.5 }
-        return sum / n
+        return ModelEvaluation(
+            accuracy = total.sumOf { it.accuracy } / n,
+            precision400 = total.sumOf { it.precision400 } / n,
+            recall400 = total.sumOf { it.recall400 } / n,
+            f1Score400 = total.sumOf { it.f1Score400 } / n,
+            mcc = total.sumOf { it.mcc } / n
+        )
     }
 
     /**

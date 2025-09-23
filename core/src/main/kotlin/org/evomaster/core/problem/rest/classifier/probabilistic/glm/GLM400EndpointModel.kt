@@ -52,7 +52,7 @@ class GLM400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+        if (modelMetricsFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(

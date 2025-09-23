@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier
@@ -56,10 +57,8 @@ class AIResponseClassifier : AIModel {
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
-                override fun estimateAccuracy(endpoint: Endpoint): Double  = 0.0
-                override fun estimateOverallAccuracy(): Double = 0.0
-                override fun estimatePrecision400(endpoint: Endpoint): Double  = 0.0
-                override fun estimateOverallPrecision400(): Double = 0.0
+                override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation  = ModelEvaluation(accuracy = 0.5,precision400 = 0.5,recall400 = 0.0,f1Score400 = 0.0,mcc = 0.0)
+                override fun estimateOverallMetrics(): ModelEvaluation  = ModelEvaluation(accuracy = 0.5,precision400 = 0.5,recall400 = 0.0,f1Score400 = 0.0,mcc = 0.0)
             }
         }
     }
@@ -86,21 +85,15 @@ class AIResponseClassifier : AIModel {
         return delegate.classify(input)
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        return delegate.estimateAccuracy(endpoint)
+    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
+        return delegate.estimateMetrics(endpoint)
     }
 
-    override fun estimateOverallAccuracy(): Double {
-        return delegate.estimateOverallAccuracy()
+
+    override fun estimateOverallMetrics(): ModelEvaluation {
+        return delegate.estimateOverallMetrics()
     }
 
-    override fun estimatePrecision400(endpoint: Endpoint): Double {
-        return delegate.estimatePrecision400(endpoint)
-    }
-
-    override fun estimateOverallPrecision400(): Double {
-        return delegate.estimateOverallPrecision400()
-    }
 
     fun viewInnerModel(): AIModel = delegate
 
@@ -111,7 +104,9 @@ class AIResponseClassifier : AIModel {
      */
     fun attemptRepair(call: RestCallAction){
 
-        val accuracy = estimateAccuracy(call.endpoint)
+        val metrics = estimateMetrics(call.endpoint)
+        val accuracy = metrics.accuracy
+
         //TODO any better way to use this accuracy?
         if(!randomness.nextBoolean(accuracy)){
             //do nothing
