@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.service.fitness
 
-import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
@@ -37,6 +36,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
@@ -63,6 +63,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
 import javax.annotation.PostConstruct
+import javax.inject.Inject
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -90,6 +91,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    @Inject
+    protected lateinit var callGraphService: CallGraphService
+
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -988,9 +993,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && builder.hasParameterChild(a)) {
-                    location = a.resolvedPath() + "/" + id.value
-                    rcr.setHeuristicsForChainedLocation(true)
+                if (id != null) {
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+                    if(location != null) {
+                        rcr.setHeuristicsForChainedLocation(true)
+                    }
                 }
             }
 
