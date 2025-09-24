@@ -14,6 +14,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -49,7 +50,7 @@ class EMConfig {
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
 
         private const val headerRegex = "(.+:.+)|(^$)"
-
+        private const val faultCodeRegex = "(\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
@@ -2502,14 +2503,11 @@ class EMConfig {
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
 
-    @Cfg("Disable security oracles. Provide a comma-separated list of codes to disable. " +
-                "Available codes: " +
-                "204 = SECURITY_EXISTENCE_LEAKAGE, " +
-                "205 = SECURITY_NOT_RECOGNIZED_AUTHENTICATED, " +
-                "206 = SECURITY_WRONG_AUTHORIZATION. " +
+    @Regex(faultCodeRegex)
+    @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
                 "By default, all oracles are enabled."
     )
-    var disabledSecurityOracleCodes = ""
+    var disabledOracleCodes = ""
 
     enum class VulnerableInputClassificationStrategy {
         /**
@@ -2783,15 +2781,18 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
-    fun getDisabledSecurityOracleCodesList() = disabledSecurityOracleCodes
+    fun getDisabledSecurityOracleCodesList() = disabledOracleCodes
         .split(",")
         .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
         .map { str ->
             val code = str.toIntOrNull()
                 ?: throw IllegalArgumentException("Invalid number: $str")
 
-            DefinedFaultCategory.values()
-                .firstOrNull { it.code == code && code in 200..299 }
-                ?: throw IllegalArgumentException("Invalid or non-2xx (security) fault code: $code")
+            val allCategories = DefinedFaultCategory.values().asList() + ExperimentalFaultCategory.values()
+
+            allCategories.firstOrNull { it.code == code }
+                ?: throw ConfigProblemException("Invalid fault code: $code" +
+                " All available codes are: \n" +
+                        allCategories.joinToString(separator = "\n") { "${it.code} (${it.name})" })
         }
 }

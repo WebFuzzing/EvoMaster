@@ -53,7 +53,7 @@ class OracleDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledSecurityOracleCodes", "204,205,206")
+            setOption(args, "disabledOracleCodes", "204,205,206")
 
             val solution = initAndRun(args)
 
@@ -76,7 +76,7 @@ class OracleDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledSecurityOracleCodes", "204")
+            setOption(args, "disabledOracleCodes", "204")
 
             val solution = initAndRun(args)
 

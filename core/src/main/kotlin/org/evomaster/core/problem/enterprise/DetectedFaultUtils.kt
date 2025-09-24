@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.ActionResult
 
 object DetectedFaultUtils {
 
@@ -13,6 +14,14 @@ object DetectedFaultUtils {
         }
 
         return ei.seeResults()
+            .filterIsInstance<EnterpriseActionResult>()
+            .flatMap { it.getFaults() }
+            .toSet()
+    }
+
+    fun getDetectedFaults(actionResults: List<ActionResult>) : Set<DetectedFault> {
+
+        return actionResults
             .filterIsInstance<EnterpriseActionResult>()
             .flatMap { it.getFaults() }
             .toSet()
@@ -35,6 +44,11 @@ object DetectedFaultUtils {
         return solution.individuals
             .flatMap { getDetectedFaultCategories(it) }
             .toSet()
+    }
+
+    fun verifyExcludedCategories(actionResults: List<ActionResult>, excludedCategories: List<FaultCategory>) : Boolean {
+        val detected = getDetectedFaults(actionResults).map { it.category }.toSet()
+        return excludedCategories.intersect(detected).isEmpty()
     }
 
 }

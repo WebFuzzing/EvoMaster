@@ -11,6 +11,7 @@ import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUti
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -1083,6 +1084,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         analyzeResponseData(fv,individual,actionResults,dto.additionalInfoList)
 
+        // check that excluded fault categories are not present
+        Lazy.assert{
+            DetectedFaultUtils.verifyExcludedCategories(actionResults ,
+                config.getDisabledSecurityOracleCodesList() as List<FaultCategory>
+            )
+        }
         return dto
     }
 
