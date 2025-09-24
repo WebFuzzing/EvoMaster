@@ -157,7 +157,7 @@ class SSRFAnalyser {
                 if (action is RestCallAction) {
                     val actionFaultMapping = ActionFaultMapping(action.getName())
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
-                        extractBodyParameters(action.parameters)
+                        extractRequestParameters(action.parameters)
 
                     inputFaultMapping.forEach { (paramName, paramMapping) ->
                         val answer = when (config.vulnerableInputClassificationStrategy) {
@@ -241,7 +241,7 @@ class SSRFAnalyser {
     /**
      * Extract descriptions from the Gene of body payloads.
      */
-    private fun extractBodyParameters(
+    private fun extractRequestParameters(
         parameters: List<Param>
     ): MutableMap<String, InputFaultMapping> {
         val output = mutableMapOf<String, InputFaultMapping>()
