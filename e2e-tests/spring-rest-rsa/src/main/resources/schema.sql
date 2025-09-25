@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS user (
+    id_card_no VARCHAR(18) PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20) NOT NULL
+);
