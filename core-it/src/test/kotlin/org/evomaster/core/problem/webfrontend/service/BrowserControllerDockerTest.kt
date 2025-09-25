@@ -83,4 +83,49 @@ internal class BrowserControllerDockerTest{
         browser.goBack()
         assertEquals(aPage, browser.getCurrentUrl())
     }
+
+    //TODO @IVa add test for Select
+    @Test
+    fun testSingleSelect(){
+        browser.initUrlOfStartingPage("http://localhost:8080/",true)
+        //browser.initUrlOfStartingPage("http://localhost:${getPort()}",true)// to double check
+        browser.goToStartingPage()
+
+        var actions = browser.computePossibleUserInteractions()
+        assertEquals(1, actions.size)
+        val homePage = browser.getCurrentUrl()
+        assertTrue(homePage.endsWith("/"), homePage)
+        val a = actions[0] // first action is the dropdown list
+        assertEquals(UserActionType.SELECT_SINGLE, a.userActionType)
+
+        browser.selectAndWaitPageLoad(a.cssSelector, listOf(a.inputs[1].toString()))
+        val page1 = browser.getCurrentUrl()
+        assertTrue(page1.endsWith("1?"), page1)// ? to be fixed
+
+        actions = browser.computePossibleUserInteractions()
+        assertEquals(1, actions.size)
+        var backHome = actions.first { it.cssSelector.contains("a") }
+        browser.clickAndWaitPageLoad(backHome.cssSelector)
+        assertEquals(homePage, browser.getCurrentUrl())
+
+        browser.selectAndWaitPageLoad(a.cssSelector, listOf(a.inputs[2].toString()))
+        val page2 = browser.getCurrentUrl()
+        assertTrue(page2.endsWith("2?"), page2)
+        actions = browser.computePossibleUserInteractions()
+        assertEquals(1, actions.size)
+        backHome = actions.first { it.cssSelector.contains("a") }
+        browser.clickAndWaitPageLoad(backHome.cssSelector)
+        assertEquals(homePage, browser.getCurrentUrl())
+
+        browser.selectAndWaitPageLoad(a.cssSelector, listOf(a.inputs[3].toString()))
+        val page3 = browser.getCurrentUrl()
+        assertTrue(page3.endsWith("3?"), page3)
+        actions = browser.computePossibleUserInteractions()
+        assertEquals(1, actions.size)
+        backHome = actions.first { it.cssSelector.contains("a") }
+        browser.clickAndWaitPageLoad(backHome.cssSelector)
+        assertEquals(homePage, browser.getCurrentUrl())
+
+    }
+
 }

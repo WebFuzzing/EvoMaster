@@ -25,6 +25,13 @@
 
 
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>4.0.1</version>
+            <scope>provided</scope> <!-- Tomcat provides this at runtime -->
+        </dependency>
+
+        <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-utils</artifactId>
             <type>test-jar</type>
