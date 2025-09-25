@@ -2538,7 +2538,8 @@ class EMConfig {
     var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
 
     @Experimental
-    @Cfg("HTTP callback URL hostname")
+    @Cfg("HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a " +
+            "container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname.")
     var callbackURLHostname = "localhost"
 
     @Experimental
