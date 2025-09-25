@@ -57,17 +57,8 @@ class ModelMetricsWithTimeWindow(
     }
 
     /**
-     * F1(400) = 2 * (Precision * Recall) / (Precision + Recall)
-     */
-    override fun estimateF1Score400(): Double {
-        val p = estimatePrecision400()
-        val r = estimateRecall400()
-        return if (p + r > 0.0) 2 * (p * r) / (p + r) else 0.0
-    }
-
-    /**
-     * MCC(400) = (TP*TN - FP*FN) /
-     *            sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))
+     * Matthews Correlation Coefficient (MCC)
+     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
      */
     override fun estimateMCC400(): Double {
         val tp = truePositive400Queue.count { it }.toDouble()
@@ -87,7 +78,6 @@ class ModelMetricsWithTimeWindow(
             accuracy = estimateAccuracy(),
             precision400 = estimatePrecision400(),
             recall400 = estimateRecall400(),
-            f1Score400 = estimateF1Score400(),
             mcc = estimateMCC400()
         )
     }
@@ -100,11 +90,16 @@ class ModelMetricsWithTimeWindow(
         val predictionWasCorrect = predictedStatusCode == actualStatusCode
         queue.add(predictionWasCorrect)
 
-        when {
-            actualStatusCode == 400 && predictedStatusCode == 400 -> truePositive400Queue.add(true)
-            actualStatusCode == 400 && predictedStatusCode != 400 -> falseNegative400Queue.add(true)
-            actualStatusCode != 400 && predictedStatusCode == 400 -> falsePositive400Queue.add(true)
-            actualStatusCode != 400 && predictedStatusCode != 400 -> trueNegative400Queue.add(true)
-        }
+
+        val isTP = (actualStatusCode == 400 && predictedStatusCode == 400) //True Positive
+        val isFN = (actualStatusCode == 400 && predictedStatusCode != 400) //False Negative
+        val isFP = (actualStatusCode != 400 && predictedStatusCode == 400) //False Positive
+        val isTN = (actualStatusCode != 400 && predictedStatusCode != 400) // True Negative
+
+        truePositive400Queue.add(isTP)
+        falseNegative400Queue.add(isFN)
+        falsePositive400Queue.add(isFP)
+        trueNegative400Queue.add(isTN)
+
     }
 }

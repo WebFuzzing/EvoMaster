@@ -57,8 +57,8 @@ class AIResponseClassifier : AIModel {
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
-                override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation  = ModelEvaluation(accuracy = 0.5,precision400 = 0.5,recall400 = 0.0,f1Score400 = 0.0,mcc = 0.0)
-                override fun estimateOverallMetrics(): ModelEvaluation  = ModelEvaluation(accuracy = 0.5,precision400 = 0.5,recall400 = 0.0,f1Score400 = 0.0,mcc = 0.0)
+                override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
+                override fun estimateOverallMetrics(): ModelEvaluation  = ModelEvaluation.DEFAULT_NO_DATA
             }
         }
     }

@@ -20,15 +20,6 @@ package org.evomaster.core.problem.rest.classifier
 interface ModelMetrics {
 
     /**
-     * Return a bundle of all key performance metrics as a [ModelEvaluation].
-     *
-     * This is the preferred way to query the model’s performance,
-     * as it provides a single unified object instead of calling
-     * individual metric methods.
-     */
-    fun estimateMetrics(): ModelEvaluation
-
-    /**
      * Estimate the overall accuracy of the model.
      *
      * Accuracy = (TP + TN) / (TP + TN + FP + FN)
@@ -59,20 +50,9 @@ interface ModelMetrics {
     fun estimateRecall400(): Double
 
     /**
-     * Estimate the F1 score of the model when predicting HTTP 400 responses.
+     * Estimate the Matthews Correlation Coefficient (MCC) for prediction 400.
      *
-     * F1(400) = 2 * (Precision(400) * Recall(400)) / (Precision(400) + Recall(400))
-     *
-     * Harmonic mean of precision and recall,
-     * balancing false positives and false negatives.
-     */
-    fun estimateF1Score400(): Double
-
-    /**
-     * Estimate the Matthews Correlation Coefficient (MCC) for 400 prediction.
-     *
-     * MCC(400) = (TP*TN - FP*FN) /
-     *            sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))
+     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
      *
      * Ranges from -1 to 1:
      * - +1 → perfect prediction
@@ -85,13 +65,29 @@ interface ModelMetrics {
     fun estimateMCC400(): Double
 
     /**
+     * Return a bundle of all key performance metrics as a [ModelEvaluation].
+     *
+     * This is the preferred way to query the model’s performance,
+     * as it provides a single unified object instead of calling
+     * individual metric methods.
+     */
+    fun estimateMetrics(): ModelEvaluation =
+        ModelEvaluation(
+            accuracy = estimateAccuracy(),
+            precision400 = estimatePrecision400(),
+            recall400 = estimateRecall400(),
+            mcc = estimateMCC400()
+        )
+
+
+    /**
      * Update the internal performance counters after a new prediction.
      *
      * @param predictedStatusCode the status code predicted by the model
      * @param actualStatusCode    the true status code obtained after executing the request
      *
      * Notes:
-     * - Accuracy, precision, recall, etc., can only be updated if the actual status code is known.
+     * - Accuracy, precision, recall, etc. can only be updated if the actual status code is known.
      * - If a prediction leads to rejecting an input without execution,
      *   no update can be made since the correctness of the prediction is unknown.
      */

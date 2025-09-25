@@ -76,29 +76,22 @@ abstract class AbstractProbabilistic400EndpointModel(
         verifyEndpoint(endpoint)
         if (!initialized) {
             // hasn’t learned anything yet → return defaults
-            return ModelEvaluation(
-                accuracy = 0.5,
-                precision400 = 0.5,
-                recall400 = 0.0,
-                f1Score400 = 0.0,
-                mcc = 0.0
-            )
+            return ModelEvaluation.DEFAULT_NO_DATA
         }
 
-        val acc = modelMetrics.estimateAccuracy()
-        val prec = modelMetrics.estimatePrecision400()
-        val rec = modelMetrics.estimateRecall400()
-        val f1 = if (prec + rec == 0.0) 0.0 else 2 * (prec * rec) / (prec + rec)
-        val mcc = modelMetrics.estimateMCC400()
-
-        return ModelEvaluation(acc, prec, rec, f1, mcc)
+        return ModelEvaluation(
+            modelMetrics.estimateAccuracy(),
+            modelMetrics.estimatePrecision400(),
+            modelMetrics.estimateRecall400(),
+            modelMetrics.estimateMCC400()
+        )
     }
 
     /** Default overall metrics estimates */
     override fun estimateOverallMetrics(): ModelEvaluation {
         if (!initialized) {
             // hasn’t learned anything yet
-            return ModelEvaluation(0.5, 0.5, 0.0, 0.0, 0.0)
+            return ModelEvaluation.DEFAULT_NO_DATA
         }
         return modelMetrics.estimateMetrics()
     }

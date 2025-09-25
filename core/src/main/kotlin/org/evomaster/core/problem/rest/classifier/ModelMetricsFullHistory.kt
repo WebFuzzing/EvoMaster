@@ -48,8 +48,8 @@ class ModelMetricsFullHistory : ModelMetrics {
      * Of all requests predicted as 400, how many were truly 400.
      */
     override fun estimatePrecision400(): Double {
-        val denom = truePositive400 + falsePositive400
-        return if (denom > 0) truePositive400.toDouble() / denom else 0.0
+        val denominator = truePositive400 + falsePositive400
+        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
     }
 
     /**
@@ -62,20 +62,12 @@ class ModelMetricsFullHistory : ModelMetrics {
         return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
     }
 
-    /**
-     * F1(400) = 2 * (Precision * Recall) / (Precision + Recall)
-     *
-     * Harmonic mean of precision and recall.
-     */
-    override fun estimateF1Score400(): Double {
-        val p = estimatePrecision400()
-        val r = estimateRecall400()
-        return if ((p + r) > 0.0) 2 * (p * r) / (p + r) else 0.0
-    }
 
     /**
-     * MCC(400) = (TP*TN - FP*FN) /
-     *            sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))
+     * Matthews Correlation Coefficient (MCC)
+     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
+     *
+     * See: [Wikipedia: Matthews correlation coefficient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)
      *
      * Matthews Correlation Coefficient, robust even with imbalanced data.
      */
@@ -97,7 +89,6 @@ class ModelMetricsFullHistory : ModelMetrics {
             accuracy = estimateAccuracy(),
             precision400 = estimatePrecision400(),
             recall400 = estimateRecall400(),
-            f1Score400 = estimateF1Score400(),
             mcc = estimateMCC400()
         )
     }
