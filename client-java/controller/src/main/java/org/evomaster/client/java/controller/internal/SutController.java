@@ -603,20 +603,27 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 //List<String> tablesToClean = new ArrayList<>();
                 List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
+
+                    //FIXME ignoring schema here
+                    List<String> names = tablesToClean.stream().map(it -> {
+                        String [] tokens = it.split("\\.");
+                        return tokens[tokens.length - 1];
+                    }).collect(Collectors.toList());
+
                     /*
                         TODO should emDbClean.schemaNames be deprecated/removed?
                      */
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
                         emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
                     } else {
-                        //FIXME ignoring schema here
-                        List<String> names = tablesToClean.stream().map(it -> {
-                            String [] tokens = it.split("\\.");
-                            return tokens[tokens.length - 1];
-                        }).collect(Collectors.toList());
                         DbCleaner.clearDatabase(getConnectionIfExist(), null, null, names, emDbClean.dbType, true);
                     }
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
+
+                    // tableDataToInit = tablesToClean.stream()
+                    //FIXME
+                    tableDataToInit = names.stream()
+                            .filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a)))
+                            .collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
