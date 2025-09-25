@@ -34,9 +34,15 @@ data class ModelEvaluation(
         require(mcc in -1.0..1.0) { "MCC must be in [-1,1], but was $mcc" }
     }
 
-    /** F1-score, as the harmonic mean of precision and recall balancing false positives and false negatives.
-     * F1-score 400 automatically derived from precision and recall as
+    /**
+     * F1-score, automatically derived from precision and recall.
+     *
      * F1(400) = 2 * (Precision(400) * Recall(400)) / (Precision(400) + Recall(400))
+     *
+     * Harmonic mean of precision and recall,
+     * balancing false positives and false negatives.
+     *
+     * See: [Wikipedia: F-score](https://en.wikipedia.org/wiki/F-score)
      */
     val f1Score400: Double = if (precision400 + recall400 == 0.0) {
         0.0

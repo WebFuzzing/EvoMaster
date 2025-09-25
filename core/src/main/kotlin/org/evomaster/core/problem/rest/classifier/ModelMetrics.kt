@@ -25,7 +25,8 @@ interface ModelMetrics {
      * Accuracy = (TP + TN) / (TP + TN + FP + FN)
      *
      * The proportion of correct predictions
-     * (both positives and negatives) out of all evaluated predictions.
+     *
+     * See: [Wikipedia: Accuracy and precision](https://en.wikipedia.org/wiki/Accuracy_and_precision)
      */
     fun estimateAccuracy(): Double
 
@@ -34,8 +35,9 @@ interface ModelMetrics {
      *
      * Precision(400) = TP / (TP + FP)
      *
-     * Of all the requests predicted as 400,
-     * how many were truly 400.
+     * Of all the requests predicted as 400, how many were truly 400.
+     *
+     * See: [Wikipedia: Precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)
      */
     fun estimatePrecision400(): Double
 
@@ -46,6 +48,8 @@ interface ModelMetrics {
      *
      * Of all the requests that were actually 400,
      * how many the model correctly predicted as 400.
+     *
+     * See: [Wikipedia: Precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)
      */
     fun estimateRecall400(): Double
 
@@ -54,13 +58,15 @@ interface ModelMetrics {
      *
      * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
      *
-     * Ranges from -1 to 1:
+     * MCC ranges from -1 to 1:
      * - +1 → perfect prediction
      * -  0 → no better than random
      * - -1 → total disagreement
      *
      * Considered one of the best single-value metrics
      * for binary classification, especially with imbalanced data.
+     *
+     * See: [Wikipedia: Matthews correlation coefficient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)
      */
     fun estimateMCC400(): Double
 
@@ -68,8 +74,7 @@ interface ModelMetrics {
      * Return a bundle of all key performance metrics as a [ModelEvaluation].
      *
      * This is the preferred way to query the model’s performance,
-     * as it provides a single unified object instead of calling
-     * individual metric methods.
+     * as it provides a single unified object instead of calling individual metric methods.
      */
     fun estimateMetrics(): ModelEvaluation =
         ModelEvaluation(

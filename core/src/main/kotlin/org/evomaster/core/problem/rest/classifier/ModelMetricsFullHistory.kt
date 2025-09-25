@@ -33,44 +33,27 @@ class ModelMetricsFullHistory : ModelMetrics {
     var trueNegative400: Int = 0
         private set
 
-    /**
-     * Accuracy = (TP + TN) / (TP + TN + FP + FN)
-     */
+    /** Model Accuracy. See [ModelMetrics.estimateAccuracy] */
     override fun estimateAccuracy(): Double {
         return if (totalSentRequests > 0) {
             correctPrediction.toDouble() / totalSentRequests
         } else 0.0
     }
 
-    /**
-     * Precision(400) = TP / (TP + FP)
-     *
-     * Of all requests predicted as 400, how many were truly 400.
-     */
+    /** Precision 400. See [ModelMetrics.estimatePrecision400] */
     override fun estimatePrecision400(): Double {
         val denominator = truePositive400 + falsePositive400
         return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
     }
 
-    /**
-     * Recall(400) = TP / (TP + FN)
-     *
-     * Of all requests that were actually 400, how many were correctly predicted as 400.
-     */
+    /** Recall 400. See [ModelMetrics.estimateRecall400] */
     override fun estimateRecall400(): Double {
         val denominator = truePositive400 + falseNegative400
         return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
     }
 
 
-    /**
-     * Matthews Correlation Coefficient (MCC)
-     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
-     *
-     * See: [Wikipedia: Matthews correlation coefficient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)
-     *
-     * Matthews Correlation Coefficient, robust even with imbalanced data.
-     */
+    /** Matthews Correlation Coefficient (MCC). See [ModelMetrics.estimateMCC400] */
     override fun estimateMCC400(): Double {
         val tp = truePositive400.toDouble()
         val tn = trueNegative400.toDouble()
@@ -81,9 +64,7 @@ class ModelMetricsFullHistory : ModelMetrics {
         return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
     }
 
-    /**
-     * Unified metrics estimate packaged into a [ModelEvaluation].
-     */
+    /** Unified metrics estimate packaged into a [ModelEvaluation] */
     override fun estimateMetrics(): ModelEvaluation {
         return ModelEvaluation(
             accuracy = estimateAccuracy(),

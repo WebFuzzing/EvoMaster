@@ -28,9 +28,8 @@ class ModelMetricsWithTimeWindow(
     private val falseNegative400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
     private val trueNegative400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
 
-    /**
-     * Accuracy = (TP + TN) / (TP + TN + FP + FN)
-     */
+
+    /** Model Accuracy. See [ModelMetrics.estimateAccuracy] */
     override fun estimateAccuracy(): Double {
         if (queue.isEmpty()) return 0.0
         val n = queue.size.toDouble()
@@ -38,28 +37,23 @@ class ModelMetricsWithTimeWindow(
         return ok / n
     }
 
-    /**
-     * Precision(400) = TP / (TP + FP)
-     */
+    /** Precision 400. See [ModelMetrics.estimatePrecision400] */
     override fun estimatePrecision400(): Double {
         val tp = truePositive400Queue.count { it }
         val fp = falsePositive400Queue.count { it }
         return if ((tp + fp) > 0) tp.toDouble() / (tp + fp) else 0.0
     }
 
-    /**
-     * Recall(400) = TP / (TP + FN)
-     */
+
+    /** Recall 400. See [ModelMetrics.estimateRecall400] */
     override fun estimateRecall400(): Double {
         val tp = truePositive400Queue.count { it }
         val fn = falseNegative400Queue.count { it }
         return if ((tp + fn) > 0) tp.toDouble() / (tp + fn) else 0.0
     }
 
-    /**
-     * Matthews Correlation Coefficient (MCC)
-     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
-     */
+
+    /** Matthews Correlation Coefficient (MCC). See [ModelMetrics.estimateMCC400] */
     override fun estimateMCC400(): Double {
         val tp = truePositive400Queue.count { it }.toDouble()
         val tn = trueNegative400Queue.count { it }.toDouble()
@@ -70,9 +64,7 @@ class ModelMetricsWithTimeWindow(
         return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
     }
 
-    /**
-     * Unified metrics estimate packaged into a [ModelEvaluation].
-     */
+    /** Unified metrics estimate packaged into a [ModelEvaluation] */
     override fun estimateMetrics(): ModelEvaluation {
         return ModelEvaluation(
             accuracy = estimateAccuracy(),
