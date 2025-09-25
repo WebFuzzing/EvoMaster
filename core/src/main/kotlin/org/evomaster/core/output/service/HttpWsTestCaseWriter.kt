@@ -22,6 +22,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
@@ -124,25 +126,34 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             val actionName = call.getName()
             if (choiceGene != null) {
                 // TODO add support for payloads from choice genes
-                throw IllegalStateException("Choice genes not yet supported for dto payload")
+                if (hasObjectOrArrayGene(choiceGene)) {
+                    // this because when using `example` and `default` entries, "primitive" genes are represented as ChoiceGene with
+                    // an EnumGene and the actual String/Integer/Number/etc gene
+                    throw IllegalStateException("Choice genes not yet supported for dto payload")
+                }
             } else {
                 val leafGene = primaryGene.getLeafGene()
-                val geneToDto = GeneToDto(format)
+                if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
+                    val geneToDto = GeneToDto(format)
 
-                val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
-                val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
+                    val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
+                    val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
 
-                dtoCall.objectCalls.forEach {
-                    lines.add(it)
+                    dtoCall.objectCalls.forEach {
+                        lines.add(it)
+                    }
+                    lines.addEmpty()
+                    return dtoCall.varName
                 }
-                lines.addEmpty()
-                return dtoCall.varName
             }
 
         }
         return ""
     }
 
+    private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { it is ObjectGene || it is ArrayGene<*> }
+    }
 
     protected fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
 
@@ -532,9 +543,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
                 }
-                else -> {
-                    writeJvmJavaScriptJsonBody(lines, send, bodyLines, dtoVar, false)
-                }
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
             }
         } else {
             when {
@@ -558,31 +568,38 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.add("${bodyLines.last()}")
                     }
                 }
-                else -> {
-                    writeJvmJavaScriptJsonBody(lines, send, bodyLines, dtoVar, true)
-                }
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
             }
         }
     }
 
-    private fun writeJvmJavaScriptJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+    private fun writeJavaOrKotlinJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
         // TODO: When performing robustness testing, we'll need to check the individual type and send data
         //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
-        if (config.dtoForRequestPayload && format.isJava()) {
+        if (shouldUseDtoForPayload(dtoVar)) {
             lines.add(".$send(${dtoVar})")
         } else {
-            lines.add(".$send(${bodyLines.first()}")
-            if (isMultiLine) {
-                lines.append(" + ")
-                lines.indented {
-                    (1 until bodyLines.lastIndex).forEach { i ->
-                        lines.add("${bodyLines[i]} + ")
-                    }
-                    lines.add("${bodyLines.last()}")
-                }
-            }
-            lines.append(")")
+            writeStringifiedPayload(lines, send, bodyLines, isMultiLine)
         }
+    }
+
+    private fun shouldUseDtoForPayload(dtoVar: String?): Boolean {
+        return config.dtoForRequestPayload && format.isJava() && dtoVar?.isNotEmpty() == true
+    }
+
+    private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
+        lines.add(".$send(${bodyLines.first()}")
+        if (isMultiLine) {
+            lines.append(" + ")
+            lines.indented {
+                (1 until bodyLines.lastIndex).forEach { i ->
+                    lines.add("${bodyLines[i]} + ")
+                }
+                lines.add("${bodyLines.last()}")
+            }
+        }
+        lines.append(")")
     }
 
     /**
