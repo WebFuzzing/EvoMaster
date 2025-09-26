@@ -16,6 +16,9 @@ public class InsertionDto {
      */
     public Long id;
 
+    /**
+     * FIXME schema
+     */
     public String targetTable;
 
     public List<InsertionEntryDto> data = new ArrayList<>();

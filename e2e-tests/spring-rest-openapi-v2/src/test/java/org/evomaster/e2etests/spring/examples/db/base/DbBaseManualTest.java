@@ -13,6 +13,10 @@ import static org.hamcrest.CoreMatchers.is;
 
 public class DbBaseManualTest extends DbBaseTestBase {
 
+    @BeforeEach
+    public void reset(){
+        controller.resetDatabase(Collections.singletonList("db_base_entity"));
+    }
 
     @Test
     public void testCreateOne() {
@@ -93,9 +97,5 @@ public class DbBaseManualTest extends DbBaseTestBase {
                 .body("size()", is(2));
     }
 
-    @BeforeEach
-    public void reset(){
-        controller.resetDatabase(Collections.singletonList("db_base_entity"));
-    }
 
 }

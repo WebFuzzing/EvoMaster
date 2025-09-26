@@ -24,6 +24,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.MongoIns
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ExtraConstraintsDto;
 import org.evomaster.client.java.controller.api.dto.MockDatabaseDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
@@ -103,6 +104,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * track all tables accessed in a test
+     *
+     * FIXME shouldn't use string SqlTableId
      */
     private final List<String> accessedTables = new CopyOnWriteArrayList<>();
 
@@ -114,12 +117,16 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     /**
      * a map of table to fk target tables
+     *
+     * FIXME shouldn't use string but SqlTableId
      */
     private final Map<String, List<String>> fkMap = new ConcurrentHashMap<>();
 
 
     /**
      * a map of table to a set of commands which are to insert data into the db
+     *
+     * FIXME shouldn't use string SqlTableId
      */
     private final Map<String, List<String>> tableInitSqlMap = new ConcurrentHashMap<>();
 
@@ -417,9 +424,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (!additionalInfoList.isEmpty()) {
             AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
             last.getSqlInfoData().stream().forEach(it -> {
-//                    String sql = it.getCommand();
                 try {
-                    final SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(it.getSqlCommand(), it.hasThrownSqlException(), it.getExecutionTime());
+                    SqlExecutionLogDto sqlExecutionLogDto = new SqlExecutionLogDto(
+                            it.getSqlCommand(),
+                            it.hasThrownSqlException(),
+                            it.getExecutionTime());
                     sqlHandler.handle(sqlExecutionLogDto);
                 } catch (Exception e) {
                     SimpleLogger.error("FAILED TO HANDLE SQL COMMAND: " + it.getSqlCommand());
@@ -448,8 +457,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         if (sqlExecutionsDto != null) {
             accessedTables.addAll(sqlExecutionsDto.deletedData);
             accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
+            //TODO should accessedTables be renamed into modifiedTables???
             //accessedTables.addAll(executionDto.queriedData.keySet());
-//            accessedTables.addAll(sqlExecutionsDto.insertedData.keySet());
             accessedTables.addAll(sqlExecutionsDto.updatedData.keySet());
         }
     }
@@ -568,17 +577,53 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         try {
             setExecutingInitSql(true);
 
-            // clean accessed tables
+//            // clean accessed tables
+//            Set<String> tableDataToInit = null;
+//            if (!accessedTables.isEmpty()){
+//                List<String> tablesToClean = getTablesToClean(accessedTables);
+//                if (!tablesToClean.isEmpty()){
+//                    if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
+//                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
+//                    } else {
+//                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, tablesToClean, emDbClean.dbType, true);
+//                    }
+//                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> t.equalsIgnoreCase(a))).collect(Collectors.toSet());
+//                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
+//                    }else
+//                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
+//                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
+//
+//                handleInitSqlInDbClean(tableDataToInit, emDbClean);
+//
+//            }
+////            }
+
             Set<String> tableDataToInit = null;
             if (!accessedTables.isEmpty()){
-                List<String> tablesToClean = new ArrayList<>();
-                getTableToClean(accessedTables, tablesToClean);
+                //List<String> tablesToClean = new ArrayList<>();
+                List<String> tablesToClean = getTablesToClean(accessedTables);
                 if (!tablesToClean.isEmpty()){
+
+                    //FIXME ignoring schema here
+                    List<String> names = tablesToClean.stream().map(it -> {
+                        String [] tokens = it.split("\\.");
+                        return tokens[tokens.length - 1];
+                    }).collect(Collectors.toList());
+
+                    /*
+                        TODO should emDbClean.schemaNames be deprecated/removed?
+                     */
                     if (emDbClean.schemaNames != null && !emDbClean.schemaNames.isEmpty()){
-                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType));
-                    }else
-                        DbCleaner.clearDatabase(getConnectionIfExist(), null,  null, tablesToClean, emDbClean.dbType);
-                    tableDataToInit = tablesToClean.stream().filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a))).collect(Collectors.toSet());
+                        emDbClean.schemaNames.forEach(sch-> DbCleaner.clearDatabase(getConnectionIfExist(), sch,  null, tablesToClean, emDbClean.dbType, true));
+                    } else {
+                        DbCleaner.clearDatabase(getConnectionIfExist(), null, null, names, emDbClean.dbType, true);
+                    }
+
+                    // tableDataToInit = tablesToClean.stream()
+                    //FIXME
+                    tableDataToInit = names.stream()
+                            .filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a)))
+                            .collect(Collectors.toSet());
                 }
             }
             handleInitSqlInDbClean(tableDataToInit, emDbClean);
@@ -673,20 +718,39 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         successfulInitSqlInsertions.add(insertionDto);
     }
 
-    private void getTableToClean(List<String> accessedTables, List<String> tablesToClean){
-        for (String t: accessedTables){
-            if (!findInCollectionIgnoreCase(t, tablesToClean).isPresent()){
-                if (findInMapIgnoreCase(t, fkMap).isPresent()){
-                    tablesToClean.add(t);
-                    List<String> fk = fkMap.entrySet().stream().filter(e->
-                            findInCollectionIgnoreCase(t, e.getValue()).isPresent()
-                                    && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent()).map(Map.Entry::getKey).collect(Collectors.toList());
-                    if (!fk.isEmpty())
-                        getTableToClean(fk, tablesToClean);
-                }else {
-                    SimpleLogger.uniqueWarn("Cannot find the table "+t+" in ["+String.join(",", fkMap.keySet())+"]");
-                }
+    private List<String> getTablesToClean(List<String> accessedTables) {
+        List<String> tablesToClean = new ArrayList<>();
+        fillTablesToClean(accessedTables,tablesToClean);
+        return tablesToClean;
+    }
 
+
+    private boolean hasTableNameDirtyHack(String name, Collection<String> tableIds){
+        //FIXME when refactoring datastructures in this class, remove
+        return tableIds.stream().anyMatch(i-> i.toLowerCase().endsWith(name.toLowerCase()));
+    }
+
+    private void fillTablesToClean(List<String> accessedTables, List<String> tablesToClean){
+        for (String t : accessedTables) {
+            if (findInCollectionIgnoreCase(t, tablesToClean).isPresent()) {
+                continue;
+            }
+            //if (findInMapIgnoreCase(t, fkMap).isPresent()) {
+            if(hasTableNameDirtyHack(t,fkMap.keySet())){
+                tablesToClean.add(t);
+                List<String> fk = fkMap.entrySet().stream()
+                        .filter(e ->
+                                        hasTableNameDirtyHack(t, e.getValue())
+                                    && !hasTableNameDirtyHack(e.getKey(), tablesToClean)
+//                                findInCollectionIgnoreCase(t, e.getValue()).isPresent()
+//                                        && !findInCollectionIgnoreCase(e.getKey(), tablesToClean).isPresent())
+                        )
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                if (!fk.isEmpty())
+                    fillTablesToClean(fk, tablesToClean);
+            } else {
+                SimpleLogger.uniqueWarn("Cannot find the table " + t + " in [" + String.join(",", fkMap.keySet()) + "]");
             }
         }
     }
@@ -735,12 +799,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         return false;
     }
 
-    private void cleanDataInDbConnection(Connection connection, DbSpecification dbSpecification){
-        if (dbSpecification.schemaNames != null && !dbSpecification.schemaNames.isEmpty()){
-            dbSpecification.schemaNames.forEach(sch-> DbCleaner.clearDatabase(connection, sch,  null, dbSpecification.dbType));
-        }else
-            DbCleaner.clearDatabase(connection, null, dbSpecification.dbType);
-    }
 
     /**
      * Extra information about the SQL Database Schema, if any is present.
@@ -794,10 +852,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         if (fkMap.isEmpty()){
             schemaDto.tables.forEach(t->{
-                fkMap.putIfAbsent(t.name, new ArrayList<>());
+                String id = SqlDtoUtils.getId(t);
+                fkMap.putIfAbsent(id, new ArrayList<>());
                 if (t.foreignKeys!=null && !t.foreignKeys.isEmpty()){
                     t.foreignKeys.forEach(f->{
-                        fkMap.get(t.name).add(f.targetTable.toUpperCase());
+                        fkMap.get(id).add(f.targetTable.toUpperCase());
                     });
                 }
             });
@@ -1612,7 +1671,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     ec.digitsInteger = c.getDigitsInteger();
                     ec.enumValuesAsStrings = c.getEnumValuesAsStrings() == null ? null : new ArrayList<>(c.getEnumValuesAsStrings());
                     ExtraConstraintsDto jpa = new ExtraConstraintsDto();
-                    jpa.tableName = c.getTableName();
+                    jpa.tableId = new TableIdDto();
+                    jpa.tableId.name = c.getTableName();
+                    jpa.tableId.schema = null; //TODO
+                    jpa.tableId.catalog = null; //TODO
                     jpa.columnName = c.getColumnName();
                     jpa.constraints = ec;
                     return jpa;
@@ -1689,7 +1751,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
                 if(tablesToClean == null){
                     // all data will be reset
-                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType);
+                    DbCleaner.clearDatabase(spec.connection, null, null, null, spec.dbType, true);
                     try {
                         reAddAllInitSql();
                     } catch (SQLException e) {
@@ -1700,10 +1762,12 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
                 if (tablesToClean.isEmpty()) return;
 
-                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
-                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
-                else
-                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
+                DbCleaner.clearTables(spec.connection, tablesToClean, spec.dbType);
+
+//                if (spec.schemaNames == null || spec.schemaNames.isEmpty())
+//                    DbCleaner.clearDatabase(spec.connection, null, null, tablesToClean, spec.dbType);
+//                else
+//                    spec.schemaNames.forEach(sp-> DbCleaner.clearDatabase(spec.connection, sp, null, tablesToClean, spec.dbType));
 
                 try {
                     handleInitSqlInDbClean(tablesToClean, spec);

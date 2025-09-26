@@ -1,5 +1,7 @@
+
 package org.evomaster.client.java.sql.internal;
 
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
@@ -9,6 +11,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * FIXME this will need refactoring
+ */
 public class SqlDatabaseDtoUtils {
 
 
@@ -18,7 +23,9 @@ public class SqlDatabaseDtoUtils {
      * @return name of columns based on specified filter
      */
     public static List<String> extractColumnNamesUsedInTheInsertion(InsertionDto dto, Set<SqlColumnId> filter){
-        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.variableName).collect(Collectors.toList());
+
+        return SqlDtoUtils.extractColumnNames(dto, filter.stream().map(it -> it.getColumnId()).collect(Collectors.toSet()));
+        //return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.variableName).collect(Collectors.toList());
     }
 
     /**
@@ -27,17 +34,9 @@ public class SqlDatabaseDtoUtils {
      * @return printable value of columns based on specified filter
      */
     public static List<String> extractColumnPrintableValues(InsertionDto dto, Set<SqlColumnId> filter){
-        return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.printableValue).collect(Collectors.toList());
+
+        return SqlDtoUtils.extractColumnPrintableValues(dto, filter.stream().map(it -> it.getColumnId()).collect(Collectors.toSet()));
+        //return dto.data.stream().filter(i-> (filter == null) || filter.stream().anyMatch(f-> i.variableName.equalsIgnoreCase(f.getColumnId()))).map(i-> i.printableValue).collect(Collectors.toList());
     }
 
-
-    /**
-     *
-     * @param columnName specified which ColumnDto should be returned based on its name
-     * @return ColumnDto based on specified columnName
-     */
-    public static ColumnDto extractColumnInfo(TableDto dto, String columnName){
-        Optional<ColumnDto> op = dto.columns.stream().filter(c-> columnName.equalsIgnoreCase(c.name)).findAny();
-        return op.orElse(null);
-    }
 }

@@ -93,7 +93,21 @@ public class QueryResultSet {
     public QueryResult getQueryResultForNamedTable(String tableName) {
         Objects.requireNonNull(tableName);
 
-        return queryResults.get(tableName.toLowerCase());
+
+
+        String name = tableName.toLowerCase();
+
+        QueryResult res = queryResults.get(name);
+        if(res != null){
+            return res;
+        }
+
+        //FIXME should do proper handling of schema/catalog
+        return queryResults.entrySet().stream()
+                .filter(it -> it.getKey().toLowerCase().endsWith("."+name))
+                .findFirst()
+                .map(Map.Entry::getValue)
+                .orElse(null);
     }
 
 

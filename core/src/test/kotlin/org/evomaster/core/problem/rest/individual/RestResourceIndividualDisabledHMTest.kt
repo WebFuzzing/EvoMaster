@@ -90,7 +90,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     override fun getFitnessFunction(): AbstractRestFitness = ff
 
     private fun sampleDbAction(table : Table) : List<SqlAction>{
-        val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.name)
+        val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.id)
         return actions.map { it.copy() as SqlAction }
     }
 

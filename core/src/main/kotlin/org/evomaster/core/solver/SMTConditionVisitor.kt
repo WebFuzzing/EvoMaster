@@ -119,7 +119,7 @@ class SMTConditionVisitor(
      */
     private fun isAColumn(operand: String): Boolean {
         return tables.any {
-            it.name.equals(defaultTableName, ignoreCase = true) &&
+            it.id.name.equals(defaultTableName, ignoreCase = true) &&
                     it.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
         }
     }

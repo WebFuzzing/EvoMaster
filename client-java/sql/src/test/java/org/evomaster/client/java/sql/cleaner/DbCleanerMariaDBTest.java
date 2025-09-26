@@ -1,6 +1,7 @@
-package org.evomaster.client.java.sql;
+package org.evomaster.client.java.sql.cleaner;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.sql.DbCleaner;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,7 +59,7 @@ public class DbCleanerMariaDBTest extends DbCleanerTestBase{
 
     @Override
     protected void clearDatabase(List<String> tablesToSkip, List<String> tableToClean) {
-        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, tableToClean, getDbType());
+        DbCleaner.clearDatabase(connection, DB_NAME, tablesToSkip, tableToClean, getDbType(), true);
     }
 
     @Override

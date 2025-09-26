@@ -45,39 +45,6 @@ class SqlAction(
          */
         val representExistingData: Boolean = false,
 
-        /**
-         * An id representing the connection to the database process.
-         * This could be the connecting URL.
-         * This is needed when dealing with multiple connection to different database processes,
-         * possibly running on different machines.
-         * If left null, default connection will be used (ie, assume there is only one).
-         */
-        val connectionId: String? = null,
-
-        /**
-         * At a high-level this represents a "catalog".
-         * Ie, a "logical" database instance.
-         * Note that a database process could have several logical databases.
-         * We do not use the term "catalog" though as Postgres and MySQL behave differently.
-         * In MySQL, can access different catalogs on same connection.
-         * This is not possible on Postgres.
-         * However, this latter has "schemas", which MySQL does not.
-         * In other words:
-         * - MySQL: this will always be empty
-         * - Postgres: this would be the catalog name.
-         * However, as in Postgres we cannot change catalog within same connection, the important info is in the
-         * [connectionId] entry.
-         * Even if we were to access 2 different catalogs in the same database process, we would need 2 different connections.
-         * As such, this parameter is technically redundant.
-         */
-        val sealedGroupName: String? = null,
-
-        /**
-         *  In Postgres this represents a "schema", whereas it is a "catalog" for MySQL.
-         *  In other words, this is used to group tables that can be indexed by this group name for disambiguation.
-         */
-        val openGroupName: String? = null,
-
 ) : EnvironmentAction(listOf()) {
 
     init {
@@ -97,6 +64,7 @@ class SqlAction(
             }
         }
     }
+
 
     private val genes: List<Gene> = (computedGenes
         ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(id, table, it) }
@@ -129,9 +97,10 @@ class SqlAction(
     }
 
     override fun getName(): String {
-        val c = if(connectionId.isNullOrEmpty()) "" else "_$connectionId"
-        val s = if(openGroupName.isNullOrEmpty()) "" else "_$openGroupName"
-        val t = "_${table.name}"
+        val id = table.id
+        val c = if(id.connectionId.isNullOrEmpty()) "" else "_${id.connectionId}"
+        val s = if(id.openGroupName.isNullOrEmpty()) "" else "_${id.openGroupName}"
+        val t = "_${id.name}"
         return "SQL_Insert$c$s${t}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
     }
 
@@ -148,7 +117,7 @@ class SqlAction(
     }
 
     override fun copyContent(): Action {
-        return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData, connectionId, sealedGroupName, openGroupName)
+        return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     fun geInsertionId(): Long {

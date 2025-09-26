@@ -5,8 +5,9 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.fitness.BlackBoxRestFitness
-import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness
 import org.evomaster.core.problem.rest.service.sampler.RestSampler
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.FitnessFunction
@@ -20,6 +21,9 @@ class BlackBoxRestModule(
 
         super.configure()
 
+        bind(object : TypeLiteral<EnterpriseSampler<RestIndividual>>() {})
+            .to(ResourceSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<RestIndividual>>() {})
                 .to(RestSampler::class.java)
                 .asEagerSingleton()

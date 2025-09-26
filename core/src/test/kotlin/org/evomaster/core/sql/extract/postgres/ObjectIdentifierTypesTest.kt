@@ -44,8 +44,8 @@ class ObjectIdentifierTypesTest : ExtractTestBasePostgres() {
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
-        assertTrue(schema.tables.any { it.name.equals("ObjectIdentifierTypes".lowercase()) })
-        val table = schema.tables.find { it.name.equals("ObjectIdentifierTypes".lowercase()) }
+        assertTrue(schema.tables.any { it.id.name.equals("ObjectIdentifierTypes".lowercase()) })
+        val table = schema.tables.find { it.id.name.equals("ObjectIdentifierTypes".lowercase()) }
 
         assertTrue(table!!.columns.any { it.name.equals("oidColumn".lowercase()) })
 

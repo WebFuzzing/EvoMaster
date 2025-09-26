@@ -11,6 +11,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,7 +21,7 @@ import org.slf4j.LoggerFactory
  * This is important to check Foreign Keys referencing it.
  */
 class SqlPrimaryKeyGene(name: String,
-                        val tableName: String,
+                        val tableName: TableId,
                         val gene: Gene,
                         /**
                          * Important for the Foreign Keys referencing it.
@@ -28,6 +29,9 @@ class SqlPrimaryKeyGene(name: String,
                          */
                         val uniqueId: Long
 ) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {
+
+    @Deprecated("Rather use the one forcing TableId")
+    constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
 
 
     init {
