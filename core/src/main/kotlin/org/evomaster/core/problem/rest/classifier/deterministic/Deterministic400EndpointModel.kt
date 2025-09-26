@@ -105,17 +105,7 @@ class Deterministic400EndpointModel(
     /** Default metrics estimates */
     override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
         verifyEndpoint(endpoint)
-        if (!initialized) {
-            // hasn’t learned anything yet → return defaults
-            return ModelEvaluation.DEFAULT_NO_DATA
-        }
-
-        return ModelEvaluation(
-            modelMetrics.estimateAccuracy(),
-            modelMetrics.estimatePrecision400(),
-            modelMetrics.estimateRecall400(),
-            modelMetrics.estimateMCC400()
-        )
+        return estimateOverallMetrics()
     }
 
     /** Default overall metrics estimates */
@@ -124,6 +114,7 @@ class Deterministic400EndpointModel(
             // hasn’t learned anything yet
             return ModelEvaluation.DEFAULT_NO_DATA
         }
+        // This is a single-endpoint model and just return its own metrics
         return modelMetrics.estimateMetrics()
     }
 

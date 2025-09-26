@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.classifier
 
 import com.google.common.collect.EvictingQueue
+import kotlin.math.sqrt
 
 /**
  * Tracks model performance metrics within a fixed-size sliding time window.
@@ -60,18 +61,8 @@ class ModelMetricsWithTimeWindow(
         val fp = falsePositive400Queue.count { it }.toDouble()
         val fn = falseNegative400Queue.count { it }.toDouble()
 
-        val denominator = Math.sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        val denominator = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
         return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
-    }
-
-    /** Unified metrics estimate packaged into a [ModelEvaluation] */
-    override fun estimateMetrics(): ModelEvaluation {
-        return ModelEvaluation(
-            accuracy = estimateAccuracy(),
-            precision400 = estimatePrecision400(),
-            recall400 = estimateRecall400(),
-            mcc = estimateMCC400()
-        )
     }
 
     /**

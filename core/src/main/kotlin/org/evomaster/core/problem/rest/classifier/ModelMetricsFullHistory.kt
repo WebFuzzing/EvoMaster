@@ -64,16 +64,6 @@ class ModelMetricsFullHistory : ModelMetrics {
         return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
     }
 
-    /** Unified metrics estimate packaged into a [ModelEvaluation] */
-    override fun estimateMetrics(): ModelEvaluation {
-        return ModelEvaluation(
-            accuracy = estimateAccuracy(),
-            precision400 = estimatePrecision400(),
-            recall400 = estimateRecall400(),
-            mcc = estimateMCC400()
-        )
-    }
-
     /**
      * Update the performance counters after a new prediction.
      *
