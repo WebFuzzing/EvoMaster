@@ -10,7 +10,7 @@ class AIResponseClassification(
     /**
      * If the classification thinks the call will lead to a user error, it might provide some info
      * on the offending inputs.
-     * However, as only few classifiers might be able to provide such info, such info is optional.
+     * However, as only a few classifiers might be able to provide such info, such info is optional.
      */
     val invalidFields : Set<InputField> = setOf(),
 ) {

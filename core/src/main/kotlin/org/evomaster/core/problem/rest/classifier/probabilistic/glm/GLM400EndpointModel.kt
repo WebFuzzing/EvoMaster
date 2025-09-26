@@ -52,7 +52,7 @@ class GLM400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+        if (modelMetricsFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -98,15 +98,14 @@ class GLM400EndpointModel(
         }
 
         /**
-         * Updating classifier performance based on its prediction
-         * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
+         * Updating classifier metrics such as accuracy and precision based on its prediction
          */
-        val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
+        updateModelMetrics(input, result = output)
 
         /**
          * Updating model parameters
          */
+        val trueStatusCode = output.getStatusCode()
         val y = if (trueStatusCode == 400) 0.0 else 1.0
 
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias

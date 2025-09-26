@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.classifier.deterministic
 
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
+import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -29,19 +30,27 @@ class Deterministic400Classifier(
         return m.classify(input)
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        val m = models[endpoint] ?:
-            return 0.0
-
-        return m.estimateAccuracy(endpoint)
+    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
+        val m = models[endpoint] ?: return ModelEvaluation.DEFAULT_NO_DATA
+        return m.estimateMetrics(endpoint)
     }
 
-    override fun estimateOverallAccuracy(): Double {
+    override fun estimateOverallMetrics(): ModelEvaluation {
+        if (models.isEmpty()) {
+            return ModelEvaluation.DEFAULT_NO_DATA
+        }
 
-        //average over all internal models
         val n = models.size.toDouble()
-        val sum = models.values.sumOf { it.estimateOverallAccuracy() }
+        val total = models.values.map {
+            it?.estimateOverallMetrics() ?: ModelEvaluation.DEFAULT_NO_DATA
+        }
 
-        return sum / n
+        return ModelEvaluation(
+            accuracy = total.sumOf { it.accuracy } / n,
+            precision400 = total.sumOf { it.precision400 } / n,
+            recall400 = total.sumOf { it.recall400 } / n,
+            mcc = total.sumOf { it.mcc } / n
+        )
     }
+
 }

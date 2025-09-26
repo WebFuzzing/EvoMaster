@@ -79,7 +79,7 @@ class NN400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup) {
+        if (modelMetricsFullHistory.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -114,9 +114,9 @@ class NN400EndpointModel(
 
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
-            val guess = randomness.nextBoolean()
-            modelAccuracyFullHistory.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
+            modelMetricsFullHistory.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }
 
@@ -127,12 +127,11 @@ class NN400EndpointModel(
         }
 
         /**
-         * Updating classifier performance based on its prediction
+         * Updating classifier metrics such as accuracy and precision based on its prediction
          */
+        updateModelMetrics(input, result = output)
+
         val trueStatusCode = output.getStatusCode()
-        updatePerformance(input, trueStatusCode)
-
-
         val yIndex = if (trueStatusCode == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }
 
