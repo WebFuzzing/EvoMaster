@@ -923,7 +923,8 @@ object GeneUtils {
                 getAllFields(p.primaryGene(), klass)
             } else {
                 // PathParam are explicitly excluded, as not really representing possible fields
-                listOf()
+                getAllFields(p.primaryGene(), klass)
+//                listOf()
             }
         }
     }

@@ -21,7 +21,7 @@ class SSRFPathEMTest: SpringTestBase() {
         }
     }
 
-    @Disabled
+//    @Disabled
     @Test
     fun testSSRFPathVariable() {
         runTestHandlingFlakyAndCompilation(
