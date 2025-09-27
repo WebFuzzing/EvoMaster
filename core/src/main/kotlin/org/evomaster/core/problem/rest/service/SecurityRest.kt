@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
@@ -275,7 +276,12 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        handleForgottenAuthentication()
+        if(config.getDisabledSecurityOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+            log.info("Skipping experimental security test for forgotten authentication as disabled in configuration")
+        } else {
+            handleForgottenAuthentication()
+        }
+
         //TODO other rules. See FaultCategory
         //etc.
     }

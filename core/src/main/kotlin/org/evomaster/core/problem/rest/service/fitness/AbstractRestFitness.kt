@@ -1093,7 +1093,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         // check that excluded fault categories are not present
         Lazy.assert{
-            DetectedFaultUtils.verifyExcludedCategories(actionResults ,
+            DetectedFaultUtils.verifyExcludedCategories(actionResults,
                 config.getDisabledSecurityOracleCodesList() as List<FaultCategory>
             )
         }
