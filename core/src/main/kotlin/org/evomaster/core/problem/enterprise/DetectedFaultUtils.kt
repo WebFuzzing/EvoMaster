@@ -27,6 +27,10 @@ object DetectedFaultUtils {
             .toSet()
     }
 
+    fun getDetectedFaultCategories(actionResults: List<ActionResult>) : Set<FaultCategory> {
+        return getDetectedFaults(actionResults).map { it.category }.toSet()
+    }
+
     fun getDetectedFaultCategories(ei: EvaluatedIndividual<*>) : Set<FaultCategory> {
         return getDetectedFaults(ei).map { it.category }.toSet()
     }
@@ -47,7 +51,7 @@ object DetectedFaultUtils {
     }
 
     fun verifyExcludedCategories(actionResults: List<ActionResult>, excludedCategories: List<FaultCategory>) : Boolean {
-        val detected = getDetectedFaults(actionResults).map { it.category }.toSet()
+        val detected = getDetectedFaultCategories(actionResults)
         return excludedCategories.intersect(detected).isEmpty()
     }
 

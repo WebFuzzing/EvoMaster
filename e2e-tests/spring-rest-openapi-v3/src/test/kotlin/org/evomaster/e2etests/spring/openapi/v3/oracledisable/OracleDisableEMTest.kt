@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.oracledisable
+package org.evomaster.e2etests.spring.openapi.v3.oracledisable
 
 import com.foo.rest.examples.spring.openapi.v3.security.oracledisable.OracleDisableController
 import com.webfuzzing.commons.faults.DefinedFaultCategory

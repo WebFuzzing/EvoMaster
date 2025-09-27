@@ -1,6 +1,7 @@
 package org.evomaster.core
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
+import com.webfuzzing.commons.faults.FaultCategory
 import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
@@ -50,7 +51,7 @@ class EMConfig {
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
 
         private const val headerRegex = "(.+:.+)|(^$)"
-        private const val faultCodeRegex = "(\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
+        private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
@@ -2781,18 +2782,29 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
-    fun getDisabledSecurityOracleCodesList() = disabledOracleCodes
-        .split(",")
-        .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
-        .map { str ->
-            val code = str.toIntOrNull()
-                ?: throw IllegalArgumentException("Invalid number: $str")
+    private var disabledSecurityOracleCodesList: List<FaultCategory>? = null
 
-            val allCategories = DefinedFaultCategory.values().asList() + ExperimentalFaultCategory.values()
+    fun getDisabledSecurityOracleCodesList(): List<FaultCategory> {
+        if (disabledSecurityOracleCodesList == null) {
+            disabledSecurityOracleCodesList = disabledOracleCodes
+                .split(",")
+                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+                .map { str ->
+                    val code = str.toIntOrNull()
+                        ?: throw IllegalArgumentException("Invalid number: $str")
 
-            allCategories.firstOrNull { it.code == code }
-                ?: throw ConfigProblemException("Invalid fault code: $code" +
-                " All available codes are: \n" +
-                        allCategories.joinToString(separator = "\n") { "${it.code} (${it.name})" })
+                    val allCategories = DefinedFaultCategory.values().asList() +
+                            ExperimentalFaultCategory.values()
+
+                    allCategories.firstOrNull { it.code == code }
+                        ?: throw ConfigProblemException(
+                            "Invalid fault code: $code" +
+                                    " All available codes are: \n" +
+                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
+                        )
+                }
         }
+        return disabledSecurityOracleCodesList!!
+    }
+
 }
