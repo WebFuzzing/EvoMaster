@@ -10,12 +10,14 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.StructuralElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.inject.Inject
 import javax.ws.rs.core.NewCookie
 
 
@@ -116,7 +118,7 @@ class BlackBoxRestFitness : RestFitness() {
 
         for(create in toHandle){
 
-            val template = builder.findDeleteFor(create.action as RestCallAction)
+            val template = callGraphService.findDeleteFor(create.action as RestCallAction)
                 ?: continue
 
             val delete = builder.createBoundActionOnPreviousCreate(template, create.action)

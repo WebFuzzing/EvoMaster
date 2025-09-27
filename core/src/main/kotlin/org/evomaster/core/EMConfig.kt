@@ -1301,12 +1301,6 @@ class EMConfig {
         GAUSSIAN,
 
         /**
-         * Gaussian Mixture Model (GMM).
-         * Represents the data as a mixture of multiple Gaussian distributions.
-         */
-        GM,
-
-        /**
          * Kernel Density Estimation (KDE).
          * A non-parametric method for estimating the probability density function.
          */
@@ -1348,8 +1342,34 @@ class EMConfig {
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
-    @Cfg("Learning rate for classifiers like GLM and NN.")
+    @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
+            "Relevant for gradient-based models such as GLM and neural networks. " +
+            "A smaller value ensures stable but slower convergence, while a larger value speeds up " +
+            "training but may cause instability.")
     var aiResponseClassifierLearningRate: Double = 0.01
+
+    @Experimental
+    @Cfg("Number of training iterations required to update classifier parameters. " +
+                "For example, in the Gaussian model this affects mean and variance updates. " +
+                "For neural network (NN) models, the warm-up should typically be larger than 1000.")
+    var aiResponseClassifierWarmup : Int = 10
+
+
+    enum class EncoderType {
+
+        /** Use raw values without any transformation. */
+        RAW,
+
+        /** Normalize values to a standard scale (e.g., zero mean and unit variance). */
+        NORMAL,
+
+        /** Scale the vector to have unit length, making it a point on the unit sphere. */
+        UNIT_NORMAL
+    }
+
+    @Experimental
+    @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -2525,6 +2545,11 @@ class EMConfig {
     @Experimental
     @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
     var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
+
+    @Experimental
+    @Cfg("HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a " +
+            "container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname.")
+    var callbackURLHostname = "localhost"
 
     @Experimental
     @Cfg("Enable language model connector")

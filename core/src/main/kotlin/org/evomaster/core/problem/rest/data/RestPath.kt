@@ -181,6 +181,20 @@ class RestPath(path: String) {
                 && this.endsWithSlash == other.endsWithSlash
     }
 
+    fun lengthSharedAncestors(other: RestPath): Int {
+        var common = 0
+        for(i in elements.indices) {
+            if(i >= other.elements.size) {
+                return common
+            }
+            if(elements[i] != other.elements[i]) {
+                return common
+            }
+            common++
+        }
+        return common
+    }
+
     /**
      * @return whether this is sibling of the [other]
      *
