@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class OracleDisableEMTest : SpringTestBase(){
+class OracleMultipleDisableEMTest : SpringTestBase(){
 
     companion object {
         @BeforeAll
@@ -25,7 +25,7 @@ class OracleDisableEMTest : SpringTestBase(){
     @Test
     fun testRunEM() {
         runTestHandlingFlakyAndCompilation(
-            "OracleDisableEM",
+            "OracleMultipleDisableEM",
             600
         ) { args: MutableList<String> ->
 
@@ -45,7 +45,7 @@ class OracleDisableEMTest : SpringTestBase(){
     }
 
     @Test
-    fun testRunEMDisableAll() {
+    fun testRunEMDisableMultiple() {
         runTestHandlingFlakyAndCompilation(
             "OracleDisableAll",
             600
@@ -67,25 +67,4 @@ class OracleDisableEMTest : SpringTestBase(){
         }
     }
 
-    @Test
-    fun testRunEMDisableOne() {
-        runTestHandlingFlakyAndCompilation(
-            "OracleDisableOne",
-            600
-        ) { args: MutableList<String> ->
-
-            setOption(args, "security", "true")
-            setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "204")
-
-            val solution = initAndRun(args)
-
-            assertTrue(solution.individuals.size >= 1)
-
-            val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertEquals(2, faults.size)
-            assertTrue(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION in faults)
-            assertTrue(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED in faults)
-        }
-    }
 }

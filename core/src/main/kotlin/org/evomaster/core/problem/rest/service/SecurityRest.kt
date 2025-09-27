@@ -253,7 +253,7 @@ class SecurityRest {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        if(config.getDisabledSecurityOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
             log.info("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
@@ -262,21 +262,21 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(config.getDisabledSecurityOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
             log.info("Skipping security test for existence leakage as disabled in configuration")
         } else {
             // getting 404 instead of 403
             handleExistenceLeakage()
         }
 
-        if(config.getDisabledSecurityOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
             log.info("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
         }
 
-        if(config.getDisabledSecurityOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
             log.info("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()

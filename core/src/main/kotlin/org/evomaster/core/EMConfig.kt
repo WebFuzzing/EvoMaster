@@ -2807,11 +2807,11 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
-    private var disabledSecurityOracleCodesList: List<FaultCategory>? = null
+    private var disabledOracleCodesList: List<FaultCategory>? = null
 
-    fun getDisabledSecurityOracleCodesList(): List<FaultCategory> {
-        if (disabledSecurityOracleCodesList == null) {
-            disabledSecurityOracleCodesList = disabledOracleCodes
+    fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList == null) {
+            disabledOracleCodesList = disabledOracleCodes
                 .split(",")
                 .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
                 .map { str ->
@@ -2829,7 +2829,7 @@ class EMConfig {
                         )
                 }
         }
-        return disabledSecurityOracleCodesList!!
+        return disabledOracleCodesList!!
     }
 
 }

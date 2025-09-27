@@ -19,18 +19,6 @@ object DetectedFaultUtils {
             .toSet()
     }
 
-    fun getDetectedFaults(actionResults: List<ActionResult>) : Set<DetectedFault> {
-
-        return actionResults
-            .filterIsInstance<EnterpriseActionResult>()
-            .flatMap { it.getFaults() }
-            .toSet()
-    }
-
-    fun getDetectedFaultCategories(actionResults: List<ActionResult>) : Set<FaultCategory> {
-        return getDetectedFaults(actionResults).map { it.category }.toSet()
-    }
-
     fun getDetectedFaultCategories(ei: EvaluatedIndividual<*>) : Set<FaultCategory> {
         return getDetectedFaults(ei).map { it.category }.toSet()
     }
@@ -50,8 +38,8 @@ object DetectedFaultUtils {
             .toSet()
     }
 
-    fun verifyExcludedCategories(actionResults: List<ActionResult>, excludedCategories: List<FaultCategory>) : Boolean {
-        val detected = getDetectedFaultCategories(actionResults)
+    fun verifyExcludedCategories(ei: EvaluatedIndividual<*>, excludedCategories: List<FaultCategory>) : Boolean {
+        val detected = getDetectedFaultCategories(ei)
         return excludedCategories.intersect(detected).isEmpty()
     }
 
