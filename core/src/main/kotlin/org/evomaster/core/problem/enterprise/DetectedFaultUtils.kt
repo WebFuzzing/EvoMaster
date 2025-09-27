@@ -3,6 +3,7 @@ package org.evomaster.core.problem.enterprise
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.ActionResult
 
 object DetectedFaultUtils {
 
@@ -35,6 +36,11 @@ object DetectedFaultUtils {
         return solution.individuals
             .flatMap { getDetectedFaultCategories(it) }
             .toSet()
+    }
+
+    fun verifyExcludedCategories(ei: EvaluatedIndividual<*>, excludedCategories: List<FaultCategory>) : Boolean {
+        val detected = getDetectedFaultCategories(ei)
+        return excludedCategories.intersect(detected).isEmpty()
     }
 
 }

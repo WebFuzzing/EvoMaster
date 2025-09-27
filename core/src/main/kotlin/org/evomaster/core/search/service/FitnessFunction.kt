@@ -1,7 +1,10 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -96,6 +99,13 @@ abstract class FitnessFunction<T>  where T : Individual {
 //        if (config.isEnabledImpactCollection()){
 //            ei?.updateInitImpactAfterDoCalculateCoverage(calculatedBefore, null, config)
 //        }
+
+        // check that excluded fault categories are not present
+        Lazy.assert{
+            DetectedFaultUtils.verifyExcludedCategories(ei as EvaluatedIndividual<Individual>,
+                config.getDisabledOracleCodesList() as List<FaultCategory>
+            )
+        }
 
         return ei
     }
