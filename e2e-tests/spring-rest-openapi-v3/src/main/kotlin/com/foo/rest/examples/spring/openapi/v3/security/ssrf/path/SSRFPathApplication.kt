@@ -36,25 +36,24 @@ open class SSRFPathApplication {
             ApiResponse(responseCode = "500", description = "Invalid server error")
         ]
     )
-    @GetMapping(path = ["/path/{remoteURL}"])
-    open fun pathParameter(@PathVariable("remoteURL") remoteURL: String): ResponseEntity<String> {
-        if (remoteURL != null) {
-            try {
-                val url = URL(remoteURL)
+    @GetMapping(path = ["/path/{source}"])
+    open fun pathParameter(@PathVariable("source") source: String): ResponseEntity<String> {
+        if (source != null) {
+            return try {
+                val url = URL(source)
                 val connection = url.openConnection() as HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.connectTimeout = 1000
 
                 if (connection.responseCode == 200) {
-                    // Do nothing
-                    // Usually at this point, the fetched information will be processed
+                    return ResponseEntity.status(200).body("OK")
                 }
+                ResponseEntity.status(204).body("Unable to fetch.")
             } catch (e: Exception) {
-                // Do nothing
-                // Error from the remote service shouldn't impact this endpoint's response
+                ResponseEntity.status(204).body("Unable to fetch.")
             }
         }
 
-        return ResponseEntity.status(200).body("OK")
+        return ResponseEntity.badRequest().body("Invalid request")
     }
 }
