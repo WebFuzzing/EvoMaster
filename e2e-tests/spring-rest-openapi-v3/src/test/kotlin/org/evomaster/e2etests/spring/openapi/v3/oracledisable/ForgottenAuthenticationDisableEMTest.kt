@@ -24,7 +24,7 @@ class ForgottenAuthenticationDisableEMTest : SpringTestBase(){
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-                "ForgottenAuthenticationEM",
+                "ForgottenAuthenticationDisableEM",
                 100
         ) { args: MutableList<String> ->
 
