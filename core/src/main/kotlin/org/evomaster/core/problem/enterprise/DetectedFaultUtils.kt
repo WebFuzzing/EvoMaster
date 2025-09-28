@@ -39,6 +39,12 @@ object DetectedFaultUtils {
     }
 
     fun verifyExcludedCategories(ei: EvaluatedIndividual<*>, excludedCategories: List<FaultCategory>) : Boolean {
+
+        // if not an enterprise individual, then no need to check
+        if(ei.individual !is EnterpriseIndividual){
+            return true
+        }
+
         val detected = getDetectedFaultCategories(ei)
         return excludedCategories.intersect(detected).isEmpty()
     }
