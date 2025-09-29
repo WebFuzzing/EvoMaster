@@ -623,6 +623,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                     //FIXME
                     tableDataToInit = names.stream()
                             .filter(a-> tableInitSqlMap.keySet().stream().anyMatch(t-> isSameTable(t, a)))
+                            .map(String::toLowerCase)
                             .collect(Collectors.toSet());
                 }
             }
@@ -652,9 +653,31 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private void handleInitSqlInDbClean(Collection<String> tableDataToInit, DbSpecification spec) throws SQLException {
         // init db script
         //boolean initAll = registerInitSqlCommands(getConnectionIfExist(), spec);
-        if (tableDataToInit!= null &&!tableDataToInit.isEmpty()){
-            tableDataToInit.stream().sorted((s1, s2)-> tableFkCompartor(s1, s2)).forEach(a->{
-                tableInitSqlMap.keySet().stream().filter(t-> isSameTable(t, a)).forEach(t->{
+        if (tableDataToInit == null  || tableDataToInit.isEmpty()) {
+            return;
+        }
+
+        tableDataToInit.stream()
+                .sorted((s1, s2)-> tableFkCompartor(s1, s2))
+                .forEach(a->{
+                    tableInitSqlMap.keySet().stream()
+                            .filter(t-> isSameTable(t, a))
+                            .forEach(t->{
+                                tableInitSqlMap.get(t).forEach(c->{
+                                    try {
+                                      SqlScriptRunner.execCommand(getConnectionIfExist(), c);
+                                    } catch (SQLException e) {
+                                        throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
+                                    }
+                                });
+                            });
+                });
+    }
+
+    private void reAddAllInitSql() throws SQLException{
+
+        tableInitSqlMap.keySet()
+                .forEach(t->{
                     tableInitSqlMap.get(t).forEach(c->{
                         try {
                             SqlScriptRunner.execCommand(getConnectionIfExist(), c);
@@ -663,22 +686,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                         }
                     });
                 });
-            });
-        }
-    }
-
-    private void reAddAllInitSql() throws SQLException{
-        if(tableInitSqlMap != null){
-            tableInitSqlMap.keySet().stream().forEach(t->{
-                tableInitSqlMap.get(t).forEach(c->{
-                    try {
-                        SqlScriptRunner.execCommand(getConnectionIfExist(), c);
-                    } catch (SQLException e) {
-                        throw new RuntimeException("SQL Init Execution Error: fail to execute "+ c + " with error "+e);
-                    }
-                });
-            });
-        }
     }
 
     private int tableFkCompartor(String tableA, String tableB){
@@ -686,19 +693,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     private int getFkDepth(String tableName, Set<String> checked){
-        List<String> keys = fkMap.keySet().stream().filter(s-> s.equalsIgnoreCase(tableName)).collect(Collectors.toList());
-        if(keys.isEmpty()) return -1;
+
+        List<String> keys = fkMap.keySet().stream()
+                //.filter(s-> s.equalsIgnoreCase(tableName))
+                //FIXME
+                .filter((s-> s.toLowerCase().endsWith(tableName.toLowerCase())))
+                .collect(Collectors.toList());
+
+        if(keys.isEmpty()){
+            return -1;
+        }
+
         checked.add(tableName);
-        List<String> fks = keys.stream().map(s -> fkMap.get(s)).flatMap(List::stream).collect(Collectors.toList());
+
+        List<String> fks = keys.stream()
+                .map(s -> fkMap.get(s))
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
         if (fks.isEmpty()) {
             return 0;
         }
+
         int sum = fks.size();
         for (String fk: fks){
             if (!checked.stream().anyMatch(c -> c.equalsIgnoreCase(fk))){
                 sum += getFkDepth(fk, checked);
             }
         }
+
         return sum;
     }
 
