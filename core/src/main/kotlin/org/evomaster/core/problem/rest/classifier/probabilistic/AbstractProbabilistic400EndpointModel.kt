@@ -2,11 +2,13 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.problem.rest.classifier.ModelAccuracy
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelAccuracyWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -26,8 +28,8 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
-    val modelAccuracyFullHistory: ModelAccuracyFullHistory = ModelAccuracyFullHistory()
-    val modelAccuracy: ModelAccuracy = ModelAccuracyWithTimeWindow(20)
+    val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
+    val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -54,33 +56,37 @@ abstract class AbstractProbabilistic400EndpointModel(
      * Updating classifier performance based on its prediction
      * Before the warmup is completed, the update is based on a crude guess (like a coin flip).
      */
-    protected fun updatePerformance(input: RestCallAction, outputStatusCode: Int?) {
+    protected fun updateModelMetrics(action: RestCallAction, result: RestCallResult) {
 
-        if (modelAccuracyFullHistory.totalSentRequests < warmup || input.parameters.isEmpty()) {
-            val guess = randomness.nextBoolean()
-            modelAccuracyFullHistory.updatePerformance(guess)
-            modelAccuracy.updatePerformance(guess)
+        val outputStatusCode= result.getStatusCode()
+        if (modelMetricsFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
+            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
-            val predicted = classify(input).prediction()
-            val predictIsCorrect = (predicted == outputStatusCode)
-            modelAccuracyFullHistory.updatePerformance(predictIsCorrect)
-            modelAccuracy.updatePerformance(predictIsCorrect)
+            val predictedStatusCode = classify(action).prediction()
+            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
     }
 
-
-    /** Default accuracy estimates */
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
+    /** Default metrics estimates */
+    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
         verifyEndpoint(endpoint)
-        return estimateOverallAccuracy()
+        return estimateOverallMetrics()
     }
 
-    override fun estimateOverallAccuracy(): Double {
+    /** Default overall metrics estimates */
+    override fun estimateOverallMetrics(): ModelEvaluation {
         if (!initialized) {
             // hasn’t learned anything yet
-            return 0.5
+            return ModelEvaluation.DEFAULT_NO_DATA
         }
-        return modelAccuracy.estimateAccuracy()
+        // This is a single-endpoint model and just return its own metrics
+        return modelMetrics.estimateMetrics()
     }
+
+
+
 }
