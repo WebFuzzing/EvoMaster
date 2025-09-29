@@ -29,6 +29,9 @@ class SSRFPathEMTest: SpringTestBase() {
             200,
         ) { args: MutableList<String> ->
 
+            // TODO: Due to limitations on PathParam to have URL as value, this test is disabled until
+            //  that's fixed.
+
             // If mocking enabled, it'll spin new services each time when there is a valid URL.
             setOption(args, "externalServiceIPSelectionStrategy", "NONE")
 

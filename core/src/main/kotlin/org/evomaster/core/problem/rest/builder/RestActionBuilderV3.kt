@@ -625,8 +625,6 @@ object RestActionBuilderV3 {
             /*
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
-
-                TODO: d_ changed to gene.name
              */
             "path" -> params.add(PathParam(name, CustomMutationRateGene(gene.name, gene, 1.0))
                 .apply { this.description = description }
