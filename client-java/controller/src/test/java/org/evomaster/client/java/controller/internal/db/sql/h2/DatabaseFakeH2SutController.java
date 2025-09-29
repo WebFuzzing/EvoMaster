@@ -52,7 +52,7 @@ public class DatabaseFakeH2SutController extends EmbeddedSutController {
     @Override
     public String startSut() {
         running = true;
-        DbCleaner.clearDatabase(sqlConnection, null, DatabaseType.H2);
+        DbCleaner.clearDatabase_H2(sqlConnection, null, null);
         return "foo";
     }
 

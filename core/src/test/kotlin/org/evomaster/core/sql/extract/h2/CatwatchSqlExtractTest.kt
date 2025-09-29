@@ -29,17 +29,17 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
         assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(5, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONTRIBUTOR" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "LANGUAGE_LIST" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "MAINTAINERS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PROJECT" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "STATISTICS" }) }
+                Executable { assertTrue(schema.tables.any { it.id.name == "CONTRIBUTOR" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "LANGUAGE_LIST" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "MAINTAINERS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PROJECT" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "STATISTICS" }) }
         )
 
-        assertEquals(listOf("ID", "ORGANIZATION_ID", "SNAPSHOT_DATE"), schema.tables.filter { it.name == "CONTRIBUTOR" }.first().primaryKeySequence)
-        assertEquals(listOf("ID", "SNAPSHOT_DATE"), schema.tables.filter { it.name == "STATISTICS" }.first().primaryKeySequence)
-        assertEquals(listOf("ID"), schema.tables.filter { it.name == "PROJECT" }.first().primaryKeySequence)
-        assertEquals(listOf<String>(), schema.tables.filter { it.name == "MAINTAINERS" }.first().primaryKeySequence)
+        assertEquals(listOf("ID", "ORGANIZATION_ID", "SNAPSHOT_DATE"), schema.tables.filter { it.id.name == "CONTRIBUTOR" }.first().primaryKeySequence)
+        assertEquals(listOf("ID", "SNAPSHOT_DATE"), schema.tables.filter { it.id.name == "STATISTICS" }.first().primaryKeySequence)
+        assertEquals(listOf("ID"), schema.tables.filter { it.id.name == "PROJECT" }.first().primaryKeySequence)
+        assertEquals(listOf<String>(), schema.tables.filter { it.id.name == "MAINTAINERS" }.first().primaryKeySequence)
 
     }
 
@@ -59,8 +59,8 @@ class CatwatchSqlExtractTest : ExtractTestBaseH2(){
         SqlActionUtils.randomizeDbActionGenes(insertions.toMutableList(), Randomness())
 
         assertEquals(2, insertions.size)
-        assert(insertions[0].table.name.equals("PROJECT", ignoreCase = true))
-        assert(insertions[1].table.name.equals("lANGUAGE_LIST", ignoreCase = true))
+        assert(insertions[0].table.id.getFullQualifyingTableName().equals("PUBLIC.PROJECT", ignoreCase = true))
+        assert(insertions[1].table.id.getFullQualifyingTableName().equals("PUBLIC.lANGUAGE_LIST", ignoreCase = true))
 
         val projectId = (insertions[0].seeTopGenes().filterIsInstance<SqlPrimaryKeyGene>()).first().uniqueId
 

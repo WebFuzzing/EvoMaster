@@ -20,16 +20,16 @@ class AlterTableUniqueTest : ExtractTestBaseH2() {
         assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(2, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "COUNTRIES" }, "missing table COUNTRIES") },
-                Executable { assertTrue(schema.tables.any { it.name == "PASSPORTS" }, "missing table PASSPORTS") }
+                Executable { assertTrue(schema.tables.any { it.id.name == "COUNTRIES" }, "missing table COUNTRIES") },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PASSPORTS" }, "missing table PASSPORTS") }
         )
 
 
-        assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "COUNTRY_ID"}.first().unique)
-        assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().unique)
+        assertEquals(true, schema.tables.filter { it.id.name == "PASSPORTS" }.first().columns.filter { it.name == "COUNTRY_ID"}.first().unique)
+        assertEquals(true, schema.tables.filter { it.id.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().unique)
 
-        assertEquals(1, schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions.size)
-        assertEquals("(\"PASSPORT_NUMBER\" > CAST(0 AS BIGINT))", schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals(1, schema.tables.filter { it.id.name == "PASSPORTS" }.first().tableCheckExpressions.size)
+        assertEquals("(\"PASSPORT_NUMBER\" > CAST(0 AS BIGINT))", schema.tables.filter { it.id.name == "PASSPORTS" }.first().tableCheckExpressions[0].sqlCheckExpression)
 
     }
 

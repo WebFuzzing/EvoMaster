@@ -3,6 +3,7 @@ package org.evomaster.client.java.sql.internal;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -59,7 +60,8 @@ public class ColumnTableAnalyzerTest {
 
         DbInfoDto schema = new DbInfoDto();
         TableDto fooTableDto = new TableDto();
-        fooTableDto.name = "Foo";
+        fooTableDto.id = new TableIdDto();
+        fooTableDto.id.name = "Foo";
         schema.tables.add(fooTableDto);
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
 
@@ -74,7 +76,8 @@ public class ColumnTableAnalyzerTest {
 
         DbInfoDto schema = new DbInfoDto();
         TableDto tableDto = new TableDto();
-        tableDto.name = "v1.Foo";
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = "v1.Foo";
         schema.tables.add(tableDto);
 
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);

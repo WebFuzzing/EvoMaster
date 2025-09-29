@@ -64,7 +64,8 @@ public class DbDirectIntEMTest extends SpringRPCTestBase {
                     assertContentInResponseForEndpoint(solution, DbDirectIntService.Iface.class.getName()+":get", "400");
                     assertContentInResponseForEndpoint(solution, DbDirectIntService.Iface.class.getName()+":get", "200");
 
-                    assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(listOf(\"db_direct_int_entity\"))");
+                    assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(");
+                    assertTextInTests(outputFolder, outputTestName, it -> it.toLowerCase().contains("db_direct_int_entity"));
                 });
     }
 }

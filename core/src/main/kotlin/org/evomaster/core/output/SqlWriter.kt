@@ -36,7 +36,8 @@ object SqlWriter {
         insertionVars: MutableList<Pair<String, String>>,
         skipFailure: Boolean) {
 
-        if (dbInitialization.isEmpty() || dbInitialization.none { !it.sqlAction.representExistingData && (!skipFailure || it.sqlResult.getInsertExecutionResult())}) {
+        if (dbInitialization.isEmpty()
+            || dbInitialization.none { !it.sqlAction.representExistingData && (!skipFailure || it.sqlResult.getInsertExecutionResult())}) {
             return
         }
 

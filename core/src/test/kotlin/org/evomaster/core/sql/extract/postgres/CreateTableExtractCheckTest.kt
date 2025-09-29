@@ -22,14 +22,14 @@ class CreateTableExtractCheckTest : ExtractTestBasePostgres() {
 
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
-        assertTrue(schema.tables.any { it.name == "people" })
+        assertTrue(schema.tables.any { it.id.name == "people" })
 
-        assertEquals(2, schema.tables.first { it.name == "people" }.columns.size)
+        assertEquals(2, schema.tables.first { it.id.name == "people" }.columns.size)
 
-        assertTrue(schema.tables.first { it.name == "people" }.columns.any { it.name == "age" });
+        assertTrue(schema.tables.first { it.id.name == "people" }.columns.any { it.name == "age" });
 
-        assertEquals(1, schema.tables.first { it.name == "people" }.tableCheckExpressions.size)
-        assertEquals("(age <= 100)", schema.tables.first { it.name == "people" }.tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals(1, schema.tables.first { it.id.name == "people" }.tableCheckExpressions.size)
+        assertEquals("(age <= 100)", schema.tables.first { it.id.name == "people" }.tableCheckExpressions[0].sqlCheckExpression)
 
     }
 }

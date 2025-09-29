@@ -10,6 +10,7 @@ import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.SqlTableId;
 import org.junit.jupiter.api.Assumptions;
@@ -64,7 +65,8 @@ class TableColumnResolverTest {
 
     private static TableDto createTableDto(String tableName) {
         TableDto table = new TableDto();
-        table.name = tableName;
+        table.id = new TableIdDto();
+        table.id.name = tableName;
         return table;
     }
 
@@ -762,7 +764,7 @@ class TableColumnResolverTest {
     void testResolveColumnTableNotInSchema() throws Exception {
 
         Assumptions.assumeTrue(this.schema.tables.stream()
-                .filter(t -> t.name.equals("Foo"))
+                .filter(t -> t.id.name.equals("Foo"))
                 .count()==0);
 
         String sql = "SELECT * FROM Foo";
@@ -782,7 +784,7 @@ class TableColumnResolverTest {
     void testResolveTableNotInSchema() throws Exception {
 
         Assumptions.assumeTrue(this.schema.tables.stream()
-                .filter(t -> t.name.equals("Foo"))
+                .filter(t -> t.id.name.equals("Foo"))
                 .count()==0);
 
         String sql = "SELECT * FROM Foo";
