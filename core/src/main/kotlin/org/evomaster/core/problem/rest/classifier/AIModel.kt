@@ -32,24 +32,24 @@ interface AIModel {
      */
     fun classify(input: RestCallAction): AIResponseClassification
 
-
     /**
-     *  Return a probability in [0,1] on how accurate the model is.
+     *  Return metrics such as accuracy, precision, and F1Score of the model.
      *  The model is learned dynamically throughout the search.
      *  Especially at the beginning of the search, the model will be unreliable.
-     *  This accuracy estimate can then be used by EvoMaster to make a non-deterministic decision on whether
+     *  These metrics estimate can then be used by EvoMaster to make a non-deterministic decision on whether
      *  the model should be used or not yet for classification, or if it needs more training first.
      *
      *  An API can have many different endpoints.
-     *  Based on the training data, the accuracy might be different between endpoints.
+     *  Based on the training data, the metrics might be different between endpoints.
      */
-    fun estimateAccuracy(endpoint: Endpoint) : Double
+    fun estimateMetrics(endpoint: Endpoint): ModelEvaluation
 
     /**
-     * Return a probability in [0,1] on how accurate the model is.
+     * Return the overall measurements of the metrics on how efficient the model is.
      * This is based on all endpoints.
      * If the model internally stores separated submodels for each endpoint,
-     * then this could be simply the average accuracy.
+     * then this could be seen as the average metrics.
      */
-    fun estimateOverallAccuracy() : Double
+    fun estimateOverallMetrics(): ModelEvaluation
+
 }

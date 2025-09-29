@@ -67,6 +67,24 @@ class InputEncoderUtilWrapper(
     }
 
 
+    /**
+     * Encode the current endpoint's gene values into a numeric feature vector.
+     *
+     *  - A sentinel value (-1e6) is used for missing or null-like cases
+     *
+     * Each gene is converted to a Double according to its type:
+     *  - IntegerGene → its integer value as Double
+     *  - DoubleGene → its double value
+     *  - StringGene → sentinel if blank, otherwise 1.0 (presence indicator)
+     *  - BooleanGene → 1.0 for true, 0.0 for false
+     *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"),
+     *                   or sentinel if not found
+     *
+     * This encoding produces a fixed-length feature vector of doubles
+     * that can be consumed by AI models.
+     *
+     * @return a list of doubles representing the encoded feature vector
+     */
     fun encode(): List<Double> {
         val sentinel = -1e6 // for null handling
         val listGenes = endPointToGeneList()

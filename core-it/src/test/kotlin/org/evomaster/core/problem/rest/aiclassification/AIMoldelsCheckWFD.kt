@@ -1,8 +1,5 @@
 package org.evomaster.core.problem.rest.aiclassification
 
-import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
-import bar.examples.it.spring.aiclassification.basic.BasicController
-import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -29,26 +26,19 @@ import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
-import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
+import java.io.File
 
 
-class AIModelsCheck : IntegrationTestRestBase() {
+class AIModelsCheckWFD : IntegrationTestRestBase() {
 
     companion object {
-        @JvmStatic
-        fun init() {
-             initClass(BasicController())
-//            initClass(MultiTypeController())
-//             initClass(AllOrNoneController())
-        }
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val test = AIModelsCheck()
-            init()
+            val test = AIModelsCheckWFD()
             test.initializeTest()
 
             test.injector.injectMembers(test)
@@ -60,12 +50,17 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runIterations = 1000
-    val encoderType4Test = EMConfig.EncoderType.NORMAL
-
+    val runIterations = 10000
+    val encoderType4Test = EMConfig.EncoderType.RAW
     val saveReport: Boolean = false
 
     val decisionMaking = "sendAnyway" // choose "probabilistic" to make the machine decide weather to send the request or not
+
+    val baseUrlOfSut = "http://localhost:8080"
+    val v2orV3 = "v2"
+
+    val swaggerUrl = "$baseUrlOfSut/$v2orV3/api-docs"
+
 
     @Inject
     lateinit var randomness: Randomness
@@ -75,8 +70,22 @@ class AIModelsCheck : IntegrationTestRestBase() {
         else -> 10
     }
 
+
+    fun recreateInjectorForBlackBox(extraArgs: List<String> = listOf()) {
+        val args = listOf(
+            "--problemType", "REST",
+            "--blackBox", "true",
+            "--bbTargetUrl", baseUrlOfSut,
+            "--bbSwaggerUrl", swaggerUrl,
+            "--createConfigPathIfMissing", "false",
+            "--seed", "42"
+        ).plus(extraArgs)
+
+        injector = init(args)
+    }
+
     fun initializeTest() {
-        recreateInjectorForWhite(listOf(modelName))
+        recreateInjectorForBlackBox(listOf(modelName))
     }
 
     @Inject
@@ -196,10 +205,12 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         // Save the report
         File(filePath).writeText(sb.toString())
+
     }
 
     fun runClassifierExample() {
-        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
+        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v2/api-docs")
+//        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
         val restSchema = RestSchema(schema)
 
         val options = RestActionBuilderV3.Options(config)
@@ -219,6 +230,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
+        val startTime = System.currentTimeMillis()
 
         for (i in 0 until runIterations) {
             val template = random.choose(actionList)
@@ -240,6 +252,10 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val action = individual.seeMainExecutableActions()[0]
 
             val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
+
+            val geneList = encoderTemp.endPointToGeneList()
+            val typesRow = geneList.joinToString(", ") { gene -> gene.javaClass.simpleName }
+            println("Genes type in the gene list: $typesRow")
 
             val hasUnsupportedGene = !encoderTemp.areAllGenesSupported()
             if (hasUnsupportedGene) {
@@ -343,8 +359,6 @@ class AIModelsCheck : IntegrationTestRestBase() {
                 }
             }
 
-            println("Send the request or not: $sendOrNot")
-
             if (sendOrNot) {
                 val result = executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
@@ -386,5 +400,6 @@ class AIModelsCheck : IntegrationTestRestBase() {
             println("The report is saved!")
         }
         println("The process is finished!")
+
     }
 }
