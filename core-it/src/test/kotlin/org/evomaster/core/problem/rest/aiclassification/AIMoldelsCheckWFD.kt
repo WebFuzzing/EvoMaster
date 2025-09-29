@@ -253,6 +253,11 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 
             val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
 
+            //print gene types
+            println("Expanded genes are: " +
+                    encoderTemp.endPointToGeneList()
+                        .joinToString(", ") { it.getLeafGene()::class.simpleName ?: "Unknown" })
+
             val geneList = encoderTemp.endPointToGeneList()
             val typesRow = geneList.joinToString(", ") { gene -> gene.javaClass.simpleName }
             println("Genes type in the gene list: $typesRow")

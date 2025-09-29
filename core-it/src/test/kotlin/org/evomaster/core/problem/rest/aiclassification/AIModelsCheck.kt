@@ -1,8 +1,15 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
+import bar.examples.it.spring.aiclassification.arithmetic.ArithmeticController
 import bar.examples.it.spring.aiclassification.basic.BasicController
+import bar.examples.it.spring.aiclassification.imply.ImplyController
+import bar.examples.it.spring.aiclassification.mixed.MixedController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
+import bar.examples.it.spring.aiclassification.onlyone.OnlyOneController
+import bar.examples.it.spring.aiclassification.or.OrController
+import bar.examples.it.spring.aiclassification.required.RequiredController
+import bar.examples.it.spring.aiclassification.zeroorone.ZeroOrOneController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -40,9 +47,16 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-             initClass(BasicController())
+             initClass(AllOrNoneController())
+//            initClass(ArithmeticController())
+//             initClass(BasicController())
+//            initClass(ImplyController())
+//             initClass(MixedController())
 //            initClass(MultiTypeController())
-//             initClass(AllOrNoneController())
+//             initClass(OnlyOneController())
+//             initClass(OrController())
+//             initClass(RequiredController())
+//             initClass(ZeroOrOneController())
         }
 
         @JvmStatic
@@ -61,7 +75,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
     val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
     val runIterations = 1000
-    val encoderType4Test = EMConfig.EncoderType.NORMAL
+    val encoderType4Test = EMConfig.EncoderType.RAW
 
     val saveReport: Boolean = false
 
@@ -240,6 +254,11 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val action = individual.seeMainExecutableActions()[0]
 
             val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
+
+            //print gene types
+            println("Expanded genes are: " +
+                    encoderTemp.endPointToGeneList()
+                        .joinToString(", ") { it.getLeafGene()::class.simpleName ?: "Unknown" })
 
             val hasUnsupportedGene = !encoderTemp.areAllGenesSupported()
             if (hasUnsupportedGene) {

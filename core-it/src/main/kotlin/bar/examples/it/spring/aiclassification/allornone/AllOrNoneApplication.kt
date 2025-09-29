@@ -25,13 +25,7 @@ open class AllOrNoneApplication {
 
         var d : ACAllOrNoneEnum? = null,
 
-        // TODO: Handling Lists that provides ArrayGenes is challenging because their length is flexible.
-        //       Each ArrayGene can expand into a variable number of elements, which makes
-        //       it difficult to map them into a fixed-length input vector for classification.
-        //       A proper strategy (e.g., padding, truncation, or embedding) will be needed later
-        //       to address this challenge.
-
-//        var e : List<String>? = null,
+        var e : List<String>? = null,
 
         )
 
