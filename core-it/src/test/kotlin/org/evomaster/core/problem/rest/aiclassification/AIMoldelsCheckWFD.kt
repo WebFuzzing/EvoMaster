@@ -50,7 +50,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
     }
 
     val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runIterations = 10000
+    val runIterations = 5000
     val encoderType4Test = EMConfig.EncoderType.RAW
     val saveReport: Boolean = false
 

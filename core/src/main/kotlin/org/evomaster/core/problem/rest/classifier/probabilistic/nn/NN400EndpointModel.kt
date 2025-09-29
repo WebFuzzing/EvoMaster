@@ -116,7 +116,7 @@ class NN400EndpointModel(
             // Skip training if unsupported or empty
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
             modelMetricsFullHistory.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
-            modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
+            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }
 

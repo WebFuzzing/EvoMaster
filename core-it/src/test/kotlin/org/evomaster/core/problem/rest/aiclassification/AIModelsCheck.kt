@@ -47,16 +47,18 @@ class AIModelsCheck : IntegrationTestRestBase() {
     companion object {
         @JvmStatic
         fun init() {
-             initClass(AllOrNoneController())
+//            initClass(MultiTypeController())
+
+
+//             initClass(AllOrNoneController())
 //            initClass(ArithmeticController())
 //             initClass(BasicController())
 //            initClass(ImplyController())
 //             initClass(MixedController())
-//            initClass(MultiTypeController())
 //             initClass(OnlyOneController())
 //             initClass(OrController())
 //             initClass(RequiredController())
-//             initClass(ZeroOrOneController())
+             initClass(ZeroOrOneController())
         }
 
         @JvmStatic
@@ -74,7 +76,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runIterations = 1000
+    val runIterations = 5000
     val encoderType4Test = EMConfig.EncoderType.RAW
 
     val saveReport: Boolean = false
