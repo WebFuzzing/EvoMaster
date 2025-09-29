@@ -561,7 +561,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
         } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            log.info("Status code 500 is not considered a bug, as HTTP 500 faults are disabled")
+            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
         }
     }
 
@@ -734,7 +734,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
             handleSchemaOracles(a, rcr, fv)
         } else {
-            log.info("Schema oracles disabled via configuration")
+            LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
         }
 
         val handledSavedLocation = handleSaveLocation(a, rcr, chainState)

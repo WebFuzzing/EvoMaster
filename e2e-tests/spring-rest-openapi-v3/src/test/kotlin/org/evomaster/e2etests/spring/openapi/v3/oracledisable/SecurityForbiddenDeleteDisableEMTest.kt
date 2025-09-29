@@ -33,7 +33,7 @@ class SecurityForbiddenDeleteDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "206")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION.code.toString())
 
             val solution = initAndRun(args)
 

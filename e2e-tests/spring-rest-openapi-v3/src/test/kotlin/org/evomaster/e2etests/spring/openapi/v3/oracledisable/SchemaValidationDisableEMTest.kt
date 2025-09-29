@@ -36,7 +36,7 @@ class SchemaValidationDisableEMTest : SpringTestBase(){
             Constants.statusCodeToReturn = 204
 
             setOption(args, "schemaOracles", "true")
-            setOption(args, "disabledOracleCodes", "101")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SCHEMA_INVALID_RESPONSE.code.toString())
 
             val solution = initAndRun(args)
 

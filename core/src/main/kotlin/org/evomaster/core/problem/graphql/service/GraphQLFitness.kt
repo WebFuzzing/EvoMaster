@@ -238,7 +238,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
         } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            log.info("Status code 500 is not considered a bug, as HTTP 500 faults are disabled")
+            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
         }
     }
 

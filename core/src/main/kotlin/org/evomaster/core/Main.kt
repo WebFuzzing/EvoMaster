@@ -428,7 +428,7 @@ class Main {
                     } else {
                         if(DefinedFaultCategory.SSRF in config.getDisabledOracleCodesList())
                         {
-                            LoggingUtil.getInfoLogger().info("Skipping security test for SSRF detection as disabled in configuration")
+                            LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
                         }
 
                         return solution

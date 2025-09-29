@@ -35,7 +35,7 @@ class HTTPStatus500DisableEMTest : SpringTestBase(){
             Constants.statusCodeToReturn = 500
 
             setOption(args, "schemaOracles", "true")
-            setOption(args, "disabledOracleCodes", "100")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.HTTP_STATUS_500.code.toString())
 
             val solution = initAndRun(args)
 

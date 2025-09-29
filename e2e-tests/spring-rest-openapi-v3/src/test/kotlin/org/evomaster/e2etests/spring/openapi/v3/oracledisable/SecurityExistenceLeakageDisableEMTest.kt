@@ -30,7 +30,7 @@ class SecurityExistenceLeakageDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "204")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE.code.toString())
 
             val solution = initAndRun(args)
 

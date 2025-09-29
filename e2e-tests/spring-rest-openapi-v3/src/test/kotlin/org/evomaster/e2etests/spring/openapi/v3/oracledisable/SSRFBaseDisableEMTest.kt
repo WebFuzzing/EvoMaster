@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.oracledisable
 
 import com.foo.rest.examples.spring.openapi.v3.security.ssrf.base.SSRFBaseController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -36,7 +37,7 @@ class SSRFBaseDisableEMTest : SpringTestBase() {
 
             setOption(args, "languageModelConnector", "false")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "202")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SSRF.code.toString())
 
             val solution = initAndRun(args)
 

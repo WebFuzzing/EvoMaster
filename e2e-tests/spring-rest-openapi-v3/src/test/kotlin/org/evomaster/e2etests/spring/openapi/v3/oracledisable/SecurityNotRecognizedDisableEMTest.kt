@@ -34,7 +34,7 @@ class SecurityNotRecognizedDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "205")
+            setOption(args, "disabledOracleCodes", DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.code.toString())
 
             val solution = initAndRun(args)
 

@@ -2816,7 +2816,7 @@ class EMConfig {
                 .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
                 .map { str ->
                     val code = str.toIntOrNull()
-                        ?: throw IllegalArgumentException("Invalid number: $str")
+                        ?: throw ConfigProblemException("Invalid number: $str")
 
                     val allCategories = DefinedFaultCategory.values().asList() +
                             ExperimentalFaultCategory.values()

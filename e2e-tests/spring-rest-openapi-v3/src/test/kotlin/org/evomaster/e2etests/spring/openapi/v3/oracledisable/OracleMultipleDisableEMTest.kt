@@ -53,7 +53,15 @@ class OracleMultipleDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
-            setOption(args, "disabledOracleCodes", "204,205,206")
+
+            // disabling all the 3 security oracles
+            val codes = listOf(
+                DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE.code,
+                DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION.code,
+                DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED.code
+            )
+
+            setOption(args, "disabledOracleCodes", codes.joinToString(","))
 
             val solution = initAndRun(args)
 
