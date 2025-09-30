@@ -70,7 +70,7 @@ class SSRFAnalyser {
      * Possible URL variable names.
      * TODO: Can load from a file.
      */
-    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource", "referer")
+    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource", "referer", "imageURL", "")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
