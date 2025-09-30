@@ -350,6 +350,12 @@ abstract class Gene(
     }
 
 
+    open fun getAllPossibleLeafGenes(): List<Gene> {
+
+        return listOf(getLeafGene())
+    }
+
+
 
     protected fun matchingClass(klass: Class<*>, strict: Boolean): Boolean {
         if (strict) {
