@@ -944,7 +944,7 @@ object GeneUtils {
         val parent = leaf.parent
         if (parent is ChoiceGene<*>) {
             if (parent.getViewOfChildren().any {it is StringGene}){
-                if (klass.isAssignableFrom(parent.javaClass)){
+                if (klass.isAssignableFrom(leaf.javaClass)) {
                     fields.add(parent)
                 }
             }
