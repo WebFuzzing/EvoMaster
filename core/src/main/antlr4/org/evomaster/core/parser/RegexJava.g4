@@ -23,7 +23,7 @@ grammar RegexJava;
 //------ PARSER ------------------------------
 // Parser rules have first letter in lower-case
 
-pattern : disjunction;
+pattern : disjunction EOF;
 
 
 disjunction
