@@ -941,17 +941,18 @@ object GeneUtils {
 
         val leaf = gene.getLeafGene()
 
+        val parent = leaf.parent
 
-
-        if(klass.isAssignableFrom(leaf.javaClass)){
-            val parent = leaf.parent
-            if (parent is ChoiceGene<*>) {
-                fields.add(parent)
-            } else {
-                //we are adding the wrapper gene, not the leaf
+        if (parent is ChoiceGene<*>){
+            parent.getViewOfChildren().forEach {
+                if (klass.isAssignableFrom(it.javaClass)){
+                    fields.add(parent)
+                }
+            }
+        } else {
+            if (klass.isAssignableFrom(leaf.javaClass)) {
                 fields.add(gene)
             }
-
         }
 
         // TODO: Need to check for ChoiceGene?
