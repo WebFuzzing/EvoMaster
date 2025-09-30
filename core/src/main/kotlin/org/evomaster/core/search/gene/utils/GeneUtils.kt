@@ -945,7 +945,9 @@ object GeneUtils {
 
         if (parent is ChoiceGene<*>) {
             if (parent.getViewOfChildren().any {it is StringGene}){
-                fields.add(parent)
+                if (klass.isAssignableFrom(parent.javaClass)){
+                    fields.add(parent)
+                }
             }
         } else {
             if(klass.isAssignableFrom(leaf.javaClass)){
