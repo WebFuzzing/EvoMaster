@@ -295,24 +295,22 @@ class SSRFAnalyser {
         )
 
         copy.seeMainExecutableActions().forEach { action ->
-            action.parameters.forEach { param ->
-                param.primaryGene().getViewOfChildren().forEach { gene ->
-                    updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
-                }
+            val genes = GeneUtils.getAllStringFields(action.parameters)
+            genes.forEach { gene ->
+                updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
             }
         }
 
         val executedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
         if (executedIndividual != null) {
-            handleExecutedIndividual(action, executedIndividual, callbackURL)
+            handleExecutedIndividual(action, executedIndividual)
         }
     }
 
     private fun handleExecutedIndividual(
         action: RestCallAction,
-        executedIndividual: EvaluatedIndividual<RestIndividual>,
-        callbackURL: String
+        executedIndividual: EvaluatedIndividual<RestIndividual>
     ) {
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
