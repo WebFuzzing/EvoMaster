@@ -626,7 +626,7 @@ object RestActionBuilderV3 {
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
-            "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0))
+            "path" -> params.add(PathParam(name, CustomMutationRateGene(gene.name, gene, 1.0))
                 .apply { this.description = description }
             )
             "header" -> params.add(HeaderParam(name, gene).apply { this.description = description })
@@ -651,7 +651,7 @@ object RestActionBuilderV3 {
                 var fixed = false
                 for (i in 0 until params.size) {
                     if (params[i] is QueryParam && params[i].name == n) {
-                        params[i] = PathParam(params[i].name, CustomMutationRateGene("d_", params[i].gene, 1.0))
+                        params[i] = PathParam(params[i].name, CustomMutationRateGene(params[i].gene.name, params[i].gene, 1.0))
                         fixed = true
                         break
                     }
@@ -659,7 +659,7 @@ object RestActionBuilderV3 {
 
                 if (!fixed) {
                     //just create a string
-                    val k = PathParam(n, CustomMutationRateGene("d_", StringGene(n), 1.0))
+                    val k = PathParam(n, CustomMutationRateGene(n, StringGene(n), 1.0))
                     params.add(k)
                 }
             }
