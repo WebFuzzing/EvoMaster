@@ -119,13 +119,13 @@ quoteChar
 ;
 
 //TODO
-CharacterEscape: HexEscapeSequence;
+CharacterEscape
 // : ControlEscape
 // | 'c' ControlLetter
-// | HexEscapeSequence
-// | UnicodeEscapeSequence
+ : HexEscapeSequence
+ | UnicodeEscapeSequence
  //| IdentityEscape
-// ;
+ ;
 
 //TODO
 //ControlEscape
@@ -267,7 +267,10 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-//TODO
+UnicodeEscapeSequence:
+ 'u' HexDigit HexDigit HexDigit HexDigit
+;
+
 HexEscapeSequence
  : 'x' HexDigit HexDigit
  ;

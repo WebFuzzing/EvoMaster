@@ -170,7 +170,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         if(ctx.AtomEscape() != null) {
             val txt = ctx.AtomEscape().text
             when {
-                txt[1] == 'x' -> {
+                txt[1] == 'x' || txt[1] == 'u' -> {
                     val hexValue =
                         txt.subSequence(2, txt.length).toString().toInt(16)
                     return VisitResult(

@@ -331,4 +331,9 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     fun testHexEscape(){
         checkSameAsJava("""\x00\x0a\xba\xFF""")
     }
+
+    @Test
+    fun testUnicodeEscape(){
+        checkSameAsJava("""\u0000\u0a0b\uffff""")
+    }
 }
