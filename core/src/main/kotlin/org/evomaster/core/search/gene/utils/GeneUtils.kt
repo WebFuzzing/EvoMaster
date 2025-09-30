@@ -922,8 +922,11 @@ object GeneUtils {
         //  name isn't the same as StringGene. Name: d_
         return params.flatMap { p ->
             if(p is HeaderParam || p is QueryParam || p is BodyParam || p is PathParam){
+<<<<<<< HEAD
                 // Note: PathParam was explicitly excluded, as not really representing possible fields.
                 //  Added to work with SSRF detection
+=======
+>>>>>>> ssrf-gene-utils
                 getAllFields(p.primaryGene(), klass)
             } else {
                 listOf()
