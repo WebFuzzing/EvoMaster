@@ -918,14 +918,14 @@ object GeneUtils {
 
 
     fun <K:Gene> getAllFields(params: List<Param>, klass: Class<K>) : List<Gene>{
-        // TODO: PathParam get the StringGene but the wrapper CustomMutationRateGene
-        //  name isn't the same as StringGene. Name: d_
+
         return params.flatMap { p ->
             if(p is HeaderParam || p is QueryParam || p is BodyParam || p is PathParam){
                 // Note: PathParam was explicitly excluded, as not really representing possible fields.
                 //  Added to work with SSRF detection
                 getAllFields(p.primaryGene(), klass)
             } else {
+                // PathParam are explicitly excluded, as not really representing possible fields
                 listOf()
             }
         }
