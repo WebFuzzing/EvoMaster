@@ -1099,18 +1099,18 @@ class EMConfig {
     var endpointPrefix: String? = null
 
     @Important(5.2)
-    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
-            " Only the REST endpoints having at least one of such tags will be fuzzed." +
-            " If no tag is specified here, then such filter is not applied.")
-    var endpointTagFilter: String? = null
-
-    @Important(5.2)
     @Cfg("Comma-separated list of endpoints for excluding endpoints." +
             " This is useful for excluding endpoints that are not relevant for testing, " +
             " such as those used for health checks or metrics. If no such endpoint is specified, " +
             " then no endpoints are excluded from the search.")
     var endpointExclude: String? = null
 
+    @Important(5.3)
+    @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
+            " Only the REST endpoints having at least one of such tags will be fuzzed." +
+            " If no tag is specified here, then such filter is not applied.")
+    var endpointTagFilter: String? = null
+    
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
