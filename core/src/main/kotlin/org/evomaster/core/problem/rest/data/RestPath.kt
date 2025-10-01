@@ -181,6 +181,20 @@ class RestPath(path: String) {
                 && this.endsWithSlash == other.endsWithSlash
     }
 
+    fun lengthSharedAncestors(other: RestPath): Int {
+        var common = 0
+        for(i in elements.indices) {
+            if(i >= other.elements.size) {
+                return common
+            }
+            if(elements[i] != other.elements[i]) {
+                return common
+            }
+            common++
+        }
+        return common
+    }
+
     /**
      * @return whether this is sibling of the [other]
      *
@@ -292,7 +306,7 @@ class RestPath(path: String) {
     }
 
     private fun usableQueryParamsFunction(): (Param) -> Boolean {
-        return { it is QueryParam && (it.primaryGene().getWrappedGene(OptionalGene::class.java)?.isActive ?: true) }
+        return { it is QueryParam && it.isActive() }
     }
 
     fun numberOfUsableQueryParams(params: List<Param>): Int {

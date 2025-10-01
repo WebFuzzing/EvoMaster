@@ -1,0 +1,112 @@
+openapi: 3.0.0
+info:
+  version: "1.0"
+  title: open-api
+paths:
+  "/a/users":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/a/users/{id}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/b/users/{id}":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+    "put":
+      responses:
+        "200":
+          description: "ok"
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/c/users/{x}/{y}":
+    "put":
+      responses:
+        "200":
+          description: "ok"
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/d/users/{x}":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/d/users/{x}/foo":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/e/foo":
+    "put":
+      responses:
+        "200":
+          description: "ok"
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/f/users/{x}/{y}":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/f/users/{x}/{y}/{id}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/g/users":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/g/users/{x}/{y}/{id}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/h/users":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/h/users/delete/{id}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/i/users":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/i/user/{id}":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/l/foo":
+    "post":
+      responses:
+        "200":
+          description: "ok"
+  "/l/bar":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+  "/m/foo":
+    "delete":
+      responses:
+        "200":
+          description: "ok"
+

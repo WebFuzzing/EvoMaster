@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 
 class QueryParam(
@@ -43,4 +44,6 @@ class QueryParam(
     override fun copyContent(): Param {
         return QueryParam(name, gene.copy(), explode, style)
     }
+
+    fun isActive() = (primaryGene().getWrappedGene(OptionalGene::class.java)?.isActive ?: true)
 }

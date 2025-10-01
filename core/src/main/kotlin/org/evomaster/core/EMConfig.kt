@@ -1,5 +1,7 @@
 package org.evomaster.core
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
+import com.webfuzzing.commons.faults.FaultCategory
 import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
@@ -13,6 +15,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -48,7 +51,7 @@ class EMConfig {
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
 
         private const val headerRegex = "(.+:.+)|(^$)"
-
+        private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
@@ -1293,16 +1296,87 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN, GLM, DETERMINISTIC
+        /**
+         * No classification is performed.
+         */
+        NONE,
+
+        /**
+         * Gaussian Model.
+         * Assumes the data follows a bell-shaped curve, parameterized by mean and variance.
+         */
+        GAUSSIAN,
+
+        /**
+         * Kernel Density Estimation (KDE).
+         * A non-parametric method for estimating the probability density function.
+         */
+        KDE,
+
+        /**
+         * K-Nearest Neighbors (KNN).
+         * Classifies a point based on the majority label among its k closest neighbors.
+         */
+        KNN,
+
+        /**
+         * Neural Network (NN).
+         * A computational model inspired by biological neural systems, consisting of layers of interconnected neurons.
+         * Neural networks learn patterns from data to capture underlying nonlinear relationships
+         * and to perform flexible classification
+         */
+        NN,
+
+        /**
+         * Generalized Linear Model (GLM).
+         * Extends linear regression to handle non-normal response distributions.
+         */
+        GLM,
+
+        /**
+         * Rule-Based Deterministic Model.
+         * Uses predefined, fixed rules for classification,
+         * providing clear and structured decision logic as an
+         * alternative to probabilistic or statistical methods.
+         */
+        DETERMINISTIC
     }
+
+
 
     @Experimental
     @Cfg("Model used to learn input constraints and infer response status before making request.")
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
-    @Cfg("Learning rate for classifiers like GLM and NN.")
+    @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
+            "Relevant for gradient-based models such as GLM and neural networks. " +
+            "A smaller value ensures stable but slower convergence, while a larger value speeds up " +
+            "training but may cause instability.")
     var aiResponseClassifierLearningRate: Double = 0.01
+
+    @Experimental
+    @Cfg("Number of training iterations required to update classifier parameters. " +
+                "For example, in the Gaussian model this affects mean and variance updates. " +
+                "For neural network (NN) models, the warm-up should typically be larger than 1000.")
+    var aiResponseClassifierWarmup : Int = 10
+
+
+    enum class EncoderType {
+
+        /** Use raw values without any transformation. */
+        RAW,
+
+        /** Normalize values to a standard scale (e.g., zero mean and unit variance). */
+        NORMAL,
+
+        /** Scale the vector to have unit length, making it a point on the unit sphere. */
+        UNIT_NORMAL
+    }
+
+    @Experimental
+    @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
+    var aiEncoderType = EncoderType.RAW
 
 
     @Experimental
@@ -2457,6 +2531,12 @@ class EMConfig {
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
 
+    @Regex(faultCodeRegex)
+    @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
+                "By default, all oracles are enabled."
+    )
+    var disabledOracleCodes = ""
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2470,14 +2550,13 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Port to run HTTP server to verify HTTP callbacks related to SSRF.")
-    @Min(0.0)
-    @Max(maxTcpPort)
-    var httpCallbackVerifierPort: Int = 19876
-
-    @Experimental
     @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
     var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
+
+    @Experimental
+    @Cfg("HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a " +
+            "container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname.")
+    var callbackURLHostname = "localhost"
 
     @Experimental
     @Cfg("Enable language model connector")
@@ -2736,4 +2815,30 @@ class EMConfig {
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+
+    private var disabledOracleCodesList: List<FaultCategory>? = null
+
+    fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList == null) {
+            disabledOracleCodesList = disabledOracleCodes
+                .split(",")
+                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+                .map { str ->
+                    val code = str.toIntOrNull()
+                        ?: throw ConfigProblemException("Invalid number: $str")
+
+                    val allCategories = DefinedFaultCategory.values().asList() +
+                            ExperimentalFaultCategory.values()
+
+                    allCategories.firstOrNull { it.code == code }
+                        ?: throw ConfigProblemException(
+                            "Invalid fault code: $code" +
+                                    " All available codes are: \n" +
+                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
+                        )
+                }
+        }
+        return disabledOracleCodesList!!
+    }
+
 }

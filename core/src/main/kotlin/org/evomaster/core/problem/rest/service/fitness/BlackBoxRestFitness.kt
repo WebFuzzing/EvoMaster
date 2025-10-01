@@ -10,12 +10,14 @@ import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.StructuralElement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.inject.Inject
 import javax.ws.rs.core.NewCookie
 
 
@@ -57,8 +59,12 @@ class BlackBoxRestFitness : RestFitness() {
         val chainState = mutableMapOf<String, String>()
         val mainActions = individual.seeMainExecutableActions()
 
+        goingToStartExecutingNewTest()
+
         //run the test, one action at a time
         for (i in mainActions.indices) {
+
+            reportActionIndex(i)
             val a = mainActions[i]
             val ok = handleRestCall(a, mainActions, actionResults, chainState, cookies, tokens, fv)
             actionResults[i].stopping = !ok
@@ -73,6 +79,8 @@ class BlackBoxRestFitness : RestFitness() {
         if(config.blackBoxCleanUp) {
             handleCleanUpActions(individual, actionResults, chainState, cookies, tokens, fv)
         }
+
+        handleFurtherFitnessFunctions(fv)
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
@@ -110,7 +118,7 @@ class BlackBoxRestFitness : RestFitness() {
 
         for(create in toHandle){
 
-            val template = builder.findDeleteFor(create.action as RestCallAction)
+            val template = callGraphService.findDeleteFor(create.action as RestCallAction)
                 ?: continue
 
             val delete = builder.createBoundActionOnPreviousCreate(template, create.action)
