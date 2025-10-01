@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
@@ -63,6 +63,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var builder: RestIndividualBuilder
+
+    @Inject
+    protected lateinit var config: EMConfig
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -250,18 +253,35 @@ class SecurityRest {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        // quite a few rules here that can be defined
-        handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
-        handleForbiddenOperationButOKOthers(HttpVerb.PUT)
-        handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+            LoggingUtil.uniqueUserInfo("Skipping security test for forbidden but ok others as disabled in configuration")
+        } else {
+            // quite a few rules here that can be defined
+            handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
+            handleForbiddenOperationButOKOthers(HttpVerb.PUT)
+            handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
+        }
 
-        // getting 404 instead of 403
-        handleExistenceLeakage()
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+            LoggingUtil.uniqueUserInfo("Skipping security test for existence leakage as disabled in configuration")
+        } else {
+            // getting 404 instead of 403
+            handleExistenceLeakage()
+        }
 
-        //authenticated, but wrongly getting 401 (eg instead of 403)
-        handleNotRecognizedAuthenticated()
+        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
+            LoggingUtil.uniqueUserInfo("Skipping security test for not recognized authenticated as disabled in configuration")
+        } else {
+            //authenticated, but wrongly getting 401 (eg instead of 403)
+            handleNotRecognizedAuthenticated()
+        }
 
-        handleForgottenAuthentication()
+        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for forgotten authentication as disabled in configuration")
+        } else {
+            handleForgottenAuthentication()
+        }
+
         //TODO other rules. See FaultCategory
         //etc.
     }
