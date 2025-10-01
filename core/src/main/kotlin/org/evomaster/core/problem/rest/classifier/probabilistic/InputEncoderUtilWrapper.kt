@@ -47,28 +47,36 @@ class InputEncoderUtilWrapper(
         ArrayGene::class
     )
 
+    data class ParamAndGene(
+        val paramName: String,
+        val gene: Gene
+    )
+
     fun isSupported(g: Gene): Boolean =
         supportedGeneTypes.any { it.isInstance(g) }
 
-    fun areAllGenesSupported(): Boolean {
-        val leafs = endPointToGeneList().map { gene -> gene.getLeafGene() }
-        return leafs.all { isSupported(it) }
-    }
+    fun areAllGenesSupported(): Boolean =
+        endPointToGeneList().all { isSupported(it.gene.getLeafGene()) }
 
-    fun expandGene(g: Gene): List<Gene> = when (g) {
-        is ObjectGene -> {
+    private fun expandGene(g: Gene): List<Gene> {
+
+        val gene = g.getLeafGene()
+
+        if (gene is ObjectGene) {
             val expanded = mutableListOf<Gene>()
-            g.fixedFields.forEach { expanded.addAll(expandGene(it)) }
-            g.additionalFields?.forEach { pair ->
+            gene.fixedFields.forEach { expanded.addAll(expandGene(it)) }
+            gene.additionalFields?.forEach { pair ->
                 expanded.addAll(expandGene(pair.second))
             }
-            expanded
+            return expanded
         }
-        else -> listOf(g)
+
+        return listOf(gene)
     }
 
-    fun endPointToGeneList(): List<Gene> {
-        val listGenes = mutableListOf<Gene>()
+    fun endPointToGeneList(): List<ParamAndGene> {
+        val paramAndGenes = mutableListOf<ParamAndGene>()
+
         action.parameters
             .filter { p ->
                 val name = p.name
@@ -77,9 +85,13 @@ class InputEncoderUtilWrapper(
             }
             .forEach { p ->
                 val g = p.primaryGene()
-                listGenes.addAll(expandGene(g))
+                val expanded = expandGene(g)
+                expanded.forEach { subGene ->
+                    paramAndGenes.add(ParamAndGene(subGene.name, subGene))
+                }
             }
-        return listGenes
+
+        return paramAndGenes
     }
 
 
@@ -102,12 +114,12 @@ class InputEncoderUtilWrapper(
      */
     fun encode(): List<Double> {
         val sentinel = -1e6 // for null handling
-        val listGenes = endPointToGeneList()
+        val listGenes = endPointToGeneList().map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 
         for (g in listGenes) {
 
-            if(g.getValueAsPrintableString()==""){
+            if(!g.staticCheckIfImpactPhenotype() || g.getValueAsPrintableString()==""){
                 rawEncodedFeatures.add(sentinel)
                 continue
             }
@@ -150,8 +162,13 @@ class InputEncoderUtilWrapper(
                  * its effective size.
                  */
                 is ArrayGene<*> -> {
-                    val count = leaf.getViewOfElements()
-                        .count { e -> e.getValueAsPrintableString().isNotBlank() }
+                    val elements = leaf.getViewOfElements()
+                    // If the array is empty, encode as sentinel
+                    val count = if (elements.isEmpty()) {
+                        sentinel
+                    } else {
+                        elements.count { e -> e.getValueAsPrintableString().isNotBlank()}
+                    }
                     rawEncodedFeatures.add(count.toDouble())
                 }
 

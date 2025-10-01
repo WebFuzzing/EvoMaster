@@ -28,6 +28,7 @@ class KNN400EndpointModel (
 
     companion object {
         private const val NOT_400 = 200
+        private const val MAX_SAMPLES = 10_000    // Fixed-size buffer for samples to avoid memory overload
     }
 
     /**
@@ -37,6 +38,9 @@ class KNN400EndpointModel (
      *  - Int         : the corresponding status code (i.e., HTTP response)
      */
     val samples = mutableListOf<Pair<List<Double>, Int>>()
+
+    /** Total number of samples observed so far (including discarded ones). */
+    private var seen: Long = 0L
 
     // Euclidean distance between two points in the feature space
     private fun distance(a: List<Double>, b: List<Double>): Double {
@@ -112,11 +116,25 @@ class KNN400EndpointModel (
          * Store only classes of interest (i.e., 400 and not 400 groups)
          */
         val trueStatusCode = output.getStatusCode()
-        if (trueStatusCode == 400) {
-            samples.add(inputVector to 400)
+        val label = if (trueStatusCode == 400) 400 else NOT_400
+
+        /**
+         * Keep the sample list bounded using reservoir sampling.
+         *
+         * - If we have not yet filled the reservoir (samples.size < MAX_SAMPLES), add the new sample.
+         * - Otherwise, replace an existing sample with decreasing probability to maintain
+         *   a uniform random subset of all seen data.
+         */
+        seen++
+        if (samples.size < MAX_SAMPLES) {
+            samples.add(inputVector to label)
         } else {
-            samples.add(inputVector to NOT_400)
+            val r = kotlin.random.Random.nextLong(seen)
+            if (r < MAX_SAMPLES) {
+                samples[r.toInt()] = inputVector to label
+            }
         }
+
 
     }
 

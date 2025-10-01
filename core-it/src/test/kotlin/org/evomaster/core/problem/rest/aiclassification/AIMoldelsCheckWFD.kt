@@ -25,7 +25,9 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
+import org.jetbrains.kotlin.fir.builder.escapedStringToCharacter
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
@@ -49,17 +51,18 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runIterations = 5000
+    val modelName = "KNN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
+    val runIterations = 200
     val encoderType4Test = EMConfig.EncoderType.RAW
     val saveReport: Boolean = false
 
     val decisionMaking = "sendAnyway" // choose "probabilistic" to make the machine decide weather to send the request or not
 
     val baseUrlOfSut = "http://localhost:8080"
-    val v2orV3 = "v2"
 
-    val swaggerUrl = "$baseUrlOfSut/$v2orV3/api-docs"
+//    val v2orV3 = "v2"
+//    val swaggerUrl = "$baseUrlOfSut/$v2orV3/api-docs"
+    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
 
 
     @Inject
@@ -209,8 +212,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
     }
 
     fun runClassifierExample() {
-        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v2/api-docs")
-//        val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
+        val schema = OpenApiAccess.getOpenAPIFromLocation(swaggerUrl)
         val restSchema = RestSchema(schema)
 
         val options = RestActionBuilderV3.Options(config)
@@ -242,9 +244,12 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             println("*************************************************")
             println("Path: $endPoint")
 
+            println(sampledAction.parameters.joinToString(", ") {
+                    "${it.name}=${it.primaryGene().getValueAsRawString()}" })
+
             val geneValues = sampledAction.parameters
                 .map { it.primaryGene().getValueAsRawString().replace("EVOMASTER", "") }
-            println("Input Genes: ${geneValues.joinToString(", ")}")
+            println("Input Gene: ${geneValues.joinToString(", ")}")
             println("Genes Size: ${geneValues.size}")
 
             val individual =
@@ -253,14 +258,24 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
 
             val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
 
-            //print gene types
-            println("Expanded genes are: " +
-                    encoderTemp.endPointToGeneList()
-                        .joinToString(", ") { it.getLeafGene()::class.simpleName ?: "Unknown" })
+            println(
+                "Expanded genes are: " +
+                        encoderTemp.endPointToGeneList()
+                            .joinToString(", ") { ng ->
+                                "[Name:${ng.gene.name}, Value:${ng.gene.getValueAsRawString()}, Class:${ng.gene::class.simpleName ?: "Unknown"}]"
+                            }
+            )
 
-            val geneList = encoderTemp.endPointToGeneList()
-            val typesRow = geneList.joinToString(", ") { gene -> gene.javaClass.simpleName }
-            println("Genes type in the gene list: $typesRow")
+//            println(
+//                "Expanded genes are: " +
+//                        encoderTemp.endPointToGeneList()
+//                            .onEach { ng ->
+//                                println("Is ${ng.gene.name} an ObjectGene? ${ng.gene is ObjectGene}")
+//                            }
+//                            .joinToString(", ") { ng ->
+//                                "${ng.gene.name}:${ng.gene.getLeafGene()::class.simpleName ?: "Unknown"}"
+//                            }
+//            )
 
             val hasUnsupportedGene = !encoderTemp.areAllGenesSupported()
             if (hasUnsupportedGene) {

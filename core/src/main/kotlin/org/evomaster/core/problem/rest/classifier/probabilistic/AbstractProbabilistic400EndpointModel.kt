@@ -29,7 +29,7 @@ abstract class AbstractProbabilistic400EndpointModel(
     protected var initialized: Boolean = false
 
     val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
-    val modelMetricsWithTimeWindow: ModelMetrics = ModelMetricsWithTimeWindow(1000)
+    val modelMetricsWithTimeWindow: ModelMetrics = ModelMetricsWithTimeWindow(100)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {

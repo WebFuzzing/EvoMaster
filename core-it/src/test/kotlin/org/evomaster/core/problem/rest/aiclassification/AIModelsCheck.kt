@@ -50,7 +50,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 //            initClass(MultiTypeController())
 
 
-//             initClass(AllOrNoneController())
+             initClass(AllOrNoneController())
 //            initClass(ArithmeticController())
 //             initClass(BasicController())
 //            initClass(ImplyController())
@@ -58,7 +58,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
 //             initClass(OnlyOneController())
 //             initClass(OrController())
 //             initClass(RequiredController())
-             initClass(ZeroOrOneController())
+//             initClass(ZeroOrOneController())
         }
 
         @JvmStatic
@@ -75,7 +75,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
+    val modelName = "KNN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val runIterations = 5000
     val encoderType4Test = EMConfig.EncoderType.RAW
 
@@ -258,9 +258,13 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val encoderTemp = InputEncoderUtilWrapper(action, encoderType = config.aiEncoderType)
 
             //print gene types
-            println("Expanded genes are: " +
-                    encoderTemp.endPointToGeneList()
-                        .joinToString(", ") { it.getLeafGene()::class.simpleName ?: "Unknown" })
+            println(
+                "Expanded genes are: " +
+                        encoderTemp.endPointToGeneList()
+                            .joinToString(", ") { ng ->
+                                "${ng.gene.name}:${ng.gene::class.simpleName ?: "Unknown"}"
+                            }
+            )
 
             val hasUnsupportedGene = !encoderTemp.areAllGenesSupported()
             if (hasUnsupportedGene) {

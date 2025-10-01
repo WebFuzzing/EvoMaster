@@ -33,11 +33,8 @@ class KDE400EndpointModel (
     private var density400: KDE? = null
     private var densityNot400: KDE? = null
 
-    /**
-     * Optional cap on stored samples per class (0 = unlimited).
-     * If >0, uses reservoir-style uniform downsampling.
-     */
-    var maxSamplesPerClass: Int = 0
+    /** Cap on stored samples per class based on the reservoir-style uniform downsampling.*/
+    var maxSamplesPerClass: Int = 10000
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
@@ -148,7 +145,7 @@ class KDE400EndpointModel (
      * Represents a Kernel Density Estimator (KDE) that approximates the distribution of a dataset
      * using Gaussian kernels with diagonal bandwidth.
      * @property d Dimensionality of the data points.
-     * @property maxStored Maximum number of samples to store in memory. If the value is <= 0, all samples are stored.
+     * @property maxStored Maximum number of samples to store in memory.
      */
     class KDE(private val d: Int, private val maxStored: Int = 0) {
 
@@ -174,18 +171,19 @@ class KDE400EndpointModel (
                 M2[j] += delta * delta2
             }
 
-            // Store sample (unbounded or reservoir downsample)
-            if (maxStored <= 0) {
+            /**
+             * Reservoir-style replacement to avoid memory issue
+             *  - Fill up until we reach maxStored.
+             *  - After that, replace existing samples with decreasing probability
+             *    to maintain a uniform random subset of all seen data.
+             */
+            if (samples.size < maxStored) {
                 samples.add(x)
             } else {
-                if (samples.size < maxStored) {
-                    samples.add(x)
-                } else {
-                    // reservoir: replace with decreasing probability
-                    val r = kotlin.random.Random.nextLong(seen)
-                    if (r < maxStored) {
-                        samples[r.toInt()] = x
-                    }
+                // reservoir: replace with decreasing probability
+                val r = kotlin.random.Random.nextLong(seen)
+                if (r < maxStored) {
+                    samples[r.toInt()] = x
                 }
             }
         }
