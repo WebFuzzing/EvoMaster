@@ -7,6 +7,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
@@ -919,7 +920,9 @@ object GeneUtils {
     fun <K:Gene> getAllFields(params: List<Param>, klass: Class<K>) : List<Gene>{
 
         return params.flatMap { p ->
-            if(p is HeaderParam || p is QueryParam || p is BodyParam){
+            if(p is HeaderParam || p is QueryParam || p is BodyParam || p is PathParam){
+                // Note: PathParam was explicitly excluded, as not really representing possible fields.
+                //  Added to work with SSRF detection
                 getAllFields(p.primaryGene(), klass)
             } else {
                 // PathParam are explicitly excluded, as not really representing possible fields
@@ -938,11 +941,19 @@ object GeneUtils {
 
         val leaf = gene.getLeafGene()
 
-        if(klass.isAssignableFrom(leaf.javaClass)){
-            //we are adding the wrapper gene, not the leaf
-            fields.add(gene)
+        val parent = leaf.parent
+
+        if (parent is ChoiceGene<*>){
+            if (parent.getViewOfChildren().any { klass.isAssignableFrom(it.javaClass) }) {
+                fields.add(parent)
+            }
+        } else {
+            if (klass.isAssignableFrom(leaf.javaClass)) {
+                fields.add(gene)
+            }
         }
 
+        // TODO: Need to check for ChoiceGene?
         if(leaf is ObjectGene){
             leaf.fields.forEach {
                 fields.addAll(getAllFields(it, klass))
