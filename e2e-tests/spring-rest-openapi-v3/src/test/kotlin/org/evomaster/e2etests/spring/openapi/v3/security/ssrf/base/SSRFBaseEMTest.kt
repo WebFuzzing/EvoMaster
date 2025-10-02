@@ -4,10 +4,8 @@ import com.foo.rest.examples.spring.openapi.v3.security.ssrf.base.SSRFBaseContro
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class SSRFBaseEMTest : SpringTestBase() {
@@ -22,7 +20,6 @@ class SSRFBaseEMTest : SpringTestBase() {
         }
     }
 
-    @Disabled
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
@@ -43,9 +40,9 @@ class SSRFBaseEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
+            assertTrue { solution.hasSsrfFaults() }
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch/data", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.POST, 204, "/api/fetch/data", "Unable to fetch sensor data.")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/fetch", "OK")
         }
     }
 }

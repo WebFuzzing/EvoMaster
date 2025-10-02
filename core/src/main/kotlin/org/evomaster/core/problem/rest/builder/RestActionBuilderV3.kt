@@ -102,13 +102,21 @@ object RestActionBuilderV3 {
 
         val probUseDefault: Double = 0.0,
 
-        val probUseExamples: Double = 0.0
+        val probUseExamples: Double = 0.0,
+
+        /**
+            If we are doing white-box testing, we might use advance techniques like taint analysis,
+            which might impact how we design the chromosome.
+            but, for black-box, they would not be useful
+         */
+        val usingWhiteBox: Boolean = true
     ){
         constructor(config: EMConfig): this(
             enableConstraintHandling = config.enableSchemaConstraintHandling,
             invalidData = config.allowInvalidData,
             probUseDefault = config.probRestDefault,
-            probUseExamples = config.probRestExamples
+            probUseExamples = config.probRestExamples,
+            usingWhiteBox = !config.blackBox
         )
 
         init {
@@ -618,7 +626,7 @@ object RestActionBuilderV3 {
                 a path is inside a Disruptive Gene, because there are cases in which we want to prevent
                 mutation. Note that 1.0 means can always be mutated
              */
-            "path" -> params.add(PathParam(name, CustomMutationRateGene("d_", gene, 1.0))
+            "path" -> params.add(PathParam(name, CustomMutationRateGene(name, gene, 1.0))
                 .apply { this.description = description }
             )
             "header" -> params.add(HeaderParam(name, gene).apply { this.description = description })
@@ -643,7 +651,7 @@ object RestActionBuilderV3 {
                 var fixed = false
                 for (i in 0 until params.size) {
                     if (params[i] is QueryParam && params[i].name == n) {
-                        params[i] = PathParam(params[i].name, CustomMutationRateGene("d_", params[i].gene, 1.0))
+                        params[i] = PathParam(params[i].name, CustomMutationRateGene(params[i].gene.name, params[i].gene, 1.0))
                         fixed = true
                         break
                     }
@@ -651,7 +659,7 @@ object RestActionBuilderV3 {
 
                 if (!fixed) {
                     //just create a string
-                    val k = PathParam(n, CustomMutationRateGene("d_", StringGene(n), 1.0))
+                    val k = PathParam(n, CustomMutationRateGene(n, StringGene(n), 1.0))
                     params.add(k)
                 }
             }
@@ -1025,25 +1033,37 @@ object RestActionBuilderV3 {
          */
 
         var additionalFieldTemplate : PairGene<StringGene, Gene>? = null
-        /*
-            Can be either a boolean or a Schema
-         */
+        var valueTemplate : Gene? = null
+
+        //    Can be either a boolean or a Schema
         val additional = schema.additionalProperties
 
-        if (additional is Boolean) {
+        if (additional == null || (additional is Boolean && additional)) {
             /*
                 if 'false', no other fields besides the specified ones can be added.
-                Default is 'true'.
+                if 'true', then any kind of extra field can be added
+                Default is 'true' if not specified.
               */
-            //TODO could add extra fields for robustness testing
+            /*
+                FIXME need to fix few things in ObjectGene before we can have this.
+                TODO once fixed, put this back, and reenable failing test in
+                core-it/src/test/kotlin/org/evomaster/core/problem/rest/body/BodyTest.kt
+             */
+//               val name = "valueTemplate"
+//               valueTemplate = ChoiceGene(name, listOf(
+//                   StringGene("${name}_string"),
+//                   BooleanGene("${name}_boolean"),
+//                   IntegerGene("${name}_integer"),
+//                   DoubleGene("${name}_double"),
+//               ))
         }
-        if (additional is Schema<*>) {
 
+        if (additional is Schema<*>) {
             /*
                support additionalProperties with schema
             */
             if (!additional.`$ref`.isNullOrBlank()) {
-                val valueTemplate = createObjectFromReference(
+                valueTemplate = createObjectFromReference(
                     "valueTemplate",
                     additional.`$ref`,
                     schemaHolder,
@@ -1052,12 +1072,9 @@ object RestActionBuilderV3 {
                     options = options,
                     examples = examples,
                     messages = messages)
-                additionalFieldTemplate= PairGene(
-                    "template",
-                    StringGene("keyTemplate"),
-                    valueTemplate.copy())
+
             }else if(!additional.type.isNullOrBlank() || additional.types?.isNotEmpty() == true){
-                val valueTemplate = getGene(
+                valueTemplate = getGene(
                     "valueTemplate",
                     additional,
                     schemaHolder,
@@ -1066,26 +1083,18 @@ object RestActionBuilderV3 {
                     null,
                     options = options,
                     messages = messages)
-                additionalFieldTemplate = PairGene("template", StringGene("keyTemplate"), valueTemplate.copy())
             }
+        }
+        /*
+            TODO could add extra fields for robustness testing,
+            with and without following the given schema for their type
+         */
 
-            /*
-               TODO could add extra fields for robustness testing,
-               with and without following the given schema for their type
-             */
-
-            /*
-                TODO proper handling.
-                Using a map is just a temp solution
-             */
-
-//            if (fields.isEmpty()) {
-//                if (additionalFieldTemplate != null)
-//                    return FixedMapGene(name, additionalFieldTemplate)
-//
-//                // here, the first of pairgene should not be mutable
-//                return FixedMapGene(name, PairGene.createStringPairGene(getGene(name + "_field", additional, swagger, history, null, enableConstraintHandling), isFixedFirst = true))
-//            }
+        if(valueTemplate != null){
+            additionalFieldTemplate= PairGene(
+                "template",
+                StringGene("keyTemplate"),
+                valueTemplate.copy())
         }
 
         return assembleObjectGeneWithConstraints(
@@ -1232,20 +1241,22 @@ object RestActionBuilderV3 {
         messages: MutableList<String>
     ) : Gene{
         if (fields.isEmpty()) {
-            if (additionalFieldTemplate != null)
+
+            if(options.usingWhiteBox &&
+                schema.additionalProperties == null
+                || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
+                //default is true
+                return TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
+            }
+
+            if (additionalFieldTemplate != null){
                 return FixedMapGene(name, additionalFieldTemplate)
+            }
 
             messages.add("No fields for object definition: $name")
 
-            return if(schema.additionalProperties == null || (schema.additionalProperties is Boolean && schema.additionalProperties == true)) {
-                //default is true
-                TaintedMapGene(name, TaintInputName.getTaintName(StaticCounter.getAndIncrease()))
-            } else {
-                /*
-                            If we get here, it is really something wrong with the schema...
-                         */
-                FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
-            }
+            //If we get here, it is really something wrong with the schema...
+            return FixedMapGene(name, PairGene.createStringPairGene(StringGene(name + "_field"), isFixedFirst = true))
         }
 
         val mainGene = if (additionalFieldTemplate!=null){

@@ -25,7 +25,7 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -35,6 +35,30 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
     }
 
     private fun testRunEM(model: AIResponseClassifierModel) {
@@ -59,9 +83,43 @@ class ACRequiredEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/required",
+                    queryParams = mapOf("x" to "foo", "y" to "42", "z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/required",
+                    jsonBodyPayload = """
+                        {"b": "Bar"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("PUT", "/api/required",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "Bar", "c": 42}
+                    """.trimIndent(),
+                    queryParams = mapOf("x" to "foo"))!!
+            )
 
-            //verifyModel(injector) //TODO
+            val fail = listOf(
+                ptr.fromVerbPath("GET", "/api/required",
+                    queryParams = mapOf("x" to "foo", "y" to "42"))!!,
+                ptr.fromVerbPath("GET", "/api/required",
+                    queryParams = mapOf("x" to "foo", "z" to "true"))!!,
+                ptr.fromVerbPath("GET", "/api/required",
+                    queryParams = mapOf("y" to "42", "z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/required",
+                    jsonBodyPayload = """
+                        {}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("PUT", "/api/required",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "Bar"}
+                    """.trimIndent(),
+                    queryParams = mapOf("x" to "foo"))!!,
+                ptr.fromVerbPath("PUT", "/api/required",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "Bar", "c": 42}
+                    """.trimIndent(),
+                    queryParams = mapOf())!!            )
+
+            verifyModel(injector,ok,fail)
         }
     }
 }

@@ -25,6 +25,16 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ### 2025
 
+* A. Golmohammadi, M. Zhang, A. Arcuri. 
+  *Tools and Benchmarks Evolve: What is their Impact on Parameter Tuning in SBSE Experiments?*.
+  Empirical Software Engineering (EMSE).
+  (To appear)
+
+* F. F. Susilo.
+  *Human-Centered Evaluation of REST API Fuzzing Tools: Bridging Academia and Industry*.
+  IEEE/ACM International Conference on Automated Software Engineering (ASE), Doctoral Symposium.
+  (To appear)
+
 * A. Arcuri, O. Sahin, M. Zhang.
   *Fuzzing for Detecting Access Policy Violations in REST APIs*.
   IEEE International Symposium on Software Reliability Engineering (ISSRE).

@@ -34,15 +34,47 @@ building on decades of research in the field of [Search-Based Software Testing](
 ### 1-Minute Example 
 
 On a console, copy&paste the following (requires _Docker_ installed).
-It will fuzz the PetClinic example API from Swagger, for 30 seconds. 
+It will fuzz the PetClinic example API from Swagger, for 30 seconds, as shown in the following video. 
 
 ```
 docker run -v "$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
 ```
-Note, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $ (as in the following video).
 
 
 ![](docs/img/evomaster_docker_use.gif)
+
+#### Using Docker on Different Shells
+
+Note that, depending on which shell and operating system you are using, you might need slightly different commands when mounting folders with the `-v` option.  
+
+For example, if run in a MSYS shell on Windows like _Git Bash_, there is the need of an extra / before the $.
+
+```
+docker run -v "/$(pwd)/generated_tests":/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+```
+
+If you are rather using a Command Prompt (Cmd.exe) terminal, you need to use `%CD%` instead of `$(pwd)` to refer to the current folder:
+
+```
+docker run -v %CD%/generated_tests:/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+```
+
+On the other hand, on a PowerShell you need `${PWD}`:
+
+```
+docker run -v ${PWD}/generated_tests:/generated_tests webfuzzing/evomaster  --blackBox true --maxTime 30s  --ratePerMinute 60 --bbSwaggerUrl  https://petstore.swagger.io/v2/swagger.json
+```
+
+#### Troubleshooting
+
+If you encounter issues running the command:
+
+* Ensure Docker is installed and running.
+* Check that you have the correct rights/permissions to mount the specified volume.
+* Consult the Docker documentation for your shell environment for specific syntax requirements.
+
+
+#### Generated Output
 
 Once the command is executed, you can inspect the generated files under `generated_tests` folder. 
 

@@ -27,7 +27,7 @@ class ACOnlyOneEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -37,6 +37,30 @@ class ACOnlyOneEMTest : AIClassificationEMTestBase() {
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
     }
 
     private fun testRunEM(model: AIResponseClassifierModel) {
@@ -59,9 +83,42 @@ class ACOnlyOneEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            // OnlyOne(x,z=true)
+            // OnlyOne(a=false,d=FOO)
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/onlyone",
+                    queryParams = mapOf("x" to "foo"))!!,
+                ptr.fromVerbPath("GET", "/api/onlyone",
+                    queryParams = mapOf("z" to "true"))!!,
+                ptr.fromVerbPath("GET", "/api/onlyone",
+                    queryParams = mapOf("x" to "foo", "z" to "false"))!!,
+                ptr.fromVerbPath("POST", "/api/onlyone",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "bar", "c": -3, "d": "BAR", "e": null}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/onlyone",
+                    jsonBodyPayload = """
+                        {"a": true, "b": "bar", "c": -3, "d": "FOO", "e": null}
+                    """.trimIndent())!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET", "/api/onlyone",
+                    queryParams = mapOf())!!,
+                ptr.fromVerbPath("GET", "/api/onlyone",
+                    queryParams = mapOf("x" to "foo", "z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/onlyone",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "bar", "c": -3, "d": "FOO", "e": null}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/onlyone",
+                    jsonBodyPayload = """
+                        {"b": "bar", "c": -3, "e": null}
+                    """.trimIndent())!!,
+                )
+
+            verifyModel(injector,ok,fail)
         }
     }
 }

@@ -29,7 +29,7 @@ class ACZeroOrOneEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -39,6 +39,30 @@ class ACZeroOrOneEMTest : AIClassificationEMTestBase() {
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
     }
 
     private fun testRunEM(model: AIResponseClassifierModel) {
@@ -61,9 +85,45 @@ class ACZeroOrOneEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            // ZeroOrOne(x,z=true)
+            // ZeroOrOne(d=HELLO,f=X)
+            // ZeroOrOne(a!=true,b!=null)
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/zeroorone",
+                    queryParams = mapOf("x" to "bar"))!!,
+                ptr.fromVerbPath("GET", "/api/zeroorone",
+                    queryParams = mapOf("z" to "true"))!!,
+                ptr.fromVerbPath("GET", "/api/zeroorone",
+                    queryParams = mapOf())!!,
+                ptr.fromVerbPath("POST", "/api/zeroorone",
+                    jsonBodyPayload = """
+                        {}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/zeroorone",
+                    jsonBodyPayload = """
+                        {"d": "HELLO"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/zeroorone",
+                    jsonBodyPayload = """
+                        {"a": false}
+                    """.trimIndent())!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET", "/api/zeroorone",
+                    queryParams = mapOf("x" to "bar", "z" to "true"))!!,
+                ptr.fromVerbPath("POST", "/api/zeroorone",
+                    jsonBodyPayload = """
+                        {"d": "HELLO", "f": "X"}
+                    """.trimIndent())!!,
+                ptr.fromVerbPath("POST", "/api/zeroorone",
+                    jsonBodyPayload = """
+                        {"a": false, "b": "bar"}
+                    """.trimIndent())!!,
+            )
+
+            verifyModel(injector,ok,fail)
         }
     }
 }

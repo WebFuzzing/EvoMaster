@@ -52,6 +52,17 @@ class LongGene(
     }
 
 
+    override fun setValueBasedOn(value: String) : Boolean{
+
+        try{
+            this.value = value.toLong()
+        }catch (e: NumberFormatException){
+            return false
+        }
+
+        return true
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, tryToForceNewValue)
     }

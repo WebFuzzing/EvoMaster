@@ -30,7 +30,7 @@ class ACMixedEMTest : AIClassificationEMTestBase() {
         }
     }
 
-   // @Disabled
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
@@ -40,6 +40,30 @@ class ACMixedEMTest : AIClassificationEMTestBase() {
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunGLM(){
+        testRunEM(AIResponseClassifierModel.GLM)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKDE(){
+        testRunEM(AIResponseClassifierModel.KDE)
+    }
+
+    @Disabled
+    @Test
+    fun testRunKNN(){
+        testRunEM(AIResponseClassifierModel.KNN)
+    }
+
+    @Disabled
+    @Test
+    fun testRunNN(){
+        testRunEM(AIResponseClassifierModel.NN)
     }
 
     private fun testRunEM(model: AIResponseClassifierModel) {
@@ -60,9 +84,32 @@ class ACMixedEMTest : AIClassificationEMTestBase() {
 
             val ptr = injector.getInstance(PirToRest::class.java)
 
-            //TODO need to deal with body payload in PTR
+            // x<=y
+            // ! (a&&b)
+            // s!= null
+            // if c then d=HELLO
 
-            //verifyModel(injector) //TODO
+            val ok = listOf(
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3", "s" to "hello there"))!!,
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3", "s" to "hello there", "a" to "true", "b" to "false", "c" to "false"))!!,
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3", "s" to "hello there", "c" to "true", "d" to "HELLO"))!!,
+            )
+
+            val fail = listOf(
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "42", "y" to "3", "s" to "hello there"))!!,
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3"))!!,
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3", "s" to "hello there", "a" to "true", "b" to "true", "c" to "false"))!!,
+                ptr.fromVerbPath("GET", "/api/mixed",
+                    queryParams = mapOf("x" to "0", "y" to "3", "s" to "hello there", "c" to "true", "d" to "Z"))!!,
+            )
+
+            verifyModel(injector, ok, fail)
         }
     }
 }

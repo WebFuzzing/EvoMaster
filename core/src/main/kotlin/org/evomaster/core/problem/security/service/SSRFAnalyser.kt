@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
@@ -14,6 +15,7 @@ import org.evomaster.core.problem.security.data.InputFaultMapping
 import org.evomaster.core.problem.security.SSRFUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
@@ -92,20 +94,13 @@ class SSRFAnalyser {
     fun apply(): Solution<RestIndividual> {
         LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
-        // extract individuals from the archive
-        val individuals = this.archive.extractSolution().individuals
-
-        individualsInSolution =
-            RestIndividualSelectorUtils.findIndividuals(
-                individuals,
-                statusCodes = listOf(200, 201, 204)
-            )
+        individualsInSolution = getIndividualsWithStatus2XX()
 
         if (individualsInSolution.isEmpty()) {
             return archive.extractSolution()
         }
 
-        log.debug("Total individuals before vulnerability analysis: {}", individuals.size)
+        log.debug("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
         // The below steps are generic, for future extensions can be
         // accommodated easily under these common steps.
 
@@ -123,10 +118,7 @@ class SSRFAnalyser {
         analyse()
 
         // TODO: This is for development, remove it later
-        val individualsAfterExecution = RestIndividualSelectorUtils.findIndividuals(
-            this.archive.extractSolution().individuals,
-            statusCodes = listOf(200, 201, 204)
-        )
+        val individualsAfterExecution = getIndividualsWithStatus2XX()
         log.debug("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
 
         return archive.extractSolution()
@@ -222,7 +214,6 @@ class SSRFAnalyser {
         }
         return false
     }
-
 
     /**
      * Private method to identify parameter is a potentially holds URL value,
@@ -343,5 +334,12 @@ class SSRFAnalyser {
                 }
             }
         }
+    }
+
+    private fun getIndividualsWithStatus2XX(): List<EvaluatedIndividual<RestIndividual>> {
+        return RestIndividualSelectorUtils.findIndividuals(
+            this.archive.extractSolution().individuals,
+            statusGroup = StatusGroup.G_2xx
+        )
     }
 }

@@ -172,4 +172,14 @@ class FloatGene(name: String,
 
     override fun getZero(): Float = 0.0f
 
+    override fun setValueBasedOn(value: String) : Boolean{
+
+        try{
+            this.value = value.toFloat()
+        }catch (e: NumberFormatException){
+            return false
+        }
+
+        return true
+    }
 }

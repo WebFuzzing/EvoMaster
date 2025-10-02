@@ -4,6 +4,7 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -260,7 +261,7 @@ class Main {
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
             resetExternalServiceHandler(injector)
-
+            // Stop the WM before test execution
             stopHTTPCallbackVerifier(injector)
 
             val statistics = injector.getInstance(Statistics::class.java)
@@ -419,13 +420,18 @@ class Main {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
                     val solution = securityRest.applySecurityPhase()
 
-                    if (config.ssrf) {
+                    if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
                         val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
                         ssrfAnalyser.apply()
                     } else {
-                        solution
+                        if(DefinedFaultCategory.SSRF in config.getDisabledOracleCodesList())
+                        {
+                            LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
+                        }
+
+                        return solution
                     }
                 }
 

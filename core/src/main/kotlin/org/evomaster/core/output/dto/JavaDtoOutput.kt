@@ -7,23 +7,12 @@ import org.evomaster.core.utils.StringUtils
 import java.nio.file.Files
 import java.nio.file.Path
 
-/**
- * When [EMConfig.dtoForRequestPayload] is enabled and [OutputFormat] is set to Java, this writer object will
- * create DTO java classes in the filesystem under the `dto` package. These DTO classes will then be used for
- * test case writing for JSON request payloads. Instead of having a stringified view of the payload, EM will
- * leverage these DTOs.
- */
-object JavaDtoWriter {
+class JavaDtoOutput: DtoOutput {
 
-    /**
-     * @param testSuitePath under which the java class must be written
-     * @param outputFormat forwarded to the [Lines] helper class and for setting the .java extension in the generated file
-     * @param dtoClass to be written to filesystem
-     */
-    fun write(testSuitePath: Path, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
-        setPackage(lines)
+        setPackage(lines, testSuitePackage)
         addImports(lines)
         initClass(lines, dtoFilename.getClassName())
         addClassContent(lines, dtoClass)
@@ -31,8 +20,25 @@ object JavaDtoWriter {
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
-    private fun setPackage(lines: Lines) {
-        lines.add("package dto;")
+    override fun getNewObjectStatement(dtoName: String, dtoVarName: String): String {
+        return "$dtoName $dtoVarName = new $dtoName();"
+    }
+
+    override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
+        return "$dtoVarName.set${attributeName}($value);"
+    }
+
+    override fun getNewListStatement(listType: String, listVarName: String): String {
+        return "List<$listType> $listVarName = new ArrayList<$listType>();"
+    }
+
+    override fun getAddElementToListStatement(listVarName: String, value: String): String {
+        return "$listVarName.add($value);"
+    }
+
+    private fun setPackage(lines: Lines, suitePackage: String) {
+        val pkgPrefix = if (suitePackage.isNotEmpty()) "$suitePackage." else ""
+        lines.add("package ${pkgPrefix}dto;")
         lines.addEmpty()
     }
 

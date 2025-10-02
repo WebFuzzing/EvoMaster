@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.graphql.service
 
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.core.Lazy
 import org.evomaster.core.sql.SqlAction
@@ -40,6 +39,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
     ): EvaluatedIndividual<GraphQLIndividual>? {
         rc.resetSUT()
 
+        goingToStartExecutingNewTest()
+
         val cookies = AuthUtils.getCookies(client, getBaseUrl(), individual)
         val tokens = AuthUtils.getTokens(client, getBaseUrl(), individual)
 
@@ -56,6 +57,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
             val a = actions[i]
 
+            reportActionIndex(i)
             registerNewAction(a, i)
 
             val ok = handleGraphQLCall(a, actionResults, cookies, tokens)
@@ -87,6 +89,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
 
         val graphQLActionResults = actionResults.filterIsInstance<GraphQlCallResult>()
         handleResponseTargets(fv, actions, graphQLActionResults, dto.additionalInfoList)
+
+        handleFurtherFitnessFunctions(fv)
 
         if(epc.isInSearch()) {
             if (config.isEnabledTaintAnalysis()) {
@@ -218,7 +222,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500) {
+        if (status == 500 && DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
             Lazy.assert {
                 location5xx != null || config.blackBox
             }
@@ -233,6 +237,8 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             val bugId = idMapper.handleLocalTarget(descriptiveId)
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
+        } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
         }
     }
 

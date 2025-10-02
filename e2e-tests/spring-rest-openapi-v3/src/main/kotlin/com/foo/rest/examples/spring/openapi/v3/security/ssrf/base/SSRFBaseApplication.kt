@@ -41,9 +41,9 @@ open class SSRFBaseApplication {
             ApiResponse(responseCode = "500", description = "Invalid server error")
         ]
     )
-    @PostMapping(path = ["/fetch/data"])
+    @PostMapping(path = ["/fetch"])
     open fun fetchSensorData(@RequestBody remoteData: RemoteDataDto): ResponseEntity<String> {
-        if (remoteData.sensorUrl!!.isNotEmpty()) {
+        if (remoteData.sensorUrl != null) {
             return try {
                 val url = URL(remoteData.sensorUrl)
                 val connection = url.openConnection() as HttpURLConnection

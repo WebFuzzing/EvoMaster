@@ -43,11 +43,11 @@ class DtoWriter {
      */
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
-    fun write(testSuitePath: Path, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
+    fun write(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
         calculateDtos(actionDefinitions)
         dtoCollector.forEach {
             when {
-                outputFormat.isJava() -> JavaDtoWriter.write(testSuitePath, outputFormat, it.value)
+                outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
                 else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
             }
         }
@@ -69,31 +69,46 @@ class DtoWriter {
     }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        val dtoName = TestWriterUtils.safeVariableName(actionName)
-        val dtoClass = DtoClass(dtoName)
-        val children = gene.getViewOfChildren()
-        // merge options into a single DTO
-        children.forEach { childGene ->
-            when (childGene) {
-                is ObjectGene -> populateDtoClass(dtoClass, childGene)
-                is ArrayGene<*> -> {
-                    val template = childGene.template
-                    if (template is ObjectGene) {
-                        populateDtoClass(dtoClass, template)
+        // TODO: should we handle EnumGene?
+        if (hasObjectOrArrayGene(gene)) {
+            val dtoName = TestWriterUtils.safeVariableName(actionName)
+            val dtoClass = DtoClass(dtoName)
+            val children = gene.getViewOfChildren()
+            // merge options into a single DTO
+            children.forEach { childGene ->
+                when (childGene) {
+                    is ObjectGene -> populateDtoClass(dtoClass, childGene)
+                    is ArrayGene<*> -> {
+                        val template = childGene.template
+                        if (template is ObjectGene) {
+                            populateDtoClass(dtoClass, template)
+                        }
                     }
                 }
             }
+            dtoCollector.put(dtoName, dtoClass)
         }
-        dtoCollector.put(dtoName, dtoClass)
+    }
+
+    private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { it is ObjectGene || it is ArrayGene<*> }
     }
 
     private fun calculateDtoFromNonChoiceGene(gene: Gene, actionName: String) {
-        when (gene) {
-            is ObjectGene -> calculateDtoFromObject(gene, actionName)
-            is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+        when {
+            gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
+            gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+            isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
+        }
+    }
+
+    private fun isPrimitiveGene(gene: Gene): Boolean {
+        return when (gene) {
+            is StringGene, is IntegerGene, is LongGene, is DoubleGene, is FloatGene, is BooleanGene -> true
+            else -> false
         }
     }
 

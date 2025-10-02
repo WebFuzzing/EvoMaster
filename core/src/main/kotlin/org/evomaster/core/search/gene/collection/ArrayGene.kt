@@ -304,10 +304,17 @@ class ArrayGene<T>(
      */
     override fun setValueBasedOn(value: String): Boolean {
         val elements = value
+            .trim()
             .removePrefix(openingTag)
             .removeSuffix(closingTag)
-            .split(separatorTag)
+            /*
+                the separator tag might have spaces for readability.
+                those should be ignored.
+                however, if the tag itself is just empty spaces, then cannot ignore them.
+             */
+            .split(if(separatorTag.isBlank()) separatorTag else separatorTag.trim())
             .map { it.trim() }
+
         if (elements.isNotEmpty()) {
             killAllChildren()
             when(template) {
