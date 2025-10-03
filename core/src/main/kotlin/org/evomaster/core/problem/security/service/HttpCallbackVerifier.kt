@@ -135,7 +135,7 @@ class HttpCallbackVerifier {
      * Get all the [ActionStubMapping] as [List].
      */
     fun getActionVerifierMappings(): List<ActionStubMapping> {
-        return actionStubMapping.values.toList()
+        return actionStubMapping.values.distinctBy { it.port }.toList()
     }
 
     /**
