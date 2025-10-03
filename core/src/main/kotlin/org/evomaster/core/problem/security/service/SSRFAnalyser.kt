@@ -335,9 +335,10 @@ class SSRFAnalyser {
     }
 
     private fun getIndividualsWithStatus2XX(): List<EvaluatedIndividual<RestIndividual>> {
+        // TODO: Status codes changed temporarily for the experimental purposes
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusGroup = StatusGroup.G_2xx
+            statusCodes = listOf(200, 201, 203, 204, 401, 403, 422, 419)
         )
     }
 }
