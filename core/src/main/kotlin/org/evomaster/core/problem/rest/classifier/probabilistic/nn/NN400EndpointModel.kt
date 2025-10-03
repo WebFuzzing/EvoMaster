@@ -41,9 +41,6 @@ class NN400EndpointModel(
     private var weightsHiddenOutput: Array<DoubleArray> = Array(hiddenSize) { DoubleArray(2) }
     private val outputSize = 2 // [class400, classNot400]
 
-    companion object {
-        private const val NOT_400 = 200
-    }
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {

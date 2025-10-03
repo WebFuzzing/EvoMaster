@@ -46,11 +46,6 @@ class Gaussian400EndpointModel (
     var densityNot400: Density? = null
         private set
 
-    companion object {
-        private const val NOT_400 = 200
-    }
-
-
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
      */

@@ -29,10 +29,6 @@ class GLM400EndpointModel(
     private var weights: MutableList<Double>? = null
     private var bias: Double = 0.0
 
-    companion object {
-        private const val NOT_400 = 200
-    }
-
     /** Initialize dimension and weights if needed */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)

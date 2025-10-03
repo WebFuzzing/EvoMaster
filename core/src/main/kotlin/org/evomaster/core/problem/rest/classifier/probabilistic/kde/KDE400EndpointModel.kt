@@ -35,18 +35,17 @@ class KDE400EndpointModel (
 
     /** Cap on stored samples per class based on the reservoir-style uniform downsampling to avoid memory overload.*/
     companion object{
-        private const val NOT_400 = 200
-        private const val MAX_SAMPLES = 10_000
+        private const val MAX_SAMPLES_PER_CLASS = 10_000
     }
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
         if(density400 == null) {
-            density400 = KDE(dimension!!, MAX_SAMPLES)
+            density400 = KDE(dimension!!, MAX_SAMPLES_PER_CLASS)
         }
         if(densityNot400 == null) {
-            densityNot400 = KDE(dimension!!, MAX_SAMPLES)
+            densityNot400 = KDE(dimension!!, MAX_SAMPLES_PER_CLASS)
         }
         initialized = true
     }

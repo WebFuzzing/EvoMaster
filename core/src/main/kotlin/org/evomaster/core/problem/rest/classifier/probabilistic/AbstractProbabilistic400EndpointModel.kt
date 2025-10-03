@@ -28,6 +28,10 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
+    companion object {
+        const val NOT_400 = 200
+    }
+
     val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
     val modelMetricsWithTimeWindow: ModelMetrics = ModelMetricsWithTimeWindow(100)
 

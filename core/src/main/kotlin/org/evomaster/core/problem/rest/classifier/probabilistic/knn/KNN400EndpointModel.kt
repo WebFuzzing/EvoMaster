@@ -26,11 +26,6 @@ class KNN400EndpointModel (
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
-    companion object {
-        private const val NOT_400 = 200
-        private const val MAX_SAMPLES = 10_000    // Fixed-size buffer for samples to avoid memory overload
-    }
-
     /**
      * Stores the training samples for this endpoint model.
      * Each element is a pair of:
@@ -38,6 +33,11 @@ class KNN400EndpointModel (
      *  - Int         : the corresponding status code (i.e., HTTP response)
      */
     val samples = mutableListOf<Pair<List<Double>, Int>>()
+
+    /** Cap on stored samples based on the reservoir-style uniform downsampling to avoid memory overload.*/
+    companion object {
+        private const val MAX_SAMPLES = 20_000
+    }
 
     /** Total number of samples observed so far (including discarded ones). */
     private var seen: Long = 0L
@@ -99,7 +99,7 @@ class KNN400EndpointModel (
         }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        var inputVector = encoder.encode()
+        val inputVector = encoder.encode()
 
         initializeIfNeeded(inputVector)
 
