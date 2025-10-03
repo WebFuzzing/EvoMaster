@@ -23,12 +23,9 @@ class KNN400EndpointModel (
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType= EMConfig.EncoderType.RAW,
     private val k: Int = 3,
+    private val maxStoredSamples: Int = 10000,
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
-
-    companion object {
-        private const val NOT_400 = 200
-    }
 
     /**
      * Stores the training samples for this endpoint model.
@@ -37,6 +34,9 @@ class KNN400EndpointModel (
      *  - Int         : the corresponding status code (i.e., HTTP response)
      */
     val samples = mutableListOf<Pair<List<Double>, Int>>()
+
+    /** Total number of samples observed so far (including discarded ones). */
+    private var seen: Long = 0L
 
     // Euclidean distance between two points in the feature space
     private fun distance(a: List<Double>, b: List<Double>): Double {
@@ -60,7 +60,7 @@ class KNN400EndpointModel (
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -95,7 +95,7 @@ class KNN400EndpointModel (
         }
 
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
-        var inputVector = encoder.encode()
+        val inputVector = encoder.encode()
 
         initializeIfNeeded(inputVector)
 
@@ -112,11 +112,25 @@ class KNN400EndpointModel (
          * Store only classes of interest (i.e., 400 and not 400 groups)
          */
         val trueStatusCode = output.getStatusCode()
-        if (trueStatusCode == 400) {
-            samples.add(inputVector to 400)
+        val label = if (trueStatusCode == 400) 400 else NOT_400
+
+        /**
+         * Keep the sample list bounded using reservoir sampling.
+         *
+         * - If we have not yet filled the reservoir (samples.size < maxStoredSamples), add the new sample.
+         * - Otherwise, replace an existing sample with decreasing probability to maintain
+         *   a uniform random subset of all seen data.
+         */
+        seen++
+        if (samples.size < maxStoredSamples) {
+            samples.add(inputVector to label)
         } else {
-            samples.add(inputVector to NOT_400)
+            val r = kotlin.random.Random.nextLong(seen)
+            if (r < maxStoredSamples) {
+                samples[r.toInt()] = inputVector to label
+            }
         }
+
 
     }
 

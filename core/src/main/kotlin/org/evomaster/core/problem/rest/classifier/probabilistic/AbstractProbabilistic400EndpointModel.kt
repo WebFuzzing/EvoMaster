@@ -28,8 +28,12 @@ abstract class AbstractProbabilistic400EndpointModel(
 
     protected var initialized: Boolean = false
 
+    companion object {
+        const val NOT_400 = 200
+    }
+
     val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
-    val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
+    val modelMetricsWithTimeWindow: ModelMetrics = ModelMetricsWithTimeWindow(100)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -62,11 +66,11 @@ abstract class AbstractProbabilistic400EndpointModel(
         if (modelMetricsFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
             modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
-            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
             val predictedStatusCode = classify(action).prediction()
             modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
-            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
     }
@@ -84,7 +88,7 @@ abstract class AbstractProbabilistic400EndpointModel(
             return ModelEvaluation.DEFAULT_NO_DATA
         }
         // This is a single-endpoint model and just return its own metrics
-        return modelMetrics.estimateMetrics()
+        return modelMetricsWithTimeWindow.estimateMetrics()
     }
 
 

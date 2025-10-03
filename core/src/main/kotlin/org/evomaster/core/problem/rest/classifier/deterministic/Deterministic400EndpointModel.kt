@@ -22,7 +22,7 @@ class Deterministic400EndpointModel(
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
-    private val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
+    private val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(100)
 
     override fun updateModel(
         input: RestCallAction,

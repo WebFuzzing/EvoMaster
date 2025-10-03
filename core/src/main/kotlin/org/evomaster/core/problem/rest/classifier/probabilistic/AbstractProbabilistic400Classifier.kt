@@ -45,7 +45,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
                 return@getOrPut null
             }
 
-            val listGenes = encoder.endPointToGeneList().map { it.getLeafGene() }
+            val listGenes = encoder.endPointToGeneList().map { it.gene.getLeafGene() }
             createEndpointModel(endpoint, warmup, listGenes.size, encoderType, randomness)
         }
 

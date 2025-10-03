@@ -6,9 +6,17 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.BigDecimalGene
+import org.evomaster.core.search.gene.numeric.BigIntegerGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.FloatingPointNumberGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.IntegralNumberGene
+import org.evomaster.core.search.gene.numeric.LongGene
+import org.evomaster.core.search.gene.numeric.NumberGene
 import org.evomaster.core.search.gene.string.StringGene
 import kotlin.math.sqrt
 import kotlin.reflect.KClass
@@ -26,33 +34,49 @@ class InputEncoderUtilWrapper(
     private val supportedGeneTypes: Set<KClass<out Gene>> = setOf(
         IntegerGene::class,
         DoubleGene::class,
+        FloatGene::class,
+        FloatingPointNumberGene::class,
+        LongGene::class,
+        BigDecimalGene::class,
+        BigIntegerGene::class,
+        IntegralNumberGene::class,
+        NumberGene::class,
         BooleanGene::class,
         EnumGene::class,
-        StringGene::class
+        StringGene::class,
+        ArrayGene::class
+    )
+
+    data class ParamAndGene(
+        val paramName: String,
+        val gene: Gene
     )
 
     fun isSupported(g: Gene): Boolean =
         supportedGeneTypes.any { it.isInstance(g) }
 
-    fun areAllGenesSupported(): Boolean {
-        val leafs = endPointToGeneList().map { gene -> gene.getLeafGene() }
-        return leafs.all { isSupported(it) }
-    }
+    fun areAllGenesSupported(): Boolean =
+        endPointToGeneList().all { isSupported(it.gene.getLeafGene()) }
 
-    fun expandGene(g: Gene): List<Gene> = when (g) {
-        is ObjectGene -> {
+    private fun expandGene(g: Gene): List<Gene> {
+
+        val gene = g.getLeafGene()
+
+        if (gene is ObjectGene) {
             val expanded = mutableListOf<Gene>()
-            g.fixedFields.forEach { expanded.addAll(expandGene(it)) }
-            g.additionalFields?.forEach { pair ->
+            gene.fixedFields.forEach { expanded.addAll(expandGene(it)) }
+            gene.additionalFields?.forEach { pair ->
                 expanded.addAll(expandGene(pair.second))
             }
-            expanded
+            return expanded
         }
-        else -> listOf(g)
+
+        return listOf(gene)
     }
 
-    fun endPointToGeneList(): List<Gene> {
-        val listGenes = mutableListOf<Gene>()
+    fun endPointToGeneList(): List<ParamAndGene> {
+        val paramAndGenes = mutableListOf<ParamAndGene>()
+
         action.parameters
             .filter { p ->
                 val name = p.name
@@ -61,9 +85,13 @@ class InputEncoderUtilWrapper(
             }
             .forEach { p ->
                 val g = p.primaryGene()
-                listGenes.addAll(expandGene(g))
+                val expanded = expandGene(g)
+                expanded.forEach { subGene ->
+                    paramAndGenes.add(ParamAndGene(subGene.name, subGene))
+                }
             }
-        return listGenes
+
+        return paramAndGenes
     }
 
 
@@ -73,12 +101,11 @@ class InputEncoderUtilWrapper(
      *  - A sentinel value (-1e6) is used for missing or null-like cases
      *
      * Each gene is converted to a Double according to its type:
-     *  - IntegerGene → its integer value as Double
-     *  - DoubleGene → its double value
+     *  - Numeric genes (e.g., IntegerGene, DoubleGene, FloatGene, LongGene) → their numeric value as Double
      *  - StringGene → sentinel if blank, otherwise 1.0 (presence indicator)
      *  - BooleanGene → 1.0 for true, 0.0 for false
-     *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"),
-     *                   or sentinel if not found
+     *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"), or sentinel if not found
+     *  - ArrayGene → number of non-null and non-empty elements in the array
      *
      * This encoding produces a fixed-length feature vector of doubles
      * that can be consumed by AI models.
@@ -87,35 +114,62 @@ class InputEncoderUtilWrapper(
      */
     fun encode(): List<Double> {
         val sentinel = -1e6 // for null handling
-        val listGenes = endPointToGeneList()
+        val listGenes = endPointToGeneList().map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 
         for (g in listGenes) {
 
-            if(g.getValueAsPrintableString()==""){
+            if(!g.staticCheckIfImpactPhenotype() || g.getValueAsPrintableString()==""){
                 rawEncodedFeatures.add(sentinel)
                 continue
             }
 
             val leaf = g.getLeafGene()
             when (leaf) {
-                is IntegerGene -> {
-                    rawEncodedFeatures.add(leaf.value.toDouble())
+                /** Handle numeric gene types by converting their value to Double */
+                is IntegerGene, is DoubleGene, is FloatGene, is LongGene,
+                is BigDecimalGene, is BigIntegerGene, is IntegralNumberGene<*>,
+                is FloatingPointNumberGene<*>, is NumberGene<*> -> {
+                    rawEncodedFeatures.add((leaf as NumberGene<*>).value.toDouble())
                 }
-                is DoubleGene -> {
-                    rawEncodedFeatures.add(leaf.value)
-                }
+                /**
+                 * Encode a StringGene as a binary presence indicator:
+                 * - 1.0 if the string is non-blank
+                 * - sentinel if the string is blank (treated as missing)
+                 */
                 is StringGene -> {
                     rawEncodedFeatures.add(if (leaf.value.isBlank()) sentinel else 1.0)
                 }
                 is BooleanGene -> {
                     rawEncodedFeatures.add(if (leaf.value) 1.0 else 0.0)
                 }
+                /**
+                 * Encode an EnumGene by mapping its selected value to
+                 * the index of that value in the list of allowed enum values
+                 * (excluding the reserved "EVOMASTER" string).
+                 * If the value is not found, use the sentinel.
+                 */
                 is EnumGene<*> -> {
                     val raw = leaf.getValueAsRawString()
                     val values = leaf.values.map { it.toString() }.filter { it != "EVOMASTER" }
                     val idx = values.indexOf(raw)
                     rawEncodedFeatures.add(if (idx >= 0) idx.toDouble() else sentinel)
+                }
+                /**
+                 * Encode an ArrayGene by counting how many of its elements
+                 * are non-null / non-empty (i.e., contain meaningful data).
+                 * This reduces the array to a single numeric feature representing
+                 * its effective size.
+                 */
+                is ArrayGene<*> -> {
+                    val elements = leaf.getViewOfElements()
+                    // If the array is empty, encode as sentinel
+                    val count = if (elements.isEmpty()) {
+                        sentinel
+                    } else {
+                        elements.count { e -> e.getValueAsPrintableString().isNotBlank()}
+                    }
+                    rawEncodedFeatures.add(count.toDouble())
                 }
 
                 else -> throw IllegalArgumentException("Unsupported gene type: ${g::class.simpleName}")
