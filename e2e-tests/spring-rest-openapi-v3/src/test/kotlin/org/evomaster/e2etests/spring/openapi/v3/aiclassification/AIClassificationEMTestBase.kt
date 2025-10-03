@@ -53,21 +53,21 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
-        val overallMertics = model.estimateOverallMetrics()
+        val overallMetrics = model.estimateOverallMetrics()
 
-        val overallAccuracy = overallMertics.accuracy
+        val overallAccuracy = overallMetrics.accuracy
         assertTrue(overallAccuracy >= minimalOverallAccuracy, "Too low accuracy $overallAccuracy." +
                 " Minimal accepted is $minimalOverallAccuracy")
 
-        val overallPrecision400 = overallMertics.precision400
+        val overallPrecision400 = overallMetrics.precision400
         assertTrue(overallPrecision400 >= minimalOverallPrecision400, "Too low Precision $overallPrecision400." +
                 " Minimal accepted is $minimalOverallPrecision400")
 
-        val overallRecall400 = overallMertics.recall400
+        val overallRecall400 = overallMetrics.recall400
         assertTrue(overallRecall400 >= minimalOverallRecall400, "Too low Recall $overallRecall400." +
                 " Minimal accepted is $minimalOverallRecall400")
 
-        val overallMCC = overallMertics.mcc
+        val overallMCC = overallMetrics.mcc
         assertTrue(overallMCC >= minimalOverallMCC, "Too low MCC $overallMCC." +
                 " Minimal accepted is $minimalOverallMCC")
 

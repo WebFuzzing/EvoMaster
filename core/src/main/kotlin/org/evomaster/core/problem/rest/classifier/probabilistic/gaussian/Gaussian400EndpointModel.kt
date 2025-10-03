@@ -46,6 +46,10 @@ class Gaussian400EndpointModel (
     var densityNot400: Density? = null
         private set
 
+    companion object {
+        private const val NOT_400 = 200
+    }
+
 
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
@@ -77,7 +81,7 @@ class Gaussian400EndpointModel (
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -101,7 +105,7 @@ class Gaussian400EndpointModel (
         if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -112,7 +116,7 @@ class Gaussian400EndpointModel (
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posteriorNot400,
+                NOT_400 to posteriorNot400,
                 400 to posterior400
             )
         )

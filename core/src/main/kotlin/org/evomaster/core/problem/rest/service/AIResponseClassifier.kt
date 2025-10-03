@@ -105,10 +105,14 @@ class AIResponseClassifier : AIModel {
     fun attemptRepair(call: RestCallAction){
 
         val metrics = estimateMetrics(call.endpoint)
-        val accuracy = metrics.accuracy
 
-        //TODO any better way to use this accuracy?
-        if(!randomness.nextBoolean(accuracy)){
+        /**
+         * Skips repair if the classifier is still weak, as indicated by low accuracy and F1-score
+         * (see [ModelEvaluation]). In this case, the call is executed as originally generated
+         * because the classifier is not yet a reliable reference for guiding the repair process.
+         * Although there is no guarantee, the classifier uses such calls to learn more and reach a reliable level.
+         */
+        if(metrics.accuracy <= 0.5 || metrics.f1Score400 <= 0.5){
             //do nothing
             return
         }
@@ -117,13 +121,28 @@ class AIResponseClassifier : AIModel {
 
         repeat(n) {
             val classification = classify(call)
-
             val p = classification.probabilityOf400()
 
+            // Stop attempts to repair if the classifier predicts a non-400 response
+            if (classification.prediction()!=400) return
+
             val repair = when(config.aiClassifierRepairActivation){
+
+                /**
+                 * Threshold-based decision-making:
+                 * Attempts repair only if the predicted probability of failure (p)
+                 * is greater than or equal to the configured threshold.
+                 */
                 EMConfig.AIClassificationRepairActivation.THRESHOLD ->
                     p >= config.classificationRepairThreshold
 
+                /**
+                 * Probabilistic decision-making:
+                 * Attempts repair with probability equal to the predicted probability of failure (p).
+                 * If p is high, repair is more likely; if p is low, repair is less likely.
+                 * This approach reduces unnecessary repairs while still allowing exploration
+                 * of potential misclassifications.
+                 */
                 EMConfig.AIClassificationRepairActivation.PROBABILITY ->
                     randomness.nextBoolean(p)
             }

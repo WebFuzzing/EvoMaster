@@ -64,7 +64,7 @@ class KNN400EndpointModel (
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )

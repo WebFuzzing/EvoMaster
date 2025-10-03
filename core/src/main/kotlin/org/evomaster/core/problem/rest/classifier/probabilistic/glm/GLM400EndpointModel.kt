@@ -29,6 +29,10 @@ class GLM400EndpointModel(
     private var weights: MutableList<Double>? = null
     private var bias: Double = 0.0
 
+    companion object {
+        private const val NOT_400 = 200
+    }
+
     /** Initialize dimension and weights if needed */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
@@ -56,7 +60,7 @@ class GLM400EndpointModel(
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -72,7 +76,7 @@ class GLM400EndpointModel(
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to probNot400,
+                NOT_400 to probNot400,
                 400 to prob400
             )
         )

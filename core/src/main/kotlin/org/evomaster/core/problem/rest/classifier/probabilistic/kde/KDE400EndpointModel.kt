@@ -33,17 +33,20 @@ class KDE400EndpointModel (
     private var density400: KDE? = null
     private var densityNot400: KDE? = null
 
-    /** Cap on stored samples per class based on the reservoir-style uniform downsampling.*/
-    var maxSamplesPerClass: Int = 10000
+    /** Cap on stored samples per class based on the reservoir-style uniform downsampling to avoid memory overload.*/
+    companion object{
+        private const val NOT_400 = 200
+        private const val MAX_SAMPLES = 10_000
+    }
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
         if(density400 == null) {
-            density400 = KDE(dimension!!, maxSamplesPerClass)
+            density400 = KDE(dimension!!, MAX_SAMPLES)
         }
         if(densityNot400 == null) {
-            densityNot400 = KDE(dimension!!, maxSamplesPerClass)
+            densityNot400 = KDE(dimension!!, MAX_SAMPLES)
         }
         initialized = true
     }
@@ -65,7 +68,7 @@ class KDE400EndpointModel (
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -89,7 +92,7 @@ class KDE400EndpointModel (
         if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -100,7 +103,7 @@ class KDE400EndpointModel (
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posteriorNot400,
+                NOT_400 to posteriorNot400,
                 400 to posterior400
             )
         )
