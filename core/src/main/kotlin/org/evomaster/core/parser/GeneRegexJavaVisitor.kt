@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
 
+private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
@@ -16,7 +17,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
+        // we remove the <EOF> token from end of the string to store as sourceRegex
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0, text.length - EOF_TOKEN.length)}")
 
         return VisitResult(gene)
     }
@@ -179,8 +181,20 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.AtomEscape() != null){
-            val char = ctx.AtomEscape().text[1].toString()
-            return VisitResult(CharacterClassEscapeRxGene(char))
+            val txt = ctx.AtomEscape().text
+            when {
+                txt[1] == 'x' || txt[1] == 'u' -> {
+                    val hexValue =
+                        txt.subSequence(2, txt.length).toString().toInt(16)
+                    return VisitResult(
+                        PatternCharacterBlockGene(
+                            txt,
+                            hexValue.toChar().toString()
+                        )
+                    )
+                }
+                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
+            }
         }
 
         if(ctx.disjunction() != null){
