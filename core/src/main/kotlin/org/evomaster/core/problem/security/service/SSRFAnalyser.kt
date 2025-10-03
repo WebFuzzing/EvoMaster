@@ -70,7 +70,7 @@ class SSRFAnalyser {
      * Possible URL variable names.
      * TODO: Can load from a file.
      */
-    private val potentialUrlParamNames: List<String> = listOf("url", "source", "target", "datasource", "referer")
+    private val potentialUrlParamNames: List<String> = listOf("referer", "image")
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SSRFAnalyser::class.java)
@@ -157,7 +157,7 @@ class SSRFAnalyser {
                 if (action is RestCallAction) {
                     val actionFaultMapping = ActionFaultMapping(action.getName())
                     val inputFaultMapping: MutableMap<String, InputFaultMapping> =
-                        extractBodyParameters(action.parameters)
+                        extractRequestParameters(action.parameters)
 
                     inputFaultMapping.forEach { (paramName, paramMapping) ->
                         val answer = when (config.vulnerableInputClassificationStrategy) {
@@ -241,7 +241,7 @@ class SSRFAnalyser {
     /**
      * Extract descriptions from the Gene of body payloads.
      */
-    private fun extractBodyParameters(
+    private fun extractRequestParameters(
         parameters: List<Param>
     ): MutableMap<String, InputFaultMapping> {
         val output = mutableMapOf<String, InputFaultMapping>()
@@ -295,24 +295,22 @@ class SSRFAnalyser {
         )
 
         copy.seeMainExecutableActions().forEach { action ->
-            action.parameters.forEach { param ->
-                param.primaryGene().getViewOfChildren().forEach { gene ->
-                    updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
-                }
+            val genes = GeneUtils.getAllStringFields(action.parameters)
+            genes.forEach { gene ->
+                updateGeneWithCallbackURL(action.getName(), gene, callbackURL)
             }
         }
 
         val executedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
         if (executedIndividual != null) {
-            handleExecutedIndividual(action, executedIndividual, callbackURL)
+            handleExecutedIndividual(action, executedIndividual)
         }
     }
 
     private fun handleExecutedIndividual(
         action: RestCallAction,
-        executedIndividual: EvaluatedIndividual<RestIndividual>,
-        callbackURL: String
+        executedIndividual: EvaluatedIndividual<RestIndividual>
     ) {
         val result = httpCallbackVerifier.verify(action.getName())
         if (result) {
@@ -337,9 +335,10 @@ class SSRFAnalyser {
     }
 
     private fun getIndividualsWithStatus2XX(): List<EvaluatedIndividual<RestIndividual>> {
+        // TODO: Status codes changed temporarily for the experimental purposes
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusGroup = StatusGroup.G_2xx
+            statusCodes = listOf(200, 201, 203, 204, 401, 403, 422, 419)
         )
     }
 }
