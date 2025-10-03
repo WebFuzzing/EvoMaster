@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -22,10 +23,12 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -282,10 +285,62 @@ class SecurityRest {
             handleForgottenAuthentication()
         }
 
+        handleStackTraceCheck()
+
         //TODO other rules. See FaultCategory
         //etc.
     }
 
+    /**
+     * Checks whether any response body contains a stack trace, which would constitute a security issue.
+     * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.
+     *
+     * Note: This is a best-effort oracle that may produce false positives, as some applications might
+     * legitimately return stack traces as part of their business logic.
+     *
+     * This check is performed only at the end of the search, not during each fitness evaluation,
+     * to avoid performance overhead during the main search phase.
+     */
+    private fun handleStackTraceCheck(){
+
+        mainloop@ for(action in actionDefinitions){
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                status = 500,
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            for(target in suspicious) {
+                val copyTarget = target.copy()
+
+                copyTarget.evaluatedMainActions().forEach { action ->
+                    // body
+                    val result = (action.result as RestCallResult)
+                    val action = (action.action as RestCallAction)
+
+                    val body = result.getBody()
+
+                    if(body != null && StackTraceUtils.looksLikeStackTrace(body)){
+                        copyTarget.individual.modifySampleType(SampleType.SECURITY)
+                        copyTarget.individual.ensureFlattenedStructure()
+                        val scenarioId = idMapper.handleLocalTarget(
+                            idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_STACK_TRACE, action.getName())
+                        )
+                        copyTarget.fitness.updateTarget(scenarioId, 1.0)
+                        result.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, action.getName(), null))
+                    }
+                }
+                val added = archive.addIfNeeded(copyTarget)
+                assert(added)
+            }
+        }
+    }
 
     /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
