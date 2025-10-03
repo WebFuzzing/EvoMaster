@@ -1346,6 +1346,22 @@ class EMConfig {
     var aiResponseClassifierLearningRate: Double = 0.01
 
     @Experimental
+    @Cfg(
+        "Maximum number of stored samples for classifiers such as KNN and KDE models that rely " +
+                "on retaining encoded inputs. " +
+                "This value specifies the maximum number of samples stored for each endpoint. " +
+                "A higher value can improve classification accuracy by leveraging more historical data, " +
+                "but also increases memory usage. " +
+                "A lower value reduces memory consumption but may limit the classifier’s knowledge base. " +
+                "Typically, it is safe to keep this value between 10,000 and 50,000 when the encoded input vector " +
+                "is usually a list of doubles with a length under 20. " +
+                "Reservoir sampling is applied independently for each endpoint: if this maximum number is exceeded, " +
+                "new samples randomly replace existing ones, ensuring an unbiased selection of preserved data. " +
+                "As an example, for an API with 100 endpoints and an input vector of size 20, " +
+                "a maximum of 10,000 samples per endpoint would require roughly 200 MB of memory.")
+    var aiResponseClassifierMaxStoredSamples: Int = 10_000
+
+    @Experimental
     @Cfg("Number of training iterations required to update classifier parameters. " +
                 "For example, in the Gaussian model this affects mean and variance updates. " +
                 "For neural network (NN) models, the warm-up should typically be larger than 1000.")

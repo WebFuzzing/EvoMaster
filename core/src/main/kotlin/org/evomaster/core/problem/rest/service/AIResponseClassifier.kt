@@ -49,9 +49,11 @@ class AIResponseClassifier : AIModel {
                 NN400Classifier(config.aiResponseClassifierWarmup,
                     config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
             EMConfig.AIResponseClassifierModel.KNN ->
-                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3, randomness)
+                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3,
+                    config.aiResponseClassifierMaxStoredSamples, randomness)
             EMConfig.AIResponseClassifierModel.KDE ->
-                KDE400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
+                KDE400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType,
+                    config.aiResponseClassifierMaxStoredSamples, randomness)
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
                 Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
@@ -107,7 +109,7 @@ class AIResponseClassifier : AIModel {
         val metrics = estimateMetrics(call.endpoint)
 
         /**
-         * Skips repair if the classifier is still weak, as indicated by low accuracy and F1-score
+         * Skips repair if the classifier is still weak, as indicated by low accuracy or F1-score
          * (see [ModelEvaluation]). In this case, the call is executed as originally generated
          * because the classifier is not yet a reliable reference for guiding the repair process.
          * Although there is no guarantee, the classifier uses such calls to learn more and reach a reliable level.

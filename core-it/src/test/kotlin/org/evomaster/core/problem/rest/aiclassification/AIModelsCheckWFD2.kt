@@ -17,7 +17,7 @@ class AIModelsCheckWFD2 : RestTestBase() {
     fun runTest() {
         runTestHandlingFlakyAndCompilation(
             "WFD-Test",
-            10
+            60
         ) { args: MutableList<String> ->
 
             // Add black-box Swagger parameters

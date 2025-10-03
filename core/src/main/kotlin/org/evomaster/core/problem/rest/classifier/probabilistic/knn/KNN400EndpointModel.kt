@@ -23,6 +23,7 @@ class KNN400EndpointModel (
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType= EMConfig.EncoderType.RAW,
     private val k: Int = 3,
+    private val maxStoredSamples: Int = 10000,
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
 
@@ -33,11 +34,6 @@ class KNN400EndpointModel (
      *  - Int         : the corresponding status code (i.e., HTTP response)
      */
     val samples = mutableListOf<Pair<List<Double>, Int>>()
-
-    /** Cap on stored samples based on the reservoir-style uniform downsampling to avoid memory overload.*/
-    companion object {
-        private const val MAX_SAMPLES = 20_000
-    }
 
     /** Total number of samples observed so far (including discarded ones). */
     private var seen: Long = 0L
@@ -121,16 +117,16 @@ class KNN400EndpointModel (
         /**
          * Keep the sample list bounded using reservoir sampling.
          *
-         * - If we have not yet filled the reservoir (samples.size < MAX_SAMPLES), add the new sample.
+         * - If we have not yet filled the reservoir (samples.size < maxStoredSamples), add the new sample.
          * - Otherwise, replace an existing sample with decreasing probability to maintain
          *   a uniform random subset of all seen data.
          */
         seen++
-        if (samples.size < MAX_SAMPLES) {
+        if (samples.size < maxStoredSamples) {
             samples.add(inputVector to label)
         } else {
             val r = kotlin.random.Random.nextLong(seen)
-            if (r < MAX_SAMPLES) {
+            if (r < maxStoredSamples) {
                 samples[r.toInt()] = inputVector to label
             }
         }

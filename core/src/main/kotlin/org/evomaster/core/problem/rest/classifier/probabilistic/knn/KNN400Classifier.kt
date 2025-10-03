@@ -10,6 +10,7 @@ class KNN400Classifier(
     warmup: Int = 10,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
     private val k: Int = 3,
+    private val maxStoredSamples: Int = 10000,
     randomness: Randomness
 ) : AbstractProbabilistic400Classifier<KNN400EndpointModel>(warmup, encoderType, randomness) {
 
@@ -26,6 +27,7 @@ class KNN400Classifier(
             dimension,
             encoderType,
             k = k,
+            maxStoredSamples = maxStoredSamples,
             randomness
         )
     }
