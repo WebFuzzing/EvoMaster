@@ -317,6 +317,8 @@ class SecurityRest {
             }
 
             for(target in suspicious) {
+                var isFaultFound = false
+
                 val copyTarget = target.copy()
 
                 copyTarget.evaluatedMainActions().forEach { action ->
@@ -334,8 +336,14 @@ class SecurityRest {
                         )
                         copyTarget.fitness.updateTarget(scenarioId, 1.0)
                         result.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, action.getName(), null))
+                        isFaultFound = true
                     }
                 }
+
+                if(!isFaultFound){
+                    continue
+                }
+
                 val added = archive.addIfNeeded(copyTarget)
                 assert(added)
             }
