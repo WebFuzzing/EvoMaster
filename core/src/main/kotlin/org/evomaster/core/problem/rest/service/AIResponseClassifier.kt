@@ -109,12 +109,12 @@ class AIResponseClassifier : AIModel {
         val metrics = estimateMetrics(call.endpoint)
 
         /**
-         * Skips repair if the classifier is still weak, as indicated by low accuracy or F1-score
+         * Skips repair if the classifier is still weak, as indicated by low accuracy and F1-score
          * (see [ModelEvaluation]). In this case, the call is executed as originally generated
          * because the classifier is not yet a reliable reference for guiding the repair process.
          * Although there is no guarantee, the classifier uses such calls to learn more and reach a reliable level.
          */
-        if(metrics.accuracy <= 0.5 || metrics.f1Score400 <= 0.5){
+        if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.5)){
             //do nothing
             return
         }
