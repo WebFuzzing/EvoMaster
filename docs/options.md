@@ -50,6 +50,7 @@ There are 3 types of options:
 |`header2`| __String__. See documentation of _header0_. *Constraints*: `regex (.+:.+)\|(^$)`. *Default value*: `""`.|
 |`endpointFocus`| __String__. Concentrate search on only one single REST endpoint. *Default value*: `null`.|
 |`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
+|`endpointExclude`| __String__. Comma-separated list of endpoints for excluding endpoints. This is useful for excluding endpoints that are not relevant for testing,  such as those used for health checks or metrics. If no such endpoint is specified,  then no endpoints are excluded from the search. *Default value*: `null`.|
 |`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
 |`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
 |`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
@@ -85,6 +86,7 @@ There are 3 types of options:
 |`customNaming`| __Boolean__. Enable custom naming and sorting criteria. *Default value*: `true`.|
 |`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *DEBUG option*. *Default value*: `dependencies.csv`.|
+|`disabledOracleCodes`| __String__. Disable oracles. Provide a comma-separated list of codes to disable. By default, all oracles are enabled. *Constraints*: `regex (\s*\d{3}\s*(,\s*\d{3}\s*)*)?`. *Default value*: `""`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *DEBUG option*. *Default value*: `false`.|
 |`doesApplyNameMatching`| __Boolean__. Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `true`.|
 |`e_u1f984`| __Boolean__. QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==. *Default value*: `false`.|
