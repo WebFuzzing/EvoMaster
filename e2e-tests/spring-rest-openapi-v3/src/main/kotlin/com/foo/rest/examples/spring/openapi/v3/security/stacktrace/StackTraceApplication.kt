@@ -36,7 +36,7 @@ open class StackTraceApplication {
     @GetMapping(path = ["/error"])
     open fun triggerError(): ResponseEntity<String> {
         try {
-            throw RuntimeException("Bu bir test exception'ıdır")
+            throw RuntimeException("This is a test exception")
         } catch (e: Exception) {
             val stackTrace = getStackTrace(e)
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(stackTrace)

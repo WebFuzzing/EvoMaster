@@ -52,7 +52,7 @@ class StackTraceEMTest : SpringTestBase(){
             // GET:/api/resources/null-pointer_not_stack_trace filter
             assertTrue(faults.none {
                 it.category == ExperimentalFaultCategory.SECURITY_STACK_TRACE
-                        && it.operationId == "GET:/api/resources/null-pointer_not_stack_trace filter"
+                        && it.operationId == "GET:/api/resources/null-pointer_not_stack_trace"
             })
         }
     }

@@ -346,6 +346,8 @@ class SecurityRest {
 
                 val added = archive.addIfNeeded(copyTarget)
                 assert(added)
+
+                continue@mainloop
             }
         }
     }
