@@ -17,7 +17,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0,text.length-5)}")
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0,text.length - "<EOF>".length)}")
 
         return VisitResult(gene)
     }
