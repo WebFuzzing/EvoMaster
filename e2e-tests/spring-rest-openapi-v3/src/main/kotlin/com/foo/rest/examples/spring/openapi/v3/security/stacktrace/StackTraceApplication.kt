@@ -33,16 +33,6 @@ open class StackTraceApplication {
         return sw.toString()
     }
 
-    @GetMapping(path = ["/error"])
-    open fun triggerError(): ResponseEntity<String> {
-        try {
-            throw RuntimeException("This is a test exception")
-        } catch (e: Exception) {
-            val stackTrace = getStackTrace(e)
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(stackTrace)
-        }
-    }
-
     @GetMapping(path = ["/divide/{a}/{b}"])
     open fun divide(
         @PathVariable("a") a: Int,

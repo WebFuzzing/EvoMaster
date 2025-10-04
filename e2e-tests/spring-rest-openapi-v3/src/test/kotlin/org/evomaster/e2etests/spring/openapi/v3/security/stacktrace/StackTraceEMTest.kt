@@ -38,7 +38,6 @@ class StackTraceEMTest : SpringTestBase(){
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resources/error", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/divide/{a}/{b}", null)
             assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/resources/divide/{a}/{b}", null)
             assertHasAtLeastOne(solution, HttpVerb.POST, 500, "/api/resources/array-access/{index}", null)
