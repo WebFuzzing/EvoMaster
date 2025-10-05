@@ -23,6 +23,7 @@ abstract class AbstractProbabilistic400EndpointModel(
     var warmup: Int = 10,
     var dimension: Int? = null,
     val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     val randomness: Randomness
 ) : AIModel {
 
@@ -32,8 +33,11 @@ abstract class AbstractProbabilistic400EndpointModel(
         const val NOT_400 = 200
     }
 
-    val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
-    val modelMetricsWithTimeWindow: ModelMetrics = ModelMetricsWithTimeWindow(100)
+    /** Performance metrics tracker.*/
+    val modelMetrics: ModelMetrics = when (metricType) {
+        EMConfig.AIClassificationMetrics.TIME_WINDOW -> ModelMetricsWithTimeWindow(100)
+        EMConfig.AIClassificationMetrics.FULL_HISTORY -> ModelMetricsFullHistory()
+    }
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -63,14 +67,12 @@ abstract class AbstractProbabilistic400EndpointModel(
     protected fun updateModelMetrics(action: RestCallAction, result: RestCallResult) {
 
         val outputStatusCode= result.getStatusCode()
-        if (modelMetricsFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
-            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
-            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+        if (modelMetrics.totalSentRequests < warmup || action.parameters.isEmpty()) {
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
             val predictedStatusCode = classify(action).prediction()
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
-            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
     }
@@ -88,9 +90,7 @@ abstract class AbstractProbabilistic400EndpointModel(
             return ModelEvaluation.DEFAULT_NO_DATA
         }
         // This is a single-endpoint model and just return its own metrics
-        return modelMetricsWithTimeWindow.estimateMetrics()
+        return modelMetrics.estimateMetrics()
     }
-
-
 
 }

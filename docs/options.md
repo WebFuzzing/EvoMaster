@@ -235,6 +235,7 @@ There are 3 types of options:
 
 |Options|Description|
 |---|---|
+|`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `TIME_WINDOW`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
 |`aiEncoderType`| __Enum__. The encoding strategy applied to transform raw data to the encoded version. *Valid values*: `RAW, NORMAL, UNIT_NORMAL`. *Default value*: `RAW`.|

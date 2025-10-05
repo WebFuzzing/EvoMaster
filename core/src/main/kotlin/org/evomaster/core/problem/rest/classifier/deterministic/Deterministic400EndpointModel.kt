@@ -1,11 +1,13 @@
 package org.evomaster.core.problem.rest.classifier.deterministic
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputField
 import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
 import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
@@ -15,14 +17,19 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 
 class Deterministic400EndpointModel(
     val endpoint: Endpoint,
-    private val thresholdForClassification : Double = 0.8
-) : AIModel {
+    private val thresholdForClassification : Double = 0.8,
+    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW
+    ) : AIModel {
 
     private var initialized = false
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
-    private val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(100)
+    /** Performance metrics tracker.*/
+    val modelMetrics: ModelMetrics = when (metricType) {
+        EMConfig.AIClassificationMetrics.TIME_WINDOW -> ModelMetricsWithTimeWindow(100)
+        EMConfig.AIClassificationMetrics.FULL_HISTORY -> ModelMetricsFullHistory()
+    }
 
     override fun updateModel(
         input: RestCallAction,

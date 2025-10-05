@@ -27,9 +27,11 @@ class KDE400EndpointModel (
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val maxStoredSamples: Int = 10_000,
     randomness: Randomness
-): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+): AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
     private var density400: KDE? = null
     private var densityNot400: KDE? = null
@@ -60,7 +62,7 @@ class KDE400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsFullHistory.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(

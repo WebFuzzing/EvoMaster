@@ -1,7 +1,8 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400EndpointModel
@@ -20,7 +21,6 @@ object ExtraTools {
 
     fun executeRestCallAction(action: RestCallAction, baseUrlOfSut: String): RestCallResult {
         val fullUrl = "$baseUrlOfSut${action.resolvedPath()}"
-        println("The full URL of the action is: $fullUrl")
         val url = URL(fullUrl)
         val connection = url.openConnection() as HttpURLConnection
 
@@ -46,7 +46,8 @@ object ExtraTools {
         return result
     }
 
-    fun printModelMetrics(modelName: String, metrics: ModelMetricsFullHistory) {
+    fun printModelMetrics(modelName: String, metrics: ModelMetrics) {
+
         println("=== $modelName ===")
         println(
             """
@@ -58,8 +59,7 @@ object ExtraTools {
         | Actual 400 | TP=${metrics.truePositive400.toString().padEnd(10)}| FN=${metrics.falseNegative400.toString().padEnd(11)}|
         | Actual¬400 | FP=${metrics.falsePositive400.toString().padEnd(10)}| TN=${metrics.trueNegative400.toString().padEnd(11)}|
         +-------------------------------------------+
-        Correct Predictions : ${metrics.correctPrediction}
-        Total Requests      : ${metrics.totalSentRequests}
+        Window Total      : ${metrics.windowTotal}
         Accuracy            : ${"%.4f".format(metrics.estimateMetrics().accuracy)}
         Precision400        : ${"%.4f".format(metrics.estimateMetrics().precision400)}
         Recall400           : ${"%.4f".format(metrics.estimateMetrics().recall400)}
@@ -87,12 +87,12 @@ object ExtraTools {
         sb.appendLine()
 
         for ((endpoint, model) in models) {
-            val metrics: ModelMetricsFullHistory? = when (model) {
-                is Gaussian400EndpointModel -> model.modelMetricsFullHistory
-                is GLM400EndpointModel      -> model.modelMetricsFullHistory
-                is KDE400EndpointModel      -> model.modelMetricsFullHistory
-                is NN400EndpointModel       -> model.modelMetricsFullHistory
-                is KNN400EndpointModel      -> model.modelMetricsFullHistory
+            val metrics: ModelMetrics? = when (model) {
+                is Gaussian400EndpointModel -> model.modelMetrics
+                is GLM400EndpointModel      -> model.modelMetrics
+                is KDE400EndpointModel      -> model.modelMetrics
+                is NN400EndpointModel       -> model.modelMetrics
+                is KNN400EndpointModel      -> model.modelMetrics
                 else -> null
             }
 
@@ -108,8 +108,7 @@ object ExtraTools {
                 sb.appendLine("| Actual¬400 | FP=${it.falsePositive400.toString().padEnd(10)}| TN=${it.trueNegative400.toString().padEnd(11)}|")
                 sb.appendLine("+-------------------------------------------+")
                 sb.appendLine()
-                sb.appendLine("Correct Predictions : ${it.correctPrediction}")
-                sb.appendLine("Total Requests      : ${it.totalSentRequests}")
+                sb.appendLine("Window Total        : ${it.windowTotal}")
                 sb.appendLine("Accuracy            : ${"%.4f".format(it.estimateMetrics().accuracy)}")
                 sb.appendLine("Precision400        : ${"%.4f".format(it.estimateMetrics().precision400)}")
                 sb.appendLine("Recall400           : ${"%.4f".format(it.estimateMetrics().recall400)}")

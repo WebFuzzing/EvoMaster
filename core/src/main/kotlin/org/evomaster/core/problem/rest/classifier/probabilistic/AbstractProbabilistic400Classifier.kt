@@ -21,6 +21,7 @@ import org.evomaster.core.search.service.Randomness
 abstract class AbstractProbabilistic400Classifier<T : AIModel>(
     private val warmup: Int,
     private val encoderType: EMConfig.EncoderType,
+    private val metricType: EMConfig.AIClassificationMetrics,
     private val randomness: Randomness
 ) : AIModel {
 
@@ -46,7 +47,12 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
             }
 
             val listGenes = encoder.endPointToGeneList().map { it.gene.getLeafGene() }
-            createEndpointModel(endpoint, warmup, listGenes.size, encoderType, randomness)
+            createEndpointModel(
+                endpoint, warmup,
+                listGenes.size,
+                encoderType,
+                metricType,
+                randomness)
         }
 
         if (m == null) {
@@ -93,6 +99,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         warmup: Int,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
+        metricType: EMConfig.AIClassificationMetrics,
         randomness: Randomness
     ): T
 }
