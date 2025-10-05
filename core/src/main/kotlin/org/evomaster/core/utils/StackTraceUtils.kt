@@ -49,14 +49,25 @@ object StackTraceUtils {
         fun looksLikeStackTrace(text: String): Boolean {
             if (text.isBlank()) return false
 
+            // First, normalize escaped newlines (e.g., from JSON strings)
+            val normalizedText = text.replace("\\n", "\n").replace("\\r", "\r")
+
+            // Extract all string values from JSON if text appears to be JSON
+            // This handles: {"trace": "..."}, {"stack": ["...", "..."]}, nested objects, etc.
+            val textToAnalyze = if (looksLikeJson(normalizedText)) {
+                extractAllStringsFromJson(normalizedText)
+            } else {
+                normalizedText
+            }
+
             // Check if any error keyword is present in the entire text
             val keywordPresent = errorKeywords.any { kw ->
-                text.contains(kw, ignoreCase = true)
+                textToAnalyze.contains(kw, ignoreCase = true)
             }
 
             // Count how many lines match known stack trace patterns
             var matchCount = 0
-            for (line in text.lineSequence()) {
+            for (line in textToAnalyze.lineSequence()) {
                 if (patterns.any { it.containsMatchIn(line) }) {
                     matchCount++
                     if (matchCount >= 3) break // early stop for efficiency
@@ -65,5 +76,29 @@ object StackTraceUtils {
 
             // Decision rule
             return (keywordPresent && matchCount >= 2) || (!keywordPresent && matchCount >= 3)
+        }
+
+        /**
+         * Simple heuristic to detect if text looks like JSON
+         */
+        private fun looksLikeJson(text: String): Boolean {
+            val trimmed = text.trim()
+            return (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+                   (trimmed.startsWith("[") && trimmed.endsWith("]"))
+        }
+
+        /**
+         * Extract all string values from JSON (including arrays and nested objects)
+         * and combine them with newlines. This is a simple regex-based approach that
+         * works for most cases without requiring a full JSON parser.
+         */
+        private fun extractAllStringsFromJson(json: String): String {
+            // Match all quoted strings in JSON, handling escaped quotes
+            val stringPattern = Regex(""""((?:[^"\\]|\\.)*)"""")
+            val matches = stringPattern.findAll(json)
+
+            return matches
+                .map { it.groupValues[1] }
+                .joinToString("\n")
         }
 }
