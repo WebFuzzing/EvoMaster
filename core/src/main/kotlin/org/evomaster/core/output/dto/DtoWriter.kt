@@ -56,7 +56,7 @@ class DtoWriter {
     private fun calculateDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
             action.getViewOfChildren().find { it is BodyParam }
-            .let {
+            ?.let {
                 val primaryGene = (it as BodyParam).primaryGene()
                 val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
                 if (choiceGene != null) {
