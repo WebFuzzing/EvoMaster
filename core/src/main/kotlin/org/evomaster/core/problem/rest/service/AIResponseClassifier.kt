@@ -110,11 +110,13 @@ class AIResponseClassifier : AIModel {
 
         /**
          * Skips repair if the classifier is still weak, as indicated by low accuracy and F1-score
-         * (see [ModelEvaluation]). In this case, the call is executed as originally generated
-         * because the classifier is not yet a reliable reference for guiding the repair process.
-         * Although there is no guarantee, the classifier uses such calls to learn more and reach a reliable level.
+         * (see [ModelEvaluation]). A threshold of accuracy > 0.5 ensures that the classifier performs
+         * better than random guessing overall, while an F1-score > 0.2 ensures at least minimal skill
+         * in identifying 400 responses. If either threshold is not met, the classifier is not yet
+         * reliable for guiding repairs. In such cases, the call is executed as originally generated
+         * to allow the classifier to gather more informative data and improve over time.
          */
-        if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.5)){
+        if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2)){
             //do nothing
             return
         }

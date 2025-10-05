@@ -89,7 +89,7 @@ class NN400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsFullHistory.totalSentRequests < warmup) {
+        if (modelMetricsWithTimeWindow.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -125,7 +125,7 @@ class NN400EndpointModel(
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
+            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
             modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }
