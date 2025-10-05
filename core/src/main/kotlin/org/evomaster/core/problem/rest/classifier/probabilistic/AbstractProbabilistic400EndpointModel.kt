@@ -33,7 +33,7 @@ abstract class AbstractProbabilistic400EndpointModel(
         const val NOT_400 = 200
     }
 
-    /** Performance metrics tracker chosen based on [metricType].*/
+    /** Performance metrics tracker.*/
     val modelMetrics: ModelMetrics = when (metricType) {
         EMConfig.AIClassificationMetrics.TIME_WINDOW -> ModelMetricsWithTimeWindow(100)
         EMConfig.AIClassificationMetrics.FULL_HISTORY -> ModelMetricsFullHistory()

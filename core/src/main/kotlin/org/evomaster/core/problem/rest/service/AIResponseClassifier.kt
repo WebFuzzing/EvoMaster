@@ -75,7 +75,9 @@ class AIResponseClassifier : AIModel {
                     randomness = randomness
                 )
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
-                Deterministic400Classifier(config.classificationRepairThreshold)
+                Deterministic400Classifier(
+                    config.classificationRepairThreshold,
+                    metricType = config.aIClassificationMetrics)
             else -> object : AIModel {
                 override fun updateModel(input: RestCallAction, output: RestCallResult) {}
                 override fun classify(input: RestCallAction) = AIResponseClassification()
