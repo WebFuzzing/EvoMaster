@@ -256,7 +256,7 @@ class SecurityRest {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
             LoggingUtil.uniqueUserInfo("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
@@ -265,27 +265,31 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
             LoggingUtil.uniqueUserInfo("Skipping security test for existence leakage as disabled in configuration")
         } else {
             // getting 404 instead of 403
             handleExistenceLeakage()
         }
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
             LoggingUtil.uniqueUserInfo("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
         }
 
-        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
             LoggingUtil.uniqueUserInfo("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
-        handleStackTraceCheck()
+        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
+        }
 
         //TODO other rules. See FaultCategory
         //etc.
