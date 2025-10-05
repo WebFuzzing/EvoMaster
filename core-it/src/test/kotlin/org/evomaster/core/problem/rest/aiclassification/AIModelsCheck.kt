@@ -1,8 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
-import bar.examples.it.spring.aiclassification.basic.BasicController
-import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -10,6 +8,8 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
@@ -63,6 +63,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
     val modelName = "KNN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val encoderType = "RAW" // Choose "RAW" or "NORMAL"
     val decisionMaking = "PROBABILITY" // Choose "PROBABILITY" or "THRESHOLD"
+    val metricType = "TIME_WINDOW"
     val warmUpRep = 10
     val maxAttemptRepair = 100 // i.e., the classifier has 10 times the chances to pick an action with non-400 response
 
@@ -84,6 +85,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
         config.aiModelForResponseClassification = EMConfig.AIResponseClassifierModel.valueOf(modelName)
         config.aiEncoderType = EMConfig.EncoderType.valueOf(encoderType)
         config.aiClassifierRepairActivation = EMConfig.AIClassificationRepairActivation.valueOf(decisionMaking)
+        config.aIClassificationMetrics = EMConfig.AIClassificationMetrics.valueOf(metricType)
         config.aiResponseClassifierWarmup = warmUpRep
         config.maxRepairAttemptsInResponseClassification = maxAttemptRepair
     }
@@ -155,8 +157,13 @@ class AIModelsCheck : IntegrationTestRestBase() {
             }
 
             endpointModel?.let {
-                ExtraTools.printModelMetrics("${it.javaClass.simpleName}", it.modelMetricsWithTimeWindow)
-            } ?: println("No endpoint model available yet for $endPoint")
+                val metrics = it.modelMetrics
+                when (metrics) {
+                    is ModelMetricsWithTimeWindow -> ExtraTools.printModelMetrics("${it.javaClass.simpleName}", metrics)
+                    is ModelMetricsFullHistory    -> ExtraTools.printModelMetrics("${it.javaClass.simpleName}", metrics)
+                    else -> throw IllegalArgumentException("Unsupported metrics type: ${metrics::class.simpleName}")
+                }
+            }
 
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 

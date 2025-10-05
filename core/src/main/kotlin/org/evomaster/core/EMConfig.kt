@@ -1418,6 +1418,26 @@ class EMConfig {
     @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
     var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
 
+
+    enum class AIClassificationMetrics {
+
+        /**
+         * Evaluates metrics (accuracy, F1, etc.) over a recent sliding time window.
+         * This highlights short-term classifier behavior and adapts to changes in data distribution.
+          */
+        TIME_WINDOW,
+
+        /**
+         * Evaluates metrics over the entire lifetime of the classifier,
+         * capturing its cumulative long-term performance without forgetting older data.
+         */
+        FULL_HISTORY
+    }
+
+    @Experimental
+    @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
+    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
     var writeWFCReport = true

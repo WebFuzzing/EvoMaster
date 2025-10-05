@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
 import com.google.common.collect.EvictingQueue
-import kotlin.math.sqrt
 
 /**
  * Tracks model performance metrics within a fixed-size sliding time window,
@@ -20,8 +19,11 @@ import kotlin.math.sqrt
  * short-term view of performance rather than lifetime history.
  */
 class ModelMetricsWithTimeWindow(
-    bufferSize: Int
+    bufferSize: Int = 100
 ) : ModelMetrics {
+
+    /** Lifetime counter of total evaluated requests. Important for warm-up logic. */
+    override var totalSentRequests: Int = 0
 
     // Sliding window queues
     private val truePositive400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
@@ -29,51 +31,16 @@ class ModelMetricsWithTimeWindow(
     private val falseNegative400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
     private val trueNegative400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
 
-    // Lifetime counter
-    var totalSentRequests: Int = 0
-        private set
+    // Window-based confusion-matrix metrics
+    override val truePositive400 get() = truePositive400Queue.count { it }
+    override val falsePositive400 get() = falsePositive400Queue.count { it }
+    override val falseNegative400 get() = falseNegative400Queue.count { it }
+    override val trueNegative400 get() = trueNegative400Queue.count { it }
 
-    // Window-based metrics
-    val truePositive400 get() = truePositive400Queue.count { it }
-    val falsePositive400 get() = falsePositive400Queue.count { it }
-    val falseNegative400 get() = falseNegative400Queue.count { it }
-    val trueNegative400 get() = trueNegative400Queue.count { it }
-
-    val correctPredictions get() = truePositive400 + trueNegative400
-
-    /** Model Accuracy in the window. See [ModelMetrics.estimateAccuracy]*/
-    override fun estimateAccuracy(): Double {
-        return if (totalSentRequests > 0) {
-            correctPredictions.toDouble() / (truePositive400 + falsePositive400 + falseNegative400 + trueNegative400)
-        } else 0.0
-    }
-
-    /** Precision 400. See [ModelMetrics.estimatePrecision400] */
-    override fun estimatePrecision400(): Double {
-        val denominator = truePositive400 + falsePositive400
-        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
-    }
-
-    /** Recall 400. See [ModelMetrics.estimateRecall400] */
-    override fun estimateRecall400(): Double {
-        val denominator = truePositive400 + falseNegative400
-        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
-    }
-
-    /** Matthews Correlation Coefficient (MCC). See [ModelMetrics.estimateMCC400] */
-    override fun estimateMCC400(): Double {
-        val tp = truePositive400.toDouble()
-        val tn = trueNegative400.toDouble()
-        val fp = falsePositive400.toDouble()
-        val fn = falseNegative400.toDouble()
-
-        val denominator = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-        return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
-    }
-
-    /** Update counters for both the lifetime and the sliding window. */
+    /**
+     * Update both lifetime counter and window-based queues.
+     */
     override fun updatePerformance(predictedStatusCode: Int, actualStatusCode: Int) {
-        totalSentRequests++
 
         val isTP = (actualStatusCode == 400 && predictedStatusCode == 400)
         val isFN = (actualStatusCode == 400 && predictedStatusCode != 400)
@@ -84,5 +51,7 @@ class ModelMetricsWithTimeWindow(
         falseNegative400Queue.add(isFN)
         falsePositive400Queue.add(isFP)
         trueNegative400Queue.add(isTN)
+
+        totalSentRequests++
     }
 }

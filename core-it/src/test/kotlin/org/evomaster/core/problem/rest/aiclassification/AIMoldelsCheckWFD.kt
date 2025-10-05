@@ -158,7 +158,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             }
 
             endpointModel?.let {
-                ExtraTools.printModelMetrics("${it.javaClass.simpleName}", it.modelMetricsWithTimeWindow)
+                ExtraTools.printModelMetrics("${it.javaClass.simpleName}", it.modelMetrics)
             } ?: println("No endpoint model available yet for $endPoint")
 
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)

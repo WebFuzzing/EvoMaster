@@ -22,9 +22,11 @@ class NN400EndpointModel(
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val learningRate: Double = 0.01,
     randomness: Randomness
-) : AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+) : AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
     init {
         // Throw an exception if a non-NORMAL encoder is provided
@@ -89,7 +91,7 @@ class NN400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsWithTimeWindow.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -125,8 +127,8 @@ class NN400EndpointModel(
         if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
-            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
-            modelMetricsWithTimeWindow.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }
 

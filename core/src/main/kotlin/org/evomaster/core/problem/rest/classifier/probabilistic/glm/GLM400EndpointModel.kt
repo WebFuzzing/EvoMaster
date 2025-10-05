@@ -22,9 +22,11 @@ class GLM400EndpointModel(
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val learningRate: Double = 0.01,
     randomness: Randomness
-) : AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+) : AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
     private var weights: MutableList<Double>? = null
     private var bias: Double = 0.0
@@ -52,7 +54,7 @@ class GLM400EndpointModel(
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsWithTimeWindow.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(

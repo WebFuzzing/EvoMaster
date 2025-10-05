@@ -41,19 +41,39 @@ class AIResponseClassifier : AIModel {
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
             EMConfig.AIResponseClassifierModel.GAUSSIAN ->
-                Gaussian400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, randomness)
+                Gaussian400Classifier(
+                    warmup = config.aiResponseClassifierWarmup,
+                    encoderType=config.aiEncoderType,
+                    metricType =config.aIClassificationMetrics,
+                    randomness = randomness)
             EMConfig.AIResponseClassifierModel.GLM ->
-                GLM400Classifier(config.aiResponseClassifierWarmup,
-                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
+                GLM400Classifier(
+                    warmup = config.aiResponseClassifierWarmup,
+                    encoderType=config.aiEncoderType,
+                    metricType =config.aIClassificationMetrics,
+                    randomness = randomness,
+                    learningRate = config.aiResponseClassifierLearningRate)
             EMConfig.AIResponseClassifierModel.NN ->
-                NN400Classifier(config.aiResponseClassifierWarmup,
-                    config.aiEncoderType, config.aiResponseClassifierLearningRate, randomness)
+                NN400Classifier(
+                    warmup = config.aiResponseClassifierWarmup,
+                    encoderType=config.aiEncoderType,
+                    metricType =config.aIClassificationMetrics,
+                    randomness = randomness,
+                    learningRate = config.aiResponseClassifierLearningRate)
             EMConfig.AIResponseClassifierModel.KNN ->
-                KNN400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType, k = 3,
-                    config.aiResponseClassifierMaxStoredSamples, randomness)
+                KNN400Classifier(
+                    warmup = config.aiResponseClassifierWarmup,
+                    encoderType=config.aiEncoderType,
+                    metricType =config.aIClassificationMetrics,
+                    randomness = randomness,
+                    k = 3)
             EMConfig.AIResponseClassifierModel.KDE ->
-                KDE400Classifier(config.aiResponseClassifierWarmup, config.aiEncoderType,
-                    config.aiResponseClassifierMaxStoredSamples, randomness)
+                KDE400Classifier(
+                    warmup = config.aiResponseClassifierWarmup,
+                    encoderType=config.aiEncoderType,
+                    metricType =config.aIClassificationMetrics,
+                    randomness = randomness
+                )
             EMConfig.AIResponseClassifierModel.DETERMINISTIC ->
                 Deterministic400Classifier(config.classificationRepairThreshold)
             else -> object : AIModel {
