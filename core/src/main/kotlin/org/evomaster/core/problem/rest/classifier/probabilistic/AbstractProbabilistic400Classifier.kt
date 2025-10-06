@@ -41,7 +41,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         val m = models.getOrPut(endpoint) {
             val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
 
-            if (!encoder.areAllGenesSupported()) {
+            if (encoder.areAllGenesUnSupported()) {
                 unsupportedEndpoints.add(endpoint)
                 return@getOrPut null
             }
