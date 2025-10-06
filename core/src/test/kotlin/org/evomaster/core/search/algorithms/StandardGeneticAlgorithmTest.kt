@@ -1,89 +1,50 @@
 package org.evomaster.core.search.algorithms
 
+import com.google.inject.Injector
+import com.google.inject.Key
+import com.google.inject.Module
+import com.google.inject.TypeLiteral
+import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
-//TODO: Note that this class is not fully tested.
-// It needs to be thoroughly verified whether this truly adheres to the intended algorithm.
-/**
- * An implementation of the Standard Genetic Algorithm (Standard GA).
- *
- * This algorithm evolves a population of individuals using tournament selection,
- * crossover, and mutation, guided by fitness. It is one of the core metaheuristics
- * supported in EvoMaster.
- *
- * Each iteration (via [searchOnce]) forms a new population by:
- * 1. Selecting parent individuals using tournament selection,
- * 2. Optionally applying crossover with a probability defined by [config.xoverProbability],
- * 3. Optionally applying mutation to each offspring with a probability defined by [config.fixedRateMutation],
- * 4. Adding the offspring to the next generation.
- *
- * The process continues until the configured population size is reached or the time budget ends.
- *
- * Note:
- * - This implementation assumes that crossover and mutation are implemented by the superclass.
- * - The actual fitness evaluation is managed externally via the [WtsEvalIndividual] wrapper.
- */
-open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+import org.evomaster.core.TestUtils
+import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
+import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.service.ExecutionPhaseController
+import org.junit.jupiter.api.Test
 
-    override fun getType(): EMConfig.Algorithm {
-        return EMConfig.Algorithm.StandardGA
-    }
+import org.junit.jupiter.api.Assertions.*
 
-    /**
-     * Performs a single generation of the genetic algorithm (one evolutionary step).
-     *
-     * Forms the next generation by:
-     * - Selecting pairs of parents using tournament selection,
-     * - Applying crossover (if enabled),
-     * - Applying mutation to offspring (if enabled),
-     * - Adding new offspring to the next population.
-     *
-     * Terminates early if the time budget is exceeded.
-     */
-    override fun searchOnce() {
-        // Freeze objectives for this generation
-        frozenTargets = archive.notCoveredTargets()
-        val n = config.populationSize
+class StandardGeneticAlgorithmTest {
 
-        // Generate the base of the next population (e.g., elitism or re-selection of fit individuals)
-        val nextPop = formTheNextPopulation(population)
+    val injector: Injector = LifecycleInjector.builder()
+        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+        .build().createInjector()
 
-        while (nextPop.size < n) {
-            val sizeBefore = nextPop.size
+    // To verify if the Standard GA can find the optimal solution for the OneMax problem
+    @Test
+    fun testStandardGeneticAlgorithm() {
+        TestUtils.handleFlaky {
+            val standardGeneticAlgorithm = injector.getInstance(
+                Key.get(
+                    object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
+            )
 
-            // Select two parents
-            val x = tournamentSelection()
-            val y = tournamentSelection()
+            val config = injector.getInstance(EMConfig::class.java)
+            config.maxEvaluations = 10000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
-            // Crossover with configured probability
-            if (randomness.nextBoolean(config.xoverProbability)) {
-                xover(x, y)
-            }
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
 
-            // Mutate each offspring with configured mutation rate
-            if (randomness.nextBoolean(config.fixedRateMutation)) {
-                mutate(x)
-            }
-            if (randomness.nextBoolean(config.fixedRateMutation)) {
-                mutate(y)
-            }
+            val solution = standardGeneticAlgorithm.search()
 
-            // Add both offspring to the next population
-            nextPop.add(x)
-            nextPop.add(y)
+            epc.finishSearch()
 
-            // Sanity check: we expect exactly 2 new individuals
-            assert(nextPop.size == sizeBefore + 2)
-
-            // Stop early if time budget is exhausted
-            if (!time.shouldContinueSearch()) {
-                break
-            }
+            assertTrue(solution.individuals.size == 1)
+            assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
-
-        // Replace current population with the new one
-        population.clear()
-        population.addAll(nextPop)
     }
+
 }
