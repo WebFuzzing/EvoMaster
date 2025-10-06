@@ -97,6 +97,8 @@ class SSRFAnalyser {
         individualsInSolution = getIndividualsWithStatus2XX()
 
         if (individualsInSolution.isEmpty()) {
+            // FIXME: If the [individualsInSolution] is empty, we need to look for individuals
+            //  with 400 and 422
             return archive.extractSolution()
         }
 
@@ -335,10 +337,9 @@ class SSRFAnalyser {
     }
 
     private fun getIndividualsWithStatus2XX(): List<EvaluatedIndividual<RestIndividual>> {
-        // TODO: Status codes changed temporarily for the experimental purposes
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(200, 201, 203, 204, 422)
+            statusGroup = StatusGroup.G_2xx
         )
     }
 }
