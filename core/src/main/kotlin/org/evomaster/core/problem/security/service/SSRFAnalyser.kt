@@ -338,7 +338,7 @@ class SSRFAnalyser {
         // TODO: Status codes changed temporarily for the experimental purposes
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(200, 201, 203, 204, 401, 403, 422, 419)
+            statusCodes = listOf(200, 201, 203, 204, 422)
         )
     }
 }
