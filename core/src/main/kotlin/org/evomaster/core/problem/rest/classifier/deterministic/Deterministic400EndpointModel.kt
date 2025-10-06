@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.ModelMetrics
 import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
 import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.createModelMetrics
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -25,11 +26,8 @@ class Deterministic400EndpointModel(
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
-    /** Performance metrics tracker.*/
-    val modelMetrics: ModelMetrics = when (metricType) {
-        EMConfig.AIClassificationMetrics.TIME_WINDOW -> ModelMetricsWithTimeWindow(100)
-        EMConfig.AIClassificationMetrics.FULL_HISTORY -> ModelMetricsFullHistory()
-    }
+    /** Create a metric tracker.*/
+    val modelMetrics: ModelMetrics = createModelMetrics(metricType)
 
     override fun updateModel(
         input: RestCallAction,

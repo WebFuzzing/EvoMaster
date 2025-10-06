@@ -12,11 +12,16 @@ class ModelMetricsFullHistory : ModelMetrics {
 
     /** Lifetime counter of total evaluated requests. Important for warm-up logic. */
     override var totalSentRequests: Int = 0
+        private set
 
     override var truePositive400: Int = 0
+        private set
     override var falsePositive400: Int = 0
+        private set
     override var falseNegative400: Int = 0
+        private set
     override var trueNegative400: Int = 0
+        private set
 
     /**
      * Update the performance counters after a new prediction.

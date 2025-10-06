@@ -24,6 +24,7 @@ class ModelMetricsWithTimeWindow(
 
     /** Lifetime counter of total evaluated requests. Important for warm-up logic. */
     override var totalSentRequests: Int = 0
+        private set
 
     // Sliding window queues
     private val truePositive400Queue: EvictingQueue<Boolean> = EvictingQueue.create(bufferSize)
