@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.oracledisable
 
-import com.foo.rest.examples.spring.openapi.v3.security.stacktrace.StackTraceController
+import com.foo.rest.examples.spring.openapi.v3.security.stacktrace.StackTraceJSONController
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -15,7 +15,7 @@ class StackTraceDisableEMTest : SpringTestBase(){
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(StackTraceController())
+            initClass(StackTraceJSONController())
         }
     }
 
