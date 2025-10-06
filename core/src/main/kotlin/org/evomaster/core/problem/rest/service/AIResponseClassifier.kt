@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
 import org.evomaster.core.problem.rest.classifier.deterministic.Deterministic400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400Classifier

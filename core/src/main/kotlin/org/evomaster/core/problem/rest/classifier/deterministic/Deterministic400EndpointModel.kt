@@ -5,11 +5,9 @@ import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputField
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
-import org.evomaster.core.problem.rest.classifier.ModelMetrics
-import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
-import org.evomaster.core.problem.rest.classifier.createModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.createModelMetrics
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
 import org.evomaster.core.problem.rest.data.Endpoint

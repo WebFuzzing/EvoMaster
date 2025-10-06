@@ -1,8 +1,7 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.ModelMetrics
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetrics
 import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.glm.GLM400EndpointModel

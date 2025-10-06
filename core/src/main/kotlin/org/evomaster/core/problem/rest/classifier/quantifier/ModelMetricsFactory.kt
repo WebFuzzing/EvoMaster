@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.quantifier
 
 import org.evomaster.core.EMConfig
 

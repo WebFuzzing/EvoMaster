@@ -8,8 +8,8 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsWithTimeWindow
 import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel

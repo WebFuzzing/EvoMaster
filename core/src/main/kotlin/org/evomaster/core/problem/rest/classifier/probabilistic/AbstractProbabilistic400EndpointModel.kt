@@ -2,11 +2,9 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
-import org.evomaster.core.problem.rest.classifier.ModelMetrics
-import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
-import org.evomaster.core.problem.rest.classifier.createModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.createModelMetrics
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult

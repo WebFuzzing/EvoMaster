@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
-import org.evomaster.core.problem.rest.StatusGroup
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult

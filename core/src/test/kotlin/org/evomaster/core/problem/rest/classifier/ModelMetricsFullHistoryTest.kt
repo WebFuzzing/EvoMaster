@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.classifier
 
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsFullHistory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
