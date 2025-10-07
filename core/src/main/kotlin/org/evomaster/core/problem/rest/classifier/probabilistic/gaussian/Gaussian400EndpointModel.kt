@@ -37,15 +37,16 @@ class Gaussian400EndpointModel (
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     randomness: Randomness
-): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+): AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
     var density400: Density? = null
     private set
 
     var densityNot400: Density? = null
         private set
-
 
     /** Must be called once to initialize the model properties
      * Initialize dimension and weights if needed
@@ -73,11 +74,11 @@ class Gaussian400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsFullHistory.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -101,7 +102,7 @@ class Gaussian400EndpointModel (
         if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -112,7 +113,7 @@ class Gaussian400EndpointModel (
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posteriorNot400,
+                NOT_400 to posteriorNot400,
                 400 to posterior400
             )
         )
