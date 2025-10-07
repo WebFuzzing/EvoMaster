@@ -1,14 +1,16 @@
 package org.evomaster.core.problem.rest.classifier.deterministic
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 
 class Deterministic400Classifier(
-    private val thresholdForClassification : Double = 0.8
+    private val thresholdForClassification : Double = 0.8,
+    private val metricType: EMConfig.AIClassificationMetrics
 ) : AIModel {
 
     private val models: MutableMap<Endpoint, Deterministic400EndpointModel> = mutableMapOf()
@@ -18,7 +20,7 @@ class Deterministic400Classifier(
         output: RestCallResult
     ) {
         val m = models.getOrPut(input.endpoint) {
-            Deterministic400EndpointModel(input.endpoint, thresholdForClassification)
+            Deterministic400EndpointModel(input.endpoint, thresholdForClassification,metricType = metricType)
         }
         m.updateModel(input, output)
     }

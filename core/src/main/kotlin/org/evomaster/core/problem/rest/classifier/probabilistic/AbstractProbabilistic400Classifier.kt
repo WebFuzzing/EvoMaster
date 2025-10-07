@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -21,6 +21,7 @@ import org.evomaster.core.search.service.Randomness
 abstract class AbstractProbabilistic400Classifier<T : AIModel>(
     private val warmup: Int,
     private val encoderType: EMConfig.EncoderType,
+    private val metricType: EMConfig.AIClassificationMetrics,
     private val randomness: Randomness
 ) : AIModel {
 
@@ -40,13 +41,18 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         val m = models.getOrPut(endpoint) {
             val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
 
-            if (!encoder.areAllGenesSupported()) {
+            if (encoder.areAllGenesUnSupported()) {
                 unsupportedEndpoints.add(endpoint)
                 return@getOrPut null
             }
 
-            val listGenes = encoder.endPointToGeneList().map { it.getLeafGene() }
-            createEndpointModel(endpoint, warmup, listGenes.size, encoderType, randomness)
+            val listGenes = encoder.endPointToGeneList().map { it.gene.getLeafGene() }
+            createEndpointModel(
+                endpoint, warmup,
+                listGenes.size,
+                encoderType,
+                metricType,
+                randomness)
         }
 
         if (m == null) {
@@ -93,6 +99,7 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         warmup: Int,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
+        metricType: EMConfig.AIClassificationMetrics,
         randomness: Randomness
     ): T
 }
