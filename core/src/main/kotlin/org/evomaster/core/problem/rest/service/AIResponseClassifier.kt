@@ -149,9 +149,6 @@ class AIResponseClassifier : AIModel {
             val classification = classify(call)
             val p = classification.probabilityOf400()
 
-            // Stop attempts to repair if the classifier predicts a non-400 response
-            if (classification.prediction()!=400) return
-
             val repair = when(config.aiClassifierRepairActivation){
 
                 /**
@@ -164,13 +161,14 @@ class AIResponseClassifier : AIModel {
 
                 /**
                  * Probabilistic decision-making:
-                 * Attempts repair with probability equal to the predicted probability of failure (p).
+                 * Attempts repair with a probability equal to the predicted failure probability (p), provided that
+                 * p exceeds the classification threshold which is 0.5 from [AIResponseClassification.prediction].
                  * If p is high, repair is more likely; if p is low, repair is less likely.
                  * This approach reduces unnecessary repairs while still allowing exploration
                  * of potential misclassifications.
                  */
                 EMConfig.AIClassificationRepairActivation.PROBABILITY ->
-                    randomness.nextBoolean(p)
+                    randomness.nextBoolean(p) && p > 0.5
             }
 
             if(repair){

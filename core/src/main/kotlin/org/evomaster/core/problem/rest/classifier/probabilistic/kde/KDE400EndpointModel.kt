@@ -41,10 +41,10 @@ class KDE400EndpointModel (
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
         if(density400 == null) {
-            density400 = KDE(dimension!!, maxStoredSamples)
+            density400 = KDE(dimension!!, maxStoredSamples, randomness)
         }
         if(densityNot400 == null) {
-            densityNot400 = KDE(dimension!!, maxStoredSamples)
+            densityNot400 = KDE(dimension!!, maxStoredSamples, randomness)
         }
         initialized = true
     }
@@ -148,7 +148,9 @@ class KDE400EndpointModel (
      * @property d Dimensionality of the data points.
      * @property maxStoredSamples Maximum number of samples to store in memory.
      */
-    class KDE(private val d: Int, private val maxStoredSamples: Int) {
+    class KDE(private val d: Int,
+              private val maxStoredSamples: Int,
+              private val randomness: Randomness) {
 
         private val samples = mutableListOf<DoubleArray>()
         private var seen: Long = 0L // total seen (for reservoir)
@@ -182,7 +184,7 @@ class KDE400EndpointModel (
                 samples.add(x)
             } else {
                 // reservoir: replace with decreasing probability
-                val r = kotlin.random.Random.nextLong(seen)
+                val r = randomness.nextLong(0, seen)
                 if (r < maxStoredSamples) {
                     samples[r.toInt()] = x
                 }

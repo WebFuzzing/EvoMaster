@@ -127,7 +127,7 @@ class KNN400EndpointModel (
         if (samples.size < maxStoredSamples) {
             samples.add(inputVector to label)
         } else {
-            val r = kotlin.random.Random.nextLong(seen)
+            val r = randomness.nextLong(0, seen)
             if (r < maxStoredSamples) {
                 samples[r.toInt()] = inputVector to label
             }
