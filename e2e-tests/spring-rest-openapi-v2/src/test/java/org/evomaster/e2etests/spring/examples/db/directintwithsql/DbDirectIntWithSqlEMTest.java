@@ -144,7 +144,9 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         //now, try to execute an action in which as well we add SQL data
 
-        List<SqlAction> insertions = sampler.sampleSqlInsertion(new TableId("DB_DIRECT_INT_ENTITY",null,null,null), Collections.singleton("*"));
+        List<SqlAction> insertions = sampler.sampleSqlInsertion(
+                new TableId("DB_DIRECT_INT_ENTITY",null,null,"public"),
+                Collections.singleton("*"));
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
