@@ -543,7 +543,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500) {
+        if (status == 500 && DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
             /*
                 500 codes "might" be bugs. To distinguish between different bugs
                 that crash the same endpoint, we need to know what was the last
@@ -560,6 +560,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv.updateTarget(bugId, 1.0, indexOfAction)
 
             result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
+        } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
         }
     }
 
@@ -729,7 +731,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        handleSchemaOracles(a, rcr, fv)
+        if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
+            handleSchemaOracles(a, rcr, fv)
+        } else {
+            LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
+        }
 
         val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
 
@@ -737,7 +743,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf) {
+        if (config.security && config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -1116,7 +1122,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf) {
+        if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.aiclassification
 
+import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
 import bar.examples.it.spring.aiclassification.basic.BasicController
 import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
@@ -10,6 +11,8 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
+import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabilistic400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.gaussian.Gaussian400EndpointModel
@@ -21,10 +24,12 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400Classi
 import org.evomaster.core.problem.rest.classifier.probabilistic.knn.KNN400EndpointModel
 import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400Classifier
 import org.evomaster.core.problem.rest.classifier.probabilistic.nn.NN400EndpointModel
+import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import javax.ws.rs.core.MediaType
@@ -55,8 +60,12 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     val modelName = "KNN" // Choose "GAUSSIAN", "KNN", "GLM", "KDE", "NN", etc.
-    val runTimeDuration = 10_000L
+    val runIterations = 1000
     val encoderType4Test = EMConfig.EncoderType.NORMAL
+
+    val saveReport: Boolean = false
+
+    val decisionMaking = "sendAnyway" // choose "probabilistic" to make the machine decide weather to send the request or not
 
     @Inject
     lateinit var randomness: Randomness
@@ -67,7 +76,7 @@ class AIModelsCheck : IntegrationTestRestBase() {
     }
 
     fun initializeTest() {
-        recreateInjectorForWhite(listOf("--aiModelForResponseClassification", modelName))
+        recreateInjectorForWhite(listOf(modelName))
     }
 
     @Inject
@@ -110,6 +119,85 @@ class AIModelsCheck : IntegrationTestRestBase() {
         return result
     }
 
+    private fun printModelMetrics(modelName: String, metrics: ModelMetricsFullHistory) {
+        println("=== $modelName ===")
+        println(
+            """
+        +-------------------------------------------+
+        +----- Confusion Matrix 400 vs. not400 -----+
+        +-------------------------------------------+
+        |            | Pred 400     | Pred ¬400     |
+        +-------------------------------------------+
+        | Actual 400 | TP=${metrics.truePositive400.toString().padEnd(10)}| FN=${metrics.falseNegative400.toString().padEnd(11)}|
+        | Actual¬400 | FP=${metrics.falsePositive400.toString().padEnd(10)}| TN=${metrics.trueNegative400.toString().padEnd(11)}|
+        +-------------------------------------------+
+        Correct Predictions : ${metrics.correctPrediction}
+        Total Requests      : ${metrics.totalSentRequests}
+        Accuracy            : ${"%.4f".format(metrics.estimateMetrics().accuracy)}
+        Precision400        : ${"%.4f".format(metrics.estimateMetrics().precision400)}
+        Recall400           : ${"%.4f".format(metrics.estimateMetrics().recall400)}
+        F1Score400          : ${"%.4f".format(metrics.estimateMetrics().f1Score400)}
+        MCC400              : ${"%.4f".format(metrics.estimateMetrics().mcc)}
+        """.trimIndent()
+        )
+    }
+
+    fun saveAllMetricsToTxt(
+        models: Map<Endpoint, AbstractProbabilistic400EndpointModel?>,
+        filePath: String,
+        runIterations: Int,
+        encoderType: EMConfig.EncoderType,
+        modelName: String
+    ) {
+        val sb = StringBuilder()
+        sb.appendLine("=============================================")
+        sb.appendLine("EvoMaster Classifier Report")
+        sb.appendLine("=============================================")
+        sb.appendLine("Model Type     : $modelName")
+        sb.appendLine("Encoder Type   : $encoderType")
+        sb.appendLine("Number of Iterations : $runIterations")
+        sb.appendLine("=============================================")
+        sb.appendLine()
+
+        for ((endpoint, model) in models) {
+            val metrics: ModelMetricsFullHistory? = when (model) {
+                is Gaussian400EndpointModel -> model.modelMetricsFullHistory
+                is GLM400EndpointModel      -> model.modelMetricsFullHistory
+                is KDE400EndpointModel      -> model.modelMetricsFullHistory
+                is NN400EndpointModel       -> model.modelMetricsFullHistory
+                is KNN400EndpointModel      -> model.modelMetricsFullHistory
+                else -> null
+            }
+
+            metrics?.let {
+                sb.appendLine("Endpoint: $endpoint")
+                sb.appendLine()
+                sb.appendLine("+-------------------------------------------+")
+                sb.appendLine("+----- Confusion Matrix 400 vs. not400 -----+")
+                sb.appendLine("+-------------------------------------------+")
+                sb.appendLine("|            | Pred 400     | Pred ¬400     |")
+                sb.appendLine("+-------------------------------------------+")
+                sb.appendLine("| Actual 400 | TP=${it.truePositive400.toString().padEnd(10)}| FN=${it.falseNegative400.toString().padEnd(11)}|")
+                sb.appendLine("| Actual¬400 | FP=${it.falsePositive400.toString().padEnd(10)}| TN=${it.trueNegative400.toString().padEnd(11)}|")
+                sb.appendLine("+-------------------------------------------+")
+                sb.appendLine()
+                sb.appendLine("Correct Predictions : ${it.correctPrediction}")
+                sb.appendLine("Total Requests      : ${it.totalSentRequests}")
+                sb.appendLine("Accuracy            : ${"%.4f".format(it.estimateMetrics().accuracy)}")
+                sb.appendLine("Precision400        : ${"%.4f".format(it.estimateMetrics().precision400)}")
+                sb.appendLine("Recall400           : ${"%.4f".format(it.estimateMetrics().recall400)}")
+                sb.appendLine("F1Score400          : ${"%.4f".format(it.estimateMetrics().f1Score400)}")
+                sb.appendLine("MCC400              : ${"%.4f".format(it.estimateMetrics().mcc)}")
+                sb.appendLine()
+                sb.appendLine("=============================================")
+                sb.appendLine()
+            }
+        }
+
+        // Save the report
+        File(filePath).writeText(sb.toString())
+    }
+
     fun runClassifierExample() {
         val schema = OpenApiAccess.getOpenAPIFromLocation("$baseUrlOfSut/v3/api-docs")
         val restSchema = RestSchema(schema)
@@ -131,9 +219,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
 
         val random = Randomness()
         val sampler = injector.getInstance(AbstractRestSampler::class.java)
-        val startTime = System.currentTimeMillis()
 
-        while (System.currentTimeMillis() - startTime < runTimeDuration) {
+        for (i in 0 until runIterations) {
             val template = random.choose(actionList)
             val sampledAction = template.copy() as RestCallAction
             sampledAction.doInitialize(random)
@@ -170,31 +257,31 @@ class AIModelsCheck : IntegrationTestRestBase() {
             val endpointModel: Any? = when(modelName){
                 "GAUSSIAN" -> {
                     val m = (globalClassifier as Gaussian400Classifier).getModel(endPoint)
-                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelMetricsFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding GAUSSIAN model is cold: $isCold")
                     m
                 }
                 "GLM" -> {
                     val m = (globalClassifier as GLM400Classifier).getModel(endPoint)
-                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelMetricsFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding GLM model is cold: $isCold")
                     m
                 }
                 "KDE" -> {
                     val m = (globalClassifier as KDE400Classifier).getModel(endPoint)
-                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelMetricsFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding KDE model is cold: $isCold")
                     m
                 }
                 "NN" -> {
                     val m = (globalClassifier as NN400Classifier).getModel(endPoint)
-                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelMetricsFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding NN model is cold: $isCold")
                     m
                 }
                 "KNN" -> {
                     val m = (globalClassifier as KNN400Classifier).getModel(endPoint)
-                    val isCold = (m?.modelAccuracyFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
+                    val isCold = (m?.modelMetricsFullHistory?.totalSentRequests ?: 0) < config.aiResponseClassifierWarmup
                     println("Corresponding KNN model is cold: $isCold")
                     m
                 }
@@ -202,11 +289,11 @@ class AIModelsCheck : IntegrationTestRestBase() {
             }
 
             val isCold = when(endpointModel){
-                is Gaussian400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
-                is GLM400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
-                is KDE400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
-                is NN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
-                is KNN400EndpointModel -> endpointModel.modelAccuracyFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is Gaussian400EndpointModel -> endpointModel.modelMetricsFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is GLM400EndpointModel -> endpointModel.modelMetricsFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KDE400EndpointModel -> endpointModel.modelMetricsFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is NN400EndpointModel -> endpointModel.modelMetricsFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
+                is KNN400EndpointModel -> endpointModel.modelMetricsFullHistory.totalSentRequests < config.aiResponseClassifierWarmup
                 else -> true
             }
 
@@ -218,48 +305,44 @@ class AIModelsCheck : IntegrationTestRestBase() {
             }
 
             when (endpointModel) {
-                is Gaussian400EndpointModel -> {
-                    println("The model is a Gaussian400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
-                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
-                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
-                }
-                is GLM400EndpointModel -> {
-                    println("The model is a GLM400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
-                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
-                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
-                }
-                is KDE400EndpointModel -> {
-                    println("The model is a KDE400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
-                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
-                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
-                }
-                is NN400EndpointModel -> {
-                    println("The model is a NN400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
-                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
-                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
-                }
-                is KNN400EndpointModel -> {
-                    println("The model is a KNN400EndpointModel")
-                    println("Correct Predictions: ${endpointModel.modelAccuracyFullHistory.correctPrediction}")
-                    println("Total Requests: ${endpointModel.modelAccuracyFullHistory.totalSentRequests}")
-                    println("Accuracy: ${endpointModel.modelAccuracyFullHistory.estimateAccuracy()}")
-                }
+                is Gaussian400EndpointModel -> printModelMetrics("Gaussian400EndpointModel", endpointModel.modelMetricsFullHistory)
+                is GLM400EndpointModel      -> printModelMetrics("GLM400EndpointModel", endpointModel.modelMetricsFullHistory)
+                is KDE400EndpointModel      -> printModelMetrics("KDE400EndpointModel", endpointModel.modelMetricsFullHistory)
+                is NN400EndpointModel       -> printModelMetrics("NN400EndpointModel", endpointModel.modelMetricsFullHistory)
+                is KNN400EndpointModel      -> printModelMetrics("KNN400EndpointModel", endpointModel.modelMetricsFullHistory)
                 else -> println("No performance info available")
             }
 
-            println("Overall Accuracy Global: ${globalClassifier.estimateOverallAccuracy()}")
+            val overAllMetrics = globalClassifier.estimateOverallMetrics()
+            println("Overall Accuracy: ${overAllMetrics.accuracy}")
+            println("Overall Precision400: ${overAllMetrics.precision400}")
+            println("Overall Recall400: ${overAllMetrics.recall400}")
+            println("Overall F1Score400: ${overAllMetrics.f1Score400}")
+            println("Overall MCC: ${overAllMetrics.mcc}")
 
             val classification = globalClassifier.classify(action)
             val predictionOfStatusCode = classification.prediction()
             println("Prediction is: $predictionOfStatusCode")
 
-            val sendOrNot =
-                predictionOfStatusCode != 400 ||
-                        Math.random() > globalClassifier.estimateAccuracy(endPoint)
+            val sendOrNot: Boolean
+            when (decisionMaking) {
+                "sendAnyway" -> {
+                    sendOrNot = true
+                }
+                // Probabilistic decision-making based on mcc
+                "probabilistic" -> {
+                    val mcc = globalClassifier.estimateMetrics(endPoint).mcc
+                    sendOrNot = if (predictionOfStatusCode != 400 || mcc <= 0.5) {
+                        true
+                    } else {
+                        Math.random() > mcc
+                    }
+                }
+                else -> {
+                    throw IllegalArgumentException("Unsupported decision making strategy: $decisionMaking")
+                }
+            }
+
             println("Send the request or not: $sendOrNot")
 
             if (sendOrNot) {
@@ -290,5 +373,18 @@ class AIModelsCheck : IntegrationTestRestBase() {
                 }
             }
         }
+
+        // Save the final result as a .txt file
+        if (saveReport == true){
+            val allModels = globalClassifier.getAllModels()
+            saveAllMetricsToTxt(
+                allModels,
+                "classifier_report.txt",
+                runIterations,
+                config.aiEncoderType,
+                modelName)
+            println("The report is saved!")
+        }
+        println("The process is finished!")
     }
 }

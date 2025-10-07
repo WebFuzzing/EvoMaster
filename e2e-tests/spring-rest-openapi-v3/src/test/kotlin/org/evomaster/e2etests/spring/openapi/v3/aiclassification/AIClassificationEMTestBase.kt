@@ -44,15 +44,32 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         ok2xx: List<RestCallAction>,
         fail400: List<RestCallAction>,
         threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
-        minimalAccuracy: Double = 0.5
+        minimalOverallAccuracy: Double = 0.5,
+        minimalOverallPrecision400: Double = 0.5,
+        minimalOverallRecall400: Double = 0.5,
+        minimalOverallMCC: Double = 0.0 //MCC>0.0 also means recall > 0.5, precision > 0.5, and accuracy > 0.5
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
-        val accuracy = model.estimateOverallAccuracy()
-        assertTrue(accuracy >= minimalAccuracy, "Too low accuracy $accuracy." +
-                " Minimal accepted is $minimalAccuracy")
+        val overallMertics = model.estimateOverallMetrics()
+
+        val overallAccuracy = overallMertics.accuracy
+        assertTrue(overallAccuracy >= minimalOverallAccuracy, "Too low accuracy $overallAccuracy." +
+                " Minimal accepted is $minimalOverallAccuracy")
+
+        val overallPrecision400 = overallMertics.precision400
+        assertTrue(overallPrecision400 >= minimalOverallPrecision400, "Too low Precision $overallPrecision400." +
+                " Minimal accepted is $minimalOverallPrecision400")
+
+        val overallRecall400 = overallMertics.recall400
+        assertTrue(overallRecall400 >= minimalOverallRecall400, "Too low Recall $overallRecall400." +
+                " Minimal accepted is $minimalOverallRecall400")
+
+        val overallMCC = overallMertics.mcc
+        assertTrue(overallMCC >= minimalOverallMCC, "Too low MCC $overallMCC." +
+                " Minimal accepted is $minimalOverallMCC")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)

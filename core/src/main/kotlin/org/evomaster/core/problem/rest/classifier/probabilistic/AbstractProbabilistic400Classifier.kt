@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
-import org.evomaster.core.problem.rest.classifier.probabilistic.InputEncoderUtilWrapper
+import org.evomaster.core.problem.rest.classifier.ModelEvaluation
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -62,16 +62,27 @@ abstract class AbstractProbabilistic400Classifier<T : AIModel>(
         return m.classify(input)
     }
 
-    override fun estimateAccuracy(endpoint: Endpoint): Double {
-        val m = models[endpoint] ?: return 0.5
-        return m.estimateAccuracy(endpoint)
+    override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
+        val m = models[endpoint] ?: return ModelEvaluation.DEFAULT_NO_DATA
+        return m.estimateMetrics(endpoint)
     }
 
-    override fun estimateOverallAccuracy(): Double {
-        if (models.isEmpty()) return 0.5
+    override fun estimateOverallMetrics(): ModelEvaluation {
+        if (models.isEmpty()) {
+            return ModelEvaluation.DEFAULT_NO_DATA
+        }
+
         val n = models.size.toDouble()
-        val sum = models.values.sumOf { it?.estimateOverallAccuracy() ?: 0.5 }
-        return sum / n
+        val total = models.values.map {
+            it?.estimateOverallMetrics() ?: ModelEvaluation.DEFAULT_NO_DATA
+        }
+
+        return ModelEvaluation(
+            accuracy = total.sumOf { it.accuracy } / n,
+            precision400 = total.sumOf { it.precision400 } / n,
+            recall400 = total.sumOf { it.recall400 } / n,
+            mcc = total.sumOf { it.mcc } / n
+        )
     }
 
     /**

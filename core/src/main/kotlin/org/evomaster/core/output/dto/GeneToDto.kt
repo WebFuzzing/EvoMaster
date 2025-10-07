@@ -51,7 +51,7 @@ class GeneToDto(outputFormat: OutputFormat) {
                     template.refType?:TestWriterUtils.safeVariableName(actionName)
                 } else {
                     // TODO handle arrays of basic data types
-                    throw IllegalStateException("Arrays of non custom objects are not collected as DTOs for root level. Attempted at $actionName")
+                    return getListType(actionName, template)
                 }
             }
             else -> throw IllegalStateException("Gene $leafGene is not supported for DTO payloads for action: $actionName")

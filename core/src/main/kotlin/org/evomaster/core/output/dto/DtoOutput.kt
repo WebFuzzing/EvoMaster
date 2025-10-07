@@ -13,10 +13,11 @@ interface DtoOutput {
 
     /**
      * @param testSuitePath under which the java class must be written
+     * @param testSuitePackage under which the java class must be written
      * @param outputFormat forwarded to the [Lines] helper class and for setting the .java extension in the generated file
      * @param dtoClass to be written to filesystem
      */
-    fun writeClass(testSuitePath: Path, outputFormat: OutputFormat, dtoClass: DtoClass)
+    fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass)
 
     /**
      * @param dtoName that will be instantiated for payload

@@ -33,6 +33,8 @@ class DtoWriterTest {
         const val STRING = "String"
         const val INTEGER = "Integer"
         const val BOOLEAN = "Boolean"
+
+        const val TEST_PACKAGE = "test.package"
     }
 
     @Test
@@ -44,14 +46,14 @@ class DtoWriterTest {
 
         supportedOutputFormats.forEach { outputFormat ->
             val dtoWriter = DtoWriter()
-            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
             assertTrue(dtoWriter.getCollectedDtos().isNotEmpty())
         }
 
         unsupportedOutputFormats.forEach { outputFormat ->
             assertThrows(IllegalStateException::class.java, {
                 val dtoWriter = DtoWriter()
-                dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+                dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
             })
         }
     }
@@ -60,7 +62,7 @@ class DtoWriterTest {
     fun emptyActionListReturnsNoDtos() {
         val dtoWriter = DtoWriter()
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, emptyList())
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, emptyList())
 
         assertTrue(dtoWriter.getCollectedDtos().isEmpty())
     }
@@ -70,7 +72,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("primitiveTypes.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -97,7 +99,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("object/childObjectInline.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -121,7 +123,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("object/simpleComponents.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -143,7 +145,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("object/childObjectComponent.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -167,7 +169,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("array/rootArrayWithComponents.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -184,7 +186,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("array/arrayOfInlineObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -207,7 +209,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("array/arrayOfComponentsObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 3)
@@ -237,7 +239,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("object/duplicateInlineObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -261,7 +263,7 @@ class DtoWriterTest {
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("object/twoEndpointUsingSameComponent.yaml")
 
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -279,7 +281,7 @@ class DtoWriterTest {
         dtoSpecs.forEach { chosenDto ->
             val dtoWriter = DtoWriter()
             val actionCluster = initRestSchema("choice/oneOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val oneOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -297,7 +299,7 @@ class DtoWriterTest {
         dtoSpecs.forEach { chosenDto ->
             val dtoWriter = DtoWriter()
             val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val anyOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -314,7 +316,7 @@ class DtoWriterTest {
         val chosenDto = "ArrayAndObject"
         val dtoWriter = DtoWriter()
         val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")
-        dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
         val anyOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -331,7 +333,7 @@ class DtoWriterTest {
         dtoSpecs.forEach { chosenDto ->
             val dtoWriter = DtoWriter()
             val actionCluster = initRestSchema("choice/allOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val allOfDto = collectedDtos[collectedDtos.keys.first()]

@@ -22,7 +22,8 @@ object EndpointFilter {
 
          if(config.endpointFocus.isNullOrBlank()
             && config.endpointPrefix.isNullOrBlank()
-            && config.endpointTagFilter.isNullOrBlank()){
+            && config.endpointTagFilter.isNullOrBlank()
+            && config.endpointExclude.isNullOrBlank()){
             return listOf()
         }
 
@@ -37,6 +38,10 @@ object EndpointFilter {
 
         if(! config.endpointPrefix.isNullOrBlank()){
             Endpoint.validatePrefix(config.endpointPrefix!!, swagger)
+        }
+
+        if(! config.endpointExclude.isNullOrBlank()){
+            Endpoint.validateExclude(config.getExcludeEndpoints(), swagger)
         }
 
         val all = Endpoint.fromOpenApi(swagger)
@@ -56,9 +61,18 @@ object EndpointFilter {
             listOf()
         }
 
+         val excludes = config.getExcludeEndpoints()
+
+         val z = if(excludes.isNotEmpty()){
+             all.filter { e -> excludes.contains(e.path.toString()) }
+         } else {
+             listOf()
+         }
+
         return mutableSetOf<Endpoint>().apply {
             addAll(x)
             addAll(y)
+            addAll(z)
         }.toList()
     }
 
