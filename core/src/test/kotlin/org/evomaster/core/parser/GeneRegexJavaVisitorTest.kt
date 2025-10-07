@@ -75,10 +75,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
 
     @Test
     fun testJavaHexEscape(){
-        checkSameAsJava("""\x{0}""")
-        checkSameAsJava("""\x{FFFf}""")
-        checkSameAsJava("""\x{0FFFf}""")
-        checkSameAsJava("""\x{01FFFf}""")
-        checkSameAsJava("""\x{10FFFf}""")
+        checkSameAsJava("""x{3}\x{0}\x{FFFf}\x{0FFFf}\x{01FFFf}\x{10FFFf}""")
+    }
+
+    @Test
+    fun testJavaOctalEscape(){
+        checkSameAsJava("""00\00\07\077\0377""")
+        checkSameAsJava("""\0378\0400""")
     }
 }

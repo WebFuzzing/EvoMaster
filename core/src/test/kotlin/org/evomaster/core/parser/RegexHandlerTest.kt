@@ -132,6 +132,8 @@ internal class RegexHandlerTest{
         assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\x[h}") }
         assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("\\x{110000}") }
         assertThrows(IllegalArgumentException::class.java) { RegexHandler.createGeneForJVM("\\x{ffffff}") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\0") }
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\09") }
     }
 
     @Test

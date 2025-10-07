@@ -173,7 +173,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             when {
                 txt[1] == 'x' || txt[1] == 'u' -> {
                     val hexValue =
-                        txt.subSequence(2, txt.length).toString().toInt(16)
+                        txt.substring(2).toInt(16)
                     return VisitResult(
                         PatternCharacterBlockGene(
                             txt,

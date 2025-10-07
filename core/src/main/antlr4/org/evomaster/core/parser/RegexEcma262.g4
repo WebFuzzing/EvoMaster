@@ -96,7 +96,7 @@ atom
 
 
 //TODO
-CharacterEscape
+fragment CharacterEscape
 // : ControlEscape
 // | 'c' ControlLetter
  : HexEscapeSequence
@@ -238,11 +238,11 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-UnicodeEscapeSequence
+fragment UnicodeEscapeSequence
  : 'u' HexDigit HexDigit HexDigit HexDigit
  ;
 
-HexEscapeSequence
+fragment HexEscapeSequence
  : 'x' HexDigit HexDigit
  ;
 
