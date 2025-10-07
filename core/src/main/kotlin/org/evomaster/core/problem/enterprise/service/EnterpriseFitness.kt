@@ -22,6 +22,7 @@ import org.evomaster.core.database.dynamodb.DynamoDbActionResult
 import org.evomaster.core.database.dynamodb.DynamoDbActionTransformer
 import org.evomaster.core.database.dynamodb.DynamoDbExecution
 import org.evomaster.core.extra.shared.AdditionalTargetCollector
+import org.evomaster.core.extra.logcollector.LogCollector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.FitnessValue
@@ -61,8 +62,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     @PostConstruct
     private fun initialize(){
-
         //TODO populate additionalTargetCollectors based on config
+        if (config.enableLogCollector) {
+            additionalTargetCollectors.add(LogCollector())
+        }
     }
 
     fun goingToStartExecutingNewTest(){
