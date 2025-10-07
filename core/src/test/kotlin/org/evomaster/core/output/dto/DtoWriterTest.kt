@@ -38,11 +38,11 @@ class DtoWriterTest {
     }
 
     @Test
-    fun javaIsOnlySupportedForDtos() {
+    fun javaAndKotlinAreOnlySupportedForDtos() {
         val actionCluster = initRestSchema("primitiveTypes.yaml")
-        val supportedOutputFormats = listOf(OutputFormat.JAVA_JUNIT_4, OutputFormat.JAVA_JUNIT_5)
-        val unsupportedOutputFormats = listOf(OutputFormat.KOTLIN_JUNIT_4, OutputFormat.KOTLIN_JUNIT_5, OutputFormat.JS_JEST,
-            OutputFormat.PYTHON_UNITTEST)
+        val supportedOutputFormats = listOf(OutputFormat.JAVA_JUNIT_4, OutputFormat.JAVA_JUNIT_5,
+            OutputFormat.KOTLIN_JUNIT_4, OutputFormat.KOTLIN_JUNIT_5)
+        val unsupportedOutputFormats = listOf(OutputFormat.JS_JEST, OutputFormat.PYTHON_UNITTEST)
 
         supportedOutputFormats.forEach { outputFormat ->
             val dtoWriter = DtoWriter(outputFormat)
