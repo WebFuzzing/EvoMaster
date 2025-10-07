@@ -80,7 +80,7 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (!encoder.areAllGenesSupported()) {
+        if (encoder.areAllGenesUnSupported()) {
             // skip classification/training if unsupported
             return AIResponseClassification(
                 probabilities = mapOf(
@@ -124,7 +124,7 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
+        if (encoder.areAllGenesUnSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
             modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)

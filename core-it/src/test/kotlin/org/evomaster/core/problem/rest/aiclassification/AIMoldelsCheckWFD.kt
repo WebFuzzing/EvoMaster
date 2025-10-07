@@ -135,9 +135,8 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                         .joinToString(", ") { ng ->
                             "${ng.gene.name}:${ng.gene::class.simpleName ?: "Unknown"}" })
 
-            val hasUnsupportedGene = !encoder.areAllGenesSupported()
-            if (hasUnsupportedGene) {
-                println("Skipping classification for $endPoint as it has unsupported genes")
+            if (encoder.areAllGenesUnSupported()) {
+                println("Skipping classification for $endPoint as all its genes are unsupported.")
                 continue
             }
 

@@ -8,6 +8,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.datetime.DateGene
+import org.evomaster.core.search.gene.datetime.DateTimeGene
+import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.BigDecimalGene
 import org.evomaster.core.search.gene.numeric.BigIntegerGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -44,7 +47,10 @@ class InputEncoderUtilWrapper(
         BooleanGene::class,
         EnumGene::class,
         StringGene::class,
-        ArrayGene::class
+        ArrayGene::class,
+        DateGene::class,
+        TimeGene::class,
+        DateTimeGene::class
     )
 
     data class ParamAndGene(
@@ -57,6 +63,9 @@ class InputEncoderUtilWrapper(
 
     fun areAllGenesSupported(): Boolean =
         endPointToGeneList().all { isSupported(it.gene.getLeafGene()) }
+
+    fun areAllGenesUnSupported(): Boolean =
+        endPointToGeneList().all { !isSupported(it.gene.getLeafGene()) }
 
     private fun expandGene(g: Gene): List<Gene> {
 
@@ -94,11 +103,12 @@ class InputEncoderUtilWrapper(
         return paramAndGenes
     }
 
-
     /**
-     * Encode the current endpoint's gene values into a numeric feature vector.
+     * Encodes the current endpoint's gene values into a numeric feature vector suitable for
+     * machine-learning or classification tasks.
      *
      *  - A sentinel value (-1e6) is used for missing or null-like cases
+     *  - A neutral value (0.0) is used for unsupported genes
      *
      * Each gene is converted to a Double according to its type:
      *  - Numeric genes (e.g., IntegerGene, DoubleGene, FloatGene, LongGene) → their numeric value as Double
@@ -106,18 +116,28 @@ class InputEncoderUtilWrapper(
      *  - BooleanGene → 1.0 for true, 0.0 for false
      *  - EnumGene → index of the chosen enum value (ignoring "EVOMASTER"), or sentinel if not found
      *  - ArrayGene → number of non-null and non-empty elements in the array
+     *  - DateGene → encoded as epoch day (days since 1970-01-01)
+     *  - TimeGene → encoded as a fraction of a day (e.g., noon ≈ 0.5)
+     *  - DateTimeGene → encoded as epoch day plus fractional day component
      *
-     * This encoding produces a fixed-length feature vector of doubles
-     * that can be consumed by AI models.
+     * Unsupported genes are encoded using neutral value.
+     * This approach allows inputs with partially supported genes to still contribute useful
+     * information to the classification process without breaking the model’s expected input dimensionality.
      *
      * @return a list of doubles representing the encoded feature vector
      */
     fun encode(): List<Double> {
         val sentinel = -1e6 // for null handling
+        val neutral = 0.0 // for handling unsupported genes
         val listGenes = endPointToGeneList().map { it.gene }
         val rawEncodedFeatures = mutableListOf<Double>()
 
         for (g in listGenes) {
+
+            if(!isSupported(g)){
+                rawEncodedFeatures.add(neutral)
+                continue
+            }
 
             if(!g.staticCheckIfImpactPhenotype() || g.getValueAsPrintableString()==""){
                 rawEncodedFeatures.add(sentinel)
@@ -172,6 +192,52 @@ class InputEncoderUtilWrapper(
                     rawEncodedFeatures.add(count.toDouble())
                 }
 
+                /** Date gene as epoch days */
+                is DateGene -> {
+                    try {
+                        val epochDays = java.time.LocalDate.of(
+                            leaf.year.value,
+                            leaf.month.value.coerceIn(1, 12),
+                            leaf.day.value.coerceIn(1, 28)
+                        ).toEpochDay()
+                        rawEncodedFeatures.add(epochDays.toDouble())
+                    } catch (ex: Exception) {
+                        rawEncodedFeatures.add(sentinel)
+                    }
+                }
+
+                /** Time gene as fractional day */
+                is TimeGene -> {
+                    try {
+                        val fractionOfDay =
+                            (leaf.hour.value.coerceIn(0, 23) / 24.0) +
+                                    (leaf.minute.value.coerceIn(0, 59) / (24.0 * 60.0)) +
+                                    (leaf.second.value.coerceIn(0, 59) / (24.0 * 3600.0))
+                        rawEncodedFeatures.add(fractionOfDay)
+                    } catch (ex: Exception) {
+                        rawEncodedFeatures.add(sentinel)
+                    }
+                }
+
+                /** DateTime gene as epoch days + fractional part */
+                is DateTimeGene -> {
+                    try {
+                        val epochDays = java.time.LocalDate.of(
+                            leaf.date.year.value,
+                            leaf.date.month.value.coerceIn(1, 12),
+                            leaf.date.day.value.coerceIn(1, 28)
+                        ).toEpochDay()
+
+                        val fractionOfDay =
+                            (leaf.time.hour.value.coerceIn(0, 23) / 24.0) +
+                                    (leaf.time.minute.value.coerceIn(0, 59) / (24.0 * 60.0)) +
+                                    (leaf.time.second.value.coerceIn(0, 59) / (24.0 * 3600.0))
+
+                        rawEncodedFeatures.add(epochDays.toDouble() + fractionOfDay)
+                    } catch (ex: Exception) {
+                        rawEncodedFeatures.add(sentinel)
+                    }
+                }
                 else -> throw IllegalArgumentException("Unsupported gene type: ${g::class.simpleName}")
             }
         }

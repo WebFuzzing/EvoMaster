@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.aiclassification
 
 import bar.examples.it.spring.aiclassification.allornone.AllOrNoneController
+import bar.examples.it.spring.aiclassification.multitype.MultiTypeController
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
@@ -134,9 +135,8 @@ class AIModelsCheck : IntegrationTestRestBase() {
                         .joinToString(", ") { ng ->
                             "${ng.gene.name}:${ng.gene::class.simpleName ?: "Unknown"}" })
 
-            val hasUnsupportedGene = !encoder.areAllGenesSupported()
-            if (hasUnsupportedGene) {
-                println("Skipping classification for $endPoint as it has unsupported genes")
+            if (encoder.areAllGenesUnSupported()) {
+                println("Skipping classification for $endPoint as all its genes are unsupported.")
                 continue
             }
 
