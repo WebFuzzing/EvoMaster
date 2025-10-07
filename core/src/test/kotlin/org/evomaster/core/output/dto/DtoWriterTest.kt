@@ -45,34 +45,34 @@ class DtoWriterTest {
             OutputFormat.PYTHON_UNITTEST)
 
         supportedOutputFormats.forEach { outputFormat ->
-            val dtoWriter = DtoWriter()
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+            val dtoWriter = DtoWriter(outputFormat)
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
             assertTrue(dtoWriter.getCollectedDtos().isNotEmpty())
         }
 
         unsupportedOutputFormats.forEach { outputFormat ->
             assertThrows(IllegalStateException::class.java, {
-                val dtoWriter = DtoWriter()
-                dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+                val dtoWriter = DtoWriter(outputFormat)
+                dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
             })
         }
     }
 
     @Test
     fun emptyActionListReturnsNoDtos() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, emptyList())
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, emptyList())
 
         assertTrue(dtoWriter.getCollectedDtos().isEmpty())
     }
 
     @Test
     fun primitiveTypesAreCollectedAsDtoFields() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("primitiveTypes.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -96,10 +96,10 @@ class DtoWriterTest {
 
     @Test
     fun childObjectInlineIsCollectedInDto() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("object/childObjectInline.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -120,10 +120,10 @@ class DtoWriterTest {
 
     @Test
     fun whenUsingComponentsDtoNameIsSchemaName() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("object/simpleComponents.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -142,10 +142,10 @@ class DtoWriterTest {
 
     @Test
     fun childObjectComponentIsCollectedInDto() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("object/childObjectComponent.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -166,10 +166,10 @@ class DtoWriterTest {
 
     @Test
     fun arrayAsRootTypeCollectsASingleDto() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("array/rootArrayWithComponents.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -183,10 +183,10 @@ class DtoWriterTest {
 
     @Test
     fun arrayOfInlineObjectUsesPropertyName() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("array/arrayOfInlineObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -206,10 +206,10 @@ class DtoWriterTest {
 
     @Test
     fun arrayOfComponentsObjectUsesSchemaName() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("array/arrayOfComponentsObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 3)
@@ -236,10 +236,10 @@ class DtoWriterTest {
 
     @Test
     fun sameDtoInDifferentInlineEndpointsIsDuplicated() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("object/duplicateInlineObject.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 2)
@@ -260,10 +260,10 @@ class DtoWriterTest {
 
     @Test
     fun whenUsingComponentsDtoIsCollectedOnce() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("object/twoEndpointUsingSameComponent.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
@@ -279,9 +279,9 @@ class DtoWriterTest {
     fun testOneOfMergesDtosIntoASingleOne() {
         val dtoSpecs = listOf("Components", "Inline", "Mixed")
         dtoSpecs.forEach { chosenDto ->
-            val dtoWriter = DtoWriter()
+            val dtoWriter = DtoWriter(outputFormat)
             val actionCluster = initRestSchema("choice/oneOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val oneOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -297,9 +297,9 @@ class DtoWriterTest {
     fun testAnyOfMergesDtosIntoASingleOne() {
         val dtoSpecs = listOf("Components", "Inline", "MixedOptional")
         dtoSpecs.forEach { chosenDto ->
-            val dtoWriter = DtoWriter()
+            val dtoWriter = DtoWriter(outputFormat)
             val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val anyOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -314,9 +314,9 @@ class DtoWriterTest {
     @Test
     fun testAnyOfArrayAndObject() {
         val chosenDto = "ArrayAndObject"
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
         val collectedDtos = dtoWriter.getCollectedDtos()
         assertEquals(collectedDtos.size, 1)
         val anyOfDto = collectedDtos[collectedDtos.keys.first()]
@@ -331,9 +331,9 @@ class DtoWriterTest {
     fun testAllOfMergesDtosIntoASingleOne() {
         val dtoSpecs = listOf("Components", "Inline", "Mixed")
         dtoSpecs.forEach { chosenDto ->
-            val dtoWriter = DtoWriter()
+            val dtoWriter = DtoWriter(outputFormat)
             val actionCluster = initRestSchema("choice/allOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
             val collectedDtos = dtoWriter.getCollectedDtos()
             assertEquals(collectedDtos.size, 1)
             val allOfDto = collectedDtos[collectedDtos.keys.first()]
