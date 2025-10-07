@@ -72,4 +72,13 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         //checkSameAsJava("[9-1]") //not valid in Java
         checkCanSample("[9-1]", listOf("1","5","9"),200)
     }
+
+    @Test
+    fun testJavaHexEscape(){
+        checkSameAsJava("""\x{0}""")
+        checkSameAsJava("""\x{FFFf}""")
+        checkSameAsJava("""\x{0FFFf}""")
+        checkSameAsJava("""\x{01FFFf}""")
+        checkSameAsJava("""\x{10FFFf}""")
+    }
 }

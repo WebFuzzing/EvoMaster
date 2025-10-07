@@ -273,6 +273,7 @@ UnicodeEscapeSequence:
 
 HexEscapeSequence
  : 'x' HexDigit HexDigit
+ | 'x{' HexDigit+ '}'
  ;
 
 fragment HexDigit:
