@@ -97,18 +97,18 @@ atom
 
 //TODO
 fragment CharacterEscape
-// : ControlEscape
+ : ControlEscape
 // | 'c' ControlLetter
- : HexEscapeSequence
+ | HexEscapeSequence
  | UnicodeEscapeSequence
  //| IdentityEscape
  ;
 
 //TODO
-//ControlEscape
+fragment ControlEscape
 // //one of f n r t v
-// : [fnrtv]
-// ;
+ : [fnrtv]
+ ;
 
 //TODO
 //ControlLetter

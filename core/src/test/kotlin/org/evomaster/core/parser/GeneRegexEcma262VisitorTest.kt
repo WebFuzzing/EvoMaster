@@ -336,4 +336,9 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     fun testUnicodeEscape(){
         checkSameAsJava("""u0000\u0000\u0a0b\uffff""")
     }
+
+    @Test
+    open fun testControlEscape(){
+        checkSameAsJava("""ftnrv\f\t\n\r\v""")
+    }
 }

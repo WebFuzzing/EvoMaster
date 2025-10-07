@@ -83,4 +83,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""00\00\07\077\0377""")
         checkSameAsJava("""\0378\0400""")
     }
+
+    @Test
+    override fun testControlEscape(){
+        checkSameAsJava("""ftnr\f\t\n\r""")
+    }
 }

@@ -192,6 +192,15 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                         )
                     )
                 }
+                txt[1] in "fnrtv" -> {
+                    val escape = when {
+                        txt[1] == 'n' -> "\u000A"
+                        txt[1] == 'f' -> "\u000C"
+                        txt[1] == 'r' -> "\u000D"
+                        else -> "\u0009"
+                    }
+                    return VisitResult(PatternCharacterBlockGene(txt, escape))
+                }
                 txt[1] == 'x' || txt[1] == 'u' -> {
                     val hexValue = when {
                         txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}'
