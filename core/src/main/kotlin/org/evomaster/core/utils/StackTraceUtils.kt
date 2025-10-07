@@ -12,28 +12,65 @@ object StackTraceUtils {
             // Python
             Regex("""Traceback \(most recent call last\):""", RegexOption.IGNORE_CASE),
             Regex("""File ".*", line \d+"""),
+            Regex("""During handling of the above exception"""),
+            Regex("""\b\w+(Error|Exception):"""), // Python exception types (ValueError, KeyError, etc.)
 
             // Java / Kotlin (JVM stack traces)
+            Regex("""\w+\.\w+Exception:"""), // Java/Kotlin exception types (e.g., java.lang.NullPointerException)
             Regex("""\bat [a-zA-Z0-9_\.$]+\(.*:\d+\)"""),
+            Regex("""Caused by:"""),
+            Regex("""Suppressed:"""),
+            Regex("""\.\.\. \d+ more"""),
 
             // C#
+            Regex("""System\.\w+Exception:"""), // System.Exception types
             Regex("""\bat [\w\.]+\(.*\) in .+:line \d+"""),
+            Regex("""--- End of (stack trace|inner exception stack trace) from previous location ---"""),
+            Regex("""---> .+Exception:"""),
+            Regex("""\bat [\w\.<>]+\.MoveNext\(\)"""), // async/await pattern
+            Regex("""\bat System\.Runtime\."""), // System.Runtime stack frames
 
             // JavaScript / Node.js (V8 engine stack traces)
+            Regex("""\b(TypeError|ReferenceError|Error|SyntaxError|RangeError):"""), // JS exception types
             Regex("""\bat .+\(.+:\d+:\d+\)"""),
             Regex("""\bat .+:\d+:\d+"""),
+            Regex("""\bat async """),
+            Regex("""Uncaught \w+Error:"""),
 
             // Ruby
             Regex("""\b.+:\d+:in `[^`]+`"""),
+            Regex("""\b\w+::\w+(Error|Exception):"""), // Ruby exception types
 
             // Go
             Regex("""\b[\w./-]+\.go:\d+\b"""),
+            Regex("""goroutine \d+ \["""),
+            Regex("""created by """),
 
             // PHP
             Regex("""^#\d+\s+.*\.php\(\d+\):""", setOf(RegexOption.MULTILINE)),
+            Regex("""Next \w+Exception:"""),
+            Regex("""thrown in .+ on line \d+"""),
+            Regex("""(Fatal error|PHP Fatal error):.*Exception:"""), // PHP fatal errors with exceptions
+            Regex("""\bPDOException:"""), // PHP PDO exceptions
+
+            // Rust
+            Regex("""thread '.+' panicked at"""),
+            Regex("""stack backtrace:"""),
+
+            // Scala
+            Regex("""scala\.\w+:"""), // Scala exception types
+
+            // Dart/Flutter
+            Regex("""^#\d+\s+.+\(package:.+\.dart:\d+:\d+\)""", setOf(RegexOption.MULTILINE)),
+
+            // Elixir
+            Regex("""\*\* \(\w+\)"""), // Elixir exception format
+
+            // Swift
+            Regex("""Fatal error:"""),
 
             // Generic file:line matcher for many languages
-            Regex("""\b[a-zA-Z0-9_\-/\\\.]+\.(java|kt|py|cs|js|ts|rb|go|php|cpp|c|m|mm):\d+\b""")
+            Regex("""\b[a-zA-Z0-9_\-/\\\.]+\.(java|kt|py|cs|js|ts|rb|go|php|cpp|c|m|mm|rs|swift|dart|ex|scala):\d+\b""")
         )
 
         /**

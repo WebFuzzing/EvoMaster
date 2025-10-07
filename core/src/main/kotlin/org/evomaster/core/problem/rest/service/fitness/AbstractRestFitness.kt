@@ -59,6 +59,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.taint.TaintAnalysis
+import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -1202,6 +1203,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
+        handleStackTraceCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1287,6 +1289,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
                 r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+            }
+        }
+    }
+
+
+    private fun handleStackTraceCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
             }
         }
     }

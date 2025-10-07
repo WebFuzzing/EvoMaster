@@ -325,33 +325,31 @@ class SecurityRest {
 
                 val copyTarget = target.copy()
 
-                copyTarget.evaluatedMainActions().forEach { action ->
-                    // body
-                    val result = (action.result as RestCallResult)
-                    val action = (action.action as RestCallAction)
-
-                    val body = result.getBody()
-
-                    if(body != null && StackTraceUtils.looksLikeStackTrace(body)){
-                        copyTarget.individual.modifySampleType(SampleType.SECURITY)
-                        copyTarget.individual.ensureFlattenedStructure()
-                        val scenarioId = idMapper.handleLocalTarget(
-                            idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_STACK_TRACE, action.getName())
-                        )
-                        copyTarget.fitness.updateTarget(scenarioId, 1.0)
-                        result.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, action.getName(), null))
-                        isFaultFound = true
+                isFaultFound = copyTarget.evaluatedMainActions()
+                    .asSequence()
+                    .filter { (it.action as RestCallAction).verb == action.verb && it.action.path == action.path }
+                    .mapNotNull { it.result as? RestCallResult }
+                    .any { r ->
+                        val body = r.getBody()
+                        r.getStatusCode() == 500 &&
+                                body != null &&
+                                StackTraceUtils.looksLikeStackTrace(body)
                     }
+
+                if(isFaultFound){
+                    copyTarget.individual.modifySampleType(SampleType.SECURITY)
+                    copyTarget.individual.ensureFlattenedStructure()
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copyTarget.individual)
+
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        continue@mainloop
+                    }
+
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
                 }
-
-                if(!isFaultFound){
-                    continue
-                }
-
-                val added = archive.addIfNeeded(copyTarget)
-                assert(added)
-
-                continue@mainloop
             }
         }
     }
