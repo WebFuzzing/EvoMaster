@@ -27,26 +27,24 @@ class KDE400EndpointModel (
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    private val maxStoredSamples: Int = 10_000,
     randomness: Randomness
-): AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+): AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
     private var density400: KDE? = null
     private var densityNot400: KDE? = null
 
-    /**
-     * Optional cap on stored samples per class (0 = unlimited).
-     * If >0, uses reservoir-style uniform downsampling.
-     */
-    var maxSamplesPerClass: Int = 0
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
         super.initializeIfNeeded(inputVector)
         if(density400 == null) {
-            density400 = KDE(dimension!!, maxSamplesPerClass)
+            density400 = KDE(dimension!!, maxStoredSamples, randomness)
         }
         if(densityNot400 == null) {
-            densityNot400 = KDE(dimension!!, maxSamplesPerClass)
+            densityNot400 = KDE(dimension!!, maxStoredSamples, randomness)
         }
         initialized = true
     }
@@ -64,11 +62,11 @@ class KDE400EndpointModel (
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsFullHistory.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -92,7 +90,7 @@ class KDE400EndpointModel (
         if (total == 0.0 || total.isNaN() || likelihood400.isNaN() || likelihoodNot400.isNaN()) {
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -103,7 +101,7 @@ class KDE400EndpointModel (
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to posteriorNot400,
+                NOT_400 to posteriorNot400,
                 400 to posterior400
             )
         )
@@ -148,9 +146,11 @@ class KDE400EndpointModel (
      * Represents a Kernel Density Estimator (KDE) that approximates the distribution of a dataset
      * using Gaussian kernels with diagonal bandwidth.
      * @property d Dimensionality of the data points.
-     * @property maxStored Maximum number of samples to store in memory. If the value is <= 0, all samples are stored.
+     * @property maxStoredSamples Maximum number of samples to store in memory.
      */
-    class KDE(private val d: Int, private val maxStored: Int = 0) {
+    class KDE(private val d: Int,
+              private val maxStoredSamples: Int,
+              private val randomness: Randomness) {
 
         private val samples = mutableListOf<DoubleArray>()
         private var seen: Long = 0L // total seen (for reservoir)
@@ -174,18 +174,19 @@ class KDE400EndpointModel (
                 M2[j] += delta * delta2
             }
 
-            // Store sample (unbounded or reservoir downsample)
-            if (maxStored <= 0) {
+            /**
+             * Reservoir-style replacement to avoid memory issue
+             *  - Fill up until we reach maxStoredSamples.
+             *  - After that, replace existing samples with decreasing probability
+             *    to maintain a uniform random subset of all seen data.
+             */
+            if (samples.size < maxStoredSamples) {
                 samples.add(x)
             } else {
-                if (samples.size < maxStored) {
-                    samples.add(x)
-                } else {
-                    // reservoir: replace with decreasing probability
-                    val r = kotlin.random.Random.nextLong(seen)
-                    if (r < maxStored) {
-                        samples[r.toInt()] = x
-                    }
+                // reservoir: replace with decreasing probability
+                val r = randomness.nextLong(0, seen)
+                if (r < maxStoredSamples) {
+                    samples[r.toInt()] = x
                 }
             }
         }

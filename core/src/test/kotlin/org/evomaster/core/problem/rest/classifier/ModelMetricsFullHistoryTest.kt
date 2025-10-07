@@ -1,17 +1,17 @@
 package org.evomaster.core.problem.rest.classifier
 
-import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsFullHistory
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class ModelMetricsWithTimeWindowTest {
+class ModelMetricsFullHistoryTest {
 
 
     @Test
     fun estimateModelMetrics() {
 
         val delta = 0.0001
-        val ma = ModelMetricsWithTimeWindow(10) // buffer large enough to hold all
+        val ma = ModelMetricsFullHistory()
 
         // 1) correct prediction: 200 vs. 200 -> TN
         ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 200)
@@ -35,7 +35,7 @@ class ModelMetricsWithTimeWindowTest {
         assertEquals(1.0/2.0, ma.estimateMetrics().precision400, delta) // 1 TP, 1 FP
         assertEquals(1.0, ma.estimateMetrics().recall400, delta)        // 1 TP, 0 FN
         assertEquals(2.0/3.0, ma.estimateMetrics().f1Score400, delta)
-        assertEquals(0.5, ma.estimateMetrics().mcc, 0.0001)
+        assertEquals(0.5, ma.estimateMetrics().mcc, delta)
 
         // 4) incorrect prediction: 200 vs. 400 -> FN
         ma.updatePerformance(predictedStatusCode = 200, actualStatusCode = 400)

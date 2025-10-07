@@ -9,15 +9,18 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabil
 class GLM400Classifier(
     warmup: Int = 10,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val learningRate: Double = 0.01,
     randomness: Randomness
-) : AbstractProbabilistic400Classifier<GLM400EndpointModel>(warmup, encoderType, randomness) {
+) : AbstractProbabilistic400Classifier<GLM400EndpointModel>(
+    warmup, encoderType, metricType ,randomness) {
 
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
+        metricType: EMConfig.AIClassificationMetrics,
         randomness: Randomness
     ): GLM400EndpointModel {
         return GLM400EndpointModel(
@@ -25,6 +28,7 @@ class GLM400Classifier(
             warmup,
             dimension,
             encoderType,
+            metricType,
             learningRate,
             randomness
         )

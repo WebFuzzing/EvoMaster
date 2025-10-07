@@ -2,10 +2,9 @@ package org.evomaster.core.problem.rest.classifier.probabilistic
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.classifier.AIModel
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
-import org.evomaster.core.problem.rest.classifier.ModelMetrics
-import org.evomaster.core.problem.rest.classifier.ModelMetricsFullHistory
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.createModelMetrics
 import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
@@ -23,13 +22,18 @@ abstract class AbstractProbabilistic400EndpointModel(
     var warmup: Int = 10,
     var dimension: Int? = null,
     val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     val randomness: Randomness
 ) : AIModel {
 
     protected var initialized: Boolean = false
 
-    val modelMetricsFullHistory: ModelMetricsFullHistory = ModelMetricsFullHistory()
-    val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
+    companion object {
+        const val NOT_400 = 200
+    }
+
+    /** Create a metric tracker.*/
+    val modelMetrics: ModelMetrics = createModelMetrics(metricType)
 
     /** Ensure endpoint matches this model */
     protected fun verifyEndpoint(inputEndpoint: Endpoint) {
@@ -59,13 +63,11 @@ abstract class AbstractProbabilistic400EndpointModel(
     protected fun updateModelMetrics(action: RestCallAction, result: RestCallResult) {
 
         val outputStatusCode= result.getStatusCode()
-        if (modelMetricsFullHistory.totalSentRequests < warmup || action.parameters.isEmpty()) {
-            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
+        if (modelMetrics.totalSentRequests < warmup || action.parameters.isEmpty()) {
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
             modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         } else {
             val predictedStatusCode = classify(action).prediction()
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
             modelMetrics.updatePerformance(predictedStatusCode, outputStatusCode?:-1)
         }
 
@@ -86,7 +88,5 @@ abstract class AbstractProbabilistic400EndpointModel(
         // This is a single-endpoint model and just return its own metrics
         return modelMetrics.estimateMetrics()
     }
-
-
 
 }
