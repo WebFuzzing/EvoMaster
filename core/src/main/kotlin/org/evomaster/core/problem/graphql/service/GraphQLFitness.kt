@@ -222,23 +222,24 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500 && DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            Lazy.assert {
-                location5xx != null || config.blackBox
-            }
-            /*
-                500 codes "might" be bugs. To distinguish between different bugs
-                that crash the same endpoint, we need to know what was the last
-                executed statement in the SUT.
-                So, we create new targets for it.
-            */
-            val postfix = if(location5xx==null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
-            val bugId = idMapper.handleLocalTarget(descriptiveId)
-            fv.updateTarget(bugId, 1.0, indexOfAction)
+        if (status == 500) {
+            if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+                Lazy.assert { location5xx != null || config.blackBox }
+                /*
+                    500 codes "might" be bugs. To distinguish between different bugs
+                    that crash the same endpoint, we need to know what was the last
+                    executed statement in the SUT.
+                    So, we create new targets for it.
+                */
+                val postfix = if (location5xx == null) name else "${location5xx!!} $name"
+                val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500, postfix)
+                val bugId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(bugId, 1.0, indexOfAction)
 
-        } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
+            } else {
+                LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault," +
+                        " as HTTP 500 fault detection has been disabled.")
+            }
         }
     }
 
