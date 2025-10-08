@@ -24,16 +24,16 @@ import org.evomaster.core.utils.StringUtils
  * Provides a mapping between a Gene and its DTO representation at use. Takes in the [OutputFormat] to delegate
  * writing of statements to the corresponding [DtoOutput]
  */
-class GeneToDto(outputFormat: OutputFormat) {
+class GeneToDto(
+    val outputFormat: OutputFormat
+) {
 
-    private var dtoOutput: DtoOutput
-
-    init {
-        if (outputFormat.isJava()) {
-            dtoOutput = JavaDtoOutput()
-        } else {
-            throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
-        }
+    private var dtoOutput: DtoOutput = if (outputFormat.isJava()) {
+        JavaDtoOutput()
+    } else if (outputFormat.isKotlin()){
+        KotlinDtoOutput()
+    } else {
+        throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
     }
 
     /**
@@ -85,16 +85,16 @@ class GeneToDto(outputFormat: OutputFormat) {
 
         includedFields.forEach {
             val leafGene = it.getLeafGene()
-            val attributeName = StringUtils.capitalization(it.name)
+            val attributeName = it.name
             when (leafGene) {
                 is ObjectGene -> {
-                    val childDtoCall = getDtoCall(leafGene, attributeName, counter)
+                    val childDtoCall = getDtoCall(leafGene, StringUtils.capitalization(attributeName), counter)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 is ArrayGene<*> -> {
-                    val childDtoCall = getDtoCall(leafGene, attributeName, counter)
+                    val childDtoCall = getDtoCall(leafGene, StringUtils.capitalization(attributeName), counter)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
@@ -136,7 +136,7 @@ class GeneToDto(outputFormat: OutputFormat) {
     private fun getListType(fieldName: String, gene: Gene): String {
         return when (gene) {
             is StringGene -> "String"
-            is IntegerGene -> "Integer"
+            is IntegerGene -> if (outputFormat.isJava()) "Integer" else "Int"
             is LongGene -> "Long"
             is DoubleGene -> "Double"
             is FloatGene -> "Float"
