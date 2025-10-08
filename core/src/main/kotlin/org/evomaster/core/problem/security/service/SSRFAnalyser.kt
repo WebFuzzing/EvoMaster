@@ -94,11 +94,16 @@ class SSRFAnalyser {
     fun apply(): Solution<RestIndividual> {
         LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
-        individualsInSolution = getIndividualsWithStatus2XX()
+        val individualsWith2XX = getIndividualsWithStatus2XX()
+
+        // Note: In some cases with black-box, we may not be able to get HTTP 200
+        //  while, there is a possibility for a SSRF. As a temporary fix, we are
+        //  selecting individuals with HTTP 400 and 422 status codes.
+        val individualsWith4XX = getIndividualsWithStatus4XX()
+
+        individualsInSolution = individualsWith2XX + individualsWith4XX
 
         if (individualsInSolution.isEmpty()) {
-            // FIXME: If the [individualsInSolution] is empty, we need to look for individuals
-            //  with 400 and 422
             return archive.extractSolution()
         }
 
@@ -118,10 +123,6 @@ class SSRFAnalyser {
 
         // execute
         analyse()
-
-        // TODO: This is for development, remove it later
-        val individualsAfterExecution = getIndividualsWithStatus2XX()
-        log.debug("Total individuals after vulnerability analysis: {}", individualsAfterExecution.size)
 
         return archive.extractSolution()
     }
@@ -340,6 +341,12 @@ class SSRFAnalyser {
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
             statusGroup = StatusGroup.G_2xx
+        )
+    }
+    private fun getIndividualsWithStatus4XX(): List<EvaluatedIndividual<RestIndividual>> {
+        return RestIndividualSelectorUtils.findIndividuals(
+            this.archive.extractSolution().individuals,
+            statusCodes = listOf(400, 422)
         )
     }
 }
