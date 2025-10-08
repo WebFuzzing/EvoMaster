@@ -413,6 +413,15 @@ public abstract class EnterpriseTestBase {
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
 
+        int code = testClassName.getFullNameWithDots().hashCode();
+        /*
+            get a deterministic boolean based on the test properties.
+            this is used to try different options that should have no impact on the
+            results of the E2E.
+            if some tests need to use those options, can always be overridden.
+         */
+        boolean active = code % 2 == 0;
+
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
@@ -427,7 +436,8 @@ public abstract class EnterpriseTestBase {
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",
                 "--executiveSummary", summary,
-                "--createConfigPathIfMissing", "false"
+                "--createConfigPathIfMissing", "false",
+                "--dtoForRequestPayload", ""+active
         ));
     }
 
