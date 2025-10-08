@@ -1211,6 +1211,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SSRF)) {
+            return
+        }
+
         individual.seeMainExecutableActions().forEach {
             val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
             if (ar != null) {
@@ -1232,6 +1236,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
+            return
+        }
 
         val notRecognized = individual.seeMainExecutableActions()
             .filter {
@@ -1269,6 +1276,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
+            return
+        }
+
         val getPaths = individual.seeMainExecutableActions()
             .filter { it.verb == HttpVerb.GET }
             .map { it.path }
@@ -1299,6 +1310,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            return
+        }
+
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
@@ -1318,6 +1333,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+
+        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+            return
+        }
+
         val endpoints = individual.seeMainExecutableActions()
             .map { it.getName() }
             .toSet()
@@ -1349,6 +1369,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
+
+        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
+            return
+        }
+
         if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
            val actionIndex = individual.size() - 1
             val action = individual.seeMainExecutableActions()[actionIndex]

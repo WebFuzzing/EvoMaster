@@ -324,6 +324,9 @@ class SecurityRest {
                 var isFaultFound = false
 
                 val copyTarget = target.copy()
+                //  we need BOTH the check here and in the fitness function.
+                //  here: because we need to make sure 500 from archive are re-executed and added back with SECURITY tag if fault found
+                //  in ff: to avoid losing info if test is re-evaluated
 
                 isFaultFound = copyTarget.evaluatedMainActions()
                     .asSequence()
