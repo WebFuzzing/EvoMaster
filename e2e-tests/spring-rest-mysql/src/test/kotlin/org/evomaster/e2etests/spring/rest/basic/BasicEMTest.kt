@@ -95,7 +95,7 @@ class BasicEMTest : RestTestBase() {
             val injector = init(args)
 
             val sampler = injector.getInstance(RestSampler::class.java)
-            val dbactions = sampler.sampleSqlInsertion(TableId("X"), setOf("*"))
+            val dbactions = sampler.sampleSqlInsertion(TableId("X", openGroupName = "test"), setOf("*"))
 
             assertEquals(1, dbactions.size)
 

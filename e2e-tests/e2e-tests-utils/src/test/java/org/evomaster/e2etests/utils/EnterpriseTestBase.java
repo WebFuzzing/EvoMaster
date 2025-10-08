@@ -91,12 +91,14 @@ public abstract class EnterpriseTestBase {
     @AfterAll
     public static void tearDown() {
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            boolean stopped = remoteController.stopSUT();
-            stopped = embeddedStarter.stop() && stopped;
+        if(remoteController != null) {
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                boolean stopped = remoteController.stopSUT();
+                stopped = embeddedStarter.stop() && stopped;
 
-            assertTrue(stopped);
-        });
+                assertTrue(stopped);
+            });
+        }
 
         SimpleLogger.setThreshold(SimpleLogger.Level.INFO);
     }
