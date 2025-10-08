@@ -212,7 +212,7 @@ class TestSuiteWriter {
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
         val restSampler = sampler as AbstractRestSampler
-        DtoWriter().write(testSuitePath, testSuiteFileName.getPackage(), config.outputFormat, restSampler.getActionDefinitions())
+        DtoWriter(config.outputFormat).write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -419,14 +419,15 @@ class TestSuiteWriter {
             //in Kotlin this should not be imported
             addImport("java.util.Map", lines)
             addImport("java.util.Arrays", lines)
+        }
+
+        if (format.isJavaOrKotlin()) {
+
             if (config.dtoForRequestPayload) {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
             }
-        }
-
-        if (format.isJavaOrKotlin()) {
 
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
