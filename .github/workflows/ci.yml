@@ -37,9 +37,9 @@ env:
   # third-party libraries, which might do it only in special cases.
   # For some "hilarious" case, see:
   # https://github.com/WebFuzzing/EvoMaster/issues/447
-  release-jdk: 21
-  latest-jdk: 21
-  build-jdk: 1.8
+  release-jdk: 25
+  latest-jdk: 25
+  build-jdk: 25
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
   debugTestName: "org.evomaster.e2etests.spring.graphql.db.tree.DbTreeEMTest" # replace with test to debug
