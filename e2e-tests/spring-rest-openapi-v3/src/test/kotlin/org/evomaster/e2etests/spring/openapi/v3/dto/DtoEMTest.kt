@@ -25,8 +25,7 @@ class DtoEMTest : SpringTestBase(){
             100,
         ) { args: MutableList<String> ->
 
-            args.add("--dtoForRequestPayload")
-            args.add("true")
+            setOption(args,"dtoForRequestPayload","true")
 
             val solution = initAndRun(args)
 
