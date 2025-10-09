@@ -23,7 +23,7 @@ class SSRFHeaderEMTest: SpringTestBase() {
     @Test
     fun testSSRFHeader() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFHeaderEMTest",
+            "SSRFHeaderGeneratedTest",
             30,
         ) { args: MutableList<String> ->
 
