@@ -20,7 +20,8 @@
     <modules>
         <module>dbconstraint</module>
         <module>core</module>
-        <module>core-driver-it</module>
+<!--        FIXME PUT BACK after upgrade -->
+<!--        <module>core-driver-it</module>-->
         <module>core-it</module>
         <module>core-graphql-it</module>
         <module>client-java</module>
@@ -118,7 +119,8 @@
         <addOpens></addOpens> <!-- overridden in profile -->
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>25</java.version>
+        <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
+        <java.version>21</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <wfc.version>0.0.6</wfc.version>

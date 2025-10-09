@@ -16,7 +16,7 @@ class CreateTableCheckTest : ExtractTestBaseMySQL() {
 
         assertNotNull(schema)
 
-        assertEquals("test", schema.name.toLowerCase())
+        assertEquals("test", schema.name.lowercase())
         assertEquals(DatabaseType.MYSQL, schema.databaseType)
         assertTrue(schema.tables.any { it.id.name.equals("people", ignoreCase = true) })
 
