@@ -68,7 +68,7 @@ class GeneToDto(
     fun getDtoCall(gene: Gene, dtoName: String, counter: Int): DtoCall {
         return when(gene) {
             is ObjectGene -> getObjectDtoCall(gene, dtoName, counter)
-            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counter)
+            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counter, null)
             else -> throw RuntimeException("BUG: Gene $gene (with type ${this::class.java.simpleName}) should not be creating DTOs")
         }
     }
@@ -94,7 +94,7 @@ class GeneToDto(
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 is ArrayGene<*> -> {
-                    val childDtoCall = getDtoCall(leafGene, getDtoName(leafGene, attributeName), counter)
+                    val childDtoCall = getArrayDtoCall(leafGene, getDtoName(leafGene, attributeName), counter, attributeName)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
@@ -108,12 +108,12 @@ class GeneToDto(
         return DtoCall(dtoVarName, result)
     }
 
-    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counter: Int): DtoCall {
+    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counter: Int, targetAttribute: String?): DtoCall {
         val result = mutableListOf<String>()
         val template = gene.template
 
         val listType = getListType(dtoName,template)
-        val listVarName = "list_${dtoName}_${counter}"
+        val listVarName = "list_${targetAttribute?:dtoName}_${counter}"
         result.add(dtoOutput.getNewListStatement(listType, listVarName))
 
         if (template is ObjectGene) {
