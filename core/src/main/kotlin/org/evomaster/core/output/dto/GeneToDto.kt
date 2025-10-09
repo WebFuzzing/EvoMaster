@@ -38,23 +38,23 @@ class GeneToDto(
 
     /**
      * @param leafGene to obtain the refType if the component is defined with a name
-     * @param actionName to provide a fallback on the DTO named with the action if the component is defined inline
+     * @param fallback to provide a fallback on the DTO named with the action if the component is defined inline
      *
      * @return the DTO name that will be used to instantiate the first variable
      */
-    fun getRootDtoName(leafGene: Gene, actionName: String): String {
+    fun getDtoName(leafGene: Gene, fallback: String): String {
         return when (leafGene) {
-            is ObjectGene -> leafGene.refType?:TestWriterUtils.safeVariableName(actionName)
+            is ObjectGene -> leafGene.refType?:StringUtils.capitalization(TestWriterUtils.safeVariableName(fallback))
             is ArrayGene<*> -> {
                 val template = leafGene.template
                 if (template is ObjectGene) {
-                    template.refType?:TestWriterUtils.safeVariableName(actionName)
+                    template.refType?:StringUtils.capitalization(TestWriterUtils.safeVariableName(fallback))
                 } else {
                     // TODO handle arrays of basic data types
-                    return getListType(actionName, template)
+                    return getListType(fallback, template)
                 }
             }
-            else -> throw IllegalStateException("Gene $leafGene is not supported for DTO payloads for action: $actionName")
+            else -> throw IllegalStateException("Gene $leafGene is not supported for DTO payloads for action: $fallback")
         }
     }
 
@@ -68,7 +68,7 @@ class GeneToDto(
     fun getDtoCall(gene: Gene, dtoName: String, counter: Int): DtoCall {
         return when(gene) {
             is ObjectGene -> getObjectDtoCall(gene, dtoName, counter)
-            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counter)
+            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counter, null)
             else -> throw RuntimeException("BUG: Gene $gene (with type ${this::class.java.simpleName}) should not be creating DTOs")
         }
     }
@@ -88,19 +88,19 @@ class GeneToDto(
             val attributeName = it.name
             when (leafGene) {
                 is ObjectGene -> {
-                    val childDtoCall = getDtoCall(leafGene, StringUtils.capitalization(attributeName), counter)
+                    val childDtoCall = getDtoCall(leafGene, getDtoName(leafGene, attributeName), counter)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 is ArrayGene<*> -> {
-                    val childDtoCall = getDtoCall(leafGene, StringUtils.capitalization(attributeName), counter)
+                    val childDtoCall = getArrayDtoCall(leafGene, getDtoName(leafGene, attributeName), counter, attributeName)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 else -> {
-                    result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, it.getValueAsPrintableString(targetFormat = null)))
+                    result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
                 }
             }
         }
@@ -108,16 +108,16 @@ class GeneToDto(
         return DtoCall(dtoVarName, result)
     }
 
-    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counter: Int): DtoCall {
+    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counter: Int, targetAttribute: String?): DtoCall {
         val result = mutableListOf<String>()
         val template = gene.template
 
         val listType = getListType(dtoName,template)
-        val listVarName = "list_${listType}_${counter}"
+        val listVarName = "list_${targetAttribute?:dtoName}_${counter}"
         result.add(dtoOutput.getNewListStatement(listType, listVarName))
 
         if (template is ObjectGene) {
-            val childDtoName = StringUtils.capitalization(template.refType?: gene.name)
+            val childDtoName = template.refType?:StringUtils.capitalization(gene.name)
             var listCounter = 1
             gene.getViewOfElements().forEach {
                 val childDtoCall = getDtoCall(it,childDtoName, listCounter++)
@@ -126,7 +126,8 @@ class GeneToDto(
             }
         } else {
             gene.getViewOfElements().forEach {
-                result.add(dtoOutput.getAddElementToListStatement(listVarName, it.getValueAsPrintableString(targetFormat = null)))
+                val leafGene = it.getLeafGene()
+                result.add(dtoOutput.getAddElementToListStatement(listVarName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
             }
         }
 
@@ -150,6 +151,16 @@ class GeneToDto(
             is ObjectGene -> gene.refType?:StringUtils.capitalization(fieldName)
             is ArrayGene<*> -> "List<${getListType(gene.name, gene.template)}>"
             else -> throw Exception("Not supported gene at the moment: ${gene?.javaClass?.simpleName} for field $fieldName")
+        }
+    }
+
+    // According to documentation, a trailing constant is only needed for Long, Hexadecimal and Float
+    // https://kotlinlang.org/docs/numbers.html#literal-constants-for-numbers
+    private fun getValueSuffix(gene: Gene): String {
+        return when (gene) {
+            is LongGene -> "L"
+            is FloatGene -> "f"
+            else -> ""
         }
     }
 }
