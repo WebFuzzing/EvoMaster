@@ -193,11 +193,15 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     fun testResourceRelatedToTable(resource: String, expectedRelatedTable : List<String>){
         assertTrue(rm.getTableInfo().isNotEmpty())
 
-        rm.getResourceCluster().getValue(resource).getDerivedTables().apply {
+        rm.getResourceCluster().getValue(resource).getDerivedTables(rm.sqlInsertBuilder!!.getTableNames()).apply {
             assertTrue(isNotEmpty()){
                 "derived tables of resource $resource should not be empty"
             }
-            assertTrue(expectedRelatedTable.all { this.any { a->a.equals(it, ignoreCase = true) } }){
+            /*
+               here, we employ with the table
+               TODO might later change it with table id
+            */
+            assertTrue(expectedRelatedTable.all { this.any { a->a.name.equals(it, ignoreCase = true) } }){
                 "expected related tables are ${expectedRelatedTable.joinToString(",")}; but actual related tables are ${this.joinToString(",")}."
             }
         }
@@ -231,7 +235,11 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         assertTrue(resourceNode.resourceToTable.derivedMap.isNotEmpty())
 
-        assertTrue(resourceNode.resourceToTable.derivedMap.any { tables.any { t-> it.key.equals(t.key, ignoreCase = true) } })
+        /*
+            here, we employ with the table
+            TODO might later change it with table id
+         */
+        assertTrue(resourceNode.resourceToTable.derivedMap.any { tables.any { t-> it.key.name.equals(t.key, ignoreCase = true) } })
 
         val resourceCalls = mutableListOf<RestResourceCalls>()
         rm.sampleCall(resourceNode.getName(), true, resourceCalls, config.maxTestSize, true)

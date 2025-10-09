@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql;
 
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.sql.internal.constraint.*;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -42,7 +43,7 @@ public class DbInfoExtractor {
             if (schema.enumeraredTypes.stream().noneMatch(k -> k.name.equals(column.type))) {
                 throw new IllegalArgumentException("Missing enumerated type declaration for type " + column.type
                         + " in column " + column.name
-                        + " of table " + table.name);
+                        + " of table " + SqlDtoUtils.getId(table));
             }
         }
     }
@@ -62,13 +63,12 @@ public class DbInfoExtractor {
         }
 
         //TODO proper handling of multi-column PKs/FKs
-
         Optional<TableDto> targetTable = schema.tables.stream()
-                .filter(t -> t.name.equals(fk.get().targetTable))
+                .filter(t -> SqlDtoUtils.matchByName(t, fk.get().targetTable))
                 .findFirst();
 
         if (!targetTable.isPresent()) {
-            throw new IllegalArgumentException("Foreign key in table " + table.name +
+            throw new IllegalArgumentException("Foreign key in table " + table.id.name +
                     " pointing to non-existent table " + fk.get().targetTable);
         }
 
@@ -77,14 +77,14 @@ public class DbInfoExtractor {
                 .collect(Collectors.toList());
 
         if (pks.isEmpty()) {
-            throw new IllegalArgumentException("No PK in table " + targetTable.get().name + " that has FKs pointing to it");
+            throw new IllegalArgumentException("No PK in table " + targetTable.get().id.name + " that has FKs pointing to it");
         }
 
         for (ColumnDto pk : pks) {
             if (pk.autoIncrement || pk.foreignKeyToAutoIncrement) {
                 throw new IllegalArgumentException("Column " + pk.name + " in table " +
                         pk.table + " is auto-increment, although FK pointing to it does not mark it " +
-                        "as autoincrement in " + column.name + " in " + table.name
+                        "as autoincrement in " + column.name + " in " + table.id.name
                 );
             }
         }
@@ -101,17 +101,17 @@ public class DbInfoExtractor {
 
         if (!fk.isPresent()) {
             throw new IllegalArgumentException("No foreign key constraint for marked column " +
-                    column.name + " in table " + table.name);
+                    column.name + " in table " + table.id.name);
         }
 
         //TODO proper handling of multi-column PKs/FKs
 
         Optional<TableDto> targetTable = schema.tables.stream()
-                .filter(t -> t.name.equals(fk.get().targetTable))
+                .filter(t ->  SqlDtoUtils.matchByName(t, fk.get().targetTable))
                 .findFirst();
 
         if (!targetTable.isPresent()) {
-            throw new IllegalArgumentException("Foreign key in table " + table.name +
+            throw new IllegalArgumentException("Foreign key in table " + table.id.name +
                     " pointing to non-existent table " + fk.get().targetTable);
         }
 
@@ -123,15 +123,15 @@ public class DbInfoExtractor {
 
         if (pks.size() != 1) {
             throw new IllegalArgumentException("There must be only 1 PK in table " +
-                    targetTable.get().name + " pointed by the FK-to-autoincrement " +
-                    column.name + " in " + table.name + ". However, there were: " + pks.size());
+                    targetTable.get().id.name + " pointed by the FK-to-autoincrement " +
+                    column.name + " in " + table.id.name + ". However, there were: " + pks.size());
         }
 
         ColumnDto pk = pks.get(0);
         if (!pk.autoIncrement && !pk.foreignKeyToAutoIncrement) {
             throw new IllegalArgumentException("Column " + pk.name + " in table " +
                     pk.table + " is not auto-increment, although FK pointing to it does mark it" +
-                    "as autoincrement in " + column.name + " in " + table.name
+                    "as autoincrement in " + column.name + " in " + table.id.name
             );
         }
     }
@@ -235,7 +235,7 @@ public class DbInfoExtractor {
 
     private static ColumnDto getColumnDto(DbInfoDto schemaDto, String tableName, String columnName) {
         TableDto tableDto = schemaDto.tables.stream()
-                .filter(t -> t.name.equals(tableName.toLowerCase()))
+                .filter(t -> SqlDtoUtils.matchByName(t,tableName))
                 .findFirst()
                 .orElse(null);
         return tableDto.columns.stream()
@@ -498,7 +498,7 @@ public class DbInfoExtractor {
                 .filter(c -> c.name.equals(columnName)).findAny().orElse(null);
 
         if (columnDto == null) {
-            throw new IllegalArgumentException("Missing column DTO for column:" + tableDto.name + "." + columnName);
+            throw new IllegalArgumentException("Missing column DTO for column:" + tableDto.id.name + "." + columnName);
         }
 
         columnDto.unique = true;
@@ -521,7 +521,9 @@ public class DbInfoExtractor {
     private static void addConstraints(DbInfoDto schemaDto, List<DbTableConstraint> constraintList) {
         for (DbTableConstraint constraint : constraintList) {
             String tableName = constraint.getTableName();
-            TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+            TableDto tableDto = schemaDto.tables.stream()
+                    .filter(t ->  SqlDtoUtils.matchByName(t,tableName))
+                    .findFirst().orElse(null);
 
             if (tableDto == null) {
                 throw new NullPointerException("TableDto for table " + tableName + " was not found in the schemaDto");
@@ -544,12 +546,7 @@ public class DbInfoExtractor {
         }
     }
 
-    private static String getId(TableDto dto){
-        if(dto.schema == null){
-            return dto.name;
-        }
-        return dto.schema + "." + dto.name;
-    }
+
 
     private static void handleTableEntry(Connection connection, DbInfoDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableIds) throws SQLException {
 
@@ -578,22 +575,23 @@ public class DbInfoExtractor {
 
         TableDto tableDto = new TableDto();
         schemaDto.tables.add(tableDto);
-        tableDto.name = tables.getString("TABLE_NAME");
-        tableDto.schema = tableSchema;
-        tableDto.catalog = tableCatalog;
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = tables.getString("TABLE_NAME");
+        tableDto.id.schema = tableSchema;
+        tableDto.id.catalog = tableCatalog;
 
-        if (tableIds.contains(getId(tableDto))) {
+        if (tableIds.contains(SqlDtoUtils.getId(tableDto))) {
             /*
              * Perhaps we should throw a more specific exception than IllegalArgumentException
              */
-            throw new IllegalArgumentException("Cannot handle repeated table " + getId(tableDto) + " in database");
+            throw new IllegalArgumentException("Cannot handle repeated table " + SqlDtoUtils.getId(tableDto) + " in database");
         } else {
-            tableIds.add(getId(tableDto));
+            tableIds.add(SqlDtoUtils.getId(tableDto));
         }
 
         Set<String> pks = new HashSet<>();
         SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
-        ResultSet rsPK = md.getPrimaryKeys(tableDto.catalog, tableDto.schema, tableDto.name);
+        ResultSet rsPK = md.getPrimaryKeys(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name);
 
         while (rsPK.next()) {
             String pkColumnName = rsPK.getString("COLUMN_NAME");
@@ -606,21 +604,21 @@ public class DbInfoExtractor {
 
         tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
-        ResultSet columns = md.getColumns(tableDto.catalog, tableDto.schema, tableDto.name, null);
+        ResultSet columns = md.getColumns(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name, null);
 
         Set<String> columnNames = new HashSet<>();
         while (columns.next()) {
             ColumnDto columnDto = new ColumnDto();
             tableDto.columns.add(columnDto);
 
-            columnDto.table = tableDto.name;
+            columnDto.table = tableDto.id.name;
             columnDto.name = columns.getString("COLUMN_NAME");
 
             if (columnNames.contains(columnDto.name)) {
                 /*
                  * Perhaps we should throw a more specific exception than IllegalArgumentException
                  */
-                throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.name);
+                throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.id.name);
             } else {
                 columnNames.add(columnDto.name);
             }
@@ -655,7 +653,7 @@ public class DbInfoExtractor {
         columns.close();
 
 
-        ResultSet fks = md.getImportedKeys(tableDto.catalog, tableDto.schema, tableDto.name);
+        ResultSet fks = md.getImportedKeys(tableDto.id.catalog, tableDto.id.schema, tableDto.id.name);
         while (fks.next()) {
             //TODO need to see how to handle case of multi-columns
 
@@ -730,7 +728,7 @@ public class DbInfoExtractor {
              * corresponding [DATA_TYPE] column value.
              */
             String sqlQuery = String.format("SELECT DATA_TYPE, table_schema from INFORMATION_SCHEMA.COLUMNS where\n" +
-                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.schema, tableDto.name, columnDto.name);
+                    " table_schema = '%s' and table_name = '%s' and column_name= '%s' ", tableDto.id.schema, tableDto.id.name, columnDto.name);
             try (Statement statement = connection.createStatement()) {
                 ResultSet rs = statement.executeQuery(sqlQuery);
                 if (rs.next()) {
@@ -813,14 +811,6 @@ public class DbInfoExtractor {
         }
     }
 
-    /**
-     * @return a table DTO for a particular table name
-     */
-    private static TableDto getTable(DbInfoDto schema, String tableName) {
-        return schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(tableName))
-                .findFirst().orElse(null);
-    }
 
     private static ColumnDto getColumn(TableDto table, String columnName) {
         return table.columns.stream()
@@ -866,7 +856,7 @@ public class DbInfoExtractor {
                     support for multi-column PKs/FKs
                  */
                 int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
-                TableDto targetTableDto = getTable(schema, fk.targetTable);
+                TableDto targetTableDto = SqlDtoUtils.getTable(schema, fk.targetTable);
                 String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
                 ColumnDto targetColumnDto = getColumn(targetTableDto, targetColumnName);
 

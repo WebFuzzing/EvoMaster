@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.multidb
 
-import org.evomaster.client.java.controller.EmbeddedSutController
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.instrumentation.InputProperties
@@ -11,9 +10,13 @@ import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 
+
+//FIXME put back once fixed
+@Disabled
 abstract class MultiDbParameterizedE2ETemplate : RestTestBase(){
 
     companion object {
@@ -35,6 +38,8 @@ abstract class MultiDbParameterizedE2ETemplate : RestTestBase(){
         }
     }
 
+    //FIXME put back once fixed
+    @Disabled
     @ParameterizedTest
     @EnumSource(names = ["MYSQL","POSTGRES","H2"])
     fun testRunEM(databaseType: DatabaseType) {

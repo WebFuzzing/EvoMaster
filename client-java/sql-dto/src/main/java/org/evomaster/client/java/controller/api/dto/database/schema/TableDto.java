@@ -4,19 +4,7 @@ import java.util.*;
 
 public class TableDto {
 
-    /**
-     * The schema this table belongs to.
-     *  Note that databases like MySQL make no distinction between catalog and schema.
-     */
-    public String schema;
-
-
-    public String catalog;
-
-    /**
-     * The name of the table
-     */
-    public String name;
+    public TableIdDto id;
 
     /**
      * A list of descriptions for each column in the table

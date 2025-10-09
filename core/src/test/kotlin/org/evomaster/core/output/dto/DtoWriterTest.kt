@@ -345,6 +345,16 @@ class DtoWriterTest {
         }
     }
 
+    @Test
+    fun noDtosWhenNoBodyParam() {
+        val dtoWriter = DtoWriter(outputFormat)
+        val actionCluster = initRestSchema("noBody.yaml")
+
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
+
+        assertEquals(dtoWriter.getCollectedDtos().size, 0)
+    }
+
     private fun initRestSchema(openApiLocation: String) : Map<String, Action> {
         val restSchema = RestSchema(OpenApiAccess.getOpenAPIFromResource("/swagger/dto-writer/$openApiLocation"))
         val actionCluster = mutableMapOf<String, Action>()

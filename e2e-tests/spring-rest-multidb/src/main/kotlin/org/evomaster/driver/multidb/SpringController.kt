@@ -50,6 +50,8 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         //startSut()
     }
 
+    abstract fun extraSpringStartOptions() : List<String>
+
     override fun startSut(): String {
 
         //lot of problem if using same H2 instance. see:
@@ -65,9 +67,9 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
         val commonSettings = arrayOf(
             "--server.port=0",
             "--spring.jpa.properties.hibernate.show_sql=true",
-            "--spring.jpa.hibernate.ddl-auto=create-drop",
+            "--spring.jpa.hibernate.ddl-auto=validate",
             "--spring.jmx.enabled=false"
-        )
+        ).plus(extraSpringStartOptions())
 
         ctx = when(databaseType) {
             DatabaseType.H2 -> {

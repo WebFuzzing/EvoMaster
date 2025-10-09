@@ -22,14 +22,14 @@ class CreateTableCheckTest : ExtractTestBaseH2() {
 
         assertEquals("db_test", schema.name.lowercase())
         assertEquals(DatabaseType.H2, schema.databaseType)
-        assertTrue(schema.tables.any { it.name == "PEOPLE" })
+        assertTrue(schema.tables.any { it.id.name == "PEOPLE" })
 
-        assertEquals(2, schema.tables.first { it.name == "PEOPLE" }.columns.size)
+        assertEquals(2, schema.tables.first { it.id.name == "PEOPLE" }.columns.size)
 
-        assertTrue(schema.tables.first { it.name == "PEOPLE" }.columns.any { it.name == "AGE" });
+        assertTrue(schema.tables.first { it.id.name == "PEOPLE" }.columns.any { it.name == "AGE" });
 
-        assertEquals(1, schema.tables.first { it.name == "PEOPLE" }.tableCheckExpressions.size)
-        assertEquals("(\"AGE\" <= 100)", schema.tables.first { it.name == "PEOPLE" }.tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals(1, schema.tables.first { it.id.name == "PEOPLE" }.tableCheckExpressions.size)
+        assertEquals("(\"AGE\" <= 100)", schema.tables.first { it.id.name == "PEOPLE" }.tableCheckExpressions[0].sqlCheckExpression)
 
     }
 }

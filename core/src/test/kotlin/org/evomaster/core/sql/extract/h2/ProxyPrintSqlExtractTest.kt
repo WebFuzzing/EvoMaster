@@ -30,18 +30,18 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
         assertAll(Executable { assertEquals("db_test", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(15, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "ADMIN" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONSUMERS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "DOCUMENTS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "DOCUMENTS_SPECS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "EMPLOYEES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "MANAGERS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "NOTIFICATION" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRICETABLES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRINT_REQUESTS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "REVIEWS" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "ROLES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "USERS" }) }
+                Executable { assertTrue(schema.tables.any { it.id.name == "ADMIN" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "CONSUMERS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "DOCUMENTS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "DOCUMENTS_SPECS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "EMPLOYEES" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "MANAGERS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "NOTIFICATION" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PRICETABLES" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "PRINT_REQUESTS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "REVIEWS" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "ROLES" }) },
+                Executable { assertTrue(schema.tables.any { it.id.name == "USERS" }) }
         )
 
 
@@ -50,38 +50,38 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
          * table USERS has a unique column USERNAME:
          * alter table users add constraint UK_r43af9ap4edm43mmtq01oddj6 unique (username);
          */
-        assertEquals(true, schema.tables.find { it.name == "USERS" }!!.columns.find { it.name == "USERNAME" }!!.unique)
+        assertEquals(true, schema.tables.find { it.id.name == "USERS" }!!.columns.find { it.name == "USERNAME" }!!.unique)
 
         /**
          * BIGSERIAL are autoincrement fields
          */
-        assertEquals(true, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "PRINTSHOPS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "PRINT_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
-        assertEquals(true, schema.tables.filter { it.name == "REVIEWS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "USERS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "PRINTSHOPS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "PRINT_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.id.name == "REVIEWS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
 
-        assertEquals(false, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "PASSWORD" }.first().nullable)
-        assertEquals(false, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "USERNAME" }.first().nullable)
+        assertEquals(false, schema.tables.filter { it.id.name == "USERS" }.first().columns.filter { it.name == "PASSWORD" }.first().nullable)
+        assertEquals(false, schema.tables.filter { it.id.name == "USERS" }.first().columns.filter { it.name == "USERNAME" }.first().nullable)
 
-        assertEquals(listOf("PRINTSHOP_ID", "ITEM"), schema.tables.filter { it.name == "PRICETABLES" }.first().primaryKeySequence);
+        assertEquals(listOf("PRINTSHOP_ID", "ITEM"), schema.tables.filter { it.id.name == "PRICETABLES" }.first().primaryKeySequence);
 
-        assertEquals(true, schema.tables.filter { it.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
-        assertEquals(true, schema.tables.filter { it.name == "ADMIN" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
-        assertEquals(true, schema.tables.filter { it.name == "EMPLOYEES" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement); assertEquals(true, schema.tables.filter { it.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
-        assertEquals(true, schema.tables.filter { it.name == "MANAGERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
-        assertEquals(true, schema.tables.filter { it.name == "PRICETABLES" }.first().columns.filter { it.name == "PRINTSHOP_ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.id.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.id.name == "ADMIN" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.id.name == "EMPLOYEES" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement); assertEquals(true, schema.tables.filter { it.id.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.id.name == "MANAGERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.id.name == "PRICETABLES" }.first().columns.filter { it.name == "PRINTSHOP_ID" }.first().foreignKeyToAutoIncrement);
 
-        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
-        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
-        assertEquals(false, schema.tables.filter { it.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
-        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
-        assertEquals(false, schema.tables.filter { it.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
-        assertEquals(false, schema.tables.filter { it.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.id.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
 
 
     }

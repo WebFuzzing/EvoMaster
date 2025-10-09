@@ -70,10 +70,17 @@ public class QueryResult {
 
             for (int i = 0; i < md.getColumnCount(); i++) {
                 int index = i + 1;
+                String schema = md.getSchemaName(index);
+                String name;
+                if (schema != null) {
+                    name = schema + "." + md.getTableName(index);
+                } else {
+                    name = md.getTableName(index);
+                }
                 VariableDescriptor desc = new VariableDescriptor(
                         getColumnName(md, index),
                         md.getColumnLabel(index),
-                        md.getTableName(index)
+                        name
                 );
                 variableDescriptors.add(desc);
             }

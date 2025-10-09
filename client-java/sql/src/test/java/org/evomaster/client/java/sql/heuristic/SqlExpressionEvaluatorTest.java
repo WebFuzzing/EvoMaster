@@ -9,6 +9,7 @@ import net.sf.jsqlparser.statement.select.SelectItem;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.DataRow;
 
@@ -44,7 +45,8 @@ class SqlExpressionEvaluatorTest {
 
     private static TableDto createTableDto(String tableName) {
         TableDto table = new TableDto();
-        table.name = tableName;
+        table.id = new TableIdDto();
+        table.id.name = tableName;
         return table;
     }
 
