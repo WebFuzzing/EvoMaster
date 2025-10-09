@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -105,7 +106,12 @@ public class ResourceDbMIOAndHypermutationBasicTest extends ResourceMIOHWTestBas
             RestResourceNode node = rmanger.getResourceNodeFromCluster(key);
             assertEquals(keysToTemplate.get(key), node.getTemplates().keySet(), key);
             // check derived tables
-            assertEquals(keysToTable.get(key), node.getResourceToTable().getDerivedMap().keySet(), key);
+            assertEquals(
+                    keysToTable.get(key),
+                    node.getResourceToTable().getDerivedMap().keySet().stream()
+                            .map(it -> it.getName())
+                            .collect(Collectors.toSet()),
+                    key);
         }
 
         List<RestResourceCalls> calls = new ArrayList<>();
