@@ -809,16 +809,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             lines.addEmpty(1)
 
-            lines.add("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")
+            lines.add("${verifier.getVerifierName()}.stubFor(")
             lines.indented {
-                lines.add(".atPriority(1)")
-                lines.add(".willReturn(")
+                lines.add("get(\"${verifier.stub}\")")
                 lines.indented {
-                    lines.add("aResponse()")
-                    lines.add(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
-                    lines.add(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                    lines.add(".atPriority(1)")
+                    lines.add(".willReturn(")
+                    lines.indented {
+                        lines.add("aResponse()")
+                        lines.indented {
+                            lines.add(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                            lines.add(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                        }
+                    }
+                    lines.add(")")
                 }
-                lines.add(")")
             }
             lines.addStatement(")")
             lines.addEmpty(1)
