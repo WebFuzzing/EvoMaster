@@ -136,7 +136,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
                     val geneToDto = GeneToDto(format)
 
-                    val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
+                    val dtoName = geneToDto.getDtoName(leafGene, actionName)
                     val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
 
                     dtoCall.objectCalls.forEach {
