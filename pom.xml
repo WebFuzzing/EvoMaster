@@ -120,7 +120,8 @@
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
-        <java.version>21</java.version>
+        <!--  SpringBoot 2.x does not like JDK 21 -->
+        <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <wfc.version>0.0.6</wfc.version>
@@ -150,7 +151,7 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
-        <asm.version>9.7</asm.version>
+        <asm.version>9.9</asm.version>
         <testcontainers.version>1.21.0</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
