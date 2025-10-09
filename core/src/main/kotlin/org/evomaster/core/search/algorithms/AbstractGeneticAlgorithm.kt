@@ -5,6 +5,10 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
+import com.google.inject.Inject
+import org.evomaster.core.search.algorithms.strategy.CrossoverOperator
+import org.evomaster.core.search.algorithms.strategy.MutationOperator
+import org.evomaster.core.search.algorithms.strategy.SelectionStrategy
 
 /**
  * Abstract base class for implementing Genetic Algorithms (GAs) in EvoMaster.
@@ -31,6 +35,15 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * Captured at the start of a generation and kept constant until the generation ends.
      */
     protected var frozenTargets: Set<Int> = emptySet()
+
+    @Inject
+    lateinit var selectionStrategy: SelectionStrategy
+
+    @Inject
+    lateinit var crossoverOperator: CrossoverOperator
+
+    @Inject
+    lateinit var mutationOperator: MutationOperator
 
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.
@@ -86,38 +99,15 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        val op = randomness.choose(listOf("del", "add", "mod"))
-        val n = wts.suite.size
-
-        when (op) {
-            "del" -> if (n > 1) {
-                val i = randomness.nextInt(n)
-                wts.suite.removeAt(i)
-            }
-
-            "add" -> if (n < config.maxSearchSuiteSize) {
-                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
-                    if (config.gaSolutionSource != EMConfig.GASolutionSource.POPULATION) {
-                        archive.addIfNeeded(this)
-                    }
-                    wts.suite.add(this)
-                }
-            }
-
-            "mod" -> {
-                val i = randomness.nextInt(n)
-                val ind = wts.suite[i]
-
-                if (config.gaSolutionSource == EMConfig.GASolutionSource.POPULATION) {
-                    val mutated = getMutatator().mutate(ind)
-                    ff.calculateCoverage(mutated, modifiedSpec = null)
-                        ?.let { wts.suite[i] = it }
-                } else {
-                    getMutatator().mutateAndSave(ind, archive)
-                        ?.let { wts.suite[i] = it }
-                }
-            }
-        }
+        mutationOperator.apply(
+            wts,
+            config,
+            randomness,
+            getMutatator(),
+            ff,
+            sampler,
+            archive
+        )
     }
 
     /**
@@ -127,16 +117,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * (bounded by the size of the smaller suite).
      */
     protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
-        val nx = x.suite.size
-        val ny = y.suite.size
-
-        val splitPoint = randomness.nextInt(Math.min(nx, ny))
-
-        (0..splitPoint).forEach {
-            val k = x.suite[it]
-            x.suite[it] = y.suite[it]
-            y.suite[it] = k
-        }
+        crossoverOperator.apply(x, y, randomness)
     }
 
     /**
@@ -146,9 +127,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * highest fitness among them is chosen. Falls back to random selection if needed.
      */
     protected fun tournamentSelection(): WtsEvalIndividual<T> {
-        val selectedIndividuals = randomness.choose(population, config.tournamentSize)
-        val bestIndividual = selectedIndividuals.maxByOrNull { score(it) }
-        return bestIndividual ?: randomness.choose(population)
+        return selectionStrategy.select(population, config.tournamentSize, randomness, ::score)
     }
 
     /**
@@ -221,4 +200,10 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
             super.buildSolution()
         }
     }
+
+    /**
+     * Exposes a snapshot copy of the current population (read-only) para observabilidad/tests.
+     * Se devuelve una copia inmutable para evitar mutaciones externas del estado interno.
+     */
+    fun populationSnapshot(): List<WtsEvalIndividual<T>> = population.toList()
 }
