@@ -17,8 +17,7 @@ import org.junit.jupiter.api.Test
 
 import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.algorithms.strategy.FixedSelectionStrategy
-import org.evomaster.core.search.algorithms.strategy.SpyCrossoverOperator
-import org.evomaster.core.search.algorithms.strategy.SpyMutationOperator
+import org.evomaster.core.search.algorithms.observer.GARecorder
 
 class StandardGeneticAlgorithmTest {
 
@@ -60,44 +59,29 @@ class StandardGeneticAlgorithmTest {
     @Test
     fun testNextGenerationIsElitesPlusSelectedOffspring() {
         TestUtils.handleFlaky {
+
+            // Create GA with Fixed Selection
             val fixedSel = FixedSelectionStrategy()
-            val spyXo = SpyCrossoverOperator()
-            val spyMut = SpyMutationOperator()
+            val (ga, localInjector) = createGAWithSelection(fixedSel)
 
-            val testModule = object : com.google.inject.AbstractModule() {
-                override fun configure() {
-                    bind(org.evomaster.core.search.algorithms.strategy.SelectionStrategy::class.java).toInstance(fixedSel)
-                    bind(org.evomaster.core.search.algorithms.strategy.CrossoverOperator::class.java).toInstance(spyXo)
-                    bind(org.evomaster.core.search.algorithms.strategy.MutationOperator::class.java).toInstance(spyMut)
-                }
-            }
+            // Add Observer
 
-            val overriddenBase: Module = com.google.inject.util.Modules.override(BaseModule()).with(testModule)
+            val rec = GARecorder<OneMaxIndividual>()
+            ga.addObserver(rec)
 
-            val localInjector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(
-                    OneMaxModule(),
-                    overriddenBase
-                ))
-                .build().createInjector()
-
-            val ga = localInjector.getInstance(
-                Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
-            )
+            // Set Config
 
             val config = localInjector.getInstance(EMConfig::class.java)
             val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
-            config.apply {
-                populationSize = 4
-                elitesCount = 2
-                xoverProbability = 1.0
-                fixedRateMutation = 1.0
-                gaSolutionSource = EMConfig.GASolutionSource.POPULATION
-                maxEvaluations = 100_000
-                stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            }
+            config.populationSize = 4
+            config.elitesCount = 2
+            config.xoverProbability = 1.0
+            config.fixedRateMutation = 1.0
+            config.gaSolutionSource = EMConfig.GASolutionSource.POPULATION
+            config.maxEvaluations = 100_000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             if (epc.isInSearch()) epc.finishSearch()
             try {
@@ -122,25 +106,23 @@ class StandardGeneticAlgorithmTest {
                 // population size preserved
                 assertEquals(config.populationSize, nextPop.size)
 
-                // selection is called twice
-                assertEquals(2, fixedSel.getCallCount())
-
-                // mutation is applied twice (once per selected parent)
-                assertEquals(2, spyMut.getCallCount())
+                // selection is called twice (via observer)
+                assertEquals(2, rec.selections.size)
 
                 // Check that elites are present in nextPop
                 assertTrue(nextPop.any { it === expectedElites[0] })
                 assertTrue(nextPop.any { it === expectedElites[1] })
 
-                // crossover was called with the 2 selected parents (in order)
-                assertEquals(1, spyXo.calls.size)
-                assertSame(expectedNonElites[0], spyXo.calls[0].first)
-                assertSame(expectedNonElites[1], spyXo.calls[0].second)
+                // crossover was called with 2 offspring (captured by observer)
+                assertEquals(1, rec.xoCalls.size)
+                val (o1, o2) = rec.xoCalls[0]
+                assertTrue(nextPop.any { it === o1 })
+                assertTrue(nextPop.any { it === o2 })
 
-                // mutation happened on the exact selected parents (identity, order-agnostic)
-                assertEquals(2, spyMut.mutated.size)
-                assertTrue(spyMut.mutated.any { it === expectedNonElites[0] })
-                assertTrue(spyMut.mutated.any { it === expectedNonElites[1] })
+                // mutation happened twice on the offspring (captured by observer)
+                assertEquals(2, rec.mutated.size)
+                assertTrue(rec.mutated.any { it === o1 })
+                assertTrue(rec.mutated.any { it === o2 })
 
             } finally {
                 epc.finishSearch()
@@ -148,48 +130,27 @@ class StandardGeneticAlgorithmTest {
         }
     }
 
-    // Tests Edge Case: CrossoverProbability=0
+     // Tests Edge Case: CrossoverProbability=0
     @Test
     fun testNoCrossoverWhenProbabilityZero() {
         TestUtils.handleFlaky {
             val fixedSel = FixedSelectionStrategy()
-            val spyXo = SpyCrossoverOperator()
-            val spyMut = SpyMutationOperator()
+            val (ga, localInjector) = createGAWithSelection(fixedSel)
 
-            val testModule = object : com.google.inject.AbstractModule() {
-                override fun configure() {
-                    bind(org.evomaster.core.search.algorithms.strategy.SelectionStrategy::class.java).toInstance(fixedSel)
-                    bind(org.evomaster.core.search.algorithms.strategy.CrossoverOperator::class.java).toInstance(spyXo)
-                    bind(org.evomaster.core.search.algorithms.strategy.MutationOperator::class.java).toInstance(spyMut)
-                }
-            }
-
-            val overriddenBase: Module = com.google.inject.util.Modules.override(BaseModule()).with(testModule)
-
-            val localInjector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(
-                    OneMaxModule(),
-                    overriddenBase
-                ))
-                .build().createInjector()
-
-            val ga = localInjector.getInstance(
-                Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
-            )
+            val rec = GARecorder<OneMaxIndividual>()
+            ga.addObserver(rec)
 
             val config = localInjector.getInstance(EMConfig::class.java)
             val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
-            config.apply {
-                populationSize = 4
-                elitesCount = 2
-                xoverProbability = 0.0 // disable crossover
-                fixedRateMutation = 1.0 // force mutation
-                gaSolutionSource = EMConfig.GASolutionSource.POPULATION
-                maxEvaluations = 100_000
-                stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            }
+            config.populationSize = 4
+            config.elitesCount = 2
+            config.xoverProbability = 0.0 // disable crossover
+            config.fixedRateMutation = 1.0 // force mutation
+            config.gaSolutionSource = EMConfig.GASolutionSource.POPULATION
+            config.maxEvaluations = 100_000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             if (epc.isInSearch()) epc.finishSearch()
             try {
@@ -207,14 +168,14 @@ class StandardGeneticAlgorithmTest {
                 val nextPop = ga.populationSnapshot()
 
                 assertEquals(config.populationSize, nextPop.size)
-                assertEquals(2, fixedSel.getCallCount())
+                assertEquals(2, rec.selections.size)
                 assertTrue(nextPop.any { it === expectedElites[0] })
                 assertTrue(nextPop.any { it === expectedElites[1] })
 
                 // crossover disabled
-                assertEquals(0, spyXo.calls.size)
+                assertEquals(0, rec.xoCalls.size)
                 // mutation still applied twice
-                assertEquals(2, spyMut.getCallCount())
+                assertEquals(2, rec.mutated.size)
             } finally {
                 epc.finishSearch()
             }
@@ -226,43 +187,22 @@ class StandardGeneticAlgorithmTest {
     fun testNoMutationWhenProbabilityZero() {
         TestUtils.handleFlaky {
             val fixedSel = FixedSelectionStrategy()
-            val spyXo = SpyCrossoverOperator()
-            val spyMut = SpyMutationOperator()
+            val (ga, localInjector) = createGAWithSelection(fixedSel)
 
-            val testModule = object : com.google.inject.AbstractModule() {
-                override fun configure() {
-                    bind(org.evomaster.core.search.algorithms.strategy.SelectionStrategy::class.java).toInstance(fixedSel)
-                    bind(org.evomaster.core.search.algorithms.strategy.CrossoverOperator::class.java).toInstance(spyXo)
-                    bind(org.evomaster.core.search.algorithms.strategy.MutationOperator::class.java).toInstance(spyMut)
-                }
-            }
-
-            val overriddenBase: Module = com.google.inject.util.Modules.override(BaseModule()).with(testModule)
-
-            val localInjector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(
-                    OneMaxModule(),
-                    overriddenBase
-                ))
-                .build().createInjector()
-
-            val ga = localInjector.getInstance(
-                Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
-            )
+            val rec = GARecorder<OneMaxIndividual>()
+            ga.addObserver(rec)
 
             val config = localInjector.getInstance(EMConfig::class.java)
             val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
-            config.apply {
-                populationSize = 4
-                elitesCount = 2
-                xoverProbability = 1.0 // force crossover
-                fixedRateMutation = 0.0 // disable mutation
-                gaSolutionSource = EMConfig.GASolutionSource.POPULATION
-                maxEvaluations = 100_000
-                stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            }
+            config.populationSize = 4
+            config.elitesCount = 2
+            config.xoverProbability = 1.0 // force crossover
+            config.fixedRateMutation = 0.0 // disable mutation
+            config.gaSolutionSource = EMConfig.GASolutionSource.POPULATION
+            config.maxEvaluations = 100_000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             if (epc.isInSearch()) epc.finishSearch()
             try {
@@ -280,18 +220,44 @@ class StandardGeneticAlgorithmTest {
                 val nextPop = ga.populationSnapshot()
 
                 assertEquals(config.populationSize, nextPop.size)
-                assertEquals(2, fixedSel.getCallCount())
+                assertEquals(2, rec.selections.size)
                 assertTrue(nextPop.any { it === expectedElites[0] })
                 assertTrue(nextPop.any { it === expectedElites[1] })
 
                 // crossover forced
-                assertEquals(1, spyXo.calls.size)
+                assertEquals(1, rec.xoCalls.size)
                 // mutation disabled
-                assertEquals(0, spyMut.getCallCount())
+                assertEquals(0, rec.mutated.size)
             } finally {
             epc.finishSearch()
             }
         }
     }
+   
 
+}
+
+// --- Test helpers ---
+
+private fun createGAWithSelection(
+    fixedSel: FixedSelectionStrategy
+): Pair<StandardGeneticAlgorithm<OneMaxIndividual>, Injector> {
+    val testModule = object : com.google.inject.AbstractModule() {
+        override fun configure() {
+            bind(org.evomaster.core.search.algorithms.strategy.SelectionStrategy::class.java)
+                .toInstance(fixedSel)
+        }
+    }
+
+    val injector = LifecycleInjector.builder()
+        .withModules(* arrayOf<Module>(
+            OneMaxModule(),
+            com.google.inject.util.Modules.override(BaseModule()).with(testModule)
+        ))
+        .build().createInjector()
+
+    val ga = injector.getInstance(
+        Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
+    )
+    return ga to injector
 }

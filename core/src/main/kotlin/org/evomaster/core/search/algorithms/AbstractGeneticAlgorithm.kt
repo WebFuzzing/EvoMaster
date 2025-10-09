@@ -9,6 +9,7 @@ import com.google.inject.Inject
 import org.evomaster.core.search.algorithms.strategy.CrossoverOperator
 import org.evomaster.core.search.algorithms.strategy.MutationOperator
 import org.evomaster.core.search.algorithms.strategy.SelectionStrategy
+import org.evomaster.core.search.algorithms.observer.GAObserver
 
 /**
  * Abstract base class for implementing Genetic Algorithms (GAs) in EvoMaster.
@@ -44,6 +45,17 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
 
     @Inject
     lateinit var mutationOperator: MutationOperator
+
+    /** Optional observers for GA events (test/telemetry). */
+    protected val observers: MutableList<GAObserver<T>> = mutableListOf()
+
+    fun addObserver(observer: GAObserver<T>) {
+        observers.add(observer)
+    }
+
+    fun removeObserver(observer: GAObserver<T>) {
+        observers.remove(observer)
+    }
 
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.
@@ -108,6 +120,8 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
             sampler,
             archive
         )
+        // notify observers
+        observers.forEach { it.onMutation(wts) }
     }
 
     /**
@@ -118,6 +132,8 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      */
     protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
         crossoverOperator.apply(x, y, randomness)
+        // notify observers
+        observers.forEach { it.onCrossover(x, y) }
     }
 
     /**
@@ -127,7 +143,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * highest fitness among them is chosen. Falls back to random selection if needed.
      */
     protected fun tournamentSelection(): WtsEvalIndividual<T> {
-        return selectionStrategy.select(population, config.tournamentSize, randomness, ::score)
+        val sel = selectionStrategy.select(population, config.tournamentSize, randomness, ::score)
+        observers.forEach { it.onSelection(sel) }
+        return sel
     }
 
     /**
