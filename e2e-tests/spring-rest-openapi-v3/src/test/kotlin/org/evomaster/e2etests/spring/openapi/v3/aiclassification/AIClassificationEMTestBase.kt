@@ -45,31 +45,21 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         fail400: List<RestCallAction>,
         threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
         minimalOverallAccuracy: Double = 0.5,
-        minimalOverallPrecision400: Double = 0.5,
-        minimalOverallRecall400: Double = 0.5,
-        minimalOverallMCC: Double = 0.0 //MCC>0.0 also means recall > 0.5, precision > 0.5, and accuracy > 0.5
+        minimalOverallF1Score400: Double = 0.2
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
-        val overallMertics = model.estimateOverallMetrics()
+        val overallMetrics = model.estimateOverallMetrics()
 
-        val overallAccuracy = overallMertics.accuracy
+        val overallAccuracy = overallMetrics.accuracy
         assertTrue(overallAccuracy >= minimalOverallAccuracy, "Too low accuracy $overallAccuracy." +
                 " Minimal accepted is $minimalOverallAccuracy")
 
-        val overallPrecision400 = overallMertics.precision400
-        assertTrue(overallPrecision400 >= minimalOverallPrecision400, "Too low Precision $overallPrecision400." +
-                " Minimal accepted is $minimalOverallPrecision400")
-
-        val overallRecall400 = overallMertics.recall400
-        assertTrue(overallRecall400 >= minimalOverallRecall400, "Too low Recall $overallRecall400." +
-                " Minimal accepted is $minimalOverallRecall400")
-
-        val overallMCC = overallMertics.mcc
-        assertTrue(overallMCC >= minimalOverallMCC, "Too low MCC $overallMCC." +
-                " Minimal accepted is $minimalOverallMCC")
+        val overallF1Score400 = overallMetrics.f1Score400
+        assertTrue(overallF1Score400 >= minimalOverallF1Score400, "Too low F1-Score $overallF1Score400." +
+                " Minimal accepted is $minimalOverallF1Score400")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)

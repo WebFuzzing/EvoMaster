@@ -1,4 +1,6 @@
-package org.evomaster.core.problem.rest.classifier
+package org.evomaster.core.problem.rest.classifier.quantifier
+
+import kotlin.math.sqrt
 
 /**
  * Interface for tracking and estimating performance metrics of a model
@@ -10,6 +12,12 @@ package org.evomaster.core.problem.rest.classifier
  * - FP (False Positives): predicted 400 but actual not-400
  * - FN (False Negatives): predicted not-400 but actual 400
  *
+ * @property truePositive400 TP
+ * @property falsePositive400 FP
+ * @property falseNegative400 FN
+ * @property trueNegative400 TN
+ *
+ *
  * From these values, various metrics can be derived, such as:
  * - Accuracy
  * - Precision (for 400s)
@@ -20,6 +28,29 @@ package org.evomaster.core.problem.rest.classifier
 interface ModelMetrics {
 
     /**
+     * The total number of requests evaluated by the classifier.
+     * This value is crucial because the classifier avoids updating its model
+     * until the total number of processed requests reaches the configured
+     * warm-up threshold [org.evomaster.core.EMConfig.aiResponseClassifierWarmup].
+     */
+    val totalSentRequests: Int
+
+    val truePositive400: Int
+    val falsePositive400: Int
+    val falseNegative400: Int
+    val trueNegative400: Int
+
+    /**
+     * Total number of predictions currently held in the active window.
+     *
+     * For a full-history model [ModelMetricsFullHistory], this would equal all past predictions,
+     * but in a time-window model [ModelMetricsWithTimeWindow] it reflects only the most recent
+     * predictions kept in the buffer.
+     */
+    val windowTotal: Int
+        get() = truePositive400 + falsePositive400 + falseNegative400 + trueNegative400
+
+    /**
      * Estimate the overall accuracy of the model.
      *
      * Accuracy = (TP + TN) / (TP + TN + FP + FN)
@@ -28,7 +59,11 @@ interface ModelMetrics {
      *
      * See: [Wikipedia: Accuracy and precision](https://en.wikipedia.org/wiki/Accuracy_and_precision)
      */
-    fun estimateAccuracy(): Double
+    fun estimateAccuracy(): Double {
+        return if (windowTotal > 0) {
+            (truePositive400 + trueNegative400).toDouble() / windowTotal
+        } else 0.0
+    }
 
     /**
      * Estimate the precision of the model when predicting HTTP 400 responses.
@@ -39,7 +74,10 @@ interface ModelMetrics {
      *
      * See: [Wikipedia: Precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)
      */
-    fun estimatePrecision400(): Double
+    fun estimatePrecision400(): Double {
+        val denominator = truePositive400 + falsePositive400
+        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
+    }
 
     /**
      * Estimate the recall of the model when predicting HTTP 400 responses.
@@ -51,7 +89,10 @@ interface ModelMetrics {
      *
      * See: [Wikipedia: Precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)
      */
-    fun estimateRecall400(): Double
+    fun estimateRecall400(): Double {
+        val denominator = truePositive400 + falseNegative400
+        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
+    }
 
     /**
      * Estimate the Matthews Correlation Coefficient (MCC) for prediction 400.
@@ -68,7 +109,15 @@ interface ModelMetrics {
      *
      * See: [Wikipedia: Matthews correlation coefficient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)
      */
-    fun estimateMCC400(): Double
+    fun estimateMCC400(): Double {
+        val tp = truePositive400.toDouble()
+        val tn = trueNegative400.toDouble()
+        val fp = falsePositive400.toDouble()
+        val fn = falseNegative400.toDouble()
+
+        val denominator = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
+        return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
+    }
 
     /**
      * Return a bundle of all key performance metrics as a [ModelEvaluation].
