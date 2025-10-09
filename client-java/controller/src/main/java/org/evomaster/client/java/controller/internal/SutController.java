@@ -636,8 +636,24 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         }
     }
 
+    //FIXME refactor in utils
     private boolean isSameTable(String tableA, String tableB) {
-        if (tableA.equalsIgnoreCase(tableB)) return true;
+
+        //FIXME hack
+        if(tableA.contains(".")){
+            String a =  tableA.substring(tableA.lastIndexOf('.')+1);
+            return isSameTable(a, tableB);
+        }
+        if(tableB.contains(".")){
+            String b =  tableB.substring(tableB.lastIndexOf('.')+1);
+            return isSameTable(tableA, b);
+        }
+
+
+        if (tableA.equalsIgnoreCase(tableB)){
+            return true;
+        }
+
         for (String qm : possibleQuotationMarksInDb){
             if (wrapWithQuotationMarks(tableA, qm).equalsIgnoreCase(tableB)) return true;
             if (wrapWithQuotationMarks(tableB, qm).equalsIgnoreCase(tableA)) return true;
