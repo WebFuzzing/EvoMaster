@@ -118,8 +118,8 @@
         <addOpens></addOpens> <!-- overridden in profile -->
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-        <kotlin.version>1.8.20</kotlin.version>
+        <java.version>25</java.version>
+        <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <wfc.version>0.0.6</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
@@ -1237,10 +1237,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>${java.version}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
 
                     </configuration>
