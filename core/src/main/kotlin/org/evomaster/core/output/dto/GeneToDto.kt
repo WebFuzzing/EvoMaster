@@ -154,6 +154,8 @@ class GeneToDto(
         }
     }
 
+    // According to documentation, a trailing constant is only needed for Long, Hexadecimal and Float
+    // https://kotlinlang.org/docs/numbers.html#literal-constants-for-numbers
     private fun getValueSuffix(gene: Gene): String {
         return when (gene) {
             is LongGene -> "L"
