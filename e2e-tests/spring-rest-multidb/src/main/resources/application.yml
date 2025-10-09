@@ -1,0 +1,10 @@
+spring:
+  jmx:
+    enabled: false
+  jpa:
+    show-sql: true
+server:
+  error:
+    include-stacktrace: always
+    include-exception: true
+

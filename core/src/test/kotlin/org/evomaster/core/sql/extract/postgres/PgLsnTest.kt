@@ -28,8 +28,8 @@ class PgLsnTest : ExtractTestBasePostgres() {
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
-        assertTrue(schema.tables.any { it.name.equals("PgLsnType".lowercase()) })
-        val table = schema.tables.find { it.name.equals("PgLsnType".lowercase()) }
+        assertTrue(schema.tables.any { it.id.name.equals("PgLsnType".lowercase()) })
+        val table = schema.tables.find { it.id.name.equals("PgLsnType".lowercase()) }
 
         assertTrue(table!!.columns.any { it.name.equals("pglsnColumn".lowercase()) })
         val nonArrayColumnDto = table.columns.find { it.name.equals("pglsnColumn".lowercase()) }!!

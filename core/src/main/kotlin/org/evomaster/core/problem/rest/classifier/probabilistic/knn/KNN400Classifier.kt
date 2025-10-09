@@ -9,15 +9,19 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabil
 class KNN400Classifier(
     warmup: Int = 10,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val k: Int = 3,
+    private val maxStoredSamples: Int = 10000,
     randomness: Randomness
-) : AbstractProbabilistic400Classifier<KNN400EndpointModel>(warmup, encoderType, randomness) {
+) : AbstractProbabilistic400Classifier<KNN400EndpointModel>(
+    warmup, encoderType, metricType, randomness) {
 
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
+        metricType: EMConfig.AIClassificationMetrics,
         randomness: Randomness
     ): KNN400EndpointModel {
         return KNN400EndpointModel(
@@ -25,7 +29,9 @@ class KNN400Classifier(
             warmup,
             dimension,
             encoderType,
+            metricType,
             k = k,
+            maxStoredSamples = maxStoredSamples,
             randomness
         )
     }

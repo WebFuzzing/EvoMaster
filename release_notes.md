@@ -5,7 +5,7 @@ Under development in `master` branch.
 ### New Features
 
 - Option _--disabledOracleCodes_ to disable the checking of specific fault types based on their WFC fault codes. By default, all fault types are checked for. 
-
+- Option _--endpointExclude_ to exclude specific REST endpoints from the fuzzing.
 
 # Version 4.0.0
 

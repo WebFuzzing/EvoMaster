@@ -29,7 +29,7 @@ public class DbAuthController extends SpringWithDbController {
 
     @Override
     public void resetStateOfSUT() {
-        DbCleaner.clearDatabase_H2(sqlConnection);
+        DbCleaner.clearDatabase_H2(sqlConnection, null, null);
 
         try {
             SqlScriptRunner.execInsert(sqlConnection,

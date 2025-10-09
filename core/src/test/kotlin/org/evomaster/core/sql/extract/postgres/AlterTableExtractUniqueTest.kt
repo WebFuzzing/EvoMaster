@@ -20,16 +20,16 @@ class AlterTableExtractUniqueTest : ExtractTestBasePostgres() {
         assertAll(Executable { assertEquals("postgres", schema.name.toLowerCase()) },
                 Executable { assertEquals(DatabaseType.POSTGRES, schema.databaseType) },
                 Executable { assertEquals(2, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "countries" }, "missing table COUNTRIES") },
-                Executable { assertTrue(schema.tables.any { it.name == "passports" }, "missing table PASSPORTS") }
+                Executable { assertTrue(schema.tables.any { it.id.name == "countries" }, "missing table COUNTRIES") },
+                Executable { assertTrue(schema.tables.any { it.id.name == "passports" }, "missing table PASSPORTS") }
         )
 
 
-        assertEquals(true, schema.tables.filter { it.name == "passports" }.first().columns.filter { it.name == "country_id" }.first().unique)
-        assertEquals(true, schema.tables.filter { it.name == "passports" }.first().columns.filter { it.name == "passport_number" }.first().unique)
+        assertEquals(true, schema.tables.filter { it.id.name == "passports" }.first().columns.filter { it.name == "country_id" }.first().unique)
+        assertEquals(true, schema.tables.filter { it.id.name == "passports" }.first().columns.filter { it.name == "passport_number" }.first().unique)
 
-        assertEquals(1, schema.tables.filter { it.name == "passports" }.first().tableCheckExpressions.size)
-        assertEquals("(passport_number > 0)", schema.tables.filter { it.name == "passports" }.first().tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals(1, schema.tables.filter { it.id.name == "passports" }.first().tableCheckExpressions.size)
+        assertEquals("(passport_number > 0)", schema.tables.filter { it.id.name == "passports" }.first().tableCheckExpressions[0].sqlCheckExpression)
 
     }
 

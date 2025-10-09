@@ -94,8 +94,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables) {
-            String tableSchema = tableDto.schema;
-            String tableName = tableDto.name;
+            String tableSchema = tableDto.id.schema;
+            String tableName = tableDto.id.name;
             try (Statement statement = connectionToH2.createStatement()) {
                 final String query = String.format("Select CONSTRAINT_CATALOG,CONSTRAINT_SCHEMA,CONSTRAINT_NAME,CONSTRAINT_TYPE From INFORMATION_SCHEMA.TABLE_CONSTRAINTS\n" +
                         " where TABLE_CONSTRAINTS.TABLE_SCHEMA='%s' \n"
@@ -192,8 +192,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
 
         for (TableDto tableDto : schemaDto.tables) {
-            String tableSchema = tableDto.schema;
-            String tableName = tableDto.name;
+            String tableSchema = tableDto.id.schema;
+            String tableName = tableDto.id.name;
             try (Statement statement = connectionToH2.createStatement()) {
                 final String query = String.format("Select CONSTRAINT_TYPE, CHECK_EXPRESSION, COLUMN_LIST From INFORMATION_SCHEMA.CONSTRAINTS\n" +
                         " where CONSTRAINTS.TABLE_SCHEMA='%s' \n"
@@ -255,8 +255,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
-            String tableSchema = tableDto.schema;
-            String tableName = tableDto.name;
+            String tableSchema = tableDto.id.schema;
+            String tableName = tableDto.id.name;
 
             try (Statement statement = connectionToH2.createStatement()) {
 

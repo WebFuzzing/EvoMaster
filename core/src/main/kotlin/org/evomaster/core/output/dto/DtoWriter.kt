@@ -33,7 +33,9 @@ import java.nio.file.Path
  * Using DTOs provides a major advantage towards code readability and sustainability. It is more flexible and scales
  * better.
  */
-class DtoWriter {
+class DtoWriter(
+    val outputFormat: OutputFormat
+) {
 
     private val log: Logger = LoggerFactory.getLogger(DtoWriter::class.java)
 
@@ -43,11 +45,12 @@ class DtoWriter {
      */
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
-    fun write(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, actionDefinitions: List<Action>) {
+    fun write(testSuitePath: Path, testSuitePackage: String, actionDefinitions: List<Action>) {
         calculateDtos(actionDefinitions)
         dtoCollector.forEach {
             when {
                 outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
+                outputFormat.isKotlin() -> KotlinDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
                 else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
             }
         }
@@ -56,7 +59,7 @@ class DtoWriter {
     private fun calculateDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
             action.getViewOfChildren().find { it is BodyParam }
-            .let {
+            ?.let {
                 val primaryGene = (it as BodyParam).primaryGene()
                 val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
                 if (choiceGene != null) {
@@ -162,7 +165,7 @@ class DtoWriter {
         return when (field) {
             // TODO: handle nested arrays, objects and extend type system for dto fields
             is StringGene -> "String"
-            is IntegerGene -> "Integer"
+            is IntegerGene -> if (outputFormat.isJava()) "Integer" else "Int"
             is LongGene -> "Long"
             is DoubleGene -> "Double"
             is FloatGene -> "Float"

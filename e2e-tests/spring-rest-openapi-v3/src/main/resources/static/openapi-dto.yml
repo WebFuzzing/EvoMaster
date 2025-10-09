@@ -128,6 +128,8 @@ components:
           type: integer
         address:
           $ref: "#/components/schemas/Address"
+        key:
+          $ref: "#/components/schemas/SuperKey"
       required:
         - name
         - age
@@ -144,3 +146,10 @@ components:
       required:
         - street
         - country
+    SuperKey:
+      type: object
+      properties:
+        key:
+          type: string
+        value:
+          type: string

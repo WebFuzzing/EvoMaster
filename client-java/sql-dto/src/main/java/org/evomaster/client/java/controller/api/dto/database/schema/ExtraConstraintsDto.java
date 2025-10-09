@@ -8,7 +8,7 @@ import org.evomaster.client.java.controller.api.dto.constraint.ElementConstraint
  */
 public class ExtraConstraintsDto {
 
-    public String tableName;
+    public TableIdDto tableId;
 
     public String columnName;
 

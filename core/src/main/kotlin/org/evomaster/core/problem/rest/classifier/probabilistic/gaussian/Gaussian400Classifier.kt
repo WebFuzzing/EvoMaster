@@ -9,16 +9,25 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabil
 class Gaussian400Classifier(
     warmup: Int = 10,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     randomness: Randomness
-) : AbstractProbabilistic400Classifier<Gaussian400EndpointModel>(warmup, encoderType, randomness) {
+) : AbstractProbabilistic400Classifier<Gaussian400EndpointModel>(
+    warmup, encoderType, metricType, randomness) {
 
     override fun createEndpointModel(
         endpoint: Endpoint,
         warmup: Int,
         dimension: Int,
         encoderType: EMConfig.EncoderType,
+        metricType: EMConfig.AIClassificationMetrics,
         randomness: Randomness
     ): Gaussian400EndpointModel {
-        return Gaussian400EndpointModel(endpoint, warmup, dimension, encoderType, randomness)
+        return Gaussian400EndpointModel(
+            endpoint,
+            warmup,
+            dimension,
+            encoderType,
+            metricType,
+            randomness)
     }
 }
