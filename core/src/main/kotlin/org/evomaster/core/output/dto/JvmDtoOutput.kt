@@ -15,6 +15,7 @@ abstract class JvmDtoOutput: DtoOutput {
     }
 
     protected fun addImports(lines: Lines) {
+        lines.addStatement("import java.util.List")
         lines.addStatement("import java.util.Optional")
         lines.addEmpty()
         lines.addStatement("import com.fasterxml.jackson.annotation.JsonInclude")

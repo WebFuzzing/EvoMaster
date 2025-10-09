@@ -347,10 +347,10 @@ class DtoWriterTest {
 
     @Test
     fun noDtosWhenNoBodyParam() {
-        val dtoWriter = DtoWriter()
+        val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("noBody.yaml")
 
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, outputFormat, actionCluster.values.map { it.copy() })
+        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, actionCluster.values.map { it.copy() })
 
         assertEquals(dtoWriter.getCollectedDtos().size, 0)
     }
