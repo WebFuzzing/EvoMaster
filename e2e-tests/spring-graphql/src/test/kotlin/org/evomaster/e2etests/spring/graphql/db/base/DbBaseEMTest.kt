@@ -27,8 +27,7 @@ class DbBaseEMTest : SpringTestBase() {
     @ValueSource(booleans = [false, true])
     fun testRunEM(heuristicsForSQLAdvanced: Boolean) {
         runTestHandlingFlakyAndCompilation(
-            "GQL_DbBaseEM",
-            "org.foo.graphql.DbBaseEM" +
+            "DbBaseEM" +
                     if (heuristicsForSQLAdvanced) "Complete" else "Partial",
             10000
         ) { args: MutableList<String> ->

@@ -39,13 +39,17 @@ public interface InitSqlScriptWithSmartDbCleanTest extends DatabaseTestTemplate 
 
     @Test
     default void testAccessedFkClean() throws Exception {
-        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
-        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, refer_foo INT DEFAULT NULL, bar_id INT, " +
+        EMSqlScriptRunner.execCommand(getConnection(),
+                "CREATE TABLE Bar(id INT Primary Key, valueColumn INT)", true);
+        EMSqlScriptRunner.execCommand(getConnection(),
+                "CREATE TABLE Foo(id INT Primary Key, valueColumn INT, refer_foo INT DEFAULT NULL, bar_id INT, " +
                 "CONSTRAINT fk_foo FOREIGN KEY (bar_id) REFERENCES Bar(id)," +
                 "CONSTRAINT fk_self_foo FOREIGN KEY (refer_foo) REFERENCES Foo(id) )", true);
-        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Abc(id INT Primary Key, valueColumn INT, foo_id INT, " +
+        EMSqlScriptRunner.execCommand(getConnection(),
+                "CREATE TABLE Abc(id INT Primary Key, valueColumn INT, foo_id INT, " +
                 "CONSTRAINT fk_abc FOREIGN KEY (foo_id) REFERENCES Foo(id) )", true);
-        EMSqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Xyz(id INT Primary Key, valueColumn INT, abc_id INT, " +
+        EMSqlScriptRunner.execCommand(getConnection(),
+                "CREATE TABLE Xyz(id INT Primary Key, valueColumn INT, abc_id INT, " +
                 "CONSTRAINT fk_xyz FOREIGN KEY (abc_id) REFERENCES Abc(id) )", true);
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();

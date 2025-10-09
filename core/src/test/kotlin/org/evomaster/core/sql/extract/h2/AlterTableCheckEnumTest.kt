@@ -22,14 +22,14 @@ class AlterTableCheckEnumTest : ExtractTestBaseH2() {
 
         assertEquals("db_test", schema.name.lowercase())
         assertEquals(DatabaseType.H2, schema.databaseType)
-        assertTrue(schema.tables.any { it.name == "X" })
+        assertTrue(schema.tables.any { it.id.name == "X" })
 
-        assertEquals(10, schema.tables.first { it.name == "X" }.columns.size)
+        assertEquals(10, schema.tables.first { it.id.name == "X" }.columns.size)
 
-        assertTrue(schema.tables.first { it.name == "X" }.columns.any { it.name == "STATUS" });
+        assertTrue(schema.tables.first { it.id.name == "X" }.columns.any { it.name == "STATUS" });
 
-        assertEquals(1, schema.tables.first { it.name == "X" }.tableCheckExpressions.size)
-        assertEquals("(\"STATUS\" IN('A', 'B'))", schema.tables.first { it.name == "X" }.tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals(1, schema.tables.first { it.id.name == "X" }.tableCheckExpressions.size)
+        assertEquals("(\"STATUS\" IN('A', 'B'))", schema.tables.first { it.id.name == "X" }.tableCheckExpressions[0].sqlCheckExpression)
 
     }
 }

@@ -9,6 +9,7 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils;
 
 import java.util.*;
 
@@ -67,8 +68,8 @@ public class SqlNameContext {
      *
      * If no schema is defined, this method returns false.
      */
-    public boolean hasColumn(String tableName, String columnName){
-        Objects.requireNonNull(tableName);
+    public boolean hasColumn(String fullyQualifyingTableName, String columnName){
+        Objects.requireNonNull(fullyQualifyingTableName);
         Objects.requireNonNull(columnName);
 
         if(schema == null){
@@ -76,7 +77,7 @@ public class SqlNameContext {
         }
 
         return this.schema.tables.stream()
-                .filter(t -> t.name.equalsIgnoreCase(tableName))
+                .filter(t -> SqlDtoUtils.matchByName(t,fullyQualifyingTableName))
                 .flatMap(t -> t.columns.stream())
                 .filter(c -> c.name.equalsIgnoreCase(columnName))
                 .count() > 0;
@@ -91,12 +92,12 @@ public class SqlNameContext {
      * @param column a column object
      * @return the name of the table that this column belongs to
      */
-    public String getTableName(Column column) {
+    public String getFullyQualifiedTableName(Column column) {
 
         Table table = column.getTable();
 
         if (table != null) {
-            return tableAliases.getOrDefault(table.getName().toLowerCase(), table.getName().toLowerCase());
+            return tableAliases.getOrDefault(table.getFullyQualifiedName().toLowerCase(), table.getFullyQualifiedName().toLowerCase());
         }
 
         if(statement instanceof Select) {
@@ -112,10 +113,10 @@ public class SqlNameContext {
             }
         } else if(statement instanceof Delete){
             Delete delete = (Delete) statement;
-            return delete.getTable().getName().toLowerCase();
+            return delete.getTable().getFullyQualifiedName().toLowerCase();
         } else if(statement instanceof Update){
             Update update = (Update) statement;
-            return update.getTable().getName().toLowerCase();
+            return update.getTable().getFullyQualifiedName().toLowerCase();
         }else {
             throw new IllegalArgumentException("Cannot handle table name for: " + statement);
         }
@@ -129,7 +130,13 @@ public class SqlNameContext {
         if (hasFromItem()) {
             FromItem fromItem = getFromItem();
 
-            FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
+//        FromItemVisitorAdapter visitor = new FromItemVisitorAdapter(){
+//            @Override
+//            public void visit(Table table) {
+//                names.add(table.getFullyQualifiedName().toLowerCase());
+//            }
+//        };
+             FromItemVisitorAdapter visitor = new FromItemVisitorAdapter() {
                 @Override
                 public void visit(Table table) {
                     names.add(table.getName().toLowerCase());

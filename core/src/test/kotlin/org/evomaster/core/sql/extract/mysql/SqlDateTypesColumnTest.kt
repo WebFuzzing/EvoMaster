@@ -4,6 +4,7 @@ import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -16,7 +17,7 @@ class SqlDateTypesColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("t1", setOf("t", "dt", "ts"))
+        val actions = builder.createSqlInsertionAction(TableId("t1", openGroupName = MYSQL_DB_NAME), setOf("t", "dt", "ts"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
