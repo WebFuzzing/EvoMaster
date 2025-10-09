@@ -22,7 +22,7 @@ grammar RegexEcma262;
 //------ PARSER ------------------------------
 // Parser rules have first letter in lower-case
 
-pattern : disjunction;
+pattern : disjunction EOF;
 
 
 disjunction
@@ -96,13 +96,13 @@ atom
 
 
 //TODO
-//CharacterEscape
+CharacterEscape
 // : ControlEscape
 // | 'c' ControlLetter
-// | HexEscapeSequence
-// | UnicodeEscapeSequence
+ : HexEscapeSequence
+ | UnicodeEscapeSequence
  //| IdentityEscape
-// ;
+ ;
 
 //TODO
 //ControlEscape
@@ -205,7 +205,7 @@ AtomEscape
  : '\\' CharacterClassEscape
  //TODO
 // | '\\' DecimalEscape
-// | '\\' CharacterEscape
+ | '\\' CharacterEscape
  ;
 
 fragment CharacterClassEscape
@@ -238,11 +238,17 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-//TODO
-//HexEscapeSequence
-// : 'x' HexDigit HexDigit
-// ;
-//
+UnicodeEscapeSequence
+ : 'u' HexDigit HexDigit HexDigit HexDigit
+ ;
+
+HexEscapeSequence
+ : 'x' HexDigit HexDigit
+ ;
+
+fragment HexDigit:
+ [a-fA-F0-9]
+ ;
 
 //TODO
 //DecimalIntegerLiteral

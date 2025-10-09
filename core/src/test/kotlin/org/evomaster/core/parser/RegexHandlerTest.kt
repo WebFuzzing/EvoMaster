@@ -121,4 +121,15 @@ internal class RegexHandlerTest{
 
     }
 
+    @Test
+    fun testCreateGeneForJVMInvalidRegex() {
+
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForJVM("\\xR") }
+    }
+
+    @Test
+    fun testCreateGeneForEcma262InvalidRegex() {
+
+        assertThrows(ParseCancellationException::class.java) { RegexHandler.createGeneForEcma262("\\xR") }
+    }
 }
