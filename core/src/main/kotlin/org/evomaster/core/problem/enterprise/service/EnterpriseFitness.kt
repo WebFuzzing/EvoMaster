@@ -11,10 +11,12 @@ import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.TargetInfo
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -25,6 +27,7 @@ import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual {
 
@@ -40,6 +43,38 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
 
     @Inject
     protected lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    protected lateinit var sampler: EnterpriseSampler<T>
+
+    private val additionalTargetCollectors = mutableListOf<AdditionalTargetCollector>()
+
+    @PostConstruct
+    private fun initialize(){
+
+        //TODO populate additionalTargetCollectors based on config
+    }
+
+    fun goingToStartExecutingNewTest(){
+        additionalTargetCollectors.forEach {it.goingToStartExecutingNewTest()}
+    }
+
+    fun reportActionIndex(actionIndex: Int){
+        additionalTargetCollectors.forEach {it.reportActionIndex(actionIndex)}
+    }
+
+    fun handleFurtherFitnessFunctions(fv: FitnessValue){
+
+        val targets = additionalTargetCollectors.flatMap { it.testFinishedCollectResult() }
+        if (targets.isEmpty()){
+            return
+        }
+
+        targets.forEach {
+            val id = idMapper.handleLocalTarget(it.descriptiveId)
+            fv.updateTarget(id, it.value, it.actionIndex)
+        }
+    }
 
 
     /**
@@ -268,10 +303,13 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                val databaseExecution = DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto)
-                fv.setDatabaseExecution(i, databaseExecution)
-                if (databaseExecution.sqlParseFailureCount>0) {
-                    statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                val sdto = extra.sqlSqlExecutionsDto
+                if(sampler.sqlInsertBuilder != null && sdto != null) {
+                    val databaseExecution = DatabaseExecution.fromDto(sdto, sampler.sqlInsertBuilder!!.getTableNames())
+                    fv.setDatabaseExecution(i, databaseExecution)
+                    if (databaseExecution.sqlParseFailureCount > 0) {
+                        statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                    }
                 }
             }
             fv.aggregateDatabaseData()

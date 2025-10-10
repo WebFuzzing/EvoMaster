@@ -40,7 +40,7 @@ class OpenAPILocalURLIssueTest {
         fun setSwaggerDirectoryBasedOnOS() {
 
             // get the name of the current operating system
-            hostOs = System.getProperty("os.name").lowercase(Locale.getDefault())
+            hostOs = System.getProperty("os.name").lowercase()
 
             // if the operating system is Windows, then replace \ with /
             if (hostOs.contains("win")) {

@@ -6,7 +6,7 @@ And there are several different mechanism to do authentication.
 In _EvoMaster_, few mechanisms are supported, as discussed next.
 How to set them up will depend on whether you are doing _white_ or _black_ box testing. 
 
-__NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/WebFuzzing/EvoMaster/issues).     
+> __NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/WebFuzzing/EvoMaster/issues).     
 
 
 The following documentation is divided on whether the tested API is a REST/GraphQL one, or RPC.
@@ -14,6 +14,8 @@ The following documentation is divided on whether the tested API is a REST/Graph
 ## REST/GraphQL APIs
 
 ### Black-Box Testing
+
+> __NOTE__: since version `4.0.0`, for black-box testing of  APIs we support authentication configurations expressed in [WFC format](https://github.com/WebFuzzing/Commons). For the most updated documentation, we suggest to read the documentation on the WFC site as well.     
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed).
 

@@ -4,10 +4,11 @@ import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.seeding.service.PirToIndividual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,7 +43,12 @@ class PirToRest: PirToIndividual(){
     /**
      *  From components of a string representation, create an action, based on existing template
      */
-    fun fromVerbPath(verb: String, path: String, queryParams : Map<String,String> = mapOf()) : RestCallAction?{
+    fun fromVerbPath(
+        verb: String,
+        path: String,
+        queryParams : Map<String,String> = mapOf(),
+        jsonBodyPayload: String? = null
+    ) : RestCallAction?{
 
         val v = try{
             HttpVerb.valueOf(verb.uppercase())}
@@ -76,7 +82,7 @@ class PirToRest: PirToIndividual(){
             when(p){
                 is PathParam -> {
                     val toSeed = x.path.getKeyValues(path)?.get(p.name)!!
-                    val isSet = p.gene.setFromStringValue(toSeed)
+                    val isSet = p.primaryGene().setFromStringValue(toSeed)
                     if(!isSet){
                         log.warn("Failed to update path parameter ${p.name} with value: $toSeed")
                         return null
@@ -108,6 +114,21 @@ class PirToRest: PirToIndividual(){
                                     " This could happen if schema has changed since the seed was created.")
                             //nothing to do further
                         }
+                    }
+                }
+                is BodyParam ->{
+
+                    val gene = p.primaryGene()
+                    val optional = gene.getWrappedGene(OptionalGene::class.java)
+                    if(optional != null){
+                        optional.isActive =  jsonBodyPayload != null
+                    } else {
+                        if(jsonBodyPayload == null){
+                            log.warn("Provided body payload is null, but it is supposed to be required.")
+                        }
+                    }
+                    if(jsonBodyPayload != null) {
+                        gene.setFromStringValue(jsonBodyPayload)
                     }
                 }
                 else -> {

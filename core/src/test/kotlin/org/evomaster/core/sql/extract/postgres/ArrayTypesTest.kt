@@ -7,7 +7,7 @@ import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlMultidimensionalArrayGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
@@ -39,8 +39,8 @@ class ArrayTypesTest : ExtractTestBasePostgres() {
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
-        assertTrue(schema.tables.any { it.name.equals("ArrayTypes".lowercase()) })
-        val table = schema.tables.find { it.name.equals("ArrayTypes".lowercase()) }
+        assertTrue(schema.tables.any { it.id.name.equals("ArrayTypes".lowercase()) })
+        val table = schema.tables.find { it.id.name.equals("ArrayTypes".lowercase()) }
 
         assertTrue(table!!.columns.any { it.name.equals("nonArrayColumn".lowercase()) })
         val nonArrayColumnDto = table.columns.find { it.name.equals("nonArrayColumn".lowercase()) }!!

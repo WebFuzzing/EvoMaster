@@ -6,7 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -210,12 +210,6 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
         }
     }
 
-    /**
-     * extract tables with additional FK tables
-     */
-    open fun extractFkTables(tables: Set<String>): Set<String>{
-        throw IllegalStateException("FK tables have not been not handled yet")
-    }
 
     /**
      * Return a list of pre-written individuals that will be added in the final solution.

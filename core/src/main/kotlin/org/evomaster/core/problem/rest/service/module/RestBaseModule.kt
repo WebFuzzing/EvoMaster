@@ -7,10 +7,10 @@ import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.SecurityRest
-import org.evomaster.core.problem.rest.classifier.GaussianOnlineClassifier
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.seeding.service.rest.PirToRest
@@ -18,6 +18,7 @@ import org.evomaster.core.seeding.service.rest.PirToRest
 open class RestBaseModule : EnterpriseModule() {
 
     override fun configure() {
+        super.configure()
 
         bind(TestCaseWriter::class.java)
             .to(RestTestCaseWriter::class.java)
@@ -58,5 +59,7 @@ open class RestBaseModule : EnterpriseModule() {
         bind(AIResponseClassifier::class.java)
             .asEagerSingleton()
 
+        bind(CallGraphService::class.java)
+            .asEagerSingleton()
     }
 }

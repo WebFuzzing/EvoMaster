@@ -54,6 +54,7 @@ object CookieWriter {
             }
 
             if (!format.isPython()) {
+                // TODO: should we use DTO for cookie related requests?
                 testCaseWriter.startRequest(lines)
                 lines.indent()
             }

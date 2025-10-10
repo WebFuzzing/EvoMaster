@@ -31,7 +31,7 @@ class SMTConditionVisitor(
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${columnName.uppercase(Locale.getDefault())} ${tableName.lowercase(Locale.getDefault())}$rowIndex)"
+        return "(${columnName.uppercase()} ${tableName.lowercase()}$rowIndex)"
     }
 
     /**
@@ -119,7 +119,7 @@ class SMTConditionVisitor(
      */
     private fun isAColumn(operand: String): Boolean {
         return tables.any {
-            it.name.equals(defaultTableName, ignoreCase = true) &&
+            it.id.name.equals(defaultTableName, ignoreCase = true) &&
                     it.columns.any { column -> column.name.equals(operand, ignoreCase = true) }
         }
     }

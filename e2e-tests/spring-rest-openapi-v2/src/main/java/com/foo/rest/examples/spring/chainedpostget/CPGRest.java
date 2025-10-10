@@ -19,7 +19,7 @@ public class CPGRest {
 
 
     @RequestMapping(
-            path = "/x",
+            path = "/x-k",
             method = RequestMethod.POST
     )
     public ResponseEntity createX(){
@@ -28,12 +28,12 @@ public class CPGRest {
         X x = new X();
         data.put(index, x);
 
-        return ResponseEntity.created(URI.create("/api/cpg/x/"+index)).build();
+        return ResponseEntity.created(URI.create("/api/cpg/x-k/"+index)).build();
     }
 
 
     @RequestMapping(
-            path = "/x/{id}/y",
+            path = "/x-k/{id}/y",
             method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON_VALUE
     )
@@ -51,7 +51,7 @@ public class CPGRest {
     }
 
     @RequestMapping(
-            path = "/x/{id}/y",
+            path = "/x-k/{id}/y",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON_UTF8_VALUE
     )

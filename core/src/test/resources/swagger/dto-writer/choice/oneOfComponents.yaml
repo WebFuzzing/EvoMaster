@@ -1,0 +1,36 @@
+openapi: 3.0.3
+info:
+  title: oneOf with Component Schemas
+  version: 1.0.0
+
+paths:
+  /oneof:
+    post:
+      summary: Accepts either a Cat or Dog schema via $ref
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/CatSchema'
+                - $ref: '#/components/schemas/DogSchema'
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    CatSchema:
+      type: object
+      required: [cat]
+      properties:
+        cat:
+          type: string
+
+    DogSchema:
+      type: object
+      required: [dog]
+      properties:
+        dog:
+          type: string

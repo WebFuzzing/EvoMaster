@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.graphql.db.directint
 
 import com.foo.graphql.db.directint.DbDirectIntController
+import graphql.com.google.common.base.Predicate
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.graphql.GQMethodType
 import org.evomaster.e2etests.spring.graphql.SpringTestBase
@@ -72,9 +73,9 @@ class DbDirectIntEMTest : SpringTestBase() {
             assertHasAtLeastOne(solution, "get", GQMethodType.QUERY, 200, "\"get\":[]")
             assertNoneWithErrors(solution)
 
-            assertTextInTests(outputFolder, outputTestName,
-                "controller.resetDatabase(listOf(\"db_direct_int\"))"
-            )
+            assertTextInTests(outputFolder, outputTestName, "controller.resetDatabase(")
+            val condition: Predicate<String> = Predicate { it!!.contains("db_direct_int", true) }
+            assertTextInTests(outputFolder, outputTestName, condition)
         }
     }
 }

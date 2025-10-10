@@ -9,7 +9,6 @@ enum class ExperimentalFaultCategory(
     private val fullDescription: String,
 ) : FaultCategory {
 
-
     //9xx for experimental, work-in-progress oracles
 
     HTTP_INVALID_PAYLOAD_SYNTAX(901, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
@@ -48,19 +47,13 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     //6xx: mobile
 
-    //8xx: security
-    SECURITY_EXISTENCE_LEAKAGE(980, "Leakage Information Existence of Protected Resource", "allowsUnauthorizedAccessToProtectedResource",
+    //security
+    //Likely this one is not really viable
+    //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
+      //  "TODO")
+    SECURITY_FORGOTTEN_AUTHENTICATION(980, "A Protected Resource Is Accessible Without Providing Any Authentication",
+        "forgottenAuthentication",
         "TODO"),
-    SECURITY_NOT_RECOGNIZED_AUTHENTICATED(981, "Wrongly Not Recognized as Authenticated", "failedToAuthenticateWithValidCredentials",
-        "TODO"),
-    SECURITY_FORBIDDEN_DELETE(982, "Forbidden Delete But Allowed Modifications", "forbidsDeleteButAllowsModifications",
-        "TODO"),
-    SECURITY_FORBIDDEN_PUT(983, "Forbidden Replacement But Allowed Modifications", "forbidsReplacementButAllowsModifications",
-        "TODO"),
-    SECURITY_FORBIDDEN_PATCH(984, "Forbidden Updates But Allowed Modifications", "forbidsUpdatesButAllowsModifications",
-        "TODO"),
-    SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
-        "TODO")
     ;
 
     override fun getCode(): Int {

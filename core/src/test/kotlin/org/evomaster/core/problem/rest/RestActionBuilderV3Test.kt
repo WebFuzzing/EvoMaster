@@ -25,8 +25,8 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -277,7 +277,7 @@ class RestActionBuilderV3Test{
         (gene as ObjectGene).apply {
             assertEquals(4, fixedFields.size)
             //assertTrue(template!!.second is FixedMapGene<*, *>)
-            assertTrue(template!!.second is TaintedMapGene)
+            assertTrue(template!!.second is TaintedMapGene, "Template is of type ${template!!.second::class.simpleName}")
         }
     }
 

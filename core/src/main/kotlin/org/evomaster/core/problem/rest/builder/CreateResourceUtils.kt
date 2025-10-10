@@ -50,13 +50,22 @@ object CreateResourceUtils {
                 POST /x
                 POST /x/{id}/y
                 GET  /x/{id}/y
-                not going to save the position of last POST, as same as target
+                not need to save the position of last POST, as same as target
 
                 however, might also be in the case of:
                 PUT /x/{id}
                 GET /x/{id}
              */
-            before.saveCreatedResourceLocation = false
+            /*
+                removing the flag here was a mistake.
+                even if after is not using the resource path, between "before" and "after"
+                there could be other calls that need it, eg:
+
+                PUT    /x/{a}
+                PUT    /x/{a}/y/{b}
+                DELETE /x/{a}
+             */
+            //before.saveCreatedResourceLocation = false
 
             // the target (eg GET) needs to use the location of first POST, or more correctly
             // the same location used for the last POST (in case there is a deeper chain)

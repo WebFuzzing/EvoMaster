@@ -64,7 +64,14 @@ class RestSchemaOracle(
 
         val res = SimpleResponse.Builder(rcr.getStatusCode()!!)
             .withBody(rcr.getBody())
-            .withContentType(rcr.getBodyType()?.toString())
+            .let {
+                val bodyType = rcr.getBodyType()
+                if(bodyType != null){
+                    it.withContentType(bodyType.toString())
+                } else {
+                    it
+                }
+            }
             //TODO we should collect headers and handle them here
             .build()
 

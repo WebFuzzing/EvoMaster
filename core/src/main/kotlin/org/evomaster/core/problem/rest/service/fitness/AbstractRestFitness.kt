@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.service.fitness
 
-import com.google.inject.Inject
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import com.webfuzzing.commons.faults.FaultCategory
 import org.evomaster.test.utils.EMTestUtils
@@ -19,6 +18,7 @@ import org.evomaster.core.problem.externalservice.HostnameResolutionInfo
 import org.evomaster.core.problem.externalservice.httpws.service.HarvestActualHttpWsResponseHandler
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
 import org.evomaster.core.problem.httpws.service.HttpWsFitness
 import org.evomaster.core.problem.rest.*
@@ -36,9 +36,11 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler.Companion.CALL_TO_SWAGGER_ID
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.util.ParserDtoUtil
 import org.evomaster.core.remote.HttpClientFactory
 import org.evomaster.core.remote.SutProblemException
@@ -51,8 +53,8 @@ import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.NumberGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
@@ -61,6 +63,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URL
 import javax.annotation.PostConstruct
+import javax.inject.Inject
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
@@ -78,6 +81,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
     @Inject
+    protected lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
     protected lateinit var responsePool: DataPool
 
     @Inject
@@ -85,6 +91,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     @Inject
     protected lateinit var responseClassifier: AIResponseClassifier
+
+    @Inject
+    protected lateinit var callGraphService: CallGraphService
+
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -533,23 +543,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500) {
-            /*
-                500 codes "might" be bugs. To distinguish between different bugs
-                that crash the same endpoint, we need to know what was the last
-                executed statement in the SUT.
-                So, we create new targets for it.
+        if (status == 500){
+            if( DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+                /*
+                    500 codes "might" be bugs. To distinguish between different bugs
+                    that crash the same endpoint, we need to know what was the last
+                    executed statement in the SUT.
+                    So, we create new targets for it.
 
-                However, such info is missing in black-box testing
-            */
-            Lazy.assert { location5xx != null || config.blackBox }
+                    However, such info is missing in black-box testing
+                */
+                Lazy.assert { location5xx != null || config.blackBox }
 
-            val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
-            val bugId = idMapper.handleLocalTarget(descriptiveId)
-            fv.updateTarget(bugId, 1.0, indexOfAction)
+                val postfix = if (location5xx == null) name else "${location5xx!!} $name"
+                val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
+                val bugId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
+                result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
+            } else  {
+                LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
+            }
         }
     }
 
@@ -719,17 +733,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(config.schemaOracles && schemaOracle.canValidate() && a.id != CALL_TO_SWAGGER_ID) {
-            val report = schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
-
-            report.messages.forEach {
-                val discriminant = a.getName() + " -> " + it.message
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
-                )
-                fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
-                rcr.addFault(DetectedFault(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, a.getName(), it.message))
-            }
+        if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
+            handleSchemaOracles(a, rcr, fv)
+        } else {
+            LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
         }
 
         val handledSavedLocation = handleSaveLocation(a, rcr, chainState)
@@ -738,7 +745,60 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
+        if (config.security && config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+            if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
+                rcr.setVulnerableForSSRF(true)
+            }
+        }
+
         return handledSavedLocation
+    }
+
+    private fun handleSchemaOracles(
+        a: RestCallAction,
+        rcr: RestCallResult,
+        fv: FitnessValue
+    ) {
+        if (!config.schemaOracles || !schemaOracle.canValidate() || a.id == CALL_TO_SWAGGER_ID) {
+            return
+        }
+
+        val report = try{
+            schemaOracle.handleSchemaOracles(a.resolvedOnlyPath(), a.verb, rcr)
+        }catch (e:Exception){
+            log.warn("Failed to handle response validation for ${a.getName()}." +
+                    " This might be a bug in EvoMaster, or in one of the third-party libraries it uses." +
+                    " Error: ${e.message}")
+            return
+        }
+
+        val onePerType = report.messages
+            .groupBy { it.key }
+            .filter {
+                /*
+                  FIXME this is due to bug in library.
+                  see disabled test in [RestSchemaOraclesTest]
+                 */
+                it.key != "validation.response.body.schema.additionalProperties"
+            }
+            .map { (key, value) -> value.first() }
+
+        onePerType.forEach {
+
+            val discriminant = a.getName() + " -> " + it.key
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE, discriminant)
+            )
+            fv.updateTarget(scenarioId, 1.0, a.positionAmongMainActions())
+            val fault = DetectedFault(
+                DefinedFaultCategory.SCHEMA_INVALID_RESPONSE,
+                a.getName(),
+                "Type: ${it.key}",
+                it.message?.replace("\n", " ")
+            )
+            rcr.addFault(fault)
+        }
+
     }
 
 
@@ -941,9 +1001,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if (id != null && builder.hasParameterChild(a)) {
-                    location = a.resolvedPath() + "/" + id.value
-                    rcr.setHeuristicsForChainedLocation(true)
+                if (id != null) {
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+                    if(location != null) {
+                        rcr.setHeuristicsForChainedLocation(true)
+                    }
                 }
             }
 
@@ -991,6 +1053,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
+        handleFurtherFitnessFunctions(fv)
 
         val wmStarted = handleExternalServiceInfo(individual, fv, dto.additionalInfoList)
         if(wmStarted){
@@ -1059,6 +1122,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
             analyzeSecurityProperties(individual,actionResults,fv)
+        }
+
+        if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+            handleSsrfFaults(individual, actionResults, fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1131,11 +1198,33 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     ){
         //TODO the other cases
 
-        handleForbiddenOperation(HttpVerb.DELETE, ExperimentalFaultCategory.SECURITY_FORBIDDEN_DELETE, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PUT, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, ExperimentalFaultCategory.SECURITY_FORBIDDEN_PATCH, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleExistenceLeakage(individual,actionResults,fv)
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
+        handleForgottenAuthentication(individual, actionResults, fv)
+    }
+
+    private fun handleSsrfFaults(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        individual.seeMainExecutableActions().forEach {
+            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+            if (ar != null) {
+                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
+                }
+            }
+        }
     }
 
     private fun handleNotRecognizedAuthenticated(
@@ -1167,11 +1256,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         notRecognized.forEach {
             val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
             )
             fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
             val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
+            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
         }
     }
 
@@ -1196,10 +1285,39 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleForgottenAuthentication(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val endpoints = individual.seeMainExecutableActions()
+            .map { it.getName() }
+            .toSet()
+
+        val faultyEndpoints = endpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
+
+        if(faultyEndpoints.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName(), null))
             }
         }
     }

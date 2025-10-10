@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.QueryResultSet;
 import org.jetbrains.annotations.NotNull;
@@ -25,7 +26,8 @@ public class QueryResultTransformerTest {
     private TableDto createTableDate(List<String> columnTypes, List<String> columnNames, String tableName){
         assertEquals(columnTypes.size(), columnNames.size());
         TableDto tableDto = new TableDto();
-        tableDto.name = tableName;
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = tableName;
         for (int i = 0; i < columnTypes.size(); i++){
             ColumnDto dto = new ColumnDto();
             dto.name = columnNames.get(i);
@@ -200,20 +202,23 @@ public class QueryResultTransformerTest {
 
     private static DbInfoDto createSchema() {
         TableDto employeesTable = new TableDto();
-        employeesTable.name = "Employees";
+        employeesTable.id = new TableIdDto();
+        employeesTable.id.name = "Employees";
         employeesTable.columns.add(createColumnDto("employees", "id", "INTEGER"));
         employeesTable.columns.add(createColumnDto("employees", "name", "VARCHAR"));
         employeesTable.columns.add(createColumnDto("employees", "income", "INTEGER"));
         employeesTable.columns.add(createColumnDto("employees", "department_id", "INTEGER"));
 
         TableDto departmentsTable = new TableDto();
-        departmentsTable.name = "Departments";
+        departmentsTable.id = new TableIdDto();
+        departmentsTable.id.name = "Departments";
         departmentsTable.columns.add(createColumnDto("departments", "id", "INTEGER"));
         departmentsTable.columns.add(createColumnDto("departments", "name", "VARCHAR"));
         departmentsTable.columns.add(createColumnDto("departments", "location_id", "INTEGER"));
 
         TableDto locationsTable = new TableDto();
-        locationsTable.name = "Locations";
+        locationsTable.id = new TableIdDto();
+        locationsTable.id.name = "Locations";
         locationsTable.columns.add(createColumnDto("locations", "id", "INTEGER"));
         locationsTable.columns.add(createColumnDto("locations", "city", "VARCHAR"));
 

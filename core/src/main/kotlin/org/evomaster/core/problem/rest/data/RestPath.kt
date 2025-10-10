@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -181,6 +181,20 @@ class RestPath(path: String) {
                 && this.endsWithSlash == other.endsWithSlash
     }
 
+    fun lengthSharedAncestors(other: RestPath): Int {
+        var common = 0
+        for(i in elements.indices) {
+            if(i >= other.elements.size) {
+                return common
+            }
+            if(elements[i] != other.elements[i]) {
+                return common
+            }
+            common++
+        }
+        return common
+    }
+
     /**
      * @return whether this is sibling of the [other]
      *
@@ -292,7 +306,7 @@ class RestPath(path: String) {
     }
 
     private fun usableQueryParamsFunction(): (Param) -> Boolean {
-        return { it is QueryParam && (it.gene.getWrappedGene(OptionalGene::class.java)?.isActive ?: true) }
+        return { it is QueryParam && it.isActive() }
     }
 
     fun numberOfUsableQueryParams(params: List<Param>): Int {
@@ -310,7 +324,7 @@ class RestPath(path: String) {
             .map { q ->
                 val name = encode(q.name)
 
-                val gene = GeneUtils.getWrappedValueGene(q.getGeneForQuery(), true)
+                val gene = q.getGeneForQuery().getLeafGene()
                 if(gene is ArrayGene<*> && q.explode && gene.getViewOfElements().isNotEmpty()){
                     gene.getViewOfElements()
                         .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }

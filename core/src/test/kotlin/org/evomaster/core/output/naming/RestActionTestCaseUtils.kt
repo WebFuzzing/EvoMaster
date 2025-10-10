@@ -23,8 +23,8 @@ import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.Traceable

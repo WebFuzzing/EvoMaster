@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -33,6 +34,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     @Inject
     private lateinit var partialOracles: PartialOracles
+
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
 
     constructor() : super()
 
@@ -111,9 +116,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         /*
             Ids are supposed to be unique, but might have invalid characters for a variable
          */
-        //TODO make sure name is syntactically valid
-
-        return "location_${id.trim().replace(" ", "_").replace(Individual.LOCAL_ID_PREFIX_ACTION,"")}"
+        val suffix = TestWriterUtils.safeVariableName(id.trim().replace(Individual.LOCAL_ID_PREFIX_ACTION,""))
+        return "location_$suffix"
     }
 
 
@@ -201,7 +205,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
-        val verb = call.verb.name.lowercase(Locale.getDefault())
+        val verb = call.verb.name.lowercase()
 
         if (format.isCsharp()) {
             lines.append(".${StringUtils.capitalization(verb)}Async(")
@@ -288,6 +292,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 val bodyParam = action.parameters.find { param -> param is BodyParam } as BodyParam?
                 if (bodyParam != null) {
                     lines.append(", data=body")
+                }
+                if(config.testTimeout > 0) {
+                    /*
+                        As timeout at test level does not work reliably in Python, we do timeout as well in each HTTP call.
+                    */
+                    lines.append(", timeout=${config.testTimeout}")
                 }
             }
         }
@@ -415,7 +425,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
-                    "\"${call.path.resolveOnlyPath(call.parameters)}\""
+                    val path = callGraphService.resolveLocationForParentOfChildOperationUsingCreatedResource(call)
+                    "\"$path\""
                 }
 
                 val idPointer = res.getResourceId()?.pointer ?: "/id"
@@ -426,9 +437,9 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     format.isJavaScript() -> lines.add("const ")
                     format.isJava() -> lines.add("String ")
                     format.isKotlin() -> lines.add("val ")
-                    format.isPython()  -> { /* nothing to do in Python */}
+                    format.isPython()  -> lines.add("")/* nothing to do in Python */
                 }
-                lines.add("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
+                lines.append("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }

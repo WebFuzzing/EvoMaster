@@ -3,7 +3,7 @@ package org.evomaster.core.sql.extract.h2
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -64,7 +64,7 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         )
 
         for (name in tableNames) {
-            assertTrue(schema.tables.any { it.name.equals(name, true) }, "Missing table $name")
+            assertTrue(schema.tables.any { it.id.name.equals(name, true) }, "Missing table $name")
         }
     }
 
@@ -77,7 +77,7 @@ class OcvnExtractTest : ExtractTestBaseH2() {
         val builder = SqlInsertBuilder(schema)
 
         val tableName = "FILE_CONTENT"
-        assertTrue(schema.tables.any { it.name.equals(tableName, true) })
+        assertTrue(schema.tables.any { it.id.name.equals(tableName, true) })
 
         val columnName = "BYTES"
         val actions = builder.createSqlInsertionAction(tableName, setOf(columnName))

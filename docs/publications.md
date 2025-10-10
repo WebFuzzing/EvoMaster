@@ -13,16 +13,37 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-  
+* O. Sahin, M. Zhang, A. Arcuri. 
+  *WFC/WFD: Web Fuzzing Commons, Dataset and Guidelines to Support Experimentation in REST API Fuzzing*. 
+  [[arxiv](https://arxiv.org/abs/2509.01612)]
 
-* O. Sahin, M. Zhang, A. Arcuri.
-  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
-  [[arXiv](https://arxiv.org/abs/2502.00169)]
-
+* H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
+  *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
+  [[arxiv](https://arxiv.org/abs/2507.20848)]
 
 ## Peer-Reviewed Publications
 
 ### 2025
+
+* A. Golmohammadi, M. Zhang, A. Arcuri. 
+  *Tools and Benchmarks Evolve: What is their Impact on Parameter Tuning in SBSE Experiments?*.
+  Empirical Software Engineering (EMSE).
+  (To appear)
+
+* F. F. Susilo.
+  *Human-Centered Evaluation of REST API Fuzzing Tools: Bridging Academia and Industry*.
+  IEEE/ACM International Conference on Automated Software Engineering (ASE), Doctoral Symposium.
+  (To appear)
+
+* A. Arcuri, O. Sahin, M. Zhang.
+  *Fuzzing for Detecting Access Policy Violations in REST APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2025_issre.pdf)]
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2025_ause.pdf)]
 
 * M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
   *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.

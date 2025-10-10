@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -8,35 +9,24 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
-import org.evomaster.core.output.dto.DtoClass
-import org.evomaster.core.output.dto.DtoField
-import org.evomaster.core.output.dto.JavaDtoWriter
+import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.gene.BooleanGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.datetime.DateGene
-import org.evomaster.core.search.gene.datetime.TimeGene
-import org.evomaster.core.search.gene.numeric.DoubleGene
-import org.evomaster.core.search.gene.numeric.FloatGene
-import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.string.Base64StringGene
-import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -97,6 +87,9 @@ class TestSuiteWriter {
 
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
 
     fun writeTests(testSuiteCode: TestSuiteCode){
@@ -220,17 +213,20 @@ class TestSuiteWriter {
 
     // TODO: take DTO extraction and writing to a different class
     fun writeDtos(solutionFilename: String) {
-        val testSuitePath = getTestSuitePath(TestSuiteFileName(solutionFilename), config).parent
-        getDtos().forEach {
-            JavaDtoWriter.write(testSuitePath, config.outputFormat, it)
-        }
+        val testSuiteFileName = TestSuiteFileName(solutionFilename)
+        val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
+        val restSampler = sampler as AbstractRestSampler
+        DtoWriter(config.outputFormat).write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
+        if(sampler !is EnterpriseSampler<*>){
+            throw IllegalArgumentException("Not dealing with an enterprise application")
+        }
         if (!config.outputFormat.isJavaOrKotlin())
             throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
-        val accessedTable = mutableSetOf<String>()
+        val accessedTable = mutableSetOf<TableId>()
         solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
             if (e.individual is ApiWsIndividual) {
@@ -242,14 +238,17 @@ class TestSuiteWriter {
                 accessedTable.addAll(de.deletedData)
             }
         }
-        val all = sampler.extractFkTables(accessedTable)
+        val all = (sampler as EnterpriseSampler).extractFkTables(accessedTable)
 
-        //if (all.isEmpty()) return "null"
+        val schema = remoteController.getCachedSutInfo()?.sqlSchemaDto
 
-        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+        val tableNamesInSchema = schema
+            ?.tables
+            ?.map { TableId.fromDto(schema.databaseType, it.id) }
+            ?.toSet()
             ?: setOf()
 
-        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y == x } }.sortedBy { it.name }
         if(missingTables.isNotEmpty()){
             /*
                 Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
@@ -261,7 +260,10 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
+            else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
+                .map{it.getFullQualifyingTableName()}
+                .sorted()
+                .joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
@@ -434,6 +436,12 @@ class TestSuiteWriter {
 
         if (format.isJavaOrKotlin()) {
 
+            if (config.dtoForRequestPayload) {
+                val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
+                addImport("${pkgPrefix}dto.*", lines)
+                addImport("java.util.ArrayList", lines)
+            }
+
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
@@ -444,7 +452,8 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
+            if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
+                || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
@@ -630,6 +639,13 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
+                }
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
                 lines.indented {
@@ -654,6 +670,13 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
+                }
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
                 lines.indented {
@@ -821,6 +844,31 @@ class TestSuiteWriter {
                         }
                 } else {
                     log.warn("In mocking of external services, we do NOT support for other format ($format) except JavaOrKotlin")
+                }
+            }
+
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    if (format.isJava()) {
+                        lines.add("${v.getVerifierName()} = new WireMockServer(new WireMockConfiguration()")
+                    }
+                    if (format.isKotlin()) {
+                        lines.add("${v.getVerifierName()} = WireMockServer(WireMockConfiguration()")
+                    }
+
+                    lines.indented {
+                        lines.add(".port(${v.port})")
+                        if (format.isJava()) {
+                            addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                        }
+                        if (format.isKotlin()) {
+                            addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                        }
+                    }
+                    addStatement("${v.getVerifierName()}.start()", lines)
+                    addStatement("assertNotNull(${v.getVerifierName()})", lines)
+
+                    lines.addEmpty(1)
                 }
             }
 
@@ -1094,54 +1142,6 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
-    }
-
-    private fun getDtos(): List<DtoClass> {
-        val restSampler = sampler as AbstractRestSampler
-        val result = mutableListOf<DtoClass>()
-        restSampler.getActionDefinitions().forEach { action ->
-            action.getViewOfChildren().forEach { child ->
-                if (child is BodyParam) {
-                    val primaryGene = GeneUtils.getWrappedValueGene(child.primaryGene())
-                    // TODO: Payloads could also be json arrays, analyze ArrayGene
-                    if (primaryGene is ObjectGene) {
-                        // TODO: Determine strategy for objects that are not defined as a component and do not have a name
-                        val dtoClass = DtoClass(primaryGene.refType?:TestWriterUtils.safeVariableName(action.getName()))
-                        primaryGene.fixedFields.forEach { field ->
-                            try {
-                                dtoClass.addField(getDtoField(field))
-                            } catch (ex: Exception) {
-                                log.warn("A failure has occurred when collecting DTOs. \n"
-                                            + "Exception: ${ex.localizedMessage} \n"
-                                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-                                )
-                                assert(false)
-                            }
-                        }
-                        result.add(dtoClass)
-                    }
-                }
-            }
-        }
-        return result
-    }
-
-    private fun getDtoField(field: Gene): DtoField {
-        val wrappedGene = GeneUtils.getWrappedValueGene(field)
-        return DtoField(field.name, when (wrappedGene) {
-            // TODO: handle nested arrays, objects and extend type system for dto fields
-            is StringGene -> "String"
-            is IntegerGene -> "Integer"
-            is LongGene -> "Long"
-            is DoubleGene -> "Double"
-            is FloatGene -> "Float"
-            is Base64StringGene -> "String"
-            // Time and Date genes will be handled with strings at the moment. In the future we'll evaluate if it's worth having any validation
-            is DateGene -> "String"
-            is TimeGene -> "String"
-            is BooleanGene -> "Boolean"
-            else -> throw Exception("Not supported gene at the moment: ${wrappedGene?.javaClass?.simpleName}")
-        })
     }
 
 }

@@ -1,5 +1,7 @@
 package org.evomaster.core
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
+import com.webfuzzing.commons.faults.FaultCategory
 import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
@@ -13,6 +15,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -48,7 +51,7 @@ class EMConfig {
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
 
         private const val headerRegex = "(.+:.+)|(^$)"
-
+        private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
@@ -70,7 +73,7 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // the first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
         private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
 
@@ -591,6 +594,16 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
+        if(!security && ssrf) {
+            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+        }
+
+        if (ssrf &&
+            vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
+            !languageModelConnector) {
+            throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
+        }
+
         if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
             throw ConfigProblemException("Language model server URL cannot be empty.")
         }
@@ -615,9 +628,16 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        if(writeWFCReport && !createTests){
-            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-        }
+        /*
+            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
+            like writeWFCReport.
+            TODO however, we should issue some WARN message.
+            ie. we should have a distinction between @Requires (which should crash) and something like
+            @DependOn that does not lead to a crash, but just a warning
+         */
+//        if(writeWFCReport && !createTests){
+//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -1079,11 +1099,18 @@ class EMConfig {
     var endpointPrefix: String? = null
 
     @Important(5.2)
+    @Cfg("Comma-separated list of endpoints for excluding endpoints." +
+            " This is useful for excluding endpoints that are not relevant for testing, " +
+            " such as those used for health checks or metrics. If no such endpoint is specified, " +
+            " then no endpoints are excluded from the search.")
+    var endpointExclude: String? = null
+
+    @Important(5.3)
     @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
-
+    
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1269,23 +1296,152 @@ class EMConfig {
 
 
     enum class AIResponseClassifierModel {
-        NONE, GAUSSIAN, NN, GLM
+        /**
+         * No classification is performed.
+         */
+        NONE,
+
+        /**
+         * Gaussian Model.
+         * Assumes the data follows a bell-shaped curve, parameterized by mean and variance.
+         */
+        GAUSSIAN,
+
+        /**
+         * Kernel Density Estimation (KDE).
+         * A non-parametric method for estimating the probability density function.
+         */
+        KDE,
+
+        /**
+         * K-Nearest Neighbors (KNN).
+         * Classifies a point based on the majority label among its k closest neighbors.
+         */
+        KNN,
+
+        /**
+         * Neural Network (NN).
+         * A computational model inspired by biological neural systems, consisting of layers of interconnected neurons.
+         * Neural networks learn patterns from data to capture underlying nonlinear relationships
+         * and to perform flexible classification
+         */
+        NN,
+
+        /**
+         * Generalized Linear Model (GLM).
+         * Extends linear regression to handle non-normal response distributions.
+         */
+        GLM,
+
+        /**
+         * Rule-Based Deterministic Model.
+         * Uses predefined, fixed rules for classification,
+         * providing clear and structured decision logic as an
+         * alternative to probabilistic or statistical methods.
+         */
+        DETERMINISTIC
     }
+
+
 
     @Experimental
     @Cfg("Model used to learn input constraints and infer response status before making request.")
     var aiModelForResponseClassification = AIResponseClassifierModel.NONE
 
     @Experimental
-    @Cfg("Learning rate for classifiers like GLM and NN.")
+    @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
+            "Relevant for gradient-based models such as GLM and neural networks. " +
+            "A smaller value ensures stable but slower convergence, while a larger value speeds up " +
+            "training but may cause instability.")
     var aiResponseClassifierLearningRate: Double = 0.01
 
     @Experimental
-    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
-            " This also includes a index.html web application to visualize such data.")
-    var writeWFCReport = false
+    @Cfg(
+        "Maximum number of stored samples for classifiers such as KNN and KDE models that rely " +
+                "on retaining encoded inputs. " +
+                "This value specifies the maximum number of samples stored for each endpoint. " +
+                "A higher value can improve classification accuracy by leveraging more historical data, " +
+                "but also increases memory usage. " +
+                "A lower value reduces memory consumption but may limit the classifier’s knowledge base. " +
+                "Typically, it is safe to keep this value between 10,000 and 50,000 when the encoded input vector " +
+                "is usually a list of doubles with a length under 20. " +
+                "Reservoir sampling is applied independently for each endpoint: if this maximum number is exceeded, " +
+                "new samples randomly replace existing ones, ensuring an unbiased selection of preserved data. " +
+                "As an example, for an API with 100 endpoints and an input vector of size 20, " +
+                "a maximum of 10,000 samples per endpoint would require roughly 200 MB of memory.")
+    var aiResponseClassifierMaxStoredSamples: Int = 10_000
 
     @Experimental
+    @Cfg("Number of training iterations required to update classifier parameters. " +
+                "For example, in the Gaussian model this affects mean and variance updates. " +
+                "For neural network (NN) models, the warm-up should typically be larger than 1000.")
+    var aiResponseClassifierWarmup : Int = 10
+
+
+    enum class EncoderType {
+
+        /** Use raw values without any transformation. */
+        RAW,
+
+        /** Normalize values to a standard scale (e.g., zero mean and unit variance). */
+        NORMAL,
+
+        /** Scale the vector to have unit length, making it a point on the unit sphere. */
+        UNIT_NORMAL
+    }
+
+    @Experimental
+    @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
+    var aiEncoderType = EncoderType.RAW
+
+
+    @Experimental
+    @Min(1.0)
+    @Cfg("When the Response Classifier determines an action is going to fail, specify how many attempts will" +
+            " be tried at fixing it.")
+    var maxRepairAttemptsInResponseClassification = 100
+
+    enum class AIClassificationRepairActivation{
+        /*
+            TODO we might think of other techniques as well... and then experiment with them
+         */
+        PROBABILITY, THRESHOLD
+    }
+
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
+            " All classifications with probability equal or above such threshold value will be accepted.")
+    var classificationRepairThreshold = 0.8
+
+    @Experimental
+    @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
+    var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
+
+
+    enum class AIClassificationMetrics {
+
+        /**
+         * Evaluates metrics (accuracy, F1, etc.) over a recent sliding time window.
+         * This highlights short-term classifier behavior and adapts to changes in data distribution.
+          */
+        TIME_WINDOW,
+
+        /**
+         * Evaluates metrics over the entire lifetime of the classifier,
+         * capturing its cumulative long-term performance without forgetting older data.
+         */
+        FULL_HISTORY
+    }
+
+    @Experimental
+    @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
+    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
+            " This also includes a index.html web application to visualize such data.")
+    var writeWFCReport = true
+
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
             " the JSON report file will be created.")
     var writeWFCReportExcludeWebApp = false
@@ -1586,6 +1742,11 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_OPENSEARCH = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -2251,7 +2412,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
@@ -2403,6 +2564,37 @@ class EMConfig {
     var security = true
 
     @Experimental
+    @Cfg("To apply SSRF detection as part of security testing.")
+    var ssrf = false
+
+    @Regex(faultCodeRegex)
+    @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
+                "By default, all oracles are enabled."
+    )
+    var disabledOracleCodes = ""
+
+    enum class VulnerableInputClassificationStrategy {
+        /**
+         * Uses the manual methods to select the vulnerable inputs.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerable inputs.
+         */
+        LLM,
+    }
+
+    @Experimental
+    @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
+    var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
+
+    @Experimental
+    @Cfg("HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a " +
+            "container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname.")
+    var callbackURLHostname = "localhost"
+
+    @Experimental
     @Cfg("Enable language model connector")
     var languageModelConnector = false
 
@@ -2548,6 +2740,15 @@ class EMConfig {
             "Only available for JVM languages")
     var dtoForRequestPayload = false
 
+    @Cfg("Override the value of externalEndpointURL in auth configurations." +
+            " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
+            " are run in parallel, to avoid creating/modifying auth configuration files." +
+            " If what provided is a URL starting with 'http', then full replacement will occur." +
+            " Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g.," +
+            " path element of the URL will not change).")
+    var overrideAuthExternalEndpointURL : String? = null
+
+
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
             bbProbabilityUseDataPool
@@ -2601,6 +2802,7 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         return categories.joinToString(",")
     }
 
@@ -2646,5 +2848,33 @@ class EMConfig {
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
 
+    fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
+
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+
+    private var disabledOracleCodesList: List<FaultCategory>? = null
+
+    fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList == null) {
+            disabledOracleCodesList = disabledOracleCodes
+                .split(",")
+                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+                .map { str ->
+                    val code = str.toIntOrNull()
+                        ?: throw ConfigProblemException("Invalid number: $str")
+
+                    val allCategories = DefinedFaultCategory.values().asList() +
+                            ExperimentalFaultCategory.values()
+
+                    allCategories.firstOrNull { it.code == code }
+                        ?: throw ConfigProblemException(
+                            "Invalid fault code: $code" +
+                                    " All available codes are: \n" +
+                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
+                        )
+                }
+        }
+        return disabledOracleCodesList!!
+    }
+
 }

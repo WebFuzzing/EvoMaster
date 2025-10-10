@@ -14,14 +14,14 @@ class SecondSchemaTest : MultiDbTestBase(){
         val info = DbInfoExtractor.extract(connection)
         assertEquals(name.lowercase(), info.name.lowercase())
         assertEquals(2, info.tables.size)
-        val foo = info.tables.find { it.name.lowercase() == "foo" }!!
-        val bar = info.tables.find { it.name.lowercase() == "bar" }!!
+        val foo = info.tables.find { it.id.name.lowercase() == "foo" }!!
+        val bar = info.tables.find { it.id.name.lowercase() == "bar" }!!
         if(databaseType == DatabaseType.MYSQL){
-            assertEquals(name.lowercase(), foo.schema.lowercase())
+            assertEquals(name.lowercase(), foo.id.schema.lowercase())
         } else {
-            assertEquals("public", foo.schema.lowercase())
+            assertEquals("public", foo.id.schema.lowercase())
         }
-        assertEquals("other", bar.schema.lowercase())
+        assertEquals("other", bar.id.schema.lowercase())
     }
 
     override fun getSchemaLocation() = "/sql_schema/multidb/secondschema.sql"

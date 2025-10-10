@@ -22,8 +22,8 @@ import org.evomaster.core.search.gene.network.CidrGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.network.MacAddrGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.gene.sql.textsearch.SqlTextSearchQueryGene
@@ -54,7 +54,7 @@ class SqlActionGeneBuilder {
             column.autoIncrement ->
                 SqlAutoIncrementGene(column.name)
             fk != null ->
-                SqlForeignKeyGene(column.name, id, fk.targetTable, column.nullable)
+                SqlForeignKeyGene(column.name, id, fk.targetTableId, column.nullable)
 
             else -> when (column.type) {
                 // Man: TODO need to check
@@ -388,7 +388,7 @@ class SqlActionGeneBuilder {
         }
 
         if (column.primaryKey) {
-            gene = SqlPrimaryKeyGene(column.name, table.name, gene, id)
+            gene = SqlPrimaryKeyGene(column.name, table.id, gene, id)
         }
 
         if (column.nullable && fk == null) {

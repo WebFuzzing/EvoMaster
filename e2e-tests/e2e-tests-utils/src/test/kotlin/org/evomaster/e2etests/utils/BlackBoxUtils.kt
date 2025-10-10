@@ -29,7 +29,7 @@ object BlackBoxUtils {
 
 
     private fun isWindows(): Boolean {
-        return System.getProperty("os.name").lowercase(Locale.getDefault()).contains("win")
+        return System.getProperty("os.name").lowercase().contains("win")
     }
 
     private fun npm() = if (isWindows()) "npm.cmd" else "npm"
@@ -109,7 +109,14 @@ object BlackBoxUtils {
     fun runNpmTests(folderRelativePath: String) {
         runNpmInstall()
 
-        val command = listOf(npm(), "test", folderRelativePath)
+        val path = if(folderRelativePath.endsWith("/")){
+            folderRelativePath
+        } else {
+            //need to handle extremely annoying behavior of Jest using path as prefix by default
+            "$folderRelativePath/"
+        }
+
+        val command = listOf(npm(), "test", "--", "--testPathPattern=\"$path\"")
         runTestsCommand(command, JS_BASE_PATH, "NPM")
     }
 
