@@ -6,7 +6,7 @@ import org.evomaster.core.search.service.Randomness
 import kotlin.math.min
 
 class DefaultCrossoverOperator : CrossoverOperator {
-    override fun <T : Individual> apply(
+    override fun <T : Individual> applyCrossover(
         x: WtsEvalIndividual<T>,
         y: WtsEvalIndividual<T>,
         randomness: Randomness

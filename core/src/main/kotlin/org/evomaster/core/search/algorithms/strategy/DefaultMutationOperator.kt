@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 
 class DefaultMutationOperator : MutationOperator {
-    override fun <T : Individual> apply(
+    override fun <T : Individual> applyMutation(
         wts: WtsEvalIndividual<T>,
         config: EMConfig,
         randomness: Randomness,

@@ -111,7 +111,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        mutationOperator.apply(
+        mutationOperator.applyMutation(
             wts,
             config,
             randomness,
@@ -131,7 +131,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * (bounded by the size of the smaller suite).
      */
     protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
-        crossoverOperator.apply(x, y, randomness)
+        crossoverOperator.applyCrossover(x, y, randomness)
         // notify observers
         observers.forEach { it.onCrossover(x, y) }
     }
