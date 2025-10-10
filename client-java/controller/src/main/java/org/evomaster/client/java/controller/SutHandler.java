@@ -181,6 +181,8 @@ public interface SutHandler {
 
     default Object getOpenSearchConnection() {return null;}
 
+    default Object getRedisConnection() {return null;}
+
     /**
      * <p>
      * register or execute specified SQL script for initializing data in database
