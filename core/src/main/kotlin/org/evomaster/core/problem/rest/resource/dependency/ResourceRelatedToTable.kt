@@ -209,7 +209,7 @@ class ResourceRelatedToTable(val key: String) {
     private fun getTablesInDerivedMap(input : String) : List<MatchedInfo>{
         return derivedMap.values
             .flatMap {
-                it.filter { m-> m.input.toLowerCase() == input.toLowerCase()}
+                it.filter { m-> m.input.lowercase() == input.lowercase()}
              }
     }
 

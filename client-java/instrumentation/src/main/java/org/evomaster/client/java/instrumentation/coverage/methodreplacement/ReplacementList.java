@@ -44,6 +44,7 @@ public class ReplacementList {
                     new IntegerClassReplacement(),
                     new InetAddressClassReplacement(),
                     new InetSocketAddressClassReplacement(),
+                    new KotlinIntrinsicsClassReplacement(),
                     new JacksonObjectMapperClassReplacement(),
                     new LocalDateClassReplacement(),
                     new LocalDateTimeClassReplacement(),

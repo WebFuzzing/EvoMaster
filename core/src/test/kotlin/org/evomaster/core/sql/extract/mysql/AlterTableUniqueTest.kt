@@ -16,7 +16,7 @@ class AlterTableUniqueTest : ExtractTestBaseMySQL() {
 
         assertNotNull(schema)
 
-        assertEquals("test", schema.name.toLowerCase())
+        assertEquals("test", schema.name.lowercase())
         assertEquals(DatabaseType.MYSQL, schema.databaseType)
 
         val tableDto = schema.tables.find { it.id.name.equals("suppliers", ignoreCase = true)  }

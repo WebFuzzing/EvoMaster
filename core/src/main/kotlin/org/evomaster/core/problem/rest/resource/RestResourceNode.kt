@@ -873,7 +873,7 @@ open class RestResourceNode(
                 return paramsInfo.values.filter { it.requiredReferToOthers() || randomness?.nextBoolean(it.probOfReferringToOther) == true }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
-                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}
+                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.lowercase().contains("id"))}
             }
             HttpVerb.GET, HttpVerb.DELETE->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) }

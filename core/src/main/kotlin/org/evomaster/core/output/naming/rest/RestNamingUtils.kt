@@ -36,7 +36,7 @@ object RestNamingUtils {
             return listOf(EMPTY)
         }
         val type = result.getBodyType()?: MediaType.TEXT_PLAIN_TYPE
-        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().lowercase().contains("+json")) {
             return handleJsonBody(bodyString)
         }
         return listOf(CONTENT)

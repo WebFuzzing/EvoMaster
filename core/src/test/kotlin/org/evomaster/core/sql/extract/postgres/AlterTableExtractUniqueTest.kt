@@ -17,7 +17,7 @@ class AlterTableExtractUniqueTest : ExtractTestBasePostgres() {
 
         assertNotNull(schema)
 
-        assertAll(Executable { assertEquals("postgres", schema.name.toLowerCase()) },
+        assertAll(Executable { assertEquals("postgres", schema.name.lowercase()) },
                 Executable { assertEquals(DatabaseType.POSTGRES, schema.databaseType) },
                 Executable { assertEquals(2, schema.tables.size) },
                 Executable { assertTrue(schema.tables.any { it.id.name == "countries" }, "missing table COUNTRIES") },

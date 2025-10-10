@@ -91,7 +91,7 @@ class ResourceNodeWithDbTest {
                     u.derivedMap.forEach { ut, uu ->
 //                        assertEquals("RFOO", ut)
                         assertTrue(isMatchingTableName(ut.name, "RFOO"))
-                        assertEquals(uu.input.toLowerCase(), uu.targetMatched.toLowerCase())
+                        assertEquals(uu.input.lowercase(), uu.targetMatched.lowercase())
                     }
                 }
             }
