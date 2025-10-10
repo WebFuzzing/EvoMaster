@@ -187,6 +187,7 @@
         <org.opensearch.version>3.1.0</org.opensearch.version>
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
         <org.springframework.data.version>2.6.6</org.springframework.data.version>
+        <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
     </properties>
 
 
@@ -650,6 +651,11 @@
                 <groupId>org.springframework.data</groupId>
                 <artifactId>spring-data-redis</artifactId>
                 <version>${org.springframework.data.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${io.lettuce.core.version}</version>
             </dependency>
 
             <!--  SpringFox: Swagger documentation for SpringBoot-->

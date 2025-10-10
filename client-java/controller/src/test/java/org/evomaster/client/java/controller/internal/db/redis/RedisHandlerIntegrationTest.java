@@ -1,0 +1,115 @@
+package org.evomaster.client.java.controller.internal.db.redis;
+
+import org.evomaster.client.java.controller.internal.db.RedisCommandEvaluation;
+import org.evomaster.client.java.controller.internal.db.RedisHandler;
+import org.evomaster.client.java.instrumentation.RedisCommand;
+import org.evomaster.client.java.controller.redis.RedisClient;
+import org.junit.jupiter.api.*;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.utility.DockerImageName;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class RedisHandlerIntegrationTest {
+
+    private static final int REDIS_PORT = 6379;
+    private GenericContainer<?> redisContainer;
+    private RedisConnectionFactory connectionFactory;
+    private RedisClient client;
+    private RedisHandler handler;
+
+    @BeforeAll
+    void setupContainer() {
+        redisContainer = new GenericContainer<>(DockerImageName.parse("redis:7.0"))
+                .withExposedPorts(REDIS_PORT);
+        redisContainer.start();
+
+        int port = redisContainer.getMappedPort(REDIS_PORT);
+
+        connectionFactory = new LettuceConnectionFactory("localhost", port);
+        ((LettuceConnectionFactory) connectionFactory).afterPropertiesSet();
+
+        client = new RedisClient(connectionFactory);
+    }
+
+    @BeforeEach
+    void setupHandler() {
+        handler = new RedisHandler();
+        handler.setRedisClient(connectionFactory);
+        handler.setCalculateHeuristics(true);
+        handler.setExtractRedisExecution(true);
+
+        connectionFactory.getConnection().serverCommands().flushAll();
+    }
+
+    @AfterAll
+    void teardown() {
+        redisContainer.stop();
+    }
+
+    @Test
+    void testHeuristicDistanceForStringExists() {
+        client.setValue("user:1", "John");
+        client.setValue("user:2", "Jane");
+        assertEquals(2, client.getAllKeys().size());
+
+        RedisCommand similarKeyCmd = new RedisCommand(
+                RedisCommand.RedisCommandType.EXISTS,
+                new String[]{"key<user:3>"},
+                true,
+                10
+        );
+        RedisCommand differentKeyCmd = new RedisCommand(
+                RedisCommand.RedisCommandType.EXISTS,
+                new String[]{"key<user:82bd3bff-4567-40f4-a42e-27f87276199f>"},
+                true,
+                10
+        );
+
+        handler.handle(similarKeyCmd);
+        handler.handle(differentKeyCmd);
+
+        List<RedisCommandEvaluation> evals = handler.getEvaluatedRedisCommands();
+        assertEquals(2, evals.size(), "Should be two command evaluations.");
+
+        RedisCommandEvaluation evalForSimilar = evals.get(0);
+        assertNotNull(evalForSimilar.redisDistanceWithMetrics);
+        RedisCommandEvaluation evalForDifferent = evals.get(1);
+        assertNotNull(evalForDifferent.redisDistanceWithMetrics);
+
+        double distanceForSimilar = evalForSimilar.redisDistanceWithMetrics.getDistance();
+        int evaluatedForSimilar = evalForSimilar.redisDistanceWithMetrics.getNumberOfEvaluatedKeys();
+
+        assertTrue(distanceForSimilar >= 0 && distanceForSimilar <= 1,
+                "Distance should be between 0 and 1");
+        assertEquals(2, evaluatedForSimilar, "Both keys should be evaluated.");
+
+        double distanceForDifferent = evalForDifferent.redisDistanceWithMetrics.getDistance();
+        int evaluatedForDifferent = evalForDifferent.redisDistanceWithMetrics.getNumberOfEvaluatedKeys();
+
+        assertTrue(distanceForDifferent >= 0 && distanceForDifferent <= 1,
+                "Distance should be between 0 and 1");
+        assertEquals(2, evaluatedForDifferent, "Both keys should be evaluated.");
+        assertTrue(distanceForSimilar < distanceForDifferent,
+                "Distance for similar should be the smallest.");
+    }
+
+    @Test
+    void testResetClearsCommands() {
+        RedisCommand cmd = new RedisCommand(
+                RedisCommand.RedisCommandType.EXISTS,
+                new String[]{"key<user:1>"},
+                true,
+                5
+        );
+        handler.handle(cmd);
+        assertFalse(handler.getEvaluatedRedisCommands().isEmpty());
+        handler.reset();
+        assertTrue(handler.getEvaluatedRedisCommands().isEmpty());
+    }
+}
