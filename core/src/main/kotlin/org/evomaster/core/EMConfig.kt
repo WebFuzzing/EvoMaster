@@ -2573,6 +2573,11 @@ class EMConfig {
     )
     var disabledOracleCodes = ""
 
+    @Cfg("Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. " +
+            "Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. " +
+            "When false, all experimental oracles are disabled.")
+    var useExperimentalOracles = false
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2856,6 +2861,15 @@ class EMConfig {
 
     fun getDisabledOracleCodesList(): List<FaultCategory> {
         if (disabledOracleCodesList == null) {
+            val definedCategories = DefinedFaultCategory.values().asList()
+            val experimentalCategories = ExperimentalFaultCategory.values().asList()
+
+            val allCategories = if (useExperimentalOracles) {
+                definedCategories + experimentalCategories
+            } else {
+                definedCategories
+            }
+
             disabledOracleCodesList = disabledOracleCodes
                 .split(",")
                 .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
@@ -2863,16 +2877,31 @@ class EMConfig {
                     val code = str.toIntOrNull()
                         ?: throw ConfigProblemException("Invalid number: $str")
 
-                    val allCategories = DefinedFaultCategory.values().asList() +
-                            ExperimentalFaultCategory.values()
+                    val category = allCategories.firstOrNull { it.code == code }
+                    if (category == null) {
+                        val isExperimentalCode = ExperimentalFaultCategory.values().any { it.code == code }
 
-                    allCategories.firstOrNull { it.code == code }
-                        ?: throw ConfigProblemException(
-                            "Invalid fault code: $code" +
-                                    " All available codes are: \n" +
-                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
-                        )
+                        val message = buildString {
+                            append("Invalid fault code: $code\n")
+                            if (isExperimentalCode && !useExperimentalOracles) {
+                                append("Note: The code $code belongs to an Experimental Oracle. ")
+                                append("Please set 'useExperimentalOracles = true' to enable it.\n")
+                            }
+                            append("All available codes are:\n")
+                            append(
+                                allCategories.joinToString("\n") { "${it.code} (${it.name})" }
+                            )
+                        }
+
+                        throw ConfigProblemException(message)
+                    }
+
+                    category
                 }
+
+            if (!useExperimentalOracles) {
+                disabledOracleCodesList = (disabledOracleCodesList!! + experimentalCategories).distinct()
+            }
         }
         return disabledOracleCodesList!!
     }
