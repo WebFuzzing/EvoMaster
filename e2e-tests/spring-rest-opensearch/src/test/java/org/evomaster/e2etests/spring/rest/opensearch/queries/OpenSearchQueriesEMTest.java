@@ -27,7 +27,6 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "maxActionEvaluations", "200");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
@@ -45,7 +44,6 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "maxActionEvaluations", "200");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
@@ -63,7 +61,6 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "maxActionEvaluations", "200");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
@@ -83,7 +80,6 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "maxActionEvaluations", "200");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
