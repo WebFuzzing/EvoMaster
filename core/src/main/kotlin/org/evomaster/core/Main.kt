@@ -864,8 +864,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            // TODO: support Kotlin for DTOs
-            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJavaOrKotlin()) {
+            if (config.dtoSupportedForPayload()) {
                 writer.writeDtos(solution.getFileName().name)
             }
 

@@ -809,6 +809,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1110,7 +1112,7 @@ class EMConfig {
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
-    
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
