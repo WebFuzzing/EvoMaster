@@ -1136,9 +1136,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for non-working DELETE, as it has been disabled via configuration")
+        } else {
+            handleDeleteShouldDelete(individual, actionResults, fv)
+        }
 
-        handleDeleteShouldDelete(individual, actionResults, fv)
-        handleRepeatedCreatePut(individual, actionResults, fv)
+        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
+        } else {
+            handleRepeatedCreatePut(individual, actionResults, fv)
+        }
     }
 
     private fun handleRepeatedCreatePut(
