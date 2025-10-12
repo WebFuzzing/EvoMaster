@@ -65,6 +65,7 @@ class TestSuiteWriter {
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
+        private var containsDtos = false
     }
 
     @Inject
@@ -216,7 +217,9 @@ class TestSuiteWriter {
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
         val restSampler = sampler as AbstractRestSampler
-        DtoWriter(config.outputFormat).write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+        val dtoWriter = DtoWriter(config.outputFormat)
+        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+        containsDtos = dtoWriter.containsDtos()
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -436,7 +439,7 @@ class TestSuiteWriter {
 
         if (format.isJavaOrKotlin()) {
 
-            if (config.dtoForRequestPayload) {
+            if (config.dtoSupportedForPayload() && containsDtos) {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)

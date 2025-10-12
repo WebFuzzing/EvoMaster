@@ -56,6 +56,10 @@ class DtoWriter(
         }
     }
 
+    fun containsDtos(): Boolean {
+        return dtoCollector.isNotEmpty()
+    }
+
     private fun calculateDtos(actionDefinitions: List<Action>) {
         actionDefinitions.forEach { action ->
             action.getViewOfChildren().find { it is BodyParam }
