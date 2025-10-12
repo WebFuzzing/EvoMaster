@@ -9,8 +9,11 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.sql.schema.TableId
 
 object SqlActionUtils {
+
+    const val SCHEMA_TABLE_SEPARATOR = "."
 
     private val log: Logger = LoggerFactory.getLogger(SqlActionUtils::class.java)
 
@@ -452,8 +455,8 @@ object SqlActionUtils {
         val sorted = table.sortedWith(
             Comparator { o1, o2 ->
                 when {
-                    o1.foreignKeys.any { t-> t.targetTable.equals(o2.name,ignoreCase = true) } -> -1
-                    o2.foreignKeys.any { t-> t.targetTable.equals(o1.name,ignoreCase = true) } -> 1
+                    o1.foreignKeys.any { t-> t.targetTableId == o2.id } -> -1
+                    o2.foreignKeys.any { t-> t.targetTableId == o1.id } -> 1
                     else -> 0
                 }
             }
@@ -504,7 +507,7 @@ object SqlActionUtils {
                 throw IllegalStateException("invalid insertion, there exists invalid fk at $index")
             val pks = sqlActions.subList(0, index).flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
             fks.filter { !it.nullable && !it.isBound() || pks.none { p->p.uniqueId == it.uniqueIdOfPrimaryKey }}.forEach {fk->
-                val found = pks.find { pk -> pk.tableName.equals(fk.targetTable, ignoreCase = true) }
+                val found = pks.find { pk -> pk.tableName == fk.targetTable }
                     ?: throw IllegalStateException("fail to target table ${fk.targetTable} for the fk ${fk.name}")
                 fk.uniqueIdOfPrimaryKey = found.uniqueId
             }
@@ -516,8 +519,57 @@ object SqlActionUtils {
     /**
      * @return a list of dbactions from [sqlActions] whose related table is [tableName]
      */
-    fun findDbActionsByTableName(sqlActions: List<SqlAction>, tableName : String) : List<SqlAction>{
-        return sqlActions.filter { it.table.name.equals(tableName, ignoreCase = true) }
+    fun findDbActionsByTableName(sqlActions: List<SqlAction>, tableName : TableId) : List<SqlAction>{
+        return sqlActions.filter { it.table.id  == tableName }
     }
 
+
+    /**
+     * Are the 2 names matching? This ignores case.
+     * The first [fullName] is a full qualifying name, including schema.
+     * The second [name] "might" be simple, or full qualifying.
+     */
+    fun isMatchingTableName(fullName: String, name: String) : Boolean{
+
+        if(fullName.equals(name, ignoreCase = true)){
+            return true
+        }
+
+        if(name.contains(".")){
+            return false
+        }
+
+        return fullName.endsWith(".$name", true)
+    }
+
+    /**
+     * Given a set of table ids, returns the one matching the given table name.
+     * There are at least 2 problems handled here:
+     * 1) case sensitiveness
+     * 2) keys having full names (eg, including schemas and possibly catalog) whereas input only having the name.
+     *    this latter case is not a problem if names are unique
+     */
+    fun getTableKey(keys: Set<TableId>, tableName: String) : TableId?{
+        /*
+         * SQL is not case sensitivity, table/column must ignore case sensitivity.
+         * FIXME: No, this is not really true...
+         * Usually, names are lowered-cased by the DB, unless quoted in "":
+         * https://docs.aws.amazon.com/dms/latest/sql-server-to-aurora-postgresql-migration-playbook/chap-sql-server-aurora-pg.sql.casesensitivity.html#:~:text=By%20default%2C%20SQL%20Server%20names,names%20in%20lowercase%20for%20PostgreSQL.
+         *
+         */
+        val tableNameKey = keys.find { tableName.equals(it.getFullQualifyingTableName(), ignoreCase = true) }
+        if (!tableName.contains(".") &&  tableNameKey == null){
+            //input name might be without schema, so check for partial match
+            val candidates = keys.filter { it.name.equals(tableName, true) }
+            if(candidates.size > 1){
+                throw IllegalArgumentException("Ambiguity." +
+                        " More than one candidate of table called $tableName." +
+                        " Values: ${candidates.joinToString(", ")}")
+            }
+            if(candidates.size == 1){
+                return candidates[0]
+            }
+        }
+        return tableNameKey
+    }
 }

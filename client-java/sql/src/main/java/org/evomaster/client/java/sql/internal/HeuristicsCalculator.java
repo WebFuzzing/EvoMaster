@@ -427,7 +427,7 @@ public class HeuristicsCalculator {
             Column column = (Column) exp;
 
             String name = column.getColumnName();
-            String table = context.getTableName(column);
+            String table = context.getFullyQualifiedTableName(column);
 
             return data.getValueByName(name, table);
 

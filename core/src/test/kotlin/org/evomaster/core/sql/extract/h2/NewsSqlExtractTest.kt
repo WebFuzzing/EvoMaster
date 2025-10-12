@@ -21,7 +21,7 @@ class NewsSqlExtractTest : ExtractTestBaseH2() {
         assertAll(Executable { assertEquals("db_test", schema.name.toLowerCase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
                 Executable { assertEquals(1, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "NEWS_ENTITY" }) }
+                Executable { assertTrue(schema.tables.any { it.id.name == "NEWS_ENTITY" }) }
         )
 
     }

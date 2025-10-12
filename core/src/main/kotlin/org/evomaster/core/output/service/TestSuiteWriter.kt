@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -12,6 +13,7 @@ import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
@@ -23,6 +25,8 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -216,10 +220,13 @@ class TestSuiteWriter {
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
+        if(sampler !is EnterpriseSampler<*>){
+            throw IllegalArgumentException("Not dealing with an enterprise application")
+        }
         if (!config.outputFormat.isJavaOrKotlin())
             throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
-        val accessedTable = mutableSetOf<String>()
+        val accessedTable = mutableSetOf<TableId>()
         solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
             if (e.individual is ApiWsIndividual) {
@@ -231,14 +238,17 @@ class TestSuiteWriter {
                 accessedTable.addAll(de.deletedData)
             }
         }
-        val all = sampler.extractFkTables(accessedTable)
+        val all = (sampler as EnterpriseSampler).extractFkTables(accessedTable)
 
-        //if (all.isEmpty()) return "null"
+        val schema = remoteController.getCachedSutInfo()?.sqlSchemaDto
 
-        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+        val tableNamesInSchema = schema
+            ?.tables
+            ?.map { TableId.fromDto(schema.databaseType, it.id) }
+            ?.toSet()
             ?: setOf()
 
-        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y == x } }.sortedBy { it.name }
         if(missingTables.isNotEmpty()){
             /*
                 Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
@@ -250,7 +260,10 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
+            else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
+                .map{it.getFullQualifyingTableName()}
+                .sorted()
+                .joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
