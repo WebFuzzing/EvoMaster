@@ -200,10 +200,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                     }
                     return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
                 }
-                txt[1] in "fnrt" -> {
+                txt[1] in "aefnrt" -> {
                     val escape = when {
-                        txt[1] == 'n' -> "\u000A"
+                        txt[1] == 'a' -> "\u0007"
+                        txt[1] == 'e' -> "\u001B"
                         txt[1] == 'f' -> "\u000C"
+                        txt[1] == 'n' -> "\u000A"
                         txt[1] == 'r' -> "\u000D"
                         else -> "\u0009"
                     }

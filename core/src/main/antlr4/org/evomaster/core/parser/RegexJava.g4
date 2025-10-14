@@ -129,8 +129,8 @@ fragment CharacterEscape
  ;
 
 fragment ControlEscape
-// //one of f n r t
- : [fnrt]
+// //one of a e f n r t
+ : [aefnrt]
  ;
 
 fragment ControlLetter
