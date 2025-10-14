@@ -98,22 +98,20 @@ atom
 //TODO
 fragment CharacterEscape
  : ControlEscape
-// | 'c' ControlLetter
+ | 'c' ControlLetter
  | HexEscapeSequence
  | UnicodeEscapeSequence
  //| IdentityEscape
  ;
 
-//TODO
 fragment ControlEscape
 // //one of f n r t v
  : [fnrtv]
  ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [a-zA-Z]
+ ;
 
 
 //TODO

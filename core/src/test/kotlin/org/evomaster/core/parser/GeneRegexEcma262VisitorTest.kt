@@ -341,4 +341,11 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     open fun testControlEscape(){
         checkSameAsJava("""ftnrv\f\t\n\r\v""")
     }
+
+    @Test
+    open fun testControlLetterEscape(){
+        checkSameAsJava("""cac!\cA\cG\cZ""")
+        // The following escape sequences behave differently in Java and JavaScript.
+        checkCanSample("""\ca\cg\cz""","\u0001\u0007\u001A",10_000)
+    }
 }

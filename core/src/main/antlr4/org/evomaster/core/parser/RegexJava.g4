@@ -121,24 +121,21 @@ quoteChar
 //TODO
 fragment CharacterEscape
  : ControlEscape
-// | 'c' ControlLetter
+ | 'c' ControlLetter
  | HexEscapeSequence
  | UnicodeEscapeSequence
  | OctalEscapeSequence
  //| IdentityEscape
  ;
 
-//TODO
 fragment ControlEscape
-// //one of f n r t v
+// //one of f n r t
  : [fnrt]
  ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
-
+fragment ControlLetter
+ : [?-_a-z]
+ ;
 
 //TODO
 //fragment IdentityEscape ::
