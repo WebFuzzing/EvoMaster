@@ -57,6 +57,27 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
         observers.remove(observer)
     }
 
+    /** Call at the start of each searchOnce to begin a new generation scope. */
+    protected fun beginGeneration() {
+        observers.forEach { it.onGenerationStart() }
+    }
+
+    /** Call at the end of each searchOnce to report generation aggregates. */
+    protected fun endGeneration() {
+        val snapshot = population.toList()
+        observers.forEach { it.onGenerationEnd(snapshot) }
+    }
+
+    /** Start a new step inside current iteration. */
+    protected fun beginStep() {
+        observers.forEach { it.onStepStart() }
+    }
+
+    /** End current step and report aggregates. */
+    protected fun endStep() {
+        observers.forEach { it.onStepEnd() }
+    }
+
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.
      */
