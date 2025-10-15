@@ -1,30 +1,34 @@
 package org.evomaster.client.java.controller.opensearch.selectors;
 
-import org.evomaster.client.java.controller.opensearch.operations.TermOperation;
+import org.evomaster.client.java.controller.opensearch.operations.TermsOperation;
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
 
+import java.util.List;
+
 import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractFieldName;
-import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractFieldValue;
-import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractCaseInsensitive;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractTermsArray;
 import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractBoost;
 import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractQueryName;
+import static org.evomaster.client.java.controller.opensearch.utils.OpenSearchQueryHelper.extractValueType;
 
 /**
- * { term: { field: value } }
+ * Selector for Terms queries.
+ * Structure: { terms: { field: [value1, value2, ...] } }
  */
-public class TermSelector extends SingleConditionQuerySelector {
+public class TermsSelector extends SingleConditionQuerySelector {
 
-    private static final String OPERATOR = "Term";
-    private static final String STRUCTURE = "term";
+    private static final String OPERATOR = "Terms";
+    private static final String STRUCTURE = "terms";
 
     @Override
     protected QueryOperation parse(Object query) {
         String fieldName = extractFieldName(query, structure());
-        Object value = extractFieldValue(query, structure());
-        Boolean caseInsensitive = extractCaseInsensitive(query, structure());
+        List<Object> values = extractTermsArray(query, structure());
         Float boost = extractBoost(query, structure());
         String name = extractQueryName(query, structure());
-        return new TermOperation<>(fieldName, value, caseInsensitive, boost, name);
+        String valueType = extractValueType(query, structure());
+        
+        return new TermsOperation<>(fieldName, values, boost, name, valueType);
     }
 
     @Override
