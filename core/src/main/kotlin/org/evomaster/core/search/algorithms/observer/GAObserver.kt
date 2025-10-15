@@ -23,9 +23,10 @@ interface GAObserver<T : Individual> {
     fun onMutation(wts: WtsEvalIndividual<T>) {}
 
     /**
-     * Called at the end of a generation (one call to searchOnce), with a snapshot of the final population.
+     * Called at the end of a generation (one call to searchOnce), with a snapshot of the final population
+     * and the best score according to the GA's internal scoring (e.g., frozen targets).
      */
-    fun onGenerationEnd(population: List<WtsEvalIndividual<T>>) {}
+    fun onGenerationEnd(population: List<WtsEvalIndividual<T>>, bestScore: Double) {}
 
     /**
      * Called at the end of a step inside a generation.
