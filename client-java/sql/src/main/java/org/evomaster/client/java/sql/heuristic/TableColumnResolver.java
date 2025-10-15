@@ -84,7 +84,7 @@ public class TableColumnResolver {
         Objects.requireNonNull(tableName);
 
         return this.schema.tables.stream()
-                .filter(t -> equalNames(t.name, tableName))
+                .filter(t -> equalNames(t.id.name, tableName))
                 .count() > 0;
     }
 
@@ -92,7 +92,7 @@ public class TableColumnResolver {
         Objects.requireNonNull(sqlTableId);
 
         return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.name).equals(sqlTableId))
+                .filter(t -> new SqlTableId(t.id.name).equals(sqlTableId))
                 .flatMap(t -> t.columns.stream())
                 .filter(c -> new SqlColumnId(c.name).equals(sqlColumnId))
                 .count() > 0;

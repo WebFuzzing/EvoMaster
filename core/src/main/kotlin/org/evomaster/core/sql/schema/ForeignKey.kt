@@ -9,5 +9,5 @@ data class ForeignKey(
 
         val sourceColumns: Set<Column>,
 
-        val targetTable: String
+        val targetTableId: TableId
 )

@@ -6,6 +6,7 @@ import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.TableId
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
@@ -24,10 +25,10 @@ class ManySimilarToChecksTest : ExtractTestBasePostgres() {
     fun testManySimilarToPatternsSchemaExtraction() {
         val schema = DbInfoExtractor.extract(connection)
 
-        assertEquals(2, schema.tables.first { it.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
+        assertEquals(2, schema.tables.first { it.id.name.equals("email_table", ignoreCase = true) }.tableCheckExpressions.size)
 
         val builder = SqlInsertBuilder(schema)
-        val emailTable = builder.getTable("email_table", useExtraConstraints = true)
+        val emailTable = builder.getTable(TableId("email_table", openGroupName = "public"), useExtraConstraints = true)
 
         assertEquals(1, emailTable.columns.size)
         val emailColumn = emailTable.columns.first()

@@ -20,7 +20,7 @@ abstract class ExtractTestBaseMySQL {
 
         private var sqlSchemaCommand : String? = null
 
-        private const val MYSQL_DB_NAME = "test"
+        public const val MYSQL_DB_NAME = "test"
 
         private const val MYSQL_PORT = 3306
 

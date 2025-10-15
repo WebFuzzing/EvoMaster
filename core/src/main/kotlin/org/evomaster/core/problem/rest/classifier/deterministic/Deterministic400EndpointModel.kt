@@ -1,12 +1,13 @@
 package org.evomaster.core.problem.rest.classifier.deterministic
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.classifier.AIModel
 import org.evomaster.core.problem.rest.classifier.AIResponseClassification
 import org.evomaster.core.problem.rest.classifier.InputField
-import org.evomaster.core.problem.rest.classifier.ModelEvaluation
-import org.evomaster.core.problem.rest.classifier.ModelMetrics
-import org.evomaster.core.problem.rest.classifier.ModelMetricsWithTimeWindow
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelEvaluation
+import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetrics
+import org.evomaster.core.problem.rest.classifier.quantifier.createModelMetrics
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.ConstraintFor400
 import org.evomaster.core.problem.rest.classifier.deterministic.constraints.RequiredConstraint
 import org.evomaster.core.problem.rest.data.Endpoint
@@ -15,14 +16,16 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 
 class Deterministic400EndpointModel(
     val endpoint: Endpoint,
-    private val thresholdForClassification : Double = 0.8
-) : AIModel {
+    private val thresholdForClassification : Double = 0.8,
+    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW
+    ) : AIModel {
 
     private var initialized = false
 
     private val constraints: MutableList<ConstraintFor400> = mutableListOf()
 
-    private val modelMetrics: ModelMetrics = ModelMetricsWithTimeWindow(20)
+    /** Create a metric tracker.*/
+    val modelMetrics: ModelMetrics = createModelMetrics(metricType)
 
     override fun updateModel(
         input: RestCallAction,

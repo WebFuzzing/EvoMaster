@@ -18,10 +18,7 @@ import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.schema.Column
-import org.evomaster.core.sql.schema.ColumnDataType
-import org.evomaster.core.sql.schema.ForeignKey
-import org.evomaster.core.sql.schema.Table
+import org.evomaster.core.sql.schema.*
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
@@ -155,7 +152,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
                 val currentColumn = table.columns.firstOrNull(){ it.name == columnName}
                 if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, tableName, gene, idCounter)
+                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, idCounter)
                     idCounter++
                 }
                 gene.markAllAsInitialized()
@@ -175,7 +172,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     private fun isBoolean(schemaDto: DbInfoDto, table: Table, columnName: String?): Boolean {
-        val col = schemaDto.tables.first { it.name == table.name }.columns.first { it.name == columnName }
+        val col = schemaDto.tables.first { it.id.name == table.name }.columns.first { it.name == columnName }
         return col.type == "BOOLEAN"
     }
 
@@ -202,11 +199,11 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
      * @return The Table object.
      */
     private fun findTableByName(schema: DbInfoDto, tableName: String): Table {
-        val tableDto = schema.tables.find { it.name.equals(tableName, ignoreCase = true) }
+        val tableDto = schema.tables.find { it.id.name.equals(tableName, ignoreCase = true) }
             ?: throw RuntimeException("Table not found: $tableName")
         return Table(
-            tableDto.name,
-            findColumns(schema, tableDto), // Convert columns from DTO
+            TableId(tableDto.id.name) , //TODO other info, eg schema
+            findColumns(schema,tableDto), // Convert columns from DTO
             findForeignKeys(tableDto) // TODO: Implement this method
         )
     }

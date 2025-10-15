@@ -18,12 +18,12 @@ class AlterTableExtractCheckTest : ExtractTestBaseMySQL() {
 
         assertEquals("test", schema.name.toLowerCase())
         assertEquals(DatabaseType.MYSQL, schema.databaseType)
-        assertTrue(schema.tables.any { it.name.equals("people", ignoreCase = true) })
+        assertTrue(schema.tables.any { it.id.name.equals("people", ignoreCase = true) })
 
-        assertEquals(2, schema.tables.first { it.name.equals("people", ignoreCase = true) }.columns.size)
+        assertEquals(2, schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.columns.size)
 
         assertTrue(schema.tables.first {
-            it.name.equals(
+            it.id.name.equals(
                 "people",
                 ignoreCase = true
             )
@@ -31,12 +31,12 @@ class AlterTableExtractCheckTest : ExtractTestBaseMySQL() {
 
         assertEquals(
             1,
-            schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size
+            schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size
         )
         assertEquals(
             "(age <= 100)",
             schema.tables.first {
-                it.name.equals(
+                it.id.name.equals(
                     "people",
                     ignoreCase = true
                 )

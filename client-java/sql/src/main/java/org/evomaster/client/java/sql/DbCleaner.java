@@ -8,9 +8,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -19,19 +17,38 @@ import java.util.stream.Collectors;
  */
 public class DbCleaner {
 
-    public static void clearDatabase_H2(Connection connection) {
-        clearDatabase_H2(connection, null);
+
+    public static void clearTables(Connection connection, List<String> fullyQualifyingTableNames, DatabaseType type) {
+
+        String defaultSchema = getDefaultSchema(type);
+        // schema -> table_base_name
+        Map<String, Set<String>> schemaToNames = new HashMap<>();
+
+        for(String t : fullyQualifyingTableNames) {
+            if(! t.contains(".")){
+                Set<String> x = schemaToNames.computeIfAbsent(defaultSchema, it -> new HashSet<>());
+                x.add(t);
+            } else {
+                String[] tokens = t.split("\\.");
+                String name = tokens[tokens.length - 1];
+                String schema = tokens[tokens.length - 2];
+                Set<String> x = schemaToNames.computeIfAbsent(schema, it -> new HashSet<>());
+                x.add(name);
+            }
+        }
+
+        for(Map.Entry<String, Set<String>> e : schemaToNames.entrySet()) {
+            List<String> names = new ArrayList<>(e.getValue());
+            clearDatabase(connection, e.getKey(), null, names, type, true);
+        }
     }
 
-    public static void clearDatabase_H2(Connection connection, List<String> tableToSkip) {
-        clearDatabase_H2(connection, getDefaultSchema(DatabaseType.H2), tableToSkip);
+    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
+        clearDatabase(getDefaultRetries(DatabaseType.POSTGRES), connection, getSchemaName(schemaName, DatabaseType.POSTGRES), tableToSkip, tableToClean, DatabaseType.POSTGRES, false, true, false);
     }
 
-    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip) {
-        clearDatabase_H2(connection, schemaName, tableToSkip, null);
-    }
-
-    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
+    public static void clearDatabase_H2(Connection connection, List<String> tableToSkip, List<String> tableToClean) {
+        String schemaName = getDefaultSchema(DatabaseType.H2);
         final String h2Version;
         try {
             h2Version = H2VersionUtils.getH2Version(connection);
@@ -42,14 +59,63 @@ public class DbCleaner {
          * The SQL command "TRUNCATE TABLE my_table RESTART IDENTITY"
          * is not supported by H2 version 1.4.199 or lower
          */
-        final boolean restartIdentitiyWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
+        boolean restartIdentityWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
         clearDatabase(getDefaultRetries(DatabaseType.H2), connection, schemaName, tableToSkip, tableToClean, DatabaseType.H2,
-                false, true, restartIdentitiyWhenTruncating);
+                false, true, restartIdentityWhenTruncating);
     }
 
+
+    public static void clearDatabase_MySQL(Connection connection, String schemaName, List<String> tablesToSkip,  List<String> tableToClean) {
+        clearDatabase(connection, getSchemaName(schemaName, DatabaseType.MYSQL), tablesToSkip, tableToClean, DatabaseType.MYSQL, true);
+    }
+
+    //TODO why this function?
+    public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
+        if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
+            throw new IllegalArgumentException("Dropping tables are not supported by " + type);
+        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tablesToSkip, null, type, true, true, false);
+    }
+
+
+    public static void clearDatabase(
+            Connection connection,
+            String schemaName,
+            List<String> tableToSkip,
+            List<String> tableToClean,
+            DatabaseType type,
+            boolean doResetSequence
+    ) {
+        /*
+         * Enable the restarting of Identity fields only if sequences are to be restarted
+         * and the database type is H2
+         */
+        boolean restartIdentityWhenTruncating;
+        if (doResetSequence && type.equals(DatabaseType.H2)) {
+            try {
+                String h2Version = H2VersionUtils.getH2Version(connection);
+                restartIdentityWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
+            } catch (SQLException ex) {
+                throw new RuntimeException("Unexpected SQL exception while getting H2 version", ex);
+            }
+        } else {
+            restartIdentityWhenTruncating = false;
+        }
+        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, false, doResetSequence, restartIdentityWhenTruncating);
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    private static String getSchemaName(String schemaName, DatabaseType type) {
+        if (schemaName != null) return schemaName;
+        return getDefaultSchema(type);
+    }
+
+
     /*
-        [non-determinism-source] Man: retries might lead to non-determinate logs
-     */
+      [non-determinism-source] Man: retries might lead to non-determinate logs
+   */
     private static void clearDatabase(int retries,
                                       Connection connection,
                                       String schemaName,
@@ -120,72 +186,6 @@ public class DbCleaner {
         }
     }
 
-    public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence) {
-        clearDatabase(connection, getDefaultSchema(type), tablesToSkip, type, doResetSequence);
-    }
-
-    public static void clearDatabase(Connection connection, List<String> tablesToSkip, DatabaseType type) {
-        clearDatabase(connection, tablesToSkip, type, true);
-    }
-
-    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type) {
-        clearDatabase(connection, tableToSkip, tableToClean, type, true);
-    }
-
-    public static void clearDatabase(Connection connection, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence) {
-        clearDatabase(connection, getDefaultSchema(type), tableToSkip, tableToClean, type, doResetSequence);
-    }
-
-    public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
-        clearDatabase(connection, getSchemaName(schemaName, type), tablesToSkip, type, true);
-    }
-
-    public static void clearDatabase(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type, boolean doResetSequence) {
-        clearDatabase(connection, getSchemaName(schemaName, type), tablesToSkip, null, type, doResetSequence);
-    }
-
-    public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type) {
-        clearDatabase(connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, true);
-    }
-
-    public static void clearDatabase(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean, DatabaseType type, boolean doResetSequence) {
-        /*
-         * Enable the restarting of Identity fields only if sequences are to be restarted
-         * and the database type is H2
-         */
-        boolean restartIdentityWhenTruncating;
-        if (doResetSequence && type.equals(DatabaseType.H2)) {
-            try {
-                String h2Version = H2VersionUtils.getH2Version(connection);
-                restartIdentityWhenTruncating = H2VersionUtils.isVersionGreaterOrEqual(h2Version, H2VersionUtils.H2_VERSION_2_0_0);
-            } catch (SQLException ex) {
-                throw new RuntimeException("Unexpected SQL exception while getting H2 version", ex);
-            }
-        } else {
-            restartIdentityWhenTruncating = false;
-        }
-        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tableToSkip, tableToClean, type, false, doResetSequence, restartIdentityWhenTruncating);
-    }
-
-    public static void dropDatabaseTables(Connection connection, String schemaName, List<String> tablesToSkip, DatabaseType type) {
-        if (type != DatabaseType.MYSQL && type != DatabaseType.MARIADB)
-            throw new IllegalArgumentException("Dropping tables are not supported by " + type);
-        clearDatabase(getDefaultRetries(type), connection, getSchemaName(schemaName, type), tablesToSkip, null, type, true, true, false);
-    }
-
-
-    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip) {
-        clearDatabase_Postgres(connection, getSchemaName(schemaName, DatabaseType.POSTGRES), tablesToSkip, null);
-    }
-
-    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tableToSkip, List<String> tableToClean) {
-        clearDatabase(getDefaultRetries(DatabaseType.POSTGRES), connection, getSchemaName(schemaName, DatabaseType.POSTGRES), tableToSkip, tableToClean, DatabaseType.POSTGRES, false, true, false);
-    }
-
-    private static String getSchemaName(String schemaName, DatabaseType type) {
-        if (schemaName != null) return schemaName;
-        return getDefaultSchema(type);
-    }
 
     /**
      * @param tableToSkip   are tables to skip
@@ -204,9 +204,12 @@ public class DbCleaner {
                                                   String schema,
                                                   boolean singleCommand,
                                                   boolean doDropTable,
-                                                  boolean restartIdentityWhenTruncating) throws SQLException {
-        if (tableToSkip != null && (!tableToSkip.isEmpty()) && tableToClean != null && (!tableToClean.isEmpty()))
+                                                  boolean restartIdentityWhenTruncating
+    ) throws SQLException {
+
+        if (tableToSkip != null && (!tableToSkip.isEmpty()) && tableToClean != null && (!tableToClean.isEmpty())) {
             throw new IllegalArgumentException("tableToSkip and tableToClean cannot be configured at the same time.");
+        }
 
         // Find all tables and truncate them
         Set<String> tables = new HashSet<>();
@@ -220,7 +223,7 @@ public class DbCleaner {
             throw new IllegalStateException("Could not find any table");
         }
 
-        final List<String> tableToHandle;
+        List<String> tableToHandle;
         boolean toskip = tableToSkip != null;
         if (tableToClean != null) {
             tableToHandle = tableToClean;
@@ -228,6 +231,17 @@ public class DbCleaner {
             tableToHandle = tableToSkip;
         }
 
+        /*
+            FIXME need refactoring, this is a dirty hack
+         */
+        if(tableToHandle != null) {
+            tableToHandle = tableToHandle.stream()
+                    .map(t -> {
+                        String[] tokens = t.split("\\.");
+                        return tokens[tokens.length - 1];
+                    })
+                    .collect(Collectors.toList());
+        }
 
         if (tableToHandle != null) {
             for (String skip : tableToHandle) {
@@ -249,10 +263,11 @@ public class DbCleaner {
             rst.close();
         }
 
+        final List<String> tth = tableToHandle;
         List<String> tablesToClear = tables.stream()
-                .filter(n -> tableToHandle == null ||
-                        (toskip && (tableToHandle.isEmpty() || tableToHandle.stream().noneMatch(skip -> skip.equalsIgnoreCase(n)))) ||
-                        (!toskip && tableToHandle.stream().anyMatch(clean -> clean.equalsIgnoreCase(n)))
+                .filter(n -> tth == null ||
+                        (toskip && (tth.isEmpty() || tth.stream().noneMatch(skip -> skip.equalsIgnoreCase(n)))) ||
+                        (!toskip && tth.stream().anyMatch(clean -> clean.equalsIgnoreCase(n)))
                 )
                 .collect(Collectors.toList());
 
@@ -307,7 +322,7 @@ public class DbCleaner {
         if (!schema.isEmpty() && !schema.equals(getDefaultSchema(DatabaseType.MS_SQL_SERVER)))
             tableWithSchema = schema + "." + schema;
         statement.executeUpdate("DELETE FROM " + tableWithSchema);
-//        NOTE TAHT ideally we should reseed identify here, but there would case an issue, i.e., does not contain an identity column
+//        NOTE THAT ideally we should reseed identify here, but there would case an issue, i.e., does not contain an identity column
         if (tableHasIdentify.contains(table))
             statement.executeUpdate("DBCC CHECKIDENT ('" + tableWithSchema + "', RESEED, 0)");
     }
@@ -444,8 +459,6 @@ public class DbCleaner {
                 return command + " AND TABLE_SCHEMA='" + schema + "'";
         }
         throw new DbUnsupportedException(type);
-//            case MS_SQL_SERVER_2000:
-//                return "SELECT sobjects.name FROM sysobjects sobjects WHERE sobjects.xtype = '"+schema+"'"; // shcema can be 'U'
     }
 
     private static String getAllSequenceCommand(DatabaseType type, String schemaName) {

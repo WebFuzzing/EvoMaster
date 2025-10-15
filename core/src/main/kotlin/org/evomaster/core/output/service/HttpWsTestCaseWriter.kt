@@ -136,7 +136,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
                     val geneToDto = GeneToDto(format)
 
-                    val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
+                    val dtoName = geneToDto.getDtoName(leafGene, actionName)
                     val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
 
                     dtoCall.objectCalls.forEach {
@@ -386,7 +386,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         // TODO add support for kotlin
         var dtoVar: String? = null
-        if (config.dtoForRequestPayload && format.isJava()) {
+        if (config.dtoForRequestPayload && format.isJavaOrKotlin()) {
             dtoVar = writeDto(call, lines)
         }
 
@@ -585,7 +585,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     private fun shouldUseDtoForPayload(dtoVar: String?): Boolean {
-        return config.dtoForRequestPayload && format.isJava() && dtoVar?.isNotEmpty() == true
+        return config.dtoForRequestPayload && format.isJavaOrKotlin() && dtoVar?.isNotEmpty() == true
     }
 
     private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
