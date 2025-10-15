@@ -91,6 +91,7 @@ class MonotonicGeneticAlgorithmTest {
 
                 val nextPop = ga.populationSnapshot()
 
+
                 assertEquals(config.populationSize, nextPop.size)
                 assertEquals(2, rec.selections.size)
                 assertTrue(nextPop.any { it === expectedElites[0] })
