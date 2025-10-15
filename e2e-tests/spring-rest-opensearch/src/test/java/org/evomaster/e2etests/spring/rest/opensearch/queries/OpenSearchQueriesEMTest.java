@@ -1,5 +1,8 @@
 package org.evomaster.e2etests.spring.rest.opensearch.queries;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import com.foo.spring.rest.opensearch.queries.OpenSearchQueriesController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.data.HttpVerb;
@@ -99,22 +102,21 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "maxActionEvaluations", "300");
                 setOption(args, "stoppingCriterion", "FITNESS_EVALUATIONS");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
-                //assertTrue(solution.getIndividuals().size() >= 1);
-                //ssertTrue(solution.getOverall() >= 0.0);
+                assertFalse(solution.getIndividuals().isEmpty());
+                assertTrue(solution.getOverall().getSize() >= 0.0);
                 
-                // Verify that various endpoints are covered
-                /*long termQueries = solution.getIndividuals().stream()
+                /*// Verify that various endpoints are covered
+                long termQueries = solution.getIndividuals().stream()
                     .flatMap(ind -> ind.see().stream())
                     .filter(action -> action.toString().contains("/queries/category/"))
                     .count();
                 
                 long rangeQueries = solution.getIndividuals().stream()
-                    .flatMap(ind -> ind.seeMainExecutableActions().stream())
+                    .flatMap(ind -> ind.getMain().stream())
                     .filter(action -> action.toString().contains("/queries/price-range") || 
                                     action.toString().contains("/queries/rating-gte/"))
                     .count();
