@@ -15,6 +15,12 @@ import org.evomaster.core.search.service.mutator.genemutation.ArchiveGeneMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackService
 import org.evomaster.core.solver.SMTLibZ3DbConstraintSolver
+import org.evomaster.core.search.algorithms.strategy.SelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.TournamentSelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.CrossoverOperator
+import org.evomaster.core.search.algorithms.strategy.DefaultCrossoverOperator
+import org.evomaster.core.search.algorithms.strategy.MutationOperator
+import org.evomaster.core.search.algorithms.strategy.DefaultMutationOperator
 
 
 /**
@@ -87,6 +93,19 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
                 .asEagerSingleton()
 
         bind(SMTLibZ3DbConstraintSolver::class.java)
+            .asEagerSingleton()
+
+        // Genetic algorithm strategies (selection & crossover)
+        bind(SelectionStrategy::class.java)
+            .to(TournamentSelectionStrategy::class.java)
+            .asEagerSingleton()
+
+        bind(CrossoverOperator::class.java)
+            .to(DefaultCrossoverOperator::class.java)
+            .asEagerSingleton()
+
+        bind(MutationOperator::class.java)
+            .to(DefaultMutationOperator::class.java)
             .asEagerSingleton()
 
         //no longer needed if TestSuiteWriter is moved out?
