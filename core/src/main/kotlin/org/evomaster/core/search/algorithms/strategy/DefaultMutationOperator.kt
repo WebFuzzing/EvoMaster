@@ -57,7 +57,7 @@ class DefaultMutationOperator : MutationOperator {
                 val ind = wts.suite[i]
 
                 if (config.gaSolutionSource == EMConfig.GASolutionSource.ARCHIVE) {
-                     mutator.mutateAndSave(ind, archive)?.let { wts.suite[i] = it
+                     mutator.mutateAndSave(ind, archive)?.let { wts.suite[i] = it}
                 } else {
                     val mutated = mutator.mutate(ind)
                     ff.calculateCoverage(mutated, modifiedSpec = null)?.let { wts.suite[i] = it}
@@ -65,7 +65,6 @@ class DefaultMutationOperator : MutationOperator {
             }
         }
     }
-}
 }
 
 
