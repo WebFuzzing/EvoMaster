@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 
 interface MutationOperator {
-    fun <T : Individual> applyMutation(
+    fun <T : Individual> mutateIndividual(
         wts: WtsEvalIndividual<T>,
         config: EMConfig,
         randomness: Randomness,

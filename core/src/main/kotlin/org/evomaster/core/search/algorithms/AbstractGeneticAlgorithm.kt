@@ -111,7 +111,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        mutationOperator.applyMutation(
+        mutationOperator.mutateIndividual(
             wts,
             config,
             randomness,
