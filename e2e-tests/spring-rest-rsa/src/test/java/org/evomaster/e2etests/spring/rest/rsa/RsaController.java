@@ -1,9 +1,10 @@
-package com.example.demo.controller;
+package org.evomaster.e2etests.spring.rest.rsa;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.example.demo.MySpringBootApplication;
+import com.example.demo.controller.DemoController;
 import com.example.demo.util.CryptoUtil;
 import com.example.demo.vo.BindCardReq;
 import com.example.demo.vo.CommonReq;
@@ -29,7 +30,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EmController extends EmbeddedSutController {
+public class RsaController extends EmbeddedSutController {
 
     protected ConfigurableApplicationContext ctx;
     protected final Class<?> applicationClass;
@@ -64,7 +65,7 @@ public class EmController extends EmbeddedSutController {
             .withExposedPorts(PORT);
 
 
-    public EmController() {
+    public RsaController() {
         super.setControllerPort(0);
         this.applicationClass = MySpringBootApplication.class;
     }

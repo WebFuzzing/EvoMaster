@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.rest.rsa;
 
-import com.example.demo.controller.EmController;
 import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -18,7 +17,7 @@ RsaEMTest extends RestTestBase {
     @BeforeAll
     public static void initClass() throws Exception {
 
-        RestTestBase.initClass(new EmController());
+        RestTestBase.initClass(new RsaController());
     }
 
 
