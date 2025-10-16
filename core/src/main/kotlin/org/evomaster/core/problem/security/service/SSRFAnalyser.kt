@@ -121,8 +121,8 @@ class SSRFAnalyser {
         // Classify endpoints with potential vulnerability classes
         classify()
 
-        // execute
-        analyse()
+        // evaluate
+        evaluate()
 
         return archive.extractSolution()
     }
@@ -264,7 +264,7 @@ class SSRFAnalyser {
     /**
      * Run the determined vulnerability class (from the classification) analysers.
      */
-    private fun analyse() {
+    private fun evaluate() {
         if (config.problemType == EMConfig.ProblemType.REST) {
 
             individualsInSolution.forEach { evaluatedIndividual ->
