@@ -5,8 +5,15 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.Randomness
 import kotlin.math.min
 
+
+
 /**
  * Default crossover operator for GA test suites.
+ *
+ * Behavior:
+ * - Takes the two suites as input, named x and y.
+ * - Picks a split point uniformly at random in [0, min(len(x), len(y)) - 1].
+ * - Swaps all elements from index 0 up to the split point (i ∈ [0, split]).
  */
 class DefaultCrossoverOperator : CrossoverOperator {
     override fun <T : Individual> applyCrossover(
