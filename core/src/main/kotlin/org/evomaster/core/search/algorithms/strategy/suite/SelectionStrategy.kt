@@ -1,4 +1,4 @@
-package org.evomaster.core.search.algorithms.strategy
+package org.evomaster.core.search.algorithms.strategy.suite
 
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
@@ -12,5 +12,6 @@ interface SelectionStrategy {
         score: (WtsEvalIndividual<T>) -> Double
     ): WtsEvalIndividual<T>
 }
+
 
 

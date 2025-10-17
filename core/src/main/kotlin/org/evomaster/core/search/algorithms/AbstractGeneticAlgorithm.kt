@@ -6,9 +6,12 @@ import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import com.google.inject.Inject
-import org.evomaster.core.search.algorithms.strategy.CrossoverOperator
-import org.evomaster.core.search.algorithms.strategy.MutationOperator
-import org.evomaster.core.search.algorithms.strategy.SelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.suite.CrossoverOperator
+import org.evomaster.core.search.algorithms.strategy.suite.MutationEvaluationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.DefaultMutationEvaluationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.SelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.suite.TournamentSelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.suite.DefaultCrossoverOperator
 import org.evomaster.core.search.algorithms.observer.GAObserver
 
 /**
@@ -37,14 +40,11 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      */
     protected var frozenTargets: Set<Int> = emptySet()
 
-    @Inject
-    lateinit var selectionStrategy: SelectionStrategy
+    protected var selectionStrategy: SelectionStrategy = TournamentSelectionStrategy()
 
-    @Inject
-    lateinit var crossoverOperator: CrossoverOperator
+    protected var crossoverOperator: CrossoverOperator = DefaultCrossoverOperator()
 
-    @Inject
-    lateinit var mutationOperator: MutationOperator
+    protected var mutationOperator: MutationEvaluationOperator = DefaultMutationEvaluationOperator()
 
     /** Optional observers for GA events (test/telemetry). */
     protected val observers: MutableList<GAObserver<T>> = mutableListOf()
@@ -111,7 +111,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        mutationOperator.mutateIndividual(
+        mutationOperator.mutateEvaluateAndArchive(
             wts,
             config,
             randomness,
@@ -135,6 +135,13 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
         // notify observers
         observers.forEach { it.onCrossover(x, y) }
     }
+
+    /**
+     * Allows tests or callers to override GA operators without DI.
+     */
+    fun useSelectionStrategy(strategy: SelectionStrategy) { this.selectionStrategy = strategy }
+    fun useCrossoverOperator(operator: CrossoverOperator) { this.crossoverOperator = operator }
+    fun useMutationOperator(operator: MutationEvaluationOperator) { this.mutationOperator = operator }
 
     /**
      * Selects one individual using tournament selection.
@@ -185,7 +192,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
             return w.calculateCombinedFitness()
         }
 
-        if (frozenTargets.isEmpty()) return w.calculateCombinedFitness()
+        if (frozenTargets.isEmpty()) {
+            return w.calculateCombinedFitness()
+        }
 
         val fv = w.suite.first().fitness.copy()
         w.suite.forEach { ei -> fv.merge(ei.fitness) }
@@ -220,8 +229,8 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
     }
 
     /**
-     * Exposes a snapshot copy of the current population (read-only) para observabilidad/tests.
-     * Se devuelve una copia inmutable para evitar mutaciones externas del estado interno.
+     * Exposes a read-only view of the current population for observability/tests.
+     * Returns an immutable copy to prevent external mutations of internal state.
      */
-    fun populationSnapshot(): List<WtsEvalIndividual<T>> = population.toList()
+    fun getViewOfPopulation(): List<WtsEvalIndividual<T>> = population.toList()
 }

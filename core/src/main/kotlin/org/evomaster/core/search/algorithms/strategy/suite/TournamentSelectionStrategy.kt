@@ -1,4 +1,4 @@
-package org.evomaster.core.search.algorithms.strategy
+package org.evomaster.core.search.algorithms.strategy.suite
 
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
@@ -18,8 +18,13 @@ class TournamentSelectionStrategy : SelectionStrategy {
         randomness: Randomness,
         score: (WtsEvalIndividual<T>) -> Double
     ): WtsEvalIndividual<T> {
-        val selected = randomness.choose(population, tournamentSize)
-        return selected.maxByOrNull { score(it) } ?: randomness.choose(population)
+        if (population.isEmpty()) {
+            throw IllegalArgumentException("Tournament selection requires a non-empty population")
+        }
+
+        val k = minOf(tournamentSize.coerceAtLeast(1), population.size)
+        val selected = randomness.choose(population, k)
+        return selected.maxBy { score(it) }
     }
 }
 
