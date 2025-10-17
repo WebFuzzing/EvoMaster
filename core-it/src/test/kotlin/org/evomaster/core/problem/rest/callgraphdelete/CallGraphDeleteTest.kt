@@ -73,6 +73,10 @@ class CallGraphDeleteTest : IntegrationTestRestBase() {
         val l = pirTest.fromVerbPath("post", "/l/foo")!!
         res = graph.findDeleteFor(l)!!
         assertEquals("/l/bar", res.path.toString())
+
+        val vw = pirTest.fromVerbPath("post", "/vw/users")!!
+        res = graph.findDeleteFor(vw)!!
+        assertEquals("/vw/users/user/{id}", res.path.toString())
     }
 
 }
