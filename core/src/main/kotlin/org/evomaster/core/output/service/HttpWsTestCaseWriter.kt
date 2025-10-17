@@ -812,8 +812,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (format.isKotlin()) {
                 lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
             }
-
             lines.addEmpty(1)
+
+            //Reset verifier before test execution.
+            lines.addStatement("${verifier.getVerifierName()}.resetAll()")
 
             lines.add("${verifier.getVerifierName()}.stubFor(")
             lines.indented {
@@ -859,8 +861,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines.indented {
             if (format.isKotlin()) {
                 lines.add(".allServeEvents")
-                lines.add(".filter { it.wasMatched }")
-                lines.add(".filter { it.stubMapping.metadata != null }")
+                lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
                 lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
             }
         }
