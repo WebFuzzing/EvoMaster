@@ -3,6 +3,16 @@ package org.evomaster.core.search.algorithms
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
+import org.evomaster.core.EMConfig
+import org.evomaster.core.search.Solution
+import com.google.inject.Inject
+import org.evomaster.core.search.algorithms.strategy.suite.CrossoverOperator
+import org.evomaster.core.search.algorithms.strategy.suite.MutationEvaluationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.DefaultMutationEvaluationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.SelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.suite.TournamentSelectionStrategy
+import org.evomaster.core.search.algorithms.strategy.suite.DefaultCrossoverOperator
+import org.evomaster.core.search.algorithms.observer.GAObserver
 
 /**
  * Abstract base class for implementing Genetic Algorithms (GAs) in EvoMaster.
@@ -23,6 +33,29 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
 
     /** The current population of evaluated individuals (test suites). */
     protected val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
+
+    /**
+     * Frozen set of targets (coverage objectives) to score against during the current generation.
+     * Captured at the start of a generation and kept constant until the generation ends.
+     */
+    protected var frozenTargets: Set<Int> = emptySet()
+
+    protected var selectionStrategy: SelectionStrategy = TournamentSelectionStrategy()
+
+    protected var crossoverOperator: CrossoverOperator = DefaultCrossoverOperator()
+
+    protected var mutationOperator: MutationEvaluationOperator = DefaultMutationEvaluationOperator()
+
+    /** Optional observers for GA events (test/telemetry). */
+    protected val observers: MutableList<GAObserver<T>> = mutableListOf()
+
+    fun addObserver(observer: GAObserver<T>) {
+        observers.add(observer)
+    }
+
+    fun removeObserver(observer: GAObserver<T>) {
+        observers.remove(observer)
+    }
 
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.
@@ -59,7 +92,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
         val nextPop: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
         if (config.elitesCount > 0 && population.isNotEmpty()) {
-            val sortedPopulation = population.sortedByDescending { it.calculateCombinedFitness() }
+            val sortedPopulation = population.sortedByDescending { score(it) }
             val elites = sortedPopulation.take(config.elitesCount)
             nextPop.addAll(elites)
         }
@@ -78,30 +111,17 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        val op = randomness.choose(listOf("del", "add", "mod"))
-        val n = wts.suite.size
-
-        when (op) {
-            "del" -> if (n > 1) {
-                val i = randomness.nextInt(n)
-                wts.suite.removeAt(i)
-            }
-
-            "add" -> if (n < config.maxSearchSuiteSize) {
-                ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
-                    archive.addIfNeeded(this)
-                    wts.suite.add(this)
-                }
-            }
-
-            "mod" -> {
-                val i = randomness.nextInt(n)
-                val ind = wts.suite[i]
-
-                getMutatator().mutateAndSave(ind, archive)
-                    ?.let { wts.suite[i] = it }
-            }
-        }
+        mutationOperator.mutateEvaluateAndArchive(
+            wts,
+            config,
+            randomness,
+            getMutatator(),
+            ff,
+            sampler,
+            archive
+        )
+        // notify observers
+        observers.forEach { it.onMutation(wts) }
     }
 
     /**
@@ -111,17 +131,17 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * (bounded by the size of the smaller suite).
      */
     protected fun xover(x: WtsEvalIndividual<T>, y: WtsEvalIndividual<T>) {
-        val nx = x.suite.size
-        val ny = y.suite.size
-
-        val splitPoint = randomness.nextInt(Math.min(nx, ny))
-
-        (0..splitPoint).forEach {
-            val k = x.suite[it]
-            x.suite[it] = y.suite[it]
-            y.suite[it] = k
-        }
+        crossoverOperator.applyCrossover(x, y, randomness)
+        // notify observers
+        observers.forEach { it.onCrossover(x, y) }
     }
+
+    /**
+     * Allows tests or callers to override GA operators without DI.
+     */
+    fun useSelectionStrategy(strategy: SelectionStrategy) { this.selectionStrategy = strategy }
+    fun useCrossoverOperator(operator: CrossoverOperator) { this.crossoverOperator = operator }
+    fun useMutationOperator(operator: MutationEvaluationOperator) { this.mutationOperator = operator }
 
     /**
      * Selects one individual using tournament selection.
@@ -130,9 +150,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * highest fitness among them is chosen. Falls back to random selection if needed.
      */
     protected fun tournamentSelection(): WtsEvalIndividual<T> {
-        val selectedIndividuals = randomness.choose(population, config.tournamentSize)
-        val bestIndividual = selectedIndividuals.maxByOrNull { it.calculateCombinedFitness() }
-        return bestIndividual ?: randomness.choose(population)
+        val sel = selectionStrategy.select(population, config.tournamentSize, randomness, ::score)
+        observers.forEach { it.onSelection(sel) }
+        return sel
     }
 
     /**
@@ -141,13 +161,15 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * Each element is generated by sampling and evaluated via the fitness function.
      * Stops early if the time budget is exceeded.
      */
-    private fun sampleSuite(): WtsEvalIndividual<T> {
+    protected fun sampleSuite(): WtsEvalIndividual<T> {
         val n = 1 + randomness.nextInt(config.maxSearchSuiteSize)
         val suite = WtsEvalIndividual<T>(mutableListOf())
 
         for (i in 1..n) {
             ff.calculateCoverage(sampler.sample(), modifiedSpec = null)?.run {
-                archive.addIfNeeded(this)
+                if (config.gaSolutionSource != EMConfig.GASolutionSource.POPULATION) {
+                    archive.addIfNeeded(this)
+                }
                 suite.suite.add(this)
             }
 
@@ -158,4 +180,57 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
 
         return suite
     }
+
+    /**
+     * Combined fitness of a suite computed only over [frozenTargets] when set; otherwise full combined fitness.
+     */
+    protected fun score(w: WtsEvalIndividual<T>): Double {
+        if (w.suite.isEmpty()) return 0.0
+
+        // Explicitly use full combined fitness when solution source is POPULATION
+        if (config.gaSolutionSource == EMConfig.GASolutionSource.POPULATION) {
+            return w.calculateCombinedFitness()
+        }
+
+        if (frozenTargets.isEmpty()) {
+            return w.calculateCombinedFitness()
+        }
+
+        val fv = w.suite.first().fitness.copy()
+        w.suite.forEach { ei -> fv.merge(ei.fitness) }
+        val view = fv.getViewOfData()
+        var sum = 0.0
+        frozenTargets.forEach { t ->
+            val comp = view[t]
+            if (comp != null) sum += comp.score
+        }
+        return sum
+    }
+
+    /**
+     * For GA algorithms, optionally build the final solution from the final population
+     * instead of the archive, controlled by config.gaSolutionSource.
+     */
+    override fun buildSolution(): Solution<T> {
+        return if (config.gaSolutionSource == EMConfig.GASolutionSource.POPULATION) {
+            val best = population.maxByOrNull { it.calculateCombinedFitness() }
+            val individuals = (best?.suite ?: mutableListOf())
+            Solution(
+                individuals.toMutableList(),
+                config.outputFilePrefix,
+                config.outputFileSuffix,
+                org.evomaster.core.output.Termination.NONE,
+                listOf(),
+                listOf()
+            )
+        } else {
+            super.buildSolution()
+        }
+    }
+
+    /**
+     * Exposes a read-only view of the current population for observability/tests.
+     * Returns an immutable copy to prevent external mutations of internal state.
+     */
+    fun getViewOfPopulation(): List<WtsEvalIndividual<T>> = population.toList()
 }

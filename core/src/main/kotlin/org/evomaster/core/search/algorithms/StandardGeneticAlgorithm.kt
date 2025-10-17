@@ -42,6 +42,8 @@ open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T :
      * Terminates early if the time budget is exceeded.
      */
     override fun searchOnce() {
+        // Freeze objectives for this generation
+        frozenTargets = archive.notCoveredTargets()
         val n = config.populationSize
 
         // Generate the base of the next population (e.g., elitism or re-selection of fit individuals)

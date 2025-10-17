@@ -89,6 +89,10 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
         handleAfterSearch()
 
+        return buildSolution()
+    }
+
+    open fun buildSolution(): Solution<T> {
         return archive.extractSolution()
     }
 
