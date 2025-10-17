@@ -232,14 +232,9 @@ class MonotonicGeneticAlgorithmTest {
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
             val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            if (epc.isInSearch()) epc.finishSearch()
-            val solution = try {
-                epc.startSearch()
-                monoGA.search()
-            } finally {
-                epc.finishSearch()
-            }
-
+            epc.startSearch()
+            val solution = monoGA.search()
+            epc.finishSearch()
             // Check monotonicity across recorded generations: best score (selection metric) is non-decreasing
             val bestScores = rec.bestFitnessPerGeneration
             for (k in 1 until bestScores.size) {
