@@ -25,7 +25,7 @@ class SSRFPathEMTest: SpringTestBase() {
     @Test
     fun testSSRFPathVariable() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFPathEMTest",
+            "SSRFPathGeneratedTest",
             200,
         ) { args: MutableList<String> ->
 
