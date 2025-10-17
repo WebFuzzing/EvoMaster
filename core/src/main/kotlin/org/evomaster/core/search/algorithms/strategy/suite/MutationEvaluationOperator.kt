@@ -9,11 +9,11 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
 
-interface MutationOperator {
+interface MutationEvaluationOperator {
     /**
      * Applies a single mutation action at the test suite level.
      */
-    fun <T : Individual> mutateIndividual(
+    fun <T : Individual> mutateEvaluateAndArchive(
         wts: WtsEvalIndividual<T>,
         config: EMConfig,
         randomness: Randomness,

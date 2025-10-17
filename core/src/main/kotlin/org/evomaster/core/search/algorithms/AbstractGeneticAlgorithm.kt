@@ -7,8 +7,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import com.google.inject.Inject
 import org.evomaster.core.search.algorithms.strategy.suite.CrossoverOperator
-import org.evomaster.core.search.algorithms.strategy.suite.MutationOperator
-import org.evomaster.core.search.algorithms.strategy.suite.DefaultMutationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.MutationEvaluationOperator
+import org.evomaster.core.search.algorithms.strategy.suite.DefaultMutationEvaluationOperator
 import org.evomaster.core.search.algorithms.strategy.suite.SelectionStrategy
 import org.evomaster.core.search.algorithms.strategy.suite.TournamentSelectionStrategy
 import org.evomaster.core.search.algorithms.strategy.suite.DefaultCrossoverOperator
@@ -44,7 +44,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
 
     protected var crossoverOperator: CrossoverOperator = DefaultCrossoverOperator()
 
-    protected var mutationOperator: MutationOperator = DefaultMutationOperator()
+    protected var mutationOperator: MutationEvaluationOperator = DefaultMutationEvaluationOperator()
 
     /** Optional observers for GA events (test/telemetry). */
     protected val observers: MutableList<GAObserver<T>> = mutableListOf()
@@ -111,7 +111,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      * This method modifies the individual in-place.
      */
     protected fun mutate(wts: WtsEvalIndividual<T>) {
-        mutationOperator.mutateIndividual(
+        mutationOperator.mutateEvaluateAndArchive(
             wts,
             config,
             randomness,
@@ -141,7 +141,7 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
      */
     fun useSelectionStrategy(strategy: SelectionStrategy) { this.selectionStrategy = strategy }
     fun useCrossoverOperator(operator: CrossoverOperator) { this.crossoverOperator = operator }
-    fun useMutationOperator(operator: MutationOperator) { this.mutationOperator = operator }
+    fun useMutationOperator(operator: MutationEvaluationOperator) { this.mutationOperator = operator }
 
     /**
      * Selects one individual using tournament selection.

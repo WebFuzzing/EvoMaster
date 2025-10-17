@@ -18,14 +18,14 @@ import org.evomaster.core.search.service.mutator.Mutator
  * - add: if size < maxSearchSuiteSize, sample + evaluate; add new test to suite (and archive if needed).
  * - mod: mutate one random test in the suite; re-evaluate (or mutateAndSave if GASolutionSource = ARCHIVE).
  */
-class DefaultMutationOperator : MutationOperator {
+class DefaultMutationEvaluationOperator : MutationEvaluationOperator {
     companion object {
         private const val OP_DELETE = "del"
         private const val OP_ADD = "add"
         private const val OP_MOD = "mod"
     }
 
-    override fun <T : Individual> mutateIndividual(
+    override fun <T : Individual> mutateEvaluateAndArchive(
         wts: WtsEvalIndividual<T>,
         config: EMConfig,
         randomness: Randomness,
