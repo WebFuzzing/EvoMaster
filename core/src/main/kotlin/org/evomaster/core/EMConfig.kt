@@ -2853,9 +2853,9 @@ class EMConfig {
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
     /**
-     * Source to build the final GA solution.
+     * Source to build the final GA solution when evolving full test suites (not single tests).
      * ARCHIVE: use current behavior (take tests from the archive).
-     * POPULATION: for GA algorithms, take the best individual from the final population.
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
      */
     enum class GASolutionSource { ARCHIVE, POPULATION }
 
