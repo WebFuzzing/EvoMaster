@@ -349,13 +349,17 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val res = evaluatedAction.result as HttpWsCallResult
 
         if (config.ssrf && res.getVulnerableForSSRF()) {
-            handleSSRFFaults(lines, call)
+            handleSSRFFaultsPrologue(lines, call)
         }
 
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
+        }
+
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaultsEpilogue(lines, call)
         }
 
         // reset all used external service action
@@ -796,7 +800,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     /**
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
-    private fun handleSSRFFaults(lines: Lines, action: Action) {
+    private fun handleSSRFFaultsPrologue(lines: Lines, action: Action) {
         val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
 
         if (verifier != null) {
@@ -813,6 +817,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.indented {
                 lines.add("get(\"${verifier.stub}\")")
                 lines.indented {
+                    lines.add(".withMetadata(Metadata.metadata().attr(\"ssrf\", ${action.getName()}))")
                     lines.add(".atPriority(1)")
                     lines.add(".willReturn(")
                     lines.indented {
@@ -826,8 +831,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
             }
             lines.addStatement(")")
+            lines.add("assertFalse(verifySSRFCallback(${action.getName()}))")
             lines.addEmpty(1)
         }
+    }
+
+    private fun handleSSRFFaultsEpilogue(lines: Lines, action: Action) {
+        lines.add("assertTrue(verifySSRFCallback(${action.getName()}))")
     }
 
 }

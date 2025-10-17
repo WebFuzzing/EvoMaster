@@ -456,6 +456,7 @@ class TestSuiteWriter {
                 || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.common.Metadata", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
                     "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
