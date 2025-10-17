@@ -9,7 +9,7 @@ import org.evomaster.core.search.service.Randomness
  * of individuals provided via [setOrder]. Useful to deterministically control
  * which parents are selected during tests.
  */
-class FixedSelectionStrategy : SelectionStrategy {
+class FixedSelectionStrategy : org.evomaster.core.search.algorithms.strategy.suite.SelectionStrategy {
     private val queue = ArrayDeque<WtsEvalIndividual<*>>()
     private var callCount: Int = 0
 
