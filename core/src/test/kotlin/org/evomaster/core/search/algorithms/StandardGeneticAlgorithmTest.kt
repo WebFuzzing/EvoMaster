@@ -11,9 +11,9 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
-import org.evomaster.core.search.service.ExecutionPhaseController
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.BeforeEach
 
 import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.algorithms.strategy.FixedSelectionStrategy
@@ -21,9 +21,14 @@ import org.evomaster.core.search.algorithms.observer.GARecorder
 
 class StandardGeneticAlgorithmTest {
 
-    val injector: Injector = LifecycleInjector.builder()
-        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
-        .build().createInjector()
+    private lateinit var injector: Injector
+
+    @BeforeEach
+    fun setUp() {
+        injector = LifecycleInjector.builder()
+            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+            .build().createInjector()
+    }
 
     // Verifies that the Standard GA can find the optimal solution for the OneMax problem
     @Test
@@ -38,16 +43,7 @@ class StandardGeneticAlgorithmTest {
             config.maxEvaluations = 10000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
-            val epc = injector.getInstance(ExecutionPhaseController::class.java)
-            if (epc.isInSearch()) {
-                epc.finishSearch()
-            }
-            val solution = try {
-            epc.startSearch()
-                standardGeneticAlgorithm.search()
-            } finally {
-            epc.finishSearch()
-            }
+            val solution = standardGeneticAlgorithm.search()
 
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
@@ -72,7 +68,6 @@ class StandardGeneticAlgorithmTest {
             // Set Config
 
             val config = localInjector.getInstance(EMConfig::class.java)
-            val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
             config.populationSize = 4
@@ -83,50 +78,45 @@ class StandardGeneticAlgorithmTest {
             config.maxEvaluations = 100_000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
-            if (epc.isInSearch()) epc.finishSearch()
-            try {
-                epc.startSearch()
-                ga.setupBeforeSearch()
+            ga.setupBeforeSearch()
 
-                val pop = ga.populationSnapshot()
+            val pop = ga.getViewOfPopulation()
 
-                // Expected Elites (top-2 by combined fitness)
-                val expectedElites = pop.sortedByDescending { it.calculateCombinedFitness() }.take(2)
+            // Expected Elites (top-2 by combined fitness)
+            val expectedElites = pop.sortedByDescending { it.calculateCombinedFitness() }.take(2)
 
-                // Non Elites
-                val expectedNonElites = pop.filter { it !in expectedElites }
+            // Non Elites
+            val expectedNonElites = pop.filter { it !in expectedElites }
 
-                // Configure selection order after setup
-                fixedSel.setOrder(listOf(expectedNonElites[0], expectedNonElites[1]))
+            // Configure selection order after setup
+            fixedSel.setOrder(listOf(expectedNonElites[0], expectedNonElites[1]))
 
-                ga.searchOnce()
+            ga.searchOnce()
 
-                val nextPop = ga.populationSnapshot()
+            val nextPop = ga.getViewOfPopulation()
 
-                // population size preserved
-                assertEquals(config.populationSize, nextPop.size)
+            // population size preserved
+            assertEquals(config.populationSize, nextPop.size)
 
-                // selection is called twice (via observer)
-                assertEquals(2, rec.selections.size)
+            // selection is called twice (via observer)
+            assertEquals(2, rec.selections.size)
 
-                // Check that elites are present in nextPop
-                assertTrue(nextPop.any { it === expectedElites[0] })
-                assertTrue(nextPop.any { it === expectedElites[1] })
+            // Check that elites are present in nextPop
+            assertTrue(nextPop.any { it === expectedElites[0] })
+            assertTrue(nextPop.any { it === expectedElites[1] })
 
-                // crossover was called with 2 offspring (captured by observer)
-                assertEquals(1, rec.xoCalls.size)
-                val (o1, o2) = rec.xoCalls[0]
-                assertTrue(nextPop.any { it === o1 })
-                assertTrue(nextPop.any { it === o2 })
+            // crossover was called with 2 offspring (captured by observer)
+            assertEquals(1, rec.xoCalls.size)
+            val (o1, o2) = rec.xoCalls[0]
+            assertTrue(nextPop.any { it === o1 })
+            assertTrue(nextPop.any { it === o2 })
 
-                // mutation happened twice on the offspring (captured by observer)
-                assertEquals(2, rec.mutated.size)
-                assertTrue(rec.mutated.any { it === o1 })
-                assertTrue(rec.mutated.any { it === o2 })
+            // mutation happened twice on the offspring (captured by observer)
+            assertEquals(2, rec.mutated.size)
+            assertTrue(rec.mutated.any { it === o1 })
+            assertTrue(rec.mutated.any { it === o2 })
 
-            } finally {
-                epc.finishSearch()
-            }
+            
         }
     }
 
@@ -141,7 +131,6 @@ class StandardGeneticAlgorithmTest {
             ga.addObserver(rec)
 
             val config = localInjector.getInstance(EMConfig::class.java)
-            val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
             config.populationSize = 4
@@ -152,12 +141,9 @@ class StandardGeneticAlgorithmTest {
             config.maxEvaluations = 100_000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
-            if (epc.isInSearch()) epc.finishSearch()
-            try {
-                epc.startSearch()
-                ga.setupBeforeSearch()
+            ga.setupBeforeSearch()
 
-                val pop = ga.populationSnapshot()
+                val pop = ga.getViewOfPopulation()
                 val expectedElites = pop.sortedByDescending { it.calculateCombinedFitness() }.take(2)
                 val expectedNonElites = pop.filter { it !in expectedElites }
 
@@ -165,7 +151,7 @@ class StandardGeneticAlgorithmTest {
 
                 ga.searchOnce()
 
-                val nextPop = ga.populationSnapshot()
+                val nextPop = ga.getViewOfPopulation()
 
                 assertEquals(config.populationSize, nextPop.size)
                 assertEquals(2, rec.selections.size)
@@ -176,9 +162,7 @@ class StandardGeneticAlgorithmTest {
                 assertEquals(0, rec.xoCalls.size)
                 // mutation still applied twice
                 assertEquals(2, rec.mutated.size)
-            } finally {
-                epc.finishSearch()
-            }
+            
         }
     }
 
@@ -193,7 +177,6 @@ class StandardGeneticAlgorithmTest {
             ga.addObserver(rec)
 
             val config = localInjector.getInstance(EMConfig::class.java)
-            val epc = localInjector.getInstance(ExecutionPhaseController::class.java)
             localInjector.getInstance(Randomness::class.java).updateSeed(42)
 
             config.populationSize = 4
@@ -204,12 +187,9 @@ class StandardGeneticAlgorithmTest {
             config.maxEvaluations = 100_000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
-            if (epc.isInSearch()) epc.finishSearch()
-            try {
-                epc.startSearch()
-                ga.setupBeforeSearch()
+            ga.setupBeforeSearch()
 
-                val pop = ga.populationSnapshot()
+                val pop = ga.getViewOfPopulation()
                 val expectedElites = pop.sortedByDescending { it.calculateCombinedFitness() }.take(2)
                 val expectedNonElites = pop.filter { it !in expectedElites }
 
@@ -217,7 +197,7 @@ class StandardGeneticAlgorithmTest {
 
                 ga.searchOnce()
 
-                val nextPop = ga.populationSnapshot()
+                val nextPop = ga.getViewOfPopulation()
 
                 assertEquals(config.populationSize, nextPop.size)
                 assertEquals(2, rec.selections.size)
@@ -227,14 +207,10 @@ class StandardGeneticAlgorithmTest {
                 // crossover forced
                 assertEquals(1, rec.xoCalls.size)
                 // mutation disabled
-                assertEquals(0, rec.mutated.size)
-            } finally {
-            epc.finishSearch()
-            }
+                assertEquals(0, rec.mutated.size)  
         }
     }
    
-
 }
 
 // --- Test helpers ---
@@ -242,22 +218,14 @@ class StandardGeneticAlgorithmTest {
 private fun createGAWithSelection(
     fixedSel: FixedSelectionStrategy
 ): Pair<StandardGeneticAlgorithm<OneMaxIndividual>, Injector> {
-    val testModule = object : com.google.inject.AbstractModule() {
-        override fun configure() {
-            bind(org.evomaster.core.search.algorithms.strategy.SelectionStrategy::class.java)
-                .toInstance(fixedSel)
-        }
-    }
-
     val injector = LifecycleInjector.builder()
-        .withModules(* arrayOf<Module>(
-            OneMaxModule(),
-            com.google.inject.util.Modules.override(BaseModule()).with(testModule)
-        ))
+        .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
         .build().createInjector()
 
     val ga = injector.getInstance(
         Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
     )
+    // Override selection strategy directly on the GA instance (no DI here)
+    ga.setSelectionStrategy(fixedSel)
     return ga to injector
 }
