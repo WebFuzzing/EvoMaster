@@ -139,9 +139,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
     /**
      * Allows tests or callers to override GA operators without DI.
      */
-    fun setSelectionStrategy(strategy: SelectionStrategy) { this.selectionStrategy = strategy }
-    fun setCrossoverOperator(operator: CrossoverOperator) { this.crossoverOperator = operator }
-    fun setMutationOperator(operator: MutationOperator) { this.mutationOperator = operator }
+    fun useSelectionStrategy(strategy: SelectionStrategy) { this.selectionStrategy = strategy }
+    fun useCrossoverOperator(operator: CrossoverOperator) { this.crossoverOperator = operator }
+    fun useMutationOperator(operator: MutationOperator) { this.mutationOperator = operator }
 
     /**
      * Selects one individual using tournament selection.

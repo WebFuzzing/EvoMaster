@@ -14,6 +14,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.BeforeEach
+import org.evomaster.core.search.service.ExecutionPhaseController
 
 import org.junit.jupiter.api.Assertions.*
 import org.evomaster.core.search.algorithms.strategy.FixedSelectionStrategy
@@ -43,8 +44,10 @@ class StandardGeneticAlgorithmTest {
             config.maxEvaluations = 10000
             config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
 
+            val epc = injector.getInstance(ExecutionPhaseController::class.java)
+            epc.startSearch()
             val solution = standardGeneticAlgorithm.search()
-
+            epc.finishSearch()
             assertTrue(solution.individuals.size == 1)
             assertEquals(OneMaxSampler.DEFAULT_N.toDouble(), solution.overall.computeFitnessScore(), 0.001)
         }
@@ -115,12 +118,12 @@ class StandardGeneticAlgorithmTest {
             assertEquals(2, rec.mutated.size)
             assertTrue(rec.mutated.any { it === o1 })
             assertTrue(rec.mutated.any { it === o2 })
-
-            
+    
         }
     }
 
-     // Tests Edge Case: CrossoverProbability=0
+    // Tests Edge Case: CrossoverProbability=0
+
     @Test
     fun testNoCrossoverWhenProbabilityZero() {
         TestUtils.handleFlaky {
@@ -210,7 +213,6 @@ class StandardGeneticAlgorithmTest {
                 assertEquals(0, rec.mutated.size)  
         }
     }
-   
 }
 
 // --- Test helpers ---
@@ -226,6 +228,6 @@ private fun createGAWithSelection(
         Key.get(object : TypeLiteral<StandardGeneticAlgorithm<OneMaxIndividual>>() {})
     )
     // Override selection strategy directly on the GA instance (no DI here)
-    ga.setSelectionStrategy(fixedSel)
+    ga.useSelectionStrategy(fixedSel)
     return ga to injector
 }

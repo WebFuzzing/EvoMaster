@@ -6,7 +6,7 @@ import org.evomaster.core.search.service.Randomness
 
 /**
  * Tournament selection strategy for GA suites.
-*
+ *
  * Behavior:
  * - Randomly samples [tournamentSize] distinct individuals from [population].
  * - Computes their fitness with [score] and returns the one with the highest value.
