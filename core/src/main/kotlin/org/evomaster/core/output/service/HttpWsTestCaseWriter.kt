@@ -16,6 +16,7 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.data.ActionStubMapping
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -29,6 +30,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+import kotlin.collections.filter
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -817,7 +819,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.indented {
                 lines.add("get(\"${verifier.stub}\")")
                 lines.indented {
-                    lines.add(".withMetadata(Metadata.metadata().attr(\"ssrf\", ${action.getName()}))")
+                    lines.add(".withMetadata(Metadata.metadata().attr(\"ssrf\", \"${action.getName()}\"))")
                     lines.add(".atPriority(1)")
                     lines.add(".willReturn(")
                     lines.indented {
@@ -831,13 +833,38 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
             }
             lines.addStatement(")")
-            lines.add("assertFalse(verifySSRFCallback(${action.getName()}))")
+            lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, false)
             lines.addEmpty(1)
         }
     }
 
     private fun handleSSRFFaultsEpilogue(lines: Lines, action: Action) {
-        lines.add("assertTrue(verifySSRFCallback(${action.getName()}))")
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, true)
+        }
+    }
+
+    private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
+        if (assertTrue) {
+            lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
+            lines.add("assertTrue(${verifier.getVerifierName()}")
+        } else {
+            lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
+            lines.add("assertFalse(${verifier.getVerifierName()}")
+        }
+        lines.indented {
+            if (format.isKotlin()) {
+                lines.add(".allServeEvents")
+                lines.add(".filter { it.wasMatched }")
+                lines.add(".filter { it.stubMapping.metadata != null }")
+                lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
+            }
+        }
+        lines.add(")")
     }
 
 }

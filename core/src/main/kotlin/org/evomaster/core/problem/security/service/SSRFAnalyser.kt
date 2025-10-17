@@ -346,7 +346,7 @@ class SSRFAnalyser {
     private fun getIndividualsWithStatus4XX(): List<EvaluatedIndividual<RestIndividual>> {
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(400, 422)
+            statusCodes = listOf(422)
         )
     }
 }
