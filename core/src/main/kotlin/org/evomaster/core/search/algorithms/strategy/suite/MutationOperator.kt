@@ -1,0 +1,27 @@
+package org.evomaster.core.search.algorithms.strategy.suite
+
+import org.evomaster.core.EMConfig
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.mutator.Mutator
+
+interface MutationOperator {
+    /**
+     * Applies a single mutation action at the test suite level.
+     */
+    fun <T : Individual> mutateIndividual(
+        wts: WtsEvalIndividual<T>,
+        config: EMConfig,
+        randomness: Randomness,
+        mutator: Mutator<T>,
+        ff: FitnessFunction<T>,
+        sampler: Sampler<T>,
+        archive: Archive<T>
+    )
+}
+
+
