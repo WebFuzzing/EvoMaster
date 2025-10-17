@@ -30,6 +30,7 @@ class NonWorkingDeleteTest: IntegrationTestRestBase() {
         getEMConfig().security = false
         getEMConfig().schemaOracles = false
         getEMConfig().httpOracles = true
+        getEMConfig().useExperimentalOracles = true
     }
 
 

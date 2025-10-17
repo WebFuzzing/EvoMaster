@@ -2573,6 +2573,11 @@ class EMConfig {
     )
     var disabledOracleCodes = ""
 
+    @Cfg("Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. " +
+            "Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. " +
+            "When false, all experimental oracles are disabled.")
+    var useExperimentalOracles = false
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2852,28 +2857,71 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
+    private fun isFaultCodeActive(
+        code: Int,
+        disabledCodes: Set<Int>
+    ): Boolean {
+        val isExperimental = ExperimentalFaultCategory.values().any { it.code == code }
+        if (isExperimental && !useExperimentalOracles) return false
+        if (code in disabledCodes) return false
+        return true
+    }
+
+    private fun parseDisabledCodesOrThrow(
+        disabledOracleCodes: String,
+    ): Set<Int> {
+        if (disabledOracleCodes.isBlank()) return emptySet()
+
+        val tokens = disabledOracleCodes
+            .split(",")
+            .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+
+        val codes = tokens.map { token ->
+            token.toIntOrNull() ?: throw ConfigProblemException("Invalid number: $token")
+        }
+
+        val definedCodes = DefinedFaultCategory.values().map { it.code }.toSet()
+        val experimentalCodes = ExperimentalFaultCategory.values().map { it.code }.toSet()
+        val knownCodes = definedCodes + experimentalCodes
+
+        val unknown = codes.filter { it !in knownCodes }
+        if (unknown.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Invalid fault code(s): ${unknown.joinToString(", ")}")
+                appendLine("All available defined codes:")
+                appendLine(DefinedFaultCategory.values().joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine("All available experimental codes:")
+                appendLine(ExperimentalFaultCategory.values().joinToString("\n") { "${it.code} (${it.name})" })
+                if (!useExperimentalOracles) {
+                    appendLine("Note: Experimental oracles are currently disabled (useExperimentalOracles=false).")
+                }
+            }
+            throw ConfigProblemException(message)
+        }
+
+        return codes.toSet()
+    }
+
     private var disabledOracleCodesList: List<FaultCategory>? = null
 
     fun getDisabledOracleCodesList(): List<FaultCategory> {
-        if (disabledOracleCodesList == null) {
-            disabledOracleCodesList = disabledOracleCodes
-                .split(",")
-                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
-                .map { str ->
-                    val code = str.toIntOrNull()
-                        ?: throw ConfigProblemException("Invalid number: $str")
-
-                    val allCategories = DefinedFaultCategory.values().asList() +
-                            ExperimentalFaultCategory.values()
-
-                    allCategories.firstOrNull { it.code == code }
-                        ?: throw ConfigProblemException(
-                            "Invalid fault code: $code" +
-                                    " All available codes are: \n" +
-                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
-                        )
-                }
+        if (disabledOracleCodesList != null) {
+            return disabledOracleCodesList!!
         }
+
+        val definedCategories = DefinedFaultCategory.values().asList()
+        val experimentalCategories = ExperimentalFaultCategory.values().asList()
+
+        val allCategories: List<FaultCategory> = definedCategories + experimentalCategories
+
+        val userDisabledCodes: Set<Int> =
+            parseDisabledCodesOrThrow(disabledOracleCodes)
+
+        val disabled: List<FaultCategory> = allCategories.filter { category ->
+            !isFaultCodeActive(category.code, userDisabledCodes)
+        }
+
+        disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
     }
 
