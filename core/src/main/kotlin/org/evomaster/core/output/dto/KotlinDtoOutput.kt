@@ -34,7 +34,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
 
     private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
-        lines.add("data class $dtoFilename(")
+        lines.add("class $dtoFilename(")
         addVariables(lines, dtoClass)
         lines.add(")")
     }

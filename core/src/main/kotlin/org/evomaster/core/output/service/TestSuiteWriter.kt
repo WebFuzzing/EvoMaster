@@ -213,12 +213,14 @@ class TestSuiteWriter {
     }
 
     // TODO: take DTO extraction and writing to a different class
-    fun writeDtos(solutionFilename: String) {
+    fun writeDtos(solution: Solution<*>) {
+        val solutionFilename = solution.getFileName().name
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
         val restSampler = sampler as AbstractRestSampler
         val dtoWriter = DtoWriter(config.outputFormat)
-        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+//        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
         containsDtos = dtoWriter.containsDtos()
     }
 

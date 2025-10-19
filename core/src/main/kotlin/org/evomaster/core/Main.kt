@@ -865,7 +865,7 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
             if (config.dtoSupportedForPayload()) {
-                writer.writeDtos(solution.getFileName().name)
+                writer.writeDtos(solution)
             }
 
             val splitResult = TestSuiteSplitter.split(solution, config)
