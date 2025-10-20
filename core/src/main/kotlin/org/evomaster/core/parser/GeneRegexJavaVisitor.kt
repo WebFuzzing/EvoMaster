@@ -184,12 +184,18 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val txt = ctx.AtomEscape().text
             when {
                 txt[1] == 'x' || txt[1] == 'u' -> {
-                    val hexValue =
-                        txt.subSequence(2, txt.length).toString().toInt(16)
+                    val hexValue = when {
+                        txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}'
+                            -> txt.substring(3, txt.length - 1).toInt(16)
+                        else -> txt.substring(2).toInt(16)
+                    }
+                    if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
+                        throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
+                    }
                     return VisitResult(
                         PatternCharacterBlockGene(
                             txt,
-                            hexValue.toChar().toString()
+                            String(Character.toChars(hexValue))
                         )
                     )
                 }
