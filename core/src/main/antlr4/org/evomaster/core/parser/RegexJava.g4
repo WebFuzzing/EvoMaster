@@ -120,19 +120,18 @@ quoteChar
 
 //TODO
 fragment CharacterEscape
-// : ControlEscape
+ : ControlEscape
 // | 'c' ControlLetter
- : HexEscapeSequence
+ | HexEscapeSequence
  | UnicodeEscapeSequence
  | OctalEscapeSequence
  //| IdentityEscape
  ;
 
-//TODO
-//ControlEscape
-// //one of f n r t v
-// : [fnrtv]
-// ;
+fragment ControlEscape
+ //one of f n r t v
+ : [aefnrt]
+ ;
 
 //TODO
 //ControlLetter
@@ -274,7 +273,7 @@ fragment OctalEscapeSequence
  | '0' [0-3] OctalDigit OctalDigit
 ;
 
-UnicodeEscapeSequence:
+fragment UnicodeEscapeSequence:
  'u' HexDigit HexDigit HexDigit HexDigit
 ;
 
