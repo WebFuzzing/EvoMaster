@@ -59,7 +59,7 @@ class Statistics : SearchListener {
     private lateinit var oracles: PartialOracles
 
     @Inject(optional = true)
-    private var aiResponseClassifier: AIResponseClassifier? = null
+    private lateinit var aiResponseClassifier: AIResponseClassifier
 
     /**
      * How often test executions did timeout
@@ -130,17 +130,25 @@ class Statistics : SearchListener {
             }
         }
 
+        // All headers, including AI-related ones
         val baseHeaders = snapshots.values.first().map { it.header }.toMutableList()
-        if (config.isEnabledAIModelForResponseClassification()) {
-            baseHeaders.addAll(getAIData().map { it.header })
-        }
+        baseHeaders.addAll(
+            listOf(
+                "ai_model_enabled",
+                "ai_accuracy",
+                "ai_precision400",
+                "ai_recall400",
+                "ai_f1Score400",
+                "ai_mcc400"
+            )
+        )
+
         val headers = "interval," + baseHeaders.joinToString(",")
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
-
         Files.createDirectories(path.parent)
 
-        if (!Files.exists(path) or !config.appendToStatisticsFile) {
+        if (!Files.exists(path) || !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
@@ -151,14 +159,16 @@ class Statistics : SearchListener {
             .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
             .forEach {
                 val baseElements = it.value.map { it.element }.toMutableList()
-                if (config.isEnabledAIModelForResponseClassification()) {
-                    baseElements.addAll(getAIData().map { it.element })
-                }
+
+                // Including AI-related values
+                baseElements.addAll(getAIData().map { it.element })
+
                 val elements = baseElements.joinToString(",")
                 path.toFile().appendText("${it.key},$elements\n")
             }
-
     }
+
+
 
 
     fun reportTimeout() {
@@ -358,25 +368,24 @@ class Statistics : SearchListener {
     fun getAIData(): List<Pair> {
         val list = mutableListOf<Pair>()
 
-        // Check if AI classifier is enabled
+        // AI model is unable
         if (!config.isEnabledAIModelForResponseClassification()) {
             list.add(Pair("ai_model_enabled", "false"))
+            list.add(Pair("ai_accuracy", "0"))
+            list.add(Pair("ai_precision400", "0"))
+            list.add(Pair("ai_recall400", "0"))
+            list.add(Pair("ai_f1Score400", "0"))
+            list.add(Pair("ai_mcc400", "0"))
             return list
         }
 
-        list.add(Pair("ai_model_enabled", "true"))
-
-        // Try to get classifier and its metrics
         val classifier = aiResponseClassifier
-        if (classifier == null) {
-            list.add(Pair("ai_status", "not_initialized"))
-            return list
-        }
 
+        // Compute metrics
         val model = classifier.viewInnerModel()
         val metrics = model.estimateOverallMetrics()
 
-        // Add derived metrics
+        list.add(Pair("ai_model_enabled", "true"))
         list.add(Pair("ai_accuracy", "%.4f".format(metrics.accuracy)))
         list.add(Pair("ai_precision400", "%.4f".format(metrics.precision400)))
         list.add(Pair("ai_recall400", "%.4f".format(metrics.recall400)))
@@ -385,6 +394,8 @@ class Statistics : SearchListener {
 
         return list
     }
+
+
 
     private fun distinctActions() : Int {
         if(sampler == null){
