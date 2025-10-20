@@ -192,6 +192,14 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                         )
                     )
                 }
+                txt[1]== 'c' -> {
+                    val controlLetterValue = if (txt[2].isLowerCase()){
+                        txt[2].uppercaseChar().code.xor(0x60)
+                    } else {
+                        txt[2].code.xor(0x40)
+                    }
+                    return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
+                }
                 txt[1] in "aefnrt" -> {
                     val escape = when {
                         txt[1] == 'a' -> "\u0007"

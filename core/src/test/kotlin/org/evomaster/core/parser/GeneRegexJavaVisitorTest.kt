@@ -87,4 +87,9 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     override fun testControlEscape(){
         checkSameAsJava("""aefnrt\a\e\f\n\r\t""")
     }
+
+    @Test
+    override fun testControlLetterEscape() {
+        checkSameAsJava("""cac!\ca\cg\cz\cA\cG\cZ\c@\c[\c\\c]\c^\c\c_\c?""")
+    }
 }

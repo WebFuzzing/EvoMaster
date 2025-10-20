@@ -171,6 +171,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         if(ctx.AtomEscape() != null) {
             val txt = ctx.AtomEscape().text
             when {
+                txt[1]== 'c' -> {
+                    val controlLetterValue = txt[2].uppercaseChar().code.xor(0x40)
+                    return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
+                }
                 txt[1] in "fnrtv" -> {
                     val escape = when {
                         txt[1] == 'n' -> "\u000A"

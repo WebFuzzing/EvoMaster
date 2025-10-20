@@ -98,7 +98,7 @@ atom
 //TODO
 fragment CharacterEscape
  : ControlEscape
-// | 'c' ControlLetter
+ | 'c' ControlLetter
  | HexEscapeSequence
  | UnicodeEscapeSequence
  //| IdentityEscape
@@ -109,10 +109,9 @@ fragment ControlEscape
  : [fnrtv]
  ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [a-zA-Z]
+ ;
 
 
 //TODO

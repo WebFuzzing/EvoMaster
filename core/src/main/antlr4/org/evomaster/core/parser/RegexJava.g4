@@ -121,7 +121,7 @@ quoteChar
 //TODO
 fragment CharacterEscape
  : ControlEscape
-// | 'c' ControlLetter
+ | 'c' ControlLetter
  | HexEscapeSequence
  | UnicodeEscapeSequence
  | OctalEscapeSequence
@@ -133,10 +133,9 @@ fragment ControlEscape
  : [aefnrt]
  ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [?-_a-z]
+ ;
 
 
 //TODO
