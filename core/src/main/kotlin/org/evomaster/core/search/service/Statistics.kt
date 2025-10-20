@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.utils.IncrementalAverage
@@ -57,6 +58,9 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var oracles: PartialOracles
 
+    @Inject(optional = true)
+    private var aiResponseClassifier: AIResponseClassifier? = null
+
     /**
      * How often test executions did timeout
      */
@@ -98,7 +102,7 @@ class Statistics : SearchListener {
 
     fun writeStatistics(solution: Solution<*>) {
 
-        val data = getData(solution)
+        val data = getData(solution) + getAIData()
         val headers = data.map { it.header }.joinToString(",")
         val elements = data.map { it.element }.joinToString(",")
 
@@ -126,7 +130,11 @@ class Statistics : SearchListener {
             }
         }
 
-        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
+        val baseHeaders = snapshots.values.first().map { it.header }.toMutableList()
+        if (config.isEnabledAIModelForResponseClassification()) {
+            baseHeaders.addAll(getAIData().map { it.header })
+        }
+        val headers = "interval," + baseHeaders.joinToString(",")
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
 
@@ -140,11 +148,16 @@ class Statistics : SearchListener {
         }
 
         snapshots.entries.stream()
-                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
-                .forEach {
-                    val elements = it.value.map { it.element }.joinToString(",")
-                    path.toFile().appendText("${it.key},$elements\n")
+            .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+            .forEach {
+                val baseElements = it.value.map { it.element }.toMutableList()
+                if (config.isEnabledAIModelForResponseClassification()) {
+                    baseElements.addAll(getAIData().map { it.element })
                 }
+                val elements = baseElements.joinToString(",")
+                path.toFile().appendText("${it.key},$elements\n")
+            }
+
     }
 
 
@@ -338,6 +351,37 @@ class Statistics : SearchListener {
 
         }
         addConfig(list)
+
+        return list
+    }
+
+    fun getAIData(): List<Pair> {
+        val list = mutableListOf<Pair>()
+
+        // Check if AI classifier is enabled
+        if (!config.isEnabledAIModelForResponseClassification()) {
+            list.add(Pair("ai_model_enabled", "false"))
+            return list
+        }
+
+        list.add(Pair("ai_model_enabled", "true"))
+
+        // Try to get classifier and its metrics
+        val classifier = aiResponseClassifier
+        if (classifier == null) {
+            list.add(Pair("ai_status", "not_initialized"))
+            return list
+        }
+
+        val model = classifier.viewInnerModel()
+        val metrics = model.estimateOverallMetrics()
+
+        // Add derived metrics
+        list.add(Pair("ai_accuracy", "%.4f".format(metrics.accuracy)))
+        list.add(Pair("ai_precision400", "%.4f".format(metrics.precision400)))
+        list.add(Pair("ai_recall400", "%.4f".format(metrics.recall400)))
+        list.add(Pair("ai_f1Score400", "%.4f".format(metrics.f1Score400)))
+        list.add(Pair("ai_mcc400", "%.4f".format(metrics.mcc)))
 
         return list
     }
