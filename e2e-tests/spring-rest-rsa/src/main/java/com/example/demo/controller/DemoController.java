@@ -64,7 +64,7 @@ public class DemoController {
         boolean exists = userService.checkIdCardExists(bindCardReq.getIdCardNo());
         if (!exists)  {
             System.out.println("------WARNING! User not found with idCardNo: " + bindCardReq.getIdCardNo());
-            return ResponseEntity.status(400).body(
+            return ResponseEntity.status(404).body(
                     handle(CommonResp.of("WARNING", "User not found", null))
             );
         }

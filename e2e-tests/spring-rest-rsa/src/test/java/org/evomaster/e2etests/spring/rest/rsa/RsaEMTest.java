@@ -26,7 +26,7 @@ RsaEMTest extends RestTestBase {
 
         runTestHandlingFlakyAndCompilation(
                 "RsaEM",
-                50,
+                500,
                 (args) -> {
 
                     //UUID.randomUUID() makes assertions flaky, which we don't handle yet
@@ -34,6 +34,9 @@ RsaEMTest extends RestTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
+                    // handle RSA encryption, but no data in DB
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 404, "/api/bind_card_apply", null);
+                    // handle DB
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bind_card_apply", null);
                 }
         );
