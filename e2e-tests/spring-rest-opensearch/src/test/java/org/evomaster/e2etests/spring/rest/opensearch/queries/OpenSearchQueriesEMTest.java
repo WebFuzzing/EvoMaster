@@ -102,7 +102,6 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
             true,
             (args) -> {
                 setOption(args, "instrumentMR_OPENSEARCH", "true");
-                setOption(args, "stoppingCriterion", "FITNESS_EVALUATIONS");
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
