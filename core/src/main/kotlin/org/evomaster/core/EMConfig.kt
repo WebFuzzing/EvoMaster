@@ -2852,6 +2852,19 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
+    /**
+     * Source to build the final GA solution when evolving full test suites (not single tests).
+     * ARCHIVE: use current behavior (take tests from the archive).
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
+     */
+    enum class GASolutionSource { ARCHIVE, POPULATION }
+
+    /**
+     * Controls how GA algorithms produce the final solution.
+     * Default preserves current behavior.
+     */
+    var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
+
     private var disabledOracleCodesList: List<FaultCategory>? = null
 
     fun getDisabledOracleCodesList(): List<FaultCategory> {
