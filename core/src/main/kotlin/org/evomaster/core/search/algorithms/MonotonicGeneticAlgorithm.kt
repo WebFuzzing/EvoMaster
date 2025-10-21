@@ -77,6 +77,7 @@ class MonotonicGeneticAlgorithm<T> : StandardGeneticAlgorithm<T>() where T : Ind
             if (max(o1.calculateCombinedFitness(), o2.calculateCombinedFitness()) >
                 max(p1.calculateCombinedFitness(), p2.calculateCombinedFitness())
             ) {
+                
                 nextPop.add(o1)
                 nextPop.add(o2)
             } else {
