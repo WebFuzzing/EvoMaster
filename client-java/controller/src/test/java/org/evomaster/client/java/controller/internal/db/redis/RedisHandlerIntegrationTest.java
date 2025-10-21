@@ -5,8 +5,6 @@ import org.evomaster.client.java.controller.internal.db.RedisHandler;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.controller.redis.RedisClient;
 import org.junit.jupiter.api.*;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -19,9 +17,9 @@ class RedisHandlerIntegrationTest {
 
     private static final int REDIS_PORT = 6379;
     private GenericContainer<?> redisContainer;
-    private RedisConnectionFactory connectionFactory;
     private RedisClient client;
     private RedisHandler handler;
+    private int port;
 
     @BeforeAll
     void setupContainer() {
@@ -29,22 +27,18 @@ class RedisHandlerIntegrationTest {
                 .withExposedPorts(REDIS_PORT);
         redisContainer.start();
 
-        int port = redisContainer.getMappedPort(REDIS_PORT);
+        port = redisContainer.getMappedPort(REDIS_PORT);
 
-        connectionFactory = new LettuceConnectionFactory("localhost", port);
-        ((LettuceConnectionFactory) connectionFactory).afterPropertiesSet();
-
-        client = new RedisClient(connectionFactory);
+        client = new RedisClient("localhost", port);
     }
 
     @BeforeEach
     void setupHandler() {
         handler = new RedisHandler();
-        handler.setRedisClient(connectionFactory);
+        handler.setRedisClient(client);
         handler.setCalculateHeuristics(true);
         handler.setExtractRedisExecution(true);
-
-        connectionFactory.getConnection().serverCommands().flushAll();
+        client.flushAll();
     }
 
     @AfterAll
