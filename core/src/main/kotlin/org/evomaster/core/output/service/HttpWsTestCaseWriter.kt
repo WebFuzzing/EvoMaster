@@ -119,8 +119,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-        // should have a way to check if there's a matching DTO, otherwise use plaintext.
-        // Got the case of the bodyparam being populated later on whereas the dto writer uses the spec
         if (bodyParam != null && bodyParam.isJson()) {
 
             val primaryGene = bodyParam.primaryGene()

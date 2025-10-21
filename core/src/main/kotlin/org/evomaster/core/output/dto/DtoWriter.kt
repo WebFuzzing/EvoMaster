@@ -7,7 +7,6 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
@@ -47,13 +46,24 @@ class DtoWriter(
      */
     private val dtoCollector: MutableMap<String, DtoClass> = mutableMapOf()
 
-//    fun write(testSuitePath: Path, testSuitePackage: String, actionDefinitions: List<Action>) {
-    fun write(testSuitePath: Path, testSuitePackage: String, actionDefinitions: Solution<*>) {
-        calculateDtos(actionDefinitions)
+    fun write(testSuitePath: Path, testSuitePackage: String, solution: Solution<*>) {
+        calculateDtos(solution)
         dtoCollector.forEach {
             when {
-                outputFormat.isJava() -> JavaDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
-                outputFormat.isKotlin() -> KotlinDtoOutput().writeClass(testSuitePath, testSuitePackage, outputFormat, it.value)
+                outputFormat.isJava() -> JavaDtoOutput().writeClass(
+                    testSuitePath,
+                    testSuitePackage,
+                    outputFormat,
+                    it.value
+                )
+
+                outputFormat.isKotlin() -> KotlinDtoOutput().writeClass(
+                    testSuitePath,
+                    testSuitePackage,
+                    outputFormat,
+                    it.value
+                )
+
                 else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
             }
         }
@@ -63,33 +73,24 @@ class DtoWriter(
         return dtoCollector.isNotEmpty()
     }
 
-//    private fun calculateDtos(actionDefinitions: List<Action>) {
-    private fun calculateDtos(actionDefinitions: Solution<*>) {
-        actionDefinitions.individuals.forEach {
-            evaluatedIndividual -> evaluatedIndividual.evaluatedMainActions().forEach {
-                evaluatedAction ->
-                    val call = evaluatedAction.action as HttpWsAction
-                    val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-                    if (bodyParam != null) {
-                        val primaryGene = bodyParam.primaryGene()
-                        val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
-                        if (choiceGene != null) {
-                            calculateDtoFromChoice(choiceGene, call.getName())
-                        } else {
-                            calculateDtoFromNonChoiceGene(primaryGene.getLeafGene(), call.getName())
-                        }
+    private fun calculateDtos(solution: Solution<*>) {
+        solution.individuals.forEach { evaluatedIndividual ->
+            evaluatedIndividual.evaluatedMainActions().forEach { evaluatedAction ->
+                val call = evaluatedAction.action as HttpWsAction
+                val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+                if (bodyParam != null) {
+                    val primaryGene = bodyParam.primaryGene()
+                    val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
+                    if (choiceGene != null) {
+                        calculateDtoFromChoice(choiceGene, call.getName())
+                    } else {
+                        calculateDtoFromNonChoiceGene(primaryGene.getLeafGene(), call.getName())
                     }
                 }
             }
         }
+    }
 
-//        actionDefinitions.forEach { action ->
-//            action.getViewOfChildren().find { it is BodyParam }
-//            ?.let {
-//
-//            }
-//        }
-//    }
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
         // TODO: should we handle EnumGene?

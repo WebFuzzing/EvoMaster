@@ -19,7 +19,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -212,14 +211,11 @@ class TestSuiteWriter {
         )
     }
 
-    // TODO: take DTO extraction and writing to a different class
     fun writeDtos(solution: Solution<*>) {
         val solutionFilename = solution.getFileName().name
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
-        val restSampler = sampler as AbstractRestSampler
         val dtoWriter = DtoWriter(config.outputFormat)
-//        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
         dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
         containsDtos = dtoWriter.containsDtos()
     }
