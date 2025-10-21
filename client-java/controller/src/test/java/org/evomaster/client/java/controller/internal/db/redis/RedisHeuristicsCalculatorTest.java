@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db.redis;
 import org.evomaster.client.java.controller.internal.db.RedisDistanceWithMetrics;
 import org.evomaster.client.java.controller.redis.RedisClient;
 import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
+import org.evomaster.client.java.controller.redis.RedisInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,12 +16,10 @@ import static org.mockito.Mockito.*;
 class RedisHeuristicsCalculatorTest {
 
     private RedisHeuristicsCalculator calculator;
-    private RedisClient client;
 
     @BeforeEach
     void setup() {
         calculator = new RedisHeuristicsCalculator();
-        client = mock(RedisClient.class);
     }
 
     @Test
@@ -32,9 +31,12 @@ class RedisHeuristicsCalculatorTest {
                 5
         );
 
-        when(client.getAllKeys()).thenReturn(new HashSet<>(Arrays.asList("user:1", "user:2", "other")));
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("user:1"));
+        redisInfoList.add(new RedisInfo("user:2"));
+        redisInfoList.add(new RedisInfo("other"));
 
-        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, client);
+        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
 
         assertEquals(0.0, result.getDistance(), 1e-6, "Pattern 'user*' should fully match 'user:1' and 'user:2'");
     }
@@ -48,9 +50,11 @@ class RedisHeuristicsCalculatorTest {
                 5
         );
 
-        when(client.getAllKeys()).thenReturn(new HashSet<>(Arrays.asList("user:1", "user:2")));
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("user:1"));
+        redisInfoList.add(new RedisInfo("user:2"));
 
-        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, client);
+        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
         assertEquals(1.0, result.getDistance(), 0.1, "Pattern with no matches should yield max distance 1");
         assertEquals(2, result.getNumberOfEvaluatedKeys());
     }
@@ -71,10 +75,12 @@ class RedisHeuristicsCalculatorTest {
                 5
         );
 
-        when(client.getAllKeys()).thenReturn(new HashSet<>(Arrays.asList("user:1", "user:2")));
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("user:1"));
+        redisInfoList.add(new RedisInfo("user:2"));
 
-        RedisDistanceWithMetrics dClose = calculator.computeDistance(closeKey, client);
-        RedisDistanceWithMetrics dFar = calculator.computeDistance(farKey, client);
+        RedisDistanceWithMetrics dClose = calculator.computeDistance(closeKey, redisInfoList);
+        RedisDistanceWithMetrics dFar = calculator.computeDistance(farKey, redisInfoList);
 
         assertTrue(dClose.getDistance() < dFar.getDistance(),
                 "Closer key should have smaller distance.");
@@ -89,12 +95,11 @@ class RedisHeuristicsCalculatorTest {
                 3
         );
 
-        when(client.getAllKeys()).thenReturn(new HashSet<>(Arrays.asList("profile", "users")));
-        when(client.getType("profile")).thenReturn("hash");
-        when(client.getType("users")).thenReturn("hash");
-        when(client.hashFieldExists("profile", "name")).thenReturn(true);
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("profile", true));
+        redisInfoList.add(new RedisInfo("users", false));
 
-        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, client);
+        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
 
         assertEquals(0.0, result.getDistance(), 1e-6,
                 "Field 'name' exists, so distance must be 0");
@@ -110,11 +115,10 @@ class RedisHeuristicsCalculatorTest {
                 3
         );
 
-        when(client.getAllKeys()).thenReturn(new HashSet<>(Arrays.asList("profile")));
-        when(client.getType("profile")).thenReturn("hash");
-        when(client.hashFieldExists("profile", "age")).thenReturn(false);
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("profile", false));
 
-        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, client);
+        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
 
         assertTrue(result.getDistance() > 0.0, "Missing field should yield positive distance");
         assertTrue(result.getNumberOfEvaluatedKeys() >= 1);
@@ -136,12 +140,11 @@ class RedisHeuristicsCalculatorTest {
                 1
         );
 
-        when(client.getType("setA")).thenReturn("set");
-        when(client.getType("setB")).thenReturn("set");
-        when(client.getSetMembers("setA")).thenReturn(new HashSet<>(Arrays.asList("a", "b", "c")));
-        when(client.getSetMembers("setB")).thenReturn(new HashSet<>(Arrays.asList("b", "c", "d")));
+        List<RedisInfo> redisInfoListIntersection = new ArrayList<>();
+        redisInfoListIntersection.add(new RedisInfo("setA", "set", new HashSet<>(Arrays.asList("a", "b", "c"))));
+        redisInfoListIntersection.add(new RedisInfo("setB", "set", new HashSet<>(Arrays.asList("b", "c", "d"))));
 
-        RedisDistanceWithMetrics dIntersect = calculator.computeDistance(cmdIntersect, client);
+        RedisDistanceWithMetrics dIntersect = calculator.computeDistance(cmdIntersect, redisInfoListIntersection);
         assertEquals(0.0, dIntersect.getDistance(),
                 "Set intersection distance equals 0.0 when sets share members.");
 
@@ -153,12 +156,11 @@ class RedisHeuristicsCalculatorTest {
                 1
         );
 
-        when(client.getType("setC")).thenReturn("set");
-        when(client.getType("setD")).thenReturn("set");
-        when(client.getSetMembers("setC")).thenReturn(new HashSet<>(Arrays.asList("a", "b")));
-        when(client.getSetMembers("setD")).thenReturn(new HashSet<>(Arrays.asList("c", "d")));
+        List<RedisInfo> redisInfoListNoIntersection = new ArrayList<>();
+        redisInfoListNoIntersection.add(new RedisInfo("setC", "set", new HashSet<>(Arrays.asList("a", "b"))));
+        redisInfoListNoIntersection.add(new RedisInfo("setD", "set", new HashSet<>(Arrays.asList("c", "d"))));
 
-        RedisDistanceWithMetrics dNoIntersect = calculator.computeDistance(cmdNoIntersect, client);
+        RedisDistanceWithMetrics dNoIntersect = calculator.computeDistance(cmdNoIntersect, redisInfoListNoIntersection);
 
         assertTrue(dNoIntersect.getDistance() > 0.0,
                 "With disjoint sets, distance must be greater than zero.");
@@ -173,12 +175,11 @@ class RedisHeuristicsCalculatorTest {
                 1
         );
 
-        when(client.getType("setE")).thenReturn("set");
-        when(client.getType("setF")).thenReturn("set");
-        when(client.getSetMembers("setE")).thenReturn(new HashSet<>(Arrays.asList("a", "b")));
-        when(client.getSetMembers("setF")).thenReturn(new HashSet<>(Arrays.asList("y", "z")));
+        List<RedisInfo> redisInfoListGreaterDisjoint = new ArrayList<>();
+        redisInfoListGreaterDisjoint.add(new RedisInfo("setC", "set", new HashSet<>(Arrays.asList("a", "b"))));
+        redisInfoListGreaterDisjoint.add(new RedisInfo("setD", "set", new HashSet<>(Arrays.asList("y", "z"))));
 
-        RedisDistanceWithMetrics dNoIntersectFarDistance = calculator.computeDistance(cmdNoIntersectFarDistance, client);
+        RedisDistanceWithMetrics dNoIntersectFarDistance = calculator.computeDistance(cmdNoIntersectFarDistance, redisInfoListGreaterDisjoint);
 
         assertTrue(dNoIntersectFarDistance.getDistance() > 0.0,
                 "With disjoint sets, distance must be greater than zero.");
@@ -199,29 +200,23 @@ class RedisHeuristicsCalculatorTest {
                 1
         );
 
-        when(client.getType("setA")).thenReturn("set");
-        when(client.getType("setB")).thenReturn("set");
-        when(client.getType("setC")).thenReturn("set");
-        when(client.getType("setD")).thenReturn("set");
-        when(client.getSetMembers("setA")).thenReturn(new HashSet<>(Arrays.asList("a", "b", "c")));
-        when(client.getSetMembers("setB")).thenReturn(new HashSet<>(Arrays.asList("b", "c")));
-        when(client.getSetMembers("setC")).thenReturn(new HashSet<>(Arrays.asList("c", "d")));
-        when(client.getSetMembers("setD")).thenReturn(new HashSet<>(Arrays.asList("d", "e")));
+        List<RedisInfo> redisInfoListLessDistance = new ArrayList<>();
+        redisInfoListLessDistance.add(new RedisInfo("setA", "set", new HashSet<>(Arrays.asList("a", "b", "c"))));
+        redisInfoListLessDistance.add(new RedisInfo("setB", "set", new HashSet<>(Arrays.asList("b", "c"))));
+        redisInfoListLessDistance.add(new RedisInfo("setC", "set", new HashSet<>(Arrays.asList("c", "d"))));
+        redisInfoListLessDistance.add(new RedisInfo("setD", "set", new HashSet<>(Arrays.asList("d", "e"))));
 
-        RedisDistanceWithMetrics dIntersectLessDistance = calculator.computeDistance(cmdIntersect, client);
+        RedisDistanceWithMetrics dIntersectLessDistance = calculator.computeDistance(cmdIntersect, redisInfoListLessDistance);
         assertTrue(dIntersectLessDistance.getDistance() > 0.0,
                 "With disjoint sets, distance must be greater than zero.");
 
-        when(client.getType("setA")).thenReturn("set");
-        when(client.getType("setB")).thenReturn("set");
-        when(client.getType("setC")).thenReturn("set");
-        when(client.getType("setD")).thenReturn("set");
-        when(client.getSetMembers("setA")).thenReturn(new HashSet<>(Arrays.asList("a", "b", "c")));
-        when(client.getSetMembers("setB")).thenReturn(new HashSet<>(Arrays.asList("b", "c")));
-        when(client.getSetMembers("setC")).thenReturn(new HashSet<>(Arrays.asList("d", "e")));
-        when(client.getSetMembers("setD")).thenReturn(new HashSet<>(Arrays.asList("f", "g")));
+        List<RedisInfo> redisInfoListMoreDistance = new ArrayList<>();
+        redisInfoListMoreDistance.add(new RedisInfo("setA", "set", new HashSet<>(Arrays.asList("a", "b", "c"))));
+        redisInfoListMoreDistance.add(new RedisInfo("setB", "set", new HashSet<>(Arrays.asList("b", "c"))));
+        redisInfoListMoreDistance.add(new RedisInfo("setC", "set", new HashSet<>(Arrays.asList("d", "e"))));
+        redisInfoListMoreDistance.add(new RedisInfo("setD", "set", new HashSet<>(Arrays.asList("f", "g"))));
 
-        RedisDistanceWithMetrics dIntersectMoreDistance = calculator.computeDistance(cmdIntersect, client);
+        RedisDistanceWithMetrics dIntersectMoreDistance = calculator.computeDistance(cmdIntersect, redisInfoListMoreDistance);
         assertTrue(dIntersectMoreDistance.getDistance() > 0.0,
                 "With disjoint sets, distance must be greater than zero.");
 
@@ -244,10 +239,13 @@ class RedisHeuristicsCalculatorTest {
                 2
         );
 
-        when(client.getKeysByType("set")).thenReturn(new HashSet<>(Arrays.asList("user:setA", "user:setB", "profile:set")));
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("user:setA"));
+        redisInfoList.add(new RedisInfo("user:setB"));
+        redisInfoList.add(new RedisInfo("profile:set"));
 
-        double dSimilar = calculator.computeDistance(similar, client).getDistance();
-        double dDifferent = calculator.computeDistance(different, client).getDistance();
+        double dSimilar = calculator.computeDistance(similar, redisInfoList).getDistance();
+        double dDifferent = calculator.computeDistance(different, redisInfoList).getDistance();
 
         assertTrue(dSimilar < dDifferent,
                 "SMEMBERS with similar keys should yield smaller distance");
@@ -269,10 +267,13 @@ class RedisHeuristicsCalculatorTest {
                 1
         );
 
-        when(client.getKeysByType("string")).thenReturn(new HashSet<>(Arrays.asList("session:1235", "config", "log")));
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("session:1235"));
+        redisInfoList.add(new RedisInfo("config"));
+        redisInfoList.add(new RedisInfo("log"));
 
-        double dSimilar = calculator.computeDistance(similar, client).getDistance();
-        double dDifferent = calculator.computeDistance(different, client).getDistance();
+        double dSimilar = calculator.computeDistance(similar, redisInfoList).getDistance();
+        double dDifferent = calculator.computeDistance(different, redisInfoList).getDistance();
 
         assertTrue(dSimilar < dDifferent,
                 "GET with similar keys should yield smaller distance");

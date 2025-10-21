@@ -3,8 +3,9 @@ package org.evomaster.client.java.controller.internal.db;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.redis.RedisClient;
 import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
+import org.evomaster.client.java.controller.redis.RedisInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
@@ -77,17 +78,93 @@ public class RedisHandler {
     public List<RedisCommandEvaluation> getEvaluatedRedisCommands() {
         operations.stream()
             .filter(command -> command.getType().shouldCalculateHeuristic())
-            .forEach(redisInfo -> {
-                RedisDistanceWithMetrics distanceWithMetrics = calculator.computeDistance(redisInfo, redisClient);
-                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisInfo, distanceWithMetrics));
+            .forEach(redisCommand -> {
+                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
         });
         operations.clear();
 
         return evaluatedRedisCommands;
     }
 
-    public void setRedisClient(RedisConnectionFactory connectionFactory) {
-        this.redisClient = new RedisClient(connectionFactory);
+    private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, RedisClient redisClient) {
+        RedisCommand.RedisCommandType type = redisCommand.getType();
+        try {
+            switch (type) {
+                case KEYS:
+                case EXISTS: {
+                    List<RedisInfo> redisInfo = createRedisInfoForAllKeys(redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                case GET: {
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("string", redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                case HGET: {
+                    String field = redisCommand.extractArgs().get(1);
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByField(field, redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                case HGETALL: {
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("hash", redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                case SMEMBERS: {
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("set", redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                case SINTER: {
+                    List<String> keys = redisCommand.extractArgs();
+                    List<RedisInfo> redisInfo = createRedisInfoForIntersection(keys, redisClient);
+                    return calculator.computeDistance(redisCommand, redisInfo);
+                }
+
+                default:
+                    return new RedisDistanceWithMetrics(1d, 0);
+            }
+        } catch (Exception e) {
+            SimpleLogger.warn("Could not compute distance for " + type + ": " + e.getMessage());
+            return new RedisDistanceWithMetrics(1d, 0);
+        }
     }
 
+    private List<RedisInfo> createRedisInfoForIntersection(List<String> keys, RedisClient redisClient) {
+        List<RedisInfo> redisData = new ArrayList<>();
+        keys.forEach(
+                key -> redisData.add(new RedisInfo(key, redisClient.getType(key), redisClient.getSetMembers(key))
+        ));
+        return redisData;
+    }
+
+    private List<RedisInfo> createRedisInfoForAllKeys(RedisClient redisClient) {
+        Set<String> keys = redisClient.getAllKeys();
+        List<RedisInfo> redisData = new ArrayList<>();
+        keys.forEach(
+                key -> redisData.add(new RedisInfo(key))
+        );
+        return redisData;
+    }
+
+    private List<RedisInfo> createRedisInfoForKeysByType(String type, RedisClient redisClient) {
+        Set<String> keys = redisClient.getKeysByType(type);
+        List<RedisInfo> redisData = new ArrayList<>();
+        keys.forEach(key -> redisData.add(new RedisInfo(key)));
+        return redisData;
+    }
+
+    private List<RedisInfo> createRedisInfoForKeysByField(String field, RedisClient redisClient) {
+        Set<String> keys = redisClient.getKeysByType("hash");
+        List<RedisInfo> redisData = new ArrayList<>();
+        keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.hashFieldExists(key, field))));
+        return redisData;
+    }
+
+    public void setRedisClient(RedisClient redisClient) {
+        this.redisClient = redisClient;
+    }
 }
