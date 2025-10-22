@@ -31,7 +31,7 @@ class CharacterClassEscapeRxGene(
     var value: String = ""
 
     init {
-        if (!listOf("w", "W", "d", "D", "s", "S").contains(type)) {
+        if (!listOf("w", "W", "d", "D", "s", "S", "v", "V", "h", "H").contains(type)) {
             throw IllegalArgumentException("Invalid type: $type")
         }
     }
@@ -61,6 +61,10 @@ class CharacterClassEscapeRxGene(
             "W" -> randomness.nextNonWordChar()
             "s" -> randomness.nextSpaceChar()
             "S" -> randomness.nextNonSpaceChar()
+            "v" -> randomness.nextVerticalSpaceChar()
+            "V" -> randomness.nextNonVerticalSpaceChar()
+            "h" -> randomness.nextHorizontalSpaceChar()
+            "H" -> randomness.nextNonHorizontalSpaceChar()
             else ->
                 //this should never happen due to check in init
                 throw IllegalStateException("Type '\\$type' not supported yet")

@@ -234,7 +234,7 @@ AtomEscape
 
 fragment CharacterClassEscape
  //one of d D s S w W
- : [dDsSwW]
+ : [dDsSwWvVhH]
  ;
 
 
