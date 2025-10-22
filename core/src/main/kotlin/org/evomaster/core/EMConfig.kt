@@ -1160,7 +1160,7 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, BreederGA // GA variants still work-in-progress
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA // GA variants still work-in-progress
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -2734,6 +2734,15 @@ class EMConfig {
     @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
     @Min(0.0)
     var elitesCount: Int = 1
+
+    // Cellular GA neighborhood configuration
+    enum class CGANeighborhoodModel {
+        RING, L5, C9, C13
+    }
+
+    @Experimental
+    @Cfg("Cellular GA: neighborhood model (RING, L5, C9, C13)")
+    var cgaNeighborhoodModel: CGANeighborhoodModel = CGANeighborhoodModel.RING
 
     /**
      * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
