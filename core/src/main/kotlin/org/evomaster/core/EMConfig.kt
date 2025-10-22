@@ -1160,7 +1160,7 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA // GA variants still work-in-progress
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA // GA variants still work-in-progress.
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
