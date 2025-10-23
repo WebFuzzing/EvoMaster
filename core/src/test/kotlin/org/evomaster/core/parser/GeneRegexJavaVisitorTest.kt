@@ -97,4 +97,10 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testJavaCharClassEscape(){
         checkSameAsJava("""\v\V\h\H""")
     }
+
+    @Test
+    fun testPosixCharacterClasses(){
+        checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
+            |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
+    }
 }

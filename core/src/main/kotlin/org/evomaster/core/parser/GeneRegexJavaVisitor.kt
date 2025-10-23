@@ -227,7 +227,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
                         )
                     )
                 }
-                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
+                else -> return VisitResult(CharacterClassEscapeRxGene(txt.substring(1)))
             }
         }
 

@@ -125,7 +125,24 @@ fragment CharacterEscape
  | HexEscapeSequence
  | UnicodeEscapeSequence
  | OctalEscapeSequence
+ | 'p' BRACE_open PosixCharacterClassLabel BRACE_close
  //| IdentityEscape
+ ;
+
+fragment PosixCharacterClassLabel
+ : 'Lower'
+ | 'Upper'
+ | 'ASCII'
+ | 'Alpha'
+ | 'Digit'
+ | 'Alnum'
+ | 'Punct'
+ | 'Graph'
+ | 'Print'
+ | 'Blank'
+ | 'Cntrl'
+ | 'XDigit'
+ | 'Space'
  ;
 
 fragment ControlEscape

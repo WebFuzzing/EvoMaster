@@ -40,7 +40,9 @@ class Randomness {
     private val wordSet = "_$digitSet$asciiLetterSet"
     private val spaceSet = " \t\r\n\u000C\u000b"
     private val verticalSpaceSet = "\n\u000B\u000C\r\u0085\u2028\u2029"
-    private val horizontalSpaceSet = " \t\u00A0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
+    private val horizontalSpaceSet = " \t\u00A0\u1680\u180e\u2000\u2001\u2002\u2003" +
+            "\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
+    private val punctuationSet = "!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 
     // does not actually include all characters but covers ASCII
     private val allSet = (0x00..0xFF).map { it.toChar() }.joinToString("")
@@ -54,6 +56,22 @@ class Randomness {
     private val nonSpaceSet = complementSet(allSet, spaceSet)
     private val nonVerticalSpaceSet = complementSet(allSet, verticalSpaceSet)
     private val nonHorizontalSpaceSet = complementSet(allSet, horizontalSpaceSet)
+
+    private val posixCharClassSet = mapOf(
+        "Lower" to ('a'..'z').joinToString(""),
+        "Upper" to ('A'..'Z').joinToString(""),
+        "ASCII" to (0x00..0x7F).map { it.toChar() }.joinToString(""),
+        "Alpha" to asciiLetterSet,
+        "Digit" to digitSet,
+        "Alnum" to "$digitSet$asciiLetterSet",
+        "Punct" to punctuationSet,
+        "Graph" to "$digitSet$asciiLetterSet$punctuationSet",
+        "Print" to "$digitSet$asciiLetterSet$punctuationSet\u0020",
+        "Blank" to " \t",
+        "Cntrl" to (0x00..0x1F).map { it.toChar() }.joinToString("") + 0x7F.toChar(),
+        "XDigit" to "0123456789abcdefABCDEF",
+        "Space" to spaceSet
+    )
 
     private val wordChars = wordSet.map { it.toInt() }.sorted()
 
@@ -340,6 +358,15 @@ class Randomness {
     fun nextNonHorizontalSpaceChar(): Char {
         val k = nextFromStringSet(nonHorizontalSpaceSet)
         log.trace("nextNonHorizontalSpaceChar(): {}", k)
+        return k
+    }
+
+    fun nextPosixCharClassChar(type: String): Char {
+        if (type.substring(2,type.length-1) !in posixCharClassSet){
+            throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
+        }
+        val k = nextFromStringSet(posixCharClassSet[type.substring(2,type.length-1)]!!)
+        log.trace("nextPosixCharClassChar({}): {}", type, k)
         return k
     }
 

@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory
 \D	Find a non-digit character
 \s	Find a whitespace character
 \S	Find a non-whitespace character
+\p{X} Find a character from X POSIX character class (eg:\p{Lower})
  */
 class CharacterClassEscapeRxGene(
         val type: String
@@ -31,7 +32,7 @@ class CharacterClassEscapeRxGene(
     var value: String = ""
 
     init {
-        if (!listOf("w", "W", "d", "D", "s", "S", "v", "V", "h", "H").contains(type)) {
+        if (!listOf("w", "W", "d", "D", "s", "S", "v", "V", "h", "H").contains(type) && 'p' != type[0]) {
             throw IllegalArgumentException("Invalid type: $type")
         }
     }
@@ -54,17 +55,18 @@ class CharacterClassEscapeRxGene(
 
         val previous = value
 
-        value = when(type){
-            "d" -> randomness.nextDigitChar()
-            "D" -> randomness.nextNonDigitChar()
-            "w" -> randomness.nextWordChar()
-            "W" -> randomness.nextNonWordChar()
-            "s" -> randomness.nextSpaceChar()
-            "S" -> randomness.nextNonSpaceChar()
-            "v" -> randomness.nextVerticalSpaceChar()
-            "V" -> randomness.nextNonVerticalSpaceChar()
-            "h" -> randomness.nextHorizontalSpaceChar()
-            "H" -> randomness.nextNonHorizontalSpaceChar()
+        value = when(type[0]){
+            'd' -> randomness.nextDigitChar()
+            'D' -> randomness.nextNonDigitChar()
+            'w' -> randomness.nextWordChar()
+            'W' -> randomness.nextNonWordChar()
+            's' -> randomness.nextSpaceChar()
+            'S' -> randomness.nextNonSpaceChar()
+            'v' -> randomness.nextVerticalSpaceChar()
+            'V' -> randomness.nextNonVerticalSpaceChar()
+            'h' -> randomness.nextHorizontalSpaceChar()
+            'H' -> randomness.nextNonHorizontalSpaceChar()
+            'p' -> randomness.nextPosixCharClassChar(type)
             else ->
                 //this should never happen due to check in init
                 throw IllegalStateException("Type '\\$type' not supported yet")
