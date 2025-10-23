@@ -646,6 +646,12 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -671,6 +677,12 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -695,6 +707,12 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -728,6 +746,12 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }

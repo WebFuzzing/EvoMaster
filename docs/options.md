@@ -68,7 +68,7 @@ There are 3 types of options:
 |`addPreDefinedTests`| __Boolean__. Add predefined tests at the end of the search. An example is a test to fetch the schema of RESTful APIs. *Default value*: `true`.|
 |`addTestComments`| __Boolean__. Add summary comments on each test. *Default value*: `true`.|
 |`advancedBlackBoxCoverage`| __Boolean__. Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites. *Default value*: `true`.|
-|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA`. *Default value*: `DEFAULT`.|
+|`algorithm`| __Enum__. The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done. *Valid values*: `DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA`. *Default value*: `DEFAULT`.|
 |`allowInvalidData`| __Boolean__. When generating data, allow in some cases to use invalid values on purpose. *Default value*: `true`.|
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveAfterMutationFile`| __String__. Specify a path to save archive after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `archive.csv`.|
@@ -245,7 +245,10 @@ There are 3 types of options:
 |`aiResponseClassifierWarmup`| __Int__. Number of training iterations required to update classifier parameters. For example, in the Gaussian model this affects mean and variance updates. For neural network (NN) models, the warm-up should typically be larger than 1000. *Default value*: `10`.|
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
+|`breederParentsMin`| __Int__. Breeder GA: minimum number of individuals in parents pool after truncation. *Constraints*: `min=1.0`. *Default value*: `2`.|
+|`breederTruncationFraction`| __Double__. Breeder GA: fraction of top individuals to keep in parents pool (truncation). *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.5`.|
 |`callbackURLHostname`| __String__. HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname. *Default value*: `localhost`.|
+|`cgaNeighborhoodModel`| __Enum__. Cellular GA: neighborhood model (RING, L5, C9, C13). *Valid values*: `RING, L5, C9, C13`. *Default value*: `RING`.|
 |`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
 |`dockerLocalhost`| __Boolean__. Replace references to 'localhost' to point to the actual host machine. Only needed when running EvoMaster inside Docker. *Default value*: `false`.|

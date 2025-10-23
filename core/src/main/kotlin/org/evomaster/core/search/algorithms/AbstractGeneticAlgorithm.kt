@@ -57,6 +57,28 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
         observers.remove(observer)
     }
 
+    /** Call at the start of each searchOnce to begin a new generation scope. */
+    protected fun beginGeneration() {
+        observers.forEach { it.onGenerationStart() }
+    }
+
+    /** Call at the end of each searchOnce to report generation aggregates. */
+    protected fun endGeneration() {
+        val snapshot = population.toList()
+        val bestScore = snapshot.maxOfOrNull { score(it) } ?: 0.0
+        observers.forEach { it.onGenerationEnd(snapshot, bestScore) }
+    }
+
+    /** Start a new step inside current iteration. */
+    protected fun beginStep() {
+        observers.forEach { it.onStepStart() }
+    }
+
+    /** End current step and report aggregates. */
+    protected fun endStep() {
+        observers.forEach { it.onStepEnd() }
+    }
+
     /**
      * Called once before the search begins. Clears any old population and initializes a new one.
      */
@@ -184,12 +206,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
     /**
      * Combined fitness of a suite computed only over [frozenTargets] when set; otherwise full combined fitness.
      */
-    protected fun score(w: WtsEvalIndividual<T>): Double {
-        if (w.suite.isEmpty()) return 0.0
-
-        // Explicitly use full combined fitness when solution source is POPULATION
-        if (config.gaSolutionSource == EMConfig.GASolutionSource.POPULATION) {
-            return w.calculateCombinedFitness()
+    public fun score(w: WtsEvalIndividual<T>): Double {
+        if (w.suite.isEmpty()) {
+            return 0.0
         }
 
         if (frozenTargets.isEmpty()) {
@@ -202,7 +221,9 @@ abstract class AbstractGeneticAlgorithm<T> : SearchAlgorithm<T>() where T : Indi
         var sum = 0.0
         frozenTargets.forEach { t ->
             val comp = view[t]
-            if (comp != null) sum += comp.score
+            if (comp != null){
+                sum += comp.score
+            }
         }
         return sum
     }
