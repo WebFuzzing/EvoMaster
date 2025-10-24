@@ -19,7 +19,7 @@ abstract class JvmDtoOutput: DtoOutput {
         lines.addStatement("import java.util.Optional")
         lines.addEmpty()
         lines.addStatement("import com.fasterxml.jackson.annotation.JsonInclude")
-        lines.addStatement("import shaded.com.fasterxml.jackson.annotation.JsonProperty")
+        lines.addStatement("import com.fasterxml.jackson.annotation.JsonProperty")
         lines.addEmpty()
     }
 

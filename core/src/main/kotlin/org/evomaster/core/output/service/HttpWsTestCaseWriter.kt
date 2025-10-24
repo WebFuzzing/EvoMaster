@@ -390,9 +390,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
-        // TODO add support for kotlin
         var dtoVar: String? = null
-        if (config.dtoForRequestPayload && format.isJavaOrKotlin()) {
+        if (config.dtoSupportedForPayload()) {
             dtoVar = writeDto(call, lines)
         }
 
@@ -591,7 +590,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     private fun shouldUseDtoForPayload(dtoVar: String?): Boolean {
-        return config.dtoForRequestPayload && format.isJavaOrKotlin() && dtoVar?.isNotEmpty() == true
+        return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
     }
 
     private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
