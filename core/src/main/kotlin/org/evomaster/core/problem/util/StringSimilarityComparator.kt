@@ -18,7 +18,7 @@ object StringSimilarityComparator {
      */
     fun stringSimilarityScore(str1 : String, str2 : String, algorithm : SimilarityAlgorithm =SimilarityAlgorithm.Trigrams): Double{
         return when(algorithm){
-            SimilarityAlgorithm.Trigrams -> trigrams(bigram(str1.toLowerCase()), bigram(str2.toLowerCase()))
+            SimilarityAlgorithm.Trigrams -> trigrams(bigram(str1.lowercase()), bigram(str2.lowercase()))
             //else-> 0.0
         }
     }

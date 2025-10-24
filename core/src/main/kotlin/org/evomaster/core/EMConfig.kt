@@ -809,6 +809,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1110,7 +1112,7 @@ class EMConfig {
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
-    
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -2856,6 +2858,21 @@ class EMConfig {
     fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+
+    /**
+     * Source to build the final GA solution when evolving full test suites (not single tests).
+     * ARCHIVE: use current behavior (take tests from the archive).
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
+     */
+    enum class GASolutionSource { ARCHIVE, POPULATION }
+
+    /**
+     * Controls how GA algorithms produce the final solution.
+     * Default preserves current behavior.
+     */
+    var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
+
+    private var disabledOracleCodesList: List<FaultCategory>? = null
 
     private fun isFaultCodeActive(
         code: Int,
