@@ -7,6 +7,12 @@ Under development in `master` branch.
 - Option _--disabledOracleCodes_ to disable the checking of specific fault types based on their WFC fault codes. By default, all fault types are checked for. 
 - Option _--endpointExclude_ to exclude specific REST endpoints from the fuzzing.
 
+
+### Addressed GitHub Issues
+
+- #1263: Unable to insert data into MySQL 
+
+
 # Version 4.0.0
 
 ### Breaking Changes
