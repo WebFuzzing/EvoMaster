@@ -102,7 +102,7 @@ class Statistics : SearchListener {
 
     fun writeStatistics(solution: Solution<*>) {
 
-        val data = getData(solution) + getAIData()
+        val data = getData(solution)
         val headers = data.map { it.header }.joinToString(",")
         val elements = data.map { it.element }.joinToString(",")
 
@@ -131,19 +131,7 @@ class Statistics : SearchListener {
         }
 
         // All headers, including AI-related ones
-        val baseHeaders = snapshots.values.first().map { it.header }.toMutableList()
-        baseHeaders.addAll(
-            listOf(
-                "ai_model_enabled",
-                "ai_accuracy",
-                "ai_precision400",
-                "ai_recall400",
-                "ai_f1Score400",
-                "ai_mcc400"
-            )
-        )
-
-        val headers = "interval," + baseHeaders.joinToString(",")
+        val headers = "interval," + snapshots.values.first().joinToString(",") { it.header }
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
         Files.createDirectories(path.parent)
@@ -151,24 +139,16 @@ class Statistics : SearchListener {
         if (!Files.exists(path) || !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
-
             path.toFile().appendText("$headers\n")
         }
 
         snapshots.entries.stream()
             .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
-            .forEach {
-                val baseElements = it.value.map { it.element }.toMutableList()
-
-                // Including AI-related values
-                baseElements.addAll(getAIData().map { it.element })
-
-                val elements = baseElements.joinToString(",")
-                path.toFile().appendText("${it.key},$elements\n")
+            .forEach { (key, pairs) ->
+                val elements = pairs.joinToString(",") { it.element }
+                path.toFile().appendText("$key,$elements\n")
             }
     }
-
-
 
 
     fun reportTimeout() {
@@ -362,39 +342,58 @@ class Statistics : SearchListener {
         }
         addConfig(list)
 
+        // Adding AI data
+        list.addAll(getAIData())
+
         return list
     }
+
+    // For building AI metric pairs
+    fun aiMetricsAsPairs(
+        enabled: Boolean,
+        type: String,
+        accuracy: Double,
+        precision: Double,
+        recall: Double,
+        f1: Double,
+        mcc: Double
+    ): List<Pair> = listOf(
+        Pair("ai_model_enabled", enabled.toString()),
+        Pair("ai_model_type", type),
+        Pair("ai_accuracy", "%.4f".format(accuracy)),
+        Pair("ai_precision400", "%.4f".format(precision)),
+        Pair("ai_recall400", "%.4f".format(recall)),
+        Pair("ai_f1Score400", "%.4f".format(f1)),
+        Pair("ai_mcc400", "%.4f".format(mcc))
+    )
 
     fun getAIData(): List<Pair> {
-        val list = mutableListOf<Pair>()
-
         // AI model is unable
         if (!config.isEnabledAIModelForResponseClassification()) {
-            list.add(Pair("ai_model_enabled", "false"))
-            list.add(Pair("ai_accuracy", "0"))
-            list.add(Pair("ai_precision400", "0"))
-            list.add(Pair("ai_recall400", "0"))
-            list.add(Pair("ai_f1Score400", "0"))
-            list.add(Pair("ai_mcc400", "0"))
-            return list
+            return aiMetricsAsPairs(
+                enabled = false,
+                type = "NONE",
+                accuracy = 0.0,
+                precision = 0.0,
+                recall = 0.0,
+                f1 = 0.0,
+                mcc = 0.0
+            )
         }
 
-        val classifier = aiResponseClassifier
-
         // Compute metrics
-        val model = classifier.viewInnerModel()
-        val metrics = model.estimateOverallMetrics()
+        val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
 
-        list.add(Pair("ai_model_enabled", "true"))
-        list.add(Pair("ai_accuracy", "%.4f".format(metrics.accuracy)))
-        list.add(Pair("ai_precision400", "%.4f".format(metrics.precision400)))
-        list.add(Pair("ai_recall400", "%.4f".format(metrics.recall400)))
-        list.add(Pair("ai_f1Score400", "%.4f".format(metrics.f1Score400)))
-        list.add(Pair("ai_mcc400", "%.4f".format(metrics.mcc)))
-
-        return list
+        return aiMetricsAsPairs(
+            enabled = true,
+            type = config.aiModelForResponseClassification.name,
+            accuracy = metrics.accuracy,
+            precision = metrics.precision400,
+            recall = metrics.recall400,
+            f1 = metrics.f1Score400,
+            mcc = metrics.mcc
+        )
     }
-
 
 
     private fun distinctActions() : Int {
