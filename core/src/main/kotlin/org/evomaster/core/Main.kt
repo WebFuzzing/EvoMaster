@@ -864,9 +864,8 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            // TODO: support Kotlin for DTOs
-            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJavaOrKotlin()) {
-                writer.writeDtos(solution.getFileName().name)
+            if (config.dtoSupportedForPayload()) {
+                writer.writeDtos(solution)
             }
 
             val splitResult = TestSuiteSplitter.split(solution, config)
