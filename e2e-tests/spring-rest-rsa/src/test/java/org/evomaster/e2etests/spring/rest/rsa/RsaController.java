@@ -2,12 +2,13 @@ package org.evomaster.e2etests.spring.rest.rsa;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.alibaba.fastjson.TypeReference;
 import com.example.demo.MySpringBootApplication;
 import com.example.demo.controller.DemoController;
 import com.example.demo.util.CryptoUtil;
 import com.example.demo.vo.BindCardReq;
 import com.example.demo.vo.CommonReq;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
@@ -54,6 +55,7 @@ public class RsaController extends EmbeddedSutController {
 
     private static final String MYSQL_VERSION = "8.0.27";
 
+    private  static ObjectMapper mapper = new ObjectMapper();
 
     public static final GenericContainer mysql = new GenericContainer("mysql:" + MYSQL_VERSION)
             .withEnv(new HashMap<String, String>(){{
@@ -85,7 +87,10 @@ public class RsaController extends EmbeddedSutController {
         }
 
         if(paramName.equals("data")){
-            CommonReq<BindCardReq> req = JSON.parseObject(jsonObject, new TypeReference<CommonReq<BindCardReq>>() {});
+            //WARNING: JSON.parseObject silently ignore the generics
+            //CommonReq<BindCardReq> req = JSON.parseObject(jsonObject, new TypeReference<CommonReq<BindCardReq>>() {});
+            CommonReq<BindCardReq> req = mapper.readValue(jsonObject, new TypeReference<CommonReq<BindCardReq>>(){} );
+
             return CryptoUtil.encrypt(JSONObject.toJSONString(req.getBizData()), aesKey);
         }
 

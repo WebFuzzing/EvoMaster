@@ -40,7 +40,7 @@ public class DemoController {
         String publicKey = OTHER_PARTY_PUBLIC_KEY;
         boolean checkSign = CryptoUtil.verify(signContent, req.getSign(), CryptoUtil.getPublicKey(publicKey));
         if (!checkSign) {
-            System.out.println("------ERROR! Invalid sign for the req:{}" + JSONObject.toJSONString(req));
+            System.out.println("------ERROR! Invalid sign for the req:" + JSONObject.toJSONString(req));
             return ResponseEntity.status(400).body(
                     handle(CommonResp.of("ERROR", "invalid signature", null))
             );
@@ -57,7 +57,7 @@ public class DemoController {
                     handle(CommonResp.of("ERROR", "Decryption failed", null))
             );
         }
-        System.out.println("------Decrypted bizData:{}" + bizData);
+        System.out.println("------Decrypted bizData: " + bizData);
 
         BindCardReq bindCardReq = JSONObject.parseObject(bizData, BindCardReq.class);
 
