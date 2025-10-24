@@ -2872,11 +2872,20 @@ class EMConfig {
      */
     var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
 
+
+    /**
+     * Not all oracles are active by default.
+     * Some might be experimental, while others might be explicitly excluded by the user
+     */
+    fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        return category !in getDisabledOracleCodesList()
+    }
+
     private fun isFaultCodeActive(
         code: Int,
         disabledCodes: Set<Int>
     ): Boolean {
-        val isExperimental = ExperimentalFaultCategory.values().any { it.code == code }
+        val isExperimental = ExperimentalFaultCategory.entries.any { it.code == code }
         if (isExperimental && !useExperimentalOracles) return false
         if (code in disabledCodes) return false
         return true
@@ -2895,8 +2904,8 @@ class EMConfig {
             token.toIntOrNull() ?: throw ConfigProblemException("Invalid number: $token")
         }
 
-        val definedCodes = DefinedFaultCategory.values().map { it.code }.toSet()
-        val experimentalCodes = ExperimentalFaultCategory.values().map { it.code }.toSet()
+        val definedCodes = DefinedFaultCategory.entries.map { it.code }.toSet()
+        val experimentalCodes = ExperimentalFaultCategory.entries.map { it.code }.toSet()
         val knownCodes = definedCodes + experimentalCodes
 
         val unknown = codes.filter { it !in knownCodes }
@@ -2904,9 +2913,9 @@ class EMConfig {
             val message = buildString {
                 appendLine("Invalid fault code(s): ${unknown.joinToString(", ")}")
                 appendLine("All available defined codes:")
-                appendLine(DefinedFaultCategory.values().joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine(DefinedFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
                 appendLine("All available experimental codes:")
-                appendLine(ExperimentalFaultCategory.values().joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine(ExperimentalFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
                 if (!useExperimentalOracles) {
                     appendLine("Note: Experimental oracles are currently disabled (useExperimentalOracles=false).")
                 }
@@ -2919,18 +2928,17 @@ class EMConfig {
 
     private var disabledOracleCodesList: List<FaultCategory>? = null
 
-    fun getDisabledOracleCodesList(): List<FaultCategory> {
+    private fun getDisabledOracleCodesList(): List<FaultCategory> {
         if (disabledOracleCodesList != null) {
             return disabledOracleCodesList!!
         }
 
-        val definedCategories = DefinedFaultCategory.values().asList()
-        val experimentalCategories = ExperimentalFaultCategory.values().asList()
+        val definedCategories = DefinedFaultCategory.entries
+        val experimentalCategories = ExperimentalFaultCategory.entries
 
         val allCategories: List<FaultCategory> = definedCategories + experimentalCategories
 
-        val userDisabledCodes: Set<Int> =
-            parseDisabledCodesOrThrow(disabledOracleCodes)
+        val userDisabledCodes: Set<Int> = parseDisabledCodesOrThrow(disabledOracleCodes)
 
         val disabled: List<FaultCategory> = allCategories.filter { category ->
             !isFaultCodeActive(category.code, userDisabledCodes)
