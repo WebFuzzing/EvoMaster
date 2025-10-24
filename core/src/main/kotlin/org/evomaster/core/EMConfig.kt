@@ -2872,8 +2872,6 @@ class EMConfig {
      */
     var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
 
-    private var disabledOracleCodesList: List<FaultCategory>? = null
-
     private fun isFaultCodeActive(
         code: Int,
         disabledCodes: Set<Int>
