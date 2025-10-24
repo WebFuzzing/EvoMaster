@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Changes
+
+- _core_ process is moved to JDK 17, while _driver_ is still on 8 (and it will be for the foreseeable future). If you run EM from its installers or Docker, you will see no difference. However, if you run it via its jar file with '_java -jar_', then you need to make sure to have JDK 17 (or 21, but not 25). 
+
 ### New Features
 
 - Option _--disabledOracleCodes_ to disable the checking of specific fault types based on their WFC fault codes. By default, all fault types are checked for. 
