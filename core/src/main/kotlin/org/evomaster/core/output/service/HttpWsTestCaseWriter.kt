@@ -159,7 +159,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val verbs = arrayOf("post", "put", "patch")
 
-        if (verbs.contains(verb.toLowerCase()))
+        if (verbs.contains(verb.lowercase()))
             return true;
         return false;
     }
@@ -698,7 +698,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add("dynamic $bodyVarName = ")
         }
 
-        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().lowercase().contains("+json")) {
 
             if (format.isCsharp()) {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
