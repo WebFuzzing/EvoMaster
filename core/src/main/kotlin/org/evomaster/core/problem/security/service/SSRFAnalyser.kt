@@ -101,7 +101,7 @@ class SSRFAnalyser {
         //  selecting individuals with HTTP 400 and 422 status codes.
         val individualsWith4XX = getIndividualsWithStatus4XX()
 
-        individualsInSolution = individualsWith2XX + individualsWith4XX
+        individualsInSolution =  individualsWith2XX + individualsWith4XX
 
         if (individualsInSolution.isEmpty()) {
             return archive.extractSolution()
@@ -121,8 +121,8 @@ class SSRFAnalyser {
         // Classify endpoints with potential vulnerability classes
         classify()
 
-        // execute
-        analyse()
+        // evaluate
+        evaluate()
 
         return archive.extractSolution()
     }
@@ -264,7 +264,7 @@ class SSRFAnalyser {
     /**
      * Run the determined vulnerability class (from the classification) analysers.
      */
-    private fun analyse() {
+    private fun evaluate() {
         if (config.problemType == EMConfig.ProblemType.REST) {
 
             individualsInSolution.forEach { evaluatedIndividual ->
@@ -346,7 +346,7 @@ class SSRFAnalyser {
     private fun getIndividualsWithStatus4XX(): List<EvaluatedIndividual<RestIndividual>> {
         return RestIndividualSelectorUtils.findIndividuals(
             this.archive.extractSolution().individuals,
-            statusCodes = listOf(400, 422)
+            statusCodes = listOf(422)
         )
     }
 }

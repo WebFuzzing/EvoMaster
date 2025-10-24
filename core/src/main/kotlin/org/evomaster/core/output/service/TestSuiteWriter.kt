@@ -1,7 +1,6 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.SqlDtoUtils
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
@@ -24,7 +23,6 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
-import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
@@ -457,6 +455,7 @@ class TestSuiteWriter {
                 || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.common.Metadata", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
                     "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
