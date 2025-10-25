@@ -1221,7 +1221,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SSRF)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             return
         }
 
@@ -1246,7 +1246,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
             return
         }
 
@@ -1286,7 +1286,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
             return
         }
 
@@ -1320,7 +1320,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
             return
         }
 
@@ -1344,7 +1344,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
 
-        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
             return
         }
 
@@ -1380,7 +1380,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
 
-        if (config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
             return
         }
 
