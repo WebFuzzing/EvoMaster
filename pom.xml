@@ -26,8 +26,6 @@
         <module>core-graphql-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
-<!--        TODO we don't use it, and it is outdated... should just remove it? -->
-<!--        <module>report</module>-->
         <module>test-old-libraries</module>
         <module>solver</module>
         <module>test-utils</module>
