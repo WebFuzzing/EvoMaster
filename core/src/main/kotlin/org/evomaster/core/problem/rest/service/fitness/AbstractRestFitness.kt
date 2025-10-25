@@ -544,7 +544,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         if (status == 500){
-            if( DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            if( config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_STATUS_500)) {
                 /*
                     500 codes "might" be bugs. To distinguish between different bugs
                     that crash the same endpoint, we need to know what was the last
@@ -733,7 +733,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){
             handleSchemaOracles(a, rcr, fv)
         } else {
             LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
@@ -745,7 +745,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -1124,7 +1124,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 
@@ -1136,9 +1136,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for non-working DELETE, as it has been disabled via configuration")
+        } else {
+            handleDeleteShouldDelete(individual, actionResults, fv)
+        }
 
-        handleDeleteShouldDelete(individual, actionResults, fv)
-        handleRepeatedCreatePut(individual, actionResults, fv)
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
+        } else {
+            handleRepeatedCreatePut(individual, actionResults, fv)
+        }
     }
 
     private fun handleRepeatedCreatePut(
