@@ -90,6 +90,19 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>8</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>

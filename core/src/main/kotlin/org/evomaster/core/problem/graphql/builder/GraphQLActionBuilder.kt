@@ -77,9 +77,9 @@ object GraphQLActionBuilder {
 
         if (schemaObj.data.__schema.queryType != null || schemaObj.data.__schema.mutationType != null) {
             for (element in state.tables) {
-                if (schemaObj.data.__schema.queryType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                if (schemaObj.data.__schema.queryType?.name?.lowercase() == element.typeName.lowercase()) {
                     handleOperation(state, actionCluster, treeDepth, element, GQMethodType.QUERY)
-                } else if (schemaObj.data.__schema.mutationType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                } else if (schemaObj.data.__schema.mutationType?.name?.lowercase() == element.typeName.lowercase()) {
                     handleOperation(state, actionCluster, treeDepth, element, GQMethodType.MUTATION)
                 }
             }

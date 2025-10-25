@@ -22,15 +22,27 @@ class NN400EndpointModel(
     warmup: Int = 10,
     dimension: Int? = null,
     encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
+    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
     private val learningRate: Double = 0.01,
     randomness: Randomness
-) : AbstractProbabilistic400EndpointModel(endpoint, warmup, dimension, encoderType, randomness) {
+) : AbstractProbabilistic400EndpointModel(
+    endpoint, warmup, dimension, encoderType, metricType, randomness) {
+
+    init {
+        // Throw an exception if a non-NORMAL encoder is provided
+        if (encoderType != EMConfig.EncoderType.NORMAL) {
+            throw IllegalArgumentException(
+                "NN400EndpointModel supports only NORMAL encoder, but got: $encoderType"
+            )
+        }
+    }
 
     // Initialize weights with default values to prevent null
     private val hiddenSize: Int = 16 // size of the hidden layer
     private var weightsInputHidden: Array<DoubleArray> = Array(1) { DoubleArray(hiddenSize) }
     private var weightsHiddenOutput: Array<DoubleArray> = Array(hiddenSize) { DoubleArray(2) }
     private val outputSize = 2 // [class400, classNot400]
+
 
     /** Must be called once to initialize the model properties */
     override fun initializeIfNeeded(inputVector: List<Double>) {
@@ -68,22 +80,22 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (!encoder.areAllGenesSupported()) {
+        if (encoder.areAllGenesUnSupported()) {
             // skip classification/training if unsupported
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5)
             )
         }
 
         initializeIfNeeded(inputVector)
 
-        if (modelMetricsFullHistory.totalSentRequests < warmup) {
+        if (modelMetrics.totalSentRequests < warmup) {
             // Return equal probabilities during warmup
             return AIResponseClassification(
                 probabilities = mapOf(
-                    200 to 0.5,
+                    NOT_400 to 0.5,
                     400 to 0.5
                 )
             )
@@ -94,7 +106,7 @@ class NN400EndpointModel(
 
         return AIResponseClassification(
             probabilities = mapOf(
-                200 to outputProbs[1],
+                NOT_400 to outputProbs[1],
                 400 to outputProbs[0]
             )
         )
@@ -112,10 +124,10 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        if (!encoder.areAllGenesSupported() || inputVector.isEmpty()) {
+        if (encoder.areAllGenesUnSupported() || inputVector.isEmpty()) {
             // Skip training if unsupported or empty
-            val predictedStatusCode = if(randomness.nextBoolean()) 400 else 200
-            modelMetricsFullHistory.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
+            val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
+            modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
             modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }

@@ -3,6 +3,7 @@ package org.evomaster.core.sql.extract.mysql
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -18,7 +19,7 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
 
         assertNotNull(schema)
 
-        val tableDto = schema.tables.find { it.name.equals("shirts", ignoreCase = true) }
+        val tableDto = schema.tables.find { it.id.name.equals("shirts", ignoreCase = true) }
         assertNotNull(tableDto)
         assertEquals(2, tableDto!!.columns.size)
         assertEquals(1, tableDto.tableCheckExpressions.size)
@@ -29,10 +30,10 @@ class CreateTableEnumTest : ExtractTestBaseMySQL() {
             assertEquals("ENUM", size!!.type)
         }
 
-        assertEquals("size enum('x-small','small','medium','large','x-large')",tableDto.tableCheckExpressions[0].sqlCheckExpression.toLowerCase())
+        assertEquals("size enum('x-small','small','medium','large','x-large')",tableDto.tableCheckExpressions[0].sqlCheckExpression.lowercase())
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("shirts", setOf("name", "size"))
+        val actions = builder.createSqlInsertionAction(TableId("shirts", openGroupName = MYSQL_DB_NAME), setOf("name", "size"))
 
         val sizeGene = actions[0].seeTopGenes().find { it.name == "size" }
         assertTrue(sizeGene is NullableGene)

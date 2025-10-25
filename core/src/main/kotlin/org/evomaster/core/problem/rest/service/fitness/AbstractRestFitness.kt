@@ -544,25 +544,27 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             fv.updateTarget(faultId, 1.0, indexOfAction)
         }
 
-        if (status == 500 && DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            /*
-                500 codes "might" be bugs. To distinguish between different bugs
-                that crash the same endpoint, we need to know what was the last
-                executed statement in the SUT.
-                So, we create new targets for it.
+        if (status == 500){
+            if( config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_STATUS_500)) {
+                /*
+                    500 codes "might" be bugs. To distinguish between different bugs
+                    that crash the same endpoint, we need to know what was the last
+                    executed statement in the SUT.
+                    So, we create new targets for it.
 
-                However, such info is missing in black-box testing
-            */
-            Lazy.assert { location5xx != null || config.blackBox }
+                    However, such info is missing in black-box testing
+                */
+                Lazy.assert { location5xx != null || config.blackBox }
 
-            val postfix = if (location5xx == null) name else "${location5xx!!} $name"
-            val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
-            val bugId = idMapper.handleLocalTarget(descriptiveId)
-            fv.updateTarget(bugId, 1.0, indexOfAction)
+                val postfix = if (location5xx == null) name else "${location5xx!!} $name"
+                val descriptiveId = idMapper.getFaultDescriptiveId(DefinedFaultCategory.HTTP_STATUS_500,postfix)
+                val bugId = idMapper.handleLocalTarget(descriptiveId)
+                fv.updateTarget(bugId, 1.0, indexOfAction)
 
-            result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
-        } else if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
-            LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
+                result.addFault(DetectedFault(DefinedFaultCategory.HTTP_STATUS_500, name,location5xx))
+            } else  {
+                LoggingUtil.uniqueUserInfo("Found endpoints with status code 500. But those are not marked as fault,  as HTTP 500 fault detection has been disabled.")
+            }
         }
     }
 
@@ -732,7 +734,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
 
-        if(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE !in config.getDisabledOracleCodesList()){
+        if(config.isEnabledFaultCategory(DefinedFaultCategory.SCHEMA_INVALID_RESPONSE)){
             handleSchemaOracles(a, rcr, fv)
         } else {
             LoggingUtil.uniqueUserInfo("Schema oracles disabled via configuration")
@@ -744,7 +746,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -1123,7 +1125,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 
@@ -1135,9 +1137,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     }
 
     private fun analyzeHttpSemantics(individual: RestIndividual, actionResults: List<ActionResult>, fv: FitnessValue) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_NONWORKING_DELETE)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for non-working DELETE, as it has been disabled via configuration")
+        } else {
+            handleDeleteShouldDelete(individual, actionResults, fv)
+        }
 
-        handleDeleteShouldDelete(individual, actionResults, fv)
-        handleRepeatedCreatePut(individual, actionResults, fv)
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_REPEATED_CREATE_PUT)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
+        } else {
+            handleRepeatedCreatePut(individual, actionResults, fv)
+        }
     }
 
     private fun handleRepeatedCreatePut(

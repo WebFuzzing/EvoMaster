@@ -16,18 +16,18 @@ class CreateTableCheckTest : ExtractTestBaseMySQL() {
 
         assertNotNull(schema)
 
-        assertEquals("test", schema.name.toLowerCase())
+        assertEquals("test", schema.name.lowercase())
         assertEquals(DatabaseType.MYSQL, schema.databaseType)
-        assertTrue(schema.tables.any { it.name.equals("people", ignoreCase = true) })
+        assertTrue(schema.tables.any { it.id.name.equals("people", ignoreCase = true) })
 
-        assertEquals(2, schema.tables.first { it.name.equals("people", ignoreCase = true) }.columns.size)
+        assertEquals(2, schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.columns.size)
 
-        assertTrue(schema.tables.first { it.name.equals("people", ignoreCase = true) }.columns.any { it.name == "age" });
+        assertTrue(schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.columns.any { it.name == "age" });
 
-        assertEquals(1, schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size)
+        assertEquals(1, schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.tableCheckExpressions.size)
         assertEquals(
             "(age <= 100)",
-            schema.tables.first { it.name.equals("people", ignoreCase = true) }.tableCheckExpressions[0].sqlCheckExpression
+            schema.tables.first { it.id.name.equals("people", ignoreCase = true) }.tableCheckExpressions[0].sqlCheckExpression
         )
 
     }

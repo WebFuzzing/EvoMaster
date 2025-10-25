@@ -24,6 +24,8 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -170,7 +172,7 @@ open class RestResourceNode(
         }
 
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
-            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.id)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
         }.filter{it.isMutable() && it !is SqlForeignKeyGene && it !is SqlPrimaryKeyGene}
     }
@@ -240,7 +242,7 @@ open class RestResourceNode(
     /**
      * @return related table for creating resource for [this] node with sql
      */
-    fun getSqlCreationPoints() : List<String>{
+    fun getSqlCreationPoints() : List<TableId>{
         if (resourceToTable.confirmedSet.isNotEmpty()) return resourceToTable.confirmedSet.keys.toList()
         return resourceToTable.derivedMap.keys.toList()
     }
@@ -670,7 +672,9 @@ open class RestResourceNode(
     /**
      * @return derived tables
      */
-    fun getDerivedTables() : Set<String> = resourceToTable.derivedMap.flatMap { it.value.map { m->m.targetMatched } }.toHashSet()
+    fun getDerivedTables(all: Set<TableId>) : Set<TableId> = resourceToTable.derivedMap
+        .flatMap { it.value.mapNotNull { m-> SqlActionUtils.getTableKey(all, m.targetMatched) } }
+        .toHashSet()
 
     /**
      * @return is any POST, GET, PATCH, DELETE, PUT action?
@@ -869,7 +873,7 @@ open class RestResourceNode(
                 return paramsInfo.values.filter { it.requiredReferToOthers() || randomness?.nextBoolean(it.probOfReferringToOther) == true }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
-                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}
+                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.lowercase().contains("id"))}
             }
             HttpVerb.GET, HttpVerb.DELETE->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) }

@@ -53,7 +53,7 @@ class ObjectGenerator {
                 val extendedName = "$k${fieldName}"
                 // even if there are not characters in common, a matching field should still have
                 // a probability of being chosen (albeit a small one).
-                val temp = (1.toLong() + longestCommonSubsequence(parameter.toLowerCase(), extendedName.toLowerCase())
+                val temp = (1.toLong() + longestCommonSubsequence(parameter.lowercase(), extendedName.lowercase())
                         .length.toFloat())/ (1.toLong() + Integer.max(parameter.length, extendedName.length).toFloat())
                 result[Pair(k, fieldName)] = temp
                 sum += temp

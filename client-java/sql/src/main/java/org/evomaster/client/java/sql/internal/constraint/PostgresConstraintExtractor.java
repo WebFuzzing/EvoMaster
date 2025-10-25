@@ -72,8 +72,8 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
 
         List<DbTableConstraint> constraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
-            String tableSchema = tableDto.schema;
-            String tableName = tableDto.name;
+            String tableSchema = tableDto.id.schema;
+            String tableName = tableDto.id.name;
             try (Statement statement = connectionToPostgres.createStatement()) {
 
 

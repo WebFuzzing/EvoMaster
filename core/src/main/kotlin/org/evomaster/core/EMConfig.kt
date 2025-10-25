@@ -809,6 +809,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1110,7 +1112,7 @@ class EMConfig {
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
-    
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1356,6 +1358,22 @@ class EMConfig {
     var aiResponseClassifierLearningRate: Double = 0.01
 
     @Experimental
+    @Cfg(
+        "Maximum number of stored samples for classifiers such as KNN and KDE models that rely " +
+                "on retaining encoded inputs. " +
+                "This value specifies the maximum number of samples stored for each endpoint. " +
+                "A higher value can improve classification accuracy by leveraging more historical data, " +
+                "but also increases memory usage. " +
+                "A lower value reduces memory consumption but may limit the classifier’s knowledge base. " +
+                "Typically, it is safe to keep this value between 10,000 and 50,000 when the encoded input vector " +
+                "is usually a list of doubles with a length under 20. " +
+                "Reservoir sampling is applied independently for each endpoint: if this maximum number is exceeded, " +
+                "new samples randomly replace existing ones, ensuring an unbiased selection of preserved data. " +
+                "As an example, for an API with 100 endpoints and an input vector of size 20, " +
+                "a maximum of 10,000 samples per endpoint would require roughly 200 MB of memory.")
+    var aiResponseClassifierMaxStoredSamples: Int = 10_000
+
+    @Experimental
     @Cfg("Number of training iterations required to update classifier parameters. " +
                 "For example, in the Gaussian model this affects mean and variance updates. " +
                 "For neural network (NN) models, the warm-up should typically be larger than 1000.")
@@ -1401,6 +1419,26 @@ class EMConfig {
     @Experimental
     @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
     var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
+
+
+    enum class AIClassificationMetrics {
+
+        /**
+         * Evaluates metrics (accuracy, F1, etc.) over a recent sliding time window.
+         * This highlights short-term classifier behavior and adapts to changes in data distribution.
+          */
+        TIME_WINDOW,
+
+        /**
+         * Evaluates metrics over the entire lifetime of the classifier,
+         * capturing its cumulative long-term performance without forgetting older data.
+         */
+        FULL_HISTORY
+    }
+
+    @Experimental
+    @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
+    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -2537,6 +2575,11 @@ class EMConfig {
     )
     var disabledOracleCodes = ""
 
+    @Cfg("Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. " +
+            "Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. " +
+            "When false, all experimental oracles are disabled.")
+    var useExperimentalOracles = false
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2816,28 +2859,92 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
+    /**
+     * Source to build the final GA solution when evolving full test suites (not single tests).
+     * ARCHIVE: use current behavior (take tests from the archive).
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
+     */
+    enum class GASolutionSource { ARCHIVE, POPULATION }
+
+    /**
+     * Controls how GA algorithms produce the final solution.
+     * Default preserves current behavior.
+     */
+    var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
+
+
+    /**
+     * Not all oracles are active by default.
+     * Some might be experimental, while others might be explicitly excluded by the user
+     */
+    fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        return category !in getDisabledOracleCodesList()
+    }
+
+    private fun isFaultCodeActive(
+        code: Int,
+        disabledCodes: Set<Int>
+    ): Boolean {
+        val isExperimental = ExperimentalFaultCategory.entries.any { it.code == code }
+        if (isExperimental && !useExperimentalOracles) return false
+        if (code in disabledCodes) return false
+        return true
+    }
+
+    private fun parseDisabledCodesOrThrow(
+        disabledOracleCodes: String,
+    ): Set<Int> {
+        if (disabledOracleCodes.isBlank()) return emptySet()
+
+        val tokens = disabledOracleCodes
+            .split(",")
+            .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+
+        val codes = tokens.map { token ->
+            token.toIntOrNull() ?: throw ConfigProblemException("Invalid number: $token")
+        }
+
+        val definedCodes = DefinedFaultCategory.entries.map { it.code }.toSet()
+        val experimentalCodes = ExperimentalFaultCategory.entries.map { it.code }.toSet()
+        val knownCodes = definedCodes + experimentalCodes
+
+        val unknown = codes.filter { it !in knownCodes }
+        if (unknown.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Invalid fault code(s): ${unknown.joinToString(", ")}")
+                appendLine("All available defined codes:")
+                appendLine(DefinedFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine("All available experimental codes:")
+                appendLine(ExperimentalFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                if (!useExperimentalOracles) {
+                    appendLine("Note: Experimental oracles are currently disabled (useExperimentalOracles=false).")
+                }
+            }
+            throw ConfigProblemException(message)
+        }
+
+        return codes.toSet()
+    }
+
     private var disabledOracleCodesList: List<FaultCategory>? = null
 
-    fun getDisabledOracleCodesList(): List<FaultCategory> {
-        if (disabledOracleCodesList == null) {
-            disabledOracleCodesList = disabledOracleCodes
-                .split(",")
-                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
-                .map { str ->
-                    val code = str.toIntOrNull()
-                        ?: throw ConfigProblemException("Invalid number: $str")
-
-                    val allCategories = DefinedFaultCategory.values().asList() +
-                            ExperimentalFaultCategory.values()
-
-                    allCategories.firstOrNull { it.code == code }
-                        ?: throw ConfigProblemException(
-                            "Invalid fault code: $code" +
-                                    " All available codes are: \n" +
-                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
-                        )
-                }
+    private fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList != null) {
+            return disabledOracleCodesList!!
         }
+
+        val definedCategories = DefinedFaultCategory.entries
+        val experimentalCategories = ExperimentalFaultCategory.entries
+
+        val allCategories: List<FaultCategory> = definedCategories + experimentalCategories
+
+        val userDisabledCodes: Set<Int> = parseDisabledCodesOrThrow(disabledOracleCodes)
+
+        val disabled: List<FaultCategory> = allCategories.filter { category ->
+            !isFaultCodeActive(category.code, userDisabledCodes)
+        }
+
+        disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
     }
 

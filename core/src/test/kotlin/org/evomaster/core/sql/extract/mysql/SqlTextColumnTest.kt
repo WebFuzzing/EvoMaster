@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -21,7 +22,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
@@ -35,7 +36,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -64,7 +65,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value

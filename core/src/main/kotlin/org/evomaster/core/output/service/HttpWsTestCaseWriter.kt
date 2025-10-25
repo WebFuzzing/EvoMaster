@@ -136,7 +136,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
                     val geneToDto = GeneToDto(format)
 
-                    val dtoName = geneToDto.getRootDtoName(leafGene, actionName)
+                    val dtoName = geneToDto.getDtoName(leafGene, actionName)
                     val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
 
                     dtoCall.objectCalls.forEach {
@@ -159,7 +159,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val verbs = arrayOf("post", "put", "patch")
 
-        if (verbs.contains(verb.toLowerCase()))
+        if (verbs.contains(verb.lowercase()))
             return true;
         return false;
     }
@@ -384,9 +384,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
-        // TODO add support for kotlin
         var dtoVar: String? = null
-        if (config.dtoForRequestPayload && format.isJava()) {
+        if (config.dtoSupportedForPayload()) {
             dtoVar = writeDto(call, lines)
         }
 
@@ -585,7 +584,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     private fun shouldUseDtoForPayload(dtoVar: String?): Boolean {
-        return config.dtoForRequestPayload && format.isJava() && dtoVar?.isNotEmpty() == true
+        return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
     }
 
     private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
@@ -699,7 +698,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add("dynamic $bodyVarName = ")
         }
 
-        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().lowercase().contains("+json")) {
 
             if (format.isCsharp()) {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")

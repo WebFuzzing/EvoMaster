@@ -420,14 +420,13 @@ class Main {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
                     val solution = securityRest.applySecurityPhase()
 
-                    if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+                    if (config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
                         val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
                         ssrfAnalyser.apply()
                     } else {
-                        if(DefinedFaultCategory.SSRF in config.getDisabledOracleCodesList())
-                        {
+                        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
                             LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
                         }
 
@@ -864,9 +863,8 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
-            // TODO: support Kotlin for DTOs
-            if (config.problemType == EMConfig.ProblemType.REST && config.dtoForRequestPayload && config.outputFormat.isJava()) {
-                writer.writeDtos(solution.getFileName().name)
+            if (config.dtoSupportedForPayload()) {
+                writer.writeDtos(solution)
             }
 
             val splitResult = TestSuiteSplitter.split(solution, config)

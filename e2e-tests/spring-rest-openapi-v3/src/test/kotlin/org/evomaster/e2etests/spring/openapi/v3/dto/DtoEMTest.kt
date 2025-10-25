@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.openapi.v3.dto
 
 import com.foo.rest.examples.spring.openapi.v3.dto.DtoController
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
@@ -20,18 +19,13 @@ class DtoEMTest : SpringTestBase(){
 
     @Test
     fun testRunEM() {
-        runTestHandlingFlaky(
+        runTestHandlingFlakyAndCompilation(
             "DtoEM",
             "org.foo.DtoEM",
             100,
-            true
         ) { args: MutableList<String> ->
 
-            args.add("--dtoForRequestPayload")
-            args.add("true")
-
-            // TODO: Remove when handling Kotlin as DTOs and add reflective tests on checking if DTOs are created ok
-            setOption(args, "outputFormat", OutputFormat.JAVA_JUNIT_4.toString())
+            setOption(args,"dtoForRequestPayload","true")
 
             val solution = initAndRun(args)
 
@@ -47,7 +41,4 @@ class DtoEMTest : SpringTestBase(){
         }
     }
 
-    override fun compile(outputFolderName: String?) {
-        super.compile(outputFolderName)
-    }
 }

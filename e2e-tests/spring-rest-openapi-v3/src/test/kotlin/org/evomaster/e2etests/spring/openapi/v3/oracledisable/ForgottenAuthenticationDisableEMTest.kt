@@ -30,6 +30,7 @@ class ForgottenAuthenticationDisableEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
+            setOption(args, "useExperimentalOracles", "true")
             setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION.code.toString())
 
             val solution = initAndRun(args)

@@ -44,6 +44,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -89,12 +91,14 @@ public abstract class EnterpriseTestBase {
     @AfterAll
     public static void tearDown() {
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            boolean stopped = remoteController.stopSUT();
-            stopped = embeddedStarter.stop() && stopped;
+        if(remoteController != null) {
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                boolean stopped = remoteController.stopSUT();
+                stopped = embeddedStarter.stop() && stopped;
 
-            assertTrue(stopped);
-        });
+                assertTrue(stopped);
+            });
+        }
 
         SimpleLogger.setThreshold(SimpleLogger.Level.INFO);
     }
@@ -413,6 +417,15 @@ public abstract class EnterpriseTestBase {
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests, String split, String summary){
 
+        int code = testClassName.getFullNameWithDots().hashCode();
+        /*
+            get a deterministic boolean based on the test properties.
+            this is used to try different options that should have no impact on the
+            results of the E2E.
+            if some tests need to use those options, can always be overridden.
+         */
+        boolean active = code % 2 == 0;
+
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
                 "--seed", "" + defaultSeed,
@@ -427,7 +440,8 @@ public abstract class EnterpriseTestBase {
                 "--testSuiteSplitType", split,
                 "--expectationsActive", "TRUE",
                 "--executiveSummary", summary,
-                "--createConfigPathIfMissing", "false"
+                "--createConfigPathIfMissing", "false",
+                "--dtoForRequestPayload", ""+active
         ));
     }
 
@@ -553,18 +567,23 @@ public abstract class EnterpriseTestBase {
         }
     }
 
-    /**
-     * assert a certain text in the generated tests
-     * @param outputFolder the folder where the test is
-     * @param className the complete test name
-     * @param content is the content to check
-     */
+
     protected void assertTextInTests(String outputFolder, String className, String content) {
+        assertTextInTests(outputFolder,className, l -> l.contains(content));
+    }
+
+        /**
+         * assert a certain text in the generated tests
+         * @param outputFolder the folder where the test is
+         * @param className the complete test name
+         * @param condition is the content to check
+         */
+    protected void assertTextInTests(String outputFolder, String className, Predicate<String> condition) {
         String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
         Path test = Paths.get(path);
         try {
-            boolean ok = Files.lines(test).anyMatch(l-> l.contains(content));
-            String msg = "Cannot find "+content+" in "+className+" in "+outputFolder;
+            boolean ok = Files.lines(test).anyMatch(condition);
+            String msg = "Cannot find line with requested condition in "+className+" in "+outputFolder;
             assertTrue(ok, msg);
         }catch (IOException e){
             throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
