@@ -285,7 +285,7 @@ class SecurityRest {
             handleForgottenAuthentication()
         }
 
-        if (config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
             LoggingUtil.uniqueUserInfo("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             handleStackTraceCheck()
