@@ -9,7 +9,7 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "outDir": "dist",
-    "baseUrl": ".",
+    "baseUrl": "./",
     "declaration": true,
     "paths": {
       "*": [
