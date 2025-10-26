@@ -30,6 +30,7 @@ class StackTraceJSONEMTest : SpringTestBase(){
 
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
+            setOption(args, "useExperimentalOracles", "true")
 
             val solution = initAndRun(args)
 
