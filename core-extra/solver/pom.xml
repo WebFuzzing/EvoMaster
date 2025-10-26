@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster</artifactId>
+        <artifactId>evomaster-core-extra</artifactId>
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 

@@ -43,7 +43,7 @@ experiments/target/
 *.lst
 /report/target/
 /extra_heuristics.csv
-/dbconstraint/target/
+/core-extra/dbconstraint/target/
 /e2e-tests/spring-rest-postgres/target/
 /e2e-tests/spring-rest-postgres-data-types/target/
 /core/testWithEMB.sh
@@ -137,7 +137,7 @@ Migrations/
 /e2e-tests/spring-rpc/spring-rpc-grpc/target/
 /em.toml
 
-/solver/target/
+/core-extra/solver/target/
 /em.yaml
 /e2e-tests/spring-rest-openapi-v2/em.yaml
 /e2e-tests/spring-rest-openapi-v3/em.yaml
