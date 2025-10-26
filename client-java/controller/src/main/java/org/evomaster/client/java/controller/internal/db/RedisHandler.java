@@ -9,6 +9,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
+import static org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator.MAX_REDIS_DISTANCE;
+
 /**
  * Class used to act upon Redis commands executed by the SUT
  */
@@ -41,6 +43,9 @@ public class RedisHandler {
 
     private final RedisHeuristicsCalculator calculator = new RedisHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
+    private static final String REDIS_HASH_TYPE = "hash";
+    private static final String REDIS_SET_TYPE = "set";
+    private static final String REDIS_STRING_TYPE = "string";
 
     public RedisHandler() {
         operations = new ArrayList<>();
@@ -98,7 +103,7 @@ public class RedisHandler {
                 }
 
                 case GET: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("string", redisClient);
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_STRING_TYPE, redisClient);
                     return calculator.computeDistance(redisCommand, redisInfo);
                 }
 
@@ -109,12 +114,12 @@ public class RedisHandler {
                 }
 
                 case HGETALL: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("hash", redisClient);
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_HASH_TYPE, redisClient);
                     return calculator.computeDistance(redisCommand, redisInfo);
                 }
 
                 case SMEMBERS: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType("set", redisClient);
+                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_SET_TYPE, redisClient);
                     return calculator.computeDistance(redisCommand, redisInfo);
                 }
 
@@ -125,11 +130,11 @@ public class RedisHandler {
                 }
 
                 default:
-                    return new RedisDistanceWithMetrics(1d, 0);
+                    return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
             }
         } catch (Exception e) {
             SimpleLogger.warn("Could not compute distance for " + type + ": " + e.getMessage());
-            return new RedisDistanceWithMetrics(1d, 0);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
     }
 
@@ -158,7 +163,7 @@ public class RedisHandler {
     }
 
     private List<RedisInfo> createRedisInfoForKeysByField(String field, RedisClient redisClient) {
-        Set<String> keys = redisClient.getKeysByType("hash");
+        Set<String> keys = redisClient.getKeysByType(REDIS_HASH_TYPE);
         List<RedisInfo> redisData = new ArrayList<>();
         keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.hashFieldExists(key, field))));
         return redisData;

@@ -10,9 +10,11 @@ import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
 
+import static org.evomaster.client.java.controller.redis.RedisUtils.redisPatternToRegex;
+
 public class RedisHeuristicsCalculator {
 
-    public static final double MAX_DISTANCE = 1d;
+    public static final double MAX_REDIS_DISTANCE = 1d;
 
     private final TaintHandler taintHandler;
 
@@ -59,11 +61,11 @@ public class RedisHeuristicsCalculator {
                 }
 
                 default:
-                    return new RedisDistanceWithMetrics(MAX_DISTANCE, 0);
+                    return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
             }
         } catch (Exception e) {
             SimpleLogger.warn("Could not compute distance for " + type + ": " + e.getMessage());
-            return new RedisDistanceWithMetrics(MAX_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
     }
 
@@ -77,8 +79,15 @@ public class RedisHeuristicsCalculator {
     private RedisDistanceWithMetrics calculateDistanceForPattern(
             String pattern,
             List<RedisInfo> keys) {
-        double minDist = MAX_DISTANCE;
+        double minDist = MAX_REDIS_DISTANCE;
         int eval = 0;
+        String regex;
+        try {
+            regex = redisPatternToRegex(pattern);
+        } catch (IllegalArgumentException e) {
+            SimpleLogger.uniqueWarn("Invalid Redis pattern. Cannot compute regex for: " + pattern);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
+        }
         for (RedisInfo k : keys) {
             double d = TruthnessUtils.normalizeValue(
                     RegexDistanceUtils.getStandardDistance(k.getKey(), redisPatternToRegex(pattern)));
@@ -102,10 +111,10 @@ public class RedisHeuristicsCalculator {
             List<RedisInfo> candidateKeys
     ) {
         if (candidateKeys.isEmpty()) {
-            return new RedisDistanceWithMetrics(MAX_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
 
-        double minDist = MAX_DISTANCE;
+        double minDist = MAX_REDIS_DISTANCE;
         int evaluated = 0;
 
         for (RedisInfo k : candidateKeys) {
@@ -138,17 +147,17 @@ public class RedisHeuristicsCalculator {
             List<RedisInfo> keys
     ) {
         if (keys.isEmpty()) {
-            return new RedisDistanceWithMetrics(MAX_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
 
-        double minDist = MAX_DISTANCE;
+        double minDist = MAX_REDIS_DISTANCE;
         int evaluated = 0;
 
         for (RedisInfo k : keys) {
             try {
                 long keyDist = DistanceHelper.getLeftAlignmentDistance(targetKey, k.getKey());
 
-                double fieldDist = k.hasField() ? 0d : MAX_DISTANCE;
+                double fieldDist = k.hasField() ? 0d : MAX_REDIS_DISTANCE;
 
                 double combined = TruthnessUtils.normalizeValue(keyDist + fieldDist);
 
@@ -176,7 +185,7 @@ public class RedisHeuristicsCalculator {
             List<RedisInfo> keys
     ) {
         if (keys == null || keys.isEmpty()) {
-            return new RedisDistanceWithMetrics(MAX_DISTANCE, 0);
+            return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
 
         double total = 0d;
@@ -188,7 +197,7 @@ public class RedisHeuristicsCalculator {
             RedisInfo k = keys.get(i);
             String type = k.getType();
             if (!"set".equalsIgnoreCase(type)) {
-                return new RedisDistanceWithMetrics(MAX_DISTANCE, evaluated);
+                return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, evaluated);
             }
 
             Set<String> set = k.getMembers();
@@ -196,7 +205,7 @@ public class RedisHeuristicsCalculator {
 
             if (i == 0) {
                 currentIntersection = new HashSet<>(set);
-                double d0 = currentIntersection.isEmpty() ? MAX_DISTANCE : 0d;
+                double d0 = currentIntersection.isEmpty() ? MAX_REDIS_DISTANCE : 0d;
                 total += d0;
                 evaluated++;
             } else {
@@ -221,10 +230,10 @@ public class RedisHeuristicsCalculator {
      */
     private double computeSetIntersectionDistance(Set<String> s1, Set<String> s2) {
         if (s1.isEmpty() || s2.isEmpty()) {
-            return MAX_DISTANCE;
+            return MAX_REDIS_DISTANCE;
         }
 
-        double min = MAX_DISTANCE;
+        double min = MAX_REDIS_DISTANCE;
         for (String a : s1) {
             for (String b : s2) {
                 long raw = DistanceHelper.getLeftAlignmentDistance(a, b);
@@ -236,65 +245,4 @@ public class RedisHeuristicsCalculator {
         return min;
     }
 
-    /**
-     * Translates a Redis glob-style pattern into a valid Java regex pattern.
-     * Supported conversions:
-     * - *  →  .*
-     * - ?  →  .
-     * - [ae]  →  [ae]
-     * - [^e]  →  [^e]
-     * - [a-b]  →  [a-b]
-     * Other regex metacharacters are properly escaped.
-     *
-     * @param redisPattern the Redis glob-style pattern (e.g., "h?llo*", "user:[0-9]*")
-     * @return a valid Java regex string equivalent to the Redis pattern.
-     */
-    private static String redisPatternToRegex(String redisPattern) {
-        if (redisPattern == null || redisPattern.isEmpty()) {
-            return ".*";
-        }
-
-        StringBuilder regex = new StringBuilder();
-        boolean inBrackets = false;
-
-        for (int i = 0; i < redisPattern.length(); i++) {
-            char c = redisPattern.charAt(i);
-
-            switch (c) {
-                case '*':
-                    regex.append(".*");
-                    break;
-                case '?':
-                    regex.append('.');
-                    break;
-                case '[':
-                    inBrackets = true;
-                    regex.append('[');
-                    if (i + 1 < redisPattern.length() && redisPattern.charAt(i + 1) == '^') {
-                        regex.append('^');
-                        i++;
-                    }
-                    break;
-                case ']':
-                    if (inBrackets) {
-                        regex.append(']');
-                        inBrackets = false;
-                    } else {
-                        regex.append("\\]");
-                    }
-                    break;
-                case '\\':
-                    regex.append("\\\\");
-                    break;
-                default:
-                    if (!inBrackets && ".+(){}|^$".indexOf(c) >= 0) {
-                        regex.append('\\');
-                    }
-                    regex.append(c);
-                    break;
-            }
-        }
-
-        return "^" + regex + "$";
-    }
 }
