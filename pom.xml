@@ -25,7 +25,7 @@
         <module>core-graphql-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
-        <module>test-old-libraries</module>
+<!--        <module>test-old-libraries</module>-->
         <module>test-utils</module>
     </modules>
 

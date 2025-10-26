@@ -4,7 +4,7 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster</artifactId>
+        <artifactId>evomaster-client-java</artifactId>
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 
@@ -12,7 +12,6 @@
         Need own module, to check old libraries, with version older than the ones speci
      -->
 
-    <groupId>org.evomaster</groupId>
     <artifactId>evomaster-test-old-libraries</artifactId>
     <packaging>jar</packaging>
 
