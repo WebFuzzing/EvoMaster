@@ -223,7 +223,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
         }
 
         if (status == 500) {
-            if (DefinedFaultCategory.HTTP_STATUS_500 !in config.getDisabledOracleCodesList()) {
+            if (config.isEnabledFaultCategory(DefinedFaultCategory.HTTP_STATUS_500)) {
                 Lazy.assert { location5xx != null || config.blackBox }
                 /*
                     500 codes "might" be bugs. To distinguish between different bugs

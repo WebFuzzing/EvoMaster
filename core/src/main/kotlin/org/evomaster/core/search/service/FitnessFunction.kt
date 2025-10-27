@@ -101,11 +101,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 //        }
 
         // check that excluded fault categories are not present
-        Lazy.assert{
-            DetectedFaultUtils.verifyExcludedCategories(ei as EvaluatedIndividual<Individual>,
-                config.getDisabledOracleCodesList() as List<FaultCategory>
-            )
-        }
+        Lazy.assert{ DetectedFaultUtils.verifyExcludedCategories(ei as EvaluatedIndividual<Individual>, config) }
 
         return ei
     }

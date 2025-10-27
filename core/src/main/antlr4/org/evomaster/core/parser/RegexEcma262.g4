@@ -96,24 +96,22 @@ atom
 
 
 //TODO
-CharacterEscape
-// : ControlEscape
-// | 'c' ControlLetter
- : HexEscapeSequence
+fragment CharacterEscape
+ : ControlEscape
+ | 'c' ControlLetter
+ | HexEscapeSequence
  | UnicodeEscapeSequence
  //| IdentityEscape
  ;
 
-//TODO
-//ControlEscape
-// //one of f n r t v
-// : [fnrtv]
-// ;
+fragment ControlEscape
+ //one of f n r t v
+ : [fnrtv]
+ ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [a-zA-Z]
+ ;
 
 
 //TODO
@@ -238,11 +236,11 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-UnicodeEscapeSequence
+fragment UnicodeEscapeSequence
  : 'u' HexDigit HexDigit HexDigit HexDigit
  ;
 
-HexEscapeSequence
+fragment HexEscapeSequence
  : 'x' HexDigit HexDigit
  ;
 

@@ -119,24 +119,23 @@ quoteChar
 ;
 
 //TODO
-CharacterEscape
-// : ControlEscape
-// | 'c' ControlLetter
- : HexEscapeSequence
+fragment CharacterEscape
+ : ControlEscape
+ | 'c' ControlLetter
+ | HexEscapeSequence
  | UnicodeEscapeSequence
+ | OctalEscapeSequence
  //| IdentityEscape
  ;
 
-//TODO
-//ControlEscape
-// //one of f n r t v
-// : [fnrtv]
-// ;
+fragment ControlEscape
+ //one of f n r t v
+ : [aefnrt]
+ ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [?-_a-z]
+ ;
 
 
 //TODO
@@ -267,16 +266,27 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-UnicodeEscapeSequence:
+fragment OctalEscapeSequence
+ : '0' OctalDigit
+ | '0' OctalDigit OctalDigit
+ | '0' [0-3] OctalDigit OctalDigit
+;
+
+fragment UnicodeEscapeSequence:
  'u' HexDigit HexDigit HexDigit HexDigit
 ;
 
-HexEscapeSequence
+fragment HexEscapeSequence
  : 'x' HexDigit HexDigit
+ | 'x' BRACE_open HexDigit+ BRACE_close
  ;
 
 fragment HexDigit:
  [a-fA-F0-9]
+ ;
+
+fragment OctalDigit:
+ [0-7]
  ;
 
 //TODO

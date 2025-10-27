@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.utils.IncrementalAverage
@@ -56,6 +57,9 @@ class Statistics : SearchListener {
 
     @Inject
     private lateinit var oracles: PartialOracles
+
+    @Inject(optional = true)
+    private lateinit var aiResponseClassifier: AIResponseClassifier
 
     /**
      * How often test executions did timeout
@@ -126,25 +130,24 @@ class Statistics : SearchListener {
             }
         }
 
-        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
+        // All headers, including AI-related ones
+        val headers = "interval," + snapshots.values.first().joinToString(",") { it.header }
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
-
         Files.createDirectories(path.parent)
 
-        if (!Files.exists(path) or !config.appendToStatisticsFile) {
+        if (!Files.exists(path) || !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
-
             path.toFile().appendText("$headers\n")
         }
 
         snapshots.entries.stream()
-                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
-                .forEach {
-                    val elements = it.value.map { it.element }.joinToString(",")
-                    path.toFile().appendText("${it.key},$elements\n")
-                }
+            .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+            .forEach { (key, pairs) ->
+                val elements = pairs.joinToString(",") { it.element }
+                path.toFile().appendText("$key,$elements\n")
+            }
     }
 
 
@@ -339,8 +342,59 @@ class Statistics : SearchListener {
         }
         addConfig(list)
 
+        // Adding AI data
+        list.addAll(getAIData())
+
         return list
     }
+
+    // For building AI metric pairs
+    fun aiMetricsAsPairs(
+        enabled: Boolean,
+        type: String,
+        accuracy: Double,
+        precision: Double,
+        recall: Double,
+        f1: Double,
+        mcc: Double
+    ): List<Pair> = listOf(
+        Pair("ai_model_enabled", enabled.toString()),
+        Pair("ai_model_type", type),
+        Pair("ai_accuracy", "%.4f".format(accuracy)),
+        Pair("ai_precision400", "%.4f".format(precision)),
+        Pair("ai_recall400", "%.4f".format(recall)),
+        Pair("ai_f1Score400", "%.4f".format(f1)),
+        Pair("ai_mcc400", "%.4f".format(mcc))
+    )
+
+    fun getAIData(): List<Pair> {
+        // AI model is unable
+        if (!config.isEnabledAIModelForResponseClassification()) {
+            return aiMetricsAsPairs(
+                enabled = false,
+                type = "NONE",
+                accuracy = 0.0,
+                precision = 0.0,
+                recall = 0.0,
+                f1 = 0.0,
+                mcc = 0.0
+            )
+        }
+
+        // Compute metrics
+        val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
+
+        return aiMetricsAsPairs(
+            enabled = true,
+            type = config.aiModelForResponseClassification.name,
+            accuracy = metrics.accuracy,
+            precision = metrics.precision400,
+            recall = metrics.recall400,
+            f1 = metrics.f1Score400,
+            mcc = metrics.mcc
+        )
+    }
+
 
     private fun distinctActions() : Int {
         if(sampler == null){
