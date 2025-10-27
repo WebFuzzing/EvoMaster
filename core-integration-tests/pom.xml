@@ -15,5 +15,6 @@
     <modules>
         <module>core-driver-it</module>
         <module>core-graphql-it</module>
+        <module>core-it</module>
     </modules>
 </project>
