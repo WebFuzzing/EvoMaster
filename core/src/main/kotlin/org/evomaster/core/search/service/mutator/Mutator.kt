@@ -52,6 +52,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
+    @Inject
+    protected lateinit var sampler : Sampler<T>
+
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
@@ -165,6 +168,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 current.individual.copy() as T
 
             mutatedGenes.setMutatedIndividual(mutatedInd)
+
+            sampler.applyDerivedParamModifications(mutatedInd)
 
             Lazy.assert{mutatedInd.verifyValidity(); true}
 

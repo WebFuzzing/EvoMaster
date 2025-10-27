@@ -420,14 +420,13 @@ class Main {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
                     val solution = securityRest.applySecurityPhase()
 
-                    if (config.ssrf && DefinedFaultCategory.SSRF !in config.getDisabledOracleCodesList()) {
+                    if (config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
                         LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
 
                         val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
                         ssrfAnalyser.apply()
                     } else {
-                        if(DefinedFaultCategory.SSRF in config.getDisabledOracleCodesList())
-                        {
+                        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
                             LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
                         }
 
