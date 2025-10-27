@@ -54,6 +54,9 @@ enum class ExperimentalFaultCategory(
     SECURITY_FORGOTTEN_AUTHENTICATION(980, "A Protected Resource Is Accessible Without Providing Any Authentication",
         "forgottenAuthentication",
         "TODO"),
+    SECURITY_STACK_TRACE(981, "Stack Trace",
+        "stackTrace",
+        "TODO"),
     ;
 
     override fun getCode(): Int {
