@@ -6,7 +6,7 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.core.search.service.SearchAlgorithm
 import kotlin.math.max
 /**
- * An implementation of the Steady-State Genetic Algorithm (SSGA).
+ * An implementation of the Steady-State Genetic Algorithm (SSGA). 
  *
  * Unlike Standard GA, which replaces the entire population in each generation,
  * Steady-State GA updates the population incrementally by replacing a small number
