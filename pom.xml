@@ -21,10 +21,9 @@
         <module>core-parent</module>
         <module>core</module>
         <module>core-extra</module>
-        <module>core-integration-tests</module>
+        <module>core-tests</module>
         <module>client-java</module>
         <module>test-utils</module>
-        <module>e2e-tests</module>
     </modules>
 
     <issueManagement>

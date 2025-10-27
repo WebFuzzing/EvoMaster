@@ -4,9 +4,8 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster-core-parent</artifactId>
+        <artifactId>evomaster-core-tests</artifactId>
         <version>4.0.1-SNAPSHOT</version>
-        <relativePath>../core-parent</relativePath>
     </parent>
 
     <artifactId>evomaster-e2e-tests</artifactId>

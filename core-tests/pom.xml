@@ -9,13 +9,11 @@
         <relativePath>../core-parent</relativePath>
     </parent>
 
-    <artifactId>evomaster-core-integration-tests</artifactId>
+    <artifactId>evomaster-core-tests</artifactId>
     <packaging>pom</packaging>
 
-
     <modules>
-        <module>core-driver-it</module>
-        <module>core-graphql-it</module>
-        <module>core-it</module>
+        <module>e2e-tests</module>
+        <module>integration-tests</module>
     </modules>
 </project>
