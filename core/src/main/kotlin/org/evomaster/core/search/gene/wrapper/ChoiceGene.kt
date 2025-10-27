@@ -26,7 +26,12 @@ class ChoiceGene<T>(
     /**
      * Potentially, associate different probabilities for the different choices
      */
-    probabilities: List<Double>? = null
+    probabilities: List<Double>? = null,
+    /**
+     * Optional list of name values for each of choices.
+     * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
+     */
+    valueNames: List<String?>? = null,
 
 ) : CompositeFixedGene(name, geneChoices), WrapperGene where T : Gene {
 
@@ -39,6 +44,8 @@ class ChoiceGene<T>(
 
     private val probabilities = probabilities?.toList() //make a copy
 
+    private val valueNames = valueNames?.toList()
+
     init {
         if (geneChoices.isEmpty()) {
             throw IllegalArgumentException("The list of gene choices cannot be empty")
@@ -49,6 +56,9 @@ class ChoiceGene<T>(
         }
         if(probabilities != null && probabilities.size != geneChoices.size){
             throw IllegalArgumentException("If probabilities are defined, then they must be same number as the genes")
+        }
+        if(valueNames != null && valueNames.size != geneChoices.size) {
+            throw IllegalArgumentException("If value names are defined, then they must be same number as the genes")
         }
     }
 
@@ -167,6 +177,10 @@ class ChoiceGene<T>(
             .getValueAsRawString()
     }
 
+    fun getValueName(): String?{
+        return valueNames?.get(activeGeneIndex)
+    }
+
     /**
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].
@@ -260,7 +274,8 @@ class ChoiceGene<T>(
         name,
         activeChoice = this.activeGeneIndex,
         geneChoices = this.geneChoices.map { it.copy() }.toList(),
-        probabilities = probabilities // immutable
+        probabilities = probabilities, // immutable
+        valueNames = valueNames // immutable
     )
 
     /**

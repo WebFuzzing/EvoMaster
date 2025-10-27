@@ -30,7 +30,12 @@ class EnumGene<T : Comparable<T>>(
      * to avoid specifying exact types. Still, should not be printed out as string.
      * Recall that an enum is just a group of constants that cannot be mutated
      */
-    private val treatAsNotString : Boolean = false
+    private val treatAsNotString : Boolean = false,
+    /**
+     * An optional list of 'names' for each/some of the values in this enumeration.
+     * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
+     */
+    private val valueNames: List<String?>? = null
 ) : SimpleGene(name) {
 
     companion object {
@@ -81,6 +86,10 @@ class EnumGene<T : Comparable<T>>(
             if (index < 0 || index >= values.size) {
                 throw IllegalArgumentException("Invalid index: $index")
             }
+
+            if(valueNames != null && valueNames.size != values.size) {
+                throw IllegalArgumentException("Invalid valueNames size: ${valueNames.size}!=${values.size}")
+            }
         }
 
         if(treatAsNotString && values.isNotEmpty() && values[0] !is String){
@@ -98,7 +107,7 @@ class EnumGene<T : Comparable<T>>(
 
     override fun copyContent(): Gene {
         //recall: "values" is immutable
-        return EnumGene<T>(name, values, index, treatAsNotString)
+        return EnumGene<T>(name, values, index, treatAsNotString, valueNames)
     }
 
     override fun setValueWithRawString(value: String) {
@@ -181,6 +190,10 @@ class EnumGene<T : Comparable<T>>(
 
     override fun getValueAsRawString(): String {
         return values[index].toString()
+    }
+
+    fun getValueName(): String?{
+        return valueNames?.get(index)
     }
 
     override fun copyValueFrom(other: Gene): Boolean {

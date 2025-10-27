@@ -559,21 +559,26 @@ object RestActionBuilderV3 {
         example: Any?,
         examples: Map<String, Example>?,
         messages: MutableList<String>
-    ) : List<Any>{
+    ) : List<Pair<Any,String?>>{
 
-        val data = mutableListOf<Any>()
+        /**
+         * List of pairs value/name.
+         * the name if optional, as only defined for "examples"
+         */
+        val data = mutableListOf<Pair<Any, String?>>()
+
         if(example != null){
-            data.add(example)
+            data.add(Pair(example,null))
         }
         if(!examples.isNullOrEmpty()){
-            examples.values.forEach {
-                val exm = if(it.`$ref` != null){
-                    SchemaUtils.getReferenceExample(schemaHolder, currentSchema, it.`$ref`, messages)
+            examples.entries.forEach {
+                val exm = if(it.value.`$ref` != null){
+                    SchemaUtils.getReferenceExample(schemaHolder, currentSchema, it.value.`$ref`, messages)
                 } else {
-                    it
+                    it.value
                 }
                 if(exm != null) {
-                    data.add(exm.value)
+                    data.add(Pair(exm.value, it.key))
                 }
             }
         }
@@ -780,7 +785,7 @@ object RestActionBuilderV3 {
         referenceClassDef: String?,
         options: Options,
         isInPath: Boolean = false,
-        examples: List<Any> = listOf(),
+        examples: List<Pair<Any,String?>> = listOf(),
         messages: MutableList<String>
     ): Gene {
 
@@ -974,7 +979,7 @@ object RestActionBuilderV3 {
                                  history: Deque<String>,
                                  referenceTypeName: String?,
                                  options: Options,
-                                 examples: List<Any>,
+                                 examples: List<Pair<Any,String?>>,
                                  messages: MutableList<String>
     ): Gene {
 
@@ -1131,7 +1136,7 @@ object RestActionBuilderV3 {
         history: Deque<String>,
         referenceTypeName: String?,
         options: Options,
-        examples: List<Any>,
+        examples: List<Pair<Any,String?>>,
         messages: MutableList<String>
     ) : Gene{
         /*
@@ -1237,7 +1242,7 @@ object RestActionBuilderV3 {
         fields: List<Gene>,
         additionalFieldTemplate: PairGene<StringGene, Gene>?,
         referenceTypeName: String?,
-        otherExampleValues: List<Any>,
+        otherExampleValues: List<Pair<Any,String?>>,
         messages: MutableList<String>
     ) : Gene{
         if (fields.isEmpty()) {
@@ -1269,19 +1274,29 @@ object RestActionBuilderV3 {
         val exampleValue = if(options.probUseExamples > 0) schema.example else null
         val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
 
-        val examples = mutableListOf<ObjectGene>()
+        val examples = mutableListOf<Pair<ObjectGene,String?>>()
         if(exampleValue != null){
             duplicateObjectWithExampleFields(name,mainGene, exampleValue)?.let {
-                examples.add(it)
+                examples.add(Pair(it,null))
             }
         }
         if(multiExampleValues != null ){
-            examples.addAll(multiExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+            examples.addAll(multiExampleValues
+                .mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) }
+                .map { Pair(it, null) }
+            )
         }
-        examples.addAll(otherExampleValues.mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it) })
+        examples.addAll(otherExampleValues
+            .mapNotNull { duplicateObjectWithExampleFields(name,mainGene, it.first)
+                ?.let { obj ->  Pair(obj,it.second) }
+            }
+        )
+
+        val v = examples.map { it.first } //values
+        val n = examples.map{it.second} // names
 
         val exampleGene = if(examples.isNotEmpty()){
-            ChoiceGene(EXAMPLES_NAME, examples)
+            ChoiceGene(EXAMPLES_NAME, v, valueNames = n)
         } else null
         val defaultGene = if(defaultValue != null){
             duplicateObjectWithExampleFields("default", mainGene, defaultValue)
@@ -1372,7 +1387,7 @@ object RestActionBuilderV3 {
         options: Options,
         collectionTemplate: Gene?,
         isInPath: Boolean,
-        examples: List<Any>,
+        examples: List<Pair<Any,String?>>,
         messages: MutableList<String>
     ) : Gene{
 
@@ -1412,7 +1427,7 @@ object RestActionBuilderV3 {
         collectionTemplate: Gene? = null,
         //might need to add extra constraints if in path
         isInPath: Boolean,
-        exampleObjects: List<Any>,
+        exampleObjects: List<Pair<Any,String?>>,
         format: String? = null,
         messages: MutableList<String>
     ) : Gene{
@@ -1544,10 +1559,12 @@ object RestActionBuilderV3 {
         val exampleValue = if(options.probUseExamples > 0) schema.example else null
         val multiExampleValues = if(options.probUseExamples > 0) schema.examples else null
 
-        val examples = mutableListOf<String>()
+        //value and optional name
+        val examples = mutableListOf<Pair<String,String?>>()
+
         if(exampleValue != null) {
             val raw = asRawString(exampleValue)
-            examples.add(raw)
+            examples.add(Pair(raw,null))
             val arrayM = if(raw.startsWith("[")) "If you are wrongly passing to it an array of values, " +
                     "the parser would read it as an array string or simply ignore it. "
             else ""
@@ -1558,9 +1575,9 @@ object RestActionBuilderV3 {
         }
         if(multiExampleValues != null && multiExampleValues.isNotEmpty()){
             //possibly bug in parser, but it was reading strings values double-quoted in this case
-            examples.addAll(multiExampleValues.map { asRawString(it) })
+            examples.addAll(multiExampleValues.map { Pair(asRawString(it), null) })
         }
-        examples.addAll( exampleObjects.map { asRawString(it) })
+        examples.addAll( exampleObjects.map { Pair(asRawString(it.first), it.second) })
 
 
         val defaultGene = if(defaultValue != null){
@@ -1581,15 +1598,20 @@ object RestActionBuilderV3 {
             }
         } else null
 
+        //values
+        val v = examples.map { it.first }
+        //optional names
+        val n = examples.map { it.second }
+
         val exampleGene = if(examples.isNotEmpty()){
             when{
                 NumberGene::class.java.isAssignableFrom(geneClass)
-                -> EnumGene(EXAMPLES_NAME, examples,0,true)
+                -> EnumGene(EXAMPLES_NAME, v,0,true, n)
 
                 geneClass == StringGene::class.java
                         || geneClass == Base64StringGene::class.java
                         || geneClass == RegexGene::class.java
-                -> EnumGene<String>(EXAMPLES_NAME, examples,0,false)
+                -> EnumGene<String>(EXAMPLES_NAME, v,0,false, n)
 
                 //TODO Arrays
                 else -> {
@@ -1692,7 +1714,7 @@ object RestActionBuilderV3 {
                                           currentSchema: SchemaOpenAPI,
                                           history: Deque<String> = ArrayDeque(),
                                           options: Options,
-                                          examples: List<Any>,
+                                          examples: List<Pair<Any,String?>>,
                                           messages: MutableList<String>
     ): Gene {
 
