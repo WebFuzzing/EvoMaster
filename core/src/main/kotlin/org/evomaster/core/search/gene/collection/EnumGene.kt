@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -36,7 +37,7 @@ class EnumGene<T : Comparable<T>>(
      * This is usually just extra information, eg, to recognize named "examples" in OpenAPI schemas
      */
     private val valueNames: List<String?>? = null
-) : SimpleGene(name) {
+) : SimpleGene(name), NamedExamplesGene {
 
     companion object {
 
@@ -192,7 +193,7 @@ class EnumGene<T : Comparable<T>>(
         return values[index].toString()
     }
 
-    fun getValueName(): String?{
+    override fun getValueName(): String?{
         return valueNames?.get(index)
     }
 
