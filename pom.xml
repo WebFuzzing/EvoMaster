@@ -18,17 +18,12 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>dbconstraint</module>
         <module>core</module>
-<!--        FIXME PUT BACK after upgrade -->
-<!--        <module>core-driver-it</module>-->
-        <module>core-it</module>
-        <module>core-graphql-it</module>
+        <module>core-extra</module>
+        <module>core-integration-tests</module>
         <module>client-java</module>
-        <module>e2e-tests</module>
-        <module>test-old-libraries</module>
-        <module>solver</module>
         <module>test-utils</module>
+        <module>e2e-tests</module>
     </modules>
 
     <issueManagement>
