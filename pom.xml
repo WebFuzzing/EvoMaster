@@ -18,6 +18,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>core-parent</module>
         <module>core</module>
         <module>core-extra</module>
         <module>core-integration-tests</module>
