@@ -66,10 +66,10 @@ experiments/target/
 /client-js/integration-tests/build/
 /core-it/target/
 /coveredTargets.txt
-/core-driver-it/target/
+/core-integration-tests/core-driver-it/target/
 /core-it/src/test/kotlin/exp/
 
-/core-graphql-it/target/
+/core-integration-tests/core-graphql-it/target/
 
 
 #DotNet
@@ -175,3 +175,4 @@ Migrations/
 /e2e-tests/spring-rest-multidb/target/
 /e2e-tests/spring-rest-h2-v2/target/
 e2e-tests/spring-rest-rsa/target/
+/e2e-tests/spring-rest-h2-v1/em.yaml
