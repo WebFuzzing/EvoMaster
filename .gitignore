@@ -176,3 +176,4 @@ Migrations/
 /e2e-tests/spring-rest-h2-v2/target/
 e2e-tests/spring-rest-rsa/target/
 /e2e-tests/spring-rest-h2-v1/em.yaml
+/core-integration-tests/core-it/target/
