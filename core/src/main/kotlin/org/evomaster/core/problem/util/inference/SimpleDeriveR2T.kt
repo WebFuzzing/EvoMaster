@@ -106,7 +106,7 @@ object SimpleDeriveResourceBinding : DeriveResourceBinding {
         }
         //1.3 derive resource to tables based on tokens on POST action
         resourceNode.actions.filter {it.verb == HttpVerb.POST }.forEach { post->
-            post.tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
+            post.tokens.values.filter { !resourceNode.getName().lowercase().contains(it.getKey().lowercase()) }.forEach { atoken->
                 val matchedMap = allTables.keys.map { Pair(it, calculateStringSimilarityScoreWithTableName(it.getFullQualifyingTableName(), atoken.getKey())) }.asSequence().sortedBy { e->e.second }
                 matchedMap.last().apply {
                     if(second >= StringSimilarityComparator.SimilarityThreshold){

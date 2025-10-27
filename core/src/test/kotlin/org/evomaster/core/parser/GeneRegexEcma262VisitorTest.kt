@@ -329,11 +329,23 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
 
     @Test
     fun testHexEscape(){
-        checkSameAsJava("""\x00\x0a\xba\xFF""")
+        checkSameAsJava("""x00\x00\x0a\xba\xFF""")
     }
 
     @Test
     fun testUnicodeEscape(){
-        checkSameAsJava("""\u0000\u0a0b\uffff""")
+        checkSameAsJava("""u0000\u0000\u0a0b\uffff""")
+    }
+
+    @Test
+    open fun testControlEscape(){
+        checkSameAsJava("""ftnrv\f\t\n\r\v""")
+    }
+
+    @Test
+    open fun testControlLetterEscape(){
+        checkSameAsJava("""cac!\cA\cG\cZ""")
+        // The following escape sequences behave differently in Java and JavaScript.
+        checkCanSample("""\ca\cg\cz""","\u0001\u0007\u001A",10_000)
     }
 }
