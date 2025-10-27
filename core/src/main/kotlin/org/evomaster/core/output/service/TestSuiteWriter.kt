@@ -19,7 +19,6 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceActi
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.problem.rest.data.RestIndividual
-import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
@@ -65,6 +64,7 @@ class TestSuiteWriter {
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
+        private var containsDtos = false
     }
 
     @Inject
@@ -211,12 +211,13 @@ class TestSuiteWriter {
         )
     }
 
-    // TODO: take DTO extraction and writing to a different class
-    fun writeDtos(solutionFilename: String) {
+    fun writeDtos(solution: Solution<*>) {
+        val solutionFilename = solution.getFileName().name
         val testSuiteFileName = TestSuiteFileName(solutionFilename)
         val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
-        val restSampler = sampler as AbstractRestSampler
-        DtoWriter(config.outputFormat).write(testSuitePath, testSuiteFileName.getPackage(), restSampler.getActionDefinitions())
+        val dtoWriter = DtoWriter(config.outputFormat)
+        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
+        containsDtos = dtoWriter.containsDtos()
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
@@ -436,7 +437,7 @@ class TestSuiteWriter {
 
         if (format.isJavaOrKotlin()) {
 
-            if (config.dtoForRequestPayload) {
+            if (config.dtoSupportedForPayload() && containsDtos) {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
