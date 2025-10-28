@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.enterprise.DetectedFault
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -22,10 +23,12 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
+import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -253,7 +256,7 @@ class SecurityRest {
 
     private fun accessControlBasedOnRESTGuidelines() {
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
             LoggingUtil.uniqueUserInfo("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
@@ -262,30 +265,97 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
             LoggingUtil.uniqueUserInfo("Skipping security test for existence leakage as disabled in configuration")
         } else {
             // getting 404 instead of 403
             handleExistenceLeakage()
         }
 
-        if(config.getDisabledOracleCodesList().contains(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
             LoggingUtil.uniqueUserInfo("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
         }
 
-        if(config.getDisabledOracleCodesList().contains(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
             LoggingUtil.uniqueUserInfo("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
+        }
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
         }
 
         //TODO other rules. See FaultCategory
         //etc.
     }
 
+    /**
+     * Checks whether any response body contains a stack trace, which would constitute a security issue.
+     * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.
+     *
+     * Note: This is a best-effort oracle that may produce false positives, as some applications might
+     * legitimately return stack traces as part of their business logic.
+     *
+     * This check is performed only at the end of the search, not during each fitness evaluation,
+     * to avoid performance overhead during the main search phase.
+     */
+    private fun handleStackTraceCheck(){
+
+        mainloop@ for(action in actionDefinitions){
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                status = 500,
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            for(target in suspicious) {
+                var isFaultFound = false
+
+                val copyTarget = target.copy()
+                //  we need BOTH the check here and in the fitness function.
+                //  here: because we need to make sure 500 from archive are re-executed and added back with SECURITY tag if fault found
+                //  in ff: to avoid losing info if test is re-evaluated
+
+                isFaultFound = copyTarget.evaluatedMainActions()
+                    .asSequence()
+                    .filter { (it.action as RestCallAction).verb == action.verb && it.action.path == action.path }
+                    .mapNotNull { it.result as? RestCallResult }
+                    .any { r ->
+                        val body = r.getBody()
+                        r.getStatusCode() == 500 &&
+                                body != null &&
+                                StackTraceUtils.looksLikeStackTrace(body)
+                    }
+
+                if(isFaultFound){
+                    copyTarget.individual.modifySampleType(SampleType.SECURITY)
+                    copyTarget.individual.ensureFlattenedStructure()
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copyTarget.individual)
+
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        continue@mainloop
+                    }
+
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+            }
+        }
+    }
 
     /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).

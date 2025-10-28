@@ -25,6 +25,7 @@
         <module>sql-dto</module>
         <module>distance-heuristics</module>
         <module>test-utils-java</module>
+        <module>test-old-libraries</module>
     </modules>
 
     <licenses>
@@ -90,6 +91,19 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>8</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>

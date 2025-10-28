@@ -44,11 +44,11 @@ class GeneToDto(
      */
     fun getDtoName(leafGene: Gene, fallback: String): String {
         return when (leafGene) {
-            is ObjectGene -> leafGene.refType?:StringUtils.capitalization(TestWriterUtils.safeVariableName(fallback))
+            is ObjectGene -> TestWriterUtils.safeVariableName(leafGene.refType?:fallback)
             is ArrayGene<*> -> {
                 val template = leafGene.template
                 if (template is ObjectGene) {
-                    template.refType?:StringUtils.capitalization(TestWriterUtils.safeVariableName(fallback))
+                    TestWriterUtils.safeVariableName(template.refType?:fallback)
                 } else {
                     // TODO handle arrays of basic data types
                     return getListType(fallback, template)

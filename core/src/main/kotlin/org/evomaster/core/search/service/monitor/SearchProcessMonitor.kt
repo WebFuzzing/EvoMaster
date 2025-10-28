@@ -163,7 +163,7 @@ class SearchProcessMonitor: SearchListener {
 
     private fun setOverall(){
         val stp = config.stoppingCriterion.toString()+"_"+
-                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
+                (if(config.stoppingCriterion.toString().lowercase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
