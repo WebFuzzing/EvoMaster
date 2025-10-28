@@ -651,6 +651,9 @@ class Main {
                 EMConfig.Algorithm.CellularGA ->
                     Key.get(object : TypeLiteral<CellularGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -682,6 +685,9 @@ class Main {
 
                 EMConfig.Algorithm.CellularGA ->
                     Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -712,6 +718,9 @@ class Main {
 
                 EMConfig.Algorithm.CellularGA ->
                     Key.get(object : TypeLiteral<CellularGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -751,6 +760,9 @@ class Main {
 
                 EMConfig.Algorithm.CellularGA ->
                     Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }

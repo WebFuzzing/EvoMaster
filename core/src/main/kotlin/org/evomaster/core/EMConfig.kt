@@ -1162,7 +1162,7 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA // GA variants still work-in-progress.
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA // GA variants still work-in-progress.
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -2767,6 +2767,14 @@ class EMConfig {
     @Min(1.0)
     @Cfg("Breeder GA: minimum number of individuals in parents pool after truncation.")
     var breederParentsMin: Int = 2
+
+    /**
+     * OnePlusLambdaLambda GA: number of offspring (λ).
+     */
+    @Experimental
+    @Min(1.0)
+    @Cfg("1+(λ,λ) GA: number of offspring (λ) per generation")
+    var onePlusLambdaLambdaOffspringSize: Int = 4
 
     @Experimental
     @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
