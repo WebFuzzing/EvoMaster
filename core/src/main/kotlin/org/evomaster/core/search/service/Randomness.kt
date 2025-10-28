@@ -44,6 +44,7 @@ class Randomness {
             "\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u202f\u205f\u3000"
     private val punctuationSet = "!\"#\$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
 
+    // TODO this is neither efficient nor complete; this will be modified
     // does not actually include all characters but covers ASCII
     private val allSet = (0x00..0xFF).map { it.toChar() }.joinToString("")
 
