@@ -33,6 +33,7 @@ class HttpOracleDeleteEMTest : SpringTestBase(){
             setOption(args, "security", "false")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
+            setOption(args, "useExperimentalOracles", "true")
 
             val solution = initAndRun(args)
 

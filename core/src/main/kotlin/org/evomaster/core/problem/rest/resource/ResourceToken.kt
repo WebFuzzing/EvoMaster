@@ -21,10 +21,10 @@ open class RToken(
     }
 
     fun getKey() : String{
-        return lemma.toLowerCase()
+        return lemma.lowercase()
     }
 
-    fun isKey(key : String) : Boolean = lemma == key.toLowerCase()
+    fun isKey(key : String) : Boolean = lemma == key.lowercase()
 
     open fun copy() : RToken{
         return RToken(originalText,lemma, assuredVerb)

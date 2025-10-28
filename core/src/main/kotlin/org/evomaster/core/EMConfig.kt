@@ -809,6 +809,8 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
+    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+
     fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
@@ -1110,7 +1112,7 @@ class EMConfig {
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
-    
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -2573,6 +2575,11 @@ class EMConfig {
     )
     var disabledOracleCodes = ""
 
+    @Cfg("Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. " +
+            "Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. " +
+            "When false, all experimental oracles are disabled.")
+    var useExperimentalOracles = false
+
     enum class VulnerableInputClassificationStrategy {
         /**
          * Uses the manual methods to select the vulnerable inputs.
@@ -2852,28 +2859,92 @@ class EMConfig {
 
     fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
 
+    /**
+     * Source to build the final GA solution when evolving full test suites (not single tests).
+     * ARCHIVE: use current behavior (take tests from the archive).
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
+     */
+    enum class GASolutionSource { ARCHIVE, POPULATION }
+
+    /**
+     * Controls how GA algorithms produce the final solution.
+     * Default preserves current behavior.
+     */
+    var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
+
+
+    /**
+     * Not all oracles are active by default.
+     * Some might be experimental, while others might be explicitly excluded by the user
+     */
+    fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        return category !in getDisabledOracleCodesList()
+    }
+
+    private fun isFaultCodeActive(
+        code: Int,
+        disabledCodes: Set<Int>
+    ): Boolean {
+        val isExperimental = ExperimentalFaultCategory.entries.any { it.code == code }
+        if (isExperimental && !useExperimentalOracles) return false
+        if (code in disabledCodes) return false
+        return true
+    }
+
+    private fun parseDisabledCodesOrThrow(
+        disabledOracleCodes: String,
+    ): Set<Int> {
+        if (disabledOracleCodes.isBlank()) return emptySet()
+
+        val tokens = disabledOracleCodes
+            .split(",")
+            .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+
+        val codes = tokens.map { token ->
+            token.toIntOrNull() ?: throw ConfigProblemException("Invalid number: $token")
+        }
+
+        val definedCodes = DefinedFaultCategory.entries.map { it.code }.toSet()
+        val experimentalCodes = ExperimentalFaultCategory.entries.map { it.code }.toSet()
+        val knownCodes = definedCodes + experimentalCodes
+
+        val unknown = codes.filter { it !in knownCodes }
+        if (unknown.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Invalid fault code(s): ${unknown.joinToString(", ")}")
+                appendLine("All available defined codes:")
+                appendLine(DefinedFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine("All available experimental codes:")
+                appendLine(ExperimentalFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                if (!useExperimentalOracles) {
+                    appendLine("Note: Experimental oracles are currently disabled (useExperimentalOracles=false).")
+                }
+            }
+            throw ConfigProblemException(message)
+        }
+
+        return codes.toSet()
+    }
+
     private var disabledOracleCodesList: List<FaultCategory>? = null
 
-    fun getDisabledOracleCodesList(): List<FaultCategory> {
-        if (disabledOracleCodesList == null) {
-            disabledOracleCodesList = disabledOracleCodes
-                .split(",")
-                .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
-                .map { str ->
-                    val code = str.toIntOrNull()
-                        ?: throw ConfigProblemException("Invalid number: $str")
-
-                    val allCategories = DefinedFaultCategory.values().asList() +
-                            ExperimentalFaultCategory.values()
-
-                    allCategories.firstOrNull { it.code == code }
-                        ?: throw ConfigProblemException(
-                            "Invalid fault code: $code" +
-                                    " All available codes are: \n" +
-                                    allCategories.joinToString("\n") { "${it.code} (${it.name})" }
-                        )
-                }
+    private fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList != null) {
+            return disabledOracleCodesList!!
         }
+
+        val definedCategories = DefinedFaultCategory.entries
+        val experimentalCategories = ExperimentalFaultCategory.entries
+
+        val allCategories: List<FaultCategory> = definedCategories + experimentalCategories
+
+        val userDisabledCodes: Set<Int> = parseDisabledCodesOrThrow(disabledOracleCodes)
+
+        val disabled: List<FaultCategory> = allCategories.filter { category ->
+            !isFaultCodeActive(category.code, userDisabledCodes)
+        }
+
+        disabledOracleCodesList = disabled.distinct()
         return disabledOracleCodesList!!
     }
 

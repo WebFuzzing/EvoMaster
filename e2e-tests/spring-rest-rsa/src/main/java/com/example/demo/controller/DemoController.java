@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.example.demo.service.UserService;
 import com.example.demo.util.CryptoUtil;
 import com.example.demo.vo.BindCardReq;
 import com.example.demo.vo.BindCardResp;
@@ -12,11 +13,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
+import javax.annotation.Resource;
 
 @RestController
 @RequestMapping("/api")
 public class DemoController {
+
+    @Resource
+    private UserService userService;
+
+
     // Your private key
     public static final String YOUR_PRIVATE_KEY = "MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCLhvv7oRCi/Y/d1yHWtePo0dFFpqgR5iITMa1TKolgUWkmeXAE72UgcGFEV3Vsb1k1aOkhsslhwyWTaxBgiEGhSMLswbMNXiGLsoV56kH0Mdms2zuRViUm067PUf/8sbP7a0z9/lsHnw3RQFp59bT7IuB2c6B5qpxkds59F1dR4cDjEYbee1EVXvMyRIXz10mG5VWb1M8+2njoTpZ/syKybPiaXUkyG7JX93l9Ax8MMV5T1H7GHnA9ZEygq5sDHj3se0hK3KLQS9xmEni+OFLfmEe8luhbF3ojbAeH31Iz3iXzQmxZb3HupHv1i/K30+YDdP4FgzPLuQsjFwjuM5WpAgMBAAECggEAYdF+s4jV2w8dX4/Fn3vhjoYay1PtnK7U0NQRCa9WpHou19RnXm5fXYCsEHeoUR83UaR9XSy01p8zpsh2sNaV/HbAga/C0epeZkwAG9rJ5mNUkkUY2+mjHjdl5N8+MnB7GBa/4YoDU7KEw2D0jXBfM3neF+00YlfkUOKiHTzR8QrhIkM9KUKICHBA6duSuOb8fMD5RTbfTsBjo8aKri2aU8oPEycxlx+GGxTgIGdaE7B97SUR1P/EJAThiW45+FEjH2MxD4+JjHPBfWVQSihAqOWNNFwnCICtgQ/N+dJbxQczaKycRT5MLDV27N+6UO7cIPOi6EhUVqS4LYyV0w8aoQKBgQDiJRSpyxTXI9V9gDLBx51NVcgkygida42DLh1u4jOy5EcSCMWeLlumxnOPQeqUZOzmdrlv8LkrevUqAWyGTxYqUOk2rsqWar9Lyvs62WFn3WRjbUUiMsWxnOpexCkK1ETXfdC6ZJFsmIowKdB84qoLww+zFVHwLCZESJuoz4sRvQKBgQCd8ocAdv3akx3Il3HgOr+Fcq97jtuUtw2yKcsWt7eHx0JbPA2mxGd7FuAcFG5G82K5mfAsGJfdbUfj55SOE01tAltLwJh6RZULn7MhUysgADIY39IsS5n4kQp8FMHH+/K4OPqzDKT1SW8/eB5rUhY+xGF7gIy/vAF18zSEcD70XQKBgQDIBuRwCyEz6o47o9lBbb7FWMrfP5S/KRLSpUeDfLEd2qzCVt/1Oiv3KDGu1S8YcuzYLMt5KAOhYfDYZsoHQozogQjHRXQL9/+cmr39H6n4pOrWxyAPT7ltkM39ZKSo33jE4pRtSecXlxUj5Nh0nkiqfq60SHdhaKuwWkjU2D66QQKBgDMempkI6hJDCSGx+lZDTVdIjgkkbGcOc+1U33kjzs+wKwbSQezWplNNTQ1pg2ONREejzfrHnuc4hkr52be+AZIlcBztYaw5NwsDDfvcKhn6Vjx8vE4/zb6IWudb5HfwUFdVgbZPglgtA0d8fgPoFnEMKCzLp0Iq/CILq9Sta4K1AoGAFGE+cHm+CqKOg6nNkRgh6mnZv1wlVEtCrL+xSZSSyDvFFavGCctEUOnSPSer0hML9Oq4u/iV+ecYYAP3i39v3k1KTH5+BRQwzUvqTXBKZvEI0HW7OEtemEdb/5nPkMCtFPi/A1sRVaFFUI8CVvq0Np8++pupp9ZZ/x6/l8kGvWo=";
     // Your public key
@@ -34,10 +40,10 @@ public class DemoController {
         String publicKey = OTHER_PARTY_PUBLIC_KEY;
         boolean checkSign = CryptoUtil.verify(signContent, req.getSign(), CryptoUtil.getPublicKey(publicKey));
         if (!checkSign) {
-            System.out.println("------ERROR! Invalid sign for the req:{}" + JSONObject.toJSONString(req));
+            System.out.println("------ERROR! Invalid sign for the req:" + JSONObject.toJSONString(req));
             return ResponseEntity.status(400).body(
                     handle(CommonResp.of("ERROR", "invalid signature", null))
-                    );
+            );
         }
         // decrypt the biz data with your private key
         String bizData = null;
@@ -51,11 +57,21 @@ public class DemoController {
                     handle(CommonResp.of("ERROR", "Decryption failed", null))
             );
         }
-        System.out.println("------Decrypted bizData:{}" + bizData);
+        System.out.println("------Decrypted bizData: " + bizData);
+
+        BindCardReq bindCardReq = JSONObject.parseObject(bizData, BindCardReq.class);
+
+        boolean exists = userService.checkIdCardExists(bindCardReq.getIdCardNo());
+        if (!exists)  {
+            System.out.println("------WARNING! User not found with idCardNo: " + bindCardReq.getIdCardNo());
+            return ResponseEntity.status(404).body(
+                    handle(CommonResp.of("WARNING", "User not found", null))
+            );
+        }
 
         // generate the response
         BindCardResp resp = new BindCardResp();
-        resp.setSessionId(UUID.randomUUID().toString());
+        // resp.setSessionId(UUID.randomUUID().toString());
         return  ResponseEntity.status(200).body(
                 handle(CommonResp.of("OK", "request successful", resp))
         );

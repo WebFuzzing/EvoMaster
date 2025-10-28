@@ -45,8 +45,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         private val log: Logger = LoggerFactory.getLogger(StandardMutator::class.java)
     }
 
-    @Inject
-    protected lateinit var sampler : Sampler<T>
 
     override fun doesStructureMutation(evaluatedIndividual: EvaluatedIndividual<T>): Boolean {
         if(!config.enableStructureMutation)
