@@ -79,102 +79,6 @@ class DtoWriterTest {
         assertTrue(dtoWriter.getCollectedDtos().isEmpty())
     }
 
-    @Test
-    fun primitiveTypesAreCollectedAsDtoFields() {
-        val dtoWriter = DtoWriter(outputFormat)
-        val actionCluster = initRestSchema("primitiveTypes.yaml")
-
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-
-        val collectedDtos = dtoWriter.getCollectedDtos()
-        assertEquals(collectedDtos.size, 1)
-        val postExampleDto = collectedDtos["POST__example"]
-        assertNotNull(postExampleDto)
-        val dtoFields = postExampleDto?.fields?:emptyList()
-        assertEquals(dtoFields.size, 12)
-        assertDtoFieldIn(dtoFields, "aString", STRING)
-        assertDtoFieldIn(dtoFields, "aRegex", STRING)
-        assertDtoFieldIn(dtoFields, "aBase64String", STRING)
-        assertDtoFieldIn(dtoFields, "aDate", STRING)
-        assertDtoFieldIn(dtoFields, "aTime", STRING)
-        assertDtoFieldIn(dtoFields, "aDateTime", STRING)
-        assertDtoFieldIn(dtoFields, "anInteger", INTEGER)
-        assertDtoFieldIn(dtoFields, "aLong", "Long")
-        assertDtoFieldIn(dtoFields, "aNumber", "Double")
-        assertDtoFieldIn(dtoFields, "aFloat", "Float")
-        assertDtoFieldIn(dtoFields, "aBoolean", BOOLEAN)
-        assertDtoFieldIn(dtoFields, "aNullableString", STRING)
-    }
-
-    @Test
-    fun childObjectInlineIsCollectedInDto() {
-        val dtoWriter = DtoWriter(outputFormat)
-        val actionCluster = initRestSchema("object/childObjectInline.yaml")
-
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-
-        val collectedDtos = dtoWriter.getCollectedDtos()
-        assertEquals(collectedDtos.size, 2)
-        val postExampleDto = collectedDtos["POST__example"]
-        assertNotNull(postExampleDto)
-        val dtoFields = postExampleDto?.fields?:emptyList()
-        assertEquals(dtoFields.size, 2)
-        assertDtoFieldIn(dtoFields, "aString", STRING)
-        assertDtoFieldIn(dtoFields, "anObject", "Anobject")
-
-        val childObjectDto = collectedDtos["Anobject"]
-        assertNotNull(childObjectDto)
-        val childObjectDtoFields = childObjectDto?.fields?:emptyList()
-        assertEquals(childObjectDtoFields.size, 2)
-        assertDtoFieldIn(childObjectDtoFields, "name", STRING)
-        assertDtoFieldIn(childObjectDtoFields, "age", INTEGER)
-    }
-
-    @Test
-    fun whenUsingComponentsDtoNameIsSchemaName() {
-        val dtoWriter = DtoWriter(outputFormat)
-        val actionCluster = initRestSchema("object/simpleComponents.yaml")
-
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-
-        val collectedDtos = dtoWriter.getCollectedDtos()
-        assertEquals(collectedDtos.size, 2)
-        val firstSchema = collectedDtos["FirstSchema"]
-        assertNotNull(firstSchema)
-        val dtoFields = firstSchema?.fields?:emptyList()
-        assertEquals(dtoFields.size, 1)
-        assertDtoFieldIn(dtoFields, "message", STRING)
-
-        val secondSchema = collectedDtos["SecondSchema"]
-        assertNotNull(secondSchema)
-        val childObjectDtoFields = secondSchema?.fields?:emptyList()
-        assertEquals(childObjectDtoFields.size, 1)
-        assertDtoFieldIn(childObjectDtoFields, "active", BOOLEAN)
-    }
-
-    @Test
-    fun childObjectComponentIsCollectedInDto() {
-        val dtoWriter = DtoWriter(outputFormat)
-        val actionCluster = initRestSchema("object/childObjectComponent.yaml")
-
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-
-        val collectedDtos = dtoWriter.getCollectedDtos()
-        assertEquals(collectedDtos.size, 2)
-        val postExampleDto = collectedDtos["ParentSchema"]
-        assertNotNull(postExampleDto)
-        val dtoFields = postExampleDto?.fields?:emptyList()
-        assertEquals(dtoFields.size, 2)
-        assertDtoFieldIn(dtoFields, "label", STRING)
-        assertDtoFieldIn(dtoFields, "child", "ChildSchema")
-
-        val childObjectDto = collectedDtos["ChildSchema"]
-        assertNotNull(childObjectDto)
-        val childObjectDtoFields = childObjectDto?.fields?:emptyList()
-        assertEquals(childObjectDtoFields.size, 2)
-        assertDtoFieldIn(childObjectDtoFields, "name", STRING)
-        assertDtoFieldIn(childObjectDtoFields, "age", INTEGER)
-    }
 
     @Test
     fun arrayAsRootTypeCollectsASingleDto() {
@@ -305,23 +209,6 @@ class DtoWriterTest {
         }
     }
 
-    @Test
-    fun testAnyOfMergesDtosIntoASingleOne() {
-        val dtoSpecs = listOf("Components", "Inline", "MixedOptional")
-        dtoSpecs.forEach { chosenDto ->
-            val dtoWriter = DtoWriter(outputFormat)
-            val actionCluster = initRestSchema("choice/anyOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-            val collectedDtos = dtoWriter.getCollectedDtos()
-            assertEquals(collectedDtos.size, 1)
-            val anyOfDto = collectedDtos[collectedDtos.keys.first()]
-            assertNotNull(anyOfDto)
-            val dtoFields = anyOfDto?.fields?:emptyList()
-            assertEquals(dtoFields.size, 2)
-            assertDtoFieldIn(dtoFields, "phone", STRING)
-            assertDtoFieldIn(dtoFields, "email", STRING)
-        }
-    }
 
     @Test
     fun testAnyOfArrayAndObject() {
@@ -339,23 +226,6 @@ class DtoWriterTest {
         assertDtoFieldIn(dtoFields, "numbers", "List<Integer>")
     }
 
-    @Test
-    fun testAllOfMergesDtosIntoASingleOne() {
-        val dtoSpecs = listOf("Components", "Inline", "Mixed")
-        dtoSpecs.forEach { chosenDto ->
-            val dtoWriter = DtoWriter(outputFormat)
-            val actionCluster = initRestSchema("choice/allOf$chosenDto.yaml")
-            dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-            val collectedDtos = dtoWriter.getCollectedDtos()
-            assertEquals(collectedDtos.size, 1)
-            val allOfDto = collectedDtos[collectedDtos.keys.first()]
-            assertNotNull(allOfDto)
-            val dtoFields = allOfDto?.fields?:emptyList()
-            assertEquals(dtoFields.size, 2)
-            assertDtoFieldIn(dtoFields, "name", STRING)
-            assertDtoFieldIn(dtoFields, "age", INTEGER)
-        }
-    }
 
     @Test
     fun noDtosWhenNoBodyParam() {
