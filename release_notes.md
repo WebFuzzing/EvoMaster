@@ -11,6 +11,9 @@ Under development in `master` branch.
 - Option _--disabledOracleCodes_ to disable the checking of specific fault types based on their WFC fault codes. By default, all fault types are checked for. 
 - Option _--endpointExclude_ to exclude specific REST endpoints from the fuzzing.
 
+### Improvements
+
+- Generated tests for REST APIs now do have a better summaries for the use of "examples" entries.
 
 ### Addressed GitHub Issues
 
