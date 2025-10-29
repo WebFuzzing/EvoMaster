@@ -19,12 +19,12 @@ class MuPlusLambdaEvolutionaryAlgorithm<T> : AbstractGeneticAlgorithm<T>() where
         frozenTargets = archive.notCoveredTargets()
 
         val mu = config.populationSize
-        val lambda = maxOf(1, config.muPlusLambdaOffspringSize)
+        val lambda = config.muPlusLambdaOffspringSize
 
         val offspring: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
         // For each parent, generate λ/μ offspring by mutation (rounded up)
-        val perParent = maxOf(1, lambda / maxOf(1, mu))
+        val perParent = lambda / mu
         for (p in population) {
             for (i in 0 until perParent) {
                 beginStep()

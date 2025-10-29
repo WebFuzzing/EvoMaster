@@ -1556,6 +1556,10 @@ class EMConfig {
     @Probability
     var fixedRateMutation = 0.04
 
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ+λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muPlusLambdaOffspringSize = 30
+
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
     var maxSearchSuiteSize = 50
