@@ -645,6 +645,9 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -670,6 +673,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -694,6 +699,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -727,6 +734,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
