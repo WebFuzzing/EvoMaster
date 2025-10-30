@@ -120,6 +120,54 @@ class MuPlusLambdaEvolutionaryAlgorithmTest {
             assertEquals(0, rec.mutated.size)
         }
     }
+
+    // One iteration properties: population size, best-µ selection, mutation count
+    @Test
+    fun testNextGenerationIsTheBestMuOfParentsUnionOffspring() {
+        TestUtils.handleFlaky {
+            val ea = injector.getInstance(
+                Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<OneMaxIndividual>>() {})
+            )
+
+            val rec = GARecorder<OneMaxIndividual>()
+            ea.addObserver(rec)
+
+            val config = injector.getInstance(EMConfig::class.java)
+            config.populationSize = 5
+            config.muPlusLambdaOffspringSize = 10 // divisible by mu -> perParent = 2
+            config.xoverProbability = 0.0 // not used in (µ+λ)
+            config.fixedRateMutation = 1.0 // force mutation on all offspring
+
+            // initialize population and snapshot parents
+            ea.setupBeforeSearch()
+            val parents = ea.getViewOfPopulation().toList()
+
+            // run a single generation
+            ea.searchOnce()
+
+            val finalPop = ea.getViewOfPopulation()
+            val mu = config.populationSize
+
+            // 1) population size remains µ
+            assertEquals(mu, finalPop.size)
+
+            // 2) final population equals best-µ of parents ∪ offspring (compare scores)
+            val offspring = rec.mutated.toList()
+            val expectedScores = (parents + offspring)
+                .map { ea.score(it) }
+                .sortedDescending()
+                .take(mu)
+            val finalScores = finalPop
+                .map { ea.score(it) }
+                .sortedDescending()
+            assertEquals(expectedScores, finalScores)
+
+            // 3) with fixedRateMutation=1, mutations equal number of created offspring
+            val perParent = config.muPlusLambdaOffspringSize / config.populationSize
+            val expectedMutations = perParent * config.populationSize
+            assertEquals(expectedMutations, rec.mutated.size)
+        }
+    }
 }
 
 
