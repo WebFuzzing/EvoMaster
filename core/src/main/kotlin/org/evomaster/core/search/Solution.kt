@@ -66,6 +66,12 @@ where T : Individual {
         }
     }
 
+    fun hasXssFaults(): Boolean {
+        return DetectedFaultUtils.getDetectedFaultCategories(this).any {
+            it == DefinedFaultCategory.XSS
+        }
+    }
+
     private fun hasAnyHostnameResolutionAction(): Boolean {
         return individuals.any { ind -> ind.individual.seeAllActions().any() { a -> a is HostnameResolutionAction } }
     }
