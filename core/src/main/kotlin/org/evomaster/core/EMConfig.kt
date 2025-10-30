@@ -2755,8 +2755,7 @@ class EMConfig {
      * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
      */
     @Experimental
-    @Min(0.0)
-    @Max(1.0)
+    @PercentageAsProbability
     @Cfg("Breeder GA: fraction of top individuals to keep in parents pool (truncation).")
     var breederTruncationFraction: Double = 0.5
 
@@ -2764,7 +2763,7 @@ class EMConfig {
      * Breeder GA: minimum number of parents to keep after truncation.
      */
     @Experimental
-    @Min(1.0)
+    @Min(2.0)
     @Cfg("Breeder GA: minimum number of individuals in parents pool after truncation.")
     var breederParentsMin: Int = 2
 
