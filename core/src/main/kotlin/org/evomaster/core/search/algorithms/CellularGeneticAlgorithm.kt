@@ -5,8 +5,24 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 
 /**
- * Cellular GA faithful to the standard pseudocode.
- * Neighborhood is mocked as a simple ring [left, self, right] for now.
+ * Cellular Genetic Algorithm (cGA).
+ *
+ * The population is organized on a virtual grid defined by a neighborhood model
+ * (e.g., ring, 5-linear, compact 9, compact 13). For each cell i in the current
+ * generation, the algorithm performs a localized evolutionary step restricted to
+ * i's neighborhood:
+ *
+ * 1) Build i's neighborhood according to the configured model (with wrap-around).
+ * 2) Select two parents via tournament restricted to that neighborhood.
+ * 3) Create two offspring and apply crossover with probability
+ *    `xoverProbability`.
+ * 4) Retain the best offspring by fitness and apply mutation with probability
+ *    `fixedRateMutation`.
+ * 5) Replace the individual at position i with the best between the mutated offspring
+ *    and the current individual at i (local elitism).
+ *
+ * One pass over all cells produces the next population. The process repeats until the
+ * global stopping criterion is met. 
  */
 class CellularGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
