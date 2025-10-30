@@ -8,13 +8,9 @@
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-core-integration-tests</artifactId>
+    <groupId>org.evomaster</groupId>
+    <artifactId>evomaster-core-parent</artifactId>
     <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
 
-
-    <modules>
-        <module>core-driver-it</module>
-        <module>core-graphql-it</module>
-        <module>core-it</module>
-    </modules>
 </project>

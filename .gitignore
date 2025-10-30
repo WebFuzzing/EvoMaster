@@ -23,7 +23,7 @@ spy.log
 /src/
 /private/
 /statistics.csv
-/e2e-tests/spring-rest-openapi-v2/src/em/
+/core-tests/e2e-tests/spring-rest-openapi-v2/src/em/
 case-study/rest/target/
 client-java/client-util/target/
 client-java/controller-api/target/
@@ -33,43 +33,32 @@ client-java/instrumentation-shared/target/
 client-java/database-spy/target/
 client-java/ci-utils/target
 core/target/
-e2e-tests/dropwizard-examples/target/
-e2e-tests/e2e-tests-utils/target/
-e2e-tests/spring-rest-openapi-v2/target/
+/core-tests/e2e-tests/dropwizard-examples/target/
+/core-tests/e2e-tests/e2e-tests-utils/target/
+/core-tests/e2e-tests/spring-rest-openapi-v2/target/
 experiments/target/
-/e2e-tests/spring-rest-openapi-v2/src/em/EvoMasterTest.java
-/e2e-tests/dropwizard-examples/src/em/
+/core-tests/e2e-tests/spring-rest-openapi-v2/src/em/EvoMasterTest.java
+/core-tests/e2e-tests/dropwizard-examples/src/em/
 /snapshot.csv
 *.lst
 /report/target/
 /extra_heuristics.csv
 /core-extra/dbconstraint/target/
-/e2e-tests/spring-rest-postgres/target/
-/e2e-tests/spring-rest-postgres-data-types/target/
+/core-tests/e2e-tests/spring-rest-postgres/target/
+/core-tests/e2e-tests/spring-rest-postgres-data-types/target/
 /core/testWithEMB.sh
 /resource-rest-experiments/api-generator/target/
-/client-js/node_modules/
-/client-js/dist/
-/client-js/yarn-error.log
-/client-js/coverage/
-/client-js/integration-tests/node_modules/
-/client-js/evomaster-client-js/coverage/
-/client-js/evomaster-client-js/node_modules/
-/client-js/evomaster-client-js/dist/
-/client-js/integration-tests/check/
-/client-js/integration-tests/coverage/
 
-/e2e-tests/spring-rest-openapi-v3/target
-/e2e-tests/spring-graphql/target
-/e2e-tests/ci-utils/target
+/core-tests/e2e-tests/spring-rest-openapi-v3/target
+/core-tests/e2e-tests/spring-graphql/target
+/core-tests/e2e-tests/ci-utils/target
 
-/client-js/integration-tests/build/
-/core-it/target/
+/core-tests/core-it/target/
 /coveredTargets.txt
-/core-integration-tests/core-driver-it/target/
-/core-it/src/test/kotlin/exp/
+/core-tests/integration-tests/core-driver-it/target/
+/core-tests/core-it/src/test/kotlin/exp/
 
-/core-integration-tests/core-graphql-it/target/
+/core-tests/integration-tests/core-graphql-it/target/
 
 
 #DotNet
@@ -99,59 +88,46 @@ generated-test-cases/
 #EF Migrations
 Migrations/
 
-/client-js/e2e-tests/node_modules/
-/client-js/e2e-tests/coverage/
-/client-js/e2e-tests/generated/
+
 /release/
-/e2e-tests/dotnet-rest/src/RestApis.ForAssertions/bin/
-/e2e-tests/dotnet-rest/src/RestApis.ForAssertions/obj/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/bin/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/obj/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.ForAssertions/generated/
-/e2e-tests/spring-rest-mysql/target/
-/e2e-tests/dotnet-rest/src/RestApis.Crud/obj/
-/e2e-tests/dotnet-rest/src/RestApis.Crud/bin/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/bin/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/obj/
-/e2e-tests/dotnet-rest/test/RestApis.Tests.Crud/generated/
-/e2e-tests/spring-rpc-thrift/target/
-/e2e-tests/spring-rpc/spring-rpc-thrift/target/
-/e2e-tests/micronaut-latest/target/
-/e2e-tests/wiremock/target/
+/core-tests/e2e-tests/spring-rpc-thrift/target/
+/core-tests/e2e-tests/spring-rpc/spring-rpc-thrift/target/
+/core-tests/e2e-tests/micronaut-latest/target/
+/core-tests/e2e-tests/wiremock/target/
 
 
-/e2e-tests/spring-rest-h2-v1/target/
-/e2e-tests/spring-rest-mysql-column-types/target/
-/e2e-tests/spring-rest-postgres-column-types/target/
-/e2e-tests/spring-rest-h2-column-types/target/
-/e2e-tests/spring-rest-h2-z3solver/target/
-/client-java/test-old-libraries/target/
-/e2e-tests/spring-web/target/
-/e2e-tests/spring-rest-mongo/target/
-/e2e-tests/spring-rest-opensearch/target/
-/client-java/target/
-/client-java/dependencies/target/
-/client-java/sql-dto/target/
-/client-java/sql/target/
-/client-java/distance-heuristics/target/
-/e2e-tests/spring-rpc/spring-rpc-grpc/target/
+/core-tests/e2e-tests/spring-rest-h2-v1/target/
+/core-tests/e2e-tests/spring-rest-mysql-column-types/target/
+/core-tests/e2e-tests/spring-rest-postgres-column-types/target/
+/core-tests/e2e-tests/spring-rest-h2-column-types/target/
+/core-tests/e2e-tests/spring-rest-h2-z3solver/target/
+/core-tests/client-java/test-old-libraries/target/
+/core-tests/e2e-tests/spring-web/target/
+/core-tests/e2e-tests/spring-rest-mongo/target/
+/core-tests/e2e-tests/spring-rest-opensearch/target/
+/core-tests/client-java/target/
+/core-tests/client-java/dependencies/target/
+/core-tests/client-java/sql-dto/target/
+/core-tests/client-java/sql/target/
+/core-tests/client-java/distance-heuristics/target/
+/core-tests/e2e-tests/spring-rpc/spring-rpc-grpc/target/
 /em.toml
 
 /core-extra/solver/target/
 /em.yaml
-/e2e-tests/spring-rest-openapi-v2/em.yaml
-/e2e-tests/spring-rest-openapi-v3/em.yaml
-/core-it/em.yaml
+/core-tests/e2e-tests/spring-rest-openapi-v2/em.yaml
+/core-tests/e2e-tests/spring-rest-openapi-v3/em.yaml
+/core-tests/core-it/em.yaml
 
 /test-utils/test-utils-js/coverage/
 /test-utils/test-utils-js/node_modules/
 /test-utils/test-utils-js/target/
 /core/em.yaml
 
-/e2e-tests/spring-rest-bb/target/
-/e2e-tests/spring-rest-bb/javascript/node_modules/
-/e2e-tests/spring-rest-bb/javascript/generated/
-/e2e-tests/spring-rest-bb/python/generated/
+/core-tests/e2e-tests/spring-rest-bb/target/
+/core-tests/e2e-tests/spring-rest-bb/javascript/node_modules/
+/core-tests/e2e-tests/spring-rest-bb/javascript/generated/
+/core-tests/e2e-tests/spring-rest-bb/python/generated/
 
 /client-java/test-utils-java/target/
 
@@ -159,21 +135,22 @@ Migrations/
 /test-utils/test-utils-py/src/main/resources/__pycache__/
 /test-utils/test-utils-py/src/test/__pycache__/
 
-/e2e-tests/spring-graphql-bb/javascript/generated/
-/e2e-tests/spring-graphql-bb/javascript/node_modules/
-/e2e-tests/spring-graphql-bb/python/generated/
-/e2e-tests/spring-graphql-bb/target/
+/core-tests/e2e-tests/spring-graphql-bb/javascript/generated/
+/core-tests/e2e-tests/spring-graphql-bb/javascript/node_modules/
+/core-tests/e2e-tests/spring-graphql-bb/python/generated/
+/core-tests/e2e-tests/spring-graphql-bb/target/
 
 /generated_tests/
-/e2e-tests/spring-rest-bb/maven/src/
-/e2e-tests/spring-rest-bb/maven/target/
+/core-tests/e2e-tests/spring-rest-bb/maven/src/
+/core-tests/e2e-tests/spring-rest-bb/maven/target/
 /target/
 /wfc/target/
 
-/e2e-tests/emb-json/target/
+/core-tests/e2e-tests/emb-json/target/
 /process_data/
-/e2e-tests/spring-rest-multidb/target/
-/e2e-tests/spring-rest-h2-v2/target/
-e2e-tests/spring-rest-rsa/target/
-/e2e-tests/spring-rest-h2-v1/em.yaml
-/core-integration-tests/core-it/target/
+/core-tests/e2e-tests/spring-rest-multidb/target/
+/core-tests/e2e-tests/spring-rest-h2-v2/target/
+/core-tests/e2e-tests/spring-rest-rsa/target/
+/core-tests/e2e-tests/spring-rest-h2-v1/em.yaml
+/core-tests/integration-tests/core-it/target/
+/core-tests/integration-tests/core-it/em.yaml
