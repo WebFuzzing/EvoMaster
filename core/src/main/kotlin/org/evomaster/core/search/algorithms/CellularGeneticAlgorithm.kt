@@ -38,23 +38,13 @@ class CellularGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Indi
                 xover(o1, o2)
             }
 
-            var o: WtsEvalIndividual<T>
-            if (score(o1) >= score(o2)) {
-                o = o1
-            } else {
-                o = o2
-            }
+            val o: WtsEvalIndividual<T> = if (score(o1) >= score(o2)) o1 else o2
 
             if (randomness.nextBoolean(config.fixedRateMutation)) {
                 mutate(o)
             }
 
-            var bestLocal: WtsEvalIndividual<T>
-            if (score(o) >= score(p)) {
-                bestLocal = o
-            } else {
-                bestLocal = p
-            }
+            val bestLocal: WtsEvalIndividual<T> = if (score(o) >= score(p)) o else p
             next.add(bestLocal)
             endStep()
         }
