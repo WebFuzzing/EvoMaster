@@ -4,17 +4,17 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster-core-parent</artifactId>
+        <artifactId>evomaster-core-tests</artifactId>
         <version>4.0.1-SNAPSHOT</version>
-        <relativePath>../core-parent</relativePath>
     </parent>
 
-    <artifactId>evomaster-core-extra</artifactId>
+    <artifactId>evomaster-core-integration-tests</artifactId>
     <packaging>pom</packaging>
 
 
     <modules>
-        <module>dbconstraint</module>
-        <module>solver</module>
+        <module>core-driver-it</module>
+        <module>core-graphql-it</module>
+        <module>core-it</module>
     </modules>
 </project>

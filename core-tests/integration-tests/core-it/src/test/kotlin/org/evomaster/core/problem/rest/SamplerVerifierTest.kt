@@ -51,7 +51,7 @@ class SamplerVerifierTest {
 
     @TestFactory
     fun testSamplingFromAllSchemasUnderCoreResources(): Collection<DynamicTest>{
-        return sampleFromSchemasAndCheckInvariants("../../core/src/test/resources/swagger", "swagger")
+        return sampleFromSchemasAndCheckInvariants("../../../core/src/test/resources/swagger", "swagger")
     }
 
 
