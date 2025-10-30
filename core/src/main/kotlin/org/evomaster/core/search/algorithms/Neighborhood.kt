@@ -10,6 +10,19 @@ import kotlin.math.sqrt
  */
 class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborModels<WtsEvalIndividual<T>> {
 
+    init {
+        require(populationSize > 0) { "populationSize must be > 0" }
+    }
+
+    private fun validate(population: List<WtsEvalIndividual<T>>, index: Int) {
+        require(population.size == populationSize) {
+            "population size (" + population.size + ") must equal initialized populationSize (" + populationSize + ")"
+        }
+        require(index in 0 until populationSize) {
+            "index " + index + " out of bounds for population of size " + populationSize
+        }
+    }
+
     /**
      * Map grid coordinate (rowIndex, colIndex) to a valid 1D index in [0, populationSize),
      * using wrap-around on both axes.
@@ -27,6 +40,7 @@ class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborMo
     }
 
     override fun ringTopology(population: List<WtsEvalIndividual<T>>, index: Int): List<WtsEvalIndividual<T>> {
+        validate(population, index)
         val n = populationSize
         val left = population[(index - 1 + n) % n]
         val self = population[index]
@@ -35,6 +49,7 @@ class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborMo
     }
 
     override fun linearFive(population: List<WtsEvalIndividual<T>>, index: Int): List<WtsEvalIndividual<T>> {
+        validate(population, index)
         val n = populationSize
         val cols = maxOf(1, sqrt(n.toDouble()).toInt())
         val row = index / cols
@@ -49,6 +64,7 @@ class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborMo
     }
 
     override fun compactNine(population: List<WtsEvalIndividual<T>>, index: Int): List<WtsEvalIndividual<T>> {
+        validate(population, index)
         val n = populationSize
         val cols = maxOf(1, sqrt(n.toDouble()).toInt())
         val row = index / cols
@@ -67,6 +83,7 @@ class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborMo
     }
 
     override fun compactThirteen(population: List<WtsEvalIndividual<T>>, index: Int): List<WtsEvalIndividual<T>> {
+        validate(population, index)
         val n = populationSize
         val cols = maxOf(1, sqrt(n.toDouble()).toInt())
         val row = index / cols
