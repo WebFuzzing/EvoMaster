@@ -5,7 +5,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 
 /**
- * (μ + λ) Evolutionary Algorithm adapted a Whole Test Suite representation.
+ * (μ + λ) Evolutionary Algorithm.
  * Population P of size μ is evolved by generating λ offspring via mutation of each parent,
  * then selecting the best μ individuals from parents ∪ offspring.
  */
