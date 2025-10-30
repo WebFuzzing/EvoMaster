@@ -6,7 +6,7 @@ import kotlin.math.sqrt
 
 /**
  * Neighborhood utilities inspired by EvoSuite's Neighbourhood for Cellular GA.
- * Returns original references (no copies) to be compatible with identity checks in tests.
+ * Reference: https://github.com/EvoSuite/evosuite/blob/master/client/src/main/java/org/evosuite/ga/Neighbourhood.java
  */
 class Neighborhood<T : Individual>(private val populationSize: Int) : NeighborModels<WtsEvalIndividual<T>> {
 
