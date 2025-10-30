@@ -645,6 +645,9 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<GraphQLIndividual>>() {})
+
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
@@ -670,6 +673,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -694,6 +699,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -727,6 +734,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.LIPS ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.LIPSAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
