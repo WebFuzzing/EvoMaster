@@ -247,7 +247,7 @@ There are 3 types of options:
 |`appendToTargetHeuristicsFile`| __Boolean__. Whether should add to an existing target heuristics file, instead of replacing it. It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `false`.|
 |`bbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for black-box (bb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`breederParentsMin`| __Int__. Breeder GA: minimum number of individuals in parents pool after truncation. *Constraints*: `min=1.0`. *Default value*: `2`.|
-|`breederTruncationFraction`| __Double__. Breeder GA: fraction of top individuals to keep in parents pool (truncation). *Constraints*: `min=0.0, max=1.0`. *Default value*: `0.5`.|
+|`breederTruncationFraction`| __Double__. Breeder GA: fraction of top individuals to keep in parents pool (truncation). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`callbackURLHostname`| __String__. HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname. *Default value*: `localhost`.|
 |`classificationRepairThreshold`| __Double__. If using THRESHOLD for AI Classification Repair, specify its value. All classifications with probability equal or above such threshold value will be accepted. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`discoveredInfoRewardedInFitness`| __Boolean__. If there is new discovered information from a test execution, reward it in the fitness function. *Default value*: `false`.|
