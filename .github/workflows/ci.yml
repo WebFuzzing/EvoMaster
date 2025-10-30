@@ -350,7 +350,7 @@ jobs:
           CI_env: GithubAction
       - name: Run BB E2E tests
         # important that what we run here does not use Docker
-        working-directory: e2e-tests/spring-rest-bb
+        working-directory: core-tests/e2e-tests/spring-rest-bb
         run:  mvn clean verify --fae
         env:
           CI_env: GithubAction
