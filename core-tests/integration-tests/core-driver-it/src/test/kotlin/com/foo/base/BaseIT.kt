@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.*
 import java.io.File
 
 
-@Disabled("No CI (Travis, CircleCI and GitHub) likes this test... :( ")
 class BaseIT {
 
 
@@ -19,14 +18,26 @@ class BaseIT {
         private val starter = InstrumentedSutStarter(driver)
         private lateinit var remote: RemoteController
 
+
         private fun setupJarAgent(){
 
-            val path = File("../client-java/instrumentation/target").walk()
+            val folder = File("../../../client-java/instrumentation/target").absoluteFile
+            if(!folder.exists()){
+                throw IllegalStateException("Target folder does not exist: ${folder.absolutePath}")
+            }
+
+            val files = folder.listFiles()
+
+            val path = files
                     .filter { it.name.endsWith(".jar") }
                     .find {
                         it.name.matches(Regex("evomaster-client-java-instrumentation-\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?\\.jar"))
-                    }!!
-                    .absolutePath
+                    }?.absolutePath
+            if(path == null) {
+                val names = files.map { it.name }
+                throw IllegalStateException("evomaster-client-java-instrumentation jar file not found in target folder: ${folder.absolutePath}." +
+                            " | Content: ${names.joinToString(", ")}")
+            }
 
             System.setProperty("evomaster.instrumentation.jar.path", path)
         }
@@ -34,10 +45,6 @@ class BaseIT {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
-            //Travis and CircleCI do not like this test...
-            CIUtils.skipIfOnTravis()
-            CIUtils.skipIfOnCircleCI()
-
             setupJarAgent()
             driver.controllerPort = 0
             starter.start()
@@ -58,13 +65,17 @@ class BaseIT {
 
     @Test
     fun testSearchCommands(){
-        remote.startANewSearch()
-        remote.startSUT()
+        val startedNewSearch = remote.startANewSearch()
+        assertTrue(startedNewSearch, "Failed to start new search")
 
-        remote.registerNewAction(ActionDto().apply { index = 0 })
+        val startedSUT = remote.startSUT()
+        assertTrue(startedSUT, "Failed to start SUT")
+
+        val actionRegistered = remote.registerNewAction(ActionDto().apply { index = 0 })
+        assertTrue(actionRegistered, "Failed to register action")
 
         val results = remote.getTestResults()
-        assertNotNull(results)
+        assertNotNull(results, "Failed to get results")
         assertEquals(0, results!!.targets.size)
     }
 
@@ -72,30 +83,30 @@ class BaseIT {
     fun testRestart(){
 
         //make sure it is started
-        assertTrue(remote.startSUT())
+        assertTrue(remote.startSUT(), "Failed to restart SUT")
         var info = remote.getSutInfo()
-        assertNotNull(info)
+        assertNotNull(info, "Failed to get SUT info")
 
         //stop it
-        assertTrue(remote.stopSUT())
+        assertTrue(remote.stopSUT(), "Failed to stop SUT")
         info = remote.getSutInfo()
-        assertNull(info)
+        assertNull(info, "Failed to get SUT info after stop")
 
 
         //start it again
         driver.sutPort++ //let's try to avoid issue with TCP port taking too long to be released
-        assertTrue(remote.startSUT())
+        assertTrue(remote.startSUT(), "Failed to re-start SUT")
         info = remote.getSutInfo()
-        assertNotNull(info)
+        assertNotNull(info, "Failed to get SUT info after re-start")
 
         //stop it
-        assertTrue(remote.stopSUT())
+        assertTrue(remote.stopSUT(), "Failed to re-stop SUT")
         info = remote.getSutInfo()
-        assertNull(info)
+        assertNull(info, "Failed to get SUT info after re-stop")
 
         //start it again
         driver.sutPort++
-        assertTrue(remote.startSUT())
+        assertTrue(remote.startSUT(), "Failed to re-start SUT in 3rd time")
         info = remote.getSutInfo()
         assertNotNull(info)
     }
