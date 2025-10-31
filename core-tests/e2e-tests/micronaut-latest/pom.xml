@@ -14,7 +14,76 @@
     <properties>
         <exec.mainClass>com.foo.micronaut.latest.MicronautApplication</exec.mainClass>
         <micronaut.runtime>netty</micronaut.runtime>
+        <micronaut.version>3.2.7</micronaut.version>
+        <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
+        <micronaut.test.version>3.0.5</micronaut.test.version>
+        <swagger.version>1.6.1</swagger.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Micronaut -->
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-bom</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-inject</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-validation</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut.test</groupId>
+                <artifactId>micronaut-test-junit5</artifactId>
+                <version>${micronaut.test.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http-client</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-http-server-netty</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-jackson-databind</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-runtime</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micronaut</groupId>
+                <artifactId>micronaut-core</artifactId>
+                <version>${micronaut.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-jaxrs</artifactId>
+                <version>${swagger.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
