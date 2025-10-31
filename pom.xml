@@ -921,6 +921,11 @@
                         -->
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <runOrder>alphabetical</runOrder>
+                        <excludes>
+                            <!-- Do NOT run integration tests with surefire... use failsafe!!!-->
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
 
