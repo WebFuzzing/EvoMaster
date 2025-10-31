@@ -1053,9 +1053,6 @@
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
-                        <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <!--  Commented out, as no longer using CircleCI-->
-                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
                         <runOrder>alphabetical</runOrder>
                     </configuration>
                 </plugin>
@@ -1070,7 +1067,7 @@
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                     <executions>
                         <execution>
