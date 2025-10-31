@@ -647,6 +647,14 @@ class Main {
 
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<GraphQLIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<GraphQLIndividual>>() {})
 
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
@@ -675,6 +683,15 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RPCIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RPCIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -701,6 +718,15 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<WebIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<WebIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }
@@ -736,6 +762,15 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.MuLambdaEA ->
                     Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
+
+                EMConfig.Algorithm.BreederGA ->
+                    Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.CellularGA ->
+                    Key.get(object : TypeLiteral<CellularGeneticAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
+                    Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RestIndividual>>() {})
 
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
