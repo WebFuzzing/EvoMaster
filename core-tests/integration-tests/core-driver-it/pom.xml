@@ -46,6 +46,12 @@
             <artifactId>evomaster-client-java-controller</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-instrumentation</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
 
         <dependency>
             <groupId>org.evomaster</groupId>

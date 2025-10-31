@@ -84,7 +84,7 @@ jobs:
       - name: Debug Test Case
         env:
           CI_env: GithubAction
-        run: mvn test  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
+        run: mvn install  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
 
   full-build-base:
     runs-on: ubuntu-latest

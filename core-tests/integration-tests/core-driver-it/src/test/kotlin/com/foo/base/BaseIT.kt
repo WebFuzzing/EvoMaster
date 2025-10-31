@@ -21,17 +21,23 @@ class BaseIT {
 
         private fun setupJarAgent(){
 
-            val folder = File("../../../client-java/instrumentation/target")
+            val folder = File("../../../client-java/instrumentation/target").absoluteFile
             if(!folder.exists()){
                 throw IllegalStateException("Target folder does not exist: ${folder.absolutePath}")
             }
 
-            val path = folder.walk()
+            val files = folder.listFiles()
+
+            val path = files
                     .filter { it.name.endsWith(".jar") }
                     .find {
                         it.name.matches(Regex("evomaster-client-java-instrumentation-\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?\\.jar"))
                     }?.absolutePath
-                ?: throw IllegalStateException("evomaster-client-java-instrumentation jar file not found in target folder: ${folder.absolutePath}")
+            if(path == null) {
+                val names = files.map { it.name }
+                throw IllegalStateException("evomaster-client-java-instrumentation jar file not found in target folder: ${folder.absolutePath}." +
+                            " | Content: ${names.joinToString(", ")}")
+            }
 
             System.setProperty("evomaster.instrumentation.jar.path", path)
         }
