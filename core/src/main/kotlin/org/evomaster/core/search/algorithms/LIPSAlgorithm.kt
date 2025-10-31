@@ -8,26 +8,24 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
  * LIPS (Linearly Independent Path-based Search).
  * Single-objective GA that optimizes one target (branch) at a time.
  *
- * Simplified adaptation:
  * - Picks a current target from the uncovered set.
- * - Freezes scoring on that target only.
  * - Runs one GA generation to evolve the population towards the current target.
- * - Adds discovered individuals to archive; when targets are covered, picks a new target.
+ * - when current target is covered or its budget is spent, select a new current target.
  */
 class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     private var currentTarget: Int? = null
-    private val budgetLeftPerTarget: MutableMap<Int, Int> = mutableMapOf()
+    private var budgetLeftForCurrentTarget: Int = 0
 
     override fun getType(): EMConfig.Algorithm = EMConfig.Algorithm.LIPS
 
     override fun initPopulation() {
         population.clear()
 
-        // 1) Generate i
+        // 1) Generate Random Individual
         val i = sampleSuite()
 
-        // 2) Compute uncovered 
+        // 2) Get Uncovered Targets
         val uncovered = archive.notCoveredTargets()
         if (uncovered.isEmpty()) {
             return
@@ -38,9 +36,8 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         currentTarget = target
         frozenTargets = setOf(target)
 
-        // 4) initialize per-target budget
-        val perTarget = calculatePerTargetBudget(uncovered.size)
-        budgetLeftPerTarget.putIfAbsent(target, perTarget)
+        // 4) initialize budget for this target
+        budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
 
         // 5) P <- RandomPopulation(ps-1) ∪ {i}
         population.add(i)
@@ -59,9 +56,14 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
             return
         }
 
-        // Pick target if none, or if previously covered
+        // current target is null if covered by previous generation or out of budget
+
+        // Pick target if null, or if previously covered 
         if (currentTarget == null || !uncovered.contains(currentTarget)) {
-            currentTarget = uncovered.last()
+            val target = uncovered.last()
+            currentTarget = target
+            // Initialize budget for this NEW target
+            budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
         }
 
         // Focus scoring on the single selected target
@@ -73,11 +75,6 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         // record budget usage for this generation
         val startActions = time.evaluatedActions
         val startSeconds = time.getElapsedSeconds()
-        
-        val t = currentTarget!!
-        val targetBudgetLeft = budgetLeftPerTarget.getOrPut(t) {
-            calculatePerTargetBudget(uncovered.size)
-        }
 
         while (nextPop.size < n) {
             beginStep()
@@ -98,18 +95,13 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
                 mutate(o2)
             }
 
-            // Keep best wrt frozen target
-            val a = if (score(o1) >= score(o2)) o1 else o2
-            nextPop.add(a)
+            nextPop.add(o1)
+            nextPop.add(o2)
 
             // Stop if global budget or target budget is up
-            val usedForTarget = when (config.stoppingCriterion) {
-                EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> time.evaluatedActions - startActions
-                EMConfig.StoppingCriterion.TIME -> time.getElapsedSeconds() - startSeconds
-                else -> 0
-            }
+            val usedForTarget = usedForCurrentTarget(startActions, startSeconds)
             
-            if (!time.shouldContinueSearch() || usedForTarget >= targetBudgetLeft) {
+            if (!time.shouldContinueSearch() || usedForTarget >= budgetLeftForCurrentTarget) {
                 endStep()
                 break
             }
@@ -120,18 +112,12 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         population.addAll(nextPop)
 
         // Update budget usage for this target
-        currentTarget?.let { target ->
-            val usedForTarget = when (config.stoppingCriterion) {
-                EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> time.evaluatedActions - startActions
-                EMConfig.StoppingCriterion.TIME -> time.getElapsedSeconds() - startSeconds
-                else -> 0
-            }
-            budgetLeftPerTarget[target] = (budgetLeftPerTarget[target] ?: 0) - usedForTarget
-        }
+        val usedForTarget = usedForCurrentTarget(startActions, startSeconds)
+        budgetLeftForCurrentTarget -= usedForTarget
 
         // Check if target is covered or out of budget
         val coveredNow = population.any { score(it) >= 1.0 }
-        val outOfBudget = currentTarget?.let { (budgetLeftPerTarget[it] ?: 1) <= 0 } ?: false
+        val outOfBudget = budgetLeftForCurrentTarget <= 0
         
         if (coveredNow || outOfBudget) {
             currentTarget = null
@@ -146,11 +132,27 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
      */
     private fun calculatePerTargetBudget(uncoveredSize: Int): Int {
         return when (config.stoppingCriterion) {
-            EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> 
-                config.maxEvaluations / uncoveredSize
-            EMConfig.StoppingCriterion.TIME -> 
-                config.timeLimitInSeconds() / uncoveredSize
+            EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> {
+                val remaining = (config.maxEvaluations - time.evaluatedActions).coerceAtLeast(0)
+                remaining / uncoveredSize
+            }
+            EMConfig.StoppingCriterion.TIME -> {
+                val remaining = (config.timeLimitInSeconds() - time.getElapsedSeconds()).coerceAtLeast(0)
+                remaining / uncoveredSize
+            }
             else -> Int.MAX_VALUE
+        }
+    }
+
+    /**
+     * Compute the budget spent since the start of the current generation,
+     * based on the active stopping criterion.
+     */
+    private fun usedForCurrentTarget(startActions: Int, startSeconds: Int): Int {
+        return when (config.stoppingCriterion) {
+            EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> time.evaluatedActions - startActions
+            EMConfig.StoppingCriterion.TIME -> time.getElapsedSeconds() - startSeconds
+            else -> 0
         }
     }
 }
