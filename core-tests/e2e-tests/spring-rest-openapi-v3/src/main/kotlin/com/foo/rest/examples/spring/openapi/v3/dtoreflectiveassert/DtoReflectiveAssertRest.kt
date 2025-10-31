@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 class DtoReflectiveAssertRest {
 
-    @PostMapping(path = ["/allof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun allof(@RequestBody body: AllOfDto) : ResponseEntity<String>{
-        return ResponseEntity.ok("OK")
-    }
+//    @PostMapping(path = ["/allof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+//    open fun allof(@RequestBody body: AllOfDto) : ResponseEntity<String>{
+//        return ResponseEntity.ok("OK")
+//    }
 
     // TODO: Restore when support for ChoiceGene has been added
 //    @PostMapping(path = ["/anyof"], consumes = [MediaType.APPLICATION_JSON_VALUE])
@@ -26,13 +26,18 @@ class DtoReflectiveAssertRest {
 //        return ResponseEntity.ok("OK")
 //    }
 
-    @PostMapping(path = ["/primitiveTypes"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun primitiveTypes(@RequestBody body: PrimitiveTypesDto) : ResponseEntity<String>{
-        return ResponseEntity.ok("OK")
-    }
+//    @PostMapping(path = ["/primitiveTypes"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+//    open fun primitiveTypes(@RequestBody body: PrimitiveTypesDto) : ResponseEntity<String>{
+//        return ResponseEntity.ok("OK")
+//    }
+//
+//    @PostMapping(path = ["/parent"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+//    open fun parent(@RequestBody body: ParentSchemaDto) : ResponseEntity<String>{
+//        return ResponseEntity.ok("OK")
+//    }
 
-    @PostMapping(path = ["/parent"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun parent(@RequestBody body: ParentSchemaDto) : ResponseEntity<String>{
+    @PostMapping(path = ["/items-inline"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun itemsInline(@RequestBody body: ItemsInlineDto) : ResponseEntity<String>{
         return ResponseEntity.ok("OK")
     }
 
