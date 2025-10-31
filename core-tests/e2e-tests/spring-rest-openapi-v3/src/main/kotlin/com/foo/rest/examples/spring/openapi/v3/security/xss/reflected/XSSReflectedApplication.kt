@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.security.xss
+package com.foo.rest.examples.spring.openapi.v3.security.xss.reflected
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
@@ -28,12 +28,12 @@ data class FeedbackDto(
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
 @RequestMapping(path = ["/api"])
 @RestController
-open class XSSBaseApplication {
+open class XSSReflectedApplication {
 
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(XSSBaseApplication::class.java, *args)
+            SpringApplication.run(XSSReflectedApplication::class.java, *args)
         }
     }
 

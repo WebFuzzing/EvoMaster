@@ -1,14 +1,14 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.xss
+package org.evomaster.e2etests.spring.openapi.v3.security.xss.stored
 
-import com.foo.rest.examples.spring.openapi.v3.security.xss.XSSBaseController
+import com.foo.rest.examples.spring.openapi.v3.security.xss.stored.XSSStoredController
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class XSSBaseEMTest : SpringTestBase() {
+class XSSStoredEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -16,14 +16,14 @@ class XSSBaseEMTest : SpringTestBase() {
         fun init() {
             val config = EMConfig()
             config.instrumentMR_NET = false
-            initClass(XSSBaseController(), config)
+            initClass(XSSStoredController(), config)
         }
     }
 
     @Test
     fun testSSRFEM() {
         runTestHandlingFlakyAndCompilation(
-            "XSSBaseEMTest",
+            "XSSStoredEMTest",
             50,
         ) { args: MutableList<String> ->
 
@@ -32,8 +32,8 @@ class XSSBaseEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.isNotEmpty())
-            assertTrue { solution.hasXssFaults() }
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
+            Assertions.assertTrue { solution.hasXssFaults() }
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/great", "OK")
         }
