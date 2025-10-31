@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Assertions.*
 import java.io.File
 
 
-@Disabled("No CI (Travis, CircleCI and GitHub) likes this test... :( ")
 class BaseIT {
 
 
@@ -19,14 +18,20 @@ class BaseIT {
         private val starter = InstrumentedSutStarter(driver)
         private lateinit var remote: RemoteController
 
+
         private fun setupJarAgent(){
 
-            val path = File("../client-java/instrumentation/target").walk()
+            val folder = File("../../../client-java/instrumentation/target")
+            if(!folder.exists()){
+                throw IllegalStateException("Target folder does not exist: ${folder.absolutePath}")
+            }
+
+            val path = folder.walk()
                     .filter { it.name.endsWith(".jar") }
                     .find {
                         it.name.matches(Regex("evomaster-client-java-instrumentation-\\d+\\.\\d+\\.\\d+(-SNAPSHOT)?\\.jar"))
-                    }!!
-                    .absolutePath
+                    }?.absolutePath
+                ?: throw IllegalStateException("evomaster-client-java-instrumentation jar file not found in target folder: ${folder.absolutePath}")
 
             System.setProperty("evomaster.instrumentation.jar.path", path)
         }
@@ -34,10 +39,6 @@ class BaseIT {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
-            //Travis and CircleCI do not like this test...
-            CIUtils.skipIfOnTravis()
-            CIUtils.skipIfOnCircleCI()
-
             setupJarAgent()
             driver.controllerPort = 0
             starter.start()

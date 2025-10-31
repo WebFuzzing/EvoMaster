@@ -17,6 +17,10 @@
         <module>integration-tests</module>
     </modules>
 
+    <properties>
+        <springdoc.version>1.6.9</springdoc.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <!-- DropWizard -->
