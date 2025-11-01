@@ -645,6 +645,9 @@ class Main {
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<StandardGeneticAlgorithm<GraphQLIndividual>>() {})
 
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
+                    
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
 
@@ -679,6 +682,9 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
+        
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
@@ -712,6 +718,9 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
+                    
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
@@ -754,6 +763,8 @@ class Main {
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MuPlusLambdaEA ->
+                    Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})
