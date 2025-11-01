@@ -12,11 +12,6 @@
     <packaging>jar</packaging>
     <name>${project.groupId}:${project.artifactId}</name>
 
-    <properties>
-        <!--  THOSE ARE ONLY FOR TESTING -->
-        <springboot.version>2.5.4</springboot.version>
-    </properties>
-
 
     <dependencies>
         <dependency>
