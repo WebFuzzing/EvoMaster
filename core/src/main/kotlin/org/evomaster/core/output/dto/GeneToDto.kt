@@ -39,6 +39,7 @@ class GeneToDto(
     /**
      * @param leafGene to obtain the refType if the component is defined with a name
      * @param fallback to provide a fallback on the DTO named with the action if the component is defined inline
+     q* @param capitalize to determine if the DTO string name must be capitalized for test case writing
      *
      * @return the DTO name that will be used to instantiate the first variable
      */
@@ -61,7 +62,8 @@ class GeneToDto(
     /**
      * @param gene from which to extract the setter calls
      * @param dtoName that will be instantiated for payload
-     * @param counter to provide uniqueness under the same DTO being used in a single test case
+     * @param counter list to provide uniqueness under the same DTO being used in a single test case
+     * @param capitalize to determine if the DTO string name must be capitalized for test case writing
      *
      * @return a [DtoCall] object that can be written to the test case
      */
