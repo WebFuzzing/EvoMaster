@@ -36,6 +36,19 @@
         </license>
     </licenses>
 
+    <properties>
+        <!--  THOSE ARE ONLY FOR TESTING -->
+        <springboot.version>2.5.4</springboot.version>
+    </properties>
+
+
+    <!--
+         "client-java" lives separately from "core".
+         where core tries to be on latest LTS, the client-java is stuck on old version to maximize its usability.
+         as such, to avoid dependency hell, versions of libraries should not be in root pom.xml file.
+         but rather in the top submodules.
+         TODO there is ongoing effort to do this refactoring, but it will take a while
+    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
