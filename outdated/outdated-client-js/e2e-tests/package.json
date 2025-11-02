@@ -1,0 +1,23 @@
+{
+  "name": "evomaster-client-js-e2e-tests",
+  "description": "E2E tests for EvoMaster support for JavaScript",
+  "main": "index.js",
+  "repository": {},
+  "author": "EvoMaster Team",
+  "license": "LGPL-3.0-only",
+  "devDependencies": {
+    "evomaster-client-js": "file:../evomaster-client-js",
+    "jest": "^24.9.0",
+    "babel-jest": "^24.9.0",
+    "dedent": "^0.7.0",
+    "superagent": "^5.1.1",
+    "supertest": "^4.0.2"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testRegex": "generated/.*-test\\.(js|jsx|ts|tsx)$"
+  }
+}
