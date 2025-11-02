@@ -41,4 +41,9 @@ class DtoReflectiveAssertRest {
         return ResponseEntity.ok("OK")
     }
 
+    @PostMapping(path = ["/items-components"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun itemsComponents(@RequestBody body: List<ParentSchemaDto>) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
 }

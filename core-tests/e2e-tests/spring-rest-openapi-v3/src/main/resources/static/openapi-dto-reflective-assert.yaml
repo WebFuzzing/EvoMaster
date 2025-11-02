@@ -32,6 +32,20 @@ paths:
       responses:
         '200':
           description: OK
+  /items-components:
+    post:
+      summary: Accepts an array of objects with numbers, labels, and wrappedStrings wrapper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParentSchema'
+      responses:
+        '200':
+          description: OK
   /primitiveTypes:
     post:
       summary: Example with all primitive and format types (no array/object)

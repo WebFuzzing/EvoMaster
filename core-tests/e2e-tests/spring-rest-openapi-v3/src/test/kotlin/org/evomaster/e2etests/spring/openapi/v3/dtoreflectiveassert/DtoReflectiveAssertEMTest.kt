@@ -40,6 +40,7 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/primitiveTypes", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/parent", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-inline", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-components", "OK")
         }
 
         assertPrimitiveTypeDtoCreated()
