@@ -600,6 +600,13 @@
                 <version>${org.mongodb.version}</version>
             </dependency>
 
+            <!-- Redis/Lettuce -->
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${io.lettuce.core.version}</version>
+            </dependency>
+
             <!-- OpenSearch -->
             <dependency>
                 <groupId>org.opensearch.client</groupId>
