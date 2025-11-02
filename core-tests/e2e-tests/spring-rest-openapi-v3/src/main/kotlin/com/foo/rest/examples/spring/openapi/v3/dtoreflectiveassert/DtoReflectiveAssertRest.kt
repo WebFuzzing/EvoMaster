@@ -36,4 +36,9 @@ class DtoReflectiveAssertRest {
         return ResponseEntity.ok("OK")
     }
 
+    @PostMapping(path = ["/items-inline"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun itemsInline(@RequestBody body: List<ItemsInlineDto>) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
 }

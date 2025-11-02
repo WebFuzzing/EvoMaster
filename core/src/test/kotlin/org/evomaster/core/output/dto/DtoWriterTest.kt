@@ -97,29 +97,6 @@ class DtoWriterTest {
     }
 
     @Test
-    fun arrayOfInlineObjectUsesPropertyName() {
-        val dtoWriter = DtoWriter(outputFormat)
-        val actionCluster = initRestSchema("array/arrayOfInlineObject.yaml")
-
-        dtoWriter.write(outputTestSuitePath, TEST_PACKAGE, MOCK_SOLUTION)
-
-        val collectedDtos = dtoWriter.getCollectedDtos()
-        assertEquals(collectedDtos.size, 2)
-        val rootDto = collectedDtos["POST__items_inline"]
-        assertNotNull(rootDto)
-        val dtoFields = rootDto?.fields?:emptyList()
-        assertEquals(dtoFields.size, 2)
-        assertDtoFieldIn(dtoFields, "numbers", "List<Integer>")
-        assertDtoFieldIn(dtoFields, "labels", "List<Labels>")
-
-        val labelsDto = collectedDtos["Labels"]
-        assertNotNull(labelsDto)
-        val dtoLabelsFields = labelsDto?.fields?:emptyList()
-        assertEquals(dtoLabelsFields.size, 1)
-        assertDtoFieldIn(dtoLabelsFields, "value", "String")
-    }
-
-    @Test
     fun arrayOfComponentsObjectUsesSchemaName() {
         val dtoWriter = DtoWriter(outputFormat)
         val actionCluster = initRestSchema("array/arrayOfComponentsObject.yaml")

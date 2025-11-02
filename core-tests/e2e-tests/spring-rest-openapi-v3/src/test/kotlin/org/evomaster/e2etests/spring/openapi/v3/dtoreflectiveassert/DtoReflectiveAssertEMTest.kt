@@ -39,11 +39,13 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/allof", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/primitiveTypes", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/parent", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-inline", "OK")
         }
 
         assertPrimitiveTypeDtoCreated()
         assertParentAndChildDtosCreated()
         assertAllOfDtoCreated()
+        assertItemsInlineDtoCreated()
         // TODO: Restore when support for ChoiceGene has been added
 //        assertAnyOfDtoCreated()
 //        assertOneOfDtoCreated()
@@ -77,6 +79,18 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         val (klass, instance) = initDtoClass("POST__allof")
         assertProperty(klass, instance, "name", "Philip")
         assertProperty(klass, instance, "age", 31)
+    }
+
+    private fun assertItemsInlineDtoCreated() {
+        val (rootKlass, rootInstance) = initDtoClass("POST__items_inline")
+        val numbersList = mutableListOf<Int>(1,2,3)
+        val (labelKlass1, labelsInstance1) = initDtoClass("Labels")
+        assertProperty(labelKlass1, labelsInstance1, "value", "label n1")
+        val (labelKlass2, labelsInstance2) = initDtoClass("Labels")
+        assertProperty(labelKlass2, labelsInstance2, "value", "label n2")
+        val labelsList = mutableListOf<Any>(labelsInstance1, labelsInstance2)
+        assertProperty(rootKlass, rootInstance, "numbers", numbersList)
+        assertProperty(rootKlass, rootInstance, "numbers", labelsList)
     }
 
     private fun assertAnyOfDtoCreated() {
