@@ -1,10 +1,11 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.xss.reflected
 
 import com.foo.rest.examples.spring.openapi.v3.security.xss.reflected.XSSReflectedController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -21,7 +22,7 @@ class XSSReflectedEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testSSRFEM() {
+    fun testXSSReflectedEM() {
         runTestHandlingFlakyAndCompilation(
             "XSSReflectedEMTest",
             50,
@@ -32,10 +33,27 @@ class XSSReflectedEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
-            Assertions.assertTrue { solution.hasXssFaults() }
+            assertTrue(solution.individuals.isNotEmpty())
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/great", "OK")
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
+            val faults = DetectedFaultUtils.getDetectedFaults(solution)
+
+            assertTrue(DefinedFaultCategory.XSS in faultsCategories)
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "POST:/api/reflected/comment"
+            })
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "GET:/api/reflected/search"
+            })
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "GET:/api/reflected/user/{username}"
+            })
         }
     }
 }

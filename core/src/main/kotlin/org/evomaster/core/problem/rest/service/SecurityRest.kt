@@ -6,7 +6,8 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -18,12 +19,16 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
-import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
@@ -277,6 +282,12 @@ class SecurityRest {
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
+        }
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
@@ -857,7 +868,123 @@ class SecurityRest {
         }
     }
 
+    /**
+     * XSS (Cross-Site Scripting) check.
+     *
+     * For endpoints that accept strings like "<script>alert('Hello');</script>", we need to verify
+     * if the application properly sanitizes such inputs.
+     *
+     * This method only creates test cases with XSS payloads injected.
+     *
+     * Algorithm:
+     * - For each POST/PUT/PATCH endpoint with 2xx response, inject XSS payload into string fields
+     * - Optionally add a linked GET operation to check for stored XSS
+     */
+    private fun handleXSSCheck(){
 
+//         Get all POST/PUT/PATCH operations (mutation operations that might store data)
+//        val mutationVerbs = listOf(HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH)
+
+
+        mainloop@ for(action in actionDefinitions){
+
+//            if(!mutationVerbs.contains(action.verb)){
+//                continue
+//            }
+
+            // Find individuals with 2xx response for this endpoint
+            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(successfulIndividuals.isEmpty()){
+                continue
+            }
+
+            // Take the smallest successful individual
+            val target = successfulIndividuals.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Slice to keep only up to the target action
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            // Try each XSS payload (but only add one test per endpoint)
+            for(payload in XSS_PAYLOADS){
+
+                // Create a copy of the individual
+                val copy = sliced.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+
+                // Try to inject XSS payload into string fields
+                var payloadInjected = false
+
+                // Attempt to inject payload into parameters
+                actionCopy.parameters.filter { it is BodyParam || it is QueryParam || it is PathParam }.forEach { param ->
+                    val genes = param.primaryGene().flatView()
+
+                    genes.forEach { gene ->
+                        if(gene !is StringGene) return@forEach
+
+                        try {
+                            // Check if constraints (min-max length) allow the payload
+                            if(payload.length >= gene.minLength && payload.length <= gene.maxLength){
+                                // Check if payload contains any invalid chars
+                                val hasInvalidChars = gene.invalidChars.any { payload.contains(it) }
+                                if(!hasInvalidChars){
+                                    // Set the XSS payload value
+                                    gene.value = payload
+                                    payloadInjected = true
+                                }
+                            }
+                        } catch(e: Exception){
+                            // Constraints might not allow the payload
+                            log.debug("Failed to inject XSS payload into ${gene.name}: ${e.message}")
+                        }
+                    }
+                }
+
+                if(!payloadInjected){
+                    continue
+                }
+
+
+                copy.modifySampleType(SampleType.SECURITY)
+                copy.ensureFlattenedStructure()
+
+                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+
+                if (evaluatedIndividual == null) {
+                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                    continue@mainloop
+                }
+
+                val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+                if(DefinedFaultCategory.XSS in faultsCategories){
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+
+            }
+        }
+    }
 
     /**
      * @return a test where last action is for given path and verb returning 403.

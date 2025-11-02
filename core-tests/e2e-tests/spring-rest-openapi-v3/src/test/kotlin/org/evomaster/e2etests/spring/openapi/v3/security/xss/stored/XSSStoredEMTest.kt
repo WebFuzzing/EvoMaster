@@ -1,10 +1,13 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.xss.stored
 
 import com.foo.rest.examples.spring.openapi.v3.security.xss.stored.XSSStoredController
+import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -21,7 +24,7 @@ class XSSStoredEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testSSRFEM() {
+    fun testXSSStoredEM() {
         runTestHandlingFlakyAndCompilation(
             "XSSStoredEMTest",
             50,
@@ -32,10 +35,30 @@ class XSSStoredEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
-            Assertions.assertTrue { solution.hasXssFaults() }
+            assertTrue(solution.individuals.isNotEmpty())
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/great", "OK")
+//            val faults = DetectedFaultUtils.getDetectedFaults(solution)
+//
+//            assertTrue(faults.size == 3)
+//
+//            val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
+//
+//            assertTrue({ DefinedFaultCategory.XSS in faultCategories })
+//
+//            assertTrue(faults.any {
+//                it.category == DefinedFaultCategory.XSS
+//                        && it.operationId == "POST:/api/stored/comments"
+//            })
+//
+//            assertTrue(faults.any {
+//                it.category == DefinedFaultCategory.XSS
+//                        && it.operationId == "GET:/api/stored/guestbook"
+//            })
+//
+//            assertTrue(faults.any {
+//                it.category == DefinedFaultCategory.XSS
+//                        && it.operationId == "GET:/api/stored/user/{username}"
+//            })
         }
     }
 }

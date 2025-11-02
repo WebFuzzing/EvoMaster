@@ -222,4 +222,65 @@ object RestSecurityOracle {
         return true
     }
 
+    // Simple XSS payloads inspired by big-list-of-naughty-strings
+    // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
+    val XSS_PAYLOADS = listOf(
+        "<script>alert('XSS')</script>",
+        "<img src=x onerror=alert('XSS')>",
+        "<svg onload=alert('XSS')>",
+        "javascript:alert('XSS')",
+        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
+    )
+
+    /**
+     * Check for XSS (Cross-Site Scripting) vulnerability.
+     *
+     * This checks if an XSS payload injected into a POST/PUT/PATCH request is reflected
+     * in the response (reflected XSS) or appears in a subsequent GET request (stored XSS).
+     *
+     * @param individual the test individual (must be of SampleType.SECURITY)
+     * @param actionResults the results of executing the actions
+     * @return true if XSS vulnerability is detected
+     */
+    fun hasXSS(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        verifySampleType(individual)
+
+        val actions = individual.seeMainExecutableActions()
+
+        if(actions.isEmpty()){
+            return false
+        }
+
+        // Check each action that might contain XSS payload
+        for(action in actions){
+            if(action.verb != HttpVerb.POST && action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.GET){
+                continue
+            }
+
+            val result = actionResults.find { r -> r.sourceLocalId == action.getLocalId() } as? RestCallResult
+                ?: continue
+
+            // Only check if request was successful
+            if(!StatusGroup.G_2xx.isInGroup(result.getStatusCode())){
+                continue
+            }
+
+            val responseBody = result.getBody() ?: continue
+
+            // Check if any XSS payload is present in the response
+            for(payload in XSS_PAYLOADS){
+                if(responseBody.contains(payload, ignoreCase = false)){
+                    // Found XSS payload in response
+                    return true
+                }
+            }
+        }
+
+        return false
+    }
+
 }

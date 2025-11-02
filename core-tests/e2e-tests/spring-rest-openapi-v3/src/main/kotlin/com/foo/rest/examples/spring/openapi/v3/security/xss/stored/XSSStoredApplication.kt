@@ -33,15 +33,6 @@ open class XSSStoredApplication {
 
     // ==== BODY PARAMETER - Comment System ====
 
-    @Operation(
-        summary = "POST endpoint to store a comment (Stored XSS)",
-        description = "Stores user comment in memory without sanitization - allows Stored XSS attacks"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Comment stored successfully")
-        ]
-    )
     @PostMapping(path = ["/comment"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun storeComment(@RequestBody commentDto: CommentDto): String {
         // VULNERABLE: Stores user input without sanitization
@@ -65,15 +56,6 @@ open class XSSStoredApplication {
         """.trimIndent()
     }
 
-    @Operation(
-        summary = "GET endpoint to retrieve all stored comments (Stored XSS)",
-        description = "Displays all stored comments without sanitization - executes stored XSS"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "All comments displayed")
-        ]
-    )
     @GetMapping(path = ["/comments"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun getComments(): String {
         // VULNERABLE: Displays stored user input without sanitization
@@ -109,7 +91,8 @@ open class XSSStoredApplication {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "Bio stored successfully")
+            ApiResponse(responseCode = "200", description = "Bio stored successfully"),
+            ApiResponse(responseCode = "400", description = "Invalid URI with special characters")
         ]
     )
     @PostMapping(path = ["/user/{username}/bio"], produces = [MediaType.TEXT_HTML_VALUE])
@@ -141,7 +124,8 @@ open class XSSStoredApplication {
     )
     @ApiResponses(
         value = [
-            ApiResponse(responseCode = "200", description = "User profile displayed")
+            ApiResponse(responseCode = "200", description = "User profile displayed"),
+            ApiResponse(responseCode = "400", description = "Invalid URI with special characters")
         ]
     )
     @GetMapping(path = ["/user/{username}"], produces = [MediaType.TEXT_HTML_VALUE])
@@ -168,15 +152,6 @@ open class XSSStoredApplication {
 
     // ==== QUERY PARAMETER - Guestbook System ====
 
-    @Operation(
-        summary = "POST endpoint to store guestbook entry (Stored XSS with query parameters)",
-        description = "Stores guestbook entry in memory without sanitization - allows Stored XSS attacks via query parameters"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Guestbook entry stored successfully")
-        ]
-    )
     @PostMapping(path = ["/guestbook"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun storeGuestbookEntry(
         @RequestParam(name = "name", required = false, defaultValue = "Anonymous") name: String,
@@ -200,15 +175,6 @@ open class XSSStoredApplication {
         """.trimIndent()
     }
 
-    @Operation(
-        summary = "GET endpoint to retrieve guestbook entries (Stored XSS)",
-        description = "Displays all guestbook entries without sanitization - executes stored XSS from query parameter data"
-    )
-    @ApiResponses(
-        value = [
-            ApiResponse(responseCode = "200", description = "Guestbook displayed")
-        ]
-    )
     @GetMapping(path = ["/guestbook"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun getGuestbook(): String {
         // VULNERABLE: Displays stored user input without sanitization
