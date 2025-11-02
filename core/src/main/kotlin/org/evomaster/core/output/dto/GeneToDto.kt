@@ -39,7 +39,7 @@ class GeneToDto(
     /**
      * @param leafGene to obtain the refType if the component is defined with a name
      * @param fallback to provide a fallback on the DTO named with the action if the component is defined inline
-     q* @param capitalize to determine if the DTO string name must be capitalized for test case writing
+     * @param capitalize to determine if the DTO string name must be capitalized for test case writing
      *
      * @return the DTO name that will be used to instantiate the first variable
      */
