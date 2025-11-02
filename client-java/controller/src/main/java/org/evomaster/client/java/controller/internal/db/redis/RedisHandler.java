@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.redis.RedisClient;

@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
-import org.evomaster.client.java.controller.internal.db.RedisCommandEvaluation;
-import org.evomaster.client.java.controller.internal.db.RedisHandler;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.controller.redis.RedisClient;
 import org.junit.jupiter.api.*;
@@ -72,19 +70,19 @@ class RedisHandlerIntegrationTest {
         assertEquals(2, evals.size(), "Should be two command evaluations.");
 
         RedisCommandEvaluation evalForSimilar = evals.get(0);
-        assertNotNull(evalForSimilar.redisDistanceWithMetrics);
+        assertNotNull(evalForSimilar.getRedisDistanceWithMetrics());
         RedisCommandEvaluation evalForDifferent = evals.get(1);
-        assertNotNull(evalForDifferent.redisDistanceWithMetrics);
+        assertNotNull(evalForDifferent.getRedisDistanceWithMetrics());
 
-        double distanceForSimilar = evalForSimilar.redisDistanceWithMetrics.getDistance();
-        int evaluatedForSimilar = evalForSimilar.redisDistanceWithMetrics.getNumberOfEvaluatedKeys();
+        double distanceForSimilar = evalForSimilar.getRedisDistanceWithMetrics().getDistance();
+        int evaluatedForSimilar = evalForSimilar.getRedisDistanceWithMetrics().getNumberOfEvaluatedKeys();
 
         assertTrue(distanceForSimilar >= 0 && distanceForSimilar <= 1,
                 "Distance should be between 0 and 1");
         assertEquals(2, evaluatedForSimilar, "Both keys should be evaluated.");
 
-        double distanceForDifferent = evalForDifferent.redisDistanceWithMetrics.getDistance();
-        int evaluatedForDifferent = evalForDifferent.redisDistanceWithMetrics.getNumberOfEvaluatedKeys();
+        double distanceForDifferent = evalForDifferent.getRedisDistanceWithMetrics().getDistance();
+        int evaluatedForDifferent = evalForDifferent.getRedisDistanceWithMetrics().getNumberOfEvaluatedKeys();
 
         assertTrue(distanceForDifferent >= 0 && distanceForDifferent <= 1,
                 "Distance should be between 0 and 1");

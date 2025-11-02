@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.redis;
 
-import org.evomaster.client.java.controller.internal.db.RedisDistanceWithMetrics;
+import org.evomaster.client.java.controller.internal.db.redis.RedisDistanceWithMetrics;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.RedisCommand;

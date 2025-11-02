@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal.db;
 
+import org.evomaster.client.java.controller.internal.db.redis.RedisDistanceWithMetrics;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;

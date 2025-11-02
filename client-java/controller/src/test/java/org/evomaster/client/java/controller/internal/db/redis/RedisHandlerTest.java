@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
-import org.evomaster.client.java.controller.internal.db.RedisCommandEvaluation;
-import org.evomaster.client.java.controller.internal.db.RedisHandler;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

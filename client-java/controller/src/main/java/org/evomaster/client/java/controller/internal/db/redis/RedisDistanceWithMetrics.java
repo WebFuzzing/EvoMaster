@@ -1,12 +1,12 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.redis;
 
 /**
  * This class will have the distance for a RedisCommand (between 0 and 1)
  * and the number of evaluated keys in that distance calculation.
  */
 public class RedisDistanceWithMetrics {
-    public final double redisDistance; // A number between 0 and 1.
-    public final int numberOfEvaluatedKeys;
+    private final double redisDistance; // A number between 0 and 1.
+    private final int numberOfEvaluatedKeys;
 
     public RedisDistanceWithMetrics(double redisDistance, int numberOfEvaluatedKeys) {
         if(redisDistance < 0){

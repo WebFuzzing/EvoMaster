@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
-import org.evomaster.client.java.controller.internal.db.RedisDistanceWithMetrics;
-import org.evomaster.client.java.controller.redis.RedisClient;
 import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
 import org.evomaster.client.java.controller.redis.RedisInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
@@ -11,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class RedisHeuristicsCalculatorTest {
 
