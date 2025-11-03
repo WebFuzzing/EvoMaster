@@ -163,4 +163,11 @@ class TaintedArrayGene(
     override fun forceNewTaintId() {
         taintedValue = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
     }
+
+    override fun evolve() {
+        if(!hasDormantGenes()){
+            return
+        }
+        activate()
+    }
 }

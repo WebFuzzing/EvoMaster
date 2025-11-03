@@ -69,8 +69,7 @@ object TaintAnalysis {
 
         if(evolveArrays) {
             allGenes.filterIsInstance<TaintedArrayGene>()
-                .filter { !it.isActive && it.isResolved() }
-                .forEach { it.activate() }
+                .forEach { it.evolve() }
         }
 
         if(evolveMaps) {

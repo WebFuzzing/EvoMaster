@@ -1071,6 +1071,10 @@ class StringGene(
         }
     }
 
+    override fun evolve() {
+        //TODO need refactoring
+    }
+
     /**
      * if its parent is ArrayGene, it cannot have the same taint input value with any other elements in this ArrayGene
      */

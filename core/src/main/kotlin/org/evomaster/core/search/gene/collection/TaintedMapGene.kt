@@ -73,12 +73,7 @@ class TaintedMapGene(
         }
     }
 
-    fun evolve(){
-        learnedKeys.forEach { addNewKey(it) }
-        learnedKeys.clear()
-        learnedTypes.entries.forEach { specifyValueTypeForKey(it.key, it.value) }
-        learnedTypes.clear()
-    }
+
 
     fun registerKey(key: String){
         learnedKeys.add(key)
@@ -256,5 +251,14 @@ class TaintedMapGene(
         idGene.second.getWrappedGene(StringGene::class.java)?.value = taintId
     }
 
+    override fun evolve(){
+        if(!hasDormantGenes()){
+            return
+        }
+        learnedKeys.forEach { addNewKey(it) }
+        learnedKeys.clear()
+        learnedTypes.entries.forEach { specifyValueTypeForKey(it.key, it.value) }
+        learnedTypes.clear()
+    }
 
 }

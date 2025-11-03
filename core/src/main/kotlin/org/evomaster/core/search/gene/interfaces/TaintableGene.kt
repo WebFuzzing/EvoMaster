@@ -18,10 +18,11 @@ interface TaintableGene {
      * Make sure the taint id for this gene, if any is in place, is replaced with a new unique one.
      * This is needed for example when copying and pasting actions, to avoid having same id repeated
      * more than once.
-     *
-     * //TODO once properly implemented, should have check unique id as invariant in Individual
      */
     fun forceNewTaintId()
 
-    //TODO evolve()
+    /**
+     * If the individual has any dormant gene, do evolve, ie., resolve the taint
+     */
+    fun evolve()
 }
