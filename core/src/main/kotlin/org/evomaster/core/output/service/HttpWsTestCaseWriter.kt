@@ -9,6 +9,7 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -23,6 +24,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -127,30 +129,35 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
             if (choiceGene != null) {
-                // TODO add support for payloads from choice genes
+                // We only generate DTOs for ChoiceGene objects that contain either an ObjectGene or ArrayGene in their
+                // genes. This check is necessary since when using `example` and `default` entries,
+                // "primitive" genes are represented as ChoiceGene with  an EnumGene and the actual
+                // String/Integer/Number/etc gene
                 if (hasObjectOrArrayGene(choiceGene)) {
-                    // this because when using `example` and `default` entries, "primitive" genes are represented as ChoiceGene with
-                    // an EnumGene and the actual String/Integer/Number/etc gene
-                    throw IllegalStateException("Choice genes not yet supported for dto payload")
+                    return generateDtoCall(choiceGene, actionName, lines).varName
                 }
             } else {
                 val leafGene = primaryGene.getLeafGene()
                 if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
-                    val geneToDto = GeneToDto(format)
-
-                    val dtoName = geneToDto.getDtoName(leafGene, actionName, false)
-                    val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, mutableListOf(counter++), false)
-
-                    dtoCall.objectCalls.forEach {
-                        lines.add(it)
-                    }
-                    lines.addEmpty()
-                    return dtoCall.varName
+                    return generateDtoCall(leafGene, actionName, lines).varName
                 }
             }
 
         }
         return ""
+    }
+
+    private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
+        val geneToDto = GeneToDto(format)
+
+        val dtoName = geneToDto.getDtoName(gene, actionName, false)
+        val dtoCall = geneToDto.getDtoCall(gene, dtoName, mutableListOf(counter++), false)
+
+        dtoCall.objectCalls.forEach {
+            lines.add(it)
+        }
+        lines.addEmpty()
+        return dtoCall
     }
 
     private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
