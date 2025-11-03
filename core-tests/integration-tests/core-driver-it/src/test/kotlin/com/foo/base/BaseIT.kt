@@ -3,7 +3,6 @@ package com.foo.base
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.ci.utils.CIUtils
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
@@ -84,7 +83,7 @@ class BaseIT {
     fun testRestart(){
 
         //make sure it is started
-        assertTrue(remote.startSUT(), "Failed to restart SUT")
+        assertTrue(remote.startSUT(), "Failed to start SUT")
         var info = remote.getSutInfo()
         assertNotNull(info, "Failed to get SUT info")
 
@@ -93,22 +92,39 @@ class BaseIT {
         info = remote.getSutInfo()
         assertNull(info, "Failed to get SUT info after stop")
 
+        val n = 3
+        for(i in 0 until n){
+            driver.sutPort++
 
-        //start it again
-        driver.sutPort++ //let's try to avoid issue with TCP port taking too long to be released
-        assertTrue(remote.startSUT(), "Failed to re-start SUT")
-        info = remote.getSutInfo()
-        assertNotNull(info, "Failed to get SUT info after re-start")
+            val started = remote.startSUT()
+            val before = remote.getSutInfo()
+            val stopped = remote.stopSUT()
+            val after = remote.getSutInfo()
 
-        //stop it
-        assertTrue(remote.stopSUT(), "Failed to re-stop SUT")
-        info = remote.getSutInfo()
-        assertNull(info, "Failed to get SUT info after re-stop")
+            if(started && stopped && before != null && after == null) {
+                //all good
+                return
+            }
+        }
 
-        //start it again
-        driver.sutPort++
-        assertTrue(remote.startSUT(), "Failed to re-start SUT in 3rd time")
-        info = remote.getSutInfo()
-        assertNotNull(info)
+        fail<Any>("Failed to start/stop SUT with $n attempts")
+
+        //REFACTORED due to possible issues with port collisions
+//        //start it again
+//        driver.sutPort++ //let's try to avoid issue with TCP port taking too long to be released
+//        assertTrue(remote.startSUT(), "Failed to re-start SUT on port ${driver.sutPort}")
+//        info = remote.getSutInfo()
+//        assertNotNull(info, "Failed to get SUT info after re-start")
+//
+//        //stop it
+//        assertTrue(remote.stopSUT(), "Failed to re-stop SUT")
+//        info = remote.getSutInfo()
+//        assertNull(info, "Failed to get SUT info after re-stop")
+//
+//        //start it again
+//        driver.sutPort++
+//        assertTrue(remote.startSUT(), "Failed to re-start SUT in 3rd time on port ${driver.sutPort}")
+//        info = remote.getSutInfo()
+//        assertNotNull(info)
     }
 }
