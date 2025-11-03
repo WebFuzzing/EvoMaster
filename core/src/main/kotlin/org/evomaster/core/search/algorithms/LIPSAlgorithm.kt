@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 
@@ -20,30 +21,52 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
     override fun getType(): EMConfig.Algorithm = EMConfig.Algorithm.LIPS
 
     override fun initPopulation() {
+        println("[LIPS DEBUG] initPopulation: enter")
         population.clear()
+        println("[LIPS DEBUG] initPopulation: population cleared")
 
         // 1) Generate Random Individual
+        println("[LIPS DEBUG] initPopulation: sampling initial individual")
         val i = sampleSuite()
+        println("[LIPS DEBUG] initPopulation: sampled initial individual")
 
-        // 2) Get Uncovered Targets
-        val uncovered = archive.notCoveredTargets()
-        if (uncovered.isEmpty()) {
-            return
-        }
+        // 2) Compute UB directly from the sampled individual `i`
+        //    Merge suite fitness and consider targets with score < 1.0 as uncovered
+        val view = if (i.suite.isNotEmpty()) {
+            val fv = i.suite.first().fitness.copy()
+            i.suite.forEach { ei -> fv.merge(ei.fitness) }
+            fv.getViewOfData()
+        } else emptyMap()
+
+        val uncovered = view.filterValues { it.score < FitnessValue.MAX_VALUE }.keys.toList()
+        println("[LIPS DEBUG] initPopulation: derived uncoveredSize=${uncovered.size} from initial individual")
 
         // 3) Select current target b
-        val target = uncovered.last()
-        currentTarget = target
-        frozenTargets = setOf(target)
+        if (uncovered.isNotEmpty()) {
+            val target = uncovered.last()
+            currentTarget = target
+            frozenTargets = setOf(target)
+            println("[LIPS DEBUG] initPopulation: selected target=$target, frozenTargets set")
+        } else {
+            currentTarget = null
+            frozenTargets = emptySet()
+            println("[LIPS DEBUG] initPopulation: no uncovered targets in initial individual; frozenTargets cleared")
+        }
 
         // 4) initialize budget for this target
-        budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
+        budgetLeftForCurrentTarget = calculatePerTargetBudget(maxOf(1, uncovered.size))
+        println("[LIPS DEBUG] init: target=${currentTarget} uncovered=${uncovered.size} budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
 
         // 5) P <- RandomPopulation(ps-1) ∪ {i}
         population.add(i)
+        println("[LIPS DEBUG] initPopulation: added initial individual, pop=${population.size}")
         while (population.size < config.populationSize) {
             population.add(sampleSuite())
+            if (population.size % 5 == 0 || population.size == config.populationSize) {
+                println("[LIPS DEBUG] initPopulation: growing pop=${population.size}/${config.populationSize}")
+            }
         }
+        println("[LIPS DEBUG] initPopulation: exit with pop=${population.size}")
     }
 
     override fun searchOnce() {
@@ -64,10 +87,11 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
             currentTarget = target
             // Initialize budget for this NEW target
             budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
+            println("[LIPS DEBUG] selectTarget: target=$target uncovered=${uncovered.size} budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
         }
 
         // Focus scoring on the single selected target
-        frozenTargets = setOf(currentTarget)
+        frozenTargets = setOf(currentTarget!!)
 
         val n = config.populationSize
         val nextPop: MutableList<WtsEvalIndividual<T>> = formTheNextPopulation(population)
@@ -114,6 +138,7 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         // Update budget usage for this target
         val usedForTarget = usedForCurrentTarget(startActions, startSeconds)
         budgetLeftForCurrentTarget -= usedForTarget
+        println("[LIPS DEBUG] afterGen: target=${currentTarget} used=$usedForTarget budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
 
         // Check if target is covered or out of budget
         val coveredNow = population.any { score(it) >= 1.0 }
