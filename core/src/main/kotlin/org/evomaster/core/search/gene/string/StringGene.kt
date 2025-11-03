@@ -462,9 +462,13 @@ class StringGene(
         handleBinding(allGenes)
     }
 
+    private fun verifyIfNewTaintWouldBeFine() : Boolean{
+        return TaintInputName.doesTaintNameSatisfiesLengthConstraints("${StaticCounter.get()}", actualMaxLength())
+    }
+
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
-        if(!TaintInputName.doesTaintNameSatisfiesLengthConstraints("${StaticCounter.get()}", actualMaxLength())){
+        if(!verifyIfNewTaintWouldBeFine()){
             return false
         }
 
@@ -1061,7 +1065,10 @@ class StringGene(
     }
 
     override fun forceNewTaintId() {
-        //TODO
+        if(TaintInputName.isTaintInput(value) && verifyIfNewTaintWouldBeFine()){
+            forceTaintedValue()
+            //note: selectedSpecialization is NOT modified here
+        }
     }
 
     /**

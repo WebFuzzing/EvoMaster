@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
@@ -196,8 +197,14 @@ abstract class Individual(
             }
         }
 
-        if(!areAllValidLocalIds()){
-            throw IllegalStateException("There are invalid local ids")
+        val localIdErrors = verifyAllLocalIds()
+        if(localIdErrors.isNotEmpty()){
+            throw IllegalStateException("There are invalid local ids:\n" + localIdErrors.joinToString("\n"))
+        }
+
+        val taintIdErrors = verifyTaintIds()
+        if(taintIdErrors.isNotEmpty()){
+            throw IllegalStateException("There are invalid taint ids:\n" + taintIdErrors.joinToString("\n"))
         }
     }
 
@@ -496,15 +503,48 @@ abstract class Individual(
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
-    fun areAllValidLocalIds() : Boolean{
+
+    fun verifyTaintIds(): List<String>{
+
+        val all = flatViewAllStructuralElements()
+
+        val taintableGenes = all.filterIsInstance<TaintableGene>()
+            .filter { TaintInputName.isTaintInput(it.getPossiblyTaintedValue()) }
+
+        val duplicates = CollectionUtils.duplicates(taintableGenes.map { it.getPossiblyTaintedValue() })
+
+        if(duplicates.isEmpty()){
+            return listOf()
+        }
+
+        val errors = mutableListOf<String>()
+
+        duplicates.entries.forEach { d ->
+           val same = taintableGenes.filter { it.getPossiblyTaintedValue() == d.key }.map { it as Gene }
+           if(same.any{ x -> same.any { y -> y !=x && !y.hasAnyBindingRelationship(x)}}){
+               errors.add("Taint id ${d.key} has duplicate genes that are not bound}")
+           }
+        }
+        return errors
+    }
+
+    /**
+     * Return error messages in case of problems.
+     * If all valid, returned list is empty
+     */
+    fun verifyAllLocalIds() : List<String>{
+        val errors = mutableListOf<String>()
         val all = flatViewAllStructuralElements()
         val ids = all.map { it.getLocalId() }
         if(ids.contains(NONE_LOCAL_ID)){
-            return false
+            errors.add("Containing NONE_LOCAL_ID")
         }
         val duplicates = CollectionUtils.duplicates(ids)
         //check for duplicates
-        return duplicates.isEmpty()
+        if(duplicates.isNotEmpty()){
+            duplicates.entries.forEach { errors.add("Id ${it.key} is repeated ${it.value} times") }
+        }
+        return errors
     }
 
 
