@@ -146,7 +146,7 @@ paths:
           description: OK
   /oneof:
     post:
-      summary: Accepts either cat or dog object (but not both)
+      summary: Accepts either cat or mouse object (but not both)
       requestBody:
         required: true
         content:
