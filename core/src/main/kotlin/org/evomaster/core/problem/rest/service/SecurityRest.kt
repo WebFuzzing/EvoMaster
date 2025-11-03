@@ -882,15 +882,7 @@ class SecurityRest {
      */
     private fun handleXSSCheck(){
 
-//         Get all POST/PUT/PATCH operations (mutation operations that might store data)
-//        val mutationVerbs = listOf(HttpVerb.POST, HttpVerb.PUT, HttpVerb.PATCH)
-
-
         mainloop@ for(action in actionDefinitions){
-
-//            if(!mutationVerbs.contains(action.verb)){
-//                continue
-//            }
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -936,6 +928,12 @@ class SecurityRest {
 
                 // Attempt to inject payload into parameters
                 actionCopy.parameters.filter { it is BodyParam || it is QueryParam || it is PathParam }.forEach { param ->
+
+                    // Skip if PathParam and payload contains "/" (would break URL structure)
+                    if(param is PathParam && payload.contains("/")){
+                        return@forEach
+                    }
+
                     val genes = param.primaryGene().flatView()
 
                     genes.forEach { gene ->
