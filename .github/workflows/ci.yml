@@ -41,7 +41,7 @@ env:
   release-jdk: 21
   build-jdk: 17
   retention-days: 5
-  debug: true  # put to true if need to debug a specific test
+  debug: false  # put to true if need to debug a specific test
   debugTestName: "com.foo.base.BaseIT" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
@@ -121,7 +121,7 @@ jobs:
         env:
           NODE_OPTIONS: "--max_old_space_size=8000"
         with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results
       # As of 2024, looks like a rate limiter is breaking the build.
       # As such, now we only upload from master branch, hoping it is enough.
