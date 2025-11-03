@@ -4,6 +4,48 @@ info:
   version: 1.0.0
 
 paths:
+  /items-inline:
+    post:
+      summary: Accepts an array of objects, each with numbers and labels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [numbers, labels]
+                properties:
+                  numbers:
+                    type: array
+                    items:
+                      type: integer
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                      required: [value]
+                      properties:
+                        value:
+                          type: string
+      responses:
+        '200':
+          description: OK
+  /items-components:
+    post:
+      summary: Accepts an array of objects with numbers, labels, and wrappedStrings wrapper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParentSchema'
+      responses:
+        '200':
+          description: OK
   /primitiveTypes:
     post:
       summary: Example with all primitive and format types (no array/object)
