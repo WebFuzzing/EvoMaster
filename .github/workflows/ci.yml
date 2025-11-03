@@ -40,9 +40,8 @@ env:
   # https://github.com/WebFuzzing/EvoMaster/issues/447
   release-jdk: 21
   build-jdk: 17
-#  latest-jdk: 21
   retention-days: 5
-  debug: false  # put to true if need to debug a specific test
+  debug: true  # put to true if need to debug a specific test
   debugTestName: "com.foo.base.BaseIT" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
