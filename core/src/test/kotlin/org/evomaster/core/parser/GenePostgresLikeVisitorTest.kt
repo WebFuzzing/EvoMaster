@@ -76,4 +76,6 @@ class GenePostgresLikeVisitorTest : RegexTestTemplate(){
     fun testPercentWithAlsoEscape(){
         check("\\%%", "%.*")
     }
+
+
 }

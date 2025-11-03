@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.mongo;
 
 import org.junit.jupiter.api.Test;
 
