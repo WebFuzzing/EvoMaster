@@ -225,21 +225,12 @@ object RestSecurityOracle {
     // Simple XSS payloads inspired by big-list-of-naughty-strings
     // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
     val XSS_PAYLOADS = listOf(
-        "<script>alert('XSS')</script>",
-        "<iframe src='javascript:alert(\"XSS\")'></iframe>",
-
-        // XSS payloads safe for PathParam (no "/" character that would break URL structure)
         "javascript:alert('XSS')",
-        "<script>alert('XSS')<script>",
         "<img src=x onerror=alert('XSS')>",
         "<svg onload=alert('XSS')>",
-        "'\"><script>alert('XSS')<script>",
-        "<body onload=alert('XSS')>",
-        "<input onfocus=alert('XSS') autofocus>",
-        "<select onfocus=alert('XSS') autofocus>",
-        "<textarea onfocus=alert('XSS') autofocus>",
-        "<marquee onstart=alert('XSS')>",
-        "<details open ontoggle=alert('XSS')>"
+        "<details open ontoggle=alert('XSS')>",
+        "<script>alert('XSS')</script>",
+        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
     )
 
 
