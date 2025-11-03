@@ -30,34 +30,7 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         val i = sampleSuite()
         println("[LIPS DEBUG] initPopulation: sampled initial individual")
 
-        // 2) Compute UB directly from the sampled individual `i`
-        //    Merge suite fitness and consider targets with score < 1.0 as uncovered
-        val view = if (i.suite.isNotEmpty()) {
-            val fv = i.suite.first().fitness.copy()
-            i.suite.forEach { ei -> fv.merge(ei.fitness) }
-            fv.getViewOfData()
-        } else emptyMap()
-
-        val uncovered = view.filterValues { it.score < FitnessValue.MAX_VALUE }.keys.toList()
-        println("[LIPS DEBUG] initPopulation: derived uncoveredSize=${uncovered.size} from initial individual")
-
-        // 3) Select current target b
-        if (uncovered.isNotEmpty()) {
-            val target = uncovered.last()
-            currentTarget = target
-            frozenTargets = setOf(target)
-            println("[LIPS DEBUG] initPopulation: selected target=$target, frozenTargets set")
-        } else {
-            currentTarget = null
-            frozenTargets = emptySet()
-            println("[LIPS DEBUG] initPopulation: no uncovered targets in initial individual; frozenTargets cleared")
-        }
-
-        // 4) initialize budget for this target
-        budgetLeftForCurrentTarget = calculatePerTargetBudget(maxOf(1, uncovered.size))
-        println("[LIPS DEBUG] init: target=${currentTarget} uncovered=${uncovered.size} budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
-
-        // 5) P <- RandomPopulation(ps-1) ∪ {i}
+        // 2) P <- RandomPopulation(ps-1) ∪ {i}
         population.add(i)
         println("[LIPS DEBUG] initPopulation: added initial individual, pop=${population.size}")
         while (population.size < config.populationSize) {
@@ -71,12 +44,17 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     override fun searchOnce() {
         beginGeneration()
+        println("[LIPS DEBUG] searchOnce: popSize=${population.size}")
 
         // Compute uncovered goals
         val uncovered = archive.notCoveredTargets()
+        println("[LIPS DEBUG] searchOnce: uncoveredSize=${uncovered.size}")
         if (uncovered.isEmpty()) {
+            println("[LIPS DEBUG] searchOnce: uncovered is EMPTY; ending generation")
             endGeneration()
             return
+        } else {
+            println("[LIPS DEBUG] searchOnce: uncovered is NOT EMPTY")
         }
 
         // current target is null if covered by previous generation or out of budget
