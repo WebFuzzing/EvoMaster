@@ -648,6 +648,8 @@ class Main {
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<GraphQLIndividual>>() {})
                     
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<GraphQLIndividual>>(){})
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<GraphQLIndividual>>() {})
 
@@ -685,6 +687,8 @@ class Main {
         
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RPCIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RPCIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RPCIndividual>>() {})
@@ -721,6 +725,8 @@ class Main {
                     
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<WebIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<WebIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<WebIndividual>>() {})
@@ -765,6 +771,8 @@ class Main {
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.MuPlusLambdaEA ->
                     Key.get(object : TypeLiteral<MuPlusLambdaEvolutionaryAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MuLambdaEA ->
+                    Key.get(object : TypeLiteral<org.evomaster.core.search.algorithms.MuLambdaEvolutionaryAlgorithm<RestIndividual>>(){})
 
                 EMConfig.Algorithm.BreederGA ->
                     Key.get(object : TypeLiteral<BreederGeneticAlgorithm<RestIndividual>>() {})

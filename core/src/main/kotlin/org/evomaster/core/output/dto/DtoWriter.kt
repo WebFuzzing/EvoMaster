@@ -198,7 +198,7 @@ class DtoWriter(
             is RegexGene -> "String"
             is BooleanGene -> "Boolean"
             is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
-            is ArrayGene<*> -> "List<${getDtoType(field.name, field.template)}>"
+            is ArrayGene<*> -> if (outputFormat.isJava()) "List<${getDtoType(field.name, field.template)}>" else "MutableList<${getDtoType(field.name, field.template)}>"
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
         }
     }
