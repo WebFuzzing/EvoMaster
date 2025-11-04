@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.instrumentation.shared.TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
@@ -1065,10 +1066,16 @@ class StringGene(
     }
 
     override fun forceNewTaintId() {
-        if(TaintInputName.isTaintInput(value) && verifyIfNewTaintWouldBeFine()){
+        if(!isDependentTaint()
+            && TaintInputName.isTaintInput(value)
+            && verifyIfNewTaintWouldBeFine()){
             forceTaintedValue()
             //note: selectedSpecialization is NOT modified here
         }
+    }
+
+    override fun isDependentTaint(): Boolean{
+        return name == TAINTED_MAP_EM_LABEL_IDENTIFIER
     }
 
     override fun evolve() {

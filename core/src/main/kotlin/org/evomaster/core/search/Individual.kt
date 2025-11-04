@@ -510,6 +510,7 @@ abstract class Individual(
 
         val taintableGenes = all.filterIsInstance<TaintableGene>()
             .filter { TaintInputName.isTaintInput(it.getPossiblyTaintedValue()) }
+            .filter { !it.isDependentTaint() }
 
         val duplicates = CollectionUtils.duplicates(taintableGenes.map { it.getPossiblyTaintedValue() })
 
@@ -523,9 +524,7 @@ abstract class Individual(
            val same = taintableGenes.filter { it.getPossiblyTaintedValue() == d.key }.map { it as Gene }
            if(same.any{ x ->
                same.any { y ->
-                      y !=x
-                   && !y.hasAnyBindingRelationship(x)
-                   && !y.areAncestorDescendantRelated(x)
+                      y !=x && !y.hasAnyBindingRelationship(x)
                }
            }){
                errors.add("Taint id ${d.key} has duplicate genes that are not related}")

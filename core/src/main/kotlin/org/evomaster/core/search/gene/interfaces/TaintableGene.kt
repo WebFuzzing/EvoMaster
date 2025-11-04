@@ -22,6 +22,11 @@ interface TaintableGene {
     fun forceNewTaintId()
 
     /**
+     * Specify that this taint value is bound to another tainted value
+     */
+    fun isDependentTaint() = false
+
+    /**
      * If the individual has any dormant gene, do evolve, ie., resolve the taint
      */
     fun evolve()

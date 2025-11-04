@@ -464,13 +464,10 @@ object TaintAnalysis {
              */
             //assert(false) // crash in tests, but not production
         } else {
-            if (genes.size > 1
+            val toModify = genes.filter { !it.isDependentTaint() }
+            if (toModify.size > 1
                     && TaintInputName.isTaintInput(taintedInput)
-                    && genes.none { x -> genes.any { y ->
-                        y.hasAnyBindingRelationship(x)
-                        || y.areAncestorDescendantRelated(x)
-                    }
-                    }
+                    && toModify.none { x -> toModify.any { y -> y.hasAnyBindingRelationship(x) } }
             ) {
                 //shouldn't really be a problem... but let keep track for it, for now at least.
                 // note, cannot really guarantee that a taint from regex is unique, as regex could generate
@@ -479,9 +476,9 @@ object TaintAnalysis {
                 log.warn("More than 2 genes have the taint '{}'", taintedInput)
                 assert(false)
             }
-            genes
-                .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER /* should never be modified */ }
-                .forEach { it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling) }
+            toModify.forEach {
+                it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling)
+            }
         }
     }
 }
