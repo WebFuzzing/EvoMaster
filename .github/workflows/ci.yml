@@ -40,10 +40,9 @@ env:
   # https://github.com/WebFuzzing/EvoMaster/issues/447
   release-jdk: 21
   build-jdk: 17
-#  latest-jdk: 21
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "org.evomaster.e2etests.spring.graphql.db.tree.DbTreeEMTest" # replace with test to debug
+  debugTestName: "com.foo.base.BaseIT" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -84,7 +83,7 @@ jobs:
       - name: Debug Test Case
         env:
           CI_env: GithubAction
-        run: mvn test  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
+        run: mvn -B install  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
 
   full-build-base:
     runs-on: ubuntu-latest
@@ -122,7 +121,7 @@ jobs:
         env:
           NODE_OPTIONS: "--max_old_space_size=8000"
         with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results
       # As of 2024, looks like a rate limiter is breaking the build.
       # As such, now we only upload from master branch, hoping it is enough.

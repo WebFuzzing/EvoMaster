@@ -124,7 +124,6 @@
         <springboot.version>2.5.4</springboot.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
-        <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
@@ -929,10 +928,12 @@
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
-                        <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <!--  Commented out, as no longer using CircleCI-->
-                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
                         <runOrder>alphabetical</runOrder>
+                        <excludes>
+                            <!-- Do NOT run integration tests with surefire... use failsafe!!!-->
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
 
@@ -940,13 +941,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <trimStackTrace>false</trimStackTrace>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                     <executions>
                         <execution>
