@@ -1149,7 +1149,9 @@ class TestSuiteWriter {
     }
 
     private fun ssrfAssertionsUtilFunction(lines: Lines, format: OutputFormat) {
-//        lines.addBlockCommentLine()
+        lines.startCommentBlock()
+        lines.addBlockCommentLine("A method for verifying requests sent to HttpCallbackVerifier.")
+        lines.endCommentBlock()
         when {
             format.isKotlin() -> {
                 lines.add("fun callbackVerifierHasServed(verifier: WireMockServer, actionName: String) : Boolean")
