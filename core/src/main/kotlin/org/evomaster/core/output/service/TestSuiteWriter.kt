@@ -1154,10 +1154,10 @@ class TestSuiteWriter {
         lines.endCommentBlock()
         when {
             format.isKotlin() -> {
-                lines.add("fun callbackVerifierHasServed(verifier: WireMockServer, actionName: String) : Boolean")
+                lines.add("fun verifierHasServedRequests(verifier: WireMockServer, actionName: String) : Boolean")
             }
             format.isJava() -> {
-                lines.add("public boolean callbackVerifierHasServed(WireMockServer verifier, String actionName)")
+                lines.add("public boolean verifierHasServedRequests(WireMockServer verifier, String actionName)")
             }
         }
         lines.block {
