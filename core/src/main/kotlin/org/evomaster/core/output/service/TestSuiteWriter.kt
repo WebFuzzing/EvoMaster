@@ -1036,6 +1036,10 @@ class TestSuiteWriter {
 
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
+
+        if (config.ssrf && solution.hasSsrfFaults()) {
+            ssrfAssertionsUtilFunction(lines, config.outputFormat)
+        }
     }
 
 
@@ -1142,6 +1146,28 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun ssrfAssertionsUtilFunction(lines: Lines, format: OutputFormat) {
+//        lines.addBlockCommentLine()
+        when {
+            format.isKotlin() -> {
+                lines.add("fun callbackVerifierHasServed(verifier: WireMockServer, actionName: String) : Boolean")
+            }
+            format.isJava() -> {
+                lines.add("public boolean callbackVerifierHasServed(WireMockServer verifier, String actionName)")
+            }
+        }
+        lines.block {
+            lines.add("return verifier")
+            lines.indented {
+                if (format.isKotlin()) {
+                    lines.add(".allServeEvents")
+                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                    lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == actionName }")
+                }
+            }
+        }
     }
 
 }

@@ -859,34 +859,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
         if (assertTrue) {
             lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
-            lines.add("assertTrue(${verifier.getVerifierName()}")
+            lines.add("assertTrue(callbackVerifierHasServed(${verifier.getVerifierName()}, \"${action.getName()}\"))")
+//            lines.add("assertTrue(${verifier.getVerifierName()}")
         } else {
             lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
-            lines.add("assertFalse(${verifier.getVerifierName()}")
+//            lines.add("assertFalse(${verifier.getVerifierName()}")
+            lines.add("assertFalse(callbackVerifierHasServed(${verifier.getVerifierName()}, \"${action.getName()}\"))")
         }
-        lines.indented {
-            if (format.isKotlin()) {
-                lines.add(".allServeEvents")
-                lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
-                lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
-            }
-        }
-        lines.add(")")
-    }
-
-    private fun ssrfAssertionsUtilFunction(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
-        // TODO: Add function
-//        lines.add()
-        lines.indented {
-            lines.add(verifier.getVerifierName())
-            lines.indented {
-                if (format.isKotlin()) {
-                    lines.add(".allServeEvents")
-                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
-                    lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
-                }
-            }
-        }
+//        lines.indented {
+//            if (format.isKotlin()) {
+//                lines.add(".allServeEvents")
+//                lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+//                lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
+//            }
+//        }
+//        lines.add(")")
     }
 
 }
