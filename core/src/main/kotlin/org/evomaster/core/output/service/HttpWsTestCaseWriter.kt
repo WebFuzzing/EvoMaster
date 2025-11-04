@@ -9,6 +9,7 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
@@ -16,12 +17,14 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.data.ActionStubMapping
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -29,6 +32,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+import kotlin.collections.filter
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
@@ -125,30 +129,35 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
             if (choiceGene != null) {
-                // TODO add support for payloads from choice genes
+                // We only generate DTOs for ChoiceGene objects that contain either an ObjectGene or ArrayGene in their
+                // genes. This check is necessary since when using `example` and `default` entries,
+                // "primitive" genes are represented as ChoiceGene with  an EnumGene and the actual
+                // String/Integer/Number/etc gene
                 if (hasObjectOrArrayGene(choiceGene)) {
-                    // this because when using `example` and `default` entries, "primitive" genes are represented as ChoiceGene with
-                    // an EnumGene and the actual String/Integer/Number/etc gene
-                    throw IllegalStateException("Choice genes not yet supported for dto payload")
+                    return generateDtoCall(choiceGene, actionName, lines).varName
                 }
             } else {
                 val leafGene = primaryGene.getLeafGene()
                 if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
-                    val geneToDto = GeneToDto(format)
-
-                    val dtoName = geneToDto.getDtoName(leafGene, actionName)
-                    val dtoCall = geneToDto.getDtoCall(leafGene, dtoName, counter++)
-
-                    dtoCall.objectCalls.forEach {
-                        lines.add(it)
-                    }
-                    lines.addEmpty()
-                    return dtoCall.varName
+                    return generateDtoCall(leafGene, actionName, lines).varName
                 }
             }
 
         }
         return ""
+    }
+
+    private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
+        val geneToDto = GeneToDto(format)
+
+        val dtoName = geneToDto.getDtoName(gene, actionName, false)
+        val dtoCall = geneToDto.getDtoCall(gene, dtoName, mutableListOf(counter++), false)
+
+        dtoCall.objectCalls.forEach {
+            lines.add(it)
+        }
+        lines.addEmpty()
+        return dtoCall
     }
 
     private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
@@ -349,13 +358,17 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val res = evaluatedAction.result as HttpWsCallResult
 
         if (config.ssrf && res.getVulnerableForSSRF()) {
-            handleSSRFFaults(lines, call)
+            handleSSRFFaultsPrologue(lines, call)
         }
 
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
+        }
+
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaultsEpilogue(lines, call)
         }
 
         // reset all used external service action
@@ -795,7 +808,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     /**
      * Method to set up stub for HttpCallbackVerifier to the test case.
      */
-    private fun handleSSRFFaults(lines: Lines, action: Action) {
+    private fun handleSSRFFaultsPrologue(lines: Lines, action: Action) {
         val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
 
         if (verifier != null) {
@@ -805,23 +818,60 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (format.isKotlin()) {
                 lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
             }
-
             lines.addEmpty(1)
 
-            lines.addStatement("${verifier.getVerifierName()}.stubFor(get(\"${verifier.stub}\")")
+            //Reset verifier before test execution.
+            lines.addStatement("${verifier.getVerifierName()}.resetAll()")
+
+            lines.add("${verifier.getVerifierName()}.stubFor(")
             lines.indented {
-                lines.addStatement(".atPriority(1)")
-                lines.addStatement(".willReturn(")
+                lines.add("get(\"${verifier.stub}\")")
                 lines.indented {
-                    lines.addStatement("aResponse()")
-                    lines.addStatement(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
-                    lines.addStatement(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                    lines.add(".withMetadata(Metadata.metadata().attr(\"ssrf\", \"${action.getName()}\"))")
+                    lines.add(".atPriority(1)")
+                    lines.add(".willReturn(")
+                    lines.indented {
+                        lines.add("aResponse()")
+                        lines.indented {
+                            lines.add(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                            lines.add(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                        }
+                    }
+                    lines.add(")")
                 }
-                lines.addStatement(")")
             }
             lines.addStatement(")")
             lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, false)
+            lines.addEmpty(1)
         }
+    }
+
+    private fun handleSSRFFaultsEpilogue(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, true)
+        }
+    }
+
+    private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
+        if (assertTrue) {
+            lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
+            lines.add("assertTrue(${verifier.getVerifierName()}")
+        } else {
+            lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
+            lines.add("assertFalse(${verifier.getVerifierName()}")
+        }
+        lines.indented {
+            if (format.isKotlin()) {
+                lines.add(".allServeEvents")
+                lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
+            }
+        }
+        lines.add(")")
     }
 
 }

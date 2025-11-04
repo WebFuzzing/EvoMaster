@@ -18,12 +18,12 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>core-parent</module>
         <module>core</module>
         <module>core-extra</module>
-        <module>core-integration-tests</module>
+        <module>core-tests</module>
         <module>client-java</module>
         <module>test-utils</module>
-        <module>e2e-tests</module>
     </modules>
 
     <issueManagement>
@@ -121,17 +121,9 @@
         <wfc.version>0.0.6</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
-        <dropwizard.version>1.3.7</dropwizard.version>
-        <swagger.version>1.6.1</swagger.version>
-        <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
-        <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
-        <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
-        <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
-        <swagger.annotations.version>2.2.7</swagger.annotations.version>
         <springboot.version>2.5.4</springboot.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
-        <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
@@ -176,14 +168,12 @@
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
         <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
-        <micronaut.version>3.2.7</micronaut.version>
-        <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
-        <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
         <org.opensearch.version>3.1.0</org.opensearch.version>
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
         <org.springframework.data.version>2.6.6</org.springframework.data.version>
+        <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
     </properties>
 
 
@@ -327,28 +317,7 @@
             </dependency>
 
 
-            <!-- Dependency Injection -->
-            <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>5.0.1</version>
-            </dependency>
-            <dependency> <!-- This is needed as Guice has no LifeCycle management -->
-                <groupId>com.netflix.governator</groupId>
-                <artifactId>governator</artifactId>
-                <version>1.17.12</version>
-                <exclusions>
-                    <!--It looks like it uses quite a few old versions -->
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-validator</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+
 
             <!--  JVM  -->
             <dependency> <!-- For bytecode instrumentation -->
@@ -572,158 +541,6 @@
             </dependency>
 
 
-            <!-- DropWizard -->
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-core</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-assets</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-testing</artifactId>
-                <version>${dropwizard.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-jetty</artifactId>
-                <version>${dropwizard.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <!-- Spring -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-web</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-jpa</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-security</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-validation</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-test</artifactId>
-                <scope>test</scope>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-mongodb</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.data</groupId>
-                <artifactId>spring-data-redis</artifactId>
-                <version>${org.springframework.data.version}</version>
-            </dependency>
-
-            <!--  SpringFox: Swagger documentation for SpringBoot-->
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger2</artifactId>
-                <version>${springfox.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-spring-web</artifactId>
-                <version>${springfox.version}</version>
-            </dependency>
-
-            <!--  SpringDoc: Swagger/OpenApi documentation for SpringBoot-->
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-security</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-kotlin</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-
-            <!--
-                Swagger for JaxRS
-
-                TODO: at the moment, only used for Dropwizard test.
-                We ll need to update to v3 version
-              -->
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-jaxrs</artifactId>
-                <version>${swagger.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-jersey2-jaxrs</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-hibernate-validations</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-
-
-            <!--  OpenApi/Swagger Parser-->
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-parser</artifactId>
-                <version>${swagger.parser-v2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger.parser.v3</groupId>
-                <artifactId>swagger-parser</artifactId>
-                <version>${swagger.parser-v3.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.atlassian.oai</groupId>
-                <artifactId>swagger-request-validator-core</artifactId>
-                <version>2.44.9</version>
-            </dependency>
-
             <!-- databases -->
             <dependency>
                 <groupId>com.h2database</groupId>
@@ -780,6 +597,13 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <!-- Redis/Lettuce -->
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${io.lettuce.core.version}</version>
             </dependency>
 
             <!-- OpenSearch -->
@@ -1000,61 +824,6 @@
                 <version>${dns.cache.manipulator.version}</version>
             </dependency>
 
-            <!-- Micronaut -->
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-bom</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-validation</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.test</groupId>
-                <artifactId>micronaut-test-junit5</artifactId>
-                <version>${micronaut.test.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http-client</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http-server-netty</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-jackson-databind</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-runtime</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>${swagger.annotations.version}</version>
-            </dependency>
-
-
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>mockserver</artifactId>
@@ -1159,10 +928,12 @@
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
                         <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
-                        <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <!--  Commented out, as no longer using CircleCI-->
-                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
                         <runOrder>alphabetical</runOrder>
+                        <excludes>
+                            <!-- Do NOT run integration tests with surefire... use failsafe!!!-->
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
 
@@ -1170,13 +941,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <trimStackTrace>false</trimStackTrace>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                     <executions>
                         <execution>
