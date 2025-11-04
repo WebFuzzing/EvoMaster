@@ -93,7 +93,12 @@ public abstract class ExternalSutController extends SutController {
         //In the past, we configured P6Spy here
     }
 
-    public void setNeedsJdk17Options(boolean needsJdk17Options) {
+    /**
+     * Unfortunately, the use of --add-opens in JDK 17+ has broken many things... :(
+     * If you are using JDK 17 or above, you must set this to true
+     * @param needsJdk17Options
+     */
+    public final void setNeedsJdk17Options(boolean needsJdk17Options) {
         this.needsJdk17Options = needsJdk17Options;
     }
 

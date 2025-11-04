@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: allOf with Component Schemas
+  title: Schema for E2E DTO Testing
   version: 1.0.0
 
 paths:
@@ -126,47 +126,46 @@ paths:
       responses:
         '200':
           description: OK
-# TODO: Restore when support for ChoiceGene has been added
-#  /anyof:
-#    post:
-#      summary: Accepts either an email (component) or phone (inline)
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              anyOf:
-#                - $ref: '#/components/schemas/EmailPayload'
-#                - type: object
-#                  required: [phone]
-#                  properties:
-#                    phone:
-#                      type: string
-#      responses:
-#        '200':
-#          description: OK
-#  /oneof:
-#    post:
-#      summary: Accepts either cat or dog object (but not both)
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              oneOf:
-#                - type: object
-#                  required: [cat]
-#                  properties:
-#                    cat:
-#                      type: string
-#                - type: object
-#                  required: [mouse]
-#                  properties:
-#                    mouse:
-#                      type: string
-#      responses:
-#        '200':
-#          description: OK
+  /anyof:
+    post:
+      summary: Accepts either an email (component) or phone (inline)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/EmailPayload'
+                - type: object
+                  required: [phone]
+                  properties:
+                    phone:
+                      type: string
+      responses:
+        '200':
+          description: OK
+  /oneof:
+    post:
+      summary: Accepts either cat or mouse object (but not both)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [cat]
+                  properties:
+                    cat:
+                      type: string
+                - type: object
+                  required: [mouse]
+                  properties:
+                    mouse:
+                      type: string
+      responses:
+        '200':
+          description: OK
 
 components:
   schemas:
