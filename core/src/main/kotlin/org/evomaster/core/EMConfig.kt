@@ -1162,7 +1162,8 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA // GA variants still work-in-progress.
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA,
+        CRO // Chemical Reaction Optimization
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1571,6 +1572,27 @@ class EMConfig {
     @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
     @Min(1.0)
     var tournamentSize = 10
+
+    // --- Chemical Reaction Optimization (CRO) parameters ---
+    @Cfg("CRO: Molecular collision rate c_r (probability of binary reactions)")
+    @Probability
+    var croMolecularCollisionRate: Double = 0.2
+
+    @Cfg("CRO: Kinetic energy loss rate k_r (lower bound of retained fraction after on-wall)")
+    @Probability
+    var croKineticEnergyLossRate: Double = 0.2
+
+    @Cfg("CRO: Initial kinetic energy assigned to each molecule")
+    @Min(0.0)
+    var croInitialKineticEnergy: Double = 1000.0
+
+    @Cfg("CRO: Decomposition threshold d_t (min number of collisions before decomposition)")
+    @Min(0.0)
+    var croDecompositionThreshold: Int = 500
+
+    @Cfg("CRO: Synthesis KE threshold s_t (molecule can synthesize if KE ≤ s_t)")
+    @Min(0.0)
+    var croSynthesisThreshold: Double = 10.0
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
