@@ -95,7 +95,7 @@ open class XSSStoredApplication {
             ApiResponse(responseCode = "400", description = "Invalid URI with special characters")
         ]
     )
-    @PostMapping(path = ["/user/{username}/bio"], produces = [MediaType.TEXT_HTML_VALUE])
+    @PostMapping(path = ["/user/{username}"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun storeBio(
         @PathVariable username: String,
         @RequestParam(name = "bio", required = false, defaultValue = "") bio: String
@@ -109,11 +109,6 @@ open class XSSStoredApplication {
             <head>
                 <title>Bio Stored</title>
             </head>
-            <body>
-                <h2>Bio Stored Successfully!</h2>
-                <p>Username: $username</p>
-                <a href="/api/stored/user/$username">View profile</a>
-            </body>
             </html>
         """.trimIndent()
     }
@@ -140,9 +135,7 @@ open class XSSStoredApplication {
                 <title>User Profile</title>
             </head>
             <body>
-                <h1>Profile of $username</h1>
                 <div class="profile-info">
-                    <p><strong>Username:</strong> $username</p>
                     <p><strong>Bio:</strong> $bio</p>
                 </div>
             </body>

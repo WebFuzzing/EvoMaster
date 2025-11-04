@@ -871,18 +871,17 @@ class SecurityRest {
     /**
      * XSS (Cross-Site Scripting) check.
      *
-     * For endpoints that accept strings like "<script>alert('Hello');</script>", we need to verify
-     * if the application properly sanitizes such inputs.
+     * Creates test cases for both reflected and stored XSS by injecting malicious payloads
+     * into string parameters. For each endpoint with a 2xx response:
+     * - Injects XSS payload into string fields (body, query, path parameters)
+     * - For POST/PUT/PATCH: attempts to add a GET on the same path for stored XSS detection
      *
-     * This method only creates test cases with XSS payloads injected.
-     *
-     * Algorithm:
-     * - For each POST/PUT/PATCH endpoint with 2xx response, inject XSS payload into string fields
-     * - Optionally add a linked GET operation to check for stored XSS
      */
+
     private fun handleXSSCheck(){
 
         mainloop@ for(action in actionDefinitions){
+
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -920,7 +919,7 @@ class SecurityRest {
             for(payload in XSS_PAYLOADS){
 
                 // Create a copy of the individual
-                val copy = sliced.copy() as RestIndividual
+                var copy = sliced.copy() as RestIndividual
                 val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
 
                 // Try to inject XSS payload into string fields
@@ -962,6 +961,60 @@ class SecurityRest {
                 }
 
 
+                // Try to add a linked GET operation for stored XSS detection
+                if(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT || action.verb == HttpVerb.PATCH){
+
+                    val getIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                        individualsInSolution,
+                        HttpVerb.GET,
+                        actionCopy.path,
+                        statusGroup = StatusGroup.G_2xx
+                    )
+
+                    if(getIndividuals.isNotEmpty()){
+                        val getInd = getIndividuals.first()
+                        val getActionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                            getInd,
+                            HttpVerb.GET,
+                            actionCopy.path,
+                            statusGroup = StatusGroup.G_2xx
+                        )
+
+                        if(getActionIndex >= 0){
+                            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(getInd.individual, getActionIndex)
+
+                            val getAction = second.seeMainExecutableActions().last() as RestCallAction
+                            getAction.resetLocalIdRecursively()
+
+                            getAction.parameters.filter { it is BodyParam || it is QueryParam || it is PathParam }.forEach { param ->
+                                val genes = param.primaryGene().flatView()
+
+                                genes.forEach { gene ->
+                                    if(gene !is StringGene) return@forEach
+
+                                    try {
+                                        // Check if constraints (min-max length) allow the payload
+                                        if(payload.length >= gene.minLength && payload.length <= gene.maxLength){
+                                            // Check if payload contains any invalid chars
+                                            val hasInvalidChars = gene.invalidChars.any { payload.contains(it) }
+                                            if(!hasInvalidChars){
+                                                // Set the XSS payload value
+                                                gene.value = payload
+                                            }
+                                        }
+                                    } catch(e: Exception){
+                                        // Constraints might not allow the payload
+                                        log.debug("Failed to inject XSS payload into GET ${gene.name}: ${e.message}")
+                                    }
+                                }
+                            }
+                            copy = RestIndividualBuilder.merge(copy, second)
+
+                        }
+                    }
+                }
+
+
                 copy.modifySampleType(SampleType.SECURITY)
                 copy.ensureFlattenedStructure()
 
@@ -975,7 +1028,12 @@ class SecurityRest {
                 val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
                 if(DefinedFaultCategory.XSS in faultsCategories){
+
                     val added = archive.addIfNeeded(evaluatedIndividual)
+                    evaluatedIndividual.individual.seeMainExecutableActions().forEach {
+                        println("$action - ${it.verb} ${it.path} -> ${it.auth.name} - ${added}")
+                    }
+
                     assert(added)
                     continue@mainloop
                 }

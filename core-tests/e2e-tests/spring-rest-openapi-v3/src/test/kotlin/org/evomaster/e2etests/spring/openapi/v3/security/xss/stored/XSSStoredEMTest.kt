@@ -37,28 +37,28 @@ class XSSStoredEMTest : SpringTestBase() {
 
             assertTrue(solution.individuals.isNotEmpty())
 
-//            val faults = DetectedFaultUtils.getDetectedFaults(solution)
-//
-//            assertTrue(faults.size == 3)
-//
-//            val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
-//
-//            assertTrue({ DefinedFaultCategory.XSS in faultCategories })
-//
-//            assertTrue(faults.any {
-//                it.category == DefinedFaultCategory.XSS
-//                        && it.operationId == "POST:/api/stored/comments"
-//            })
-//
-//            assertTrue(faults.any {
-//                it.category == DefinedFaultCategory.XSS
-//                        && it.operationId == "GET:/api/stored/guestbook"
-//            })
-//
-//            assertTrue(faults.any {
-//                it.category == DefinedFaultCategory.XSS
-//                        && it.operationId == "GET:/api/stored/user/{username}"
-//            })
+            val faults = DetectedFaultUtils.getDetectedFaults(solution)
+
+            assertTrue(faults.size == 3)
+
+            val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
+
+            assertTrue({ DefinedFaultCategory.XSS in faultCategories })
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "GET:/api/stored/comments"
+            })
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "GET:/api/stored/guestbook"
+            })
+
+            assertTrue(faults.any {
+                it.category == DefinedFaultCategory.XSS
+                        && it.operationId == "GET:/api/stored/user/{username}"
+            })
         }
     }
 }
