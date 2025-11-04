@@ -1162,7 +1162,7 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA // GA variants still work-in-progress.
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA // GA variants still work-in-progress.
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1556,6 +1556,9 @@ class EMConfig {
     @Probability
     var fixedRateMutation = 0.04
 
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ+λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muPlusLambdaOffspringSize = 30
     @Cfg("Define the number of offspring (λ) generated per generation in (μ,λ) Evolutionary Algorithm")
     @Min(1.0)
     var muLambdaOffspringSize = 30
