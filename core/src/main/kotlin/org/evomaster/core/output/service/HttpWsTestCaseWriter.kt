@@ -874,4 +874,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines.add(")")
     }
 
+    private fun ssrfAssertionsUtilFunction(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
+        // TODO: Add function
+//        lines.add()
+        lines.indented {
+            lines.add(verifier.getVerifierName())
+            lines.indented {
+                if (format.isKotlin()) {
+                    lines.add(".allServeEvents")
+                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                    lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
+                }
+            }
+        }
+    }
+
 }
