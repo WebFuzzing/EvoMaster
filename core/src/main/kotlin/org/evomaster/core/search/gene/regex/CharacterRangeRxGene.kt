@@ -11,27 +11,33 @@ import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
-import kotlin.math.max
-import kotlin.math.min
 
 
 class CharacterRangeRxGene(
-        val negated: Boolean,
-        ranges: List<Pair<Char,Char>>
+    val negated: Boolean,
+    val ranges: List<Pair<Char, Char>>
 ) : RxAtom, SimpleGene("."){
 
     companion object{
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    init {
-        //TODO this will need to be supported
-        if(negated){
-            throw IllegalArgumentException("Negated ranges are not supported yet")
-        }
+    private var internalRanges = mutableListOf<Pair<Char, Char>>()
 
+    init {
         if(ranges.isEmpty()){
             throw IllegalArgumentException("No defined ranges")
+        }
+
+        if(negated) internalRanges.add(Pair(Character.MIN_VALUE,Character.MAX_VALUE))
+        for (range in ranges) {
+            val max = maxOf(range.first, range.second)
+            val min = minOf(range.first, range.second)
+            if(negated){
+                remove(Pair(min, max))
+            } else {
+                add(Pair(min, max))
+            }
         }
 
         ranges.forEach {
@@ -41,20 +47,57 @@ class CharacterRangeRxGene(
         }
     }
 
-    var value : Char = ranges[0].first
+    var value : Char = internalRanges[0].first
 
-    /**
-     * As inputs might be unsorted, we make sure first <= second
-     */
-    val ranges = ranges.map { Pair(min(it.first.code,it.second.code).toChar(), max(it.first.code, it.second.code).toChar()) }
+    private fun add(toAdd: Pair<Char, Char>) {
+        val newInternalRanges = mutableListOf<Pair<Char, Char>>()
+        var currentStart = toAdd.first
+        var currentEnd = toAdd.second
+        var merged = false
+
+        for ((start, end) in internalRanges.sortedBy { it.first }){
+            when {
+                end < currentStart - 1 -> newInternalRanges += start to end
+                start > currentEnd + 1 -> {
+                    if (!merged) {
+                        newInternalRanges += currentStart to currentEnd
+                        merged = true
+                    }
+                    newInternalRanges += start to end
+                }
+                else -> {
+                    currentStart = minOf(currentStart, start)
+                    currentEnd = maxOf(currentEnd, end)
+                }
+            }
+        }
+
+        if (!merged) {
+            newInternalRanges += currentStart to currentEnd
+        }
+
+        internalRanges = newInternalRanges
+    }
+
+    private fun remove(toRemove: Pair<Char, Char>) {
+        internalRanges = internalRanges.flatMap { r ->
+            when {
+                toRemove.second < r.first || toRemove.first > r.second ->
+                    listOf(r)
+                else -> buildList {
+                    if (toRemove.first > r.first) add(Pair(r.first, toRemove.first - 1))
+                    if (toRemove.second < r.second) add(Pair(toRemove.second + 1, r.second))
+                }
+            }
+        }.toMutableList()
+    }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
-        //TODO negated
-        return ranges.any { value.code >= it.first.code && value.code <= it.second.code }
+        return internalRanges.any { value.code >= it.first.code && value.code <= it.second.code }
     }
 
     override fun isMutable(): Boolean {
-        return ranges.size > 1 || ranges[0].let { it.first != it.second }
+        return internalRanges.size > 1 || internalRanges[0].let { it.first != it.second }
     }
 
     override fun copyContent(): Gene {
@@ -64,28 +107,36 @@ class CharacterRangeRxGene(
     }
 
     override fun setValueWithRawString(value: String) {
-        // need to check
         val c = value.toCharArray().firstOrNull()
-        if (c!= null)
+        if (c!= null){
+            val prev = this.value
             this.value = c
+            if (!isLocallyValid()) this.value = prev
+        }
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
-        /*
-            TODO current is very simple, biased implementation.
-            Should rather have uniform sampling among all valid chars
-         */
-        val range = randomness.choose(ranges)
-
-        value = randomness.nextChar(range.first, range.second)
+        val total = internalRanges.sumOf { it.second.code - it.first.code + 1 }
+        val sampledValue = randomness.nextInt(total)
+        var currentRangeMinValue = 0
+        for (r in internalRanges) {
+            val currentRangeMaxValue = currentRangeMinValue + r.second.code - r.first.code + 1
+            if (sampledValue < currentRangeMaxValue) {
+                val codePoint = r.first.code + (sampledValue - currentRangeMinValue)
+                // is it necessary to log this?
+                log.trace("using Int {} as character selector for character class, resulting in character number: {}, {}", sampledValue, codePoint, codePoint.toChar())
+                value = codePoint.toChar()
+                return
+            }
+            currentRangeMinValue = currentRangeMaxValue
+        }
+        throw IllegalArgumentException("No defined ranges")
     }
 
     override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?): Boolean {
-
         var t = 0
-        for(i in 0 until ranges.size){
-            val p = ranges[i]
+        for(i in 0 until internalRanges.size){
+            val p = internalRanges[i]
             if(value >= p.first && value <= p.second){
                 t = i
                 break
@@ -94,18 +145,18 @@ class CharacterRangeRxGene(
 
         val delta = randomness.choose(listOf(1,-1))
 
-        if(value + delta > ranges[t].second){
+        if(value + delta > internalRanges[t].second){
             /*
                 going over current max range. check next range
                 and take its minimum
              */
-            val next = (t+1) % ranges.size
-            value = ranges[next].first
+            val next = (t+1) % internalRanges.size
+            value = internalRanges[next].first
 
-        } else if(value + delta < ranges[t].first){
+        } else if(value + delta < internalRanges[t].first){
 
-            val previous = (t - 1 + ranges.size) % ranges.size
-            value = ranges[previous].second
+            val previous = (t - 1 + internalRanges.size) % internalRanges.size
+            value = internalRanges[previous].second
 
         } else {
             value += delta
