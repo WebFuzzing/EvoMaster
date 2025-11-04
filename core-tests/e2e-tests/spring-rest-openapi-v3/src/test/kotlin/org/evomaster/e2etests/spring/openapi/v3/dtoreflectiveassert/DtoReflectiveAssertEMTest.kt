@@ -37,6 +37,8 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
 
             Assertions.assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/allof", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/anyof", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/oneof", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/primitiveTypes", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/parent", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-inline", "OK")
@@ -47,9 +49,8 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertParentAndChildDtosCreated()
         assertAllOfDtoCreated()
         assertItemsInlineDtoCreated()
-        // TODO: Restore when support for ChoiceGene has been added
-//        assertAnyOfDtoCreated()
-//        assertOneOfDtoCreated()
+        assertAnyOfDtoCreated()
+        assertOneOfDtoCreated()
     }
 
     private fun assertPrimitiveTypeDtoCreated() {

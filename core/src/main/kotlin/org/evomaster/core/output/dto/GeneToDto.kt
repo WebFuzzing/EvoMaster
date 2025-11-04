@@ -17,6 +17,7 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.utils.StringUtils
 
@@ -37,17 +38,17 @@ class GeneToDto(
     }
 
     /**
-     * @param leafGene to obtain the refType if the component is defined with a name
+     * @param gene to obtain the refType if the component is defined with a name
      * @param fallback to provide a fallback on the DTO named with the action if the component is defined inline
      * @param capitalize to determine if the DTO string name must be capitalized for test case writing
      *
      * @return the DTO name that will be used to instantiate the first variable
      */
-    fun getDtoName(leafGene: Gene, fallback: String, capitalize: Boolean): String {
-        return when (leafGene) {
-            is ObjectGene -> TestWriterUtils.safeVariableName(leafGene.refType?:fallback)
+    fun getDtoName(gene: Gene, fallback: String, capitalize: Boolean): String {
+        return when (gene) {
+            is ObjectGene -> TestWriterUtils.safeVariableName(gene.refType?:fallback)
             is ArrayGene<*> -> {
-                val template = leafGene.template
+                val template = gene.template
                 if (template is ObjectGene) {
                     TestWriterUtils.safeVariableName(template.refType?:fallback)
                 } else {
@@ -55,28 +56,30 @@ class GeneToDto(
                     return getListType(fallback, template, capitalize)
                 }
             }
-            else -> throw IllegalStateException("Gene $leafGene is not supported for DTO payloads for action: $fallback")
+            is ChoiceGene<*> -> TestWriterUtils.safeVariableName(fallback)
+            else -> throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $fallback")
         }
     }
 
     /**
      * @param gene from which to extract the setter calls
      * @param dtoName that will be instantiated for payload
-     * @param counter list to provide uniqueness under the same DTO being used in a single test case
+     * @param counters list to provide uniqueness under the same DTO being used in a single test case
      * @param capitalize to determine if the DTO string name must be capitalized for test case writing
      *
      * @return a [DtoCall] object that can be written to the test case
      */
-    fun getDtoCall(gene: Gene, dtoName: String, counter: MutableList<Int>, capitalize: Boolean): DtoCall {
+    fun getDtoCall(gene: Gene, dtoName: String, counters: MutableList<Int>, capitalize: Boolean): DtoCall {
         return when(gene) {
-            is ObjectGene -> getObjectDtoCall(gene, dtoName, counter, capitalize)
-            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counter, null, capitalize)
+            is ObjectGene -> getObjectDtoCall(gene, dtoName, counters)
+            is ArrayGene<*> -> getArrayDtoCall(gene, dtoName, counters, null, capitalize)
+            is ChoiceGene<*> -> getDtoCall(gene.activeGene(), dtoName, counters, capitalize)
             else -> throw RuntimeException("BUG: Gene $gene (with type ${this::class.java.simpleName}) should not be creating DTOs")
         }
     }
 
-    private fun getObjectDtoCall(gene: ObjectGene, dtoName: String, counter: MutableList<Int>, capitalize: Boolean): DtoCall {
-        val dtoVarName = "dto_${dtoName}_${counter.joinToString("_")}"
+    private fun getObjectDtoCall(gene: ObjectGene, dtoName: String, counters: MutableList<Int>): DtoCall {
+        val dtoVarName = "dto_${dtoName}_${counters.joinToString("_")}"
 
         val result = mutableListOf<String>()
         result.add(dtoOutput.getNewObjectStatement(dtoName, dtoVarName))
@@ -90,13 +93,13 @@ class GeneToDto(
             val attributeName = it.name
             when (leafGene) {
                 is ObjectGene -> {
-                    val childDtoCall = getDtoCall(leafGene, getDtoName(leafGene, attributeName, true), counter, true)
+                    val childDtoCall = getDtoCall(leafGene, getDtoName(leafGene, attributeName, true), counters, true)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 is ArrayGene<*> -> {
-                    val childDtoCall = getArrayDtoCall(leafGene, getDtoName(leafGene, attributeName, true), counter, attributeName, true)
+                    val childDtoCall = getArrayDtoCall(leafGene, getDtoName(leafGene, attributeName, true), counters, attributeName, true)
 
                     result.addAll(childDtoCall.objectCalls)
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
@@ -110,12 +113,12 @@ class GeneToDto(
         return DtoCall(dtoVarName, result)
     }
 
-    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counter: MutableList<Int>, targetAttribute: String?, capitalize: Boolean): DtoCall {
+    private fun getArrayDtoCall(gene: ArrayGene<*>, dtoName: String, counters: MutableList<Int>, targetAttribute: String?, capitalize: Boolean): DtoCall {
         val result = mutableListOf<String>()
         val template = gene.template
 
         val listType = getListType(dtoName,template, capitalize)
-        val listVarName = "list_${targetAttribute?:dtoName}_${counter.joinToString("_")}"
+        val listVarName = "list_${targetAttribute?:dtoName}_${counters.joinToString("_")}"
         result.add(dtoOutput.getNewListStatement(listType, listVarName))
 
         if (template is ObjectGene) {
@@ -123,7 +126,7 @@ class GeneToDto(
             var listCounter = 1
             gene.getViewOfElements().forEach {
                 val childCounter = mutableListOf<Int>()
-                childCounter.addAll(counter)
+                childCounter.addAll(counters)
                 childCounter.add(listCounter++)
                 val childDtoCall = getDtoCall(it,childDtoName, childCounter, true)
                 result.addAll(childDtoCall.objectCalls)
