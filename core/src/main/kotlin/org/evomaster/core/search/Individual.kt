@@ -521,8 +521,14 @@ abstract class Individual(
 
         duplicates.entries.forEach { d ->
            val same = taintableGenes.filter { it.getPossiblyTaintedValue() == d.key }.map { it as Gene }
-           if(same.any{ x -> same.any { y -> y !=x && !y.hasAnyBindingRelationship(x)}}){
-               errors.add("Taint id ${d.key} has duplicate genes that are not bound}")
+           if(same.any{ x ->
+               same.any { y ->
+                      y !=x
+                   && !y.hasAnyBindingRelationship(x)
+                   && !y.areAncestorDescendantRelated(x)
+               }
+           }){
+               errors.add("Taint id ${d.key} has duplicate genes that are not related}")
            }
         }
         return errors
