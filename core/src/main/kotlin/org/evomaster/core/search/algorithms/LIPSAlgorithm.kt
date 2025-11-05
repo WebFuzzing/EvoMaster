@@ -16,12 +16,10 @@ import org.evomaster.core.search.service.IdMapper
  * - Maintains a current branch target.
  * - Per-target budget is a fair share of the global TIME/ACTIONS budget; switches target when the target is covered or its budget is exhausted.
  */
-
-
 class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     private var currentTarget: Int? = null
-    private var budgetLeftForCurrentTarget: Int = 0
+    private lateinit var budget: LipsBudget
 
     override fun getType(): EMConfig.Algorithm = EMConfig.Algorithm.LIPS
 
@@ -34,32 +32,51 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         while (population.size < config.populationSize) {
             population.add(sampleSuite())
         }
+        // Initialize budget manager and first per-target budget using current uncovered targets
+        budget = LipsBudget(config, time)
+        val initUncoveredSize = archive.notCoveredTargets().size
+        budget.budgetLeftForCurrentTarget = budget.computePerTargetBudget(initUncoveredSize)
+        println("[LIPS DEBUG] initPopulation: initial per-target budget set using uncoveredSize=$initUncoveredSize -> budget=${budget.budgetLeftForCurrentTarget}")
     }
 
     override fun searchOnce() {
         beginGeneration()
+        println("[LIPS DEBUG] searchOnce: ENTER")
         // record budget usage for this generation
         val startActions = time.evaluatedActions
         val startSeconds = time.getElapsedSeconds()
 
         // Compute uncovered goals
         val uncovered = archive.notCoveredTargets()
+        println("[LIPS DEBUG] uncovered targets size = ${uncovered.size}")
 
         // current target is null if covered by previous generation or out of budget
         // Pick target if null, or if previously covered (check coverage directly)
         val needNewTarget = currentTarget == null || archive.isCovered(currentTarget!!)
+        println("[LIPS DEBUG] needNewTarget=$needNewTarget currentTarget=${currentTarget}")
         if (needNewTarget) {
-            val target = firstUncoveredBranch()
+            println("[LIPS DEBUG] selecting new target from archive snapshot")
+            val target = lastUncoveredBranchTargetId()
             currentTarget = target
+            println("[LIPS DEBUG] currentTarget set to $currentTarget")
             // Initialize budget for this NEW target
-            budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
+            println("[LIPS DEBUG] calculating per-target budget with uncoveredSize=${uncovered.size}")
+            budget.budgetLeftForCurrentTarget = budget.computePerTargetBudget(uncovered.size)
+            println("[LIPS DEBUG] selectTarget: target=$target uncovered=${uncovered.size} budgetLeftForCurrentTarget=${budget.budgetLeftForCurrentTarget}")
         }
 
-        // Focus scoring on the single selected target
-        frozenTargets = setOf(currentTarget!!)
+        // Focus scoring on the single selected target if present; otherwise use global fitness
+        if (currentTarget == null) {
+            frozenTargets = emptySet()
+            println("[LIPS DEBUG] no currentTarget; using global fitness (frozenTargets empty)")
+        } else {
+            frozenTargets = setOf(currentTarget!!)
+            println("[LIPS DEBUG] frozenTargets=${frozenTargets}")
+        }
 
         val n = config.populationSize
         val nextPop: MutableList<WtsEvalIndividual<T>> = formTheNextPopulation(population)
+        println("[LIPS DEBUG] formed base nextPop with elites size=${nextPop.size} target=$currentTarget")
 
         while (nextPop.size < n) {
             beginStep()
@@ -84,9 +101,11 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
             nextPop.add(o2)
 
             // Stop if global budget or target budget is up
-            val usedForTarget = usedForCurrentTarget(startActions, startSeconds)
-            
-            if (!time.shouldContinueSearch() || usedForTarget >= budgetLeftForCurrentTarget) {
+            val usedForTarget = budget.usedForCurrentTarget(startActions, startSeconds)
+            if ((nextPop.size % 10) == 0 || usedForTarget >= budget.budgetLeftForCurrentTarget) {
+                println("[LIPS DEBUG] innerLoop: nextSize=${nextPop.size} usedForTarget=$usedForTarget budgetLeft=${budget.budgetLeftForCurrentTarget}")
+            }
+            if (!time.shouldContinueSearch() || usedForTarget >= budget.budgetLeftForCurrentTarget) {
                 endStep()
                 break
             }
@@ -97,69 +116,40 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         population.addAll(nextPop)
 
         // Update budget usage for this target
-        updatePerTargetBudget(startActions, startSeconds)
+        budget.updatePerTargetBudget(startActions, startSeconds)
+        println("[LIPS DEBUG] afterGen: budgetLeftForCurrentTarget=${budget.budgetLeftForCurrentTarget}")
 
         // Switch target if covered or out of budget
-        if (shouldSwitchTarget()) currentTarget = null
+        val coveredNow = population.any { score(it) >= 1.0 }
+        val switching = budget.shouldSwitchTarget(coveredNow)
+        println("[LIPS DEBUG] shouldSwitchTarget=$switching currentTarget=$currentTarget")
+        if (switching) currentTarget = null
 
         endGeneration()
+        println("[LIPS DEBUG] searchOnce: EXIT")
     }
 
-    /**
-     * Calculate per-target budget based on the current stopping criterion.
-     * Returns the fair share: total budget divided by number of uncovered targets.
-     */
-    private fun calculatePerTargetBudget(uncoveredSize: Int): Int {
-        return when (config.stoppingCriterion) {
-            EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> {
-                val remaining = (config.maxEvaluations - time.evaluatedActions).coerceAtLeast(0)
-                remaining / uncoveredSize
-            }
-            EMConfig.StoppingCriterion.TIME -> {
-                val remaining = (config.timeLimitInSeconds() - time.getElapsedSeconds()).coerceAtLeast(0)
-                remaining / uncoveredSize
-            }
-            else -> Int.MAX_VALUE
-        }
-    }
-
-    /**
-     * Compute the budget spent since the start of the current generation,
-     * based on the active stopping criterion.
-     */
-    private fun usedForCurrentTarget(startActions: Int, startSeconds: Int): Int {
-        return when (config.stoppingCriterion) {
-            EMConfig.StoppingCriterion.ACTION_EVALUATIONS -> time.evaluatedActions - startActions
-            EMConfig.StoppingCriterion.TIME -> time.getElapsedSeconds() - startSeconds
-            else -> 0
-        }
-    }
-
-    private fun updatePerTargetBudget(actionsAtGenStart: Int, secondsAtGenStart: Int) {
-        val usedForTarget = usedForCurrentTarget(actionsAtGenStart, secondsAtGenStart)
-        budgetLeftForCurrentTarget -= usedForTarget
-    }
-
-    private fun shouldSwitchTarget(): Boolean {
-        val coveredNow = population.any { score(it) >= 1.0 }
-        val outOfBudget = budgetLeftForCurrentTarget <= 0
-        return coveredNow || outOfBudget
-    }
-
-    fun firstUncoveredBranch(): Int? {
-        if (populations.isEmpty()) return null
+    fun lastUncoveredBranchTargetId(): Int? {
+        val snapshot = archive.getSnapshotOfBestIndividuals()
+        if (snapshot.isEmpty()) return null
 
         // Iterate targets by numeric id in descending order
-        val orderedIds = populations.keys.sortedDescending()
+        val orderedIds = snapshot.keys.sortedDescending()
+        println("[LIPS DEBUG] lastUncoveredBranch: snapshotSize=${snapshot.size} orderedIdsCount=${orderedIds.size}")
 
         for (targetId in orderedIds) {
             val description = archive.getIdMapper().getDescriptiveId(targetId)
-            if (description.startsWith(ObjectiveNaming.BRANCH)) {
-                if (!isCovered(targetId)) {
+            val isBranch = description.startsWith(ObjectiveNaming.BRANCH)
+            val covered = archive.isCovered(targetId)
+            println("[LIPS DEBUG] candidate targetId=$targetId desc=$description isBranch=$isBranch covered=$covered")
+            if (isBranch) {
+                if (!covered) {
+                    println("[LIPS DEBUG] lastUncoveredBranch: selected targetId=$targetId")
                     return targetId
                 }
             }
         }
+        println("[LIPS DEBUG] lastUncoveredBranch: no candidate found")
         return null
     }
 }
