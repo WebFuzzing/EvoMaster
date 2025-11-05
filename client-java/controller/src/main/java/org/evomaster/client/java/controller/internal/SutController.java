@@ -33,7 +33,7 @@ import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
 import org.evomaster.client.java.sql.DbSpecification;
-import org.evomaster.client.java.controller.internal.db.MongoHandler;
+import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.internal.SqlHandler;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
