@@ -179,6 +179,7 @@ class HttpSemanticsService {
                     ?: return@forEach // we have a DELETE but no GET on this endpoint?
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
+                getOp.forceNewTaints()
                 getOp.bindToSamePathResolution(last)
                 getOp.auth = last.auth
                 //TODO: what if the GET needs WM handling?

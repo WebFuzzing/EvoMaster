@@ -559,6 +559,7 @@ open class RestResourceNode(
             action.randomize(randomness, false)
         else
             action.doInitialize(randomness)
+        action.forceNewTaints()
         return action
     }
 
