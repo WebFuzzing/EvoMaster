@@ -4,15 +4,20 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.core.search.service.IdMapper
 
 /**
- * LIPS (Linearly Independent Path-based Search).
- * Single-objective GA that optimizes one target (branch) at a time.
+ * Linearly Independent Path-based Search (LIPS).
  *
- * - Picks a current target from the uncovered set.
- * - Runs one GA generation to evolve the population towards the current target.
- * - when current target is covered or its budget is spent, select a new current target.
+ * A single-objective GA that optimizes one branch target at a time.
+ *
+ * - Initializes a random individual i and build the initial population P = random ∪ {i}.
+ * - Maintains a current branch target.
+ * - Per-target budget is a fair share of the global TIME/ACTIONS budget; switches target when the target is covered or its budget is exhausted.
  */
+
+
 class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     private var currentTarget: Int? = null
@@ -21,51 +26,33 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
     override fun getType(): EMConfig.Algorithm = EMConfig.Algorithm.LIPS
 
     override fun initPopulation() {
-        println("[LIPS DEBUG] initPopulation: enter")
         population.clear()
-        println("[LIPS DEBUG] initPopulation: population cleared")
-
         // 1) Generate Random Individual
-        println("[LIPS DEBUG] initPopulation: sampling initial individual")
         val i = sampleSuite()
-        println("[LIPS DEBUG] initPopulation: sampled initial individual")
-
         // 2) P <- RandomPopulation(ps-1) ∪ {i}
         population.add(i)
-        println("[LIPS DEBUG] initPopulation: added initial individual, pop=${population.size}")
         while (population.size < config.populationSize) {
             population.add(sampleSuite())
-            if (population.size % 5 == 0 || population.size == config.populationSize) {
-                println("[LIPS DEBUG] initPopulation: growing pop=${population.size}/${config.populationSize}")
-            }
         }
-        println("[LIPS DEBUG] initPopulation: exit with pop=${population.size}")
     }
 
     override fun searchOnce() {
         beginGeneration()
-        println("[LIPS DEBUG] searchOnce: popSize=${population.size}")
+        // record budget usage for this generation
+        val startActions = time.evaluatedActions
+        val startSeconds = time.getElapsedSeconds()
 
         // Compute uncovered goals
         val uncovered = archive.notCoveredTargets()
-        println("[LIPS DEBUG] searchOnce: uncoveredSize=${uncovered.size}")
-        if (uncovered.isEmpty()) {
-            println("[LIPS DEBUG] searchOnce: uncovered is EMPTY; ending generation")
-            endGeneration()
-            return
-        } else {
-            println("[LIPS DEBUG] searchOnce: uncovered is NOT EMPTY")
-        }
 
         // current target is null if covered by previous generation or out of budget
-
-        // Pick target if null, or if previously covered 
-        if (currentTarget == null || !uncovered.contains(currentTarget)) {
-            val target = uncovered.last()
+        // Pick target if null, or if previously covered (check coverage directly)
+        val needNewTarget = currentTarget == null || archive.isCovered(currentTarget!!)
+        if (needNewTarget) {
+            val target = firstUncoveredBranch()
             currentTarget = target
             // Initialize budget for this NEW target
             budgetLeftForCurrentTarget = calculatePerTargetBudget(uncovered.size)
-            println("[LIPS DEBUG] selectTarget: target=$target uncovered=${uncovered.size} budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
         }
 
         // Focus scoring on the single selected target
@@ -73,10 +60,6 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
         val n = config.populationSize
         val nextPop: MutableList<WtsEvalIndividual<T>> = formTheNextPopulation(population)
-
-        // record budget usage for this generation
-        val startActions = time.evaluatedActions
-        val startSeconds = time.getElapsedSeconds()
 
         while (nextPop.size < n) {
             beginStep()
@@ -114,17 +97,10 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         population.addAll(nextPop)
 
         // Update budget usage for this target
-        val usedForTarget = usedForCurrentTarget(startActions, startSeconds)
-        budgetLeftForCurrentTarget -= usedForTarget
-        println("[LIPS DEBUG] afterGen: target=${currentTarget} used=$usedForTarget budgetLeftForCurrentTarget=$budgetLeftForCurrentTarget")
+        updatePerTargetBudget(startActions, startSeconds)
 
-        // Check if target is covered or out of budget
-        val coveredNow = population.any { score(it) >= 1.0 }
-        val outOfBudget = budgetLeftForCurrentTarget <= 0
-        
-        if (coveredNow || outOfBudget) {
-            currentTarget = null
-        }
+        // Switch target if covered or out of budget
+        if (shouldSwitchTarget()) currentTarget = null
 
         endGeneration()
     }
@@ -157,6 +133,34 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
             EMConfig.StoppingCriterion.TIME -> time.getElapsedSeconds() - startSeconds
             else -> 0
         }
+    }
+
+    private fun updatePerTargetBudget(actionsAtGenStart: Int, secondsAtGenStart: Int) {
+        val usedForTarget = usedForCurrentTarget(actionsAtGenStart, secondsAtGenStart)
+        budgetLeftForCurrentTarget -= usedForTarget
+    }
+
+    private fun shouldSwitchTarget(): Boolean {
+        val coveredNow = population.any { score(it) >= 1.0 }
+        val outOfBudget = budgetLeftForCurrentTarget <= 0
+        return coveredNow || outOfBudget
+    }
+
+    fun firstUncoveredBranch(): Int? {
+        if (populations.isEmpty()) return null
+
+        // Iterate targets by numeric id in descending order
+        val orderedIds = populations.keys.sortedDescending()
+
+        for (targetId in orderedIds) {
+            val description = archive.getIdMapper().getDescriptiveId(targetId)
+            if (description.startsWith(ObjectiveNaming.BRANCH)) {
+                if (!isCovered(targetId)) {
+                    return targetId
+                }
+            }
+        }
+        return null
     }
 }
 
