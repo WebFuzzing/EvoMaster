@@ -1038,7 +1038,7 @@ class TestSuiteWriter {
         lines.addEmpty(2)
 
         if (config.ssrf && solution.hasSsrfFaults()) {
-            ssrfAssertionsUtilFunction(lines, config.outputFormat)
+            assertionUtilFunctionForSSRF(lines, config.outputFormat)
         }
     }
 
@@ -1148,7 +1148,7 @@ class TestSuiteWriter {
             .toList()
     }
 
-    private fun ssrfAssertionsUtilFunction(lines: Lines, format: OutputFormat) {
+    private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
         lines.startCommentBlock()
         lines.addBlockCommentLine("A method for verifying requests sent to HttpCallbackVerifier.")
         lines.endCommentBlock()
