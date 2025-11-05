@@ -23,7 +23,7 @@ class SSRFQueryEMTest: SpringTestBase() {
     @Test
     fun testSSRFQuery() {
         runTestHandlingFlakyAndCompilation(
-            "SSRFQueryEMTest",
+            "SSRFQueryGeneratedTest",
             30,
         ) { args: MutableList<String> ->
 

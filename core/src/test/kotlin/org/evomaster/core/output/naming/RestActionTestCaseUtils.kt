@@ -12,6 +12,7 @@ import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceInfo
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceRequest
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
@@ -22,7 +23,12 @@ import org.evomaster.core.search.action.ActionComponent
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -125,6 +131,21 @@ object RestActionTestCaseUtils {
 
     fun getIntegerQueryParam(paramName: String, wrapped: Boolean = true): Param {
         return getQueryParam(paramName, IntegerGene(paramName), wrapped)
+    }
+
+    fun getBodyParam(): Param {
+        val bodyGene = ObjectGene(
+            "foo",
+            fields = listOf(
+                LongGene("id", 1L),
+                DoubleGene("doubleValue", 2.0),
+                IntegerGene("intValue", 3),
+                FloatGene("floatValue", 4f)
+            )
+        )
+        val enumGene = EnumGene("contentType", listOf("application/json"))
+        enumGene.index = 0
+        return BodyParam(gene = bodyGene, typeGene = enumGene)
     }
 
     /*

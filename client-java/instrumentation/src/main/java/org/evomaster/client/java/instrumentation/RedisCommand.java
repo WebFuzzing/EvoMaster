@@ -1,7 +1,9 @@
 package org.evomaster.client.java.instrumentation;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Info related to Redis commands execution.
@@ -12,46 +14,152 @@ public class RedisCommand implements Serializable {
      */
     public enum RedisCommandType {
         /**
+         * Removes the specified keys. A key is ignored if it does not exist.
+         * Integer reply: the number of keys that were removed.
+         * <a href="https://redis.io/docs/latest/commands/del/">DEL Documentation</a>
+         */
+        DEL("del", "mixed", false),
+        /**
+         * Invoke the execution of a server-side Lua script.
+         * The return value depends on the script that was executed.
+         * <a href="https://redis.io/docs/latest/commands/eval/">EVAL Documentation</a>
+         */
+        EVAL("eval", "script", false),
+        /**
+         * Evaluate a script from the server's cache by its SHA1 digest.
+         * The return value depends on the script that was executed.
+         * <a href="https://redis.io/docs/latest/commands/evalsha/">EVALSHA Documentation</a>
+         */
+        EVALSHA("evalsha", "script", false),
+        /**
+         * Returns if key exists.
+         * Integer reply: the number of keys that exist from those specified as arguments.
+         * <a href="https://redis.io/docs/latest/commands/exists/">EXISTS Documentation</a>
+         */
+        EXISTS("exists", "mixed", true),
+        /**
          * Get the value of key.
          * <a href="https://redis.io/docs/latest/commands/get/">GET Documentation</a>
          */
-        GET,
+        GET("get", "string", true),
         /**
          * Returns the value associated with field in the hash stored at key.
          * <a href="https://redis.io/docs/latest/commands/hget/">HGET Documentation</a>
          */
-        HGET,
+        HGET("hget", "hash", true),
         /**
          * Returns all fields and values of the hash stored at key.
          * <a href="https://redis.io/docs/latest/commands/hgetall/">HGETALL Documentation</a>
          */
-        HGETALL,
+        HGETALL("hgetall", "hash", true),
+        /**
+         * Increments the number stored at key by one.
+         * If the key does not exist, it is set to 0 before performing the operation.
+         * An error is returned if the key contains a value of the wrong type
+         * or contains a string that can not be represented as integer.
+         * This operation is limited to 64-bit signed integers.
+         * <a href="https://redis.io/docs/latest/commands/incr/">INCR Documentation</a>
+         */
+        INCR("incr", "string", false),
         /**
          * Returns all keys matching pattern.
          * <a href="https://redis.io/docs/latest/commands/keys/">KEYS Documentation</a>
          */
-        KEYS,
-        /**
-         * Returns the members of the set resulting from the intersection of all the given sets.
-         * <a href="https://redis.io/docs/latest/commands/sinter/">SINTER Documentation</a>
-         */
-        SINTER,
+        KEYS("keys", "none", true),
         /**
          * Set key to hold the string value. If key already holds a value, it is overwritten, regardless of its type.
          * Any previous time to live associated with the key is discarded on successful SET operation.
          * <a href="https://redis.io/docs/latest/commands/set/">SET Documentation</a>
          */
-        SET,
+        SET("set", "string", false),
+        /**
+         * Posts a message to the given channel.
+         * Integer reply: the number of clients that the message was sent to.
+         * <a href="https://redis.io/docs/latest/commands/publish/">PUBLISH Documentation</a>
+         */
+        PUBLISH("publish", "pubsub", false),
+        /**
+         * Add the specified members to the set stored at key.
+         * Specified members that are already a member of this set are ignored.
+         * If key does not exist, a new set is created before adding the specified members.
+         * An error is returned when the value stored at key is not a set.
+         * <a href="https://redis.io/docs/latest/commands/sadd/">SADD Documentation</a>
+         */
+        SADD("sadd", "set", false),
+        /**
+         * Set key to hold the string value and set key to timeout after a given number of seconds.
+         * <a href="https://redis.io/docs/latest/commands/setex/">SETEX Documentation</a>
+         */
+        SETEX("setex", "string", false),
+        /**
+         * Returns the members of the set resulting from the intersection of all the given sets.
+         * <a href="https://redis.io/docs/latest/commands/sinter/">SINTER Documentation</a>
+         */
+        SINTER("sinter", "set", true),
         /**
          * Returns all the members of the set value stored at key.
          * This has the same effect as running SINTER with one argument key.
          * <a href="https://redis.io/docs/latest/commands/smembers/">SMEMBERS Documentation</a>
          */
-        SMEMBERS,
+        SMEMBERS("smembers", "set", true),
+        /**
+         * Removes and returns one or more random members from the set value store at key.
+         * Nil reply: if the key does not exist.
+         * Bulk string reply: when called without the count argument, the removed member.
+         * Array reply: when called with the count argument, a list of the removed members.
+         * <a href="https://redis.io/docs/latest/commands/spop/">SPOP Documentation</a>
+         */
+        SPOP("spop", "set", false),
+        /**
+         * Remove the specified members from the set stored at key.
+         * Specified members that are not a member of this set are ignored.
+         * If key does not exist, it is treated as an empty set and this command returns 0.
+         * An error is returned when the value stored at key is not a set.
+         * <a href="https://redis.io/docs/latest/commands/srem/">SREM Documentation</a>
+         */
+        SREM("srem", "set", false),
+        /**
+         * Subscribes the client to the specified channels.
+         * When successful, this command doesn't return anything.
+         * Instead, for each channel, one message with the first element being the string subscribe is pushed
+         * as a confirmation that the command succeeded.
+         * <a href="https://redis.io/docs/latest/commands/subscribe/">SUBSCRIBE Documentation</a>
+         */
+        SUBSCRIBE("subscribe", "pubsub", false),
+        /**
+         * Unsubscribes the client from the given channels, or from all of them if none is given.
+         * When successful, this command doesn't return anything.
+         * Instead, for each channel, one message with the first element being the string unsubscribe is pushed
+         * as a confirmation that the command succeeded.
+         * <a href="https://redis.io/docs/latest/commands/unsubscribe/">UNSUBSCRIBE Documentation</a>
+         */
+        UNSUBSCRIBE("unsubscribe", "pubsub", false),
         /**
          * Default unregistered command value.
          */
-        OTHER
+        OTHER("other", "none", false);
+
+        private final String label;
+        private final String dataType;
+        private final boolean calculateHeuristic;
+
+        RedisCommandType(String label, String dataType, boolean shouldCalculateHeuristic) {
+            this.label = label;
+            this.dataType = dataType;
+            this.calculateHeuristic = shouldCalculateHeuristic;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public String getDataType() {
+            return dataType;
+        }
+
+        public boolean shouldCalculateHeuristic() {
+            return calculateHeuristic;
+        }
     }
 
     /**
@@ -93,15 +201,19 @@ public class RedisCommand implements Serializable {
         return args;
     }
 
+    public List<String> extractArgs(){
+        List<String> parameters = new ArrayList<>();
+        for(String arg : args){
+                parameters.add(arg.substring(arg.indexOf('<')+1, arg.indexOf('>')));
+        }
+        return parameters;
+    }
+
     public boolean getSuccessfullyExecuted() {
         return successfullyExecuted;
     }
 
     public long getExecutionTime() {
         return executionTime;
-    }
-
-    public boolean isHashCommand() {
-        return type.equals(RedisCommandType.HGET);
     }
 }

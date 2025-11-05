@@ -641,25 +641,23 @@ internal class EMConfigTest{
         assertTrue(config.nameWithQueryParameters)
     }
 
-    @Test
-    fun testMaxCharsLengthIs80ByDefault() {
-        val parser = EMConfig.getOptionParser()
-        val config = EMConfig()
-
-        config.updateProperties(parser.parse())
-
-        assertEquals(config.maxTestCaseNameLength, 80)
-    }
 
     @Test
     fun testMaxCharsLengthCanBeChangedByParam() {
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
-        val options = parser.parse("--maxTestCaseNameLength", "30")
+        val default = config.maxTestCaseNameLength
+
+        config.updateProperties(parser.parse())
+        assertEquals(config.maxTestCaseNameLength, default)
+
+        val different = default * 2
+
+        val options = parser.parse("--maxTestCaseNameLength", "$different")
         config.updateProperties(options)
 
-        assertEquals(config.maxTestCaseNameLength, 30)
+        assertEquals(config.maxTestCaseNameLength, different)
     }
 
 }
