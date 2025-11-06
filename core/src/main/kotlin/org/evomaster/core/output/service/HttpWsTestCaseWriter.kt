@@ -859,10 +859,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
         if (assertTrue) {
             lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
-            lines.add("assertTrue(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
+            lines.addStatement("assertTrue(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
         } else {
             lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
-            lines.add("assertFalse(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
+            lines.addStatement("assertFalse(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
         }
     }
 

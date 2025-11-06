@@ -643,6 +643,7 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
+                    addStatement("private static final String SSRF_METADATA_TAG = \"SSRF\"", lines)
                 }
             }
 
@@ -676,6 +677,7 @@ class TestSuiteWriter {
                     addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
                     addStatement("private const val SSRF_METADATA_TAG: String = \"SSRF\" ", lines)
                 }
+                assertionUtilFunctionForSSRF(lines, config.outputFormat)
             }
 
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
@@ -1038,7 +1040,7 @@ class TestSuiteWriter {
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
 
-        if (config.ssrf && solution.hasSsrfFaults()) {
+        if (config.ssrf && solution.hasSsrfFaults() && format.isJava()) {
             assertionUtilFunctionForSSRF(lines, config.outputFormat)
         }
     }
@@ -1150,15 +1152,18 @@ class TestSuiteWriter {
     }
 
     private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
-        lines.startCommentBlock()
-        lines.addBlockCommentLine("A method for verifying requests sent to HttpCallbackVerifier.")
-        lines.endCommentBlock()
+        lines.addEmpty(1)
+
         when {
             format.isKotlin() -> {
+                lines.addSingleCommentLine("To verify whether the HttpCallbackVerifier has received any requests.")
                 lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
             }
             format.isJava() -> {
-                lines.add("public boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
+                lines.startCommentBlock()
+                lines.addBlockCommentLine("Method to verify whether the HttpCallbackVerifier has received any requests.")
+                lines.endCommentBlock()
+                lines.add("public static boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
             }
         }
         lines.block {
@@ -1168,6 +1173,11 @@ class TestSuiteWriter {
                     lines.add(".allServeEvents")
                     lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
                     lines.add(".any { it.stubMapping.metadata.getString(SSRF_METADATA_TAG) == actionName }")
+                }
+                if (format.isJava()) {
+                    lines.add(".getAllServeEvents()")
+                    lines.add(".stream().filter( r -> r.getWasMatched() && r.getStubMapping().getMetadata() != null)")
+                    lines.add(".anyMatch( r -> r.getStubMapping().getMetadata().getString(SSRF_METADATA_TAG).equals(actionName));")
                 }
             }
         }
