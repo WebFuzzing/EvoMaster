@@ -4,8 +4,9 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster</artifactId>
+        <artifactId>evomaster-core-parent</artifactId>
         <version>4.0.1-SNAPSHOT</version>
+        <relativePath>../core-parent</relativePath>
     </parent>
 
     <artifactId>evomaster-core</artifactId>
