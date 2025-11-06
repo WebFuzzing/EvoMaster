@@ -28,6 +28,20 @@ class LipsBudgetTest {
     }
 
     @Test
+    fun computePerTargetBudget_Time_FairShare() {
+        val config = EMConfig().apply {
+            stoppingCriterion = EMConfig.StoppingCriterion.TIME
+            maxTimeInSeconds = 120
+        }
+        val time = SearchTimeController()
+        val budget = LipsBudget(config, time)
+
+        // remaining seconds = 120; uncovered=4 -> 30 each
+        val perTarget = budget.computePerTargetBudget(uncoveredSize = 4)
+        assertEquals(30, perTarget)
+    }
+
+    @Test
     fun computePerTargetBudget_Actions_ZeroUncovered_ReturnsRemaining() {
         val config = EMConfig().apply {
             stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
@@ -80,6 +94,33 @@ class LipsBudgetTest {
         val start2 = time.evaluatedActions
         time.newActionEvaluation(5)
         budget.updatePerTargetBudget(start2, secondsAtGenStart = 0)
+        assertEquals(0, budget.budgetLeftForCurrentTarget)
+
+        val shouldSwitch = budget.shouldSwitchTarget(coveredNow = false)
+        assertTrue(shouldSwitch)
+    }
+
+    @Test
+    fun updateAndSwitchBudget_Time() {
+        val config = EMConfig().apply {
+            stoppingCriterion = EMConfig.StoppingCriterion.TIME
+            maxTimeInSeconds = 120
+        }
+        val time = SearchTimeController()
+        val budget = LipsBudget(config, time)
+
+        // initialize per-target remaining seconds and start the timer
+        budget.budgetLeftForCurrentTarget = 2
+        time.startSearch()
+
+        val startSeconds = time.getElapsedSeconds()
+        Thread.sleep(1100)
+        budget.updatePerTargetBudget(actionsAtGenStart = 0, secondsAtGenStart = startSeconds)
+        assertEquals(1, budget.budgetLeftForCurrentTarget)
+
+        val startSeconds2 = time.getElapsedSeconds()
+        Thread.sleep(1100)
+        budget.updatePerTargetBudget(actionsAtGenStart = 0, secondsAtGenStart = startSeconds2)
         assertEquals(0, budget.budgetLeftForCurrentTarget)
 
         val shouldSwitch = budget.shouldSwitchTarget(coveredNow = false)
