@@ -674,6 +674,7 @@ class TestSuiteWriter {
             if (config.ssrf && solution.hasSsrfFaults()) {
                 httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
                     addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
+                    addStatement("private const val SSRF_METADATA_TAG: String = \"SSRF\" ", lines)
                 }
             }
 
@@ -1154,10 +1155,10 @@ class TestSuiteWriter {
         lines.endCommentBlock()
         when {
             format.isKotlin() -> {
-                lines.add("fun verifierHasServedRequests(verifier: WireMockServer, actionName: String) : Boolean")
+                lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
             }
             format.isJava() -> {
-                lines.add("public boolean verifierHasServedRequests(WireMockServer verifier, String actionName)")
+                lines.add("public boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
             }
         }
         lines.block {
@@ -1166,7 +1167,7 @@ class TestSuiteWriter {
                 if (format.isKotlin()) {
                     lines.add(".allServeEvents")
                     lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
-                    lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == actionName }")
+                    lines.add(".any { it.stubMapping.metadata.getString(SSRF_METADATA_TAG) == actionName }")
                 }
             }
         }
