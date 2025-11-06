@@ -13,6 +13,7 @@
 
 
     <modules>
+        <module>emb-json</module>
         <module>spring-rest-postgres</module>
         <module>spring-rest-openapi-v2</module>
         <module>spring-rest-openapi-v3</module>
@@ -25,7 +26,6 @@
         <module>spring-rest-mongo</module>
         <module>spring-rest-bb</module>
         <module>spring-graphql-bb</module>
-        <module>emb-json</module>
         <module>spring-rest-multidb</module>
         <module>spring-rest-opensearch</module>
         <module>spring-rest-rsa</module>
