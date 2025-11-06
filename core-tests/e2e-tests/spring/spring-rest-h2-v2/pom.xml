@@ -4,7 +4,7 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster-e2e-tests</artifactId>
+        <artifactId>evomaster-e2e-tests-spring</artifactId>
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 

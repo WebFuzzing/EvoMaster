@@ -16,6 +16,7 @@
         <module>e2e-tests-utils</module>
         <module>dropwizard-examples</module>
         <module>micronaut-latest</module>
+        <module>spring</module>
     </modules>
 
 
