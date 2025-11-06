@@ -155,6 +155,7 @@ class RestIndividualBuilder {
             res.doInitialize(randomness)
         }
         res.auth = target.auth
+        res.forceNewTaints()
         res.bindToSamePathResolution(target)
 
         return res
@@ -191,6 +192,7 @@ class RestIndividualBuilder {
             res.doInitialize(randomness)
         }
         res.auth = previous.auth
+        res.forceNewTaints()
         if(res.path.isEquivalent(previous.path)) {
             res.bindToSamePathResolution(previous)
         }
