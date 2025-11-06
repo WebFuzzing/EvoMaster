@@ -40,8 +40,9 @@ class SleepEMTest : SpringTestBase() {
 
             assertTrue(solution.individuals.size >= 1)
 
-            //minimization re-execute the test
-            assertEquals(iterations+1, SleepCounter.counter.get())
+            //minimization and extra oracles can re-execute the test
+            val n = SleepCounter.counter.get()
+            assertTrue(n > iterations, "Times n=$n of calls should be more than i=$iterations iterations")
         }
     }
 
