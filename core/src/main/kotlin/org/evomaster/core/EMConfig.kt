@@ -1162,7 +1162,7 @@ class EMConfig {
 
     enum class Algorithm {
         DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
-        StandardGA, MonotonicGA, SteadyStateGA, LIPS
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS // GA variants still work-in-progress.
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1555,6 +1555,13 @@ class EMConfig {
     @Cfg("Define the probability of happening mutation in the genetic algorithms")
     @Probability
     var fixedRateMutation = 0.04
+
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ+λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muPlusLambdaOffspringSize = 30
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ,λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muLambdaOffspringSize = 30
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
@@ -2706,7 +2713,7 @@ class EMConfig {
     var namingStrategy = defaultTestCaseNamingStrategy
 
     @Cfg("Specify the hard limit for test case name length")
-    var maxTestCaseNameLength = 80
+    var maxTestCaseNameLength = 120
 
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
@@ -2741,6 +2748,39 @@ class EMConfig {
     @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
     @Min(0.0)
     var elitesCount: Int = 1
+
+    // Cellular GA neighborhood configuration
+    enum class CGANeighborhoodModel {
+        RING, L5, C9, C13
+    }
+
+    @Experimental
+    @Cfg("Cellular GA: neighborhood model (RING, L5, C9, C13)")
+    var cgaNeighborhoodModel: CGANeighborhoodModel = CGANeighborhoodModel.RING
+
+    /**
+     * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
+     */
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("Breeder GA: fraction of top individuals to keep in parents pool (truncation).")
+    var breederTruncationFraction: Double = 0.5
+
+    /**
+     * Breeder GA: minimum number of parents to keep after truncation.
+     */
+    @Experimental
+    @Min(2.0)
+    @Cfg("Breeder GA: minimum number of individuals in parents pool after truncation.")
+    var breederParentsMin: Int = 2
+
+    /**
+     * OnePlusLambdaLambda GA: number of offspring (λ).
+     */
+    @Experimental
+    @Min(1.0)
+    @Cfg("1+(λ,λ) GA: number of offspring (λ) per generation")
+    var onePlusLambdaLambdaOffspringSize: Int = 4
 
     @Experimental
     @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
