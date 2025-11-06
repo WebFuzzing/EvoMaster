@@ -408,6 +408,7 @@ open class RestResourceNode(
         } else {
             copy.doInitialize(randomness)
         }
+        copy.forceNewTaints()
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
@@ -558,6 +559,7 @@ open class RestResourceNode(
             action.randomize(randomness, false)
         else
             action.doInitialize(randomness)
+        action.forceNewTaints()
         return action
     }
 
@@ -565,7 +567,7 @@ open class RestResourceNode(
     private fun templateSelected(callsTemplate: CallsTemplate){
         templates.getValue(callsTemplate.template).times += 1
     }
-    
+
     private fun selectTemplate(predicate: (CallsTemplate) -> Boolean, randomness: Randomness, chosen : Map<String, CallsTemplate>?=null, chooseLessVisit : Boolean = false) : CallsTemplate?{
         val ts = if(chosen == null) templates.filter { predicate(it.value) } else chosen.filter { predicate(it.value) }
         if(ts.isEmpty())
