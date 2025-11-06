@@ -18,7 +18,6 @@
         <module>spring-rest-openapi-v3</module>
         <module>spring-graphql</module>
         <module>spring-rest-mysql</module>
-        <module>spring-rpc</module>
         <module>spring-rest-h2-v1</module>
         <module>spring-rest-h2-v2</module>
         <module>spring-rest-h2-z3solver</module>
