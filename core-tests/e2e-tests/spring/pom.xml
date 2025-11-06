@@ -1,0 +1,36 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-e2e-tests</artifactId>
+        <version>4.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>evomaster-e2e-tests-spring</artifactId>
+    <packaging>pom</packaging>
+
+
+    <modules>
+        <module>spring-rest-postgres</module>
+        <module>spring-rest-openapi-v2</module>
+        <module>spring-rest-openapi-v3</module>
+        <module>spring-graphql</module>
+        <module>spring-rest-mysql</module>
+        <module>spring-rpc</module>
+        <module>spring-rest-h2-v1</module>
+        <module>spring-rest-h2-v2</module>
+        <module>spring-rest-h2-z3solver</module>
+        <module>spring-web</module>
+        <module>spring-rest-mongo</module>
+        <module>spring-rest-bb</module>
+        <module>spring-graphql-bb</module>
+        <module>emb-json</module>
+        <module>spring-rest-multidb</module>
+        <module>spring-rest-opensearch</module>
+        <module>spring-rest-rsa</module>
+    </modules>
+
+
+</project>

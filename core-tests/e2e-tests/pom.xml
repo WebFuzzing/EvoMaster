@@ -16,24 +16,6 @@
         <module>e2e-tests-utils</module>
         <module>dropwizard-examples</module>
         <module>micronaut-latest</module>
-        <module>spring-rest-postgres</module>
-        <module>spring-rest-openapi-v2</module>
-        <module>spring-rest-openapi-v3</module>
-        <module>spring-graphql</module>
-        <module>spring-rest-mysql</module>
-        <module>spring-rpc</module>
-        <module>spring-rest-h2-v1</module>
-        <module>spring-rest-h2-v2</module>
-        <module>spring-rest-h2-z3solver</module>
-        <module>spring-web</module>
-        <module>spring-rest-mongo</module>
-        <module>spring-rest-bb</module>
-        <module>spring-graphql-bb</module>
-        <module>emb-json</module>
-        <module>spring-rest-multidb</module>
-        <module>spring-rest-opensearch</module>
-        <module>spring-rest-rsa</module>
-
     </modules>
 
 

@@ -19,6 +19,7 @@
 
     <properties>
         <springdoc.version>1.6.9</springdoc.version>
+        <springboot.version>2.5.4</springboot.version>
     </properties>
 
 
