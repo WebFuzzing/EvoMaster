@@ -29,6 +29,9 @@ class CharacterRangeRxGene(
             throw IllegalArgumentException("No defined ranges")
         }
 
+        // this limits the character class complements to 0xffff instead of allowing up to 0x10ffff, but values over
+        // 0xffff are not permitted on Char as they need 2 Chars to be represented; to allow this, we would need to
+        // use String or Int in every possible step as methods which return a single Char cannot return these characters
         if(negated) internalRanges.add(Pair(Character.MIN_VALUE,Character.MAX_VALUE))
         for (range in ranges) {
             val max = maxOf(range.first, range.second)
@@ -124,7 +127,7 @@ class CharacterRangeRxGene(
             if (sampledValue < currentRangeMaxValue) {
                 val codePoint = r.first.code + (sampledValue - currentRangeMinValue)
                 // is it necessary to log this?
-                log.trace("using Int {} as character selector for character class, resulting in character number: {}, {}", sampledValue, codePoint, codePoint.toChar())
+                log.trace("using Int {} as character selector for character class, resulting in code point: {}, which is: {}", sampledValue, codePoint, codePoint.toChar())
                 value = codePoint.toChar()
                 return
             }

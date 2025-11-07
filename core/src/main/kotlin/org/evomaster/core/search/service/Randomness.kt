@@ -49,8 +49,6 @@ class Randomness {
     private val punctuationS = stringToListOfCharPairs("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
     private val digitCC = CharacterRangeRxGene(false, digitS)
-    private val asciiLetterCC = CharacterRangeRxGene(false, asciiLetterS)
-    private val wordCC = CharacterRangeRxGene(false, wordS)
     private val spaceCC = CharacterRangeRxGene(false, spaceS)
     private val horizontalSpaceCC = CharacterRangeRxGene(false, horizontalSpaceS)
     private val verticalSpaceCC = CharacterRangeRxGene(false, verticalSpaceS)
@@ -61,6 +59,7 @@ class Randomness {
     private val nonHorizontalSpaceCC = CharacterRangeRxGene(true, horizontalSpaceS)
     private val nonVerticalSpaceCC = CharacterRangeRxGene(true, verticalSpaceS)
 
+    // US-ASCII POSIX character classes (\p{X})
     private val posixCharClassCC = mapOf(
         "Lower" to listOf('a' to 'z'),
         "Upper" to listOf('A' to 'Z'),
@@ -77,7 +76,8 @@ class Randomness {
         "Space" to spaceS
     ).mapValues { (_, value) -> CharacterRangeRxGene(false, value) }
 
-    private val wordSet = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+    private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+    private val wordSet = "_0123456789$asciiLetterSet"
 
     private val wordChars = wordSet.map { it.toInt() }.sorted()
 
@@ -296,7 +296,9 @@ class Randomness {
 
     fun nextLetter(): Char {
 
-        val k = nextFromCharClass(asciiLetterCC)
+        val characters = asciiLetterSet
+
+        val k = characters[random.nextInt(characters.length)]
         log.trace("nextLetter(): {}", k)
         return k
     }
@@ -314,7 +316,7 @@ class Randomness {
     }
 
     fun nextWordChar(): Char {
-        val k = nextFromCharClass(wordCC)
+        val k = nextFromStringSet(wordSet)
         log.trace("nextWordChar(): {}", k)
         return k
     }
