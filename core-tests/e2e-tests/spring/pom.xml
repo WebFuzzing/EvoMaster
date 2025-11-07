@@ -4,18 +4,33 @@
 
     <parent>
         <groupId>org.evomaster</groupId>
-        <artifactId>evomaster-core-tests</artifactId>
+        <artifactId>evomaster-e2e-tests</artifactId>
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-core-integration-tests</artifactId>
+    <artifactId>evomaster-e2e-tests-spring</artifactId>
     <packaging>pom</packaging>
 
 
     <modules>
-        <module>core-driver-it</module>
-        <module>core-graphql-it</module>
-        <module>core-it</module>
+        <module>emb-json</module>
+        <module>spring-rest-postgres</module>
+        <module>spring-rest-openapi-v2</module>
+        <module>spring-rest-openapi-v3</module>
+        <module>spring-graphql</module>
+        <module>spring-rest-mysql</module>
+        <module>spring-rest-h2-v1</module>
+        <module>spring-rest-h2-v2</module>
+        <module>spring-rest-h2-z3solver</module>
+        <module>spring-web</module>
+        <module>spring-rest-mongo</module>
+        <module>spring-rest-bb</module>
+        <module>spring-graphql-bb</module>
+        <module>spring-rest-multidb</module>
+        <module>spring-rest-opensearch</module>
+        <module>spring-rest-rsa</module>
+        <module>spring-rpc-grpc</module>
+        <module>spring-rpc-thrift</module>
     </modules>
 
     <dependencyManagement>
