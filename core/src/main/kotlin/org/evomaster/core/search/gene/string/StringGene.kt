@@ -178,9 +178,14 @@ class StringGene(
 //        }
 //        return true
         return maxLength > 0 //otherwise there is only 1 value, the empty string ""
+                && !isDependentTaint()
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+
+        /*
+            randomization does not apply any taint, and remove it if any is there
+         */
 
         /*
             Even if through mutation we can get large string, we should
@@ -227,7 +232,7 @@ class StringGene(
          */
         //assert(!tainted)
 
-        if(name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER){
+        if(isDependentTaint()){
             /*
                 TODO should have a better check to specify a StringGene is immutable.
                 If we end up in other cases for this, should add an "immutable" field to this gene
@@ -267,6 +272,12 @@ class StringGene(
             //not applied if used data pool
             if (!successfulDataPool && config.taintOnSampling) {
 
+                /*
+                    the method is called when gene is globally initialized, which is done when sampling.
+                    when sampling a new gene, and we want to use taint, when we can check if using
+                    global info or a direct taint value
+                 */
+
                 if (state.spa.hasInfoFor(name) && randomness.nextDouble() < state.config.useGlobalTaintInfoProbability) {
                     val spec = state.spa.chooseSpecialization(name, randomness)!!
                     assert(specializations.size == 0)
@@ -305,15 +316,28 @@ class StringGene(
     }
 
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
-                               selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        mwc: MutationWeightControl,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean{
 
         val allGenes = getAllGenesInIndividual()
 
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
+            additionalGeneMutationInfo
+                ?: throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
+
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
-                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo, changeSpecSetting = PROB_CHANGE_SPEC
+                this,
+                allGenes = allGenes,
+                selectionStrategy = selectionStrategy,
+                targets = additionalGeneMutationInfo.targets,
+                additionalGeneMutationInfo = additionalGeneMutationInfo,
+                changeSpecSetting = PROB_CHANGE_SPEC
             )
             return true
         }
@@ -321,11 +345,11 @@ class StringGene(
         val didSpecializationMutation = standardSpecializationMutation(
                 randomness, apc, mwc, selectionStrategy, allGenes, enableAdaptiveGeneMutation, additionalGeneMutationInfo
         )
+
         if (!didSpecializationMutation){
-            standardValueMutation(
-                    randomness, allGenes, apc
-            )
+            standardValueMutation(randomness, allGenes, apc)
         }
+
         return true
     }
 
@@ -401,6 +425,7 @@ class StringGene(
         if(TaintInputName.isTaintInput(value)){
             //standard mutation on a tainted value makes little sense, so randomize instead
             randomize(randomness, true)
+            return
         }
 
         val p = randomness.nextDouble()
@@ -473,6 +498,9 @@ class StringGene(
             return false
         }
 
+        // we start with a high value for probability of using a tained value.
+        // however, during search we decrease it, but not lower than specified minimum here, until start of focused search.
+        // when focus search starts, we no longer use taint values
         val minPforTaint = 0.1
         val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 
@@ -1079,7 +1107,8 @@ class StringGene(
     }
 
     override fun evolve() {
-        //TODO need refactoring
+        //there are a lot of edge cases here...
+        throw IllegalStateException("String genes should not be evolved directly, but via mutation")
     }
 
     /**
