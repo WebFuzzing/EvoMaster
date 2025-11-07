@@ -80,9 +80,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             // Initialize algorithm (creates molecules and initialEnergy)
             cro.setupBeforeSearch()
@@ -127,9 +125,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()[0]
@@ -169,9 +165,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
 
@@ -215,9 +209,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()[0]
@@ -258,9 +250,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
@@ -299,9 +289,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
@@ -345,9 +333,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
@@ -391,9 +377,7 @@ class CroAlgorithmTest {
             val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
             val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
             val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.setReactorFactoryForTesting { cfg, rnd, _, _, _ ->
-                CroReactor(cfg, rnd, mutateFn, potentialFn, xoverFn)
-            }
+            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
 
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
