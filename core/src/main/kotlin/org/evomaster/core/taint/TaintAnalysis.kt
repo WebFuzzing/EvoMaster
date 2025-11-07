@@ -69,8 +69,7 @@ object TaintAnalysis {
 
         if(evolveArrays) {
             allGenes.filterIsInstance<TaintedArrayGene>()
-                .filter { !it.isActive && it.isResolved() }
-                .forEach { it.activate() }
+                .forEach { it.evolve() }
         }
 
         if(evolveMaps) {
@@ -465,21 +464,21 @@ object TaintAnalysis {
              */
             //assert(false) // crash in tests, but not production
         } else {
-            if (genes.size > 1
+            val toModify = genes.filter { !it.isDependentTaint() }
+            if (toModify.size > 1
                     && TaintInputName.isTaintInput(taintedInput)
-                    && genes.none { x -> genes.any { y -> x.isDirectBoundWith(y) || x.is2DepthDirectBoundWith(y) || x.isAnyParentBoundWith(y) } }
+                    && toModify.none { x -> toModify.any { y -> y.hasAnyBindingRelationship(x) } }
             ) {
                 //shouldn't really be a problem... but let keep track for it, for now at least.
                 // note, cannot really guarantee that a taint from regex is unique, as regex could generate
                 // any kind of string...
                 // also if genes are bound, then of course going to be more than 2...
                 log.warn("More than 2 genes have the taint '{}'", taintedInput)
-                //FIXME possible bug in binding handling.
-//                assert(false)
+                assert(false)
             }
-            genes
-                .filter { it.name != TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER /* should never be modified */ }
-                .forEach { it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling) }
+            toModify.forEach {
+                it.addSpecializations(taintedInput, specializations, randomness, enableConstraintHandling = enableConstraintHandling)
+            }
         }
     }
 }

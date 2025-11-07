@@ -1076,6 +1076,17 @@ abstract class Gene(
         }
     }
 
+    fun hasAnyBindingRelationship(other: Gene): Boolean {
+        if (other == this) {
+            return false
+        }
+
+        return other.isDirectBoundWith(this)
+                || other.is2DepthDirectBoundWith(this)
+                || other.isAnyParentBoundWith(this)
+                || this.isAnyParentBoundWith(other)
+    }
+
     /**
      * @return whether [this] is directly bound with [gene]
      */

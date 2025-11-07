@@ -1,0 +1,213 @@
+openapi: 3.0.3
+info:
+  title: Schema for E2E DTO Testing
+  version: 1.0.0
+
+paths:
+  /items-inline:
+    post:
+      summary: Accepts an array of objects, each with numbers and labels
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                required: [numbers, labels]
+                properties:
+                  numbers:
+                    type: array
+                    items:
+                      type: integer
+                  labels:
+                    type: array
+                    items:
+                      type: object
+                      required: [value]
+                      properties:
+                        value:
+                          type: string
+      responses:
+        '200':
+          description: OK
+  /items-components:
+    post:
+      summary: Accepts an array of objects with numbers, labels, and wrappedStrings wrapper
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParentSchema'
+      responses:
+        '200':
+          description: OK
+  /primitiveTypes:
+    post:
+      summary: Example with all primitive and format types (no array/object)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                aString:
+                  type: string
+                aRegex:
+                  type: string
+                  pattern: "^[a-zA-Z0-9]+$"
+                aDate:
+                  type: string
+                  format: date
+                aTime:
+                  type: string
+                  format: time
+                aDateTime:
+                  type: string
+                  format: date-time
+                anInteger:
+                  type: integer
+                aLong:
+                  type: integer
+                  format: int64
+                aDouble:
+                  type: number
+                aFloat:
+                  type: number
+                  format: float
+                aBoolean:
+                  type: boolean
+                aNullableString:
+                  type: string
+                  nullable: true
+              required:
+                - aString
+                - aRegex
+                - aBase64String
+                - aDate
+                - aTime
+                - aDateTime
+                - anInteger
+                - aLong
+                - aDouble
+                - aFloat
+                - aBoolean
+      responses:
+        '200':
+          description: OK
+  /parent:
+    post:
+      summary: Uses ParentSchema, which references ChildSchema
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParentSchema'
+      responses:
+        '200':
+          description: OK
+  /allof:
+    post:
+      summary: Combines two components NamePart and AgePart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/NamePart'
+                - $ref: '#/components/schemas/AgePart'
+      responses:
+        '200':
+          description: OK
+  /anyof:
+    post:
+      summary: Accepts either an email (component) or phone (inline)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              anyOf:
+                - $ref: '#/components/schemas/EmailPayload'
+                - type: object
+                  required: [phone]
+                  properties:
+                    phone:
+                      type: string
+      responses:
+        '200':
+          description: OK
+  /oneof:
+    post:
+      summary: Accepts either cat or mouse object (but not both)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  required: [cat]
+                  properties:
+                    cat:
+                      type: string
+                - type: object
+                  required: [mouse]
+                  properties:
+                    mouse:
+                      type: string
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    NamePart:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+
+    AgePart:
+      type: object
+      required: [age]
+      properties:
+        age:
+          type: integer
+
+    EmailPayload:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+
+    ParentSchema:
+      type: object
+      properties:
+        label:
+          type: string
+        child:
+          $ref: '#/components/schemas/ChildSchema'
+      required:
+        - label
+        - child
+
+    ChildSchema:
+      type: object
+      properties:
+        name:
+          type: string
+        age:
+          type: integer
+      required:
+        - name
+        - age
