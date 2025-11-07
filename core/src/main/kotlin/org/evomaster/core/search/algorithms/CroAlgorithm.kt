@@ -8,14 +8,21 @@ import kotlin.math.abs
 /**
  * Chemical Reaction Optimization (CRO)
  *
- * Each molecule corresponds to a [WtsEvalIndividual] (a test suite). Potential energy (PE)
- * is defined as the negative of the combined fitness of the suite, so that minimization
- * semantics of the CRO equations align with EvoMaster's higher-is-better fitness.
+ * Each molecule corresponds to a [WtsEvalIndividual] (a test suite).
  */
 class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     private val molecules: MutableList<Molecule<T>> = mutableListOf()
     private lateinit var reactor: CroReactor<T>
+    private var reactorFactory:
+            (EMConfig,
+             org.evomaster.core.search.service.Randomness,
+             (WtsEvalIndividual<T>) -> Unit,
+             (WtsEvalIndividual<T>) -> Double,
+             (WtsEvalIndividual<T>, WtsEvalIndividual<T>) -> Unit) -> CroReactor<T> =
+        { emConfig, randomnessService, mutateFn, potentialFn, crossoverFn ->
+            CroReactor(emConfig, randomnessService, mutateFn, potentialFn, crossoverFn)
+        }
 
     // container is the global energy reservoir.
     // It collects kinetic energy lost in reactions and can be borrowed to enable otherwise infeasible decompositions, keeping total energy conserved.
@@ -36,13 +43,13 @@ class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         // Initialize the underlying GA population to reuse sampling utilities
         super.setupBeforeSearch()
 
-        // Initialize reactor with dependencies once
-        reactor = CroReactor(
-            config = config,
-            randomness = randomness,
-            mutate = this::mutate,
-            potential = this::potential,
-            xover = this::xover
+        // Initialize reactor with dependencies once (allow overriding via factory for tests)
+        reactor = reactorFactory(
+            config,
+            randomness,
+            this::mutate,
+            this::potential,
+            this::xover
         )
 
         // Convert GA population to CRO molecules with initial KE
@@ -52,6 +59,27 @@ class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
         // initialEnergy is the system’s starting total energy, used to enforce conservation.
         initialEnergy = getCurrentEnergy()
+    }
+
+    /**
+     * Allows tests to inject a deterministic reactor without reflection.
+     * Must be called before [setupBeforeSearch].
+     */
+    fun setReactorFactoryForTesting(factory:
+        (EMConfig,
+         org.evomaster.core.search.service.Randomness,
+         (WtsEvalIndividual<T>) -> Unit,
+         (WtsEvalIndividual<T>) -> Double,
+         (WtsEvalIndividual<T>, WtsEvalIndividual<T>) -> Unit) -> CroReactor<T>
+    ) {
+        this.reactorFactory = factory
+    }
+
+    /**
+     * Read-only snapshot of molecules for assertions in tests.
+     */
+    fun getMoleculesSnapshot(): List<Molecule<T>> = molecules.map { m ->
+        Molecule(m.suite, m.kineticEnergy, m.numCollisions)
     }
 
     override fun searchOnce() {

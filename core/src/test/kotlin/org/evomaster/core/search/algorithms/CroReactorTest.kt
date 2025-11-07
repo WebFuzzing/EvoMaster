@@ -98,7 +98,7 @@ class CroReactorTest {
         val config = EMConfig().apply { croKineticEnergyLossRate = 0.5 }
         val potentials = ArrayDeque(listOf(10.0, 12.0)) // old -> new
         val potentialFn: (WtsEvalIndividual<Individual>) -> Double = { _ -> potentials.removeFirst() }
-        val seed = 123
+        val seed = 123L
         val randomness = Randomness().apply { updateSeed(seed) }
         val reactor = newReactor(config = config, randomness = randomness, mutate = {}, potential = potentialFn)
 
@@ -155,7 +155,7 @@ class CroReactorTest {
         // first old=10, second old=15; updatedFirst=20, updatedSecond=0 => net = (10+15) - (20+0) = 5
         val potentials = ArrayDeque(listOf(10.0, 15.0, 20.0, 0.0))
         val potentialFn: (WtsEvalIndividual<Individual>) -> Double = { _ -> potentials.removeFirst() }
-        val seed = 222
+        val seed = 222L
         val randomness = Randomness().apply { updateSeed(seed) }
         val reactor = newReactor(config = EMConfig(), randomness = randomness, mutate = {}, potential = potentialFn)
 

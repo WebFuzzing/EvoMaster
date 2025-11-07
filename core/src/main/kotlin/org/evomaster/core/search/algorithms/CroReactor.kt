@@ -56,8 +56,8 @@ class CroReactor<T>(
         val parentPotential = potential(parent.suite)
         val parentKinetic = parent.kineticEnergy
 
-        val first = Molecule(parent.suite.copy(), ke = 0.0, numCollisions = 0)
-        val second = Molecule(parent.suite.copy(), ke = 0.0, numCollisions = 0)
+        val first = Molecule(parent.suite.copy(), kineticEnergy = 0.0, numCollisions = 0)
+        val second = Molecule(parent.suite.copy(), kineticEnergy = 0.0, numCollisions = 0)
 
         mutate(first.suite)
         mutate(second.suite)
