@@ -926,9 +926,10 @@ class SecurityRest {
                 var payloadInjected = false
 
                 // Attempt to inject payload into parameters
-                actionCopy.parameters.filter { it is BodyParam || it is QueryParam || it is PathParam }.forEach { param ->
+                actionCopy.parameters.forEach { param ->
 
                     // Skip if PathParam and payload contains "/" (would break URL structure)
+                    // TODO this in theory should be fine if properly escape entries in RestPath
                     if(param is PathParam && payload.contains("/")){
                         return@forEach
                     }
@@ -951,7 +952,7 @@ class SecurityRest {
                             }
                         } catch(e: Exception){
                             // Constraints might not allow the payload
-                            log.debug("Failed to inject XSS payload into ${gene.name}: ${e.message}")
+                            log.warn("Failed to inject XSS payload into ${gene.name}: ${e.message}")
                         }
                     }
                 }
@@ -1004,7 +1005,7 @@ class SecurityRest {
                                         }
                                     } catch(e: Exception){
                                         // Constraints might not allow the payload
-                                        log.debug("Failed to inject XSS payload into GET ${gene.name}: ${e.message}")
+                                        log.warn("Failed to inject XSS payload into GET ${gene.name}: ${e.message}")
                                     }
                                 }
                             }
@@ -1030,10 +1031,6 @@ class SecurityRest {
                 if(DefinedFaultCategory.XSS in faultsCategories){
 
                     val added = archive.addIfNeeded(evaluatedIndividual)
-                    evaluatedIndividual.individual.seeMainExecutableActions().forEach {
-                        println("$action - ${it.verb} ${it.path} -> ${it.auth.name} - ${added}")
-                    }
-
                     assert(added)
                     continue@mainloop
                 }
