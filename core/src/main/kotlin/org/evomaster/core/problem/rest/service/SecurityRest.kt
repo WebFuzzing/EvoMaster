@@ -219,6 +219,7 @@ class SecurityRest {
                             PUT /x BAR
                          */
                         val repeat = lastCall.copy() as RestCallAction
+                        repeat.forceNewTaints()
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
                         copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
@@ -637,6 +638,7 @@ class SecurityRest {
 
         actions.forEach {
             it.resetLocalIdRecursively()
+            it.forceNewTaints()
             //make sure using same auth
             it.auth = lastAction.auth
             it.usePreviousLocationId = lastAction.usePreviousLocationId
@@ -830,7 +832,9 @@ class SecurityRest {
                 val copyNoAuthLast = copyLast.copy() as RestCallAction
 
                 copyLast.resetLocalIdRecursively()
+                copyLast.forceNewTaints()
                 copyNoAuthLast.resetLocalIdRecursively()
+                copyNoAuthLast.forceNewTaints()
 
 
                 val otherUsers = authSettings.getAllOthers(copyLast.auth.name, HttpWsAuthenticationInfo::class.java)
@@ -1118,6 +1122,7 @@ class SecurityRest {
         val targetAction = targetInd.seeMainExecutableActions()[targetActionIndex].copy() as RestCallAction
         assert(targetAction.verb == verb && targetAction.path.isEquivalent(path))
         targetAction.resetLocalIdRecursively()
+        targetAction.forceNewTaints()
         targetAction.auth =
             authSettings.getDifferentOne(creationAction.auth.name, HttpWsAuthenticationInfo::class.java, randomness)
 

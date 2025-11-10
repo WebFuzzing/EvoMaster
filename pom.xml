@@ -121,7 +121,6 @@
         <wfc.version>0.0.6</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
-        <springboot.version>2.5.4</springboot.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
