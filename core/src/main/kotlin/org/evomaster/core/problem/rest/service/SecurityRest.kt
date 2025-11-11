@@ -954,18 +954,28 @@ class SecurityRest {
                 copy.modifySampleType(SampleType.SECURITY)
                 copy.ensureFlattenedStructure()
 
-                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+                try {
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
-                if (evaluatedIndividual == null) {
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        continue@mainloop
+                    }
+
+                    val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+                    if(DefinedFaultCategory.XSS in faultsCategories){
+                        archive.addIfNeeded(evaluatedIndividual)
+                        continue@mainloop
+                    }
+                } catch(e: Exception){
+                    // For certain malformed or encoded requests (such as /api/cleanup/items/<img src=x onerror=alert('XSS')>
+                    // which becomes /api/cleanup/items/%3Cimg%20src=x%20onerror=alert('XSS')%3E), the framework may throw
+                    // a "URI is not absolute" error due to invalid or non-absolute path handling. Such cases can occur when
+                    // XSS-like payloads are injected or when user input is not properly sanitized. The try-catch block ensures
+                    // that these exceptions do not interrupt the main processing loop.
+
                     log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
-                    continue@mainloop
-                }
-
-                val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
-
-                if(DefinedFaultCategory.XSS in faultsCategories){
-                    archive.addIfNeeded(evaluatedIndividual)
-                    continue@mainloop
                 }
             }
         }
@@ -1008,8 +1018,37 @@ class SecurityRest {
 
         val anySuccess = genes.any { gene -> gene.setFromStringValue(payload) }
         if (!anySuccess) return null
+        /*
+        These work fine with taint analysis:
+        First:
+        POST /api/stored/user/%3Cimg%20src=x%20onerror=alert('XSS')%3E?bio=_EM_42_XYZ_ , auth=NoAuth
+        Second:
+        GET /api/stored/user/%3Cimg%20src=x%20onerror=alert('XSS')%3E , auth=NoAuth
+        ---------------
+        First:
+        POST /api/stored/user/%3Csvg%20onload=alert('XSS')%3E?bio=_EM_42_XYZ_ , auth=NoAuth
+        Second:
+        GET /api/stored/user/%3Csvg%20onload=alert('XSS')%3E , auth=NoAuth
+        ---------------
+        First:
+        POST /api/stored/user/%3Cdetails%20open%20ontoggle=alert('XSS')%3E?bio=_EM_42_XYZ_ , auth=NoAuth
+        Second:
+        GET /api/stored/user/%3Cdetails%20open%20ontoggle=alert('XSS')%3E , auth=NoAuth
+        ---------------
 
+        But this throws an exception:
+        java.lang.IllegalStateException: There are invalid taint ids:
+        Taint id _EM_45_XYZ_ has duplicate genes that are not related}
+        Why?
+
+        First:
+        POST /api/stored/user/_EM_45_XYZ_?bio=%3Cscript%3Ealert%28%27XSS%27%29%3C%2Fscript%3E , auth=NoAuth
+        Second:
+        GET /api/stored/user/_EM_45_XYZ_?EMextraParam123=%3Cscript%3Ealert%28%27XSS%27%29%3C%2Fscript%3E , auth=NoAuth
+
+        */
         return RestIndividualBuilder.merge(ind, second)
+
     }
 
     /**
