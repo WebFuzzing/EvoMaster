@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.security.xss.reflected
+package com.foo.rest.examples.spring.openapi.v3.security.xss.reflected.html
 
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse

@@ -1,11 +1,11 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.xss.reflected
+package org.evomaster.e2etests.spring.openapi.v3.security.xss.reflected.html
 
-import com.foo.rest.examples.spring.openapi.v3.security.xss.reflected.XSSReflectedController
+import com.foo.rest.examples.spring.openapi.v3.security.xss.reflected.html.XSSReflectedController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
@@ -33,24 +33,24 @@ class XSSReflectedEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.isNotEmpty())
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertTrue(DefinedFaultCategory.XSS in faultsCategories)
+            Assertions.assertTrue(DefinedFaultCategory.XSS in faultsCategories)
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
                         && it.operationId == "POST:/api/reflected/comment"
             })
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
                         && it.operationId == "GET:/api/reflected/search"
             })
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
                         && it.operationId == "GET:/api/reflected/user/{username}"
             })

@@ -1,17 +1,15 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.xss.stored
+package org.evomaster.e2etests.spring.openapi.v3.security.xss.stored.json
 
-import com.foo.rest.examples.spring.openapi.v3.security.xss.stored.XSSStoredController
+import com.foo.rest.examples.spring.openapi.v3.security.xss.stored.json.XSSStoredJSONController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class XSSStoredEMTest : SpringTestBase() {
+class XSSStoredJSONEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
@@ -19,14 +17,14 @@ class XSSStoredEMTest : SpringTestBase() {
         fun init() {
             val config = EMConfig()
             config.instrumentMR_NET = false
-            initClass(XSSStoredController(), config)
+            initClass(XSSStoredJSONController(), config)
         }
     }
 
     @Test
     fun testXSSStoredEM() {
         runTestHandlingFlakyAndCompilation(
-            "XSSStoredEMTest",
+            "XSSStoredJSONEMTest",
             50,
         ) { args: MutableList<String> ->
 
@@ -35,29 +33,29 @@ class XSSStoredEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.isNotEmpty())
+            Assertions.assertTrue(solution.individuals.isNotEmpty())
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertTrue(faults.size == 3)
+            Assertions.assertTrue(faults.size == 3)
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            assertTrue({ DefinedFaultCategory.XSS in faultCategories })
+            Assertions.assertTrue({ DefinedFaultCategory.XSS in faultCategories })
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
-                        && it.operationId == "GET:/api/stored/comments"
+                        && it.operationId == "GET:/api/stored/json/comments"
             })
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
-                        && it.operationId == "GET:/api/stored/guestbook"
+                        && it.operationId == "GET:/api/stored/json/guestbook"
             })
 
-            assertTrue(faults.any {
+            Assertions.assertTrue(faults.any {
                 it.category == DefinedFaultCategory.XSS
-                        && it.operationId == "GET:/api/stored/user/{username}"
+                        && it.operationId == "GET:/api/stored/json/user/{username}"
             })
         }
     }
