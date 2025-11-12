@@ -22,7 +22,7 @@ class XSSStoredJSONEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testXSSStoredEM() {
+    fun testXSSStoredJSONEM() {
         runTestHandlingFlakyAndCompilation(
             "XSSStoredJSONEMTest",
             50,

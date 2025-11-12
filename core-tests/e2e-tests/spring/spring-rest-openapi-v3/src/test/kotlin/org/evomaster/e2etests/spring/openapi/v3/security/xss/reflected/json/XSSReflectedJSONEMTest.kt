@@ -22,7 +22,7 @@ class XSSReflectedJSONEMTest : SpringTestBase() {
     }
 
     @Test
-    fun testXSSReflectedEM() {
+    fun testXSSReflectedJSONEM() {
         runTestHandlingFlakyAndCompilation(
             "XSSReflectedJSONEMTest",
             50,

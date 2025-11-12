@@ -236,8 +236,8 @@ object RestSecurityOracle {
         //	at org.evomaster.core.search.gene.root.SimpleGene.<init>(SimpleGene.kt:13)
         //	at org.evomaster.core.search.gene.collection.EnumGene.<init>(EnumGene.kt:25)
         //	at org.evomaster.core.search.gene.collection.EnumGene.copyContent(EnumGene.kt:111)
-//        "<script>alert('XSS')</script>",
-//        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
+        "<script>alert('XSS')</script>",
+        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
     )
 
 
