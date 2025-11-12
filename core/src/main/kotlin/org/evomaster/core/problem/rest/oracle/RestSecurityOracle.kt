@@ -228,8 +228,16 @@ object RestSecurityOracle {
         "<img src=x onerror=alert('XSS')>",
         "<svg onload=alert('XSS')>",
         "<details open ontoggle=alert('XSS')>",
-        "<script>alert('XSS')</script>",
-        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
+        //TODO if payload contains "/" it causes StackOverflow:
+        //java.lang.StackOverflowError
+        //	at org.evomaster.core.search.StructuralElement.<init>(StructuralElement.kt:107)
+        //	at org.evomaster.core.search.StructuralElement.<init>(StructuralElement.kt:19)
+        //	at org.evomaster.core.search.gene.Gene.<init>(Gene.kt:58)
+        //	at org.evomaster.core.search.gene.root.SimpleGene.<init>(SimpleGene.kt:13)
+        //	at org.evomaster.core.search.gene.collection.EnumGene.<init>(EnumGene.kt:25)
+        //	at org.evomaster.core.search.gene.collection.EnumGene.copyContent(EnumGene.kt:111)
+//        "<script>alert('XSS')</script>",
+//        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
     )
 
 
