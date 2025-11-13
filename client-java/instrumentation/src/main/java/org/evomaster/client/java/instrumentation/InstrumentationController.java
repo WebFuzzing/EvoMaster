@@ -1,9 +1,10 @@
 package org.evomaster.client.java.instrumentation;
-
-import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
+import org.evomaster.client.java.instrumentation.cfg.CFGRecorder;
+import org.evomaster.client.java.instrumentation.cfg.ControlFlowGraph;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -144,6 +145,99 @@ public class InstrumentationController {
 
     public static void extractSpecifiedDto(List<String> dtoNames){
         UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
+    }
+
+    /**
+     * Expose the set of discovered Control Flow Graphs for instrumented methods.
+     */
+    public static List<ControlFlowGraph> getControlFlowGraphs(){
+        return CFGRecorder.getAll();
+    }
+
+    /**
+     * Compute and return ALL branch target numeric ids based on the complete CFG set.
+     * This includes targets that have not been executed yet.
+     */
+    public static List<Integer> getAllBranchTargetIds(){
+        List<Integer> ids = new ArrayList<>();
+        for (ControlFlowGraph cfg : CFGRecorder.getAll()){
+            String className = cfg.getClassName(); // bytecode name
+            // Build per-line indices
+            java.util.Set<Integer> allLines = new java.util.LinkedHashSet<>(cfg.getInstructionIndexToLineNumber().values());
+            for (Integer line : allLines){
+                java.util.List<Integer> branchIndices = cfg.getBranchInstructionIndicesForLine(line);
+                for (int pos = 0; pos < branchIndices.size(); pos++){
+                    int insnIdx = branchIndices.get(pos);
+                    Integer opcode = cfg.getInstructionIndexToOpcode().get(insnIdx);
+                    if (opcode == null) continue;
+                    // create both true/false sides
+                    String dTrue = org.evomaster.client.java.instrumentation.shared.ObjectiveNaming.branchObjectiveName(
+                            className, line, pos, true, opcode);
+                    String dFalse = org.evomaster.client.java.instrumentation.shared.ObjectiveNaming.branchObjectiveName(
+                            className, line, pos, false, opcode);
+                    int idT = ObjectiveRecorder.getMappedId(dTrue);
+                    int idF = ObjectiveRecorder.getMappedId(dFalse);
+                    ids.add(idT);
+                    ids.add(idF);
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Convenience: get coverage TargetInfo for all branch targets in the CFGs.
+     */
+    public static List<TargetInfo> getAllBranchTargetInfos(){
+        List<Integer> ids = getAllBranchTargetIds();
+        return getTargetInfos(ids, false, true);
+    }
+
+    /**
+     * Parse a branch descriptive id created by ObjectiveNaming.branchObjectiveName into a structured descriptor.
+     * Expected format:
+     *  Branch_at_<class.with.dots>_at_line_00019_position_<pos>_(trueBranch|falseBranch)_<opcode>
+     */
+    public static BranchTargetDescriptor parseBranchDescriptiveId(String descriptiveId){
+        if (descriptiveId == null || !descriptiveId.startsWith(ObjectiveNaming.BRANCH + "_at_")) {
+            throw new IllegalArgumentException("Not a branch descriptive id: " + descriptiveId);
+        }
+        try {
+            // strip "Branch_at_"
+            String rest = descriptiveId.substring((ObjectiveNaming.BRANCH + "_at_").length());
+            // split class and remainder
+            int idxAtLine = rest.indexOf("_at_line_");
+            String classDots = rest.substring(0, idxAtLine);
+            String afterLine = rest.substring(idxAtLine + "_at_line_".length());
+            // line is 5 digits padded; read until next underscore
+            int idxPos = afterLine.indexOf("_position_");
+            String linePadded = afterLine.substring(0, idxPos);
+            int line = Integer.parseInt(linePadded);
+            String afterPos = afterLine.substring(idxPos + "_position_".length());
+            // afterPos: "<pos>_trueBranch_<opcode>" or "<pos>_falseBranch_<opcode>"
+            int idxBranchTag = afterPos.indexOf("_" + ObjectiveNaming.TRUE_BRANCH.substring(1));
+            boolean thenBranch;
+            int posEndIdx;
+            if (idxBranchTag >= 0) {
+                thenBranch = true;
+                posEndIdx = idxBranchTag;
+            } else {
+                String falseTag = "_" + ObjectiveNaming.FALSE_BRANCH.substring(1);
+                idxBranchTag = afterPos.indexOf(falseTag);
+                if (idxBranchTag < 0) {
+                    throw new IllegalArgumentException("Missing branch tag in id: " + descriptiveId);
+                }
+                thenBranch = false;
+                posEndIdx = idxBranchTag;
+            }
+            int position = Integer.parseInt(afterPos.substring(0, posEndIdx));
+            // opcode after last underscore
+            int lastUnderscore = afterPos.lastIndexOf('_');
+            int opcode = Integer.parseInt(afterPos.substring(lastUnderscore + 1));
+            return new BranchTargetDescriptor(classDots, line, position, thenBranch, opcode);
+        } catch (RuntimeException ex){
+            throw new IllegalArgumentException("Failed to parse branch descriptive id: " + descriptiveId, ex);
+        }
     }
 
 }

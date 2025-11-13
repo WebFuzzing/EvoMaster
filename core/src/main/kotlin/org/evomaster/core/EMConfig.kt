@@ -1161,7 +1161,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, DYNAMOSA, RW,
         StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA // GA variants still work-in-progress.
     }
 
