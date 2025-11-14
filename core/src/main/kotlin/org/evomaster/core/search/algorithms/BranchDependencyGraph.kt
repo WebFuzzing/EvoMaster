@@ -25,12 +25,16 @@ class BranchDependencyGraph(
     private val parentsByChild: MutableMap<Int, MutableSet<Int>> = LinkedHashMap()
     private val roots: MutableSet<Int> = LinkedHashSet()
 
+    init {
+        build()
+    }
+
     /**
      * Build the graph by mapping every branch target to its CFG block, then walking
      * backwards to nearest branching basic blocks to add edges from both sides of
      * those parent branches to the current target.
      */
-    fun build() {
+    private fun build() {
         val mapDescToId: MutableMap<String, Int> = HashMap(allTargets.size)
         allTargets.forEach { ti ->
             if (ti.descriptiveId != null && ti.mappedId != null) {

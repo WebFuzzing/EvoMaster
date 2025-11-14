@@ -1,49 +1,84 @@
 package org.evomaster.core.search.algorithms
-
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.mockkStatic
-import io.mockk.unmockkAll
-import org.evomaster.client.java.instrumentation.InstrumentationController
 import org.evomaster.client.java.instrumentation.cfg.ControlFlowGraph
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.EMConfig
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class MulticriteriaManagerTest {
 
-    private lateinit var m: MulticriteriaManager
-
-    @BeforeEach
-    fun setup() {
-        mockkStatic(InstrumentationController::class)
-        every { InstrumentationController.getControlFlowGraphs() } returns emptyList()
-        every { InstrumentationController.getAllBranchTargetInfos() } returns emptyList()
-        val archive = mockk<Archive<Any>>(relaxed = true)
-        val idMapper = mockk<IdMapper>(relaxed = true)
-        m = MulticriteriaManager(archive, idMapper, arrayOf(EMConfig.CoverageCriterion.BRANCH))
-    }
-
-    @AfterEach
-    fun cleanup() {
-        unmockkAll()
-    }
-
     @Test
-    fun testGetAllCfgsDelegatesToInstrumentationController() {
+    fun testGetAllCfgsReturnsFromProvider() {
         val cfgs = listOf(
             ControlFlowGraph("C1", "m1", "()V"),
             ControlFlowGraph("C2", "m2", "(I)I")
         )
-        every { InstrumentationController.getControlFlowGraphs() } returns cfgs
-        assertEquals(cfgs, m.getAllCfgs())
+        val archive = Archive<Any>()
+        val idMapper = IdMapper()
+        val manager = MulticriteriaManager(
+            archive,
+            idMapper,
+            arrayOf(EMConfig.CoverageCriterion.BRANCH),
+            targetsProvider = { emptyList() },
+            cfgsProvider = { cfgs }
+        )
+        assertEquals(cfgs, manager.getAllCfgs())
     }
 
+    @Test
+    fun testInitSeedsCurrentGoalsFromRoots() {
+        val manager = MulticriteriaManager(
+            Archive<Any>(),
+            IdMapper(),
+            arrayOf(EMConfig.CoverageCriterion.BRANCH),
+            targetsProvider = { emptyList() },
+            cfgsProvider = { emptyList() }
+        )
+        assertEquals(emptySet<Int>(), manager.getBranchRoots())
+        assertEquals(emptySet<Int>(), manager.getCurrentGoals())
+    }
+
+    @Test
+    fun testRefreshGoalsFallsBackToAllUncovered() {
+        val ids = intArrayOf(10, 20, 30)
+        val manager = MulticriteriaManager(
+            Archive<Any>(),
+            IdMapper(),
+            arrayOf(EMConfig.CoverageCriterion.BRANCH),
+            targetsProvider = { emptyList() },
+            cfgsProvider = { emptyList() },
+            idsProvider = { ids }
+        )
+        manager.refreshGoals()
+        assertEquals(ids.toSet(), manager.getCurrentGoals())
+    }
+
+    @Test
+    fun testGetUncoveredGoalsReturnsIdsMinusCoveredWhenCoveredEmpty() {
+        val ids = intArrayOf(1, 2, 3)
+        val manager = MulticriteriaManager(
+            Archive<Any>(),
+            IdMapper(),
+            arrayOf(EMConfig.CoverageCriterion.BRANCH),
+            targetsProvider = { emptyList() },
+            cfgsProvider = { emptyList() },
+            idsProvider = { ids }
+        )
+        assertEquals(ids.toSet(), manager.getUncoveredGoals())
+    }
+
+    @Test
+    fun testGetCoveredGoalsReturnsEmptyWhenArchiveEmpty() {
+        val manager = MulticriteriaManager(
+            Archive<Any>(),
+            IdMapper(),
+            arrayOf(EMConfig.CoverageCriterion.BRANCH),
+            targetsProvider = { emptyList() },
+            cfgsProvider = { emptyList() }
+        )
+        assertEquals(emptySet<Int>(), manager.getCoveredGoals())
+    }
     // @Test
     // fun testGetCurrentGoalsReturnsLinkedHashSetSnapshotPreservingInsertionOrder() {
     //     val m = newManager()

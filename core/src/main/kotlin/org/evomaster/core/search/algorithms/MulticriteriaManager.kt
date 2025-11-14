@@ -22,23 +22,38 @@ import org.slf4j.LoggerFactory
 class MulticriteriaManager(
     private val archive: Archive<*>,
     private val idMapper: IdMapper,
-    private val enabledCriteria: Array<EMConfig.CoverageCriterion>
+    private val enabledCriteria: Array<EMConfig.CoverageCriterion>,
+    private val targetsProvider: () -> List<TargetInfo> = { InstrumentationController.getAllBranchTargetInfos() },
+    private val cfgsProvider: () -> List<ControlFlowGraph> = { InstrumentationController.getControlFlowGraphs() },
+    private val idsProvider: () -> IntArray = { InstrumentationController.getAllBranchTargetIds() }
 ) {
 
     private val log = LoggerFactory.getLogger(MulticriteriaManager::class.java)
+
+    private lateinit var branchGraph: BranchDependencyGraph
 
     /**
      * Current generation focus set of targets (numeric ids from ObjectiveRecorder mapping).
      */
     private val currentGoals: LinkedHashSet<Int> = LinkedHashSet()
 
-    /**
-     * Branch dependency graph (base graph). Extended via criterion adders.
-     */
-    private var branchGraph: BranchDependencyGraph? = null
-
     init {
-        buildGraphsAndDependencies()
+        val cfgs = cfgsProvider()
+        val targets: List<TargetInfo> = targetsProvider()
+        addDependencies4Branches(cfgs, targets)
+
+        // Extend with additional criteria
+        for (c in enabledCriteria) {
+            when (c) {
+                EMConfig.CoverageCriterion.BRANCH -> {
+                    // already handled by base graph
+                }
+                EMConfig.CoverageCriterion.LINE -> addDependencies4Line(cfgs)
+                EMConfig.CoverageCriterion.METHOD -> addDependencies4Methods(cfgs)
+                else -> log.error("The criterion {} is not currently supported in DynaMOSA", c.name)
+            }
+        }
+        currentGoals.addAll(branchGraph.getRoots())
     }
 
     /**
@@ -48,53 +63,49 @@ class MulticriteriaManager(
     fun refreshGoals() {
         val uncovered: Set<Int> = getUncoveredGoals()
         val covered: Set<Int> = getCoveredGoals()
-        val g = requireNotNull(branchGraph) { "BranchDependencyGraph was null; CFG/targets must be available" }
+        currentGoals.clear()
 
-        synchronized(currentGoals) {
-            currentGoals.clear()
+        val seeded = branchGraph.getRoots().intersect(uncovered)
+        val expanded: MutableSet<Int> = LinkedHashSet()
 
-            val seeded = g.getRoots().intersect(uncovered)
-            val expanded: MutableSet<Int> = LinkedHashSet()
-
-            for (p in covered) {
-                for (c in g.getChildren(p)) {
-                    if (c in uncovered) {
-                        expanded.add(c)
-                    }
+        for (p in covered) {
+            for (c in branchGraph.getChildren(p)) {
+                if (c in uncovered) {
+                    expanded.add(c)
                 }
             }
+        }
 
-            val next = LinkedHashSet<Int>()
-            next.addAll(seeded)
-            next.addAll(expanded)
-            if (next.isNotEmpty()) {
-                currentGoals.addAll(next)
-            } else {
-                currentGoals.addAll(uncovered)
-            }
+        val next = LinkedHashSet<Int>()
+        next.addAll(seeded)
+        next.addAll(expanded)
+        if (next.isNotEmpty()) {
+            currentGoals.addAll(next)
+        } else {
+            currentGoals.addAll(uncovered)
         }
     }
 
     /**
      * Snapshot of current goals.
      */
-    fun getCurrentGoals(): Set<Int> = synchronized(currentGoals) { LinkedHashSet(currentGoals) }
+    fun getCurrentGoals(): Set<Int> = LinkedHashSet(currentGoals)
 
     /**
      * All CFGs discovered at instrumentation time.
      */
-    fun getAllCfgs(): List<ControlFlowGraph> = InstrumentationController.getControlFlowGraphs()
+    fun getAllCfgs(): List<ControlFlowGraph> = cfgsProvider()
 
     /**
      * Roots of the branch dependency graph (base roots only).
      */
-    fun getBranchRoots(): Set<Int> = branchGraph?.getRoots() ?: emptySet()
+    fun getBranchRoots(): Set<Int> = branchGraph.getRoots()
 
     /**
      * (all CFG-derived branch ids) minus (archive-covered branch ids)
      */
     fun getUncoveredGoals(): Set<Int> {
-        val all: Set<Int> = InstrumentationController.getAllBranchTargetIds().toSet()
+        val all: Set<Int> = idsProvider().toSet()
         if (all.isEmpty()) return emptySet()
         val covered: Set<Int> = getCoveredGoals()
         return all.minus(covered)
@@ -115,27 +126,14 @@ class MulticriteriaManager(
     }
 
     /**
-     * Build the base branch dependency graph and then incorporate criterion-specific dependencies.
+     * BRANCH criterion dependencies: build the base BranchDependencyGraph from CFGs and targets.
      */
-    @Synchronized
-    private fun buildGraphsAndDependencies() {
-        val cfgs = getAllCfgs()
-        val targets: List<TargetInfo> = InstrumentationController.getAllBranchTargetInfos()
-        val g = BranchDependencyGraph(cfgs, targets)
-        g.build()
-        branchGraph = g
-        log.debug("Built BranchDependencyGraph: roots=${g.getRoots().size}")
-
-        // Extend with additional criteria, mirroring EvoSuite’s switch (subset supported)
-        for (c in enabledCriteria) {
-            when (c) {
-                EMConfig.CoverageCriterion.BRANCH -> {
-                    // already handled by base graph
-                }
-                EMConfig.CoverageCriterion.LINE -> addDependencies4Line(cfgs)
-                EMConfig.CoverageCriterion.METHOD -> addDependencies4Methods(cfgs)
-            }
-        }
+    private fun addDependencies4Branches(
+        cfgs: List<ControlFlowGraph>,
+        targets: List<TargetInfo>
+    ) {
+        branchGraph = BranchDependencyGraph(cfgs, targets)
+        log.debug("Built BranchDependencyGraph: roots=${branchGraph.getRoots().size}")
     }
 
     /**
@@ -162,9 +160,8 @@ class MulticriteriaManager(
      * Convenience: log a brief summary of a few CFGs (class/method/counts).
      */
     fun logCfgSummary(limit: Int = 10) {
-        val cfgs = getAllCfgs()
-        log.debug("CFGs available: ${cfgs.size}")
-        cfgs.take(limit).forEach { cfg ->
+        log.debug("CFGs available: ${getAllCfgs().size}")
+        getAllCfgs().take(limit).forEach { cfg ->
             log.debug("CFG: ${cfg.className}#${cfg.methodName}${cfg.descriptor} blocks=${cfg.blocksById.size}")
         }
     }
@@ -172,12 +169,8 @@ class MulticriteriaManager(
     /**
      * Validate that branch targets can be mapped to CFGs.
      */
-    fun validateCfgCompletenessForBranchTargets(maxLogs: Int = 50) {
-        val cfgs = getAllCfgs()
-        val targets = InstrumentationController.getAllBranchTargetInfos()
-        val graph = BranchDependencyGraph(cfgs, targets)
-        graph.build()
-        log.debug("CFG validation complete: roots=${graph.getRoots().size}")
+    fun validateCfgCompletenessForBranchTargets() {
+        log.debug("CFG validation complete: roots=${branchGraph.getRoots().size}")
     }
 }
 
