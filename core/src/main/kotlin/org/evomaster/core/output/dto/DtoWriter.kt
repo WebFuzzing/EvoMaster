@@ -96,21 +96,23 @@ class DtoWriter(
         // TODO: should we handle EnumGene?
         if (hasObjectOrArrayGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
-            val dtoClass = DtoClass(dtoName)
-            val children = gene.getViewOfChildren()
-            // merge options into a single DTO
-            children.forEach { childGene ->
-                when (childGene) {
-                    is ObjectGene -> populateDtoClass(dtoClass, childGene)
-                    is ArrayGene<*> -> {
-                        val template = childGene.template
-                        if (template is ObjectGene) {
-                            populateDtoClass(dtoClass, template)
+            if (!dtoCollector.contains(dtoName)) {
+                val dtoClass = DtoClass(dtoName)
+                val children = gene.getViewOfChildren()
+                // merge options into a single DTO
+                children.forEach { childGene ->
+                    when (childGene) {
+                        is ObjectGene -> populateDtoClass(dtoClass, childGene)
+                        is ArrayGene<*> -> {
+                            val template = childGene.template
+                            if (template is ObjectGene) {
+                                populateDtoClass(dtoClass, template)
+                            }
                         }
                     }
                 }
+                dtoCollector.put(dtoName, dtoClass)
             }
-            dtoCollector.put(dtoName, dtoClass)
         }
     }
 
@@ -139,10 +141,12 @@ class DtoWriter(
     private fun calculateDtoFromObject(gene: ObjectGene, actionName: String) {
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
         val dtoName = TestWriterUtils.safeVariableName(gene.refType?:actionName)
-        val dtoClass = DtoClass(dtoName)
-        // TODO: add support for additionalFields
-        populateDtoClass(dtoClass, gene)
-        dtoCollector.put(dtoName, dtoClass)
+        if (!dtoCollector.contains(dtoName)) {
+            val dtoClass = DtoClass(dtoName)
+            // TODO: add support for additionalFields
+            populateDtoClass(dtoClass, gene)
+            dtoCollector.put(dtoName, dtoClass)
+        }
     }
 
     private fun calculateDtoFromArray(gene: ArrayGene<*>, actionName: String) {

@@ -38,7 +38,8 @@ class SSRFBaseEMTest : SpringTestBase() {
             setOption(args, "schemaOracles", "false")
 
             // TODO: Remove once EnumGene is supported for DTOs
-            setOption(args, "dtoForRequestPayload","false")
+            setOption(args, "dtoForRequestPayload","true")
+//            setOption(args, "dtoForRequestPayload","false")
 
             val solution = initAndRun(args)
 

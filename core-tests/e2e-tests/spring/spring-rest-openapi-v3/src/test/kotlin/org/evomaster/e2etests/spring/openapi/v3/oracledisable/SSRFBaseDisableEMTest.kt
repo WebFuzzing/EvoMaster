@@ -40,7 +40,7 @@ class SSRFBaseDisableEMTest : SpringTestBase() {
             setOption(args, "disabledOracleCodes", DefinedFaultCategory.SSRF.code.toString())
 
             // TODO: Remove once EnumGene is supported for DTOs
-            setOption(args, "dtoForRequestPayload","false")
+            setOption(args, "dtoForRequestPayload","true")
 
             val solution = initAndRun(args)
 

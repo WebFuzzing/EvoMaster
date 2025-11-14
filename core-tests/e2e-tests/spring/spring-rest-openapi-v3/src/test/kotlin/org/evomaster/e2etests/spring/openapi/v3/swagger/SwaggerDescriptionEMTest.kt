@@ -27,7 +27,7 @@ class SwaggerDescriptionEMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             // TODO: Remove once EnumGene is supported for DTOs
-            setOption(args, "dtoForRequestPayload","false")
+            setOption(args, "dtoForRequestPayload","true")
 
             val solution = initAndRun(args)
 
