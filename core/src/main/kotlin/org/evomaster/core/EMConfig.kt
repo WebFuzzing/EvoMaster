@@ -1161,7 +1161,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, DYNAMOSA, RW,
         StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA // GA variants still work-in-progress.
     }
 
@@ -1287,6 +1287,22 @@ class EMConfig {
             " If this value is 0, the setting 'maxTime' will be used instead.")
     @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
+
+    /**
+     * Coverage criteria selection (DynaMOSA goal selection). Determines which target families are considered
+     * when building multi-criteria dependencies.
+     * Note: Currently only BRANCH, LINE and METHOD are recognized by DynaMOSA.
+     */
+    enum class CoverageCriterion {
+        BRANCH,
+        LINE,
+        METHOD
+    }
+
+    @Cfg("Coverage criteria. Multiple criteria can be combined.")
+    var criteria: Array<CoverageCriterion> = arrayOf(
+        CoverageCriterion.BRANCH
+    )
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")
