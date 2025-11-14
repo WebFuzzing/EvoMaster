@@ -617,6 +617,11 @@ class Archive<T> where T : Individual {
     }
 
     /**
+     * Expose the IdMapper used by the archive (read-only access pattern).
+     */
+    fun getIdMapper(): IdMapper = idMapper
+
+    /**
      * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
      */
     fun exportCoveredTargetsAsPair(solution: Solution<*>, includeTargetsCoveredBySeededTests: Boolean? = null) : List<Pair<String, List<Int>>>{
@@ -700,5 +705,4 @@ class Archive<T> where T : Individual {
             it.individual.seeTopGenes().all { g-> g.isLocallyValid() }
         }
     }
-
 }
