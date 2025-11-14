@@ -203,7 +203,7 @@ class SSRFAnalyser {
      * A private method to identify parameter is a potentially holds URL value
      * using a Regex based approach.
      */
-    private fun manualClassifier(name: String, description: String? = null): Boolean {
+    fun manualClassifier(name: String, description: String? = null): Boolean {
         if (potentialUrlParamNames.contains(name.lowercase())) {
             return true
         }
