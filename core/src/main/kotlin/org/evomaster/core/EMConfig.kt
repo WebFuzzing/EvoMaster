@@ -1288,6 +1288,24 @@ class EMConfig {
     @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
 
+    /**
+     * Coverage criteria selection (DynaMOSA goal selection). Determines which target families are considered
+     * when building multi-criteria dependencies.
+     * Note: Currently only BRANCH, LINE and METHOD are recognized by DynaMOSA.
+     */
+    enum class CoverageCriterion {
+        BRANCH,
+        LINE,
+        METHOD
+    }
+
+    @Cfg("Coverage criteria. Multiple criteria can be combined.")
+    var criteria: Array<CoverageCriterion> = arrayOf(
+        CoverageCriterion.LINE,
+        CoverageCriterion.BRANCH,
+        CoverageCriterion.METHOD
+    )
+
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")
     var writeStatistics = false
