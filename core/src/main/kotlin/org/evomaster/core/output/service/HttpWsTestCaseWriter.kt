@@ -827,7 +827,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.indented {
                 lines.add("get(\"${verifier.stub}\")")
                 lines.indented {
-                    lines.add(".withMetadata(Metadata.metadata().attr(\"ssrf\", \"${action.getName()}\"))")
+                    lines.add(".withMetadata(Metadata.metadata().attr(SSRF_METADATA_TAG, \"${action.getName()}\"))")
                     lines.add(".atPriority(1)")
                     lines.add(".willReturn(")
                     lines.indented {
@@ -859,19 +859,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
         if (assertTrue) {
             lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
-            lines.add("assertTrue(${verifier.getVerifierName()}")
+            lines.addStatement("assertTrue(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
         } else {
             lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
-            lines.add("assertFalse(${verifier.getVerifierName()}")
+            lines.addStatement("assertFalse(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
         }
-        lines.indented {
-            if (format.isKotlin()) {
-                lines.add(".allServeEvents")
-                lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
-                lines.add(".any { it.stubMapping.metadata.getString(\"ssrf\") == \"${action.getName()}\" }")
-            }
-        }
-        lines.add(")")
     }
 
 }
