@@ -1301,9 +1301,7 @@ class EMConfig {
 
     @Cfg("Coverage criteria. Multiple criteria can be combined.")
     var criteria: Array<CoverageCriterion> = arrayOf(
-        CoverageCriterion.LINE,
-        CoverageCriterion.BRANCH,
-        CoverageCriterion.METHOD
+        CoverageCriterion.BRANCH
     )
 
     @Cfg("Whether or not writing statistics of the search process. " +

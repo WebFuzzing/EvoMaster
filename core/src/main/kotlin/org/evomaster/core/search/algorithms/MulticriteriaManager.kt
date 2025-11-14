@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.InstrumentationController
 import org.evomaster.client.java.instrumentation.TargetInfo
 import org.evomaster.client.java.instrumentation.cfg.ControlFlowGraph
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -21,10 +22,8 @@ import org.slf4j.LoggerFactory
 class MulticriteriaManager(
     private val archive: Archive<*>,
     private val idMapper: IdMapper,
-    private val enabledCriteria: List<Criterion> = listOf(Criterion.BRANCH, Criterion.LINE, Criterion.METHOD)
+    private val enabledCriteria: Array<EMConfig.CoverageCriterion>
 ) {
-
-    enum class Criterion { BRANCH, LINE, METHOD }
 
     private val log = LoggerFactory.getLogger(MulticriteriaManager::class.java)
 
@@ -37,14 +36,6 @@ class MulticriteriaManager(
      * Branch dependency graph (base graph). Extended via criterion adders.
      */
     private var branchGraph: BranchDependencyGraph? = null
-
-    /**
-     * Optional extra edges from non-branch criteria (parent -> child).
-     * We keep them separate to avoid changing BranchDependencyGraph internals.
-     */
-    private val extraChildrenByParent: MutableMap<Int, MutableSet<Int>> = LinkedHashMap()
-    private val extraParentsByChild: MutableMap<Int, MutableSet<Int>> = LinkedHashMap()
-    private val extraRoots: MutableSet<Int> = LinkedHashSet()
 
     init {
         buildGraphsAndDependencies()
@@ -62,17 +53,11 @@ class MulticriteriaManager(
         synchronized(currentGoals) {
             currentGoals.clear()
 
-            val seeded = (g.getRoots() + extraRoots).intersect(uncovered)
+            val seeded = g.getRoots().intersect(uncovered)
             val expanded: MutableSet<Int> = LinkedHashSet()
 
-            fun childrenOf(p: Int): Set<Int> {
-                val base = g.getChildren(p)
-                val extra = extraChildrenByParent[p] ?: emptySet()
-                return if (extra.isEmpty()) base else base + extra
-            }
-
             for (p in covered) {
-                for (c in childrenOf(p)) {
+                for (c in g.getChildren(p)) {
                     if (c in uncovered) {
                         expanded.add(c)
                     }
@@ -144,11 +129,11 @@ class MulticriteriaManager(
         // Extend with additional criteria, mirroring EvoSuite’s switch (subset supported)
         for (c in enabledCriteria) {
             when (c) {
-                Criterion.BRANCH -> {
+                EMConfig.CoverageCriterion.BRANCH -> {
                     // already handled by base graph
                 }
-                Criterion.LINE -> addDependencies4Line(cfgs)
-                Criterion.METHOD -> addDependencies4Methods(cfgs)
+                EMConfig.CoverageCriterion.LINE -> addDependencies4Line(cfgs)
+                EMConfig.CoverageCriterion.METHOD -> addDependencies4Methods(cfgs)
             }
         }
     }

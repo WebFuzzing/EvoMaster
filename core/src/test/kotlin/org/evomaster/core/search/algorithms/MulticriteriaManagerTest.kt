@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.InstrumentationController
 import org.evomaster.client.java.instrumentation.cfg.ControlFlowGraph
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.EMConfig
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,7 +26,7 @@ class MulticriteriaManagerTest {
         every { InstrumentationController.getAllBranchTargetInfos() } returns emptyList()
         val archive = mockk<Archive<Any>>(relaxed = true)
         val idMapper = mockk<IdMapper>(relaxed = true)
-        m = MulticriteriaManager(archive, idMapper)
+        m = MulticriteriaManager(archive, idMapper, arrayOf(EMConfig.CoverageCriterion.BRANCH))
     }
 
     @AfterEach

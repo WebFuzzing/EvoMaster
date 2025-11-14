@@ -39,7 +39,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         population.clear()
 
         // Initialize goals manager (non-lazy for clarity and consistency)
-        goalsManager = MulticriteriaManager(archive, idMapper)
+        goalsManager = MulticriteriaManager(archive, idMapper, config.criteria)
 
         initPopulation()
         sortPopulation()
