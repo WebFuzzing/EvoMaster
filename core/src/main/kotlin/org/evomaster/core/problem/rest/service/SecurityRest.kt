@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -18,12 +19,15 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
@@ -292,10 +296,107 @@ class SecurityRest {
             handleStackTraceCheck()
         }
 
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleSqlICheck()
+        }
+
         //TODO other rules. See FaultCategory
         //etc.
     }
 
+
+    private fun handleSqlICheck(){
+
+        mainloop@ for(action in actionDefinitions){
+
+
+            // Find individuals with 2xx response for this endpoint
+            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(successfulIndividuals.isEmpty()){
+                continue
+            }
+
+            // Take the smallest successful individual
+            val target = successfulIndividuals.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Slice to keep only up to the target action
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            // Try each sqli payload (but only add one test per endpoint)
+            for(payload in SQLI_PAYLOADS){
+
+                // Create a copy of the individual
+                var copy = sliced.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+
+                val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
+                    .filter { it.staticCheckIfImpactPhenotype() }
+
+                if(genes.isEmpty()){
+                    continue
+                }
+                var anySuccess = false
+
+                genes.forEach {
+                    gene ->
+                    if(gene !is StringGene) return@forEach
+
+                    // we need to do this way because we need to append our paylod
+                    val hasInvalidChars = gene.invalidChars.any { payload.contains(it) }
+                    if(!hasInvalidChars){
+                        // append the SQLi payload value
+                        gene.value = gene.value + payload
+                        anySuccess = true
+                    }
+                }
+
+                if(!anySuccess){
+                    continue
+                }
+
+                copy.modifySampleType(SampleType.SECURITY)
+                copy.ensureFlattenedStructure()
+
+                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+
+                if (evaluatedIndividual == null) {
+                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                    continue@mainloop
+                }
+
+                val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+                if(DefinedFaultCategory.SQL_INJECTION in faultsCategories){
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+
+            }
+        }
+    }
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.
      * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.

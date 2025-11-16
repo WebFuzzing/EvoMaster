@@ -31,6 +31,7 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -1214,6 +1215,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
+        handleSQLiCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1314,6 +1316,38 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handleSQLiCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            return
+        }
+
+        // Find the action(s) where XSS payload appears in the response
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+//            if(!r.getTimedout()){
+//                continue
+//            }
+
+            // in here executionTimeMs doesn't assign yet.
+            if(fv.executionTimeMs < config.sqlInjectionMaxResponseTimeMs){
+                continue
+            }
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, a.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, index)
+            r.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, a.getName(), null))
+            break // Only add one fault per action
+        }
+    }
 
     private fun handleStackTraceCheck(
         individual: RestIndividual,

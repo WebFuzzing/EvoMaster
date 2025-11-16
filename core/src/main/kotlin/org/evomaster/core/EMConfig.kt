@@ -2576,6 +2576,10 @@ class EMConfig {
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
 
+    @Experimental
+    @Cfg("Maximum response time (in milliseconds) to consider a potential SQL Injection vulnerability.")
+    var sqlInjectionMaxResponseTimeMs = 2000
+
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
                 "By default, all oracles are enabled."

@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.openapi.v3.security.sqli
+package com.foo.rest.examples.spring.openapi.v3.security.sqli.common
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
