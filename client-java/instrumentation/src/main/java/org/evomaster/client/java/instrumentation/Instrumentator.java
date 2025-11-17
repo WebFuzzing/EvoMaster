@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation;
 
 
 
+import org.evomaster.client.java.instrumentation.cfg.CFGGenerator;
 import org.evomaster.client.java.instrumentation.coverage.visitor.classv.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.visitor.classv.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
@@ -66,6 +67,14 @@ public class Instrumentator {
         reader.accept(cn, readFlags);
 
         if(canInstrumentForCoverage(className)){
+            // Build and store CFGs for the class methods (best-effort, limited to in-scope classes)
+            try {
+                CFGGenerator.computeAndRegister(cn);
+            } catch (Throwable t) {
+                // keep instrumentation robust: a failure to build CFGs must not prevent coverage instrumentation
+                SimpleLogger.warn("Failed to build CFG for " + className.getFullNameWithDots() + " : " + t.getMessage());
+            }
+
             cv = new CoverageClassVisitor(cv, className);
         } else {
             cv = new ThirdPartyClassVisitor(cv, className);
