@@ -344,7 +344,7 @@ class CroAlgorithmTest {
     fun testInterMolecular_IneffectiveCollision_rejected_NoChange() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
