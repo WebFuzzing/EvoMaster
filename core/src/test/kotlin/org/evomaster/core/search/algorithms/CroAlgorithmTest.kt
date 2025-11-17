@@ -8,6 +8,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.TestUtils
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+
+private const val TEST_TOLERANCE = 1e-9
 
 class CroAlgorithmTest {
 
@@ -35,7 +38,7 @@ class CroAlgorithmTest {
     fun testCroAlgorithmFindsOptimum() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -59,7 +62,7 @@ class CroAlgorithmTest {
     fun testUniMolecular_DecompositionPath_usesDecomposition() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -75,15 +78,13 @@ class CroAlgorithmTest {
             // Force decomposition check to true without touching internal state (0 > -1)
             config.croDecompositionThreshold = -1
 
-            // Prepare a deterministic reactor that will accept decomposition with positive surplus
-            val potentials = ArrayDeque(listOf(10.0, 3.0, 5.0)) // parent, first, second
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             // Initialize algorithm (creates molecules and initialEnergy)
             cro.setupBeforeSearch()
+
+            // Prepare deterministic potentials and disable mutations/crossover side effects
+            cro.usePotentialSequence(listOf(10.0, 3.0, 5.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             // Run single step
             cro.searchOnce()
@@ -103,7 +104,7 @@ class CroAlgorithmTest {
     fun testUniMolecular_DecompositionPath_rejected_NoReplacementAndParentCollisionsIncrement() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -119,16 +120,14 @@ class CroAlgorithmTest {
             // Force decomposition check true
             config.croDecompositionThreshold = -1
 
-            // Potentials: parent=10, children=8 and 9 -> net = 10 - (8+9) = -7 (negative)
-            // Container starts at 0, borrow fails, decomposition returns null
-            val potentials = ArrayDeque(listOf(10.0, 8.0, 9.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()[0]
+
+            // Potentials: parent=10, children=8 and 9 -> net = 10 - (8+9) = -7 (negative)
+            // Container starts at 0, borrow fails, decomposition returns null
+            cro.usePotentialSequence(listOf(10.0, 8.0, 9.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -139,7 +138,7 @@ class CroAlgorithmTest {
             // Parent collisions incremented by +1 on failed decomposition
             assertEquals(before.numCollisions + 1, after.numCollisions)
             // KE unchanged (decomposition did not apply)
-            assertEquals(before.kineticEnergy, after.kineticEnergy, 1e-9)
+            assertEquals(before.kineticEnergy, after.kineticEnergy, TEST_TOLERANCE)
         }
     }
 
@@ -147,7 +146,7 @@ class CroAlgorithmTest {
     fun testUniMolecular_OnWallPath_usesOnWall() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -160,18 +159,16 @@ class CroAlgorithmTest {
             config.maxEvaluations = 1
             config.croInitialKineticEnergy = 0.0
 
-            // Deterministic on-wall: old=10, new=7 => net=3, accept and update KE/container
-            val potentials = ArrayDeque(listOf(10.0, 7.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             cro.setupBeforeSearch()
 
             // Make decompositionCheck false by setting very high threshold
             config.croDecompositionThreshold = Int.MAX_VALUE
             val before = cro.getMoleculesSnapshot()[0]
+
+            // Deterministic on-wall: old=10, new=7 => net=3, accept and update KE/container
+            cro.usePotentialSequence(listOf(10.0, 7.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -188,7 +185,7 @@ class CroAlgorithmTest {
     fun testUniMolecular_OnWallPath_negativeNet_NoChange() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -204,15 +201,13 @@ class CroAlgorithmTest {
             // Force on-wall branch (decomposition false)
             config.croDecompositionThreshold = Int.MAX_VALUE
 
-            // Potentials: old=10, new=15 -> net = -5 (reject), so no change
-            val potentials = ArrayDeque(listOf(10.0, 15.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()[0]
+
+            // Potentials: old=10, new=15 -> net = -5 (reject), so no change
+            cro.usePotentialSequence(listOf(10.0, 15.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -221,7 +216,7 @@ class CroAlgorithmTest {
             val after = afterList[0]
             // On-wall rejected: collisions and KE unchanged
             assertEquals(before.numCollisions, after.numCollisions)
-            assertEquals(before.kineticEnergy, after.kineticEnergy, 1e-9)
+            assertEquals(before.kineticEnergy, after.kineticEnergy, TEST_TOLERANCE)
         }
     }
 
@@ -229,7 +224,7 @@ class CroAlgorithmTest {
     fun testInterMolecular_SynthesisPath_accepted_FusesAndSizeDecreases() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -245,16 +240,14 @@ class CroAlgorithmTest {
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0
 
-            // Potentials: first=10, second=9, fused=15 -> net=19-15=4 >= 0 => accept
-            val potentials = ArrayDeque(listOf(10.0, 9.0, 15.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
             assertEquals(2, before.size)
+
+            // Potentials: first=10, second=9, fused=15 -> net=19-15=4 >= 0 => accept
+            cro.usePotentialSequence(listOf(10.0, 9.0, 15.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -269,7 +262,7 @@ class CroAlgorithmTest {
     fun testInterMolecular_SynthesisPath_rejected_ParentsCollisionsIncrementAndNoSizeChange() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -284,18 +277,16 @@ class CroAlgorithmTest {
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0 // synthesisCheck true
 
-            // Potentials: first=10, second=9, fused=25 -> net=19-25=-6 => reject, parents collisions +1
-            val potentials = ArrayDeque(listOf(10.0, 9.0, 25.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
             cro.setupBeforeSearch()
             val before = cro.getMoleculesSnapshot()
             assertEquals(2, before.size)
             val beforeA = before[0]
             val beforeB = before[1]
+
+            // Potentials: first=10, second=9, fused=25 -> net=19-25=-6 => reject, parents collisions +1
+            cro.usePotentialSequence(listOf(10.0, 9.0, 25.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -311,7 +302,7 @@ class CroAlgorithmTest {
     fun testInterMolecular_IneffectiveCollision_accepted_ReplacesBothAndCollisionsIncrement() {
         TestUtils.handleFlaky {
             val cro = injector.getInstance(
-                Key.get(object : TypeLiteral<CroAlgorithm<OneMaxIndividual>>() {})
+                Key.get(object : TypeLiteral<TestCroAlgorithm<OneMaxIndividual>>() {})
             )
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -326,17 +317,15 @@ class CroAlgorithmTest {
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
+            cro.setupBeforeSearch()
+            val before = cro.getMoleculesSnapshot()
+
             // Potentials:
             // first=10, second=9, updatedFirst=12, updatedSecond=5 =>
             // net = (10+9) - (12+5) = 2 >= 0 -> accept
-            val potentials = ArrayDeque(listOf(10.0, 9.0, 12.0, 5.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
-            cro.setupBeforeSearch()
-            val before = cro.getMoleculesSnapshot()
+            cro.usePotentialSequence(listOf(10.0, 9.0, 12.0, 5.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -370,17 +359,15 @@ class CroAlgorithmTest {
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
+            cro.setupBeforeSearch()
+            val before = cro.getMoleculesSnapshot()
+
             // Potentials:
             // first=10, second=9, updatedFirst=20, updatedSecond=10 =>
             // net = (19) - (30) = -11 -> reject
-            val potentials = ArrayDeque(listOf(10.0, 9.0, 20.0, 10.0))
-            val potentialFn: (WtsEvalIndividual<OneMaxIndividual>) -> Double = { _ -> potentials.removeFirst() }
-            val mutateFn: (WtsEvalIndividual<OneMaxIndividual>) -> Unit = { }
-            val xoverFn: (WtsEvalIndividual<OneMaxIndividual>, WtsEvalIndividual<OneMaxIndividual>) -> Unit = { _, _ -> }
-            cro.useReactor(CroReactor(config, randomness, mutateFn, potentialFn, xoverFn))
-
-            cro.setupBeforeSearch()
-            val before = cro.getMoleculesSnapshot()
+            cro.usePotentialSequence(listOf(10.0, 9.0, 20.0, 10.0))
+            cro.useMutationHook { }
+            cro.useCrossoverHook { _, _ -> }
 
             cro.searchOnce()
 
@@ -389,8 +376,56 @@ class CroAlgorithmTest {
             // No change when rejected
             assertEquals(before[0].numCollisions, after[0].numCollisions)
             assertEquals(before[1].numCollisions, after[1].numCollisions)
-            assertEquals(before[0].kineticEnergy, after[0].kineticEnergy, 1e-9)
-            assertEquals(before[1].kineticEnergy, after[1].kineticEnergy, 1e-9)
+            assertEquals(before[0].kineticEnergy, after[0].kineticEnergy, TEST_TOLERANCE)
+            assertEquals(before[1].kineticEnergy, after[1].kineticEnergy, TEST_TOLERANCE)
+        }
+    }
+}
+
+private class TestCroAlgorithm<T> : CroAlgorithm<T>() where T : Individual {
+
+    private var potentialOverrides: ArrayDeque<Double>? = null
+    private var mutateOverride: ((WtsEvalIndividual<T>) -> Unit)? = null
+    private var crossoverOverride: ((WtsEvalIndividual<T>, WtsEvalIndividual<T>) -> Unit)? = null
+
+    fun usePotentialSequence(values: List<Double>) {
+        potentialOverrides = ArrayDeque(values)
+    }
+
+    fun usePotentialSequence(vararg values: Double) = usePotentialSequence(values.toList())
+
+    fun useMutationHook(hook: ((WtsEvalIndividual<T>) -> Unit)?) {
+        mutateOverride = hook
+    }
+
+    fun useCrossoverHook(hook: ((WtsEvalIndividual<T>, WtsEvalIndividual<T>) -> Unit)?) {
+        crossoverOverride = hook
+    }
+
+    override fun computePotential(evaluatedSuite: WtsEvalIndividual<T>): Double {
+        val overrides = potentialOverrides
+        return if (overrides != null && overrides.isNotEmpty()) {
+            overrides.removeFirst()
+        } else {
+            super.computePotential(evaluatedSuite)
+        }
+    }
+
+    override fun applyMutation(wts: WtsEvalIndividual<T>) {
+        val hook = mutateOverride
+        if (hook != null) {
+            hook(wts)
+        } else {
+            super.applyMutation(wts)
+        }
+    }
+
+    override fun applyCrossover(first: WtsEvalIndividual<T>, second: WtsEvalIndividual<T>) {
+        val hook = crossoverOverride
+        if (hook != null) {
+            hook(first, second)
+        } else {
+            super.applyCrossover(first, second)
         }
     }
 }
