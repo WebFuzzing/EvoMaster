@@ -928,42 +928,7 @@ class StringGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
 
-        if(other is ChoiceGene<*>){
-            val x = other.activeGene()
-            return this.copyValueFrom(x)
-        }
-
-        val current = this.value
-
-        when(other){
-            is StringGene -> this.value = other.value
-            is EnumGene<*> -> this.value = other.getValueAsRawString()
-            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        if(other is StringGene) {
-            this.selectedSpecialization = other.selectedSpecialization
-
-            this.specializations.clear()
-            this.specializations.addAll(other.specializations)
-
-            killAllChildren()
-            addChildren(other.specializationGenes.map { it.copy() })
-
-            this.tainted = other.tainted
-            this.bindingIds.clear()
-            this.bindingIds.addAll(other.bindingIds)
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is StringGene) {
@@ -1014,6 +979,42 @@ class StringGene(
      */
 
 
+    override fun copyValueFrom(other: Gene): Boolean {
+
+        if(other is ChoiceGene<*>){
+            val x = other.activeGene()
+            return this.copyValueFrom(x)
+        }
+
+        val current = this.value
+
+        when(other){
+            is StringGene -> this.value = other.value
+            is EnumGene<*> -> this.value = other.getValueAsRawString()
+            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        if (!isLocallyValid()){
+            this.value = current
+            return false
+        }
+
+        if(other is StringGene) {
+            this.selectedSpecialization = other.selectedSpecialization
+
+            this.specializations.clear()
+            this.specializations.addAll(other.specializations)
+
+            killAllChildren()
+            addChildren(other.specializationGenes.map { it.copy() })
+
+            this.tainted = other.tainted
+            this.bindingIds.clear()
+            this.bindingIds.addAll(other.bindingIds)
+        }
+
+        return true
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
 

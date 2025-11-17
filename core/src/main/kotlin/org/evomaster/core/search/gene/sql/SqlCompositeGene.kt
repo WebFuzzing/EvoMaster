@@ -64,6 +64,18 @@ class SqlCompositeGene(
         })"
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlCompositeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return ((this.fields.size == other.fields.size)
+                && this.fields.zip(other.fields)
+        { thisField, otherField ->
+            thisField.containsSameValueAs(otherField)
+        }.all { it })
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlCompositeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -80,16 +92,7 @@ class SqlCompositeGene(
         )
     }
 
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlCompositeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return ((this.fields.size == other.fields.size)
-                && this.fields.zip(other.fields)
-        { thisField, otherField ->
-            thisField.containsSameValueAs(otherField)
-        }.all { it })
-    }
+
 
 
     override fun setValueBasedOn(gene: Gene): Boolean {
@@ -105,7 +108,7 @@ class SqlCompositeGene(
                 LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${compositeTypeName ?: "null"}) with the object gene (with the refType ${gene.compositeTypeName ?: "null"})")
             return result
         }
-        // might be cycle object genet
+        // might be cycle object gene
         LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${compositeTypeName ?: "null"}) with ${gene::class.java.simpleName}")
         return false
     }

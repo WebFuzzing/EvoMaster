@@ -39,23 +39,7 @@ class FixedMapGene<K, V>(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is FixedMapGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid({
-            killAllChildren()
-            // maxSize
-            val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
-                other.elements.subList(0, maxSize!!)
-            else other.elements)
-                .map { e -> e.copy() as PairGene<K, V> }
-                .toMutableList()
-            addChildren(copy)
-            true
-        },false)
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is FixedMapGene<*, *>) {
@@ -88,5 +72,23 @@ class FixedMapGene<K, V>(
             "cannot bind the MapGene with the template (${template::class.java.simpleName}) with the gene ${gene::class.java.simpleName}"
         )
         return false
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is FixedMapGene<*, *>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        return updateValueOnlyIfValid({
+            killAllChildren()
+            // maxSize
+            val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
+                other.elements.subList(0, maxSize!!)
+            else other.elements)
+                .map { e -> e.copy() as PairGene<K, V> }
+                .toMutableList()
+            addChildren(copy)
+            true
+        },false)
     }
 }

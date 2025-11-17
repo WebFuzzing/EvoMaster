@@ -134,6 +134,24 @@ class DisjunctionListRxGene(
                 .getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is DisjunctionListRxGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        if (this.activeDisjunction != other.activeDisjunction) {
+            return false
+        }
+
+        return this.disjunctions[activeDisjunction]
+                .containsSameValueAs(other.disjunctions[activeDisjunction])
+    }
+
+
+
+    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionListRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -153,24 +171,6 @@ class DisjunctionListRxGene(
         }, true)
 
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is DisjunctionListRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (this.activeDisjunction != other.activeDisjunction) {
-            return false
-        }
-
-        return this.disjunctions[activeDisjunction]
-                .containsSameValueAs(other.disjunctions[activeDisjunction])
-    }
-
-
-
-    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){

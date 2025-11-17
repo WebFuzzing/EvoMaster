@@ -188,6 +188,33 @@ class QuantifierRxGene(
                 .joinToString("")
     }
 
+
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is QuantifierRxGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        if (this.atoms.size != other.atoms.size) {
+            return false
+        }
+
+        for (i in 0 until other.atoms.size) {
+            if (!this.atoms[i].containsSameValueAs(other.atoms[i])) {
+                return false
+            }
+        }
+
+        return true
+    }
+
+
+
+    override fun mutationWeight(): Double {
+        return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is QuantifierRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -215,31 +242,6 @@ class QuantifierRxGene(
             }, true
         )
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is QuantifierRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (this.atoms.size != other.atoms.size) {
-            return false
-        }
-
-        for (i in 0 until other.atoms.size) {
-            if (!this.atoms[i].containsSameValueAs(other.atoms[i])) {
-                return false
-            }
-        }
-
-        return true
-    }
-
-
-
-    override fun mutationWeight(): Double {
-        return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
-    }
-
 
     /*
         Note that value binding cannot be performed on the [atoms]

@@ -67,14 +67,7 @@ class SqlXMLGene(name: String,
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlXMLGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return  updateValueOnlyIfValid(
-            {this.objectGene.copyValueFrom(other.objectGene)}, false
-        )
-    }
+
 
     /**
      * Genes might contain a value that is also stored
@@ -94,6 +87,15 @@ class SqlXMLGene(name: String,
         return  objectGene.mutationWeight()
     }
 
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is SqlXMLGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return  updateValueOnlyIfValid(
+            {this.objectGene.copyValueFrom(other.objectGene)}, false
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){

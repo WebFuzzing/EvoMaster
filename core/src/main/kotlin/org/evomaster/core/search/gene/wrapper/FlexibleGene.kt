@@ -153,7 +153,10 @@ class FlexibleGene(name: String,
         }
 
         return false
+    }
 
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return false
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -167,9 +170,7 @@ class FlexibleGene(name: String,
         return false
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return false
-    }
+
 
     override fun isPrintable(): Boolean {
         return gene.isPrintable()

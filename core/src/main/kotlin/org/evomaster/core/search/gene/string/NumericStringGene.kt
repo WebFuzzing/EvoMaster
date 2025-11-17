@@ -68,11 +68,7 @@ class NumericStringGene(
         return number.isMutable()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is NumericStringGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-       return updateValueOnlyIfValid({this.number.copyValueFrom(other.number)}, false)
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is NumericStringGene)
@@ -107,6 +103,12 @@ class NumericStringGene(
         return "\"" + number.value.toPlainString() + "\""
     }
 
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is NumericStringGene)
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        return updateValueOnlyIfValid({this.number.copyValueFrom(other.number)}, false)
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when(gene){

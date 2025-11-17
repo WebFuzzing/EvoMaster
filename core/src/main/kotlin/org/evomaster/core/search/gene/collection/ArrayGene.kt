@@ -133,26 +133,7 @@ class ArrayGene<T>(
         return copy
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ArrayGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (this.template::class.simpleName != other.template::class.simpleName) return false
-
-        return updateValueOnlyIfValid(
-            {
-                killAllChildren()
-                // check maxSize
-                val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
-                    other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
-                // build parents for [element]
-                addChildren(elements)
-                true
-            },
-            false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ArrayGene<*>) {
@@ -294,6 +275,27 @@ class ArrayGene<T>(
             "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
         )
         return false
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is ArrayGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        if (this.template::class.simpleName != other.template::class.simpleName) return false
+
+        return updateValueOnlyIfValid(
+            {
+                killAllChildren()
+                // check maxSize
+                val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
+                    other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
+                // build parents for [element]
+                addChildren(elements)
+                true
+            },
+            false
+        )
     }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")

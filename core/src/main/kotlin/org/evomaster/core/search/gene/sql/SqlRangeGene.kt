@@ -86,18 +86,7 @@ class SqlRangeGene<T>(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {isLeftClosed.copyValueFrom(other.isLeftClosed) &&
-                    left.copyValueFrom(other.left as Gene) &&
-                    right.copyValueFrom(other.right as Gene) &&
-                    isRightClosed.copyValueFrom(other.isRightClosed)}, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlRangeGene<*>) {
@@ -150,6 +139,19 @@ class SqlRangeGene<T>(
             )
     }
 
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is SqlRangeGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        return updateValueOnlyIfValid(
+            {isLeftClosed.copyValueFrom(other.isLeftClosed) &&
+                    left.copyValueFrom(other.left as Gene) &&
+                    right.copyValueFrom(other.right as Gene) &&
+                    isRightClosed.copyValueFrom(other.isRightClosed)}, true
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {

@@ -127,6 +127,15 @@ class BigIntegerGene(
         return value.toString()
     }
 
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is BigIntegerGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value.compareTo(other.value) == 0
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is BigIntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -140,13 +149,6 @@ class BigIntegerGene(
         }
 
         return true
-    }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is BigIntegerGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.value.compareTo(other.value) == 0
     }
 
 

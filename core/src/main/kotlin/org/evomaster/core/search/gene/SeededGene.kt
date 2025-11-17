@@ -95,6 +95,21 @@ class SeededGene<T>(
             gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
+
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SeededGene<*>)
+            throw IllegalArgumentException("Invalid gene ${other::class.java}")
+        return this.employSeeded == other.employSeeded
+                && (if (employSeeded) this.seeded.containsSameValueAs(other.seeded)
+        else this.gene.containsSameValueAs(other.gene as Gene))
+    }
+
+
+
+    override fun possiblySame(gene : Gene) : Boolean =
+            super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
@@ -114,19 +129,6 @@ class SeededGene<T>(
             }, false
         )
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SeededGene<*>)
-            throw IllegalArgumentException("Invalid gene ${other::class.java}")
-        return this.employSeeded == other.employSeeded
-                && (if (employSeeded) this.seeded.containsSameValueAs(other.seeded)
-        else this.gene.containsSameValueAs(other.gene as Gene))
-    }
-
-
-
-    override fun possiblySame(gene : Gene) : Boolean =
-            super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         // only allow bind value for gene

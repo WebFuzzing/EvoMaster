@@ -125,15 +125,6 @@ open class DateTimeGene(
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DateTimeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)}, true
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -143,8 +134,14 @@ open class DateTimeGene(
     }
 
 
-
-
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is DateTimeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid(
+            {this.date.copyValueFrom(other.date) && this.time.copyValueFrom(other.time)}, true
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when {

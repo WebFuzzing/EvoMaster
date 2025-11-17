@@ -70,18 +70,19 @@ class TimeOffsetGene(
         return type.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is TimeOffsetGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({type.copyValueFrom(other.type)}, true)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is TimeOffsetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return type.containsSameValueAs(other.type)
+    }
+
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is TimeOffsetGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid({type.copyValueFrom(other.type)}, true)
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {

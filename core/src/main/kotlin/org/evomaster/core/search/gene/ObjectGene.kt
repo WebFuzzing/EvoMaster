@@ -189,41 +189,7 @@ class ObjectGene(
         return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ObjectGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (other.isFixed != isFixed)
-            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
-
-        if (!isFixed && !template!!.possiblySame(other.template!!))
-            throw IllegalArgumentException("different template ${other.template.javaClass}")
-
-        //TODO what if they have a different number of fields, or name not match???
-        // semantic of this function is unclear, really need TODO refactoring
-
-        val updateOk = updateValueOnlyIfValid(
-            {
-                var ok = true
-
-                for (i in fixedFields.indices) {
-                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
-                }
-
-                if(!isFixed){
-                    //TODO what if there is a mismatch here? semantic of this function is unclear
-                    for (i in additionalFields!!.indices){
-                        ok = ok && this.additionalFields!![i].copyValueFrom(other.additionalFields!![i])
-                    }
-                }
-
-                ok
-            }, true
-        )
-
-        return updateOk
-    }
 
 
     /**
@@ -276,6 +242,42 @@ class ObjectGene(
                 && this.fixedFields.zip(other.fixedFields) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
                 && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
         )
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is ObjectGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        if (other.isFixed != isFixed)
+            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
+
+        if (!isFixed && !template!!.possiblySame(other.template!!))
+            throw IllegalArgumentException("different template ${other.template.javaClass}")
+
+        //TODO what if they have a different number of fields, or name not match???
+        // semantic of this function is unclear, really need TODO refactoring
+
+        val updateOk = updateValueOnlyIfValid(
+            {
+                var ok = true
+
+                for (i in fixedFields.indices) {
+                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
+                }
+
+                if(!isFixed){
+                    //TODO what if there is a mismatch here? semantic of this function is unclear
+                    for (i in additionalFields!!.indices){
+                        ok = ok && this.additionalFields!![i].copyValueFrom(other.additionalFields!![i])
+                    }
+                }
+
+                ok
+            }, true
+        )
+
+        return updateOk
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {

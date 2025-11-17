@@ -173,6 +173,16 @@ class TupleGene(
         }
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is TupleGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.elements.zip(other.elements) { thisElem, otherElem ->
+            thisElem.containsSameValueAs(otherElem)
+        }.all { it }
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -191,16 +201,6 @@ class TupleGene(
             true
         )
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is TupleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.elements.zip(other.elements) { thisElem, otherElem ->
-            thisElem.containsSameValueAs(otherElem)
-        }.all { it }
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
 

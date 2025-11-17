@@ -68,15 +68,6 @@ class SqlBinaryStringGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {binaryArrayGene.copyValueFrom(other.binaryArrayGene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlBinaryStringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -85,6 +76,14 @@ class SqlBinaryStringGene(
     }
 
 
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is SqlBinaryStringGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid(
+            {binaryArrayGene.copyValueFrom(other.binaryArrayGene)}, false
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is SqlBinaryStringGene) {

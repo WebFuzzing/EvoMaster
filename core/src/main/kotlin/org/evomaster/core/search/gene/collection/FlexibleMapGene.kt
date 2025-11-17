@@ -37,11 +37,7 @@ where T : Gene {
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        //TODO
 
-        return false
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is FlexibleMapGene<*>) {
@@ -55,6 +51,12 @@ where T : Gene {
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         //TODO
+        return false
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        //TODO
+
         return false
     }
 

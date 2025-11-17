@@ -46,6 +46,15 @@ class PatternCharacterBlockGene(
         return stringBlock
     }
 
+
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is PatternCharacterBlockGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.stringBlock == other.stringBlock
+    }
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is PatternCharacterBlockGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -58,14 +67,6 @@ class PatternCharacterBlockGene(
 
         return true
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is PatternCharacterBlockGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.stringBlock == other.stringBlock
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing

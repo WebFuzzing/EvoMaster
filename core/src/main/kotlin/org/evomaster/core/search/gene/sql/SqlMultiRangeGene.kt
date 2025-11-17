@@ -63,6 +63,13 @@ class SqlMultiRangeGene<T>(
         } } "
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlMultiRangeGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.rangeGenes.containsSameValueAs(other.rangeGenes)
+    }
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -71,15 +78,6 @@ class SqlMultiRangeGene<T>(
             {this.rangeGenes.copyValueFrom(other.rangeGenes)}, false
         )
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is SqlMultiRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.rangeGenes.containsSameValueAs(other.rangeGenes)
-    }
-
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when {

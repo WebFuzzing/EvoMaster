@@ -136,26 +136,7 @@ class DisjunctionRxGene(
                 postfix
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DisjunctionRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.copy()
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                for (i in 0 until terms.size) {
-                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
-                }
-                if (ok){
-                    this.extraPrefix = other.extraPrefix
-                    this.extraPostfix = other.extraPostfix
-                }
-                ok
 
-            }, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
@@ -182,6 +163,27 @@ class DisjunctionRxGene(
 
     override fun mutationWeight(): Double {
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is DisjunctionRxGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        val current = this.copy()
+        return updateValueOnlyIfValid(
+            {
+                var ok = true
+                for (i in 0 until terms.size) {
+                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
+                }
+                if (ok){
+                    this.extraPrefix = other.extraPrefix
+                    this.extraPostfix = other.extraPostfix
+                }
+                ok
+
+            }, true
+        )
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {

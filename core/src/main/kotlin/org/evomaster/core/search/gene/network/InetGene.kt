@@ -48,21 +48,7 @@ class InetGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is InetGene -> {
-                var result = true
-                repeat(octets.size) {
-                    result = result && octets[it].setValueBasedOn(gene.octets[it])
-                }
-                result
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
+
 
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
@@ -81,6 +67,22 @@ class InetGene(
             result
         } catch (e: Exception) {
             false
+        }
+    }
+
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return when {
+            gene is InetGene -> {
+                var result = true
+                repeat(octets.size) {
+                    result = result && octets[it].setValueBasedOn(gene.octets[it])
+                }
+                result
+            }
+            else -> {
+                LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
+                false
+            }
         }
     }
 

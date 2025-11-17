@@ -79,15 +79,6 @@ class UUIDGene(
 
     fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UUIDGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)}, true
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -96,7 +87,14 @@ class UUIDGene(
                 && this.leastSigBits.containsSameValueAs(other.leastSigBits)
     }
 
-
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is UUIDGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid(
+            {this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)}, true
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when{

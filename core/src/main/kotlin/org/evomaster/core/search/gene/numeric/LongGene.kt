@@ -83,6 +83,13 @@ class LongGene(
         return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberLong\":\"$stringValue\"}" else stringValue
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is LongGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
+    }
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is LongGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -96,14 +103,6 @@ class LongGene(
 
         return true
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is LongGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.value == other.value
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){

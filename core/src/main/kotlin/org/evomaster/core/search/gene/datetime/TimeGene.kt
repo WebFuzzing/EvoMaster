@@ -155,20 +155,7 @@ class TimeGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is TimeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {this.hour.copyValueFrom(other.hour)
-                    && this.minute.copyValueFrom(other.minute)
-                    && this.second.copyValueFrom(other.second)
-                    && this.millisecond.copyValueFrom(other.millisecond)
-                    && this.offset.copyValueFrom(other.offset)
-            }, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is TimeGene) {
@@ -222,6 +209,21 @@ class TimeGene(
                 false
             }
         }
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is TimeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        return updateValueOnlyIfValid(
+            {this.hour.copyValueFrom(other.hour)
+                    && this.minute.copyValueFrom(other.minute)
+                    && this.second.copyValueFrom(other.second)
+                    && this.millisecond.copyValueFrom(other.millisecond)
+                    && this.offset.copyValueFrom(other.offset)
+            }, true
+        )
     }
 
     override fun repair() {

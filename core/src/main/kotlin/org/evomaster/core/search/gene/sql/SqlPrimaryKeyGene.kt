@@ -74,15 +74,6 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlPrimaryKeyGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.gene.copyValueFrom(other.gene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -116,6 +107,14 @@ class SqlPrimaryKeyGene(name: String,
         return gene.isReferenceToNonPrintable(previousGenes)
     }
 
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is SqlPrimaryKeyGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid(
+            {this.gene.copyValueFrom(other.gene)}, false
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing

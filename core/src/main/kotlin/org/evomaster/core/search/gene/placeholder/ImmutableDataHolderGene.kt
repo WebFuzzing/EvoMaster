@@ -53,9 +53,7 @@ class ImmutableDataHolderGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        throw IllegalStateException("Not supposed to modify an immutable gene")
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is ImmutableDataHolderGene){
@@ -66,6 +64,10 @@ class ImmutableDataHolderGene(
 
     override fun mutationWeight(): Double = 0.0
 
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        throw IllegalStateException("Not supposed to modify an immutable gene")
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         // do nothing

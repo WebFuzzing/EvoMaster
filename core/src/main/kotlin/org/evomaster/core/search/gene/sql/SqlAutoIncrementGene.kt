@@ -43,6 +43,11 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
         return true
     }
 
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        // do nothing, cannot bind with others
+        return true
+    }
+
     /**
      * Since each object instance of SqlAutoIncrementGene represents a different
      * value for that particular column, we check for object identity to check
@@ -62,8 +67,5 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
     override fun mutationWeight(): Double = 0.0
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // do nothing, cannot bind with others
-        return true
-    }
+
 }

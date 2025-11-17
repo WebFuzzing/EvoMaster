@@ -54,6 +54,14 @@ class ObjectIdGene(
         return if (mode == GeneUtils.EscapeMode.EJSON) "{\"\$oid\":$hexString}" else hexString
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is ObjectIdGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return id.containsSameValueAs(other.id)
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is ObjectIdGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -62,14 +70,6 @@ class ObjectIdGene(
             { id.copyValueFrom(other.id) }, false
         )
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is ObjectIdGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return id.containsSameValueAs(other.id)
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         if (gene is ObjectIdGene) {

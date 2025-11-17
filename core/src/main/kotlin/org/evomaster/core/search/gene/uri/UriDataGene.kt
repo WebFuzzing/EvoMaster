@@ -62,6 +62,15 @@ class UriDataGene(
         return "data:$t$b64,$d"
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is UriDataGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return type.containsSameValueAs(other.type)
+                && base64.containsSameValueAs(other.base64)
+                && data.containsSameValueAs(other.data)
+    }
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -71,15 +80,6 @@ class UriDataGene(
         return updateValueOnlyIfValid(
             {type.copyValueFrom(other.type) && base64.copyValueFrom(other.base64) && data.copyValueFrom(other.data)}, true
         )
-    }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is UriDataGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return type.containsSameValueAs(other.type)
-                && base64.containsSameValueAs(other.base64)
-                && data.containsSameValueAs(other.data)
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {

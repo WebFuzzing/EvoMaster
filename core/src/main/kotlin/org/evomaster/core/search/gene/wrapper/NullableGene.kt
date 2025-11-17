@@ -113,6 +113,11 @@ class NullableGene(name: String,
         )
     }
 
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        if (gene is NullableGene) isActive = gene.isActive
+        return ParamUtil.getValueGene(gene).setValueBasedOn(ParamUtil.getValueGene(gene))
+    }
+
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -125,10 +130,7 @@ class NullableGene(name: String,
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is NullableGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(gene).setValueBasedOn(ParamUtil.getValueGene(gene))
-    }
+
 
     override fun isChildUsed(child: Gene) : Boolean {
         verifyChild(child)

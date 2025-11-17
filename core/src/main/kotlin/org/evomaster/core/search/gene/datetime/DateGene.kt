@@ -127,22 +127,7 @@ class DateGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DateGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        if (this.onlyValidDates && !other.isValidDate()) {
-            throw IllegalArgumentException(
-                "Cannot copy invalid date %s to gene accepting only valid values".format(
-                    other.getValueAsRawString()
-                )
-            )
-        }
 
-        return updateValueOnlyIfValid(
-            {this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)}, true
-        )
-    }
 
     /**
      * Checks if the current date is valid or not (e.g. max days in months, leap years)
@@ -167,6 +152,22 @@ class DateGene(
     }
 
 
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is DateGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        if (this.onlyValidDates && !other.isValidDate()) {
+            throw IllegalArgumentException(
+                "Cannot copy invalid date %s to gene accepting only valid values".format(
+                    other.getValueAsRawString()
+                )
+            )
+        }
+
+        return updateValueOnlyIfValid(
+            {this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)}, true
+        )
+    }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         return when {

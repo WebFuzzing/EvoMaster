@@ -97,22 +97,7 @@ class TaintedArrayGene(
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if(other !is TaintedArrayGene){
-            throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
-        }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
-                if (ok){
-                    this.taintedValue = other.taintedValue
-                    this.isActive = other.isActive
-                }
-                ok
-            }, false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is TaintedArrayGene){
@@ -147,6 +132,23 @@ class TaintedArrayGene(
         }
 
         return false
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if(other !is TaintedArrayGene){
+            throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
+        }
+
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
+                if (ok){
+                    this.taintedValue = other.taintedValue
+                    this.isActive = other.isActive
+                }
+                ok
+            }, false
+        )
     }
 
     override fun getPossiblyTaintedValue(): String {

@@ -85,6 +85,13 @@ class FloatGene(name: String,
         return getFormattedValue().toString()
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is FloatGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
+    }
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is FloatGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -98,14 +105,6 @@ class FloatGene(name: String,
 
         return true
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is FloatGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return this.value == other.value
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         when(gene){

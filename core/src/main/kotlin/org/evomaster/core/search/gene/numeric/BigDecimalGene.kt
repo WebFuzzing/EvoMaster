@@ -236,6 +236,14 @@ class BigDecimalGene(
         return value.toString()
     }
 
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is BigDecimalGene)
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        return this.value.compareTo(other.value) == 0
+    }
+
+
     override fun copyValueFrom(other: Gene): Boolean {
         if (other !is BigDecimalGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -249,13 +257,6 @@ class BigDecimalGene(
 
         return true
     }
-
-    override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is BigDecimalGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return this.value.compareTo(other.value) == 0
-    }
-
 
     override fun setValueBasedOn(gene: Gene): Boolean {
         val bd = when(gene){

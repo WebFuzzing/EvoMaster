@@ -217,13 +217,14 @@ class TaintedMapGene(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+
+    override fun containsSameValueAs(other: Gene): Boolean {
         //TODO
 
         return false
     }
 
-    override fun containsSameValueAs(other: Gene): Boolean {
+    override fun copyValueFrom(other: Gene): Boolean {
         //TODO
 
         return false

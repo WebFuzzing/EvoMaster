@@ -81,6 +81,11 @@ class OptionalGene(name: String,
         )
     }
 
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        if (gene is OptionalGene) isActive = gene.isActive
+        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
+    }
+
     override fun setValueBasedOn(value: String) : Boolean{
         val modified = gene.setValueBasedOn(value)
         if(modified){
@@ -156,10 +161,7 @@ class OptionalGene(name: String,
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is OptionalGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
-    }
+
 
     override fun isChildUsed(child: Gene) : Boolean {
         verifyChild(child)

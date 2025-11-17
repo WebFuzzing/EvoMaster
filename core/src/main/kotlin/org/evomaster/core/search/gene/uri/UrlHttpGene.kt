@@ -79,16 +79,6 @@ class UrlHttpGene(
         return "$s://$h$p/$e"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UrlHttpGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({scheme.copyValueFrom(other.scheme) &&
-                host.copyValueFrom(other.host) &&
-                port.copyValueFrom(other.port) &&
-                path.copyValueFrom(other.path)}, true)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -97,6 +87,17 @@ class UrlHttpGene(
                 && host.containsSameValueAs(other.host)
                 && port.containsSameValueAs(other.port)
                 && path.containsSameValueAs(other.path)
+    }
+
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is UrlHttpGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return updateValueOnlyIfValid({scheme.copyValueFrom(other.scheme) &&
+                host.copyValueFrom(other.host) &&
+                port.copyValueFrom(other.port) &&
+                path.copyValueFrom(other.path)}, true)
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {

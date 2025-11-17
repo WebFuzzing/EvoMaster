@@ -86,6 +86,18 @@ class SqlJSONGene(name: String,
         )
     }
 
+    override fun setValueBasedOn(gene: Gene): Boolean {
+        return when(gene){
+            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
+            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
+            is ObjectGene -> objectGene.setValueBasedOn(gene)
+            else->{
+                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
+    }
+
     /**
      * Genes might contain a value that is also stored
      * in another gene of the same type.
@@ -104,16 +116,6 @@ class SqlJSONGene(name: String,
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when(gene){
-            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is ObjectGene -> objectGene.setValueBasedOn(gene)
-            else->{
-                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
+
 
 }

@@ -147,22 +147,7 @@ class CustomMutationRateGene<out T>(
 
     override fun isPrintable() = gene.isPrintable()
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is CustomMutationRateGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = this.gene.copyValueFrom(other.gene)
-                if (ok){
-                    this.probability = other.probability
-                    this.searchPercentageActive = other.searchPercentageActive
-                }
-                ok
-            }, false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is CustomMutationRateGene<*>) {
@@ -189,6 +174,23 @@ class CustomMutationRateGene<out T>(
 
     override fun possiblySame(gene: Gene): Boolean {
         return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
+    }
+
+    override fun copyValueFrom(other: Gene): Boolean {
+        if (other !is CustomMutationRateGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+
+        return updateValueOnlyIfValid(
+            {
+                val ok = this.gene.copyValueFrom(other.gene)
+                if (ok){
+                    this.probability = other.probability
+                    this.searchPercentageActive = other.searchPercentageActive
+                }
+                ok
+            }, false
+        )
     }
 
     override fun setValueBasedOn(gene: Gene): Boolean {
