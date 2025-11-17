@@ -1,7 +1,7 @@
 package org.evomaster.core.search.algorithms
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
@@ -17,6 +17,9 @@ import org.evomaster.core.search.service.IdMapper
  * - Per-target budget is a fair share of the global TIME/ACTIONS budget; switches target when the target is covered or its budget is exhausted.
  */
 class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+
+    @Inject
+    private lateinit var idMapper: IdMapper
 
     private var currentTarget: Int? = null
     private lateinit var budget: LipsBudget
@@ -120,7 +123,7 @@ class LIPSAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
         val orderedIds = snapshot.keys.sortedDescending()
 
         for (targetId in orderedIds) {
-            val description = archive.getIdMapper().getDescriptiveId(targetId)
+            val description = idMapper.getDescriptiveId(targetId)
             val isBranch = description.startsWith(ObjectiveNaming.BRANCH)
             val covered = archive.isCovered(targetId)
             if (isBranch) {
