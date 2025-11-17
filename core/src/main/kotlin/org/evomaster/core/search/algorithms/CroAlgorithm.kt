@@ -5,12 +5,6 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
 import kotlin.math.abs
 
-data class Molecule<T : Individual>(
-    var suite: WtsEvalIndividual<T>,
-    var kineticEnergy: Double,
-    var numCollisions: Int
-)
-
 /**
  * Chemical Reaction Optimization (CRO)
  *
@@ -23,6 +17,12 @@ class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
     }
 
     private data class EnergyContext(var container: Double)
+
+    data class Molecule<T : Individual>(
+        var suite: WtsEvalIndividual<T>,
+        var kineticEnergy: Double,
+        var numCollisions: Int
+    )
 
     private val molecules: MutableList<Molecule<T>> = mutableListOf()
 
