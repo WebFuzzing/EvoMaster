@@ -78,14 +78,14 @@ class TimeOffsetGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is TimeOffsetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return updateValueOnlyIfValid({type.copyValueFrom(other.type)}, true)
+        return updateValueOnlyIfValid({type.unsafeCopyValueFrom(other.type)}, true)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         //TODO
         return false
     }

@@ -92,7 +92,7 @@ class FloatGene(name: String,
         return this.value == other.value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is FloatGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -106,7 +106,7 @@ class FloatGene(name: String,
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
             is FloatGene -> value = gene.value
             is DoubleGene -> value = gene.value.toFloat()
@@ -127,10 +127,10 @@ class FloatGene(name: String,
                 value = gene.uniqueId.toFloat()
             }
             is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
+                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
+                return this.unsafeSetFromStringValue(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(
@@ -171,7 +171,7 @@ class FloatGene(name: String,
 
     override fun getZero(): Float = 0.0f
 
-    override fun setValueBasedOn(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
 
         try{
             this.value = value.toFloat()

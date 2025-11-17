@@ -217,12 +217,12 @@ class SqlForeignKeyGene(
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         // do nothing
         return true
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlForeignKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }

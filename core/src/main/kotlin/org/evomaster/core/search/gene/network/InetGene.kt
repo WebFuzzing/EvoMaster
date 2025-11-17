@@ -56,13 +56,13 @@ class InetGene(
      * Set value from a string of [InetAddress].
      * If the string is valid, returns true, otherwise false.
      */
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         return try {
             val address = value.split(".")
             if (address.size != INET_SIZE) return false
             var result = true
             address.forEachIndexed { i, v ->
-                result = result && octets[i].setValueBasedOn(v.toInt().toString())
+                result = result && octets[i].unsafeSetFromStringValue(v.toInt().toString())
             }
             result
         } catch (e: Exception) {
@@ -70,12 +70,12 @@ class InetGene(
         }
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is InetGene -> {
                 var result = true
                 repeat(octets.size) {
-                    result = result && octets[it].setValueBasedOn(gene.octets[it])
+                    result = result && octets[it].unsafeSetFromStringValue(gene.octets[it])
                 }
                 result
             }
@@ -86,7 +86,7 @@ class InetGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is InetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -99,7 +99,7 @@ class InetGene(
             {
                 var ok = true
                 repeat(octets.size) {
-                    ok = ok && octets[it].copyValueFrom(other.octets[it])
+                    ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
                 }
                 ok
             }, true

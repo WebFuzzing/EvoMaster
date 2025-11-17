@@ -68,7 +68,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return this.value == other.value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is AnyCharacterRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -82,7 +82,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
             is AnyCharacterRxGene -> {
                 value = gene.value
@@ -95,7 +95,7 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
                 if (gene is StringGene && gene.value.length == 1)
                     value = gene.value.first()
                 else if(gene is StringGene && gene.getSpecializationGene() != null){
-                    return setValueBasedOn(gene.getSpecializationGene()!!)
+                    return unsafeSetFromStringValue(gene.getSpecializationGene()!!)
                 }else{
                     LoggingUtil.uniqueWarn(log, "cannot bind AnyCharacterRxGene with ${gene::class.java.simpleName}")
                     return false

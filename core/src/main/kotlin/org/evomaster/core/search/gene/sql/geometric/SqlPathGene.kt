@@ -89,12 +89,12 @@ class SqlPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.points.copyValueFrom(other.points)}, false
+            {this.points.unsafeCopyValueFrom(other.points)}, false
         )
     }
 
@@ -106,10 +106,10 @@ class SqlPathGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlPathGene -> {
-                points.setValueBasedOn(gene.points)
+                points.unsafeSetFromStringValue(gene.points)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

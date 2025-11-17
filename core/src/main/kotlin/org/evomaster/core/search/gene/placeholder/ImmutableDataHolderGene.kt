@@ -65,11 +65,11 @@ class ImmutableDataHolderGene(
     override fun mutationWeight(): Double = 0.0
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         // do nothing
         return true
     }

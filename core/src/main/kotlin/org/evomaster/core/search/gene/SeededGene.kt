@@ -110,16 +110,16 @@ class SeededGene<T>(
     override fun possiblySame(gene : Gene) : Boolean =
             super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SeededGene<*>)
             throw IllegalArgumentException("Invalid gene ${other::class.java}")
 
         return updateValueOnlyIfValid(
             {
                 val ok = if (employSeeded)
-                    this.seeded.copyValueFrom(other.seeded)
+                    this.seeded.unsafeCopyValueFrom(other.seeded)
                 else
-                    this.gene.copyValueFrom(other.gene as Gene)
+                    this.gene.unsafeCopyValueFrom(other.gene as Gene)
 
                 if (ok){
                     this.employSeeded = other.employSeeded
@@ -130,18 +130,18 @@ class SeededGene<T>(
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         // only allow bind value for gene
         if (gene is SeededGene<*> && isEmploySeededMutable){
             employSeeded = gene.employSeeded
             if (!employSeeded)
-                return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene.gene as Gene))
+                return ParamUtil.getValueGene(this.gene).unsafeSetFromStringValue(ParamUtil.getValueGene(gene.gene as Gene))
             else
-                return seeded.setValueBasedOn(gene.seeded)
+                return seeded.unsafeSetFromStringValue(gene.seeded)
         }
 
         if (gene !is SeededGene<*> && !employSeeded){
-            return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene))
+            return ParamUtil.getValueGene(this.gene).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
         }
 
         return false

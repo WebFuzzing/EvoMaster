@@ -191,7 +191,7 @@ class RestCallAction(
                     For example, they could be a ChoiceGene when dealing with "examples" or Regex when having patterns
                     only defined on some endpoints
                  */
-                parameters[i].primaryGene().copyValueFrom(k.primaryGene())
+                parameters[i].primaryGene().unsafeCopyValueFrom(k.primaryGene())
             }
         }
     }

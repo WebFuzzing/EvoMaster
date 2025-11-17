@@ -122,26 +122,26 @@ class TaintedArrayGene(
         return this.taintedValue == other.taintedValue
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if(gene !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${gene::class.java}")
         }
 
         if(arrayGene != null && gene.arrayGene != null){
-            return arrayGene!!.setValueBasedOn(gene.arrayGene!!)
+            return arrayGene!!.unsafeSetFromStringValue(gene.arrayGene!!)
         }
 
         return false
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if(other !is TaintedArrayGene){
             throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
         }
 
         return updateValueOnlyIfValid(
             {
-                val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
+                val ok = this.arrayGene?.unsafeCopyValueFrom(other.arrayGene!!)?:true
                 if (ok){
                     this.taintedValue = other.taintedValue
                     this.isActive = other.isActive

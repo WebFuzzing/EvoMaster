@@ -136,7 +136,7 @@ class BigIntegerGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is BigIntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -152,10 +152,10 @@ class BigIntegerGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
-            is SeededGene<*> -> return this.setValueBasedOn(gene.getPhenotype() as Gene)
-            is NumericStringGene -> return this.setValueBasedOn(gene.number)
+            is SeededGene<*> -> return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
+            is NumericStringGene -> return this.unsafeSetFromStringValue(gene.number)
             is LongGene -> setValueWithLong(gene.value)
             is FloatGene -> setValueWithLong(gene.value.toLong())
             is IntegerGene -> setValueWithLong(gene.value.toLong())

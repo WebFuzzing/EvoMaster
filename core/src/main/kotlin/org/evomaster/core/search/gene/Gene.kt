@@ -15,14 +15,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
-import org.evomaster.core.search.gene.wrapper.FlexibleGene
-import org.evomaster.core.search.gene.wrapper.NullableGene
-import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.wrapper.SelectableWrapperGene
 import org.evomaster.core.search.gene.wrapper.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -910,7 +903,7 @@ abstract class Gene(
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b ->
             all.add(b)
-            if (!b.setValueBasedOn(this))
+            if (!b.unsafeSetFromStringValue(this))
                 LoggingUtil.uniqueWarn(
                     log,
                     "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})"
@@ -1110,7 +1103,7 @@ abstract class Gene(
      * The type of genes can be different.
      * However, there is no check if constraints are kept satisfied.
      * So, this method should not be called directly.
-     * Rather use [setFromDifferentGene], which internally it calls this method,
+     * Rather use [copyValueFrom], which internally it calls this method,
      * and then revert in case of constraint violations.
      *
      * @return whether the binding performs successfully.
@@ -1122,7 +1115,7 @@ abstract class Gene(
      */
     @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
     //TODO remove deprecated once we integrate @PackagePrivate
-    internal abstract fun setValueBasedOn(gene: Gene): Boolean
+    internal abstract fun unsafeSetFromStringValue(gene: Gene): Boolean
 
 
     /**
@@ -1134,23 +1127,23 @@ abstract class Gene(
      *
      * @return whether the value is copied based on [other] successfully
      */
-    abstract fun copyValueFrom(other: Gene): Boolean
+    abstract fun unsafeCopyValueFrom(other: Gene): Boolean
 
 
     /**
      * Update current value of this gene, base on other gene.
-     * This is not [copyValueFrom], as the gene could be different.
+     * This is not [unsafeCopyValueFrom], as the gene could be different.
      * FIXME that comment seems wrong
      * If for any reason the update fails, there is not going to be any side-effects.
      *
      * @return if the update was successful
      */
-    fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true): Boolean {
+    fun copyValueFrom(gene: Gene, undoIfUpdateFails: Boolean = true): Boolean {
 
         //FIXME current implementation leads to infinite loops. must fix copyValueFrom
         //return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
         //TODO update once fixed
-        return setValueBasedOn(gene)
+        return unsafeSetFromStringValue(gene)
     }
 
     /*
@@ -1165,7 +1158,7 @@ abstract class Gene(
      * is violated.
      */
     fun setFromStringValue(value: String, undoIfUpdateFails: Boolean = true): Boolean {
-        return updateValueOnlyIfValid({ setValueBasedOn(value) }, undoIfUpdateFails)
+        return updateValueOnlyIfValid({ unsafeSetFromStringValue(value) }, undoIfUpdateFails)
     }
 
     /**
@@ -1181,7 +1174,7 @@ abstract class Gene(
      * TODO @PackagePrivate
      */
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
-    internal open fun setValueBasedOn(value: String): Boolean {
+    internal open fun unsafeSetFromStringValue(value: String): Boolean {
         //TODO in future this should be abstract, to force each gene to handle it.
         //few implementations can be based on AbstractParser class for Postman
         throw IllegalStateException("setValueBasedOn() is not implemented for gene ${this::class.simpleName}")
@@ -1202,7 +1195,7 @@ abstract class Gene(
         if (!ok && !undoIfUpdateFails) return false
 
         if (!ok || !isLocallyValid()) {
-            val success = copyValueFrom(current)
+            val success = unsafeCopyValueFrom(current)
             assert(success)
             return false
         }

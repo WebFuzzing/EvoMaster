@@ -51,8 +51,8 @@ class CustomMutationRateGene<out T>(
     }
 
 
-    override fun setValueBasedOn(value: String) : Boolean{
-        return gene.setValueBasedOn(value)
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+        return gene.unsafeSetFromStringValue(value)
     }
 
     @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
@@ -176,14 +176,14 @@ class CustomMutationRateGene<out T>(
         return gene is CustomMutationRateGene<*> && gene.name == this.name && this.gene.possiblySame((gene as CustomMutationRateGene<T>).gene)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is CustomMutationRateGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         return updateValueOnlyIfValid(
             {
-                val ok = this.gene.copyValueFrom(other.gene)
+                val ok = this.gene.unsafeCopyValueFrom(other.gene)
                 if (ok){
                     this.probability = other.probability
                     this.searchPercentageActive = other.searchPercentageActive
@@ -193,7 +193,7 @@ class CustomMutationRateGene<out T>(
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+        return ParamUtil.getValueGene(this).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
     }
 }

@@ -130,7 +130,7 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if(other !is CharacterRangeRxGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -144,7 +144,7 @@ class CharacterRangeRxGene(
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){
             value = gene.value
             return true

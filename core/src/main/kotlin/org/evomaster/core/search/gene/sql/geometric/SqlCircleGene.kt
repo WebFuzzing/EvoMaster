@@ -53,13 +53,13 @@ class SqlCircleGene(
         return "(${c.getValueAsRawString()}, ${r.getValueAsRawString()})"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlCircleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         return updateValueOnlyIfValid(
-            {this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)}, true
+            {this.c.unsafeCopyValueFrom(other.c) && this.r.unsafeCopyValueFrom(other.r)}, true
         )
     }
 
@@ -72,11 +72,11 @@ class SqlCircleGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlCircleGene -> {
-                c.setValueBasedOn(gene.c) &&
-                        r.setValueBasedOn(gene.r)
+                c.unsafeSetFromStringValue(gene.c) &&
+                        r.unsafeSetFromStringValue(gene.r)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind CircleGene with ${gene::class.java.simpleName}")

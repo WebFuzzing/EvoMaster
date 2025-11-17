@@ -61,12 +61,12 @@ class CidrGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is CidrGene -> {
                 var result = true
                 repeat(octets.size) {
-                    result = result && octets[it].setValueBasedOn(gene.octets[it])
+                    result = result && octets[it].unsafeSetFromStringValue(gene.octets[it])
                 }
                 result
             }
@@ -77,7 +77,7 @@ class CidrGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is CidrGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -90,7 +90,7 @@ class CidrGene(
             {
                 var ok = true
                 repeat(octets.size) {
-                    ok = ok && octets[it].copyValueFrom(other.octets[it])
+                    ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
                 }
                 ok
             }, true

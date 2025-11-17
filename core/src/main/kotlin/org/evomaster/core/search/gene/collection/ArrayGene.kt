@@ -252,7 +252,7 @@ class ArrayGene<T>(
 
         TODO might bind based on value instead of replacing them
      */
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
             val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
@@ -277,7 +277,7 @@ class ArrayGene<T>(
         return false
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -304,7 +304,7 @@ class ArrayGene<T>(
      * Use [template] to create child [Gene].
      * Use comma (,) separated elements with a space in front of the values as String.
      */
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         val elements = value
             .trim()
             .removePrefix(openingTag)

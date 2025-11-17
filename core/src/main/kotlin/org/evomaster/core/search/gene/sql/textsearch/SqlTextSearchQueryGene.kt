@@ -108,12 +108,12 @@ class SqlTextSearchQueryGene(
 
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchQueryGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.queryLexemes.copyValueFrom(other.queryLexemes)}, false
+            {this.queryLexemes.unsafeCopyValueFrom(other.queryLexemes)}, false
         )
     }
 
@@ -125,10 +125,10 @@ class SqlTextSearchQueryGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlTextSearchQueryGene -> {
-                queryLexemes.setValueBasedOn(gene.queryLexemes)
+                queryLexemes.unsafeSetFromStringValue(gene.queryLexemes)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

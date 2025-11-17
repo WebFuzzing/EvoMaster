@@ -62,14 +62,14 @@ class OptionalGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is OptionalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         return updateValueOnlyIfValid(
             {
-                val ok = gene.copyValueFrom(other.gene)
+                val ok = gene.unsafeCopyValueFrom(other.gene)
                 if (ok){
                     this.isActive = other.isActive
                     this.selectable = other.selectable
@@ -81,13 +81,13 @@ class OptionalGene(name: String,
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is OptionalGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
+        return ParamUtil.getValueGene(this).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
     }
 
-    override fun setValueBasedOn(value: String) : Boolean{
-        val modified = gene.setValueBasedOn(value)
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+        val modified = gene.unsafeSetFromStringValue(value)
         if(modified){
             isActive = true
         }

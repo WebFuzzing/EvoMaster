@@ -183,7 +183,7 @@ class TupleGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is TupleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -194,7 +194,7 @@ class TupleGene(
             {
                 var ok = true
                 (elements.indices).forEach {
-                    ok = ok && elements[it].copyValueFrom(other.elements[it])
+                    ok = ok && elements[it].unsafeCopyValueFrom(other.elements[it])
                 }
                 ok
             },
@@ -202,7 +202,7 @@ class TupleGene(
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
 
         if (gene is TupleGene
             && elements.size == gene.elements.size
@@ -211,7 +211,7 @@ class TupleGene(
         ) {
             var result = true
             (elements.indices).forEach {
-                val r = elements[it].setValueBasedOn(gene.elements[it])
+                val r = elements[it].unsafeSetFromStringValue(gene.elements[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the element at $it with the name ${elements[it].name}")
                 result = result && r

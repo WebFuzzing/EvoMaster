@@ -215,7 +215,7 @@ class QuantifierRxGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is QuantifierRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -226,7 +226,7 @@ class QuantifierRxGene(
                     //same size, so just copy over the values
                     var ok = true
                     for (i in 0 until other.atoms.size) {
-                        ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
+                        ok = ok && this.atoms[i].unsafeCopyValueFrom(other.atoms[i])
                     }
                     ok
                 } else {
@@ -246,12 +246,12 @@ class QuantifierRxGene(
     /*
         Note that value binding cannot be performed on the [atoms]
      */
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is QuantifierRxGene){
             var result = true
             if(atoms.size == gene.atoms.size){
                 atoms.indices.forEach {
-                    val r = atoms[it].setValueBasedOn(gene.atoms[it])
+                    val r = atoms[it].unsafeSetFromStringValue(gene.atoms[it])
                     if (!r)
                         LoggingUtil.uniqueWarn(log, "value binding for QuantifierRxGene does not perform successfully at index $it")
                     result =  r && result

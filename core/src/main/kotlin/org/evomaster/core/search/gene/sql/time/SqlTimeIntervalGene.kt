@@ -65,14 +65,14 @@ class SqlTimeIntervalGene(
         return "${days.value} days ${time.getValueAsRawString()}"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
         return updateValueOnlyIfValid(
-            {this.days.copyValueFrom(other.days)
-                    && this.time.copyValueFrom(other.time)}, true
+            {this.days.unsafeCopyValueFrom(other.days)
+                    && this.time.unsafeCopyValueFrom(other.time)}, true
         )
     }
 
@@ -86,11 +86,11 @@ class SqlTimeIntervalGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlTimeIntervalGene -> {
-                days.setValueBasedOn(gene.days) &&
-                        time.setValueBasedOn(gene.time)
+                days.unsafeSetFromStringValue(gene.days) &&
+                        time.unsafeSetFromStringValue(gene.time)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")

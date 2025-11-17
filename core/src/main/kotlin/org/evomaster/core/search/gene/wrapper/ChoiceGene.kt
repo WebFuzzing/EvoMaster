@@ -186,7 +186,7 @@ class ChoiceGene<T>(
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].
      */
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
         val x = if(other is ChoiceGene<*>){
             other.activeGene()
@@ -203,7 +203,7 @@ class ChoiceGene<T>(
                 val updated = updateValueOnlyIfValid(
                     {
                         this.activeGeneIndex = i
-                        g.copyValueFrom(x)
+                        g.unsafeCopyValueFrom(x)
                     }, true
                 )
                 if(updated){
@@ -215,10 +215,10 @@ class ChoiceGene<T>(
         return false
     }
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         for(i in geneChoices.indices){
             val g = geneChoices[i]
-            val updated = g.setValueBasedOn(value)
+            val updated = g.unsafeSetFromStringValue(value)
             if(updated){
                 activeGeneIndex = i
                 return true
@@ -249,11 +249,11 @@ class ChoiceGene<T>(
      * gene choices, one gene choice to the corresponding gene choice in
      * the other gene.
      */
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is ChoiceGene<*> && gene.geneChoices.size == geneChoices.size) {
             var result = true
             geneChoices.indices.forEach { i ->
-                val r = geneChoices[i].setValueBasedOn(gene.geneChoices[i])
+                val r = geneChoices[i].unsafeSetFromStringValue(gene.geneChoices[i])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${geneChoices[i].name}) at index $i")
                 result = result && r

@@ -244,7 +244,7 @@ class ObjectGene(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -263,13 +263,13 @@ class ObjectGene(
                 var ok = true
 
                 for (i in fixedFields.indices) {
-                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
+                    ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
                 }
 
                 if(!isFixed){
                     //TODO what if there is a mismatch here? semantic of this function is unclear
                     for (i in additionalFields!!.indices){
-                        ok = ok && this.additionalFields!![i].copyValueFrom(other.additionalFields!![i])
+                        ok = ok && this.additionalFields!![i].unsafeCopyValueFrom(other.additionalFields!![i])
                     }
                 }
 
@@ -280,7 +280,7 @@ class ObjectGene(
         return updateOk
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is ObjectGene
                 && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
                 && isFixed == gene.isFixed
@@ -288,14 +288,14 @@ class ObjectGene(
 
             var result = true
             (fixedFields.indices).forEach {
-                val r = fixedFields[it].setValueBasedOn(gene.fixedFields[it])
+                val r = fixedFields[it].unsafeSetFromStringValue(gene.fixedFields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
                 result = result && r
             }
             if(!isFixed){
                 (additionalFields!!.indices).forEach {
-                    val r = additionalFields!![it].setValueBasedOn(gene.additionalFields!![it])
+                    val r = additionalFields!![it].unsafeSetFromStringValue(gene.additionalFields!![it])
                     if (!r)
                         LoggingUtil.uniqueWarn(log, "cannot bind the field ${additionalFields!![it].name}")
                     result = result && r
@@ -626,7 +626,7 @@ class ObjectGene(
 
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         val tree = mapper.readTree(value)
 
@@ -654,7 +654,7 @@ class ObjectGene(
                     but, in this latter case, it would need quite a bit of refactoring
                  */
                 val input = GeneUtils.removeEnclosedQuotationMarks(text)
-                ok = ok && it.setValueBasedOn(input)
+                ok = ok && it.unsafeSetFromStringValue(input)
             }
         }
 
@@ -687,8 +687,8 @@ class ObjectGene(
                 if(this.initialized){
                     x.markAllAsInitialized()
                 }
-                x.first.setValueBasedOn(it.key)
-                x.second.setValueBasedOn(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
+                x.first.unsafeSetFromStringValue(it.key)
+                x.second.unsafeSetFromStringValue(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
                 addChild(x)
             }
         }

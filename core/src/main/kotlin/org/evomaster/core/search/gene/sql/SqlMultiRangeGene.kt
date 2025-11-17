@@ -70,19 +70,19 @@ class SqlMultiRangeGene<T>(
         return this.rangeGenes.containsSameValueAs(other.rangeGenes)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.rangeGenes.copyValueFrom(other.rangeGenes)}, false
+            {this.rangeGenes.unsafeCopyValueFrom(other.rangeGenes)}, false
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlMultiRangeGene<*> -> {
-                rangeGenes.setValueBasedOn(gene.rangeGenes)
+                rangeGenes.unsafeSetFromStringValue(gene.rangeGenes)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}")

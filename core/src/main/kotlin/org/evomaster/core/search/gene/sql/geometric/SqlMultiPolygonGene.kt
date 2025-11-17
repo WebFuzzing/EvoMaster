@@ -93,12 +93,12 @@ class SqlMultiPolygonGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPolygonGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.polygons.copyValueFrom(other.polygons)}, false
+            {this.polygons.unsafeCopyValueFrom(other.polygons)}, false
         )
     }
 
@@ -111,10 +111,10 @@ class SqlMultiPolygonGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlMultiPolygonGene -> {
-                polygons.setValueBasedOn(gene.polygons)
+                polygons.unsafeSetFromStringValue(gene.polygons)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

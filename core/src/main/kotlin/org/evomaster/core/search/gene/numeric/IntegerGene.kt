@@ -73,7 +73,7 @@ class IntegerGene(
         }
     }
 
-    override fun setValueBasedOn(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
 
         try{
             this.value = value.toInt()
@@ -168,7 +168,7 @@ class IntegerGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -182,7 +182,7 @@ class IntegerGene(
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when (gene) {
             is IntegerGene -> value = gene.value
             is FloatGene -> value = gene.value.toInt()
@@ -203,10 +203,10 @@ class IntegerGene(
                 value = gene.uniqueId.toInt()
             }
             is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
+                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
+                return this.unsafeSetFromStringValue(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind Integer with ${gene::class.java.simpleName}")

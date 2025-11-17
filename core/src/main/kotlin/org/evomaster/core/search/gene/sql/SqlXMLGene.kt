@@ -88,20 +88,20 @@ class SqlXMLGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlXMLGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return  updateValueOnlyIfValid(
-            {this.objectGene.copyValueFrom(other.objectGene)}, false
+            {this.objectGene.unsafeCopyValueFrom(other.objectGene)}, false
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when(gene){
-            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is ObjectGene -> objectGene.setValueBasedOn(gene)
+            is SqlXMLGene -> objectGene.unsafeSetFromStringValue(gene.objectGene)
+            is SqlJSONGene -> objectGene.unsafeSetFromStringValue(gene.objectGene)
+            is ObjectGene -> objectGene.unsafeSetFromStringValue(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlXMLGene with ${gene::class.java.simpleName}")
                 false

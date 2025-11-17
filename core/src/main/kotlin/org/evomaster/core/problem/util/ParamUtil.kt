@@ -16,7 +16,6 @@ import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.utils.GeneUtils
 
 /**
  * this class used to handle binding values among params
@@ -100,7 +99,7 @@ class ParamUtil {
          */
         fun compareGenesWithValue(geneA: Gene, geneB: Gene): Boolean {
             val geneAWithGeneBType = geneB.copy()
-            geneAWithGeneBType.setFromDifferentGene(geneA)
+            geneAWithGeneBType.copyValueFrom(geneA)
             return when (geneB) {
                 is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
                 is IntegerGene -> geneB.value == (geneAWithGeneBType as IntegerGene).value

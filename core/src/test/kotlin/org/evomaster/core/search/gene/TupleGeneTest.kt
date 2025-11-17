@@ -42,7 +42,7 @@ class TupleGeneTest {
 
         assertFalse(originalGene.containsSameValueAs(gene))
 
-        originalGene.copyValueFrom(gene)
+        originalGene.unsafeCopyValueFrom(gene)
         assertEquals(1, (originalGene.elements[2] as ArrayGene<*>).getViewOfElements().size)
         assertTrue(originalGene.containsSameValueAs(gene))
     }
@@ -75,7 +75,7 @@ class TupleGeneTest {
             )
         )
 
-        assertTrue(originalGene.setValueBasedOn(gene))
+        assertTrue(originalGene.unsafeSetFromStringValue(gene))
 
         originalGene.elements.apply {
             assertTrue(this[0] is StringGene)

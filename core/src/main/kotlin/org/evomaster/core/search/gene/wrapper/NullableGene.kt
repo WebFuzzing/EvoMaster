@@ -96,13 +96,13 @@ class NullableGene(name: String,
         return gene.getValueAsRawString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is NullableGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
             {
-                val ok = this.gene.copyValueFrom(other.gene)
+                val ok = this.gene.unsafeCopyValueFrom(other.gene)
                 if (ok){
                     this.isActive = other.isActive
                     this.selectable = other.selectable
@@ -113,9 +113,9 @@ class NullableGene(name: String,
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is NullableGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(gene).setValueBasedOn(ParamUtil.getValueGene(gene))
+        return ParamUtil.getValueGene(gene).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

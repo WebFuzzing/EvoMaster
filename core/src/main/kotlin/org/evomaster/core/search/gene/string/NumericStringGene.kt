@@ -104,16 +104,16 @@ class NumericStringGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is NumericStringGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return updateValueOnlyIfValid({this.number.copyValueFrom(other.number)}, false)
+        return updateValueOnlyIfValid({this.number.unsafeCopyValueFrom(other.number)}, false)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when(gene){
-            is NumericStringGene -> number.setValueBasedOn(gene.number)
-            else-> number.setValueBasedOn(gene)
+            is NumericStringGene -> number.unsafeSetFromStringValue(gene.number)
+            else-> number.unsafeSetFromStringValue(gene)
         }
     }
 

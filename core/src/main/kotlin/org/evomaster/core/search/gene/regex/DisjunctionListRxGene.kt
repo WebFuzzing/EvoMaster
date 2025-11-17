@@ -152,7 +152,7 @@ class DisjunctionListRxGene(
 
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionListRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -162,7 +162,7 @@ class DisjunctionListRxGene(
         return updateValueOnlyIfValid({
             var ok = true
             for (i in 0 until disjunctions.size) {
-                ok = ok && this.disjunctions[i].copyValueFrom(other.disjunctions[i])
+                ok = ok && this.disjunctions[i].unsafeCopyValueFrom(other.disjunctions[i])
             }
             if (ok){
                 this.activeDisjunction = other.activeDisjunction
@@ -172,11 +172,11 @@ class DisjunctionListRxGene(
 
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){
             var result = true
             disjunctions.indices.forEach { i->
-                val r = disjunctions[i].setValueBasedOn(gene.disjunctions[i])
+                val r = disjunctions[i].unsafeSetFromStringValue(gene.disjunctions[i])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${disjunctions[i].name}) at index $i")
                 result = result && r

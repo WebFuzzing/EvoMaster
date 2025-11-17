@@ -67,13 +67,13 @@ class SqlPointGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPointGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.x.copyValueFrom(other.x)
-                    && this.y.copyValueFrom(other.y)}, true
+            {this.x.unsafeCopyValueFrom(other.x)
+                    && this.y.unsafeCopyValueFrom(other.y)}, true
         )
     }
 
@@ -87,11 +87,11 @@ class SqlPointGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlPointGene -> {
-                x.setValueBasedOn(gene.x) &&
-                        y.setValueBasedOn(gene.y)
+                x.unsafeSetFromStringValue(gene.x) &&
+                        y.unsafeSetFromStringValue(gene.y)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PointGene with ${gene::class.java.simpleName}")

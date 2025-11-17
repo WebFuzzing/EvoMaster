@@ -44,17 +44,17 @@ class Base64StringGene(
         return this.data.containsSameValueAs(other.data)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is Base64StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return updateValueOnlyIfValid({this.data.copyValueFrom(other.data)}, false)
+        return updateValueOnlyIfValid({this.data.unsafeCopyValueFrom(other.data)}, false)
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when(gene){
-            is Base64StringGene -> data.setValueBasedOn(gene.data)
-            is StringGene -> data.setValueBasedOn(gene)
+            is Base64StringGene -> data.unsafeSetFromStringValue(gene.data)
+            is StringGene -> data.unsafeSetFromStringValue(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
                 false

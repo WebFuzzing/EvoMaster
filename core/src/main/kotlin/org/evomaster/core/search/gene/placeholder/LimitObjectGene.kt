@@ -42,11 +42,11 @@ class LimitObjectGene(name: String) : SimpleGene(name) {
         return other is LimitObjectGene
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return false
     }
 }

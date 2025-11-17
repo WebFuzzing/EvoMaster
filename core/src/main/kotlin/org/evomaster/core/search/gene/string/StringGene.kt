@@ -979,11 +979,11 @@ class StringGene(
      */
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
         if(other is ChoiceGene<*>){
             val x = other.activeGene()
-            return this.copyValueFrom(x)
+            return this.unsafeCopyValueFrom(x)
         }
 
         val current = this.value
@@ -1016,7 +1016,7 @@ class StringGene(
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
 
         Lazy.assert { isLocallyValid() }
         val current = value
@@ -1039,10 +1039,10 @@ class StringGene(
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
             is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
+                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
+                return this.unsafeSetFromStringValue(gene.number)
             }
             else -> {
                 //return false
@@ -1128,7 +1128,7 @@ class StringGene(
     }
 
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         this.value = value
         selectedSpecialization = -1

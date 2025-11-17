@@ -101,18 +101,18 @@ class RegexGene(
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.disjunctions.copyValueFrom(other.disjunctions)}, false
+            {this.disjunctions.unsafeCopyValueFrom(other.disjunctions)}, false
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is RegexGene){
-            return disjunctions.setValueBasedOn(gene.disjunctions)
+            return disjunctions.unsafeSetFromStringValue(gene.disjunctions)
         }
         return false
     }

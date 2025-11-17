@@ -152,7 +152,7 @@ class DateGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is DateGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -165,20 +165,20 @@ class DateGene(
         }
 
         return updateValueOnlyIfValid(
-            {this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)}, true
+            {this.year.unsafeCopyValueFrom(other.year) && this.month.unsafeCopyValueFrom(other.month) && this.day.unsafeCopyValueFrom(other.day)}, true
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is DateGene -> {
-                day.setValueBasedOn(gene.day) &&
-                        month.setValueBasedOn(gene.month) &&
-                        year.setValueBasedOn(gene.year)
+                day.unsafeSetFromStringValue(gene.day) &&
+                        month.unsafeSetFromStringValue(gene.month) &&
+                        year.unsafeSetFromStringValue(gene.year)
             }
-            gene is DateTimeGene -> setValueBasedOn(gene.date)
-            gene is StringGene && gene.getSpecializationGene() != null -> setValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.setValueBasedOn(gene.getPhenotype() as Gene)
+            gene is DateTimeGene -> unsafeSetFromStringValue(gene.date)
+            gene is StringGene && gene.getSpecializationGene() != null -> unsafeSetFromStringValue(gene.getSpecializationGene()!!)
+            gene is SeededGene<*> -> this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")

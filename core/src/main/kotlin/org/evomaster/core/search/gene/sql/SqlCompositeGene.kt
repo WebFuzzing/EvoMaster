@@ -76,7 +76,7 @@ class SqlCompositeGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlCompositeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -85,7 +85,7 @@ class SqlCompositeGene(
             {
                 var ok = true
                 for (i in fields.indices) {
-                    ok = ok && this.fields[i].copyValueFrom(other.fields[i])
+                    ok = ok && this.fields[i].unsafeCopyValueFrom(other.fields[i])
                 }
                 ok
             }, true
@@ -95,11 +95,11 @@ class SqlCompositeGene(
 
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is SqlCompositeGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
             var result = true
             (fields.indices).forEach {
-                val r = fields[it].setValueBasedOn(gene.fields[it])
+                val r = fields[it].unsafeSetFromStringValue(gene.fields[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
                 result = result && r

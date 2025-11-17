@@ -37,11 +37,11 @@ class CharacterClassEscapeRxGeneStructureTest : GeneStructuralElementBaseTest() 
     }
 
     @Test
-    fun testCopyValueFromFailure(){
+    fun testUnsafeCopyValueFromFailure(){
         val base = getStructuralElement().copy()
         val copy = getCopyFromTemplate().copy()
 
-        assertFalse(base.copyValueFrom(copy))
+        assertFalse(base.unsafeCopyValueFrom(copy))
     }
 
 

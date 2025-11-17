@@ -52,7 +52,7 @@ class LongGene(
     }
 
 
-    override fun setValueBasedOn(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
 
         try{
             this.value = value.toLong()
@@ -90,7 +90,7 @@ class LongGene(
         return this.value == other.value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is LongGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -104,7 +104,7 @@ class LongGene(
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
             is LongGene -> value = gene.value
             is FloatGene -> value = gene.value.toLong()
@@ -125,10 +125,10 @@ class LongGene(
                 value = gene.uniqueId
             }
             is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
+                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
             }
             is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
+                return this.unsafeSetFromStringValue(gene.number)
             }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")

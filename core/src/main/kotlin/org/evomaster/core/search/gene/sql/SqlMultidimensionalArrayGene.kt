@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -316,7 +315,7 @@ class SqlMultidimensionalArrayGene<T>(
      * A multidimensional array gene can only bind to other multidimensional array genes
      * with the same template and number of dimensions.
      */
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene !is SqlMultidimensionalArrayGene<*>) {
             LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
             return false
@@ -337,7 +336,7 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultidimensionalArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -348,7 +347,7 @@ class SqlMultidimensionalArrayGene<T>(
 
         return updateValueOnlyIfValid(
             {
-                val ok = getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
+                val ok = getViewOfChildren()[0].unsafeCopyValueFrom(other.getViewOfChildren()[0])
                 if (ok){
                     this.dimensionSizes = other.dimensionSizes
                 }

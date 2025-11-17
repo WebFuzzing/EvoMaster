@@ -81,12 +81,12 @@ class SqlGeometryCollectionGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlGeometryCollectionGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.elements.copyValueFrom(other.elements)}, false
+            {this.elements.unsafeCopyValueFrom(other.elements)}, false
         )
     }
 
@@ -98,10 +98,10 @@ class SqlGeometryCollectionGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when (gene) {
             is SqlGeometryCollectionGene -> {
-                elements.setValueBasedOn(gene.elements)
+                elements.unsafeSetFromStringValue(gene.elements)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

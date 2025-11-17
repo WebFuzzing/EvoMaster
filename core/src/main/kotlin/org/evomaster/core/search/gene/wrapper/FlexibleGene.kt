@@ -129,7 +129,7 @@ class FlexibleGene(name: String,
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is FlexibleGene)
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         if (replaceable){
@@ -155,7 +155,7 @@ class FlexibleGene(name: String,
         return false
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return false
     }
 

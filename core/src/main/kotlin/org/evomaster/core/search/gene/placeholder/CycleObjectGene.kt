@@ -45,12 +45,12 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
         return other is CycleObjectGene
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         // do nothing
         return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return false
     }
 

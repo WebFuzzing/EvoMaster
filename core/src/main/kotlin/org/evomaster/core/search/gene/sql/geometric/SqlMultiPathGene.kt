@@ -88,12 +88,12 @@ class SqlMultiPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPathGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return updateValueOnlyIfValid(
-            {this.paths.copyValueFrom(other.paths)}, false
+            {this.paths.unsafeCopyValueFrom(other.paths)}, false
         )
     }
 
@@ -105,10 +105,10 @@ class SqlMultiPathGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return when {
             gene is SqlMultiPathGene -> {
-                paths.setValueBasedOn(gene.paths)
+                paths.unsafeSetFromStringValue(gene.paths)
             }
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")

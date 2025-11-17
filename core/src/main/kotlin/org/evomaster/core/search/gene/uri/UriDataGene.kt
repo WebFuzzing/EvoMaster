@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
@@ -71,18 +70,18 @@ class UriDataGene(
                 && data.containsSameValueAs(other.data)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is UriDataGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         val current = copy()
 
         return updateValueOnlyIfValid(
-            {type.copyValueFrom(other.type) && base64.copyValueFrom(other.base64) && data.copyValueFrom(other.data)}, true
+            {type.unsafeCopyValueFrom(other.type) && base64.unsafeCopyValueFrom(other.base64) && data.unsafeCopyValueFrom(other.data)}, true
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         return false
     }
 

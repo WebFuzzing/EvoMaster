@@ -165,7 +165,7 @@ class DisjunctionRxGene(
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
@@ -174,7 +174,7 @@ class DisjunctionRxGene(
             {
                 var ok = true
                 for (i in 0 until terms.size) {
-                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
+                    ok = ok && this.terms[i].unsafeCopyValueFrom(other.terms[i])
                 }
                 if (ok){
                     this.extraPrefix = other.extraPrefix
@@ -186,11 +186,11 @@ class DisjunctionRxGene(
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
             var result = true
             terms.indices.forEach { i->
-                val r = terms[i].setValueBasedOn(gene.terms[i])
+                val r = terms[i].unsafeSetFromStringValue(gene.terms[i])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
                 result = result && r
