@@ -10,7 +10,7 @@ import kotlin.math.abs
  *
  * Each molecule corresponds to a [WtsEvalIndividual] (a test suite).
  */
-class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+open class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     companion object {
         private const val ENERGY_TOLERANCE = 1e-9
