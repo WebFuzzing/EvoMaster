@@ -59,6 +59,7 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
@@ -592,7 +593,13 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
-            createInvocation(a, chainState, cookies, tokens).invoke()
+            SearchTimeController.measureTimeMillis(
+                { t, res ->
+                    rcr.setResponseTime(t)
+                },
+                {createInvocation(a, chainState, cookies, tokens).invoke()}
+            )
+
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
@@ -1335,8 +1342,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 //                continue
 //            }
 
-            // in here executionTimeMs doesn't assign yet.
-            if(fv.executionTimeMs < config.sqlInjectionMaxResponseTimeMs){
+            if(r.getResponseTime() < config.sqlInjectionMaxResponseTimeMs && !r.getTimedout()){
                 continue
             }
 

@@ -18,7 +18,7 @@ class SQLiQueryH2EMTest : SpringTestBase() {
         fun init() {
             val config = EMConfig()
             config.instrumentMR_NET = false
-            config.instrumentMR_SQL = false
+//            config.instrumentMR_SQL = false
 
             initClass(SQLiH2QueryController(), config)
         }
@@ -28,7 +28,7 @@ class SQLiQueryH2EMTest : SpringTestBase() {
     fun testSQLiH2EM() {
         runTestHandlingFlakyAndCompilation(
             "SQLiH2EMTest",
-            50,
+            20
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
