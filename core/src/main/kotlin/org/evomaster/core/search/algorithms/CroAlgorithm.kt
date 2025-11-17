@@ -58,67 +58,9 @@ class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
     override fun searchOnce() {
         
         if (randomness.nextDouble() > config.croMolecularCollisionRate || molecules.size == 1) {
-            // Uni-molecular collision
-            val moleculeIndex = randomness.nextInt(molecules.size)
-            val selectedMolecule = molecules[moleculeIndex]
-
-            if (decompositionCheck(selectedMolecule)) {
-                val energyCtx = EnergyContext(container)
-                val decomposedOffspring = decomposition(
-                    parent = selectedMolecule,
-                    energy = energyCtx,
-                )
-                container = energyCtx.container
-                if (decomposedOffspring != null) {
-                    molecules.removeAt(moleculeIndex)
-                    molecules.addAll(decomposedOffspring)
-                }
-            } else {
-                val energyCtx = EnergyContext(container)
-                val collidedMolecule = onWallIneffectiveCollision(
-                    molecule = selectedMolecule,
-                    energy = energyCtx,
-                )
-                container = energyCtx.container
-                if (collidedMolecule != null) {
-                    molecules[moleculeIndex] = collidedMolecule
-                }
-            }
+            performUniMolecularCollision()
         } else {
-            // Inter-molecular collision
-            val firstIndex = randomness.nextInt(molecules.size)
-            var secondIndex = randomness.nextInt(molecules.size)
-            while (secondIndex == firstIndex) {
-                // find a different molecule as an inter-molecular collision involves at least two molecules
-                secondIndex = randomness.nextInt(molecules.size)
-            }
-
-            val firstMolecule = molecules[firstIndex]
-            val secondMolecule = molecules[secondIndex]
-
-            val shouldSynthesize = synthesisCheck(firstMolecule) && synthesisCheck(secondMolecule)
-            if (shouldSynthesize) {
-                val fusedOffspring = synthesis(
-                    first = firstMolecule,
-                    second = secondMolecule,
-                )
-                if (fusedOffspring != null) {
-                    val lowIndex = minOf(firstIndex, secondIndex)
-                    val highIndex = maxOf(firstIndex, secondIndex)
-                    molecules[lowIndex] = fusedOffspring
-                    molecules.removeAt(highIndex)
-                }
-            } else {
-                val updatedPair = intermolecularIneffectiveCollision(
-                    first = firstMolecule,
-                    second = secondMolecule,
-                )
-                if (updatedPair != null) {
-                    val (updatedFirst, updatedSecond) = updatedPair
-                    molecules[firstIndex] = updatedFirst
-                    molecules[secondIndex] = updatedSecond
-                }
-            }
+            performInterMolecularCollision()
         }
 
         // Adjust container if external factors changed fitness values, to conserve energy
@@ -134,6 +76,72 @@ class CroAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
             throw RuntimeException("Current amount of energy (" + energyAfter
                     + ") in the system is not equal to its initial amount of energy (" + this.initialEnergy
                     + "). Conservation of energy has failed!")
+        }
+    }
+
+    private fun performUniMolecularCollision() {
+        // Uni-molecular collision
+        val moleculeIndex = randomness.nextInt(molecules.size)
+        val selectedMolecule = molecules[moleculeIndex]
+
+        if (decompositionCheck(selectedMolecule)) {
+            val energyCtx = EnergyContext(container)
+            val decomposedOffspring = decomposition(
+                parent = selectedMolecule,
+                energy = energyCtx,
+            )
+            container = energyCtx.container
+            if (decomposedOffspring != null) {
+                molecules.removeAt(moleculeIndex)
+                molecules.addAll(decomposedOffspring)
+            }
+        } else {
+            val energyCtx = EnergyContext(container)
+            val collidedMolecule = onWallIneffectiveCollision(
+                molecule = selectedMolecule,
+                energy = energyCtx,
+            )
+            container = energyCtx.container
+            if (collidedMolecule != null) {
+                molecules[moleculeIndex] = collidedMolecule
+            }
+        }
+    }
+
+    private fun performInterMolecularCollision() {
+        // Inter-molecular collision
+        val firstIndex = randomness.nextInt(molecules.size)
+        var secondIndex = randomness.nextInt(molecules.size)
+        while (secondIndex == firstIndex) {
+            // find a different molecule as an inter-molecular collision involves at least two molecules
+            secondIndex = randomness.nextInt(molecules.size)
+        }
+
+        val firstMolecule = molecules[firstIndex]
+        val secondMolecule = molecules[secondIndex]
+
+        val shouldSynthesize = synthesisCheck(firstMolecule) && synthesisCheck(secondMolecule)
+        if (shouldSynthesize) {
+            val fusedOffspring = synthesis(
+                first = firstMolecule,
+                second = secondMolecule,
+            )
+            if (fusedOffspring != null) {
+                val lowIndex = minOf(firstIndex, secondIndex)
+                val highIndex = maxOf(firstIndex, secondIndex)
+                molecules[lowIndex] = fusedOffspring
+                molecules.removeAt(highIndex)
+            }
+        } else {
+            val updatedPair = intermolecularIneffectiveCollision(
+                first = firstMolecule,
+                second = secondMolecule,
+            )
+            if (updatedPair != null) {
+                val (updatedFirst, updatedSecond) = updatedPair
+                molecules[firstIndex] = updatedFirst
+                molecules[secondIndex] = updatedSecond
+            }
         }
     }
 
