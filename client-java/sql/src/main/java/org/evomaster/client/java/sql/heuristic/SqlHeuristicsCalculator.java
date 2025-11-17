@@ -406,36 +406,53 @@ public class SqlHeuristicsCalculator {
     SqlHeuristicResult computeHeuristic(Select select) {
         tableColumnResolver.enterStatementeContext(select);
         final SqlHeuristicResult heuristicResult;
-        if (select instanceof SetOperationList) {
-            SetOperationList unionQuery = (SetOperationList) select;
-            List<Select> subqueries = unionQuery.getSelects();
-            heuristicResult = computeHeuristicUnion(subqueries);
-        } else if (select instanceof ParenthesedSelect) {
-            ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
-            Select subquery = parenthesedSelect.getSelect();
-            heuristicResult = computeHeuristic(subquery);
-        } else if (select instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) select;
-            final FromItem fromItem = getFrom(plainSelect);
-            final List<Join> joins = getJoins(plainSelect);
-            final Expression whereClause = getWhere(plainSelect);
-            if (plainSelect.getGroupBy() != null) {
-                heuristicResult = computeHeuristicSelectGroupByHaving(
-                        plainSelect.getSelectItems(),
-                        fromItem,
-                        joins,
-                        whereClause,
-                        plainSelect.getGroupBy().getGroupByExpressionList(),
-                        plainSelect.getHaving());
-            } else {
-                heuristicResult = computeHeuristicSelect(
-                        plainSelect.getSelectItems(),
-                        fromItem,
-                        joins,
-                        whereClause);
-            }
+        if (select.getLimit()!=null && getLimitValue(select.getLimit())==0) {
+            // Handle case of LIMIT 0
+            heuristicResult = new SqlHeuristicResult(FALSE_TRUTHNESS, new QueryResult(Collections.emptyList()));
         } else {
-            throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
+            if (select instanceof SetOperationList) {
+                // Handle case of UNION/INTERSECT/EXCEPT
+                SetOperationList unionQuery = (SetOperationList) select;
+                List<Select> subqueries = unionQuery.getSelects();
+                heuristicResult = computeHeuristicUnion(subqueries, unionQuery.getLimit());
+            } else if (select instanceof ParenthesedSelect) {
+                // Handle case of parenthesed SELECT
+                ParenthesedSelect parenthesedSelect = (ParenthesedSelect) select;
+                Select subquery = parenthesedSelect.getSelect();
+                final SqlHeuristicResult subqueryHeuristicResult = computeHeuristic(subquery);
+                if (parenthesedSelect.getLimit() != null) {
+                    long limitValue = getLimitValue(parenthesedSelect.getLimit());
+                    QueryResult queryResult = subqueryHeuristicResult.getQueryResult().limit(limitValue);
+                    heuristicResult = new SqlHeuristicResult(subqueryHeuristicResult.getTruthness(), queryResult);
+                } else {
+                    heuristicResult = subqueryHeuristicResult;
+                }
+            } else if (select instanceof PlainSelect) {
+                // Handle case of plain SELECT
+                PlainSelect plainSelect = (PlainSelect) select;
+                final FromItem fromItem = getFrom(plainSelect);
+                final List<Join> joins = getJoins(plainSelect);
+                final Expression whereClause = getWhere(plainSelect);
+                if (plainSelect.getGroupBy() != null) {
+                    heuristicResult = computeHeuristicSelectGroupByHaving(
+                            plainSelect.getSelectItems(),
+                            fromItem,
+                            joins,
+                            whereClause,
+                            plainSelect.getGroupBy().getGroupByExpressionList(),
+                            plainSelect.getHaving(),
+                            plainSelect.getLimit());
+                } else {
+                    heuristicResult = computeHeuristicSelect(
+                            plainSelect.getSelectItems(),
+                            fromItem,
+                            joins,
+                            whereClause,
+                            plainSelect.getLimit());
+                }
+            } else {
+                throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
+            }
         }
         tableColumnResolver.exitCurrentStatementContext();
         return heuristicResult;
@@ -448,13 +465,31 @@ public class SqlHeuristicsCalculator {
         return heuristicResult;
     }
 
+    private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems,
+                                                      FromItem fromItem,
+                                                      List<Join> joins,
+                                                      Expression whereClause,
+                                                      Limit limit) {
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+        QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
+
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        return heuristicResult;
+    }
+
     private SqlHeuristicResult computeHeuristicSelectGroupByHaving(
             List<SelectItem<?>> selectItems,
             FromItem fromItem,
             List<Join> joins,
             Expression whereClause,
             List<Expression> groupByExpressions,
-            Expression having) {
+            Expression having,
+            Limit limit) {
 
         final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
 
@@ -490,7 +525,7 @@ public class SqlHeuristicsCalculator {
             }
         }
         final List<VariableDescriptor> variableDescriptors = createSelectVariableDescriptors(selectItems, sourceQueryResult.seeVariableDescriptors());
-        final QueryResult queryResult = new QueryResult(variableDescriptors);
+        QueryResult queryResult = new QueryResult(variableDescriptors);
         for (DataRow groupByDataRow : groupByDataRows) {
             queryResult.addRow(groupByDataRow);
         }
@@ -504,6 +539,11 @@ public class SqlHeuristicsCalculator {
         final Truthness groupByHavingTruthness = TruthnessUtils.buildAndAggregationTruthness(
                 intermediateHeuristicResult.getTruthness(),
                 havingTruthness);
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
 
         return new SqlHeuristicResult(groupByHavingTruthness, queryResult);
     }
@@ -728,7 +768,7 @@ public class SqlHeuristicsCalculator {
         return selectVariableDescriptors;
     }
 
-    private SqlHeuristicResult computeHeuristicUnion(List<Select> subqueries) {
+    private SqlHeuristicResult computeHeuristicUnion(List<Select> subqueries, Limit limit) {
         List<SqlHeuristicResult> subqueryResults = new ArrayList<>();
         for (Select subquery : subqueries) {
             SqlHeuristicResult subqueryResult = computeHeuristic(subquery);
@@ -742,7 +782,12 @@ public class SqlHeuristicsCalculator {
         List<QueryResult> queryResults = subqueryResults.stream()
                 .map(SqlHeuristicResult::getQueryResult)
                 .collect(Collectors.toList());
-        final QueryResult unionRowSet = QueryResultUtils.createUnionRowSet(queryResults);
+        QueryResult unionRowSet = QueryResultUtils.createUnionRowSet(queryResults);
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            unionRowSet = unionRowSet.limit(limitValue);
+        }
 
         return new SqlHeuristicResult(t, unionRowSet);
     }
