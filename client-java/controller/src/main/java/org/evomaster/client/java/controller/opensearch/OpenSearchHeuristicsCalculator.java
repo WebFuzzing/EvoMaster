@@ -121,7 +121,6 @@ public class OpenSearchHeuristicsCalculator {
             return Double.MAX_VALUE;
         }
 
-        // Handle empty terms list
         if (expectedTerms.isEmpty()) {
             return Double.MAX_VALUE;
         }
@@ -490,6 +489,11 @@ public class OpenSearchHeuristicsCalculator {
     /**
      * Calculate distance for Regexp operation.
      * Regexp query matches if the document field value matches the regular expression.
+     * 
+     * Note: OpenSearch uses Lucene regular expression syntax, which is similar but NOT identical to Java regex.
+     * 
+     * Reference: https://opensearch.org/docs/latest/query-dsl/term/regexp/
+     * Lucene regex: https://lucene.apache.org/core/8_0_0/core/org/apache/lucene/util/automaton/RegExp.html
      */
     private double calculateDistanceForRegexp(RegexpOperation operation, Object doc) {
         String field = operation.getFieldName();
@@ -505,6 +509,7 @@ public class OpenSearchHeuristicsCalculator {
         
         try {
             // Create pattern with case insensitive flag if needed
+            // Using Java regex as an approximation of Lucene/OpenSearch regex for distance calculation
             java.util.regex.Pattern pattern;
             if (caseInsensitive != null && caseInsensitive) {
                 pattern = java.util.regex.Pattern.compile(regex, java.util.regex.Pattern.CASE_INSENSITIVE);
