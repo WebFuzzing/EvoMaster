@@ -382,9 +382,9 @@ public class DistanceHelper {
                 int cost = (s1.charAt(i-1) == s2.charAt(j-1)) ? 0 : 1;
                 
                 dp[i][j] = Math.min(Math.min(
-                    dp[i-1][j] + 1,      // deletion
-                    dp[i][j-1] + 1),     // insertion
-                    dp[i-1][j-1] + cost  // substitution
+                    dp[i-1][j] + 1,
+                    dp[i][j-1] + 1),
+                    dp[i-1][j-1] + cost
                 );
                 
                 // Transposition
@@ -402,9 +402,6 @@ public class DistanceHelper {
     /**
      * Check if a text matches a wildcard pattern.
      * Supports * (matches any sequence) and ? (matches any single character).
-     * @param text the text to match
-     * @param pattern the wildcard pattern
-     * @return true if the text matches the pattern
      */
     public static boolean matchesWildcard(String text, String pattern) {
         // Convert wildcard pattern to regex
