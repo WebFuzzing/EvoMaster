@@ -30,8 +30,12 @@ public class OpenSearchStudentsEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/students/{lastName}", null);
                 assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/students/jorge", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/students/{lastName}", null);
             });
     }
 }

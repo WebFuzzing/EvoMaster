@@ -30,9 +30,14 @@ public class OpenSearchAgeEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/age/{age}", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/age/gte/{gte}", null);
                 assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/age/age", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/age/{age}", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/age/gte/{gte}", null);
             });
     }
 }
