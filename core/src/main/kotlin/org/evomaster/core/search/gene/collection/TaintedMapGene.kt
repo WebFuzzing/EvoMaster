@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -226,15 +227,11 @@ class TaintedMapGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         //TODO
+        LoggingUtil.uniqueWarn(log,"unsafeCopyValueFrom() not implemented for TaintedMapGene")
 
         return false
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        //TODO
-
-        return false
-    }
 
     override fun getPossiblyTaintedValue(): String {
         return taintId

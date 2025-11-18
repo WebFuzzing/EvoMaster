@@ -86,15 +86,12 @@ class TimeNumOffsetGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is TimeNumOffsetGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            { sign.unsafeCopyValueFrom(other.sign) && minute.unsafeCopyValueFrom(other.minute) && hour.unsafeCopyValueFrom(other.hour) },
-            true)
+        return  sign.unsafeCopyValueFrom(other.sign)
+                && minute.unsafeCopyValueFrom(other.minute)
+                && hour.unsafeCopyValueFrom(other.hour)
+
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        //TODO
-        return false
-    }
 }

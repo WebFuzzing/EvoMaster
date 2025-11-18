@@ -1,9 +1,12 @@
 package org.evomaster.core.search.gene.collection
 
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.evomaster.core.search.gene.wrapper.FlexibleGene.Companion.wrapWithFlexibleGene
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * This represents a MapGene whose values do not follow a specific gene type, ie [FlexibleGene],
@@ -27,6 +30,11 @@ where T : Gene {
     constructor(name : String, key: T, value: Gene, valueClasses : List<Class<*>>?, maxSize: Int? = null, minSize: Int? = null): this(name,
         PairGene("template", key, wrapWithFlexibleGene(value, valueClasses)), maxSize, minSize)
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(FlexibleMapGene::class.java)
+    }
+
+
     override fun copyContent(): Gene {
         return FlexibleMapGene(
             name,
@@ -49,13 +57,9 @@ where T : Gene {
         }.all { it }
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        //TODO
-        return false
-    }
-
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         //TODO
+        LoggingUtil.uniqueWarn(log,"unsafeCopyValueFrom() not implemented for FlexibleMapGene")
 
         return false
     }

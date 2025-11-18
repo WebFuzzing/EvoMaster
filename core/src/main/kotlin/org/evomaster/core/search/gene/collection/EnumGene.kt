@@ -207,26 +207,13 @@ class EnumGene<T : Comparable<T>>(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is EnumGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.index
-        this.index = other.index
-        if (!isLocallyValid()){
-            this.index = current
-            return false
-        }
 
-        return true
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        when {
-            gene is EnumGene<*> -> index == gene.index
-            gene is StringGene && gene.getSpecializationGene() != null -> return unsafeSetFromStringValue(gene.getSpecializationGene()!!)
+        val phenotype = other.getPhenotype()
+        when(phenotype) {
+            is EnumGene<*> -> index == phenotype.index
             else -> {
                 // since the binding is derived, it is not always true.
-                log.info("cannot bind EnumGene with ${gene::class.java.simpleName}")
+                log.info("cannot bind EnumGene with ${phenotype::class.java.simpleName}")
                 return false
             }
         }

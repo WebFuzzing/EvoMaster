@@ -274,7 +274,7 @@ class ParamUtil {
 
         fun generateParamId(list: Array<String>): String = list.joinToString(separator)
 
-        @Deprecated(message = "Rather use GeneUtils.getWrappedValueGene(gene)",
+        @Deprecated(message = "Rather use getLeafGene()",
             replaceWith = ReplaceWith("GeneUtils.getWrappedValueGene(gene)"))
         fun getValueGene(gene: Gene): Gene {
            return gene.getLeafGene()!!

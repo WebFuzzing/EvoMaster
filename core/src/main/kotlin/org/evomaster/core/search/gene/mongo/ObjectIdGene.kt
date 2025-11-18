@@ -64,20 +64,12 @@ class ObjectIdGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is ObjectIdGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            { id.unsafeCopyValueFrom(other.id) }, false
-        )
+
+        return  id.unsafeCopyValueFrom(other.id)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is ObjectIdGene) {
-            return id.unsafeSetFromStringValue(gene.id)
-        }
-        LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
-        return false
-    }
 
     override fun copyContent() = ObjectIdGene(
         name,

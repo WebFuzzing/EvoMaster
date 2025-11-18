@@ -70,40 +70,20 @@ class InetGene(
         }
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is InetGene -> {
-                var result = true
-                repeat(octets.size) {
-                    result = result && octets[it].unsafeSetFromStringValue(gene.octets[it])
-                }
-                result
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
-
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is InetGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         if (octets.size != other.octets.size) {
-            throw IllegalArgumentException(
-                    "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
-            )
+            return false
         }
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                repeat(octets.size) {
-                    ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
-                }
-                ok
-            }, true
-        )
+
+        var ok = true
+
+        repeat(octets.size) {
+            ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
+        }
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

@@ -342,6 +342,17 @@ abstract class Gene(
         return this
     }
 
+    /**
+     * Return the gene used for the phenotype.
+     * Most of the time this would be `this` gene.
+     * Note, it is different from the concept of "wrapper", as the wrapper itself can impact
+     * the phenotype.
+     *
+     * This is mainly used to handle very special cases such as [StringGene] and [SeededGene]
+     */
+    open fun getPhenotype() : Gene{
+        return this
+    }
 
 
     protected fun matchingClass(klass: Class<*>, strict: Boolean): Boolean {
@@ -903,7 +914,7 @@ abstract class Gene(
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b ->
             all.add(b)
-            if (!b.unsafeSetFromStringValue(this))
+            if (!b.copyValueFrom(this))
                 LoggingUtil.uniqueWarn(
                     log,
                     "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})"
@@ -1106,44 +1117,35 @@ abstract class Gene(
      * Rather use [copyValueFrom], which internally it calls this method,
      * and then revert in case of constraint violations.
      *
-     * @return whether the binding performs successfully.
+     * @return whether the value is copied based on [other] successfully.
+     * This is based only on the gene type.
+     * _WARNING_:
+     * - `true` might still leave the gene in an inconsistent state (ie violated constraints)
+     * - `false` might still apply partial updates (eg, think of an objects with several fields)
+     *
+     * Do not call directly outside this package. Call [copyValueFrom]
      *
      * TODO unfortunately, Kotlin has major design flows that do not allow package-level and true protected-level
      * scope, like in Java :(
      * This is a case in which is much worse than Java.
      * But it could be simulated with Detekt and a rule like @PackagePrivate
      */
-    @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
-    //TODO remove deprecated once we integrate @PackagePrivate
-    internal abstract fun unsafeSetFromStringValue(gene: Gene): Boolean
-
-
-    /**
-     * copy value based on [other]
-     * in some case, the [other] might not satisfy constraints of [this gene],
-     * then copying will not be performed successfully
-     *
-     * FIXME unclear if side-effects or not
-     *
-     * @return whether the value is copied based on [other] successfully
-     */
     abstract fun unsafeCopyValueFrom(other: Gene): Boolean
 
 
     /**
-     * Update current value of this gene, base on other gene.
-     * This is not [unsafeCopyValueFrom], as the gene could be different.
-     * FIXME that comment seems wrong
+     * Update current value of this gene, base on [other] gene.
      * If for any reason the update fails, there is not going to be any side-effects.
+     * A successful update must guarantee that the gene remains valid (ie, no violated constraints).
      *
      * @return if the update was successful
      */
     fun copyValueFrom(gene: Gene, undoIfUpdateFails: Boolean = true): Boolean {
 
         //FIXME current implementation leads to infinite loops. must fix copyValueFrom
-        //return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
+        //return updateValueOnlyIfValid( { unsafeCopyValueFrom(gene) } , undoIfUpdateFails)
         //TODO update once fixed
-        return unsafeSetFromStringValue(gene)
+        return unsafeCopyValueFrom(gene)
     }
 
     /*

@@ -171,6 +171,10 @@ class StringGene(
         return null
     }
 
+    override fun getPhenotype(): Gene {
+        return getSpecializationGene() ?: this
+    }
+
     override fun isMutable(): Boolean {
         //a specialization can always be undone... so previous check was wrong
 //        if (getSpecializationGene() != null) {

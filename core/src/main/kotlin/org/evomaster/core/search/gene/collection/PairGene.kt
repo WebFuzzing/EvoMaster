@@ -69,22 +69,13 @@ class PairGene<F,S>(
     }
 
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene !is PairGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
-        }
-        return first.unsafeSetFromStringValue(gene.first) && second.unsafeSetFromStringValue(gene.second)
-    }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is PairGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {
-                first.unsafeCopyValueFrom(other.first) && second.unsafeCopyValueFrom(other.second)
-            }, true
-        )
+
+        return first.unsafeCopyValueFrom(other.first) && second.unsafeCopyValueFrom(other.second)
     }
 
     override fun copyContent(): Gene {

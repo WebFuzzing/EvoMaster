@@ -184,26 +184,8 @@ class TupleGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is TupleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        assert(elements.size == other.elements.size)
 
-
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                (elements.indices).forEach {
-                    ok = ok && elements[it].unsafeCopyValueFrom(other.elements[it])
-                }
-                ok
-            },
-            true
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-
+        val gene = other.getPhenotype()
         if (gene is TupleGene
             && elements.size == gene.elements.size
             // binding is applicable only if names of element genes are consistent
@@ -211,7 +193,7 @@ class TupleGene(
         ) {
             var result = true
             (elements.indices).forEach {
-                val r = elements[it].unsafeSetFromStringValue(gene.elements[it])
+                val r = elements[it].unsafeCopyValueFrom(gene.elements[it])
                 if (!r)
                     LoggingUtil.uniqueWarn(log, "cannot bind the element at $it with the name ${elements[it].name}")
                 result = result && r
@@ -225,7 +207,6 @@ class TupleGene(
         }
         LoggingUtil.uniqueWarn(log, "cannot bind TupleGene with ${gene::class.java.simpleName}")
         return false
-
     }
 
     override fun isMutable(): Boolean {

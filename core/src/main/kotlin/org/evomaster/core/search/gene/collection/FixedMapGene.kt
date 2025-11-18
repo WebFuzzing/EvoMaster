@@ -59,10 +59,13 @@ class FixedMapGene<K, V>(
     /*
         Note that value binding cannot be performed on the [elements]
      */
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(gene: Gene): Boolean {
+
         if(gene is FixedMapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
-            val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
+            val elements = gene.elements
+                .mapNotNull { it.copy() as? PairGene<K, V> }
+                .toMutableList()
             elements.forEach { it.resetLocalIdRecursively() }
             addChildren(elements)
             return true
@@ -72,23 +75,5 @@ class FixedMapGene<K, V>(
             "cannot bind the MapGene with the template (${template::class.java.simpleName}) with the gene ${gene::class.java.simpleName}"
         )
         return false
-    }
-
-    override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is FixedMapGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        return updateValueOnlyIfValid({
-            killAllChildren()
-            // maxSize
-            val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
-                other.elements.subList(0, maxSize!!)
-            else other.elements)
-                .map { e -> e.copy() as PairGene<K, V> }
-                .toMutableList()
-            addChildren(copy)
-            true
-        },false)
     }
 }

@@ -194,16 +194,20 @@ class TimeGene(
 
 
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is TimeGene -> {
-                hour.unsafeSetFromStringValue(gene.hour) &&
-                        second.unsafeSetFromStringValue(gene.minute) &&
-                        minute.unsafeSetFromStringValue(gene.second)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
+        return when (gene) {
+            is TimeGene -> {
+                hour.unsafeCopyValueFrom(gene.hour)
+                        && second.unsafeCopyValueFrom(gene.minute)
+                        && minute.unsafeCopyValueFrom(gene.second)
+                        && millisecond.unsafeCopyValueFrom(gene.millisecond)
+                        && offset.unsafeCopyValueFrom(gene.offset)
             }
-            gene is DateTimeGene -> unsafeSetFromStringValue(gene.time)
-            gene is StringGene && gene.getSpecializationGene() != null -> unsafeSetFromStringValue(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.unsafeSetFromStringValue(gene.getPhenotype()  as Gene)
+
+            is DateTimeGene -> unsafeCopyValueFrom(gene.time)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false
@@ -211,20 +215,6 @@ class TimeGene(
         }
     }
 
-    override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is TimeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        return updateValueOnlyIfValid(
-            {this.hour.unsafeCopyValueFrom(other.hour)
-                    && this.minute.unsafeCopyValueFrom(other.minute)
-                    && this.second.unsafeCopyValueFrom(other.second)
-                    && this.millisecond.unsafeCopyValueFrom(other.millisecond)
-                    && this.offset.unsafeCopyValueFrom(other.offset)
-            }, true
-        )
-    }
 
     override fun repair() {
         if (hour.value < 0) {

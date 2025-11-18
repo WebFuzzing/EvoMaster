@@ -77,9 +77,9 @@ class SeededGene<T>(
     }
 
     /**
-     * @return a gene representing [this]
+     * @return a gene representing `this`
      */
-    fun getPhenotype() : T{
+    override fun getPhenotype() : Gene{
         return if (!employSeeded) gene else seeded.values[seeded.index]
     }
 
