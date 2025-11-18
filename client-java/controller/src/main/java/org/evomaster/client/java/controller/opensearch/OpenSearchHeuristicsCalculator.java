@@ -19,6 +19,7 @@ import org.evomaster.client.java.controller.opensearch.operations.MatchOperation
 import org.evomaster.client.java.controller.opensearch.operations.QueryOperation;
 import org.evomaster.client.java.distance.heuristics.DistanceHelper;
 import org.evomaster.client.java.sql.internal.TaintHandler;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 public class OpenSearchHeuristicsCalculator {
     private final TaintHandler taintHandler;
@@ -43,53 +44,32 @@ public class OpenSearchHeuristicsCalculator {
     protected double calculateDistance(QueryOperation operation, Object doc) {
         if (operation instanceof TermOperation<?>) {
             return calculateDistanceForEquals((TermOperation<?>) operation, doc);
-        }
-        
-        if (operation instanceof TermsOperation<?>) {
+        } else if (operation instanceof TermsOperation<?>) {
             return calculateDistanceForTerms((TermsOperation<?>) operation, doc);
-        }
-        
-        if (operation instanceof TermsSetOperation<?>) {
+        } else if (operation instanceof TermsSetOperation<?>) {
             return calculateDistanceForTermsSet((TermsSetOperation<?>) operation, doc);
-        }
-        
-        if (operation instanceof IdsOperation) {
+        } else if (operation instanceof IdsOperation) {
             return calculateDistanceForIds((IdsOperation) operation, doc);
-        }
-        
-        if (operation instanceof RangeOperation) {
+        } else if (operation instanceof RangeOperation) {
             return calculateDistanceForRange((RangeOperation) operation, doc);
-        }
-        
-        if (operation instanceof PrefixOperation) {
+        } else if (operation instanceof PrefixOperation) {
             return calculateDistanceForPrefix((PrefixOperation) operation, doc);
-        }
-        
-        if (operation instanceof ExistsOperation) {
+        } else if (operation instanceof ExistsOperation) {
             return calculateDistanceForExists((ExistsOperation) operation, doc);
-        }
-        
-        if (operation instanceof FuzzyOperation) {
+        } else if (operation instanceof FuzzyOperation) {
             return calculateDistanceForFuzzy((FuzzyOperation) operation, doc);
-        }
-        
-        if (operation instanceof WildcardOperation) {
+        } else if (operation instanceof WildcardOperation) {
             return calculateDistanceForWildcard((WildcardOperation) operation, doc);
-        }
-        
-        if (operation instanceof RegexpOperation) {
+        } else if (operation instanceof RegexpOperation) {
             return calculateDistanceForRegexp((RegexpOperation) operation, doc);
-        }
-        
-        if (operation instanceof BoolOperation) {
+        } else if (operation instanceof BoolOperation) {
             return calculateDistanceForBool((BoolOperation) operation, doc);
-        }
-        
-        if (operation instanceof MatchOperation) {
+        } else if (operation instanceof MatchOperation) {
             return calculateDistanceForMatch((MatchOperation) operation, doc);
+        } else {
+            SimpleLogger.warn("Unsupported operation type: " + operation.getClass().getName());
+            return Double.MAX_VALUE;
         }
-
-        return Double.MAX_VALUE;
     }
 
     private double calculateDistanceForEquals(TermOperation<?> operation, Object doc) {
