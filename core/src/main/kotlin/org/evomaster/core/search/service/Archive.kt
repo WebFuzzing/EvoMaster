@@ -700,5 +700,4 @@ class Archive<T> where T : Individual {
             it.individual.seeTopGenes().all { g-> g.isLocallyValid() }
         }
     }
-
 }
