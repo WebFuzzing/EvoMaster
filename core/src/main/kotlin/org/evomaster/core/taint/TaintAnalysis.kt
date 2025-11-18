@@ -59,10 +59,8 @@ object TaintAnalysis {
     fun evolveIndividual(individual: Individual, evolveMaps: Boolean, evolveArrays: Boolean) {
 
         /*
-            TODO ideally, StringGene specializations should be handled here as well,
-            but that would need quite a bit of refactoring... :(
-            especially in mutation code of StringGene.
-            a technical debt for another day...
+           string gene is not handled here.
+           it is handled directly via mutation
          */
 
         val allGenes = individual.seeFullTreeGenes()
