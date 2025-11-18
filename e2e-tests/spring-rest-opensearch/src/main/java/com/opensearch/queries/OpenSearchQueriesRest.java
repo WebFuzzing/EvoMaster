@@ -1,6 +1,7 @@
 package com.opensearch.queries;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
@@ -35,76 +36,88 @@ public class OpenSearchQueriesRest {
 
     // Term selector tests
     @GetMapping("category/{category}")
-    public List<Product> findByCategory(@PathVariable String category) throws IOException {
-        return productRepository.findByCategory(category);
+    public ResponseEntity<List<Product>> findByCategory(@PathVariable String category) throws IOException {
+        List<Product> results = productRepository.findByCategory(category);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Terms selector tests
     @GetMapping("categories")
-    public List<Product> findByCategories(@RequestParam List<String> cats) throws IOException {
-        return productRepository.findByCategories(cats);
+    public ResponseEntity<List<Product>> findByCategories(@RequestParam List<String> cats) throws IOException {
+        List<Product> results = productRepository.findByCategories(cats);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Range selector tests
     @GetMapping("price-range")
-    public List<Product> findByPriceRange(@RequestParam(required = false) Double min, 
+    public ResponseEntity<List<Product>> findByPriceRange(@RequestParam(required = false) Double min, 
                                          @RequestParam(required = false) Double max) throws IOException {
-        return productRepository.findByPriceRange(min, max);
+        List<Product> results = productRepository.findByPriceRange(min, max);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     @GetMapping("rating-gte/{rating}")
-    public List<Product> findByRatingGte(@PathVariable Integer rating) throws IOException {
-        return productRepository.findByRatingGte(rating);
+    public ResponseEntity<List<Product>> findByRatingGte(@PathVariable Integer rating) throws IOException {
+        List<Product> results = productRepository.findByRatingGte(rating);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Prefix selector tests
     @GetMapping("name-prefix/{prefix}")
-    public List<Product> findByNamePrefix(@PathVariable String prefix) throws IOException {
-        return productRepository.findByNamePrefix(prefix);
+    public ResponseEntity<List<Product>> findByNamePrefix(@PathVariable String prefix) throws IOException {
+        List<Product> results = productRepository.findByNamePrefix(prefix);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Exists selector tests
     @GetMapping("with-email")
-    public List<Product> findWithEmail() throws IOException {
-        return productRepository.findWithEmail();
+    public ResponseEntity<List<Product>> findWithEmail() throws IOException {
+        List<Product> results = productRepository.findWithEmail();
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Fuzzy selector tests
     @GetMapping("name-fuzzy/{name}")
-    public List<Product> findByNameFuzzy(@PathVariable String name, 
+    public ResponseEntity<List<Product>> findByNameFuzzy(@PathVariable String name, 
                                         @RequestParam(defaultValue = "2") Integer fuzziness) throws IOException {
-        return productRepository.findByNameFuzzy(name, fuzziness);
+        List<Product> results = productRepository.findByNameFuzzy(name, fuzziness);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Wildcard selector tests
     @GetMapping("name-wildcard/{pattern}")
-    public List<Product> findByNameWildcard(@PathVariable String pattern) throws IOException {
-        return productRepository.findByNameWildcard(pattern);
+    public ResponseEntity<List<Product>> findByNameWildcard(@PathVariable String pattern) throws IOException {
+        List<Product> results = productRepository.findByNameWildcard(pattern);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Regexp selector tests
     @GetMapping("email-pattern/{pattern}")
-    public List<Product> findByEmailPattern(@PathVariable String pattern) throws IOException {
-        return productRepository.findByEmailPattern(pattern);
+    public ResponseEntity<List<Product>> findByEmailPattern(@PathVariable String pattern) throws IOException {
+        List<Product> results = productRepository.findByEmailPattern(pattern);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Match selector tests
     @GetMapping("description-match/{text}")
-    public List<Product> findByDescriptionMatch(@PathVariable String text) throws IOException {
-        return productRepository.findByDescriptionMatch(text);
+    public ResponseEntity<List<Product>> findByDescriptionMatch(@PathVariable String text) throws IOException {
+        List<Product> results = productRepository.findByDescriptionMatch(text);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // Bool selector tests
     @GetMapping("complex")
-    public List<Product> findByComplexQuery(@RequestParam(required = false) String category,
+    public ResponseEntity<List<Product>> findByComplexQuery(@RequestParam(required = false) String category,
                                            @RequestParam(required = false) Double minPrice,
                                            @RequestParam(required = false) Boolean inStock) throws IOException {
-        return productRepository.findByComplexQuery(category, minPrice, inStock);
+        List<Product> results = productRepository.findByComplexQuery(category, minPrice, inStock);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     // IDs selector tests
     @GetMapping("by-ids")
-    public List<Product> findByIds(@RequestParam List<String> ids) throws IOException {
-        return productRepository.findByIds(ids);
+    public ResponseEntity<List<Product>> findByIds(@RequestParam List<String> ids) throws IOException {
+        List<Product> results = productRepository.findByIds(ids);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 }

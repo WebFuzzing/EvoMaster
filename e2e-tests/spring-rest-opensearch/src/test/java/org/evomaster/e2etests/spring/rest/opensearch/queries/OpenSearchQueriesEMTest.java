@@ -33,8 +33,12 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/category/{category}", null);
                 assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/queries/setup", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/category/{category}", null);
             });
     }
 
@@ -50,8 +54,13 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/price-range", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/rating-gte/{rating}", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/price-range", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/rating-gte/{rating}", null);
             });
     }
 
@@ -67,10 +76,15 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/name-prefix/{prefix}", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/name-fuzzy/{name}", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/name-wildcard/{pattern}", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/description-match/{text}", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/name-prefix/{prefix}", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/name-fuzzy/{name}", null);
             });
     }
 
@@ -86,10 +100,15 @@ public class OpenSearchQueriesEMTest extends RestTestBase {
 
                 Solution<RestIndividual> solution = initAndRun(args);
 
+                // Assert 200 responses when data is found
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/with-email", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/email-pattern/{pattern}", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/complex", null);
                 assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/queries/by-ids", null);
+                
+                // Assert 404 responses when data is not found
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/with-email", null);
+                assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/queries/complex", null);
             });
     }
 
