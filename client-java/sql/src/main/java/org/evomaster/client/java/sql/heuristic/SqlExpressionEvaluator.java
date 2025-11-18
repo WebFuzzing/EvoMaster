@@ -537,7 +537,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else {
             super.visit(function);
             final List<Object> values;
-            if (function.getParameters().size() > 0) {
+            if (!function.getParameters().isEmpty()) {
                 List<Object> concreteParameters = popAsListOfValues();
                 if (function.getParameters().size() != concreteParameters.size()) {
                     throw new IllegalStateException(
