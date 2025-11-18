@@ -441,6 +441,7 @@ public class SqlHeuristicsCalculator {
                             whereClause,
                             plainSelect.getGroupBy().getGroupByExpressionList(),
                             plainSelect.getHaving(),
+                            plainSelect.getOrderByElements(),
                             plainSelect.getLimit());
                 } else {
                     heuristicResult = computeHeuristicSelect(
@@ -448,6 +449,7 @@ public class SqlHeuristicsCalculator {
                             fromItem,
                             joins,
                             whereClause,
+                            plainSelect.getOrderByElements(),
                             plainSelect.getLimit());
                 }
             } else {
@@ -482,6 +484,28 @@ public class SqlHeuristicsCalculator {
         return heuristicResult;
     }
 
+    private SqlHeuristicResult computeHeuristicSelect(List<SelectItem<?>> selectItems,
+                                                      FromItem fromItem,
+                                                      List<Join> joins,
+                                                      Expression whereClause,
+                                                      List<OrderByElement> orderByElements,
+                                                      Limit limit) {
+        final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
+        QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
+
+        if (orderByElements != null && !orderByElements.isEmpty()) {
+            queryResult = queryResult.sort(orderByElements);
+        }
+
+        if (limit != null) {
+            long limitValue = getLimitValue(limit);
+            queryResult = queryResult.limit(limitValue);
+        }
+
+        final SqlHeuristicResult heuristicResult = new SqlHeuristicResult(intermediateHeuristicResult.getTruthness(), queryResult);
+        return heuristicResult;
+    }
+
     private SqlHeuristicResult computeHeuristicSelectGroupByHaving(
             List<SelectItem<?>> selectItems,
             FromItem fromItem,
@@ -489,6 +513,7 @@ public class SqlHeuristicsCalculator {
             Expression whereClause,
             List<Expression> groupByExpressions,
             Expression having,
+            List<OrderByElement> orderByElements,
             Limit limit) {
 
         final SqlHeuristicResult intermediateHeuristicResult = computeHeuristic(fromItem, joins, whereClause);
@@ -539,6 +564,10 @@ public class SqlHeuristicsCalculator {
         final Truthness groupByHavingTruthness = TruthnessUtils.buildAndAggregationTruthness(
                 intermediateHeuristicResult.getTruthness(),
                 havingTruthness);
+
+        if (orderByElements != null && !orderByElements.isEmpty()) {
+            queryResult = queryResult.sort(orderByElements);
+        }
 
         if (limit != null) {
             long limitValue = getLimitValue(limit);

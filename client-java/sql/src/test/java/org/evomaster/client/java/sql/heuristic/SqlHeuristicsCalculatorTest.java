@@ -1145,4 +1145,90 @@ public class SqlHeuristicsCalculatorTest {
         QueryResult queryResult = heuristicResult.getQueryResult();
         assertEquals(0, queryResult.size());
     }
+
+    @Test
+    public void testSelectWithOrderByDesc() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person ORDER BY name DESC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", "person"), queryResult.seeVariableDescriptors().get(0));
+
+        assertEquals(3, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithOrderByAndLimit() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person ORDER BY name DESC LIMIT 1";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithOrderByAscending() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person ORDER BY name ASC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+        assertEquals("Jane", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("John", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
 }
