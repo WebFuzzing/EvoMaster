@@ -1445,4 +1445,96 @@ class SqlExpressionEvaluatorTest {
         assertTrue(evaluator.getEvaluatedValue() instanceof Integer);
         assertEquals(10_000, evaluator.getEvaluatedValue());
     }
+
+    @Test
+    public void testCoalesce() {
+        String sql = "COALESCE(null, 'hello', 'world')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("hello", value);
+    }
+
+    @Test
+    public void testCoalesceWithAllNull() {
+        String sql = "COALESCE(null, null, null)";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertNull(value);
+    }
+
+    @Test
+    public void testCoalesceWithFirstValueNotNull() {
+        String sql = "COALESCE('hello', 'world', null)";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actualString = evaluator.getEvaluatedValue();
+        assertEquals("hello", actualString);
+    }
+
+    @Test
+    public void testUpper() {
+        String sql = "UPPER('hello')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("HELLO", value);
+    }
+
+    @Test
+    public void testTimeFunction() {
+        String sql = "TIME('2025-01-14 12:30:45')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actualTime = evaluator.getEvaluatedValue();
+        final Time exptectedTime = Time.valueOf("12:30:45");
+        assertEquals(exptectedTime.toString(), actualTime.toString());
+    }
+
+    @Test
+    public void testCoalesceOneExpression() {
+        String sql = "COALESCE('hello')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("hello", value);
+    }
+
 }

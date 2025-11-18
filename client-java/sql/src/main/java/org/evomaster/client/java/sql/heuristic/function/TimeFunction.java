@@ -19,6 +19,14 @@ public class TimeFunction extends SqlFunction {
         if (argument instanceof Date) {
             Date date = (Date) argument;
             return timeOf(date);
+        } else if (argument instanceof String) {
+            String s = (String) argument;
+            try {
+                Date date = Timestamp.valueOf(s);
+                return timeOf(date);
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Invalid string format for TIME() function: " + s);
+            }
         }
         throw new UnsupportedOperationException("Implement this");
     }
