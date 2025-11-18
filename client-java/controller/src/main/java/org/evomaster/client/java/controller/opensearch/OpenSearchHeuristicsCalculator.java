@@ -121,6 +121,11 @@ public class OpenSearchHeuristicsCalculator {
             return Double.MAX_VALUE;
         }
 
+        // Handle empty terms list
+        if (expectedTerms.isEmpty()) {
+            return Double.MAX_VALUE;
+        }
+
         Object actualValue = ((Map<?,?>) doc).get(field);
         
         // Count how many terms match
