@@ -5,9 +5,13 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.graphql.GqlConst
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
@@ -37,7 +41,7 @@ import java.net.URLEncoder
  *              - type: string
  *              - type: integer
  */
-class ObjectGene(
+open class ObjectGene(
         name: String,
         val fixedFields: List<out Gene>,
         val refType: String? = null,
@@ -341,22 +345,96 @@ class ObjectGene(
 
         } else if (mode == GeneUtils.EscapeMode.XML) {
 
-            // TODO might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-            /*
-                Note: this is a very basic support, which should not really depend
-                much on. Problem is that we would need to access to the XSD schema
-                to decide when fields should be represented with tags or attributes
-             */
+            fun escapeXmlSafe(s: String): String =
+                s.replace(Regex("(?<!&)&(?![a-zA-Z]+;)"), "&amp;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&apos;")
 
-            buffer.append(openXml(name))
-            includedFields.forEach {
-                //FIXME put back, but then update all broken tests
-                //buffer.append(openXml(it.name))
-                buffer.append(it.getValueAsPrintableString(previousGenes, mode, targetFormat))
-                //buffer.append(closeXml(it.name))
+            fun singularize(n: String) = when {
+                n.endsWith("s") && n.length > 1 -> n.removeSuffix("s")
+                else -> n
+            }.replaceFirstChar { it.uppercase() }
+
+            fun unwrap(v: Any?): Any? = when (v) {
+                is OptionalGene -> v.gene
+                else -> v
             }
-            buffer.append(closeXml(name))
 
+            fun cleanXmlValueString(v: String): String =
+                v.removeSurrounding("\"").let(::escapeXmlSafe)
+
+            fun getPrintedValue(v: Gene): String =
+                cleanXmlValueString(v.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat))
+
+            fun isPrimitiveGene(value: Any?): Boolean = when (unwrap(value)) {
+                is StringGene, is BooleanGene, is IntegerGene, is DoubleGene, is FloatGene,
+                is String, is Number, is Boolean -> true
+                else -> false
+            }
+
+            fun serializeXml(name: String, value: Any?): String {
+
+                if (name == "#text") {
+                    return when (val v = unwrap(value)) {
+                        is Gene -> getPrintedValue(v)
+                        null -> ""
+                        else -> escapeXmlSafe(v.toString())
+                    }
+                }
+
+                val v = unwrap(value) ?: return "<$name></$name>"
+
+                return when (v) {
+                    is ObjectWithAttributesGene -> {
+                        v.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat)
+                    }
+
+                    is ObjectGene -> {
+                        val inner = v.fields.joinToString("") { f ->
+                            serializeXml(f.name, unwrap(f))
+                        }
+                        "<$name>$inner</$name>"
+                    }
+
+                    is Collection<*> -> v.joinToString("", "<$name>", "</$name>") {
+                        val itemName = singularize(name)
+                        serializeXml(itemName, it)
+                    }
+
+                    is Map<*, *> -> v.entries.joinToString("", "<$name>", "</$name>") {
+                        serializeXml(it.key.toString(), it.value)
+                    }
+
+                    is ArrayGene<*> -> {
+                        val itemName = singularize(name)
+                        v.getViewOfElements().joinToString("", "<$name>", "</$name>") {
+                            serializeXml(itemName, it)
+                        }
+                    }
+
+                    is Gene -> "<$name>${getPrintedValue(v)}</$name>"
+
+                    else -> "<$name>${cleanXmlValueString(v.toString())}</$name>"
+                }
+            }
+
+            val inner = includedFields.joinToString("") { f ->
+                serializeXml(f.name, unwrap(f))
+            }
+
+            val singleField = includedFields.singleOrNull()
+            val inlinePrimitive = singleField?.let { isPrimitiveGene(unwrap(it)) } == true
+
+            val xmlPayload = if (inlinePrimitive) {
+                val childValue = getPrintedValue(unwrap(singleField) as Gene)
+                "<$name>$childValue</$name>"
+            } else {
+                "<$name>$inner</$name>"
+            }
+
+            buffer.append(xmlPayload)
         } else if (mode == GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED) {
 
             buffer.append(includedFields.map {

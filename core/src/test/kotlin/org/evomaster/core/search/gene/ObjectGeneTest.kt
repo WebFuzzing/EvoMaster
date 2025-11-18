@@ -101,4 +101,33 @@ internal class ObjectGeneTest {
 
         assertEquals("{foo,bar,nested{hello}}", actual)
     }
+
+    @Test
+    fun testValueAsContent() {
+
+        val root = ObjectGene(
+            name = "device",
+            listOf(
+                StringGene("#text", "XPhone"),
+                ObjectGene(
+                    name = "location",
+                    listOf(
+                        StringGene("country", "AR"),
+                        ObjectGene(
+                            name = "gps",
+                            listOf(
+                                IntegerGene("#text", 12),
+                                IntegerGene("lon", 34)
+                            )
+                        )
+                    )
+                )
+            )
+        )
+
+        val actual = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+        val expected =
+            "<device>XPhone<location><country>AR</country><gps>12<lon>34</lon></gps></location></device>"
+        assertEquals(expected, actual)
+    }
 }
