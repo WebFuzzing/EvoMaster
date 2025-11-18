@@ -330,4 +330,93 @@ public class DistanceHelper {
 
         return distance;
     }
+
+    /**
+     * Calculate edit distance between two strings.
+     */
+    public static int calculateEditDistance(String s1, String s2, boolean allowTranspositions) {
+        if (allowTranspositions) {
+            return calculateDamerauLevenshteinDistance(s1, s2);
+        } else {
+            return calculateLevenshteinDistance(s1, s2);
+        }
+    }
+
+    /**
+     * Calculate standard Levenshtein distance between two strings.
+     */
+    public static int calculateLevenshteinDistance(String s1, String s2) {
+        int[][] dp = new int[s1.length() + 1][s2.length() + 1];
+        
+        for (int i = 0; i <= s1.length(); i++) dp[i][0] = i;
+        for (int j = 0; j <= s2.length(); j++) dp[0][j] = j;
+        
+        for (int i = 1; i <= s1.length(); i++) {
+            for (int j = 1; j <= s2.length(); j++) {
+                if (s1.charAt(i-1) == s2.charAt(j-1)) {
+                    dp[i][j] = dp[i-1][j-1];
+                } else {
+                    dp[i][j] = 1 + Math.min(Math.min(dp[i-1][j], dp[i][j-1]), dp[i-1][j-1]);
+                }
+            }
+        }
+        
+        return dp[s1.length()][s2.length()];
+    }
+
+    /**
+     * Calculate Damerau-Levenshtein distance between two strings.
+     * This includes transpositions in addition to standard edit operations.
+     */
+    public static int calculateDamerauLevenshteinDistance(String s1, String s2) {
+        // Simplified Damerau-Levenshtein distance (includes transpositions)
+        int len1 = s1.length();
+        int len2 = s2.length();
+        int[][] dp = new int[len1 + 1][len2 + 1];
+        
+        for (int i = 0; i <= len1; i++) dp[i][0] = i;
+        for (int j = 0; j <= len2; j++) dp[0][j] = j;
+        
+        for (int i = 1; i <= len1; i++) {
+            for (int j = 1; j <= len2; j++) {
+                int cost = (s1.charAt(i-1) == s2.charAt(j-1)) ? 0 : 1;
+                
+                dp[i][j] = Math.min(Math.min(
+                    dp[i-1][j] + 1,      // deletion
+                    dp[i][j-1] + 1),     // insertion
+                    dp[i-1][j-1] + cost  // substitution
+                );
+                
+                // Transposition
+                if (i > 1 && j > 1 && 
+                    s1.charAt(i-1) == s2.charAt(j-2) && 
+                    s1.charAt(i-2) == s2.charAt(j-1)) {
+                    dp[i][j] = Math.min(dp[i][j], dp[i-2][j-2] + cost);
+                }
+            }
+        }
+        
+        return dp[len1][len2];
+    }
+
+    /**
+     * Check if a text matches a wildcard pattern.
+     * Supports * (matches any sequence) and ? (matches any single character).
+     * @param text the text to match
+     * @param pattern the wildcard pattern
+     * @return true if the text matches the pattern
+     */
+    public static boolean matchesWildcard(String text, String pattern) {
+        // Convert wildcard pattern to regex
+        String regex = pattern
+            .replace(".", "\\.")
+            .replace("*", ".*")
+            .replace("?", ".");
+        
+        try {
+            return text.matches(regex);
+        } catch (java.util.regex.PatternSyntaxException e) {
+            return false;
+        }
+    }
 }
