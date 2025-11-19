@@ -58,7 +58,7 @@ public abstract class EnterpriseTestBase {
     protected static int controllerPort;
 
 
-    private final static int STARTING_SEED = 42;
+    private final static int STARTING_SEED = 66;
     protected int defaultSeed = STARTING_SEED;
 
     public final static String TESTS_OUTPUT_ROOT_FOLDER = "target/em-tests/";
