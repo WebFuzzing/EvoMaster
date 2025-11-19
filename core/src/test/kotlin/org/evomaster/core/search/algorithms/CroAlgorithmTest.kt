@@ -26,6 +26,13 @@ class CroAlgorithmTest {
 
     private lateinit var injector: Injector
 
+    private fun defaultSetup(config: EMConfig) {
+        config.algorithm = EMConfig.Algorithm.CRO
+        config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
+        config.maxEvaluations = 1
+        config.croInitialKineticEnergy = 0.0
+    }
+
     @BeforeEach
     fun setUp() {
         injector = LifecycleInjector.builder()
@@ -71,10 +78,7 @@ class CroAlgorithmTest {
 
             // Single molecule guarantees uni-molecular branch regardless of collision rate
             config.populationSize = 1
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             // Force decomposition check to true without touching internal state (0 > -1)
             config.croDecompositionThreshold = -1
 
@@ -113,10 +117,7 @@ class CroAlgorithmTest {
 
             // Uni-molecular branch
             config.populationSize = 1
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             // Force decomposition check true
             config.croDecompositionThreshold = -1
 
@@ -154,10 +155,7 @@ class CroAlgorithmTest {
             randomness.updateSeed(456L)
 
             config.populationSize = 1
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
 
             cro.setupBeforeSearch()
 
@@ -193,10 +191,7 @@ class CroAlgorithmTest {
             randomness.updateSeed(321L)
 
             config.populationSize = 1
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
 
             // Force on-wall branch (decomposition false)
             config.croDecompositionThreshold = Int.MAX_VALUE
@@ -233,10 +228,7 @@ class CroAlgorithmTest {
 
             // Force inter-molecular branch and synthesis check true (KE=0 <= threshold)
             config.populationSize = 2
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0
 
@@ -270,10 +262,7 @@ class CroAlgorithmTest {
             randomness.updateSeed(112L)
 
             config.populationSize = 2
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0 // synthesisCheck true
 
@@ -310,10 +299,7 @@ class CroAlgorithmTest {
             randomness.updateSeed(113L)
 
             config.populationSize = 2
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
@@ -352,10 +338,7 @@ class CroAlgorithmTest {
             randomness.updateSeed(114L)
 
             config.populationSize = 2
-            config.algorithm = EMConfig.Algorithm.CRO
-            config.stoppingCriterion = EMConfig.StoppingCriterion.ACTION_EVALUATIONS
-            config.maxEvaluations = 1
-            config.croInitialKineticEnergy = 0.0
+            defaultSetup(config)
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
