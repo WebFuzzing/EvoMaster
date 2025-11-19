@@ -5,7 +5,7 @@ import org.evomaster.client.java.sql.internal.ColumnTypeParser;
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
 
-public class DateTrunc extends SqlFunction {
+public class DateTruncFunction extends SqlFunction {
 
     public static final String MONTH = "month";
     public static final String HH = "hh";
@@ -18,7 +18,7 @@ public class DateTrunc extends SqlFunction {
 
     private static final String DATE_TRUNC = "DATE_TRUNC";
 
-    public DateTrunc() {
+    public DateTruncFunction() {
         super(DATE_TRUNC);
     }
 

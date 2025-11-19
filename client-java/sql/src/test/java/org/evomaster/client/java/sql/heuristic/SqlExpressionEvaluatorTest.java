@@ -14,6 +14,7 @@ import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.sql.DataRow;
 
 import org.evomaster.client.java.sql.QueryResult;
+import org.evomaster.client.java.sql.heuristic.function.NowFunction;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,10 +24,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1604,7 +1602,10 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
-        assertEquals(Timestamp.valueOf("2025-01-14 00:00:00"), actual);
+        assertTrue(actual instanceof java.util.Date);
+        Instant actualInstant = ((java.util.Date) actual).toInstant();
+        Instant expectedInstant = Instant.parse("2025-01-14T00:00:00Z");
+        assertEquals(expectedInstant, actualInstant);
     }
 
     @Test
@@ -1619,8 +1620,11 @@ class SqlExpressionEvaluatorTest {
 
         expression.accept(evaluator);
         Object actual = evaluator.getEvaluatedValue();
-        assertTrue(actual instanceof Timestamp);
-        assertEquals(Timestamp.valueOf("2025-01-14 12:00:00"), actual);
+        assertTrue(actual instanceof java.util.Date);
+        Instant actualInstant = ((java.util.Date) actual).toInstant();
+        final Timestamp expected = Timestamp.valueOf("2025-01-14 12:00:00");
+        Instant expectedInstant = expected.toInstant();
+        assertEquals(expectedInstant, actualInstant);
     }
 
     @Test
@@ -1659,6 +1663,22 @@ class SqlExpressionEvaluatorTest {
                 java.time.OffsetDateTime.parse("2025-01-22T15:30:45+02:00");
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testNowStableValue() {
+        String sql = "NOW()";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actual = evaluator.getEvaluatedValue();
+        assertTrue(actual instanceof Timestamp);
+        assertEquals(NowFunction.CANONICAL_NOW_VALUE, actual);
     }
 
 
