@@ -361,13 +361,14 @@ class SecurityRest {
 
                 genes.forEach {
                     gene ->
-                    if(gene !is StringGene) return@forEach
+                    val leafGene = gene.getLeafGene()
+                    if(leafGene !is StringGene) return@forEach
 
                     // we need to do this way because we need to append our paylod
-                    val hasInvalidChars = gene.invalidChars.any { payload.contains(it) }
+                    val hasInvalidChars = leafGene.invalidChars.any { payload.contains(it) }
                     if(!hasInvalidChars){
                         // append the SQLi payload value
-                        gene.value = gene.value + payload
+                        leafGene.value = leafGene.value + payload
                         anySuccess = true
                     }
                 }

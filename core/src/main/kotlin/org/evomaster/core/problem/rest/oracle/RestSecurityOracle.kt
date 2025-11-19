@@ -225,6 +225,10 @@ object RestSecurityOracle {
     // Simple SQLi payloads
     val SQLI_PAYLOADS = listOf(
         "' OR (WITH RECURSIVE r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i < 10000000) SELECT COUNT(*) FROM r)>0--",
+        "' OR SLEEP(5)-- -",
+        "\" OR SLEEP(5)-- -",
+        "' union select sleep(5)-- -",
+        "\" union select sleep(5)-- -",
         // for h2 database
 //        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B, INFORMATION_SCHEMA.COLUMNS C)>0--",
 //        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B)>0--",
