@@ -148,46 +148,22 @@ class DisjunctionListRxGene(
                 .containsSameValueAs(other.disjunctions[activeDisjunction])
     }
 
-
-
     override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() + 1
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is DisjunctionListRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        if (other !is DisjunctionListRxGene
+            || other.disjunctions.size != disjunctions.size) {
+            return false
         }
 
-        //TODO: Man, shall we check the size of [disjunctions]
-
-        return updateValueOnlyIfValid({
-            var ok = true
-            for (i in 0 until disjunctions.size) {
-                ok = ok && this.disjunctions[i].unsafeCopyValueFrom(other.disjunctions[i])
-            }
-            if (ok){
-                this.activeDisjunction = other.activeDisjunction
-            }
-            ok
-        }, true)
-
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is DisjunctionListRxGene && gene.disjunctions.size == disjunctions.size){
-            var result = true
-            disjunctions.indices.forEach { i->
-                val r = disjunctions[i].unsafeSetFromStringValue(gene.disjunctions[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${disjunctions[i].name}) at index $i")
-                result = result && r
-            }
-
-            activeDisjunction = gene.activeDisjunction
-            return result
+        var ok = true
+        for (i in 0 until disjunctions.size) {
+            ok = ok && this.disjunctions[i].unsafeCopyValueFrom(other.disjunctions[i])
         }
-
-        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionListRxGene with ${gene::class.java.simpleName}")
-        return false
+        if (ok){
+            this.activeDisjunction = other.activeDisjunction
+        }
+        return ok
     }
 
     override fun isChildUsed(child: Gene) : Boolean {

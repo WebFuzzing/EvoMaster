@@ -103,17 +103,8 @@ class RegexGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if(other !is RegexGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.disjunctions.unsafeCopyValueFrom(other.disjunctions)}, false
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is RegexGene){
-            return disjunctions.unsafeSetFromStringValue(gene.disjunctions)
-        }
-        return false
+        return this.disjunctions.unsafeCopyValueFrom(other.disjunctions)
     }
 }

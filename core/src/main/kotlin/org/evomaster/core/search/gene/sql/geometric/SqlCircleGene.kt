@@ -55,12 +55,10 @@ class SqlCircleGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlCircleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {this.c.unsafeCopyValueFrom(other.c) && this.r.unsafeCopyValueFrom(other.r)}, true
-        )
+        return this.c.unsafeCopyValueFrom(other.c) && this.r.unsafeCopyValueFrom(other.r)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -71,19 +69,6 @@ class SqlCircleGene(
                 && this.r.containsSameValueAs(other.r)
     }
 
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlCircleGene -> {
-                c.unsafeSetFromStringValue(gene.c) &&
-                        r.unsafeSetFromStringValue(gene.r)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind CircleGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

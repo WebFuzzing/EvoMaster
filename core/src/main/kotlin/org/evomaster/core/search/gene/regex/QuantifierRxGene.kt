@@ -217,56 +217,25 @@ class QuantifierRxGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is QuantifierRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {
-                if (this.atoms.size == other.atoms.size) {
-                    //same size, so just copy over the values
-                    var ok = true
-                    for (i in 0 until other.atoms.size) {
-                        ok = ok && this.atoms[i].unsafeCopyValueFrom(other.atoms[i])
-                    }
-                    ok
-                } else {
-                    //different size, so clear and create new copies
-                    this.killAllChildren()
-                    other.atoms.forEach{
-                        val a = it.copy()
-                        a.resetLocalIdRecursively()
-                        this.addChild(a)
-                    }
-                    true
-                }
-            }, true
-        )
-    }
-
-    /*
-        Note that value binding cannot be performed on the [atoms]
-     */
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is QuantifierRxGene){
-            var result = true
-            if(atoms.size == gene.atoms.size){
-                atoms.indices.forEach {
-                    val r = atoms[it].unsafeSetFromStringValue(gene.atoms[it])
-                    if (!r)
-                        LoggingUtil.uniqueWarn(log, "value binding for QuantifierRxGene does not perform successfully at index $it")
-                    result =  r && result
-                }
-            }else{
-                this.killAllChildren()
-                gene.atoms.forEach{
-                    val a = it.copy()
-                    a.resetLocalIdRecursively()
-                    this.addChild(a)
-                }
+        return if (this.atoms.size == other.atoms.size) {
+            //same size, so just copy over the values
+            var ok = true
+            for (i in 0 until other.atoms.size) {
+                ok = ok && this.atoms[i].unsafeCopyValueFrom(other.atoms[i])
             }
-            return result
+            ok
+        } else {
+            //different size, so clear and create new copies
+            this.killAllChildren()
+            other.atoms.forEach{
+                val a = it.copy()
+                a.resetLocalIdRecursively()
+                this.addChild(a)
+            }
+            true
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind the QuantifierRxGene with ${gene::class.java.simpleName}")
-        return false
     }
 }

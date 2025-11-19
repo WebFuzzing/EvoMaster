@@ -166,46 +166,20 @@ class DisjunctionRxGene(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is DisjunctionRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.copy()
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                for (i in 0 until terms.size) {
-                    ok = ok && this.terms[i].unsafeCopyValueFrom(other.terms[i])
-                }
-                if (ok){
-                    this.extraPrefix = other.extraPrefix
-                    this.extraPostfix = other.extraPostfix
-                }
-                ok
-
-            }, true
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
-            var result = true
-            terms.indices.forEach { i->
-                val r = terms[i].unsafeSetFromStringValue(gene.terms[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
-                result = result && r
-            }
-
-            extraPostfix = gene.extraPrefix
-            extraPrefix = gene.extraPrefix
-
-            if (!result){
-                LoggingUtil.uniqueWarn(log, "not fully completely bind DisjunctionRxGene")
-            }
-            return result
+        if (other !is DisjunctionRxGene
+            || other.terms.size != this.terms.size) {
+            return false
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionRxGene with ${gene::class.java.simpleName}")
-        return false
+        var ok = true
+        for (i in 0 until terms.size) {
+            ok = ok && this.terms[i].unsafeCopyValueFrom(other.terms[i])
+        }
+        if (ok){
+            this.extraPrefix = other.extraPrefix
+            this.extraPostfix = other.extraPostfix
+        }
+        return ok
     }
+
 }

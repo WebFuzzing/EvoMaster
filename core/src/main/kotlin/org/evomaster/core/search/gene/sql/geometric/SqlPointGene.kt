@@ -69,12 +69,10 @@ class SqlPointGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPointGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.x.unsafeCopyValueFrom(other.x)
-                    && this.y.unsafeCopyValueFrom(other.y)}, true
-        )
+        return this.x.unsafeCopyValueFrom(other.x)
+                    && this.y.unsafeCopyValueFrom(other.y)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -85,20 +83,6 @@ class SqlPointGene(
                 && this.y.containsSameValueAs(other.y)
     }
 
-
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlPointGene -> {
-                x.unsafeSetFromStringValue(gene.x) &&
-                        y.unsafeSetFromStringValue(gene.y)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PointGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

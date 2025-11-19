@@ -95,11 +95,9 @@ class SqlMultiPolygonGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPolygonGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.polygons.unsafeCopyValueFrom(other.polygons)}, false
-        )
+        return this.polygons.unsafeCopyValueFrom(other.polygons)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -108,21 +106,6 @@ class SqlMultiPolygonGene(
         }
         return this.polygons.containsSameValueAs(other.polygons)
     }
-
-
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiPolygonGene -> {
-                polygons.unsafeSetFromStringValue(gene.polygons)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
-
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

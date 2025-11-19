@@ -94,9 +94,9 @@ class SqlMultiPointGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiPointGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid({this.points.unsafeCopyValueFrom(other.points)}, false)
+        return this.points.unsafeCopyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -104,20 +104,6 @@ class SqlMultiPointGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.points.containsSameValueAs(other.points)
-    }
-
-
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiPointGene -> {
-                points.unsafeSetFromStringValue(gene.points)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

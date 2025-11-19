@@ -56,20 +56,8 @@ class PatternCharacterBlockGene(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is PatternCharacterBlockGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if(other.stringBlock != this.stringBlock) {
-            //this should not happen
-            throw IllegalStateException("Not supposed to copy value for " + this.javaClass.simpleName)
-        }
-
-        return true
+        //do nothing
+        return containsSameValueAs(other)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        // do nothing
-        return true
-    }
 }
