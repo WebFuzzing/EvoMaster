@@ -47,12 +47,9 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         // do nothing
-        return true
+        return other is CycleObjectGene
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return false
-    }
 
     override fun isPrintable(): Boolean {
         return false

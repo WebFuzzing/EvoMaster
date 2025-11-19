@@ -137,25 +137,11 @@ class BigIntegerGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is BigIntegerGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        //BigInteger is immutable, just refer to the value of other gene
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
-            is SeededGene<*> -> return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
-            is NumericStringGene -> return this.unsafeSetFromStringValue(gene.number)
+            is NumericStringGene -> return this.unsafeCopyValueFrom(gene.number)
             is LongGene -> setValueWithLong(gene.value)
             is FloatGene -> setValueWithLong(gene.value.toLong())
             is IntegerGene -> setValueWithLong(gene.value.toLong())

@@ -131,20 +131,9 @@ class CharacterRangeRxGene(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if(other !is CharacterRangeRxGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if(gene is CharacterRangeRxGene){
             value = gene.value
             return true

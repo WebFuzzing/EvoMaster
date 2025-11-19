@@ -94,20 +94,9 @@ class DoubleGene(name: String,
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is DoubleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene) : Boolean{
         when(gene){
             is DoubleGene -> value = gene.value
             is FloatGene -> value = gene.value.toDouble()
@@ -115,24 +104,11 @@ class DoubleGene(name: String,
             is LongGene -> value = gene.value.toDouble()
             is BigDecimalGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
             is BigIntegerGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
-            is StringGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
-            }
-            is Base64StringGene ->{
-                value = gene.data.value.toDoubleOrNull() ?: return false
-            }
-            is ImmutableDataHolderGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
-            }
-            is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toDouble()
-            }
-            is SeededGene<*> ->{
-                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
-            }
-            is NumericStringGene ->{
-                return this.unsafeSetFromStringValue(gene.number)
-            }
+            is StringGene -> { value = gene.value.toDoubleOrNull() ?: return false }
+            is Base64StringGene ->{ value = gene.data.value.toDoubleOrNull() ?: return false }
+            is ImmutableDataHolderGene -> { value = gene.value.toDoubleOrNull() ?: return false }
+            is SqlPrimaryKeyGene ->{ value = gene.uniqueId.toDouble() }
+            is NumericStringGene ->{ return this.unsafeCopyValueFrom(gene.number) }
             else -> {
                 LoggingUtil.uniqueWarn(
                     log,

@@ -91,20 +91,9 @@ class LongGene(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is LongGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
             is LongGene -> value = gene.value
             is FloatGene -> value = gene.value.toLong()
@@ -124,11 +113,8 @@ class LongGene(
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId
             }
-            is SeededGene<*> ->{
-                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
-            }
             is NumericStringGene ->{
-                return this.unsafeSetFromStringValue(gene.number)
+                return this.unsafeCopyValueFrom(gene.number)
             }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")

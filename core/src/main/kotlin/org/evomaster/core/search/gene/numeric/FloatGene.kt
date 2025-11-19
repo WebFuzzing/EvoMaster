@@ -93,20 +93,9 @@ class FloatGene(name: String,
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is FloatGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
             is FloatGene -> value = gene.value
             is DoubleGene -> value = gene.value.toFloat()
@@ -126,11 +115,8 @@ class FloatGene(name: String,
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId.toFloat()
             }
-            is SeededGene<*> ->{
-                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
-            }
             is NumericStringGene ->{
-                return this.unsafeSetFromStringValue(gene.number)
+                return this.unsafeCopyValueFrom(gene.number)
             }
             else -> {
                 LoggingUtil.uniqueWarn(

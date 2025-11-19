@@ -69,34 +69,19 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is AnyCharacterRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         when(gene){
-            is AnyCharacterRxGene -> {
-                value = gene.value
-            }
+            is AnyCharacterRxGene -> { value = gene.value }
             is IntegerGene -> value = gene.value.toChar()
-            is DoubleGene -> value = gene.value.toChar()
-            is FloatGene -> value = gene.value.toChar()
-            is LongGene -> value = gene.value.toChar()
+            is DoubleGene -> value = gene.value.toInt().toChar()
+            is FloatGene -> value = gene.value.toInt().toChar()
+            is LongGene -> value = gene.value.toInt().toChar()
             else -> {
-                if (gene is StringGene && gene.value.length == 1)
+                if (gene is StringGene && gene.value.length == 1) {
                     value = gene.value.first()
-                else if(gene is StringGene && gene.getSpecializationGene() != null){
-                    return unsafeSetFromStringValue(gene.getSpecializationGene()!!)
-                }else{
+                } else{
                     LoggingUtil.uniqueWarn(log, "cannot bind AnyCharacterRxGene with ${gene::class.java.simpleName}")
                     return false
                 }

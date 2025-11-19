@@ -43,10 +43,8 @@ class LimitObjectGene(name: String) : SimpleGene(name) {
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        return true
+        //do nothing
+        return containsSameValueAs(other)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return false
-    }
 }

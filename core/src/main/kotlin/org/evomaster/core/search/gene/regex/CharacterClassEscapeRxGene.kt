@@ -102,20 +102,9 @@ class CharacterClassEscapeRxGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if(other !is CharacterClassEscapeRxGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
         if (gene is CharacterClassEscapeRxGene){
             value = gene.value
             return true

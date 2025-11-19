@@ -66,12 +66,8 @@ class ImmutableDataHolderGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        throw IllegalStateException("Not supposed to modify an immutable gene")
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        // do nothing
-        return true
+        //do nothing
+        return containsSameValueAs(other)
     }
 
 }
