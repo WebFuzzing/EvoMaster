@@ -1270,9 +1270,29 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-        String dateTimeAsString = dateTimeLiteralExpression.getValue();
-        String dateTimeWithoutEnclosingQuotes = SqlStringUtils.removeEnclosingQuotes(dateTimeAsString);
-        evaluationStack.push(dateTimeWithoutEnclosingQuotes);
+        final String dateTimeAsString = SqlStringUtils.removeEnclosingQuotes(dateTimeLiteralExpression.getValue());
+        final DateTimeLiteralExpression.DateTime dateTimeType = dateTimeLiteralExpression.getType();
+        Object dateTimeValue;
+        switch (dateTimeType) {
+            case DATE:
+                dateTimeValue = java.sql.Date.valueOf(dateTimeAsString);
+                break;
+            case TIME:
+                dateTimeValue = java.sql.Time.valueOf(dateTimeAsString);
+                break;
+            case TIMESTAMP:
+                dateTimeValue = java.sql.Timestamp.valueOf(dateTimeAsString);
+                break;
+            case TIMESTAMPTZ:
+                // Example literal: 2025-01-22 15:30:45+02:00
+                // Convert spaces to 'T' to comply with ISO-8601
+                String isoString = dateTimeAsString.replace(' ', 'T');
+                dateTimeValue = java.time.OffsetDateTime.parse(isoString);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported DateTimeLiteralExpression type: " + dateTimeType);
+        }
+        evaluationStack.push(dateTimeValue);
     }
 
     @Override

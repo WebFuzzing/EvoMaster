@@ -1523,6 +1523,61 @@ class SqlExpressionEvaluatorTest {
     }
 
     @Test
+    public void testTimestampExpression() {
+        String sql = "TIMESTAMP '2025-01-14 12:30:45'";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actualTimestamp = evaluator.getEvaluatedValue();
+        assertTrue(actualTimestamp instanceof Timestamp);
+        final Timestamp exptectedTimestamp = java.sql.Timestamp.valueOf("2025-01-14 12:30:45");
+        assertEquals(exptectedTimestamp, actualTimestamp);
+    }
+
+    @Test
+    public void testDateExpression() {
+        String sql = "DATE '2025-01-14'";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actualDate = evaluator.getEvaluatedValue();
+
+        assertTrue(actualDate instanceof java.sql.Date);
+
+        final java.sql.Date expectedDate = java.sql.Date.valueOf("2025-01-14");
+        assertEquals(expectedDate, actualDate);
+    }
+
+    @Test
+    public void testTimeExpression() {
+        String sql = "TIME '12:30:45'";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actualTime = evaluator.getEvaluatedValue();
+
+        assertTrue(actualTime instanceof java.sql.Time);
+
+        final java.sql.Time expectedTime = java.sql.Time.valueOf("12:30:45");
+        assertEquals(expectedTime, actualTime);
+    }
+
+    @Test
     public void testCoalesceOneExpression() {
         String sql = "COALESCE('hello')";
         Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
@@ -1536,5 +1591,75 @@ class SqlExpressionEvaluatorTest {
         Object value = evaluator.getEvaluatedValue();
         assertEquals("hello", value);
     }
+
+    @Test
+    public void dateTruncDayTruncatesTimestamp() {
+        String sql = "DATE_TRUNC('day', TIMESTAMP '2025-01-14 12:30:45')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actual = evaluator.getEvaluatedValue();
+        assertEquals(Timestamp.valueOf("2025-01-14 00:00:00"), actual);
+    }
+
+    @Test
+    public void dateTruncHourTruncatesTimestamp() {
+        String sql = "DATE_TRUNC('hour', TIMESTAMP '2025-01-14 12:30:45')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actual = evaluator.getEvaluatedValue();
+        assertTrue(actual instanceof Timestamp);
+        assertEquals(Timestamp.valueOf("2025-01-14 12:00:00"), actual);
+    }
+
+    @Test
+    public void dateTruncUnknownUnitThrowsIllegalArgumentException() {
+        String sql = "DATE_TRUNC('millennium', TIMESTAMP '2025-01-14 12:30:45')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            expression.accept(evaluator);
+            // if evaluation returns something, force get to trigger potential errors
+            evaluator.getEvaluatedValue();
+        });
+    }
+
+    @Test
+    public void testTimestampTzExpression() {
+        String sql = "TIMESTAMPTZ '2025-01-22 15:30:45+02:00'";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actual = evaluator.getEvaluatedValue();
+
+        assertTrue(actual instanceof java.time.OffsetDateTime);
+
+        java.time.OffsetDateTime expected =
+                java.time.OffsetDateTime.parse("2025-01-22T15:30:45+02:00");
+
+        assertEquals(expected, actual);
+    }
+
 
 }
