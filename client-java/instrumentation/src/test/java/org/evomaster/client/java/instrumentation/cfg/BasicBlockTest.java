@@ -37,6 +37,17 @@ class BasicBlockTest {
         assertNotEquals(a, c);
         assertEquals(a.hashCode(), b.hashCode());
     }
+
+    @Test
+    void toStringIncludesIdsRangeAndNeighbors() {
+        BasicBlock bb = new BasicBlock(7, 10, 20);
+        bb.addSuccessor(8);
+        bb.addSuccessor(9);
+        bb.addPredecessor(6);
+
+        String expected = "BasicBlock{id=7, start=10, end=20, succ=[8, 9], pred=[6]}";
+        assertEquals(expected, bb.toString());
+    }
 }
 
 

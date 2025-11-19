@@ -5,7 +5,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import java.util.*;
 
 /**
- * Instruction-level CFG mirroring the structure managed by EvoSuite's RawControlFlowGraph.
+ * Instruction-level CFG.
  * Nodes correspond to individual bytecode instructions (opcode != -1). Edges can be marked as exception edges.
  */
 public final class RawControlFlowGraph {

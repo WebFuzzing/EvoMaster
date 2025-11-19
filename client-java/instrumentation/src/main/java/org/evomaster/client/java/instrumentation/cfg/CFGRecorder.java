@@ -8,11 +8,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Global recorder to store CFGs discovered at instrumentation time.
- * This mirrors how other static state (eg UnitsInfoRecorder) is kept for later retrieval.
  */
 public class CFGRecorder {
 
-    private static final Map<String, ControlFlowGraph> graphsByMethodId = new ConcurrentHashMap<>(16384);
+    private static final Map<String, ControlFlowGraph> graphsByMethodId = new ConcurrentHashMap<>();
 
     private static String methodKey(String classBytecodeName, String methodName, String descriptor) {
         return classBytecodeName + "#" + methodName + descriptor;
