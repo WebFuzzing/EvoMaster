@@ -10,10 +10,7 @@ import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.distance.heuristics.Truthness;
 import org.evomaster.client.java.distance.heuristics.TruthnessUtils;
-import org.evomaster.client.java.sql.DataRow;
-import org.evomaster.client.java.sql.QueryResult;
-import org.evomaster.client.java.sql.QueryResultSet;
-import org.evomaster.client.java.sql.VariableDescriptor;
+import org.evomaster.client.java.sql.*;
 import org.evomaster.client.java.sql.heuristic.function.FunctionFinder;
 import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
@@ -406,7 +403,7 @@ public class SqlHeuristicsCalculator {
     SqlHeuristicResult computeHeuristic(Select select) {
         tableColumnResolver.enterStatementeContext(select);
         final SqlHeuristicResult heuristicResult;
-        if (select.getLimit()!=null && getLimitValue(select.getLimit())==0) {
+        if (select.getLimit() != null && getLimitValue(select.getLimit()) == 0) {
             // Handle case of LIMIT 0
             heuristicResult = new SqlHeuristicResult(FALSE_TRUTHNESS, new QueryResult(Collections.emptyList()));
         } else {
@@ -494,7 +491,7 @@ public class SqlHeuristicsCalculator {
         QueryResult queryResult = createQueryResult(intermediateHeuristicResult.getQueryResult(), selectItems);
 
         if (orderByElements != null && !orderByElements.isEmpty()) {
-            queryResult = queryResult.sort(orderByElements);
+            queryResult = createQueryResultOrderBy(queryResult, orderByElements);
         }
 
         if (limit != null) {
@@ -566,7 +563,7 @@ public class SqlHeuristicsCalculator {
                 havingTruthness);
 
         if (orderByElements != null && !orderByElements.isEmpty()) {
-            queryResult = queryResult.sort(orderByElements);
+            queryResult = createQueryResultOrderBy(queryResult, orderByElements);
         }
 
         if (limit != null) {
@@ -900,6 +897,23 @@ public class SqlHeuristicsCalculator {
         return evaluateAll(conditions, row, null);
     }
 
+    private QueryResult createQueryResultOrderBy(QueryResult queryResult, List<OrderByElement> orderByElements) {
+        if (orderByElements == null || orderByElements.isEmpty()) {
+            throw new IllegalArgumentException("Cannot evaluate empty orderBy elements");
+        }
+
+        QueryResult sortedResult = new QueryResult(queryResult.seeVariableDescriptors());
+
+        List<DataRow> sortedRows = new ArrayList<>(queryResult.seeRows());
+        sortedRows.sort(new OrderByComparator(orderByElements));
+
+        for (DataRow row : sortedRows) {
+            sortedResult.addRow(row);
+        }
+
+        return sortedResult;
+    }
+
     private QueryResult createQueryResult(FromItem fromItem) {
         final QueryResult tableData;
         if (fromItem == null) {
@@ -917,6 +931,46 @@ public class SqlHeuristicsCalculator {
             }
         }
         return tableData;
+    }
+
+
+    private class OrderByComparator implements Comparator<DataRow> {
+
+        private final List<OrderByElement> orderByElements;
+
+        public OrderByComparator(List<OrderByElement> orderByElements) {
+            this.orderByElements = orderByElements;
+        }
+
+        @Override
+        public int compare(DataRow r1, DataRow r2) {
+            for (OrderByElement orderByElement : orderByElements) {
+                Expression orderByElementExpression = orderByElement.getExpression();
+                Object val1 = evaluate(orderByElementExpression, r1);
+                Object val2 = evaluate(orderByElementExpression, r2);
+
+                int comparison;
+                if (val1 == null && val2 == null) {
+                    comparison = 0;
+                } else if (val1 == null) {
+                    comparison = -1;
+                } else if (val2 == null) {
+                    comparison = 1;
+                } else {
+                    if (val1 instanceof Comparable && val2 instanceof Comparable) {
+                        comparison = ((Comparable) val1).compareTo(val2);
+                    } else {
+                        // Cannot compare, treat as equal
+                        comparison = 0;
+                    }
+                }
+
+                if (comparison != 0) {
+                    return orderByElement.isAsc() ? comparison : -comparison;
+                }
+            }
+            return 0;
+        }
     }
 
 

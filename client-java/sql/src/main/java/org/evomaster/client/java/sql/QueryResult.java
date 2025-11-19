@@ -218,26 +218,4 @@ public class QueryResult {
         return limitedResult;
     }
 
-    /**
-     * Sorts the QueryResult based on the provided OrderByElements.
-     *
-     * @param orderByElements the list of OrderByElements defining the sorting criteria
-     * @return a new QueryResult sorted according to the specified OrderByElements
-     */
-    public QueryResult sort(List<OrderByElement> orderByElements) {
-        if (orderByElements == null || orderByElements.isEmpty()) {
-            return this;
-        }
-
-        QueryResult sortedResult = new QueryResult(this.variableDescriptors);
-
-        List<DataRow> sortedRows = new ArrayList<>(this.rows);
-        sortedRows.sort(new DataRowComparator(orderByElements));
-
-        for (DataRow row : sortedRows) {
-            sortedResult.addRow(row);
-        }
-
-        return sortedResult;
-    }
 }
