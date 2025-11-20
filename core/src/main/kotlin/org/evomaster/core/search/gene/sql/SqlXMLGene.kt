@@ -97,7 +97,7 @@ class SqlXMLGene(name: String,
         val gene = other.getPhenotype()
 
         return when(gene){
-            is ObjectGene -> objectGene.unsafeSetFromStringValue(gene)
+            is ObjectGene -> objectGene.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlXMLGene with ${gene::class.java.simpleName}")
                 false

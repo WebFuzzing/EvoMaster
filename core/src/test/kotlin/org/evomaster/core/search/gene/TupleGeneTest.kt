@@ -75,7 +75,7 @@ class TupleGeneTest {
             )
         )
 
-        assertTrue(originalGene.unsafeSetFromStringValue(gene))
+        assertTrue(originalGene.unsafeCopyValueFrom(gene))
 
         originalGene.elements.apply {
             assertTrue(this[0] is StringGene)

@@ -76,7 +76,7 @@ class SqlTimeIntervalGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return this.days.containsSameValueAs(other.days)
                 && this.time.containsSameValueAs(other.time)

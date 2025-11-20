@@ -276,7 +276,7 @@ class ArrayGene<T>(
             }
             return true
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
+        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${other::class.java.simpleName}")
         return false
     }
 

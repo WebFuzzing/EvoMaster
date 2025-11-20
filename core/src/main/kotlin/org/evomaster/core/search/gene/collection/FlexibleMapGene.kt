@@ -49,7 +49,7 @@ where T : Gene {
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is FlexibleMapGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return this.elements.size == other.elements.size
                 && this.elements.zip(other.elements) { thisElem, otherElem ->

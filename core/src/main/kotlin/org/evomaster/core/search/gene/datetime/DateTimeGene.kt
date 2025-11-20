@@ -144,7 +144,7 @@ open class DateTimeGene(
                         && time.unsafeCopyValueFrom(gene.time)
             }
             gene is DateGene -> date.unsafeCopyValueFrom(gene)
-            gene is TimeGene -> time.unsafeSetFromStringValue(gene)
+            gene is TimeGene -> time.unsafeCopyValueFrom(gene)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateTimeGene with ${gene::class.java.simpleName}")
                 false

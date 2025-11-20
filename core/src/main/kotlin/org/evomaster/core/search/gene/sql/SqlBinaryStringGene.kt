@@ -70,7 +70,7 @@ class SqlBinaryStringGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return binaryArrayGene.containsSameValueAs(other.binaryArrayGene)
     }
