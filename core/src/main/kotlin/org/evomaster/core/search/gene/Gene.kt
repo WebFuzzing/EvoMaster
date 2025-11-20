@@ -1140,18 +1140,9 @@ abstract class Gene(
      *
      * @return if the update was successful
      */
-    fun copyValueFrom(gene: Gene, undoIfUpdateFails: Boolean = true): Boolean {
-
-        //FIXME current implementation leads to infinite loops. must fix copyValueFrom
-        //return updateValueOnlyIfValid( { unsafeCopyValueFrom(gene) } , undoIfUpdateFails)
-        //TODO update once fixed
-        return unsafeCopyValueFrom(gene)
+    fun copyValueFrom(gene: Gene): Boolean {
+        return updateValueOnlyIfValid( { unsafeCopyValueFrom(gene) }, true)
     }
-
-    /*
-        FIXME: looks like redundancies and inconsistencies between copyValueFrom and setFromDifferentGene.
-        TODO once fixed, update
-     */
 
     /**
      * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
@@ -1184,25 +1175,28 @@ abstract class Gene(
 
 
     /**
-     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) isLocallyValid is true
+     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) [isGloballyValid] is true
      *
      * @param updateValue lambda performs update of value of the gene
-     * @param undoIfUpdateFails represents whether it needs to undo the value update if [undoIfUpdateFails] returns false
+     * @param undoIfUpdateFails represents whether it needs to undo the value update if [updateValue] returns false
      *
      * @return if the value is updated with [updateValue]
      */
     fun updateValueOnlyIfValid(updateValue: () -> Boolean, undoIfUpdateFails: Boolean): Boolean {
+
+        if(!undoIfUpdateFails) {
+            return updateValue()
+        }
+
         val current = copy()
         val ok = updateValue()
-        if (!ok && !undoIfUpdateFails) return false
 
-        if (!ok || !isLocallyValid()) {
+        if (!ok || !isGloballyValid()) {
             val success = unsafeCopyValueFrom(current)
             assert(success)
             return false
         }
         return true
-
     }
 
     /**

@@ -535,7 +535,7 @@ class HarvestActualHttpWsResponseHandler {
             val v = ParamUtil.getValueGene(geneToMutate)
             val t = ParamUtil.getValueGene(template)
             if (v::class.java == t::class.java) {
-                v.unsafeCopyValueFrom(t)
+                v.copyValueFrom(t)
                 return true
             } else if (v is StringGene) {
                 // add template as part of specialization
