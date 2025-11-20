@@ -92,17 +92,14 @@ class UrlHttpGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is UrlHttpGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid({scheme.unsafeCopyValueFrom(other.scheme) &&
+        return scheme.unsafeCopyValueFrom(other.scheme) &&
                 host.unsafeCopyValueFrom(other.host) &&
                 port.unsafeCopyValueFrom(other.port) &&
-                path.unsafeCopyValueFrom(other.path)}, true)
+                path.unsafeCopyValueFrom(other.path)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return false
-    }
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     /**

@@ -67,13 +67,11 @@ class SqlTimeIntervalGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {this.days.unsafeCopyValueFrom(other.days)
-                    && this.time.unsafeCopyValueFrom(other.time)}, true
-        )
+        return this.days.unsafeCopyValueFrom(other.days)
+                    && this.time.unsafeCopyValueFrom(other.time)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -82,21 +80,6 @@ class SqlTimeIntervalGene(
         }
         return this.days.containsSameValueAs(other.days)
                 && this.time.containsSameValueAs(other.time)
-    }
-
-
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlTimeIntervalGene -> {
-                days.unsafeSetFromStringValue(gene.days) &&
-                        time.unsafeSetFromStringValue(gene.time)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

@@ -72,18 +72,14 @@ class UriDataGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is UriDataGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        val current = copy()
 
-        return updateValueOnlyIfValid(
-            {type.unsafeCopyValueFrom(other.type) && base64.unsafeCopyValueFrom(other.base64) && data.unsafeCopyValueFrom(other.data)}, true
-        )
+        return type.unsafeCopyValueFrom(other.type)
+                && base64.unsafeCopyValueFrom(other.base64)
+                && data.unsafeCopyValueFrom(other.data)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return false
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.wrapper
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness

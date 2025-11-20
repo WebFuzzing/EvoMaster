@@ -66,11 +66,10 @@ class SqlTextSearchVectorGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchVectorGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.textLexeme.unsafeCopyValueFrom(other.textLexeme)}, false
-        )
+
+        return this.textLexeme.unsafeCopyValueFrom(other.textLexeme)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -80,18 +79,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlTextSearchVectorGene -> {
-                textLexeme.unsafeSetFromStringValue(gene.textLexeme)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

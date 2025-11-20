@@ -76,21 +76,16 @@ class SqlJSONGene(name: String,
         }
     }
 
-    override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is SqlJSONGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        return updateValueOnlyIfValid(
-            {this.objectGene.unsafeCopyValueFrom(other.objectGene)}, false
-        )
+    override fun getPhenotype(): Gene {
+        return objectGene
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         return when(gene){
-            is SqlJSONGene -> objectGene.unsafeSetFromStringValue(gene.objectGene)
-            is SqlXMLGene -> objectGene.unsafeSetFromStringValue(gene.objectGene)
-            is ObjectGene -> objectGene.unsafeSetFromStringValue(gene)
+            is ObjectGene -> objectGene.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
                 false

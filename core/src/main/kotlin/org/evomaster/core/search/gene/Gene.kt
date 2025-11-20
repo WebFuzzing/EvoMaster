@@ -16,7 +16,7 @@ import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 

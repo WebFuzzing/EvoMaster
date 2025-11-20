@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene
 
 
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue

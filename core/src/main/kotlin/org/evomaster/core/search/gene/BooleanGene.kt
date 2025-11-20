@@ -71,23 +71,9 @@ class BooleanGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is BooleanGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
 
-        return true
-    }
+        val gene = other.getPhenotype()
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is SeededGene<*>){
-            return this.unsafeSetFromStringValue(gene.getPhenotype()as Gene)
-        }
         if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")
             return false

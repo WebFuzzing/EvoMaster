@@ -105,15 +105,12 @@ class NumericStringGene(
 
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is NumericStringGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        return updateValueOnlyIfValid({this.number.unsafeCopyValueFrom(other.number)}, false)
-    }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+        val gene = other.getPhenotype()
+
         return when(gene){
-            is NumericStringGene -> number.unsafeSetFromStringValue(gene.number)
-            else-> number.unsafeSetFromStringValue(gene)
+            is NumericStringGene -> number.unsafeCopyValueFrom(gene.number)
+            else-> number.unsafeCopyValueFrom(gene)
         }
     }
 

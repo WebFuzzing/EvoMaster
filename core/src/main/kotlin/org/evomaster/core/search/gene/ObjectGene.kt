@@ -246,70 +246,35 @@ class ObjectGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is ObjectGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
         if (other.isFixed != isFixed)
-            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
+            return false
 
         if (!isFixed && !template!!.possiblySame(other.template!!))
-            throw IllegalArgumentException("different template ${other.template.javaClass}")
+            return false
 
         //TODO what if they have a different number of fields, or name not match???
         // semantic of this function is unclear, really need TODO refactoring
 
-        val updateOk = updateValueOnlyIfValid(
-            {
-                var ok = true
+        var ok = true
 
-                for (i in fixedFields.indices) {
-                    ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
-                }
-
-                if(!isFixed){
-                    //TODO what if there is a mismatch here? semantic of this function is unclear
-                    for (i in additionalFields!!.indices){
-                        ok = ok && this.additionalFields!![i].unsafeCopyValueFrom(other.additionalFields!![i])
-                    }
-                }
-
-                ok
-            }, true
-        )
-
-        return updateOk
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is ObjectGene
-                && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
-                && isFixed == gene.isFixed
-                && (isFixed || template!!.possiblySame(gene.template!!))) {
-
-            var result = true
-            (fixedFields.indices).forEach {
-                val r = fixedFields[it].unsafeSetFromStringValue(gene.fixedFields[it])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
-                result = result && r
-            }
-            if(!isFixed){
-                (additionalFields!!.indices).forEach {
-                    val r = additionalFields!![it].unsafeSetFromStringValue(gene.additionalFields!![it])
-                    if (!r)
-                        LoggingUtil.uniqueWarn(log, "cannot bind the field ${additionalFields!![it].name}")
-                    result = result && r
-                }
-            }
-            if (!result)
-                LoggingUtil.uniqueWarn(log, "fail to fully bind field values with the ObjectGene")
-
-            return result
+        for (i in fixedFields.indices) {
+            ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
-        return false
+        if(!isFixed){
+            //TODO what if there is a mismatch here? semantic of this function is unclear
+            for (i in additionalFields!!.indices){
+                ok = ok && this.additionalFields!![i].unsafeCopyValueFrom(other.additionalFields!![i])
+            }
+        }
+
+        return ok
     }
+
+
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 

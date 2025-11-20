@@ -112,39 +112,18 @@ class SeededGene<T>(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SeededGene<*>)
-            throw IllegalArgumentException("Invalid gene ${other::class.java}")
+           return false
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = if (employSeeded)
-                    this.seeded.unsafeCopyValueFrom(other.seeded)
-                else
-                    this.gene.unsafeCopyValueFrom(other.gene as Gene)
+        val ok = if (employSeeded)
+            this.seeded.unsafeCopyValueFrom(other.seeded)
+        else
+            this.gene.unsafeCopyValueFrom(other.gene as Gene)
 
-                if (ok){
-                    this.employSeeded = other.employSeeded
-                    this.isEmploySeededMutable = other.isEmploySeededMutable
-                }
-                ok
-            }, false
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        // only allow bind value for gene
-        if (gene is SeededGene<*> && isEmploySeededMutable){
-            employSeeded = gene.employSeeded
-            if (!employSeeded)
-                return ParamUtil.getValueGene(this.gene).unsafeSetFromStringValue(ParamUtil.getValueGene(gene.gene as Gene))
-            else
-                return seeded.unsafeSetFromStringValue(gene.seeded)
+        if (ok){
+            this.employSeeded = other.employSeeded
+            this.isEmploySeededMutable = other.isEmploySeededMutable
         }
-
-        if (gene !is SeededGene<*> && !employSeeded){
-            return ParamUtil.getValueGene(this.gene).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
-        }
-
-        return false
+        return ok
     }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {

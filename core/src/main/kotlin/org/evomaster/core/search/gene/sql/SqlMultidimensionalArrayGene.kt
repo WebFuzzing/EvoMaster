@@ -315,7 +315,10 @@ class SqlMultidimensionalArrayGene<T>(
      * A multidimensional array gene can only bind to other multidimensional array genes
      * with the same template and number of dimensions.
      */
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         if (gene !is SqlMultidimensionalArrayGene<*>) {
             LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
             return false
@@ -336,25 +339,7 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is SqlMultidimensionalArrayGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (numberOfDimensions != other.numberOfDimensions) {
-            throw IllegalArgumentException("Cannot copy value to array of  $numberOfDimensions dimensions from array of ${other.numberOfDimensions} dimensions")
-        }
-
-        return updateValueOnlyIfValid(
-            {
-                val ok = getViewOfChildren()[0].unsafeCopyValueFrom(other.getViewOfChildren()[0])
-                if (ok){
-                    this.dimensionSizes = other.dimensionSizes
-                }
-                ok
-            }, false
-        )
-    }
 
 
     /**

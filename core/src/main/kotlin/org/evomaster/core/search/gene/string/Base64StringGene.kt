@@ -45,16 +45,12 @@ class Base64StringGene(
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is Base64StringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({this.data.unsafeCopyValueFrom(other.data)}, false)
-    }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
+        val gene = other.getPhenotype()
+
         return when(gene){
-            is Base64StringGene -> data.unsafeSetFromStringValue(gene.data)
-            is StringGene -> data.unsafeSetFromStringValue(gene)
+            is Base64StringGene -> data.unsafeCopyValueFrom(gene.data)
+            is StringGene -> data.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
                 false

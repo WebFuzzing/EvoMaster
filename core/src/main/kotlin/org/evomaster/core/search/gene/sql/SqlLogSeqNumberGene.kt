@@ -106,24 +106,10 @@ class SqlLogSeqNumberGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlLogSeqNumberGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {leftPart.unsafeCopyValueFrom(other.leftPart)
-                    && rightPart.unsafeCopyValueFrom(other.rightPart)}, true
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is SqlLogSeqNumberGene) {
-            this.leftPart.unsafeSetFromStringValue(gene.leftPart)
-            this.rightPart.unsafeSetFromStringValue(gene.rightPart)
-        }
-        LoggingUtil.uniqueWarn(
-                log,
-                "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}"
-        )
-        return false
+        return leftPart.unsafeCopyValueFrom(other.leftPart)
+                    && rightPart.unsafeCopyValueFrom(other.rightPart)
     }
 
 

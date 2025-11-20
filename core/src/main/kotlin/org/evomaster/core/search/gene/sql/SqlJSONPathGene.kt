@@ -112,21 +112,9 @@ class SqlJSONPathGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlJSONPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.pathExpression.unsafeCopyValueFrom(other.pathExpression)}, false
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when (gene) {
-            is SqlJSONPathGene -> pathExpression.unsafeSetFromStringValue(gene.pathExpression)
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
+        return this.pathExpression.unsafeCopyValueFrom(other.pathExpression)
     }
 
     override fun customShouldApplyShallowMutation(

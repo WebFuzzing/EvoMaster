@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.wrapper
 import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -131,7 +132,7 @@ class FlexibleGene(name: String,
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is FlexibleGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         if (replaceable){
 
             if (!other.isLocallyValid())
@@ -155,9 +156,6 @@ class FlexibleGene(name: String,
         return false
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return false
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other is FlexibleGene){

@@ -78,39 +78,14 @@ class SqlCompositeGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlCompositeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                for (i in fields.indices) {
-                    ok = ok && this.fields[i].unsafeCopyValueFrom(other.fields[i])
-                }
-                ok
-            }, true
-        )
-    }
-
-
-
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is SqlCompositeGene && (fields.indices).all { fields[it].possiblySame(gene.fields[it]) }) {
-            var result = true
-            (fields.indices).forEach {
-                val r = fields[it].unsafeSetFromStringValue(gene.fields[it])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fields[it].name}")
-                result = result && r
-            }
-            if (!result)
-                LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${compositeTypeName ?: "null"}) with the object gene (with the refType ${gene.compositeTypeName ?: "null"})")
-            return result
+        var ok = true
+        for (i in fields.indices) {
+            ok = ok && this.fields[i].unsafeCopyValueFrom(other.fields[i])
         }
-        // might be cycle object gene
-        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} (with the refType ${compositeTypeName ?: "null"}) with ${gene::class.java.simpleName}")
-        return false
+        return ok
     }
 
     override fun copyContent() = SqlCompositeGene(this.name, fields.map { it.copy() }.toList(), this.compositeTypeName)

@@ -72,24 +72,11 @@ class SqlMultiRangeGene<T>(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.rangeGenes.unsafeCopyValueFrom(other.rangeGenes)}, false
-        )
+        return this.rangeGenes.unsafeCopyValueFrom(other.rangeGenes)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiRangeGene<*> -> {
-                rangeGenes.unsafeSetFromStringValue(gene.rangeGenes)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"{" +

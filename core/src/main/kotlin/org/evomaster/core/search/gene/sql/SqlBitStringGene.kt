@@ -68,22 +68,10 @@ class SqlBitStringGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlBitStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return  updateValueOnlyIfValid(
-            {booleanArrayGene.unsafeCopyValueFrom(other.booleanArrayGene)}, false
-        )
+        return  booleanArrayGene.unsafeCopyValueFrom(other.booleanArrayGene)
     }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is SqlBitStringGene) {
-            return booleanArrayGene.unsafeSetFromStringValue(gene.booleanArrayGene)
-        }
-        LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
-        return false
-    }
-
-
 
     override fun copyContent() = SqlBitStringGene(name, minSize = minSize, maxSize = maxSize, booleanArrayGene.copy() as ArrayGene<BooleanGene>)
 

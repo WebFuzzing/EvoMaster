@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.wrapper
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.value.DisruptiveGeneImpact
@@ -178,22 +179,14 @@ class CustomMutationRateGene<out T>(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is CustomMutationRateGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = this.gene.unsafeCopyValueFrom(other.gene)
-                if (ok){
-                    this.probability = other.probability
-                    this.searchPercentageActive = other.searchPercentageActive
-                }
-                ok
-            }, false
-        )
-    }
-
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        return ParamUtil.getValueGene(this).unsafeSetFromStringValue(ParamUtil.getValueGene(gene))
+        val ok = this.gene.unsafeCopyValueFrom(other.gene)
+        if (ok){
+            this.probability = other.probability
+            this.searchPercentageActive = other.searchPercentageActive
+        }
+        return ok
     }
 }

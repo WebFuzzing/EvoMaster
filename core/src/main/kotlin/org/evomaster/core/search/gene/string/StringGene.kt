@@ -985,22 +985,48 @@ class StringGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        //TODO should this be handled with phenotype or wrapper? need to double-check
         if(other is ChoiceGene<*>){
             val x = other.activeGene()
             return this.unsafeCopyValueFrom(x)
         }
 
-        val current = this.value
+        val gene = other.getPhenotype()
 
-        when(other){
-            is StringGene -> this.value = other.value
-            is EnumGene<*> -> this.value = other.getValueAsRawString()
-            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (!isLocallyValid()){
-            this.value = current
-            return false
+        when(gene){
+            is StringGene -> value = gene.value
+            is Base64StringGene -> value = gene.data.value
+            is FloatGene -> value = gene.value.toString()
+            is IntegerGene -> value = gene.value.toString()
+            is LongGene -> value = gene.value.toString()
+            is DoubleGene -> { value = gene.value.toString() }
+            is ImmutableDataHolderGene -> value = gene.value
+            is SqlPrimaryKeyGene ->{ value = gene.uniqueId.toString() }
+            // might check toEngineeringString() and toPlainString()
+            is BigDecimalGene -> value = gene.value.toString()
+            is BigIntegerGene -> value = gene.value.toString()
+            is SeededGene<*> ->{ return this.unsafeCopyValueFrom(gene.getPhenotype() as Gene) }
+            is NumericStringGene ->{ return this.unsafeCopyValueFrom(gene.number) }
+            else -> {
+                //return false
+                //Man: with taint analysis, g might be any other type.
+                if (gene is SqlForeignKeyGene){
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}")
+                    value = "${gene.uniqueIdOfPrimaryKey}"
+                } else if(gene is SqlAutoIncrementGene){
+                    /*
+                        This happens in tiltaksgjennomforing, where a SqlAutoIncrementGene is not marked
+                        as a Primary Key.
+                        Might be an issue in current limited handling of primary keys.
+                        Or are there legitimate cases for this?
+                        TODO will need to investigate
+                     */
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}.")
+                    //do nothing
+                } else{
+                    value = gene.getValueAsRawString()
+                }
+            }
         }
 
         if(other is StringGene) {
@@ -1020,71 +1046,6 @@ class StringGene(
         return true
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-
-        Lazy.assert { isLocallyValid() }
-        val current = value
-
-        when(gene){
-            //shall I add the specification into the string if it applies?
-            is StringGene -> value = gene.value
-            is Base64StringGene -> value = gene.data.value
-            is FloatGene -> value = gene.value.toString()
-            is IntegerGene -> value = gene.value.toString()
-            is LongGene -> value = gene.value.toString()
-            is DoubleGene -> {
-                value = gene.value.toString()
-            }
-            is ImmutableDataHolderGene -> value = gene.value
-            is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toString()
-            }
-            // might check toEngineeringString() and toPlainString()
-            is BigDecimalGene -> value = gene.value.toString()
-            is BigIntegerGene -> value = gene.value.toString()
-            is SeededGene<*> ->{
-                return this.unsafeSetFromStringValue(gene.getPhenotype() as Gene)
-            }
-            is NumericStringGene ->{
-                return this.unsafeSetFromStringValue(gene.number)
-            }
-            else -> {
-                //return false
-                //Man: with taint analysis, g might be any other type.
-                if (gene is SqlForeignKeyGene){
-                    LoggingUtil.uniqueWarn(
-                        log,
-                        "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
-                    )
-                    value = "${gene.uniqueIdOfPrimaryKey}"
-                } else if(gene is SqlAutoIncrementGene){
-                    /*
-                        This happens in tiltaksgjennomforing-api, where a SqlAutoIncrementGene is not marked
-                        as a Primary Key.
-                        Might be an issue in current limited handling of primary keys.
-                        Or are there legitimate cases for this?
-                        TODO will need to investigate
-                     */
-                    LoggingUtil.uniqueWarn(
-                        log,
-                        "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}."
-                    )
-                    //do nothing
-                } else{
-                    value = gene.getValueAsRawString()
-                }
-            }
-        }
-
-        if(!isLocallyValid()){
-            //this actually can happen when binding to Long, and goes above lenght limit of String
-            value = current
-            //TODO should we rather enforce this to never happen?
-            return false
-        }
-
-        return true
-    }
 
     // need to check with Andrea if there is any further impact
     override fun compareTo(other: ComparableGene): Int {

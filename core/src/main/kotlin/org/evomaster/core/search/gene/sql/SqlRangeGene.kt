@@ -142,30 +142,15 @@ class SqlRangeGene<T>(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {isLeftClosed.unsafeCopyValueFrom(other.isLeftClosed) &&
+        return isLeftClosed.unsafeCopyValueFrom(other.isLeftClosed) &&
                     left.unsafeCopyValueFrom(other.left as Gene) &&
                     right.unsafeCopyValueFrom(other.right as Gene) &&
-                    isRightClosed.unsafeCopyValueFrom(other.isRightClosed)}, true
-        )
+                    isRightClosed.unsafeCopyValueFrom(other.isRightClosed)
     }
 
-    override fun unsafeSetFromStringValue(gene: Gene): Boolean {
-        if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
-            this.isLeftClosed.unsafeSetFromStringValue(gene.isLeftClosed)
-            this.left.unsafeSetFromStringValue(gene.left as Gene)
-            this.right.unsafeSetFromStringValue(gene.right as Gene)
-            this.isRightClosed.unsafeSetFromStringValue(gene.isRightClosed)
-        }
-        LoggingUtil.uniqueWarn(
-                log,
-                "cannot bind SqlNumericRangeGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
-        )
-        return false
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
