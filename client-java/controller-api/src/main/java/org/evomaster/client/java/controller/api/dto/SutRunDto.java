@@ -45,6 +45,16 @@ public class SutRunDto {
      */
     public String methodReplacementCategories;
 
+    /**
+     * Whether to enable Dynamosa graphs generation in the Java agent
+     */
+    public Boolean enableDynamosaGraphs;
+
+    /**
+     * Whether to write generated graphs (DOT/PNGs) to disk on the agent side
+     */
+    public Boolean writeCfg;
+
 
     public SutRunDto() {
     }

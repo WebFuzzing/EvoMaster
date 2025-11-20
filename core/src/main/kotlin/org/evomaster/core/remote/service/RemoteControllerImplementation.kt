@@ -258,6 +258,10 @@ class RemoteControllerImplementation() : RemoteController{
             config.methodReplacementCategories()
         )
         requestDto.advancedHeuristics = config.heuristicsForSQLAdvanced
+        
+        // Pass Dynamosa settings from core to controller/driver
+        requestDto.enableDynamosaGraphs = config.algorithm.toString() == "DYNAMOSA"
+        requestDto.writeCfg = config.writeCfg
 
         val response = try {
             makeHttpCall {

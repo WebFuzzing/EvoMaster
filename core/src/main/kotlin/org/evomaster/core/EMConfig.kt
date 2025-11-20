@@ -1161,7 +1161,7 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW, DYNAMOSA,
         StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS // GA variants still work-in-progress.
     }
 
@@ -2348,6 +2348,13 @@ class EMConfig {
             " Note that zero means that only the size of the collection will be asserted." +
             " A negative value means all data in the collection will be asserted (i.e., no limit).")
     var maxAssertionForDataInCollection = 3
+
+    /**
+     * Enable writing Control-Flow and related graphs (e.g., DOT/PNG) on the agent side.
+     * This controls only the persistence of graphs to disk; graph creation is controlled separately.
+     */
+    @Cfg("Enable writing CFG/CDG graphs to disk on the agent side")
+    var writeCfg: Boolean = false
 
     @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +
             "`null` represents to employ the setting specified on the EM driver side")

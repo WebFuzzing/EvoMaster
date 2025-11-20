@@ -216,6 +216,10 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.BOOTING_SUT, isBooting);
     }
 
+    public boolean setDynamosaConfig(DynamosaConfigDto dto){
+        return sendWithDataAndExpectACK(Command.SET_DYNAMOSA_CONFIG, dto);
+    }
+
 //    public synchronized List<TargetInfo> getAllCoveredTargetsInfo() {
 //        boolean sent = sendCommand(Command.ALL_COVERED_TARGETS_INFO);
 //        if (!sent) {

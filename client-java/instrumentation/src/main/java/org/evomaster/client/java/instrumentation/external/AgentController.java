@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -65,6 +66,10 @@ public class AgentController {
                         InstrumentationController.resetForNewSearch();
                         sendCommand(Command.ACK);
                         break;
+                    case SET_DYNAMOSA_CONFIG:
+                        handleDynamosaConfig();
+                        sendCommand(Command.ACK);
+                        break;
                     case NEW_TEST:
                         InstrumentationController.resetForNewTest();
                         sendCommand(Command.ACK);
@@ -119,6 +124,21 @@ public class AgentController {
         });
 
         thread.start();
+    }
+
+    private static void handleDynamosaConfig() {
+        try {
+            Object msg = in.readObject();
+            DynamosaConfigDto dto = (DynamosaConfigDto) msg;
+            if (dto.enableGraphs != null) {
+                DynamosaConfig.setEnableGraphs(dto.enableGraphs);
+            }
+            if (dto.writeCfg != null && dto.enableGraphs != null) {
+                DynamosaConfig.setWriteCfgEnabled(dto.writeCfg);
+            }
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling DYNAMOSA config: "+e.getMessage());
+        }
     }
 
 

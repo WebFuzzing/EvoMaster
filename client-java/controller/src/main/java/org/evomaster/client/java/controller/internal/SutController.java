@@ -1564,6 +1564,22 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     public abstract void setExecutingAction(boolean executingAction);
 
+    /**
+     * Enable/disable Dynamosa graphs generation in the Java agent.
+     * Default no-op; external controllers can override to send to agent.
+     */
+    public void setDynamosaGraphsEnabled(boolean enableGraphs){
+        // no-op by default
+    }
+
+    /**
+     * Enable/disable writing graphs to disk in the Java agent.
+     * Default no-op; external controllers can override to send to agent.
+     */
+    public void setWriteCfgEnabled(boolean writeCfg){
+        // no-op by default
+    }
+
 
     /**
      * specify whether the SUT is booting (ie starting up), or not.

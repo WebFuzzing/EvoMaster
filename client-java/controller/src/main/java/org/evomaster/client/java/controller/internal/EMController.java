@@ -377,6 +377,11 @@ public class EMController {
                     if (!noKillSwitch(() -> sutController.isSutRunning())) {
                         noKillSwitch(() -> sutController.bootingSut(true));
                         baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
+                        // Configure Dynamosa graphs on the agent, if requested by core
+                        Boolean enableGraphs = dto.enableDynamosaGraphs;
+                        if (enableGraphs != null) noKillSwitch(() -> sutController.setDynamosaGraphsEnabled(enableGraphs));
+                        Boolean writeCfg = dto.writeCfg;
+                        if (writeCfg != null) noKillSwitch(() -> sutController.setWriteCfgEnabled(writeCfg));
                         noKillSwitch(() -> sutController.bootingSut(false));
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
