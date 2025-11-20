@@ -38,10 +38,10 @@ abstract class GeneStructuralElementBaseTest : StructuralElementBaseTest() {
 
         if (throwExceptionInCopyFromTest()){
             assertThrows<Exception> {
-                base.unsafeCopyValueFrom(template)
+                base.copyValueFrom(template)
             }
         }else{
-            base.unsafeCopyValueFrom(template)
+            base.copyValueFrom(template)
             assertCopyFrom(base)
             // keep structure after copyfrom
             assertChildren(base, -1)

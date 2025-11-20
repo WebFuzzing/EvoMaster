@@ -1180,7 +1180,8 @@ abstract class Gene(
      * @param updateValue lambda performs update of value of the gene
      * @param undoIfUpdateFails represents whether it needs to undo the value update if [updateValue] returns false
      *
-     * @return if the value is updated with [updateValue]
+     * @return if the value is updated with [updateValue]. note if for any reason the current gene was not valid,
+     *         the validity of the update will not be checked.
      */
     fun updateValueOnlyIfValid(updateValue: () -> Boolean, undoIfUpdateFails: Boolean): Boolean {
 
@@ -1188,10 +1189,12 @@ abstract class Gene(
             return updateValue()
         }
 
+        val currentlyValid = isGloballyValid()
+
         val current = copy()
         val ok = updateValue()
 
-        if (!ok || !isGloballyValid()) {
+        if (!ok || (currentlyValid && !isGloballyValid())) {
             val success = unsafeCopyValueFrom(current)
             assert(success)
             return false

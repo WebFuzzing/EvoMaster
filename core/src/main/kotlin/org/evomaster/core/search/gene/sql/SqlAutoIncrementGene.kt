@@ -36,8 +36,17 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
      * Man: need to check with Andrea, copyValueFrom of [ImmutableDataHolderGene] throw an exception
      */
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        //do nothing
-        return containsSameValueAs(other)
+        if (other !is SqlAutoIncrementGene) {
+            return false
+        }
+        /*
+            auto-increment are always unique... so a copy over should never work.
+            however, here we return true instead of false to fulfill invariant that
+            copyFrom a copy should always work...
+
+            TODO might check for side-effects, and see if need more complex handling
+         */
+        return true
     }
 
     /**
