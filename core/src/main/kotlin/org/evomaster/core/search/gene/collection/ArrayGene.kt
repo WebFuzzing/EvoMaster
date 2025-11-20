@@ -141,6 +141,8 @@ class ArrayGene<T>(
         }
         if (this.template::class.simpleName != other.template::class.simpleName) return false
 
+        if(this.elements.size != other.elements.size) return false
+
         return this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
         }.all { it }

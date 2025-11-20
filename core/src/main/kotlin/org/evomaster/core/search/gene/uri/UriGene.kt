@@ -81,6 +81,9 @@ class UriGene(name: String,
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if(other is UriGene){
+            return gene.unsafeCopyValueFrom(other.gene)
+        }
         return gene.unsafeCopyValueFrom(other)
     }
 

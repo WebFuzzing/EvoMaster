@@ -210,7 +210,7 @@ class EnumGene<T : Comparable<T>>(
 
         val phenotype = other.getPhenotype()
         when(phenotype) {
-            is EnumGene<*> -> index == phenotype.index
+            is EnumGene<*> -> index = phenotype.index
             else -> {
                 // since the binding is derived, it is not always true.
                 log.info("cannot bind EnumGene with ${phenotype::class.java.simpleName}")

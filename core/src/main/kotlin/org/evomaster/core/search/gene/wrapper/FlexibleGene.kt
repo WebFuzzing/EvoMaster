@@ -131,24 +131,17 @@ class FlexibleGene(name: String,
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        if (other !is FlexibleGene)
+        if (other !is FlexibleGene) {
             return false
+        }
+
         if (replaceable){
-
-            if (!other.isLocallyValid())
-                return false
-
-            try {
-                geneCheck(other)
-            }catch (e: Exception){
-                return false
-            }
-
             val replaced = other.gene.copy()
             replaced.resetLocalIdRecursively()
             replaceGeneTo(replaced)
+            return true
 
-        }else{
+        } else {
             // TODO need to refactor
             log.warn("TOCHECK, attempt to copyValueFrom when it is not replaceable")
         }

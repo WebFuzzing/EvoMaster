@@ -201,8 +201,8 @@ class TimeGene(
         return when (gene) {
             is TimeGene -> {
                 hour.unsafeCopyValueFrom(gene.hour)
-                        && second.unsafeCopyValueFrom(gene.minute)
-                        && minute.unsafeCopyValueFrom(gene.second)
+                        && second.unsafeCopyValueFrom(gene.second)
+                        && minute.unsafeCopyValueFrom(gene.minute)
                         && millisecond.unsafeCopyValueFrom(gene.millisecond)
                         && offset.unsafeCopyValueFrom(gene.offset)
             }
