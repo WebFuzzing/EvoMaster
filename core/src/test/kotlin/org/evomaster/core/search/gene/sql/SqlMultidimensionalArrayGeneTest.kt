@@ -275,10 +275,8 @@ class SqlMultidimensionalArrayGeneTest {
     fun testCopyValuesFromWithDifferentDimensions() {
         val nonEmptyArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3)
         val copiedArray = sampleOneDimensionalArrayOfIntegerGenes(2)
-        assertThrows<IllegalArgumentException> {
-            copiedArray.unsafeCopyValueFrom(nonEmptyArray)
-        }
 
+        assertFalse(copiedArray.unsafeCopyValueFrom(nonEmptyArray))
     }
 
     @Test
