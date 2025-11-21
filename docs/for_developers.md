@@ -339,9 +339,13 @@ Instructions can be found [here](./release.md).
 
 
 ### JDK VERSIONS
-At this point, we only support JDK __8__ and the following major LTS versions.
-_EvoMaster_ must be built with JDK 8, but still must be able to run it with the most recent LTS JDK.
-Can be useful to setup your machine to easily switch between different JDK versions.
+
+When building _EvoMaster_, there are 2 main things to consider regarding JDK version: whether building the  _driver_ library or _core_ process. 
+- The _driver_ must be built with JDK __8__ compatability. This requirement will likely stay for a long, long time (e.g., to be able to test SUTs in WFD without having to upgrade them, and also due to many enterprises still on JDK 8 at the time of writing). However, this is setup in _Maven_, i.e., you can use a higher JDK version to build it (but make sure your IDE can pick up the right version for it). 
+- The _core_ is independent of _driver_. As a rule of thumb, we try to be one version behind the latest LTS. However, upgrading might take time. To see current version, look at `build-jdk` version in CI configuration under `.github/workflows/ci.yml`.  
+
+This means you need JDK with version as in `build-jdk`.
+Still, it can be useful to setup your machine to easily switch between different JDK versions, if needed (especially if running experiments on WFD).
 For example, if you are using a Mac, in your `~/.zprofile` configuration, you could have something 
 like:
 ```

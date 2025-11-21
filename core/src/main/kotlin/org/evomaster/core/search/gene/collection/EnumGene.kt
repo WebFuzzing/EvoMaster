@@ -197,19 +197,6 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.get(index)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is EnumGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.index
-        this.index = other.index
-        if (!isLocallyValid()){
-            this.index = current
-            return false
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is EnumGene<*>) {
@@ -219,21 +206,21 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        when {
-            gene is EnumGene<*> -> index == gene.index
-            gene is StringGene && gene.getSpecializationGene() != null -> return setValueBasedOn(gene.getSpecializationGene()!!)
+        val phenotype = other.getPhenotype()
+        when(phenotype) {
+            is EnumGene<*> -> index = phenotype.index
             else -> {
                 // since the binding is derived, it is not always true.
-                log.info("cannot bind EnumGene with ${gene::class.java.simpleName}")
+                log.info("cannot bind EnumGene with ${phenotype::class.java.simpleName}")
                 return false
             }
         }
         return true
     }
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         val target = values.indexOfFirst { it == value }
         if(target < 0){

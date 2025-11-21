@@ -68,12 +68,6 @@ class UriGene(name: String,
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UriGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({gene.copyValueFrom(other.gene)}, false)
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is UriGene){
@@ -82,10 +76,17 @@ class UriGene(name: String,
         return gene.containsSameValueAs(other.gene)
     }
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return gene.setValueBasedOn(gene)
+    override fun getPhenotype(): Gene {
+        return gene
     }
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if(other is UriGene){
+            return gene.unsafeCopyValueFrom(other.gene)
+        }
+        return gene.unsafeCopyValueFrom(other)
+    }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
