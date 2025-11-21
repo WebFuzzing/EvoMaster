@@ -15,6 +15,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
@@ -1132,6 +1133,14 @@ abstract class Gene(
      */
     abstract fun unsafeCopyValueFrom(other: Gene): Boolean
 
+
+    fun forceNewTaints(){
+        flatView().forEach { r ->
+            if(r is TaintableGene && !r.isDependentTaint()){
+                r.forceNewTaintId()
+            }
+        }
+    }
 
     /**
      * Update current value of this gene, base on [other] gene.

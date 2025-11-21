@@ -209,6 +209,7 @@ class ChoiceGene<T>(
                 options even if not selected
              */
             val updated = g.copyValueFrom(x)
+            g.forceNewTaints()
             if(updated){
                 this.activeGeneIndex = i
                 return true
