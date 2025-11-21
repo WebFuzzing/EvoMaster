@@ -77,8 +77,8 @@ class CroAlgorithmTest {
             randomness.updateSeed(123L)
 
             // Single molecule guarantees uni-molecular branch regardless of collision rate
-            config.populationSize = 1
             defaultSetup(config)
+            config.populationSize = 1
             // Force decomposition check to true without touching internal state (0 > -1)
             config.croDecompositionThreshold = -1
 
@@ -116,8 +116,8 @@ class CroAlgorithmTest {
             randomness.updateSeed(789L)
 
             // Uni-molecular branch
-            config.populationSize = 1
             defaultSetup(config)
+            config.populationSize = 1
             // Force decomposition check true
             config.croDecompositionThreshold = -1
 
@@ -154,8 +154,8 @@ class CroAlgorithmTest {
             val randomness = injector.getInstance(Randomness::class.java)
             randomness.updateSeed(456L)
 
-            config.populationSize = 1
             defaultSetup(config)
+            config.populationSize = 1
 
             cro.setupBeforeSearch()
 
@@ -190,8 +190,8 @@ class CroAlgorithmTest {
             val randomness = injector.getInstance(Randomness::class.java)
             randomness.updateSeed(321L)
 
-            config.populationSize = 1
             defaultSetup(config)
+            config.populationSize = 1
 
             // Force on-wall branch (decomposition false)
             config.croDecompositionThreshold = Int.MAX_VALUE
@@ -227,8 +227,8 @@ class CroAlgorithmTest {
             randomness.updateSeed(111L)
 
             // Force inter-molecular branch and synthesis check true (KE=0 <= threshold)
-            config.populationSize = 2
             defaultSetup(config)
+            config.populationSize = 2
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0
 
@@ -261,8 +261,8 @@ class CroAlgorithmTest {
             val randomness = injector.getInstance(Randomness::class.java)
             randomness.updateSeed(112L)
 
-            config.populationSize = 2
             defaultSetup(config)
+            config.populationSize = 2
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = 0.0 // synthesisCheck true
 
@@ -298,8 +298,8 @@ class CroAlgorithmTest {
             val randomness = injector.getInstance(Randomness::class.java)
             randomness.updateSeed(113L)
 
-            config.populationSize = 2
             defaultSetup(config)
+            config.populationSize = 2
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
@@ -337,8 +337,8 @@ class CroAlgorithmTest {
             val randomness = injector.getInstance(Randomness::class.java)
             randomness.updateSeed(114L)
 
-            config.populationSize = 2
             defaultSetup(config)
+            config.populationSize = 2
             config.croMolecularCollisionRate = 1.0
             config.croSynthesisThreshold = -1.0 // synthesisCheck false
 
