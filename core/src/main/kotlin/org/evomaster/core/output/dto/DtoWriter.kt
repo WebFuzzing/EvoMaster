@@ -11,6 +11,7 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -93,7 +94,6 @@ class DtoWriter(
 
 
     private fun calculateDtoFromChoice(gene: ChoiceGene<*>, actionName: String) {
-        // TODO: should we handle EnumGene?
         if (hasObjectOrArrayGene(gene)) {
             val dtoName = TestWriterUtils.safeVariableName(actionName)
             if (!dtoCollector.contains(dtoName)) {
@@ -143,7 +143,6 @@ class DtoWriter(
         val dtoName = TestWriterUtils.safeVariableName(gene.refType?:actionName)
         if (!dtoCollector.contains(dtoName)) {
             val dtoClass = DtoClass(dtoName)
-            // TODO: add support for additionalFields
             populateDtoClass(dtoClass, gene)
             dtoCollector.put(dtoName, dtoClass)
         }
@@ -151,8 +150,8 @@ class DtoWriter(
 
     private fun calculateDtoFromArray(gene: ArrayGene<*>, actionName: String) {
         val template = gene.template
-        // TODO consider ChoiceGene. Primitive types won't be considered, an array of strings should not be wrapped
-        //  into a DTO but just use List<String> for setting the payload.
+        // Primitive types won't be considered, an array of strings should not be wrapped
+        // into a DTO but just use List<String> for setting the payload.
         if (template is ObjectGene) {
             calculateDtoFromObject(template, actionName)
         } else {
@@ -188,7 +187,6 @@ class DtoWriter(
 
     private fun getDtoType(fieldName: String, field: Gene?): String {
         return when (field) {
-            // TODO: handle nested arrays, objects and extend type system for dto fields
             is StringGene -> "String"
             is IntegerGene -> if (outputFormat.isJava()) "Integer" else "Int"
             is LongGene -> "Long"
@@ -203,6 +201,7 @@ class DtoWriter(
             is BooleanGene -> "Boolean"
             is ObjectGene -> field.refType?:StringUtils.capitalization(fieldName)
             is ArrayGene<*> -> if (outputFormat.isJava()) "List<${getDtoType(field.name, field.template)}>" else "MutableList<${getDtoType(field.name, field.template)}>"
+            is EnumGene<*> -> field.getValueType(outputFormat.isKotlin())
             else -> throw Exception("Not supported gene at the moment: ${field?.javaClass?.simpleName} for field $fieldName")
         }
     }

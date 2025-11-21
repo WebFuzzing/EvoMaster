@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -105,7 +106,13 @@ class GeneToDto(
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 else -> {
-                    result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
+                    if (leafGene is EnumGene<*> && it is ChoiceGene<*>) {
+                        val children = it.getViewOfChildren()
+                        val otherChoice = children.find { child -> child != leafGene }
+                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(otherChoice)}"))
+                    } else {
+                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
+                    }
                 }
             }
         }
@@ -164,7 +171,7 @@ class GeneToDto(
 
     // According to documentation, a trailing constant is only needed for Long, Hexadecimal and Float
     // https://kotlinlang.org/docs/numbers.html#literal-constants-for-numbers
-    private fun getValueSuffix(gene: Gene): String {
+    private fun getValueSuffix(gene: Gene?): String {
         return when (gene) {
             is LongGene -> "L"
             is FloatGene -> "f"
