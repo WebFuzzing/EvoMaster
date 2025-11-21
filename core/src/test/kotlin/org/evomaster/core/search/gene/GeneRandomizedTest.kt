@@ -1,9 +1,10 @@
 package org.evomaster.core.search.gene
 
 
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
@@ -26,26 +27,65 @@ class GeneRandomizedTest : AbstractGeneTest(){
         rand.updateSeed(seed)
         val sample = getSample(seed)
 
-        sample.filter { it.isMutable() }
-                .forEach { root ->
-                    root.doInitialize(rand)
-                    checkInvariants(root) // all invariants should hold
+        val mutable = sample.filter { it.isMutable() }
 
-                    val copy = root.copy()
-                    checkInvariants(copy) //same for a copy
+        mutable.forEach { root ->
+            root.doInitialize(rand)
+            checkInvariants(root) // all invariants should hold
 
-                    if(root.isGloballyValid()) { //in these tests, global constraints are not handled
-                        if (root.isPrintable()) {
-                            val x = root.getValueAsRawString()
-                            val y = copy.getValueAsRawString()
-                            assertEquals(x, y) // the copy should result in same phenotype
-                        } else {
-                            assertThrows<Exception>("Should throw exception when trying to print ${root.javaClass}") {
-                                root.getValueAsRawString()
-                            }
-                        }
+            val copy = root.copy()
+            checkInvariants(copy) //same for a copy
+
+            if(root.isGloballyValid()) { //in these tests, global constraints are not handled
+                if (root.isPrintable()) {
+                    val x = root.getValueAsRawString()
+                    val y = copy.getValueAsRawString()
+                    assertEquals(x, y) // the copy should result in same phenotype
+                } else {
+                    assertThrows<Exception>("Should throw exception when trying to print ${root.javaClass}") {
+                        root.getValueAsRawString()
                     }
                 }
+            }
+        }
+
+        //FIXME put back once fix all issues it finds
+        //verifyCopyValueFrom(mutable, rand)
+    }
+
+    private fun verifyCopyValueFrom(
+        mutable: List<Gene>,
+        rand: Randomness
+    ) {
+        val printable = mutable.filter { it.isGloballyValid() && it.isPrintable() }
+
+        printable.forEach { root ->
+
+            val x = root.copy()
+            val sx = x.getValueAsRawString()
+
+            val y = x.copy().apply { randomize(rand, true) }
+            val sy = y.getValueAsRawString()
+
+            if (sx == sy) {
+                //randomization did not change phenotype... but might still change the genotype!!!
+                //rare but this can happen, eg when internal genes in a collection are not printable
+                //assertTrue(x.containsSameValueAs(y))
+            } else {
+                //they must be different. the same genotype must not lead to different phenotypes
+                assertFalse(x.containsSameValueAs(y))
+
+                //with same type and constraints, even "unsafe" should always work
+                val wasCopied = x.unsafeCopyValueFrom(y)
+                assertTrue(wasCopied)
+
+                assertTrue(x.containsSameValueAs(y))
+            }
+
+            val other = rand.choose(printable)
+            //this should not crash, ie throw any exception
+            x.copyValueFrom(other)
+        }
     }
 
 
@@ -77,6 +117,9 @@ class GeneRandomizedTest : AbstractGeneTest(){
             val leaf = gene.getLeafGene() //should always return same gene
             assertEquals(gene, leaf)
         }
+
+        //must contain same value as itself
+        assertTrue(gene.containsSameValueAs(gene))
 
         //TODO add more invariants here
     }

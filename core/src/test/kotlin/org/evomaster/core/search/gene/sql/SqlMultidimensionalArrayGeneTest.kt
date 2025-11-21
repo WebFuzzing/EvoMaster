@@ -262,7 +262,7 @@ class SqlMultidimensionalArrayGeneTest {
 
         val copiedArray = sampleThreeDimensionalArrayOfIntegerGenes(3, 3, 3)
 
-        copiedArray.copyValueFrom(nonEmptyArray)
+        copiedArray.unsafeCopyValueFrom(nonEmptyArray)
 
         assertEquals(1, copiedArray.getElement(listOf(0, 0, 0)).value)
         assertEquals(2, copiedArray.getElement(listOf(1, 1, 1)).value)
@@ -275,10 +275,8 @@ class SqlMultidimensionalArrayGeneTest {
     fun testCopyValuesFromWithDifferentDimensions() {
         val nonEmptyArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3)
         val copiedArray = sampleOneDimensionalArrayOfIntegerGenes(2)
-        assertThrows<IllegalArgumentException> {
-            copiedArray.copyValueFrom(nonEmptyArray)
-        }
 
+        assertFalse(copiedArray.unsafeCopyValueFrom(nonEmptyArray))
     }
 
     @Test
@@ -287,7 +285,7 @@ class SqlMultidimensionalArrayGeneTest {
 
         val targetArray = sampleThreeDimensionalArrayOfIntegerGenes(1, 5, 1)
 
-        assertEquals(true, targetArray.setValueBasedOn(sourceArray))
+        assertEquals(true, targetArray.unsafeCopyValueFrom(sourceArray))
 
         assertEquals(2, targetArray.getDimensionSize(0))
         assertEquals(3, targetArray.getDimensionSize(1))
@@ -300,7 +298,7 @@ class SqlMultidimensionalArrayGeneTest {
     fun testFailedBindValuesBasedOn() {
         val sourceArray = sampleThreeDimensionalArrayOfIntegerGenes(2, 3, 1)
         val targetArray = sampleTwoDimensionalArrayOfIntegerGenes(2, 3)
-        assertFalse( targetArray.setValueBasedOn(sourceArray))
+        assertFalse( targetArray.unsafeCopyValueFrom(sourceArray))
     }
 
     @Test
@@ -315,7 +313,7 @@ class SqlMultidimensionalArrayGeneTest {
                 template = StringGene("element"),
                 numberOfDimensions = 3
         )
-        assertFalse( targetArray.setValueBasedOn(sourceArray))
+        assertFalse( targetArray.unsafeCopyValueFrom(sourceArray))
     }
 
     @Test

@@ -76,14 +76,21 @@ class SqlJSONGene(name: String,
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlJSONGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
+    override fun getPhenotype(): Gene {
+        return objectGene
+    }
 
-        return updateValueOnlyIfValid(
-            {this.objectGene.copyValueFrom(other.objectGene)}, false
-        )
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
+        return when(gene){
+            is ObjectGene -> objectGene.unsafeCopyValueFrom(gene)
+            else->{
+                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
+                false
+            }
+        }
     }
 
     /**
@@ -104,16 +111,6 @@ class SqlJSONGene(name: String,
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when(gene){
-            is SqlJSONGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is SqlXMLGene -> objectGene.setValueBasedOn(gene.objectGene)
-            is ObjectGene -> objectGene.setValueBasedOn(gene)
-            else->{
-                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
+
 
 }

@@ -81,13 +81,11 @@ class SqlGeometryCollectionGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlGeometryCollectionGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.elements.copyValueFrom(other.elements)}, false
-        )
+        return this.elements.unsafeCopyValueFrom(other.elements)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -95,19 +93,6 @@ class SqlGeometryCollectionGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.elements.containsSameValueAs(other.elements)
-    }
-
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when (gene) {
-            is SqlGeometryCollectionGene -> {
-                elements.setValueBasedOn(gene.elements)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(
