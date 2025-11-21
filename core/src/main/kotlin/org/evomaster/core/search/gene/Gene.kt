@@ -911,19 +911,22 @@ abstract class Gene(
      * sync [bindingGenes] based on [this]
      */
     fun syncBindingGenesBasedOnThis(all: MutableSet<Gene> = mutableSetOf()) {
-        if (bindingGenes.isEmpty()) return
+        if (bindingGenes.isEmpty()){
+            return
+        }
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b ->
             all.add(b)
-            if (!b.copyValueFrom(this))
-                LoggingUtil.uniqueWarn(
-                    log,
-                    "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})"
-                )
+            if (!b.copyValueFrom(this)) {
+                LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName})" +
+                            " based on this gene (${this.name} with ${this::class.java.simpleName})")
+            }
             b.syncBindingGenesBasedOnThis(all)
         }
 
-        children.filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
+        children.filterNot { all.contains(it) }.forEach {
+            it.syncBindingGenesBasedOnThis(all)
+        }
     }
 
     /**

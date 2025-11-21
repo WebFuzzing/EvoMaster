@@ -985,6 +985,10 @@ class StringGene(
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        /*
+            TODO aren't we ignoring here if this gene is using a specialization?
+         */
+
         //TODO should this be handled with phenotype or wrapper? need to double-check
         if(other is ChoiceGene<*>){
             val x = other.activeGene()
@@ -1029,19 +1033,20 @@ class StringGene(
             }
         }
 
-        if(other is StringGene) {
-            this.selectedSpecialization = other.selectedSpecialization
-
-            this.specializations.clear()
-            this.specializations.addAll(other.specializations)
-
-            killAllChildren()
-            addChildren(other.specializationGenes.map { it.copy() })
-
-            this.tainted = other.tainted
-            this.bindingIds.clear()
-            this.bindingIds.addAll(other.bindingIds)
-        }
+        //TODO would need updating...
+//        if(other is StringGene) {
+//            this.selectedSpecialization = other.selectedSpecialization
+//
+//            this.specializations.clear()
+//            this.specializations.addAll(other.specializations)
+//
+//            killAllChildren()
+//            addChildren(other.specializationGenes.map { it.copy() })
+//
+//            this.tainted = other.tainted
+//            this.bindingIds.clear()
+//            this.bindingIds.addAll(other.bindingIds)
+//        }
 
         return true
     }
