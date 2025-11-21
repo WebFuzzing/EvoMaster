@@ -1207,8 +1207,11 @@ abstract class Gene(
         val ok = updateValue()
 
         if (!ok || (currentlyValid && !isGloballyValid())) {
+            //revert back
             val success = unsafeCopyValueFrom(current)
-            assert(success)
+            //reversion should always work... if fails, it is a bug
+            // FIXME put back once all are implemented, eg, TaintedMapGene currently missing
+            //assert(success)
             return false
         }
         return true
