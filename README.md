@@ -198,6 +198,8 @@ Examples of Fortune 500 companies using _EvoMaster_ are:
 
 ![](docs/img/video-player-flaticon.png)
 
+* A [45-minute talk given at TestCon'25](https://www.youtube.com/watch?v=uKKRo3LrNiw&list=PLqYhGsQ9iSEoXaRmW9WQjjXJK_1NbLlZ6&index=15) on Fuzz Testing Web APIs gives an overview of what can be expected from this kind of fuzzers.   
+
 * A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
   shows the use of _EvoMaster_ on one of the
   case studies in [EMB](https://github.com/WebFuzzing/EMB).

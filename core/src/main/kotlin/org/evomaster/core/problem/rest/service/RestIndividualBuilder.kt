@@ -102,6 +102,9 @@ class RestIndividualBuilder {
                 .forEach { it.revertToWeakReference() }
             other.resetLocalIdRecursively()
 
+            //avoid possible taint id conflicts
+            other.seeAllActions().forEach { it.forceNewTaints() }
+
             val duplicates = base.addInitializingActions(other.seeInitializingActions())
 
             other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->

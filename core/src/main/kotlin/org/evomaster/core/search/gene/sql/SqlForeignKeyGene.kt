@@ -187,20 +187,7 @@ class SqlForeignKeyGene(
 
     fun isBound() = uniqueIdOfPrimaryKey >= 0
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlForeignKeyGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.uniqueIdOfPrimaryKey
-        this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
 
-        if (!isLocallyValid()){
-            this.uniqueIdOfPrimaryKey = current
-            return false
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlForeignKeyGene) {
@@ -230,8 +217,12 @@ class SqlForeignKeyGene(
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // do nothing
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlForeignKeyGene) {
+            return false
+        }
+        this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
+
         return true
     }
 }
