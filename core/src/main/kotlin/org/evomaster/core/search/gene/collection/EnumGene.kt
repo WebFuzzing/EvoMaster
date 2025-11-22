@@ -203,6 +203,15 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.get(index)
     }
 
+    /**
+     * [EnumGene] can be used in DTOs when the API spec contains either example values or an enum.
+     * Since the [EnumGene] uses generics to hold values, this function returns the type to be used
+     * by the DTO writing mechanism.
+     *
+     * @param isKotlinOutput to format output as Int instead of Integer when values are int numbers
+     *
+     * @return the String class name of the type being represented in the [EnumGene]. Default is String.
+     */
     fun getValueType(isKotlinOutput: Boolean): String {
         return when {
             values.isEmpty() -> "String"
