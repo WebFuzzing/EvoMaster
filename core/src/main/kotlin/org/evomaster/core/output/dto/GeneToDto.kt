@@ -109,9 +109,9 @@ class GeneToDto(
                     if (leafGene is EnumGene<*> && it is ChoiceGene<*>) {
                         val children = it.getViewOfChildren()
                         val otherChoice = children.find { child -> child != leafGene }
-                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(otherChoice)}"))
+                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(otherChoice)}"))
                     } else {
-                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
+                        result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
                     }
                 }
             }
@@ -142,7 +142,7 @@ class GeneToDto(
         } else {
             gene.getViewOfElements().forEach {
                 val leafGene = it.getLeafGene()
-                result.add(dtoOutput.getAddElementToListStatement(listVarName, "${leafGene.getValueAsPrintableString(targetFormat = null)}${getValueSuffix(leafGene)}"))
+                result.add(dtoOutput.getAddElementToListStatement(listVarName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
             }
         }
 
