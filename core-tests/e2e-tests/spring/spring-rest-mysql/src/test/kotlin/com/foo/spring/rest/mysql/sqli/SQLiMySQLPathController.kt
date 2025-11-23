@@ -1,4 +1,4 @@
-package com.foo.spring.rest.mysql.security.sqli
+package com.foo.spring.rest.mysql.sqli
 
 import com.foo.spring.rest.mysql.SpringRestMySqlController
 import com.foo.spring.rest.mysql.sqli.path.PathSQLiApplication

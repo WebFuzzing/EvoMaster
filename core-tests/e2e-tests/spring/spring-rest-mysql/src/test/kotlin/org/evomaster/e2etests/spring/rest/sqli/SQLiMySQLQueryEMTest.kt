@@ -1,8 +1,7 @@
-package org.evomaster.e2etests.spring.rest.security.sqli
+package org.evomaster.e2etests.spring.rest.sqli
 
-import com.foo.spring.rest.mysql.security.sqli.SQLiMySQLBodyController
+import com.foo.spring.rest.mysql.sqli.SQLiMySQLQueryController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.e2etests.spring.mysql.entity.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -10,17 +9,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SQLiMySQLBodyEMTest : SpringTestBase() {
+class SQLiMySQLQueryEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            val config = EMConfig()
-            config.instrumentMR_NET = false
-            config.instrumentMR_SQL = false
-
-            initClass(SQLiMySQLBodyController(), config)
+            initClass(SQLiMySQLQueryController())
         }
     }
 
@@ -28,7 +23,7 @@ class SQLiMySQLBodyEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "SQLiMySQLBodyEM",
+            "SQLiMySQLQueryEM",
             100
         ) { args ->
             setOption(args, "security", "true")
@@ -46,12 +41,12 @@ class SQLiMySQLBodyEMTest : SpringTestBase() {
 
             assertTrue(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "POST:/api/sqli/body/vulnerable"
+                        && it.operationId == "GET:/api/sqli/query/vulnerable"
             })
 
             assertFalse(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/body/safe"
+                        && it.operationId == "GET:/api/sqli/query/safe"
             })
 
         }

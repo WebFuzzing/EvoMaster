@@ -229,6 +229,10 @@ object RestSecurityOracle {
         "\" OR SLEEP(5)-- -",
         "' union select sleep(5)-- -",
         "\" union select sleep(5)-- -",
+        "' OR pg_sleep(5)-- -",
+        "\" OR pg_sleep(5)-- -",
+        "' union select pg_sleep(5)-- -",
+        "\" union select pg_sleep(5)-- -",
         // for h2 database
 //        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B, INFORMATION_SCHEMA.COLUMNS C)>0--",
 //        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B)>0--",

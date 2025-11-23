@@ -1,27 +1,22 @@
-package org.evomaster.e2etests.spring.rest.security.sqli
+package org.evomaster.e2etests.spring.rest.postgres.postgres
 
-import com.foo.spring.rest.mysql.security.sqli.SQLiMySQLBodyController
-import com.foo.spring.rest.mysql.security.sqli.SQLiMySQLPathController
+import com.foo.spring.rest.postgres.sqli.SQLiPostgresBodyController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.e2etests.spring.mysql.entity.SpringTestBase
+import org.evomaster.e2etests.spring.rest.postgres.SpringRestPostgresTestBase
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SQLiMySQLPathEMTest : SpringTestBase() {
+class SQLiPostgresBodyEMTest : SpringRestPostgresTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            val config = EMConfig()
-            config.instrumentMR_NET = false
-            config.instrumentMR_SQL = false
-
-            initClass(SQLiMySQLPathController(), config)
+            initClass(SQLiPostgresBodyController())
         }
     }
 
@@ -29,7 +24,7 @@ class SQLiMySQLPathEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "SQLiMySQLPathEM",
+            "SQLiPostgresBodyEM",
             100
         ) { args ->
             setOption(args, "security", "true")
@@ -39,18 +34,20 @@ class SQLiMySQLPathEMTest : SpringTestBase() {
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
+            assertTrue(faults.size == 1)
+
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
             assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
 
             assertTrue(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/path/vulnerable/{id}"
+                        && it.operationId == "POST:/api/sqli/body/vulnerable"
             })
 
             assertFalse(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/path/safe"
+                        && it.operationId == "GET:/api/sqli/body/safe"
             })
 
         }

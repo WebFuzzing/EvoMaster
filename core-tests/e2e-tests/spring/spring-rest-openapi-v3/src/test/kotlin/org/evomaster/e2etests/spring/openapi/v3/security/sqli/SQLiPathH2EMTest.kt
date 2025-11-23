@@ -1,28 +1,30 @@
 package org.evomaster.e2etests.spring.openapi.v3.security.sqli
 
 
-import com.foo.rest.examples.spring.openapi.v3.security.sqli.SQLiH2QueryController
+import com.foo.rest.examples.spring.openapi.v3.security.sqli.SQLiH2PathController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SQLiQueryH2EMTest : SpringTestBase() {
+class SQLiPathH2EMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SQLiH2QueryController())
+            initClass(SQLiH2PathController())
         }
     }
 
     @Test
     fun testSQLiH2EM() {
         runTestHandlingFlakyAndCompilation(
-            "SQLiH2EMTest",
+            "SQLiPathH2EMTest",
             20
         ) { args: MutableList<String> ->
 
@@ -39,16 +41,16 @@ class SQLiQueryH2EMTest : SpringTestBase() {
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            Assertions.assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
+            assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
 
-            Assertions.assertTrue(faults.any {
+            assertTrue(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/query/vulnerable"
+                        && it.operationId == "GET:/api/sqli/path/vulnerable/{id}"
             })
 
-            Assertions.assertFalse(faults.any {
+            assertFalse(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/query/safe"
+                        && it.operationId == "GET:/api/sqli/path/safe"
             })
 
         }

@@ -1,27 +1,21 @@
-package org.evomaster.e2etests.spring.rest.security.sqli
+package org.evomaster.e2etests.spring.rest.sqli
 
-import com.foo.spring.rest.mysql.security.sqli.SQLiMySQLQueryController
+import com.foo.spring.rest.mysql.sqli.SQLiMySQLBodyController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.e2etests.spring.mysql.entity.SpringTestBase
-import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SQLiMySQLQueryEMTest : SpringTestBase() {
+class SQLiMySQLBodyEMTest : SpringTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            val config = EMConfig()
-            config.instrumentMR_NET = false
-            config.instrumentMR_SQL = false
-
-            initClass(SQLiMySQLQueryController(), config)
+            initClass(SQLiMySQLBodyController())
         }
     }
 
@@ -29,7 +23,7 @@ class SQLiMySQLQueryEMTest : SpringTestBase() {
     fun testRunEM() {
 
         runTestHandlingFlakyAndCompilation(
-            "SQLiMySQLQueryEM",
+            "SQLiMySQLBodyEM",
             100
         ) { args ->
             setOption(args, "security", "true")
@@ -47,12 +41,12 @@ class SQLiMySQLQueryEMTest : SpringTestBase() {
 
             assertTrue(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/query/vulnerable"
+                        && it.operationId == "POST:/api/sqli/body/vulnerable"
             })
 
             assertFalse(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
-                        && it.operationId == "GET:/api/sqli/query/safe"
+                        && it.operationId == "GET:/api/sqli/body/safe"
             })
 
         }

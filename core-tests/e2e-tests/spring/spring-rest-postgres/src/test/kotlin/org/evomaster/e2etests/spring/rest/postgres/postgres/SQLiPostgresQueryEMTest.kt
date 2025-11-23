@@ -1,52 +1,51 @@
-package org.evomaster.e2etests.spring.openapi.v3.security.sqli
+package org.evomaster.e2etests.spring.rest.postgres.postgres
 
-
-import com.foo.rest.examples.spring.openapi.v3.security.sqli.SQLiH2QueryController
+import com.foo.spring.rest.postgres.sqli.SQLiPostgresQueryController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
+import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
-import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
+import org.evomaster.e2etests.spring.rest.postgres.SpringRestPostgresTestBase
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 
-class SQLiQueryH2EMTest : SpringTestBase() {
+class SQLiPostgresQueryEMTest : SpringRestPostgresTestBase() {
 
     companion object {
         @BeforeAll
         @JvmStatic
         fun init() {
-            initClass(SQLiH2QueryController())
+            initClass(SQLiPostgresQueryController())
         }
     }
 
     @Test
-    fun testSQLiH2EM() {
-        runTestHandlingFlakyAndCompilation(
-            "SQLiH2EMTest",
-            20
-        ) { args: MutableList<String> ->
+    fun testRunEM() {
 
+        runTestHandlingFlakyAndCompilation(
+            "SQLiMySQLQueryEM",
+            100
+        ) { args ->
             setOption(args, "security", "true")
 
-
             val solution = initAndRun(args)
-
-            Assertions.assertTrue(solution.individuals.isNotEmpty())
+            assertTrue(solution.individuals.isNotEmpty())
 
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            Assertions.assertTrue(faults.size == 1)
+            assertTrue(faults.size == 1)
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
-            Assertions.assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
+            assertTrue({ DefinedFaultCategory.SQL_INJECTION in faultCategories })
 
-            Assertions.assertTrue(faults.any {
+            assertTrue(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
                         && it.operationId == "GET:/api/sqli/query/vulnerable"
             })
 
-            Assertions.assertFalse(faults.any {
+            assertFalse(faults.any {
                 it.category == DefinedFaultCategory.SQL_INJECTION
                         && it.operationId == "GET:/api/sqli/query/safe"
             })
