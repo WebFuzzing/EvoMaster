@@ -72,9 +72,15 @@ open class XSSStoredJSONApplication {
         private val guestbookEntries = mutableListOf<Pair<String, String>>() // Query parameter
     }
 
+    open fun resetDB() {
+        comments.clear()
+        userBios.clear()
+        guestbookEntries.clear()
+    }
+
     // ==== BODY PARAMETER - Comment System ====
 
-    @PostMapping(path = ["/comment"], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(path = ["/comments"], produces = [MediaType.APPLICATION_JSON_VALUE])
     open fun storeComment(@RequestBody commentDto: CommentDto): ResponseEntity<CommentResponseDto> {
         // VULNERABLE: Stores user input without sanitization
         val comment = commentDto.comment ?: "No comment"
