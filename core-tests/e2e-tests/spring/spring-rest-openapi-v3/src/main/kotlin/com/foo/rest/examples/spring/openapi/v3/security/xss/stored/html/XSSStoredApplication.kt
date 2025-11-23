@@ -1,5 +1,6 @@
 package com.foo.rest.examples.spring.openapi.v3.security.xss.stored.html
 
+import com.foo.rest.examples.spring.openapi.v3.security.xss.stored.json.XSSStoredJSONApplication
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
@@ -31,9 +32,16 @@ open class XSSStoredApplication {
         private val guestbookEntries = mutableListOf<Pair<String, String>>() // Query parameter
     }
 
+
+    open fun resetDB() {
+        comments.clear()
+        userBios.clear()
+        guestbookEntries.clear()
+    }
+
     // ==== BODY PARAMETER - Comment System ====
 
-    @PostMapping(path = ["/comment"], produces = [MediaType.TEXT_HTML_VALUE])
+    @PostMapping(path = ["/comments"], produces = [MediaType.TEXT_HTML_VALUE])
     open fun storeComment(@RequestBody commentDto: CommentDto): String {
         // VULNERABLE: Stores user input without sanitization
         val comment = commentDto.comment ?: "No comment"
