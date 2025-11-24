@@ -222,6 +222,7 @@ object RestSecurityOracle {
         return true
     }
 
+    
     // Simple XSS payloads inspired by big-list-of-naughty-strings
     // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
     val XSS_PAYLOADS = listOf(
