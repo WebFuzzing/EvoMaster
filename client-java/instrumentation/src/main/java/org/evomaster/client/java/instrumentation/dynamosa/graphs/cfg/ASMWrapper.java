@@ -153,7 +153,7 @@ public abstract class ASMWrapper {
      * @return a boolean.
      */
     public boolean isActualBranch() {
-        return isBranch() || isSwitch();
+        return isBranch();
     }
 
     /**

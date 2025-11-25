@@ -133,7 +133,7 @@ public class AgentController {
             if (dto.enableGraphs != null) {
                 DynamosaConfig.setEnableGraphs(dto.enableGraphs);
             }
-            if (dto.writeCfg != null && dto.enableGraphs != null) {
+            if (dto.writeCfg != null) {
                 DynamosaConfig.setWriteCfgEnabled(dto.writeCfg);
             }
         } catch (Exception e) {

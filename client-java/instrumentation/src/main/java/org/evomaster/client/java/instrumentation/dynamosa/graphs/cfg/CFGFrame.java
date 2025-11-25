@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.evomaster.client.java.graphs.cfg;
+package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
 import org.objectweb.asm.tree.analysis.Frame;
 

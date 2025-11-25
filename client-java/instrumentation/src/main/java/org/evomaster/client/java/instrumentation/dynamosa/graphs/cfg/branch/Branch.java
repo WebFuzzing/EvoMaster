@@ -69,6 +69,13 @@ public class Branch implements Serializable, Comparable<Branch> {
     private boolean isInstrumented = false;
 
     /**
+     * Canonical identifiers matching the descriptive ids used in {@code ObjectiveNaming}.
+     */
+    private String thenObjectiveId;
+    private String elseObjectiveId;
+    private Integer branchOrdinalInLine;
+
+    /**
      * Constructor for usual jump instruction Branches, that are not SWITCH
      * instructions.
      *
@@ -296,6 +303,31 @@ public class Branch implements Serializable, Comparable<Branch> {
      */
     public void setInstrumented(boolean isInstrumented) {
         this.isInstrumented = isInstrumented;
+    }
+
+    /**
+     * Store the descriptive identifiers associated with this branch.
+     *
+     * @param ordinalInLine index of this branch on its source line (0-based)
+     * @param thenId        descriptive id for the "true" outcome
+     * @param elseId        descriptive id for the "false" outcome
+     */
+    public void setObjectiveIds(int ordinalInLine, String thenId, String elseId) {
+        this.branchOrdinalInLine = ordinalInLine;
+        this.thenObjectiveId = thenId;
+        this.elseObjectiveId = elseId;
+    }
+
+    public Integer getBranchOrdinalInLine() {
+        return branchOrdinalInLine;
+    }
+
+    public String getThenObjectiveId() {
+        return thenObjectiveId;
+    }
+
+    public String getElseObjectiveId() {
+        return elseObjectiveId;
     }
 
     private boolean ignoreFalse = false;

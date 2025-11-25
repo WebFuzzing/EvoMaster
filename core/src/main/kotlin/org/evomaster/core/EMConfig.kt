@@ -2354,7 +2354,7 @@ class EMConfig {
      * This controls only the persistence of graphs to disk; graph creation is controlled separately.
      */
     @Cfg("Enable writing CFG/CDG graphs to disk on the agent side")
-    var writeCfg: Boolean = false
+    var writeCfg: Boolean = true
 
     @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +
             "`null` represents to employ the setting specified on the EM driver side")

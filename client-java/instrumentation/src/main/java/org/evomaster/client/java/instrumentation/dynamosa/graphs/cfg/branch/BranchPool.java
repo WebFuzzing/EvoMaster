@@ -20,10 +20,7 @@
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch;
 
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.LookupSwitchInsnNode;
-import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
@@ -64,18 +61,12 @@ public class BranchPool {
     // maps all known branch instructions to their branchId
     private final Map<BytecodeInstruction, Integer> registeredNormalBranches = new HashMap<>();
 
-    // maps all known switch instructions to a list containing all of their
-    // associated Branch objects
-    private final Map<BytecodeInstruction, List<Branch>> registeredSwitches = new HashMap<>();
-
-    private final Map<BytecodeInstruction, Branch> registeredDefaultCases = new HashMap<>();
-
-    private final Map<LabelNode, List<Branch>> switchLabels = new HashMap<>();
-
     // number of known Branches - used for actualBranchIds
     private int branchCounter = 0;
 
     private static final Map<ClassLoader, BranchPool> instanceMap = new HashMap<>();
+
+    private final Map<String, Integer> branchOrdinalCounters = new HashMap<>();
 
     public static BranchPool getInstance(ClassLoader classLoader) {
         if (!instanceMap.containsKey(classLoader)) {
@@ -86,20 +77,7 @@ public class BranchPool {
     }
     // fill the pool
 
-    /**
-     * Gets called by the CFGMethodAdapter whenever it detects a method without
-     * any branches.
-     *
-     * @param methodName Unique methodName - consisting of <className>.<methodName> -
-     *                   of a method without Branches
-     * @param className  a {@link java.lang.String} object.
-     */
-    public void addBranchlessMethod(String className, String methodName,
-                                    int lineNumber) {
-        if (!branchlessMethods.containsKey(className))
-            branchlessMethods.put(className, new HashMap<>());
-        branchlessMethods.get(className).put(methodName, lineNumber);
-    }
+    
 
     /**
      * Called by the BytecodeInstructionPool whenever it detects an instruction
@@ -123,13 +101,10 @@ public class BranchPool {
             throw new IllegalStateException(
                     "expect registerInstruction() to be called at most once for each instruction");
 
-        if (v.isBranch())
-            registerNormalBranchInstruction(v);
-        else if (v.isSwitch())
-            registerSwitchInstruction(v);
-        else
-            throw new IllegalArgumentException(
-                    "expect given instruction to be an actual branch");
+        if (!v.isBranch())
+            throw new IllegalArgumentException("expect given instruction to be a normal branch");
+
+        registerNormalBranchInstruction(v);
     }
 
     private void registerNormalBranchInstruction(BytecodeInstruction v) {
@@ -144,144 +119,48 @@ public class BranchPool {
         registeredNormalBranches.put(v, branchCounter);
 
         Branch b = new Branch(v, branchCounter);
+        attachObjectiveIds(b);
         addBranchToMap(b);
         branchIdMap.put(branchCounter, b);
 
         SimpleLogger.info("Branch " + branchCounter + " at line " + v.getLineNumber());
     }
 
-    private void registerSwitchInstruction(BytecodeInstruction v) {
-        if (!v.isSwitch())
-            throw new IllegalArgumentException("expect a switch instruction");
-
-        LabelNode defaultLabel;
-
-        switch (v.getASMNode().getOpcode()) {
-            case Opcodes.TABLESWITCH:
-                TableSwitchInsnNode tableSwitchNode = (TableSwitchInsnNode) v.getASMNode();
-                registerTableSwitchCases(v, tableSwitchNode);
-                defaultLabel = tableSwitchNode.dflt;
-
-                break;
-            case Opcodes.LOOKUPSWITCH:
-                LookupSwitchInsnNode lookupSwitchNode = (LookupSwitchInsnNode) v.getASMNode();
-                registerLookupSwitchCases(v, lookupSwitchNode);
-                defaultLabel = lookupSwitchNode.dflt;
-                break;
-            default:
-                throw new IllegalStateException(
-                        "expect ASMNode of a switch to either be a LOOKUP- or TABLESWITCH");
+    private void attachObjectiveIds(Branch branch) {
+        if (branch == null) {
+            return;
         }
-
-        registerDefaultCase(v, defaultLabel);
-    }
-
-    private void registerDefaultCase(BytecodeInstruction v, LabelNode defaultLabel) {
-
-        if (defaultLabel == null)
-            throw new IllegalStateException("expect variable to bet set");
-
-        Branch defaultBranch = createSwitchCaseBranch(v, null, defaultLabel);
-        if (!defaultBranch.isSwitchCaseBranch() || !defaultBranch.isDefaultCase())
-            throw new IllegalStateException(
-                    "expect created branch to be a default case branch of a switch");
-    }
-
-    private void registerTableSwitchCases(BytecodeInstruction v,
-                                          TableSwitchInsnNode tableSwitchNode) {
-
-        int num = 0;
-
-        for (int i = tableSwitchNode.min; i <= tableSwitchNode.max; i++) {
-            LabelNode targetLabel = tableSwitchNode.labels.get(num);
-            Branch switchBranch = createSwitchCaseBranch(v, i, targetLabel);
-            if (!switchBranch.isSwitchCaseBranch() || !switchBranch.isActualCase())
-                throw new IllegalStateException(
-                        "expect created branch to be an actual case branch of a switch");
-            num++;
+        BytecodeInstruction instruction = branch.getInstruction();
+        if (instruction == null || !instruction.isBranch()) {
+            return;
+        }
+        try {
+            if (!instruction.hasLineNumberSet()) {
+                SimpleLogger.warn("Cannot attach objective ids to branch without line number: " + branch);
+                return;
+            }
+            int lineNumber = instruction.getLineNumber();
+            if (lineNumber <= 0) {
+                SimpleLogger.warn("Invalid line number while attaching objective ids to branch: " + branch);
+                return;
+            }
+            String className = instruction.getClassName();
+            String methodName = instruction.getMethodName();
+            int ordinal = nextOrdinalForLine(className, methodName, lineNumber);
+            int opcode = instruction.getASMNode().getOpcode();
+            String thenId = ObjectiveNaming.branchObjectiveName(className, lineNumber, ordinal, true, opcode);
+            String elseId = ObjectiveNaming.branchObjectiveName(className, lineNumber, ordinal, false, opcode);
+            branch.setObjectiveIds(ordinal, thenId, elseId);
+        } catch (Exception e) {
+            SimpleLogger.warn("Failed to attach objective ids to branch " + branch + ": " + e.getMessage());
         }
     }
 
-    private void registerLookupSwitchCases(BytecodeInstruction v,
-                                           LookupSwitchInsnNode lookupSwitchNode) {
-
-        for (int i = 0; i < lookupSwitchNode.keys.size(); i++) {
-            LabelNode targetLabel = lookupSwitchNode.labels.get(i);
-            Branch switchBranch = createSwitchCaseBranch(v,
-                    lookupSwitchNode.keys.get(i),
-                    targetLabel);
-            if (!switchBranch.isSwitchCaseBranch() || !switchBranch.isActualCase())
-                throw new IllegalStateException(
-                        "expect created branch to be an actual case branch of a switch");
-        }
-    }
-
-    private Branch createSwitchCaseBranch(BytecodeInstruction v,
-                                          Integer caseValue, LabelNode targetLabel) {
-
-        branchCounter++;
-
-        Branch switchBranch = new Branch(v, caseValue, targetLabel, branchCounter);
-        registerSwitchBranch(v, switchBranch);
-        addBranchToMap(switchBranch);
-        branchIdMap.put(branchCounter, switchBranch);
-
-        registerSwitchLabel(switchBranch, targetLabel);
-
-        // default case
-        if (caseValue == null) {
-            if (registeredDefaultCases.containsKey(v))
-                throw new IllegalStateException(
-                        "instruction already registered as a branch");
-            registeredDefaultCases.put(v, switchBranch);
-        }
-
-        if (!switchBranch.isSwitchCaseBranch())
-            throw new IllegalStateException("expect created Branch to be a switch branch");
-
-        return switchBranch;
-    }
-
-    private void registerSwitchLabel(Branch b, LabelNode targetLabel) {
-
-        if (switchLabels.get(targetLabel) == null)
-            switchLabels.put(targetLabel, new ArrayList<>());
-
-        List<Branch> oldList = switchLabels.get(targetLabel);
-
-        if (oldList.contains(b))
-            throw new IllegalStateException(
-                    "branch already registered for this switch label");
-
-        oldList.add(b);
-
-        // TODO several Branches can map to one Label, so switchLabels should
-        // either map from branches to labels, not the other way around. or it
-        // should map labels to a list of branches
-        // this stems from the fact that empty case: blocks do not have their
-        // own label
-
-        // TODO STOPPED HERE
-
-        switchLabels.put(targetLabel, oldList);
-    }
-
-    private void registerSwitchBranch(BytecodeInstruction v, Branch switchBranch) {
-        if (!v.isSwitch())
-            throw new IllegalArgumentException("switch instruction expected");
-
-        if (registeredSwitches.get(v) == null)
-            registeredSwitches.put(v, new ArrayList<>());
-
-        List<Branch> oldList = registeredSwitches.get(v);
-
-        if (oldList.contains(switchBranch))
-            throw new IllegalArgumentException("switch branch already registered  "
-                    + switchBranch.toString());
-
-        oldList.add(switchBranch);
-
-        registeredSwitches.put(v, oldList);
+    private int nextOrdinalForLine(String className, String methodName, int lineNumber) {
+        String key = className + "#" + methodName + "#" + lineNumber;
+        Integer ordinal = branchOrdinalCounters.getOrDefault(key, 0);
+        branchOrdinalCounters.put(key, ordinal + 1);
+        return ordinal;
     }
 
     private void addBranchToMap(Branch b) {
@@ -311,8 +190,7 @@ public class BranchPool {
      * @return a boolean.
      */
     public boolean isKnownAsBranch(BytecodeInstruction instruction) {
-        return isKnownAsNormalBranchInstruction(instruction)
-                || isKnownAsSwitchBranchInstruction(instruction);
+        return isKnownAsNormalBranchInstruction(instruction);
     }
 
     /**
@@ -326,19 +204,6 @@ public class BranchPool {
     public boolean isKnownAsNormalBranchInstruction(BytecodeInstruction ins) {
 
         return registeredNormalBranches.containsKey(ins);
-    }
-
-    /**
-     * <p>
-     * isKnownAsSwitchBranchInstruction
-     * </p>
-     *
-     * @param instruction a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
-     * @return a boolean.
-     */
-    public boolean isKnownAsSwitchBranchInstruction(BytecodeInstruction instruction) {
-
-        return registeredSwitches.containsKey(instruction);
     }
 
     /**
@@ -363,25 +228,6 @@ public class BranchPool {
 
     /**
      * <p>
-     * getCaseBranchesForSwitch
-     * </p>
-     *
-     * @param instruction a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
-     * @return a {@link java.util.List} object.
-     */
-    public List<Branch> getCaseBranchesForSwitch(BytecodeInstruction instruction) {
-        if (instruction == null)
-            throw new IllegalArgumentException("null given");
-        if (!instruction.isSwitch())
-            throw new IllegalArgumentException("switch instruction expected");
-        if (!isKnownAsSwitchBranchInstruction(instruction))
-            throw new IllegalArgumentException("not registered as a switch instruction");
-
-        return registeredSwitches.get(instruction);
-    }
-
-    /**
-     * <p>
      * getBranchForInstruction
      * </p>
      *
@@ -396,21 +242,6 @@ public class BranchPool {
                     "expect given instruction to be known as a normal branch");
 
         return getBranch(registeredNormalBranches.get(instruction));
-    }
-
-    /**
-     * <p>
-     * getBranchForLabel
-     * </p>
-     *
-     * @param label a {@link org.objectweb.asm.tree.LabelNode} object.
-     * @return a {@link java.util.List} object.
-     */
-    public List<Branch> getBranchForLabel(LabelNode label) {
-
-        // TODO see registerSwitchLabel()!
-
-        return switchLabels.get(label);
     }
 
     /**
@@ -565,134 +396,6 @@ public class BranchPool {
     }
 
     /**
-     * Returns a set with all unique methodNames of methods without Branches.
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return A set with all unique methodNames of methods without Branches.
-     */
-    public Set<String> getBranchlessMethods(String className) {
-        if (!branchlessMethods.containsKey(className))
-            return new LinkedHashSet<>();
-
-        return branchlessMethods.get(className).keySet();
-    }
-
-    /**
-     * Returns a set with all unique methodNames of methods without Branches.
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return A set with all unique methodNames of methods without Branches.
-     */
-    public Set<String> getBranchlessMethodsPrefix(String className) {
-        Set<String> methods = new LinkedHashSet<>();
-
-        for (String name : branchlessMethods.keySet()) {
-            if (name.equals(className) || name.startsWith(className + "$")) {
-                methods.addAll(branchlessMethods.get(name).keySet());
-            }
-        }
-
-        return methods;
-    }
-
-    /**
-     * Returns a set with all unique methodNames of methods without Branches.
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return A set with all unique methodNames of methods without Branches.
-     */
-    public Set<String> getBranchlessMethodsMemberClasses(String className) {
-        Set<String> methods = new LinkedHashSet<>();
-
-        for (String name : branchlessMethods.keySet()) {
-            if (name.equals(className) || name.startsWith(className + "$")) {
-                methods.addAll(branchlessMethods.get(name).keySet());
-            }
-        }
-
-        return methods;
-    }
-
-    /**
-     * Returns a set with all unique methodNames of methods without Branches.
-     *
-     * @return A set with all unique methodNames of methods without Branches.
-     */
-    public Set<String> getBranchlessMethods() {
-        Set<String> methods = new LinkedHashSet<>();
-
-        for (String name : branchlessMethods.keySet()) {
-            methods.addAll(branchlessMethods.get(name).keySet());
-        }
-
-        return methods;
-    }
-
-    public boolean isBranchlessMethod(String className, String methodName) {
-        Map<String, Integer> methodMap = branchlessMethods.get(className);
-        if (methodMap != null) {
-            return methodMap.containsKey(methodName);
-        }
-        return false;
-    }
-
-    /**
-     * Returns the number of methods without Branches for class className
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return The number of methods without Branches.
-     */
-    public int getNumBranchlessMethods(String className) {
-        if (!branchlessMethods.containsKey(className))
-            return 0;
-        return branchlessMethods.get(className).size();
-    }
-
-    /**
-     * Returns the number of methods without Branches for class className
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return The number of methods without Branches.
-     */
-    public int getNumBranchlessMethodsPrefix(String className) {
-        int num = 0;
-        for (String name : branchlessMethods.keySet()) {
-            if (name.startsWith(className))
-                num += branchlessMethods.get(name).size();
-        }
-        return num;
-    }
-
-    /**
-     * Returns the number of methods without Branches for class className
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return The number of methods without Branches.
-     */
-    public int getNumBranchlessMethodsMemberClasses(String className) {
-        int num = 0;
-        for (String name : branchlessMethods.keySet()) {
-            if (name.equals(className) || name.startsWith(className + "$"))
-                num += branchlessMethods.get(name).size();
-        }
-        return num;
-    }
-
-    /**
-     * Returns the total number of methods without branches in the instrumented
-     * classes
-     *
-     * @return
-     */
-    public int getNumBranchlessMethods() {
-        int num = 0;
-        for (String name : branchlessMethods.keySet()) {
-            num += branchlessMethods.get(name).size();
-        }
-        return num;
-    }
-
-    /**
      * Returns a Set containing all classes for which this pool knows Branches
      * for as Strings
      *
@@ -743,27 +446,6 @@ public class BranchPool {
     }
 
     /**
-     * <p>
-     * getDefaultBranchForSwitch
-     * </p>
-     *
-     * @param v a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
-     * @return a {@link org.evosuite.coverage.branch.Branch} object.
-     */
-    public Branch getDefaultBranchForSwitch(BytecodeInstruction v) {
-        if (!v.isSwitch())
-            throw new IllegalArgumentException("switch instruction expected");
-        if (!isKnownAsSwitchBranchInstruction(v))
-            throw new IllegalArgumentException(
-                    "instruction not known to be a switch instruction");
-        if (!registeredDefaultCases.containsKey(v))
-            throw new IllegalArgumentException(
-                    "there is no registered default case for this instruction");
-
-        return registeredDefaultCases.get(v);
-    }
-
-    /**
      * Reset all the data structures used to keep track of the branch
      * information
      */
@@ -773,9 +455,7 @@ public class BranchPool {
         branchlessMethods.clear();
         branchIdMap.clear();
         registeredNormalBranches.clear();
-        registeredSwitches.clear();
-        registeredDefaultCases.clear();
-        switchLabels.clear();
+        branchOrdinalCounters.clear();
     }
 
     /**
@@ -790,10 +470,8 @@ public class BranchPool {
         branchMap.clear();
         branchIdMap.clear();
         branchlessMethods.clear();
-        switchLabels.clear();
-        registeredDefaultCases.clear();
         registeredNormalBranches.clear();
-        registeredSwitches.clear();
+        branchOrdinalCounters.clear();
     }
 
     /**
@@ -806,6 +484,7 @@ public class BranchPool {
     public void clear(String className) {
         branchMap.remove(className);
         branchlessMethods.remove(className);
+        removeOrdinalCountersForClass(className);
     }
 
     /**
@@ -826,9 +505,26 @@ public class BranchPool {
         }
         if (branchlessMethods.containsKey(className))
             branchlessMethods.get(className).remove(methodName);
+        removeOrdinalCountersForMethod(className, methodName);
         SimpleLogger.info("Resetting branchCounter from " + branchCounter + " to "
                 + (branchCounter - numBranches));
         branchCounter -= numBranches;
+    }
+
+    private void removeOrdinalCountersForClass(String className) {
+        if (className == null) {
+            return;
+        }
+        String prefix = className + "#";
+        branchOrdinalCounters.keySet().removeIf(key -> key.startsWith(prefix));
+    }
+
+    private void removeOrdinalCountersForMethod(String className, String methodName) {
+        if (className == null || methodName == null) {
+            return;
+        }
+        String prefix = className + "#" + methodName + "#";
+        branchOrdinalCounters.keySet().removeIf(key -> key.startsWith(prefix));
     }
 
 }

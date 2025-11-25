@@ -86,12 +86,14 @@ public class BytecodeInstructionPool {
         for (int instructionId = 0; instructionId < node.instructions.size(); instructionId++) {
             AbstractInsnNode instructionNode = node.instructions.get(instructionId);
 
-            BytecodeInstruction instruction = BytecodeInstructionFactory.createBytecodeInstruction(classLoader,
+            BytecodeInstruction instruction = new BytecodeInstruction(
+                    classLoader,
                     className,
                     methodName,
                     instructionId,
                     bytecodeOffset,
-                    instructionNode);
+                    instructionNode
+            );
 
             if (instruction.isLineNumber())
                 lastLineNumber = instruction.getLineNumber();

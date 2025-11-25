@@ -22,7 +22,6 @@ package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.BranchPool;
 
-import org.objectweb.asm.tree.LabelNode;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
@@ -112,11 +111,9 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
 
         SimpleLogger.debug("Adding edge to RawCFG of " + className + "." + methodName + ": " + this.vertexCount());
 
-        if (BranchPool.getInstance(classLoader).isKnownAsBranch(src))
-            if (src.isBranch())
-                return addBranchEdge(src, target, isExceptionEdge);
-            else if (src.isSwitch())
-                return addSwitchBranchEdge(src, target, isExceptionEdge);
+        if (BranchPool.getInstance(classLoader).isKnownAsBranch(src) && src.isBranch()) {
+            return addBranchEdge(src, target, isExceptionEdge);
+        }
 
         return addUnlabeledEdge(src, target, isExceptionEdge);
     }
@@ -136,69 +133,6 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
         ControlFlowEdge e = new ControlFlowEdge(cd, isExceptionEdge);
 
         return internalAddEdge(src, target, e);
-    }
-
-    private ControlFlowEdge addSwitchBranchEdge(BytecodeInstruction src,
-                                                BytecodeInstruction target, boolean isExceptionEdge) {
-        if (!target.isLabel())
-            throw new IllegalStateException(
-                    "expect control flow edges from switch statements to always target labelNodes");
-
-        LabelNode label = (LabelNode) target.getASMNode();
-
-        List<Branch> switchCaseBranches = BranchPool.getInstance(classLoader).getBranchForLabel(label);
-
-        if (switchCaseBranches == null) {
-            SimpleLogger.debug("not a switch case label: " + label.toString() + " "
-                    + target);
-            return internalAddEdge(src, target, new ControlFlowEdge(isExceptionEdge));
-        }
-        // throw new IllegalStateException(
-        // "expect BranchPool to contain a Branch for each switch-case-label"+src.toString()+" to "+target.toString());
-
-        // TODO there is an inconsistency when it comes to switches with
-        // empty case: blocks. they do not have their own label, so there
-        // can be multiple ControlFlowEdges from the SWITCH instruction to
-        // one LabelNode.
-        // But currently our RawCFG does not permit multiple edges between
-        // two nodes
-
-        for (Branch switchCaseBranch : switchCaseBranches) {
-
-            // TODO n^2
-            Set<ControlFlowEdge> soFar = incomingEdgesOf(target);
-            boolean handled = false;
-            for (ControlFlowEdge old : soFar)
-                if (switchCaseBranch.equals(old.getBranchInstruction()))
-                    handled = true;
-
-            if (handled)
-                continue;
-            /*
-             * previous try to add fake intermediate nodes for each empty case
-             * block to help the CDG - unsuccessful:
-             * if(switchCaseBranches.size()>1) { // // e = new
-             * ControlFlowEdge(isExceptionEdge); //
-             * e.setBranchInstruction(switchCaseBranch); //
-             * e.setBranchExpressionValue(true); // BytecodeInstruction
-             * fakeInstruction =
-             * BytecodeInstructionPool.createFakeInstruction(className
-             * ,methodName); // addVertex(fakeInstruction); //
-             * internalAddEdge(src,fakeInstruction,e); // // e = new
-             * ControlFlowEdge(isExceptionEdge); //
-             * e.setBranchInstruction(switchCaseBranch); //
-             * e.setBranchExpressionValue(true); // // e =
-             * internalAddEdge(fakeInstruction,target,e); // } else {
-             */
-
-            ControlDependency cd = new ControlDependency(switchCaseBranch, true);
-            ControlFlowEdge e = new ControlFlowEdge(cd, isExceptionEdge);
-
-            e = internalAddEdge(src, target, e);
-
-        }
-
-        return new ControlFlowEdge(isExceptionEdge);
     }
 
     private ControlFlowEdge internalAddEdge(BytecodeInstruction src,
@@ -392,67 +326,6 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
 
         }
         return removed;
-    }
-
-    // control distance functionality
-
-    /**
-     * Returns the Set of BytecodeInstructions that can potentially be executed
-     * from entering the method of this CFG until the given BytecodeInstruction
-     * is reached.
-     *
-     * @param v a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction} object.
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<BytecodeInstruction> getPreviousInstructionsInMethod(BytecodeInstruction v) {
-        Set<BytecodeInstruction> visited = new HashSet<>();
-        PriorityQueue<BytecodeInstruction> queue = new PriorityQueue<>(
-                graph.vertexSet().size(), new BytecodeInstructionIdComparator());
-        queue.add(v);
-        while (queue.peek() != null) {
-            BytecodeInstruction current = queue.poll();
-            if (visited.contains(current))
-                continue;
-            Set<ControlFlowEdge> incomingEdges = graph.incomingEdgesOf(current);
-            for (ControlFlowEdge incomingEdge : incomingEdges) {
-                BytecodeInstruction source = graph.getEdgeSource(incomingEdge);
-                if (source.getInstructionId() >= current.getInstructionId())
-                    continue;
-                queue.add(source);
-            }
-            visited.add(current);
-        }
-        return visited;
-    }
-
-    /**
-     * Returns the Set of BytecodeInstructions that can potentially be executed
-     * from passing the given BytecodeInstruction until the end of the method of
-     * this CFG is reached.
-     *
-     * @param v a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction} object.
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<BytecodeInstruction> getLaterInstructionsInMethod(BytecodeInstruction v) {
-        Set<BytecodeInstruction> visited = new HashSet<>();
-        Comparator<BytecodeInstruction> reverseComp = new BytecodeInstructionIdComparator().reversed();
-        PriorityQueue<BytecodeInstruction> queue = new PriorityQueue<>(
-                graph.vertexSet().size(), reverseComp);
-        queue.add(v);
-        while (queue.peek() != null) {
-            BytecodeInstruction current = queue.poll();
-            if (visited.contains(current))
-                continue;
-            Set<ControlFlowEdge> outgoingEdges = graph.outgoingEdgesOf(current);
-            for (ControlFlowEdge outgoingEdge : outgoingEdges) {
-                BytecodeInstruction target = graph.getEdgeTarget(outgoingEdge);
-                if (target.getInstructionId() < current.getInstructionId())
-                    continue;
-                queue.add(target);
-            }
-            visited.add(current);
-        }
-        return visited;
     }
 
     // miscellaneous
