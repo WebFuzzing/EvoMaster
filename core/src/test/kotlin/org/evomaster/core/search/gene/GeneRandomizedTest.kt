@@ -48,7 +48,6 @@ class GeneRandomizedTest : AbstractGeneTest(){
             }
         }
 
-        //FIXME put back once fix all issues it finds
         verifyCopyValueFrom(mutable, rand)
     }
 
