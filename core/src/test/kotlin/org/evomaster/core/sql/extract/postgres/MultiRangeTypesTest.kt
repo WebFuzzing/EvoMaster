@@ -174,32 +174,32 @@ class MultiRangeTypesTest : ExtractTestBasePostgres() {
 
         val int4MultiRangeGene = genes[1] as SqlMultiRangeGene<*>
         val newInt4rangeGene = int4MultiRangeGene.template.copy() as SqlRangeGene<IntegerGene>
-        newInt4rangeGene.copyValueFrom(int4rangeGene)
+        newInt4rangeGene.unsafeCopyValueFrom(int4rangeGene)
         int4MultiRangeGene.rangeGenes.addElement(newInt4rangeGene.apply { doInitialize() })
 
         val int8MultiRangeGene = genes[2] as SqlMultiRangeGene<*>
         val newInt8rangeGene = int8MultiRangeGene.template.copy() as SqlRangeGene<LongGene>
-        newInt8rangeGene.copyValueFrom(int8rangeGene)
+        newInt8rangeGene.unsafeCopyValueFrom(int8rangeGene)
         int8MultiRangeGene.rangeGenes.addElement(newInt8rangeGene.apply { doInitialize() })
 
         val numMultiRangeGene = genes[3] as SqlMultiRangeGene<*>
         val newNumrangeGene = numMultiRangeGene.template.copy() as SqlRangeGene<FloatGene>
-        newNumrangeGene.copyValueFrom(numrangeGene)
+        newNumrangeGene.unsafeCopyValueFrom(numrangeGene)
         numMultiRangeGene.rangeGenes.addElement(newNumrangeGene.apply { doInitialize() })
 
         val timestampMultiRangeGene = genes[4] as SqlMultiRangeGene<*>
         val newTimestamprangeGene = timestampMultiRangeGene.template.copy() as SqlRangeGene<DateGene>
-        newTimestamprangeGene.copyValueFrom(timestamprangeGene)
+        newTimestamprangeGene.unsafeCopyValueFrom(timestamprangeGene)
         timestampMultiRangeGene.rangeGenes.addElement(newTimestamprangeGene.apply { doInitialize() })
 
         val timestampTzMultiRangeGene = genes[5] as SqlMultiRangeGene<*>
         val newTimestampTzRangeGene = timestampTzMultiRangeGene.template.copy() as SqlRangeGene<DateGene>
-        newTimestampTzRangeGene.copyValueFrom(timestamprangeGene)
+        newTimestampTzRangeGene.unsafeCopyValueFrom(timestamprangeGene)
         timestampTzMultiRangeGene.rangeGenes.addElement(newTimestampTzRangeGene.apply { doInitialize() })
 
         val dateMultiRangeGene = genes[6] as SqlMultiRangeGene<*>
         val newDateRangeGene = dateMultiRangeGene.template.copy() as SqlRangeGene<DateGene>
-        newDateRangeGene.copyValueFrom(daterangeGene)
+        newDateRangeGene.unsafeCopyValueFrom(daterangeGene)
         dateMultiRangeGene.rangeGenes.addElement(newDateRangeGene.apply { doInitialize() })
 
         val dbCommandDto = SqlActionTransformer.transform(actions)

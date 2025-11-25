@@ -37,9 +37,6 @@ class SSRFBaseEMTest : SpringTestBase() {
             setOption(args, "languageModelConnector", "false")
             setOption(args, "schemaOracles", "false")
 
-            // TODO: Remove once EnumGene is supported for DTOs
-            setOption(args, "dtoForRequestPayload","false")
-
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.isNotEmpty())
