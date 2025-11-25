@@ -1040,7 +1040,7 @@ class TestSuiteWriter {
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
 
-        if (config.ssrf && solution.hasSsrfFaults() && format.isJava()) {
+        if (config.ssrf && solution.hasSsrfFaults() && config.outputFormat.isJavaOrKotlin()) {
             assertionUtilFunctionForSSRF(lines, config.outputFormat)
         }
     }
@@ -1154,14 +1154,15 @@ class TestSuiteWriter {
     private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
         lines.addEmpty(1)
 
+        val methodComment = "Method to verify whether the HttpCallbackVerifier has received any requests."
         when {
             format.isKotlin() -> {
-                lines.addSingleCommentLine("To verify whether the HttpCallbackVerifier has received any requests.")
+                lines.addSingleCommentLine(methodComment)
                 lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
             }
             format.isJava() -> {
                 lines.startCommentBlock()
-                lines.addBlockCommentLine("Method to verify whether the HttpCallbackVerifier has received any requests.")
+                lines.addBlockCommentLine(methodComment)
                 lines.endCommentBlock()
                 lines.add("public static boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
             }

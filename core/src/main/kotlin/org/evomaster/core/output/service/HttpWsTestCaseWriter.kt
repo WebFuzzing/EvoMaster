@@ -857,12 +857,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     }
 
     private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
+        val verifierHasReceivedRequestsCheck = "verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\")"
         if (assertTrue) {
             lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
-            lines.addStatement("assertTrue(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
+            lines.addStatement("assertTrue($verifierHasReceivedRequestsCheck)")
         } else {
             lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
-            lines.addStatement("assertFalse(verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\"))")
+            lines.addStatement("assertFalse($verifierHasReceivedRequestsCheck)")
         }
     }
 
