@@ -746,8 +746,7 @@ object RestActionBuilderV3 {
 
         val name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
 
-        var gene = getGene(name, obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
-
+        var gene = getGene("body", obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
