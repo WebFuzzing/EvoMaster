@@ -13,7 +13,6 @@ import org.junit.jupiter.api.assertThrows
 class GeneRandomizedTest : AbstractGeneTest(){
 
 
-   // @Disabled("seed 1796 is still failing")
     @TestFactory
     fun testRandomized(): Collection<DynamicTest> {
         return (1000..2000L).map {
@@ -50,7 +49,7 @@ class GeneRandomizedTest : AbstractGeneTest(){
         }
 
         //FIXME put back once fix all issues it finds
-        //verifyCopyValueFrom(mutable, rand)
+        verifyCopyValueFrom(mutable, rand)
     }
 
     private fun verifyCopyValueFrom(
