@@ -127,7 +127,14 @@ internal class ObjectGeneTest {
 
         val actual = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         val expected =
-            "<device>XPhone<location><country>AR</country><gps>12<lon>34</lon></gps></location></device>"
+            "<device>XPhone" +
+                    "<location>" +
+                        "<country>AR</country>" +
+                        "<gps>12" +
+                            "<lon>34</lon>" +
+                        "</gps>" +
+                    "</location>" +
+            "</device>"
         assertEquals(expected, actual)
     }
 }

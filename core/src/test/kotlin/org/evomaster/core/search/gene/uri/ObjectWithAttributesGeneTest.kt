@@ -35,7 +35,11 @@ class ObjectWithAttributesGeneTest {
             attributeNames = setOf("attrib1")
         )
         val actual = person.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        val expected = "<parent attrib1=\"true\"><child1 attrib2=\"-1\" attrib3=\"bar\">42</child1><child2>foo</child2></parent>"
+        val expected =
+            "<parent attrib1=\"true\">" +
+                "<child1 attrib2=\"-1\" attrib3=\"bar\">42</child1>" +
+                "<child2>foo</child2>" +
+            "</parent>"
         assertEquals(expected, actual)
     }
 
@@ -192,7 +196,17 @@ class ObjectWithAttributesGeneTest {
         )
         val actual = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         val expected =
-            "<root id=\"root1\"><device><model>XPhone</model><location country=\"AR\"><gps><lat>12</lat><lon>34</lon></gps></location></device></root>"
+            "<root id=\"root1\">" +
+                "<device>" +
+                    "<model>XPhone</model>" +
+                    "<location country=\"AR\">" +
+                        "<gps>" +
+                            "<lat>12</lat>" +
+                            "<lon>34</lon>" +
+                        "</gps>" +
+                    "</location>" +
+                "</device>" +
+            "</root>"
         assertEquals(expected, actual)
     }
 
@@ -223,7 +237,15 @@ class ObjectWithAttributesGeneTest {
 
         val actual = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
         val expected =
-            "<device><model>XPhone</model><location country=\"AR\"><gps><lat>12</lat><lon>34</lon></gps></location></device>"
+            "<device>" +
+                    "<model>XPhone</model>" +
+                    "<location country=\"AR\">" +
+                        "<gps>" +
+                            "<lat>12</lat>" +
+                            "<lon>34</lon>" +
+                        "</gps>" +
+                    "</location>" +
+            "</device>"
         assertEquals(expected, actual)
     }
 
