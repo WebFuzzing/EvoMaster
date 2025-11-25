@@ -38,6 +38,22 @@ class ObjectWithAttributesGene(
         )
     }
 
+
+    private fun printAttribute(
+        previousGenes: List<Gene>,
+        targetFormat: OutputFormat?,
+        field: Gene
+    ): String {
+        val raw = field.getValueAsPrintableString(
+            previousGenes,
+            GeneUtils.EscapeMode.XML,
+            targetFormat
+        )
+
+        val clean = cleanXmlValueString(raw)
+        return "${field.name}=\"$clean\""
+    }
+
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,
@@ -72,20 +88,7 @@ class ObjectWithAttributesGene(
             throw IllegalStateException("Duplicate child elements not allowed in XML: $duplicated")
         }
 
-        fun xmlEscape(s: String): String =
-            s.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\"", "&quot;")
-                .replace("'", "&apos;")
-
-        fun printAttribute(field: Gene): String {
-            val raw = field.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat)
-            val clean = raw.removeSurrounding("\"")
-            return "${field.name}=\"$clean\""
-        }
-
-        val attributesString = attributeFields.joinToString(" ") { printAttribute(it) }
+        val attributesString = attributeFields.joinToString(" ") { printAttribute(previousGenes, targetFormat, it) }
         val sb = StringBuilder()
 
         if (attributesString.isEmpty()) { //No childs
@@ -102,7 +105,7 @@ class ObjectWithAttributesGene(
                 targetFormat
             )
 
-            val isInlineValue = child.name == "#text" && !(child is ObjectWithAttributesGene)
+            val isInlineValue = child.name == contentXMLTag && !(child is ObjectWithAttributesGene)
 
             if (isInlineValue) {
                 sb.append(childXml)
