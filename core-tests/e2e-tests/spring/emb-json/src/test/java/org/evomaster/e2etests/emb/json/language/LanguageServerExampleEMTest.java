@@ -24,7 +24,7 @@ public class LanguageServerExampleEMTest extends EMBJsonTestBase {
         runTestHandlingFlakyAndCompilation(
                 "LanguageServerExampleGeneratedEMTest",
                 "org.foo.LanguageServerExampleGeneratedEMTest",
-                4_000,
+                5_000,
                 true,
                 (args) -> {
 

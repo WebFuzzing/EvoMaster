@@ -48,6 +48,19 @@ class Randomness {
     private val verticalSpaceS = stringToListOfCharPairs("\n\u000B\u000C\r\u0085\u2028\u2029")
     private val punctuationS = stringToListOfCharPairs("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
 
+    private val digitCC = CharacterRangeRxGene(false, digitS)
+    private val asciiLetterCC = CharacterRangeRxGene(false, asciiLetterS)
+    private val wordCC = CharacterRangeRxGene(false, wordS)
+    private val spaceCC = CharacterRangeRxGene(false, spaceS)
+    private val horizontalSpaceCC = CharacterRangeRxGene(false, horizontalSpaceS)
+    private val verticalSpaceCC = CharacterRangeRxGene(false, verticalSpaceS)
+
+    private val nonDigitCC = CharacterRangeRxGene(true, digitS)
+    private val nonWordCC = CharacterRangeRxGene(true, wordS)
+    private val nonSpaceCC = CharacterRangeRxGene(true, spaceS)
+    private val nonHorizontalSpaceCC = CharacterRangeRxGene(true, horizontalSpaceS)
+    private val nonVerticalSpaceCC = CharacterRangeRxGene(true, verticalSpaceS)
+
     // US-ASCII POSIX character classes (\p{X})
     private val posixCharClassCC = mapOf(
         "Lower" to listOf('a' to 'z'),
@@ -63,7 +76,7 @@ class Randomness {
         "Cntrl" to listOf(0.toChar() to 0x1f.toChar()) + stringToListOfCharPairs("\u007f"),
         "XDigit" to listOf('0' to '9', 'a' to 'f', 'A' to 'F'),
         "Space" to spaceS
-    )
+    ).mapValues { (_, value) -> CharacterRangeRxGene(false, value) }
 
     private val asciiLetterSet = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
     private val wordSet = "_0123456789$asciiLetterSet"
@@ -284,7 +297,7 @@ class Randomness {
     }
 
     fun nextLetter(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, asciiLetterS))
+        val k = nextFromCharClass(asciiLetterCC)
         log.trace("nextLetter(): {}", k)
         return k
     }
@@ -302,61 +315,61 @@ class Randomness {
     }
 
     fun nextWordChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, wordS))
+        val k = nextFromCharClass(wordCC)
         log.trace("nextWordChar(): {}", k)
         return k
     }
 
     fun nextNonWordChar() : Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(true, wordS))
+        val k = nextFromCharClass(nonWordCC)
         log.trace("nextNonWordChar(): {}", k)
         return k
     }
 
     fun nextDigitChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, digitS))
+        val k = nextFromCharClass(digitCC)
         log.trace("nextDigitChar(): {}", k)
         return k
     }
 
     fun nextNonDigitChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(true, digitS))
+        val k = nextFromCharClass(nonDigitCC)
         log.trace("nextNonDigitChar(): {}", k)
         return k
     }
 
     fun nextSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, spaceS))
+        val k = nextFromCharClass(spaceCC)
         log.trace("nextSpaceChar(): {}", k)
         return k
     }
 
     fun nextNonSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(true, spaceS))
+        val k = nextFromCharClass(nonSpaceCC)
         log.trace("nextNonSpaceChar(): {}", k)
         return k
     }
 
     fun nextVerticalSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, verticalSpaceS))
+        val k = nextFromCharClass(verticalSpaceCC)
         log.trace("nextVerticalSpaceChar(): {}", k)
         return k
     }
 
     fun nextNonVerticalSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(true, verticalSpaceS))
+        val k = nextFromCharClass(nonVerticalSpaceCC)
         log.trace("nextNonVerticalSpaceChar(): {}", k)
         return k
     }
 
     fun nextHorizontalSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(false, horizontalSpaceS))
+        val k = nextFromCharClass(horizontalSpaceCC)
         log.trace("nextHorizontalSpaceChar(): {}", k)
         return k
     }
 
     fun nextNonHorizontalSpaceChar(): Char {
-        val k = nextFromCharClass(CharacterRangeRxGene(true, horizontalSpaceS))
+        val k = nextFromCharClass(nonHorizontalSpaceCC)
         log.trace("nextNonHorizontalSpaceChar(): {}", k)
         return k
     }
@@ -365,7 +378,7 @@ class Randomness {
         if (type.substring(2,type.length-1) !in posixCharClassCC){
             throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
         }
-        val k = nextFromCharClass(CharacterRangeRxGene(false, posixCharClassCC[type.substring(2,type.length-1)]!!))
+        val k = nextFromCharClass(posixCharClassCC[type.substring(2,type.length-1)]!!)
         log.trace("nextPosixCharClassChar({}): {}", type, k)
         return k
     }
