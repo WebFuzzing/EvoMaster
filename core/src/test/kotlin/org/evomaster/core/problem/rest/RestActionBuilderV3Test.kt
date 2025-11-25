@@ -1998,7 +1998,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
-        val isSet = x.setValueBasedOn(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2017,7 +2017,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
-        val isSet = x.setValueBasedOn(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)

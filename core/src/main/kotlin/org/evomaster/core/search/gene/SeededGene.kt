@@ -77,9 +77,9 @@ class SeededGene<T>(
     }
 
     /**
-     * @return a gene representing [this]
+     * @return a gene representing `this`
      */
-    fun getPhenotype() : T{
+    override fun getPhenotype() : Gene{
         return if (!employSeeded) gene else seeded.values[seeded.index]
     }
 
@@ -95,25 +95,7 @@ class SeededGene<T>(
             gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SeededGene<*>)
-            throw IllegalArgumentException("Invalid gene ${other::class.java}")
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = if (employSeeded)
-                    this.seeded.copyValueFrom(other.seeded)
-                else
-                    this.gene.copyValueFrom(other.gene as Gene)
-
-                if (ok){
-                    this.employSeeded = other.employSeeded
-                    this.isEmploySeededMutable = other.isEmploySeededMutable
-                }
-                ok
-            }, false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SeededGene<*>)
@@ -128,21 +110,20 @@ class SeededGene<T>(
     override fun possiblySame(gene : Gene) : Boolean =
             super.possiblySame(gene) && this.gene.possiblySame((gene as SeededGene<*>).gene as Gene)
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // only allow bind value for gene
-        if (gene is SeededGene<*> && isEmploySeededMutable){
-            employSeeded = gene.employSeeded
-            if (!employSeeded)
-                return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene.gene as Gene))
-            else
-                return seeded.setValueBasedOn(gene.seeded)
-        }
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SeededGene<*>)
+           return false
 
-        if (gene !is SeededGene<*> && !employSeeded){
-            return ParamUtil.getValueGene(this.gene).setValueBasedOn(ParamUtil.getValueGene(gene))
-        }
+        val ok = if (employSeeded)
+            this.seeded.unsafeCopyValueFrom(other.seeded)
+        else
+            this.gene.unsafeCopyValueFrom(other.gene as Gene)
 
-        return false
+        if (ok){
+            this.employSeeded = other.employSeeded
+            this.isEmploySeededMutable = other.isEmploySeededMutable
+        }
+        return ok
     }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
