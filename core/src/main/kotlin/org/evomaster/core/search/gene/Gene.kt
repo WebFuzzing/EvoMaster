@@ -1210,8 +1210,7 @@ abstract class Gene(
             //revert back
             val success = unsafeCopyValueFrom(current)
             //reversion should always work... if fails, it is a bug
-            // FIXME put back once all are implemented, eg, TaintedMapGene currently missing
-            //assert(success)
+            assert(success)
             return false
         }
         return true
