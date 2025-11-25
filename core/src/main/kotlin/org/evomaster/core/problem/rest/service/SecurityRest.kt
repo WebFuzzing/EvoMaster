@@ -975,7 +975,7 @@ class SecurityRest {
                     // XSS-like payloads are injected or when user input is not properly sanitized. The try-catch block ensures
                     // that these exceptions do not interrupt the main processing loop.
 
-                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck: ${e.message}")
                 }
             }
         }
@@ -986,7 +986,7 @@ class SecurityRest {
         path: RestPath,
         payload: String
     ): RestIndividual? {
-
+        //TODO to properly handle POST, we need first to finish the work on CallGraphService
         val getIndividuals = RestIndividualSelectorUtils.findIndividuals(
             individualsInSolution,
             HttpVerb.GET,
