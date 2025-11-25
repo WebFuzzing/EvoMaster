@@ -189,14 +189,7 @@ abstract class EnterpriseIndividual(
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
 
-        /*
-            FIXME There is some major bugs in Gene regarding
-            copyValueFrom() and setFromDifferentGene()
-            until fixed, this check will fail.
-            but the fix will require some major refactoring and testing... it will take time
-            TODO put back once fixed
-         */
-        //verifyValidity()
+        Lazy.assert { verifyValidity(); true }
 
         return issues
     }
