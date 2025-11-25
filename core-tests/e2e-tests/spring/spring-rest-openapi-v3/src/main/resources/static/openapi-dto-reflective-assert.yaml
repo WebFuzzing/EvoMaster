@@ -166,6 +166,30 @@ paths:
       responses:
         '200':
           description: OK
+  /enum-type:
+    post:
+      summary: Create an item using enums
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnumType'
+      responses:
+        '200':
+          description: OK
+  /enum-examples:
+    post:
+      summary: Submit an object using examples
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnumExample'
+      responses:
+        '200':
+          description: OK
 
 components:
   schemas:
@@ -211,3 +235,47 @@ components:
       required:
         - name
         - age
+
+    EnumType:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [ active, inactive, archived ]
+        intStatus:
+          type: integer
+          enum: [ -1, 0, 1 ]
+      required:
+        - name
+        - status
+        - intStatus
+
+    EnumExample:
+      type: object
+      properties:
+        textValue:
+          type: string
+          example: "hello world"
+        flagValue:
+          type: boolean
+          example: true
+        countValue:
+          type: integer
+          example: 33
+        scoreValue:
+          type: number
+          format: float
+          example: 3.14
+        listValue:
+          type: array
+          items:
+            type: string
+          example: [ "s1", "s2", "s3" ]
+      required:
+        - textValue
+        - flagValue
+        - countValue
+        - scoreValue
+        - listValue

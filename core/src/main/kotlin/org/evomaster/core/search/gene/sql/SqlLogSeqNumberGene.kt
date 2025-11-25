@@ -71,15 +71,7 @@ class SqlLogSeqNumberGene(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlLogSeqNumberGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {leftPart.copyValueFrom(other.leftPart)
-                    && rightPart.copyValueFrom(other.rightPart)}, true
-        )
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlLogSeqNumberGene) {
@@ -112,16 +104,12 @@ class SqlLogSeqNumberGene(
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlLogSeqNumberGene) {
-            this.leftPart.setValueBasedOn(gene.leftPart)
-            this.rightPart.setValueBasedOn(gene.rightPart)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlLogSeqNumberGene) {
+            return false
         }
-        LoggingUtil.uniqueWarn(
-                log,
-                "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}"
-        )
-        return false
+        return leftPart.unsafeCopyValueFrom(other.leftPart)
+                    && rightPart.unsafeCopyValueFrom(other.rightPart)
     }
 
 
