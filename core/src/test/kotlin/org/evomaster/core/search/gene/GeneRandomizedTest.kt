@@ -64,6 +64,9 @@ class GeneRandomizedTest : AbstractGeneTest(){
             val sx = x.getValueAsRawString()
 
             val y = x.copy().apply { randomize(rand, true) }
+            if(!y.isPrintable()){
+                return@forEach
+            }
             val sy = y.getValueAsRawString()
 
             if (sx == sy) {

@@ -876,12 +876,16 @@ abstract class Gene(
     /**
      * Genes might contain a value that is also stored
      * in another gene of the same type.
+     *
+     * If the type of [other] is different, this method might throw an [IllegalArgumentException]
+     *
+     * TODO refactor, in which type-check is done here
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
     /**
-     * evaluate whether [this] and [gene] belong to one evolution during search
+     * evaluate whether `this` and [gene] belong to one evolution during search
      */
     open fun possiblySame(gene: Gene): Boolean = gene.name == name && gene::class == this::class
 

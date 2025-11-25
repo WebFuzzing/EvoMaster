@@ -92,6 +92,11 @@ class SqlRangeGene<T>(
         if (other !is SqlRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
+
+        if(this.template.javaClass != other.template.javaClass) {
+            return false
+        }
+
         return isLeftClosed.containsSameValueAs(other.isLeftClosed)
                 && left.containsSameValueAs(other.left as Gene)
                 && right.containsSameValueAs(other.right as Gene)
