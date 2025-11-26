@@ -32,6 +32,7 @@ import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -1223,6 +1224,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
         handleSQLiCheck(individual, actionResults, fv)
+        handleXSSCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1374,6 +1376,46 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
                 r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleXSSCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            return
+        }
+
+        // Check if this individual has XSS vulnerability
+        if(!RestSecurityOracle.hasXSS(individual, actionResults)){
+            return
+        }
+
+        // Find the action(s) where XSS payload appears in the response
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+            if(!StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                continue
+            }
+
+            val responseBody = r.getBody() ?: continue
+
+            // Check if any XSS payload is present in this response
+            for(payload in XSS_PAYLOADS){
+                if(responseBody.contains(payload, ignoreCase = false)){
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, index)
+                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    break // Only add one fault per action
+                }
             }
         }
     }
