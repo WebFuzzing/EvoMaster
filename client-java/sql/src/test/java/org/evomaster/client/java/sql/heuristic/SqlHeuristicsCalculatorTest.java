@@ -1287,5 +1287,34 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals("john", queryResult.seeRows().get(2).getValueByName("name"));
     }
 
+    @Test
+    public void testWithClauseAndDerivedTable() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "WITH PersonCTE AS (SELECT * FROM Person) SELECT name FROM PersonCTE";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 25, 60000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", null, null), queryResult.seeVariableDescriptors().get(0));
+
+        assertEquals(2, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
+    }
+
 
 }

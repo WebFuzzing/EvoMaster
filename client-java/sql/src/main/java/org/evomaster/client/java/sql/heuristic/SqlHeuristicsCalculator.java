@@ -16,6 +16,7 @@ import org.evomaster.client.java.sql.heuristic.function.SqlAggregateFunction;
 import org.evomaster.client.java.sql.heuristic.function.SqlFunction;
 import org.evomaster.client.java.sql.internal.SqlDistanceWithMetrics;
 import org.evomaster.client.java.sql.internal.SqlParserUtils;
+import org.evomaster.client.java.sql.internal.SqlTableId;
 import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -927,7 +928,25 @@ public class SqlHeuristicsCalculator {
             if (fromItem.getAlias() != null) {
                 tableData = QueryResultUtils.addAliasToQueryResult(sourceQueryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
             } else {
-                tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
+                Table table = (Table) fromItem;
+                if (this.tableColumnResolver.resolve(table)!=null) {
+                    SqlTableReference sqlTableReference = this.tableColumnResolver.resolve(table);
+                    if (sqlTableReference instanceof SqlBaseTableReference) {
+                        SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
+                        SqlTableId sqlTableId = sqlBaseTableReference.getTableId();
+                        tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableId());
+                    } else if (sqlTableReference instanceof SqlDerivedTableReference) {
+                        SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
+                        Select select = sqlDerivedTableReference.getSelect();
+                        SqlHeuristicResult sqlHeuristicResult = this.computeHeuristic(select);
+                        tableData = sqlHeuristicResult.getQueryResult();
+                    } else {
+                        throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + table);
+                    }
+
+                } else {
+                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
+                }
             }
         }
         return tableData;
