@@ -1,12 +1,11 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -74,15 +73,6 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlPrimaryKeyGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.gene.copyValueFrom(other.gene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -116,11 +106,13 @@ class SqlPrimaryKeyGene(name: String,
         return gene.isReferenceToNonPrintable(previousGenes)
     }
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        // do nothing
-        return true
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlPrimaryKeyGene) {
+            return false
+        }
+        return this.gene.unsafeCopyValueFrom(other.gene)
     }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

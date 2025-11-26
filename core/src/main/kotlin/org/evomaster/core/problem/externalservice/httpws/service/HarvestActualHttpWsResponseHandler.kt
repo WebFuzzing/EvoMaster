@@ -532,10 +532,11 @@ class HarvestActualHttpWsResponseHandler {
         try {
             val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody ?: return false
 
-            val v = ParamUtil.getValueGene(geneToMutate)
-            val t = ParamUtil.getValueGene(template)
+            val v = geneToMutate.getLeafGene()
+            val t = template.getLeafGene()
             if (v::class.java == t::class.java) {
                 v.copyValueFrom(t)
+                v.forceNewTaints()
                 return true
             } else if (v is StringGene) {
                 // add template as part of specialization

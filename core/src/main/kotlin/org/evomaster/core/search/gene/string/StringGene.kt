@@ -171,6 +171,10 @@ class StringGene(
         return null
     }
 
+    override fun getPhenotype(): Gene {
+        return getSpecializationGene() ?: this
+    }
+
     override fun isMutable(): Boolean {
         //a specialization can always be undone... so previous check was wrong
 //        if (getSpecializationGene() != null) {
@@ -928,42 +932,7 @@ class StringGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
 
-        if(other is ChoiceGene<*>){
-            val x = other.activeGene()
-            return this.copyValueFrom(x)
-        }
-
-        val current = this.value
-
-        when(other){
-            is StringGene -> this.value = other.value
-            is EnumGene<*> -> this.value = other.getValueAsRawString()
-            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        if(other is StringGene) {
-            this.selectedSpecialization = other.selectedSpecialization
-
-            this.specializations.clear()
-            this.specializations.addAll(other.specializations)
-
-            killAllChildren()
-            addChildren(other.specializationGenes.map { it.copy() })
-
-            this.tainted = other.tainted
-            this.bindingIds.clear()
-            this.bindingIds.addAll(other.bindingIds)
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is StringGene) {
@@ -1014,56 +983,49 @@ class StringGene(
      */
 
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+        /*
+            TODO aren't we ignoring here if this gene is using a specialization?
+         */
 
-        Lazy.assert { isLocallyValid() }
-        val current = value
+        //TODO should this be handled with phenotype or wrapper? need to double-check
+        if(other is ChoiceGene<*>){
+            val x = other.activeGene()
+            return this.unsafeCopyValueFrom(x)
+        }
+
+        val gene = other.getPhenotype()
 
         when(gene){
-            //shall I add the specification into the string if it applies?
             is StringGene -> value = gene.value
             is Base64StringGene -> value = gene.data.value
             is FloatGene -> value = gene.value.toString()
             is IntegerGene -> value = gene.value.toString()
             is LongGene -> value = gene.value.toString()
-            is DoubleGene -> {
-                value = gene.value.toString()
-            }
+            is DoubleGene -> { value = gene.value.toString() }
             is ImmutableDataHolderGene -> value = gene.value
-            is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toString()
-            }
+            is SqlPrimaryKeyGene ->{ value = gene.uniqueId.toString() }
             // might check toEngineeringString() and toPlainString()
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
-            is SeededGene<*> ->{
-                return this.setValueBasedOn(gene.getPhenotype() as Gene)
-            }
-            is NumericStringGene ->{
-                return this.setValueBasedOn(gene.number)
-            }
+            is SeededGene<*> ->{ return this.unsafeCopyValueFrom(gene.getPhenotype() as Gene) }
+            is NumericStringGene ->{ return this.unsafeCopyValueFrom(gene.number) }
             else -> {
                 //return false
                 //Man: with taint analysis, g might be any other type.
                 if (gene is SqlForeignKeyGene){
-                    LoggingUtil.uniqueWarn(
-                        log,
-                        "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
-                    )
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}")
                     value = "${gene.uniqueIdOfPrimaryKey}"
                 } else if(gene is SqlAutoIncrementGene){
                     /*
-                        This happens in tiltaksgjennomforing-api, where a SqlAutoIncrementGene is not marked
+                        This happens in tiltaksgjennomforing, where a SqlAutoIncrementGene is not marked
                         as a Primary Key.
                         Might be an issue in current limited handling of primary keys.
                         Or are there legitimate cases for this?
                         TODO will need to investigate
                      */
-                    LoggingUtil.uniqueWarn(
-                        log,
-                        "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}."
-                    )
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}.")
                     //do nothing
                 } else{
                     value = gene.getValueAsRawString()
@@ -1071,15 +1033,24 @@ class StringGene(
             }
         }
 
-        if(!isLocallyValid()){
-            //this actually can happen when binding to Long, and goes above lenght limit of String
-            value = current
-            //TODO should we rather enforce this to never happen?
-            return false
-        }
+        //TODO would need updating...
+//        if(other is StringGene) {
+//            this.selectedSpecialization = other.selectedSpecialization
+//
+//            this.specializations.clear()
+//            this.specializations.addAll(other.specializations)
+//
+//            killAllChildren()
+//            addChildren(other.specializationGenes.map { it.copy() })
+//
+//            this.tainted = other.tainted
+//            this.bindingIds.clear()
+//            this.bindingIds.addAll(other.bindingIds)
+//        }
 
         return true
     }
+
 
     // need to check with Andrea if there is any further impact
     override fun compareTo(other: ComparableGene): Int {
@@ -1127,7 +1098,7 @@ class StringGene(
     }
 
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         this.value = value
         selectedSpecialization = -1

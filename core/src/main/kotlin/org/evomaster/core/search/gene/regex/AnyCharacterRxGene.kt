@@ -61,20 +61,6 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is AnyCharacterRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is AnyCharacterRxGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -82,22 +68,20 @@ class AnyCharacterRxGene : RxAtom, SimpleGene("."){
         return this.value == other.value
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
+        val gene = other.getPhenotype()
+
         when(gene){
-            is AnyCharacterRxGene -> {
-                value = gene.value
-            }
+            is AnyCharacterRxGene -> { value = gene.value }
             is IntegerGene -> value = gene.value.toChar()
-            is DoubleGene -> value = gene.value.toChar()
-            is FloatGene -> value = gene.value.toChar()
-            is LongGene -> value = gene.value.toChar()
+            is DoubleGene -> value = gene.value.toInt().toChar()
+            is FloatGene -> value = gene.value.toInt().toChar()
+            is LongGene -> value = gene.value.toInt().toChar()
             else -> {
-                if (gene is StringGene && gene.value.length == 1)
+                if (gene is StringGene && gene.value.length == 1) {
                     value = gene.value.first()
-                else if(gene is StringGene && gene.getSpecializationGene() != null){
-                    return setValueBasedOn(gene.getSpecializationGene()!!)
-                }else{
+                } else{
                     LoggingUtil.uniqueWarn(log, "cannot bind AnyCharacterRxGene with ${gene::class.java.simpleName}")
                     return false
                 }

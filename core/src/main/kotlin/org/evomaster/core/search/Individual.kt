@@ -527,7 +527,7 @@ abstract class Individual(
                       y !=x && !y.hasAnyBindingRelationship(x)
                }
            }){
-               errors.add("Taint id ${d.key} has duplicate genes that are not related}")
+               errors.add("Taint id ${d.key} has duplicate genes that are not related")
            }
         }
         return errors

@@ -4,6 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -186,7 +187,7 @@ class ChoiceGene<T>(
      * Copies the value of the other gene. The other gene
      * does not have to be [ChoiceGene].
      */
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
         val x = if(other is ChoiceGene<*>){
             other.activeGene()
@@ -194,31 +195,34 @@ class ChoiceGene<T>(
             other
         }
 
+        /*
+            TODO this is bit limited... what about if there are wrapper genes involved?
+        */
+
         for(i in geneChoices.indices){
             val g = geneChoices[i]
+
             /*
-                TODO this is bit limited... what about if there are wrapper genes involved?
+                tricky... usually in "unsafe" we would not check for validity.
+                but here there are many options, and we do NOT know beforehand if any
+                of them would be fine. also if one works, we should not break validity of the other
+                options even if not selected
              */
-            if(g.javaClass == x.javaClass){
-                val updated = updateValueOnlyIfValid(
-                    {
-                        this.activeGeneIndex = i
-                        g.copyValueFrom(x)
-                    }, true
-                )
-                if(updated){
-                    return true
-                }
+            val updated = g.copyValueFrom(x)
+            g.forceNewTaints()
+            if(updated){
+                this.activeGeneIndex = i
+                return true
             }
         }
 
         return false
     }
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
         for(i in geneChoices.indices){
             val g = geneChoices[i]
-            val updated = g.setValueBasedOn(value)
+            val updated = g.unsafeSetFromStringValue(value)
             if(updated){
                 activeGeneIndex = i
                 return true
@@ -242,29 +246,6 @@ class ChoiceGene<T>(
 
         return this.geneChoices[activeGeneIndex]
             .containsSameValueAs(other.geneChoices[activeGeneIndex])
-    }
-
-    /**
-     * Binds this gene to another [ChoiceGene<T>] with the same number of
-     * gene choices, one gene choice to the corresponding gene choice in
-     * the other gene.
-     */
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is ChoiceGene<*> && gene.geneChoices.size == geneChoices.size) {
-            var result = true
-            geneChoices.indices.forEach { i ->
-                val r = geneChoices[i].setValueBasedOn(gene.geneChoices[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind disjunctions (name: ${geneChoices[i].name}) at index $i")
-                result = result && r
-            }
-
-            activeGeneIndex = gene.activeGeneIndex
-            return result
-        }
-
-        LoggingUtil.uniqueWarn(log, "cannot bind ChoiceGene with ${gene::class.java.simpleName}")
-        return false
     }
 
     /**

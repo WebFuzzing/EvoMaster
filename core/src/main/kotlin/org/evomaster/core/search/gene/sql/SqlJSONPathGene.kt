@@ -92,14 +92,6 @@ class SqlJSONPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlJSONPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.pathExpression.copyValueFrom(other.pathExpression)}, false
-        )
-    }
 
     /**
      * Genes might contain a value that is also stored
@@ -118,15 +110,11 @@ class SqlJSONPathGene(
         return pathExpression.mutationWeight()
     }
 
-
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when (gene) {
-            is SqlJSONPathGene -> pathExpression.setValueBasedOn(gene.pathExpression)
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
-                false
-            }
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlJSONPathGene) {
+            return false
         }
+        return this.pathExpression.unsafeCopyValueFrom(other.pathExpression)
     }
 
     override fun customShouldApplyShallowMutation(

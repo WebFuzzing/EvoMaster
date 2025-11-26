@@ -183,14 +183,14 @@ class DateTimeGeneTest {
 
 
     @Test
-    fun testCopyValueFrom() {
+    fun testUnsafeCopyValueFrom() {
         val gene0 = DateTimeGene("dateTime",
                 format = FormatForDatesAndTimes.ISO_LOCAL
         )
         val gene1 = DateTimeGene("dateTime",
                 format = FormatForDatesAndTimes.DATETIME
         )
-        gene1.copyValueFrom(gene0)
+        gene1.unsafeCopyValueFrom(gene0)
 
         assertEquals(
             FormatForDatesAndTimes.ISO_LOCAL,

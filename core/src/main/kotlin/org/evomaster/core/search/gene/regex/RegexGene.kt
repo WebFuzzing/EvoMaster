@@ -84,14 +84,7 @@ class RegexGene(
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if(other !is RegexGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.disjunctions.copyValueFrom(other.disjunctions)}, false
-        )
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is RegexGene){
@@ -108,10 +101,10 @@ class RegexGene(
     override fun mutationWeight(): Double = disjunctions.mutationWeight()
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is RegexGene){
-            return disjunctions.setValueBasedOn(gene.disjunctions)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if(other !is RegexGene){
+            return false
         }
-        return false
+        return this.disjunctions.unsafeCopyValueFrom(other.disjunctions)
     }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 
 /**
  * A gene that either might contain other SQL special genes inside,
