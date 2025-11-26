@@ -79,15 +79,6 @@ class UUIDGene(
 
     fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UUIDGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.mostSigBits.copyValueFrom(other.mostSigBits) && this.leastSigBits.copyValueFrom(other.leastSigBits)}, true
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -96,21 +87,14 @@ class UUIDGene(
                 && this.leastSigBits.containsSameValueAs(other.leastSigBits)
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        val gene = other.getPhenotype()
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        return when{
-            gene is UUIDGene ->{
-                mostSigBits.setValueBasedOn(gene.mostSigBits) && leastSigBits.setValueBasedOn(gene.leastSigBits)
-            }
-            gene is StringGene && gene.getSpecializationGene() != null ->{
-                setValueBasedOn(gene.getSpecializationGene()!!)
-            }
-            else->{
-                LoggingUtil.uniqueWarn(log, "cannot bind UUIDGene with ${gene::class.java.simpleName}")
-                false
-            }
+        if (gene !is UUIDGene) {
+            throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
         }
+        return this.mostSigBits.unsafeCopyValueFrom(gene.mostSigBits)
+                && this.leastSigBits.unsafeCopyValueFrom(gene.leastSigBits)
     }
-
 }

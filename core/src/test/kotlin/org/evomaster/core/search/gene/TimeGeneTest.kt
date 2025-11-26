@@ -114,7 +114,7 @@ class TimeGeneTest {
         }
     }
     @Test
-    fun testCopyValueFrom() {
+    fun testUnsafeCopyValueFrom() {
         val gene0 = TimeGene("time",
                 format = FormatForDatesAndTimes.RFC3339
         )
@@ -126,7 +126,7 @@ class TimeGeneTest {
         val gene1 = TimeGene("time",
                 format = FormatForDatesAndTimes.ISO_LOCAL
         )
-        gene1.copyValueFrom(gene0)
+        gene1.unsafeCopyValueFrom(gene0)
 
         gene1.apply {
             assertEquals(3, hour.value)

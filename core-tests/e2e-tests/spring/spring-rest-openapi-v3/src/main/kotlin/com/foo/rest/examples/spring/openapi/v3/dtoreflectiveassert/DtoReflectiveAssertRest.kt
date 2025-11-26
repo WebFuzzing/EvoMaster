@@ -44,4 +44,14 @@ class DtoReflectiveAssertRest {
         return ResponseEntity.ok("OK")
     }
 
+    @PostMapping(path = ["/enum-examples"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun enumExamples(@RequestBody body: EnumExamplesDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
+    @PostMapping(path = ["/enum-type"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun enumType(@RequestBody body: EnumTypeDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
+
 }

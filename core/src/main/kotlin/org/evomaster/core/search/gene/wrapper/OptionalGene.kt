@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.wrapper
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.value.OptionalGeneImpact
 import org.evomaster.core.search.service.Randomness
@@ -62,27 +63,27 @@ class OptionalGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is OptionalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
+        if(gene is OptionalGene){
+            this.isActive = gene.isActive
+            this.selectable = gene.selectable
+            this.requestSelection = gene.requestSelection
+            this.searchPercentageActive = gene.searchPercentageActive
+            return this.gene.unsafeCopyValueFrom(gene.gene)
         }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = gene.copyValueFrom(other.gene)
-                if (ok){
-                    this.isActive = other.isActive
-                    this.selectable = other.selectable
-                    this.requestSelection = other.requestSelection
-                    this.searchPercentageActive = other.searchPercentageActive
-                }
-                ok
-            }, false
-        )
+        if(!isActive){
+            return false
+        }
+
+        return this.gene.unsafeCopyValueFrom(gene)
     }
 
-    override fun setValueBasedOn(value: String) : Boolean{
-        val modified = gene.setValueBasedOn(value)
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+        val modified = gene.unsafeSetFromStringValue(value)
         if(modified){
             isActive = true
         }
@@ -156,10 +157,7 @@ class OptionalGene(name: String,
     }
 
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is OptionalGene) isActive = gene.isActive
-        return ParamUtil.getValueGene(this).setValueBasedOn(ParamUtil.getValueGene(gene))
-    }
+
 
     override fun isChildUsed(child: Gene) : Boolean {
         verifyChild(child)

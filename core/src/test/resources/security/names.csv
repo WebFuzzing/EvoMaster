@@ -1,0 +1,610 @@
+uri,Filter media files based on their path. The parameter value may be found anywhere in the URI.Case sensitive.,1
+return_url,The URL [the paying user is directed to after their payment journey on GOV.UK Pay ends](https://docs.payments.service.gov.uk/making_payments/#choose-the-return-url-and-match-your-users-to-payments).,1
+bbox,A geographic bounding box defining the search area.  Must be specified as a string of the form 'minLongitudeminLatitudemaxLongitudemaxLatitude' (WGS84). e.g. -11949-11850,0
+featurePoint,A geographic coordinate specifying the centre point of the search area.  Must be specified as a string of the form 'longitudelatitude' (WGS84).  e.g. -12051,0
+distance,A radius (in kilometres) around the centre point.,0
+name,A filter to search based on the the text of the name itself.  Use the asterisk (*) as a wildcard character.  For example 'vancouv*',0
+exactSpelling,If the 'name' parameter is specified 'exactSpelling' specifies whether to include only names that exactly match the search text (exactSpelling=1) or whether to also include names with similar spellings (exactSpelling=0),0
+nameId,The unique identifier for a name,0
+aspectId,The identifier of the 'aspect' (content group) to search,0
+civixDocumentId,The document identification code for an index or directory,0
+civixIndexId,Index identification code,0
+searchString,The text to search for within the document,0
+nFrag,number of fragment snippets to return (< 10),0
+lFrag,length of fragment snippets (< 200),0
+indexKind,home or one of categories,0
+indexKey,default or one key of the categories (ministries sectors services tags themes),0
+postKind,One of: releases stories factsheets updates or default (releases+stories+factsheets),0
+count,number of posts to return,0
+skip,number of posts to skip,0
+postKind,One of: releases stories factsheets updates or default (releases+stories except top/feature),0
+msisdn,An available inbound virtual number.,0
+features,Available features are `SMS` `VOICE` and `MMS`. To look for numbers that support multiple features use a comma-separated value: `SMSMMSVOICE`.,0
+app_id,The Application that will handle inbound traffic to this number.,0
+messagesCallbackType,<strong>DEPRECATED</strong> - We recommend that you use `app_id` instead.Specifies the Messages webhook type (always `app`) associated with thisnumber and must be used with the `messagesCallbackValue` parameter.,0
+messagesCallbackValue,<strong>DEPRECATED</strong> - We recommend that you use `app_id` instead.Specifies the Application ID of your Messages application.It must be used with the `messagesCallbackType` parameter.,0
+moHttpUrl,An URL-encoded URI to the webhook endpoint that handles inbound messages. Your webhook endpoint must be active before you make this request. Vonage makes a `GET` request to the endpoint and checks that it returns a `200 OK` response. Set this parameter's value to an empty string to remove the webhook.,1
+moSmppSysType,The associated system type for your SMPP client,0
+voiceCallbackType,Specify whether inbound voice calls on your number are forwardedto a SIP or a telephone number.  This must be used with the`voiceCallbackValue` parameter. If set `sip` or `tel` areprioritized over the Voice capability in your Application.*Note: The `app` value is deprecated and will be removed in future.*,0
+voiceCallbackValue,A SIP URI or telephone number. Must be used with the `voiceCallbackType` parameter.,1
+voiceStatusCallback,A webhook URI for Vonage to send a request to when a call ends,1
+reference,Your reference for the cancel request. Maximum length: 80 characters.,0
+amount,The total amount of the order.,0
+reference,A custom reference identifying the order.,0
+order,The order request object that contains a pspReference that represents the order and the matching encrypted order data.,0
+originDomains,The list of origin domains for which origin keys are requested.,0
+allowedPaymentMethods,"List of payment methods to be presented to the shopper. To refer to payment methods use their `paymentMethod.type` from [Payment methods overview](https://docs.adyen.com/payment-methods).Example: `""allowedPaymentMethods"":[""ideal""""giropay""]`",0
+amount,The payment amount and currency.,0
+billingAddress,The address where to send the invoice.,0
+blockedPaymentMethods,"List of payment methods to be hidden from the shopper. To refer to payment methods use their `paymentMethod.type` from [Payment methods overview](https://docs.adyen.com/payment-methods).Example: `""blockedPaymentMethods"":[""ideal""""giropay""]`",0
+countryCode,The shopper's two-letter country code.,0
+deliverAt,The date and time the purchased goods should be delivered.,0
+deliveryAddress,The address where the purchased goods should be delivered.,0
+description,A short description visible on the payment page.Maximum length: 280 characters.,0
+installmentOptions,A set of key-value pairs that specifies the installment options available per payment method. The key must be a payment method name in lowercase. For example **card** to specify installment options for all cards or **visa** or **mc**. The value must be an object containing the installment options.,0
+lineItems,Price and product information about the purchased items to be included on the invoice sent to the shopper.This parameter is required for open invoice (_buy now pay later_) payment methods such Afterpay Clearpay Klarna RatePay and Zip.,0
+recurringProcessingModel,Defines a recurring payment type.Possible values:* **Subscription** – A transaction for a fixed or variable amount which follows a fixed schedule.* **CardOnFile** – With a card-on-file (CoF) transaction card details are stored to enable one-click or omnichannel journeys or simply to streamline the checkout process. Any subscription not following a fixed schedule is also considered a card-on-file transaction.* **UnscheduledCardOnFile** – An unscheduled card-on-file (UCoF) transaction is a transaction that occurs on a non-fixed schedule and/or has variable amounts. For example automatic top-ups when a cardholder's balance drops below a certain amount.,0
+reference,A reference that is used to uniquely identify the payment in future communications about the payment status.,0
+returnUrl,Website URL used for redirection after payment is completed.If provided a **Continue** button will be shown on the payment page. If shoppers select the button they are redirected to the specified URL.,1
+shopperEmail,The shopper's email address.,0
+shopperName,The shopper's full name. This object is required for some payment methods such as AfterPay Klarna or if you're enrolled in the PayPal Seller Protection program.,0
+shopperReference,Your reference to uniquely identify this shopper for example user ID or account ID. Minimum length: 3 characters.> Your reference must not include personally identifiable information (PII) for example name or email address.,0
+splits,An array of objects specifying how the payment should be split between accounts when using Adyen for Platforms. For details refer to [Providing split information](https://docs.adyen.com/platforms/processing-payments#providing-split-information).,0
+store,The physical store for which this payment is processed.,0
+additionalData,This field contains additional data which may be required for a particular payment request.The `additionalData` object consists of entries each of which includes the key and value.,0
+channel,The platform where a payment transaction takes place. This field can be used for filtering out payment methods that are only available on specific platforms. Possible values:* iOS* Android* Web,0
+countryCode,The shopper's country code.,0
+shopperReference,Required for recurring payments. Your reference to uniquely identify this shopper for example user ID or account ID. Minimum length: 3 characters.> Your reference must not include personally identifiable information (PII) for example name or email address.,0
+store,The ecommerce or point-of-sale store that is processing the payment. Used in [partner arrangement integrations](https://docs.adyen.com/platforms/platforms-for-partners#route-payments) for Adyen for Platforms.,0
+accountInfo,Shopper account information for 3D Secure 2.> For 3D Secure 2 transactions we recommend that you include this object to increase the chances of achieving a frictionless flow.,0
+additionalAmount,If you want a [BIN or card verification](https://docs.adyen.com/payment-methods/cards/bin-data-and-card-verification) request to use a non-zero value assign this value to `additionalAmount` (while the amount must be still set to 0 to trigger BIN or card verification).Required to be in the same currency as the `amount`.,0
+billingAddress,The address where to send the invoice.> The `billingAddress` object is required in the following scenarios. Include all of the fields within this object.>* For 3D Secure 2 transactions in all browser-based and mobile implementations.,0
+browserInfo,The shopper's browser information.> For 3D Secure the full object is required for web integrations. For mobile app integrations include the `userAgent` and `acceptHeader` fields to indicate  that your integration can support a redirect in case a payment is routed to 3D Secure 1.,0
+captureDelayHours,The delay between the authorisation and scheduled auto-capture specified in hours.,0
+dateOfBirth,The shopper's date of birth.Format [ISO-8601](https://www.w3.org/TR/NOTE-datetime): YYYY-MM-DD,0
+dccQuote,The forex quote as returned in the response of the forex service.,0
+deliveryDate,The date and time the purchased goods should be delivered.Format [ISO 8601](https://www.w3.org/TR/NOTE-datetime): YYYY-MM-DDThh:mm:ss.sssTZDExample: 2017-07-17T13:42:40.428+01:00,0
+deviceFingerprint,A string containing the shopper's device fingerprint. For more information refer to [Device fingerprinting](https://docs.adyen.com/risk-management/device-fingerprinting).,0
+fraudOffset,An integer value that is added to the normal fraud score. The value can be either positive or negative.,0
+installments,Contains installment settings. For more information refer to [Installments](https://docs.adyen.com/payment-methods/cards/credit-card-installments).,0
+mcc,The [merchant category code](https://en.wikipedia.org/wiki/Merchant_category_code) (MCC) is a four-digit number which relates to a particular market segment. This code reflects the predominant activity that is conducted by the merchant.,0
+merchantRiskIndicator,Additional risk fields for 3D Secure 2.> For 3D Secure 2 transactions we recommend that you include this object to increase the chances of achieving a frictionless flow.,0
+paymentMethod,The collection that contains the type of the payment method and its specific information.,0
+recurring,The recurring settings for the payment. Use this property when you want to enable [recurring payments](https://docs.adyen.com/classic-integration/recurring-payments).,0
+recurringProcessingModel,Defines a recurring payment type.Allowed values:* `Subscription` – A transaction for a fixed or variable amount which follows a fixed schedule.* `CardOnFile` – With a card-on-file (CoF) transaction card details are stored to enable one-click or omnichannel journeys or simply to streamline the checkout process. Any subscription not following a fixed schedule is also considered a card-on-file transaction.* `UnscheduledCardOnFile` – An unscheduled card-on-file (UCoF) transaction is a transaction that occurs on a non-fixed schedule and/or have variable amounts. For example automatic top-ups when a cardholder's balance drops below a certain amount.,0
+reference,"The reference to uniquely identify a payment. This reference is used in all communication with you about the payment status. We recommend using a unique value per payment; however it is not a requirement.If you need to provide multiple references for a transaction separate them with hyphens (""-"").Maximum length: 80 characters.",0
+selectedBrand,Some payment methods require defining a value for this field to specify how to process the transaction.For the Bancontact payment method it can be set to:* `maestro` (default) to be processed like a Maestro card or* `bcmc` to be processed like a Bancontact card.,0
+selectedRecurringDetailReference,The `recurringDetailReference` you want to use for this payment. The value `LATEST` can be used to select the most recently stored recurring detail.,0
+sessionId,A session ID used to identify a payment session.,0
+shopperEmail,The shopper's email address. We recommend that you provide this data as it is used in velocity fraud checks.> For 3D Secure 2 transactions schemes require `shopperEmail` for all browser-based and mobile implementations.,0
+shopperIP,The shopper's IP address. In general we recommend that you provide this data as it is used in a number of risk checks (for instance number of payment attempts or location-based checks).> For 3D Secure 2 transactions schemes require `shopperIP` for all browser-based implementations.This field is also mandatory for some merchants depending on your business model. For more information [contact Support](https://support.adyen.com/hc/en-us/requests/new).,0
+shopperName,The shopper's full name.,0
+shopperStatement,The text to be shown on the shopper's bank statement. To enable this field contact our [Support Team](https://support.adyen.com/hc/en-us/requests/new). We recommend sending a maximum of 22 characters otherwise banks might truncate the string.,0
+splits,An array of objects specifying how the payment should be split when using [Adyen for Platforms](https://docs.adyen.com/platforms/processing-payments#providing-split-information) or [Issuing](https://docs.adyen.com/issuing/manage-funds#split).,0
+telephoneNumber,The shopper's telephone number.,0
+threeDS2RequestData,Request fields for 3D Secure 2. To check if any of the following fields are required for your integration refer to [Online payments](https://docs.adyen.com/online-payments) or [Classic integration](https://docs.adyen.com/classic-integration) documentation.,0
+totalsGroup,The reference value to aggregate sales totals in reporting. When not specified the store field is used (if available).,0
+trustedShopper,Set to true if the payment should be routed to a trusted MID.,0
+allowedPaymentMethods,"List of payment methods to be presented to the shopper. To refer to payment methods use their `paymentMethod.type`from [Payment methods overview](https://docs.adyen.com/payment-methods).Example: `""allowedPaymentMethods"":[""ideal""""giropay""]`",0
+blockedPaymentMethods,"List of payment methods to be hidden from the shopper. To refer to payment methods use their `paymentMethod.type`from [Payment methods overview](https://docs.adyen.com/payment-methods).Example: `""blockedPaymentMethods"":[""ideal""""giropay""]`",0
+channel,The platform where a payment transaction takes place. This field is optional for filtering out payment methods that are only available on specific platforms. If this value is not set then we will try to infer it from the `sdkVersion` or `token`.Possible values:* iOS* Android* Web,0
+company,Information regarding the company.,0
+configuration,Specify configurations to enable additional features.,0
+countryCode,The shopper country.Format: [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2)Example: NL or DE,0
+enableOneClick,When true and `shopperReference` is provided the shopper will be asked if the payment details should be stored for future one-click payments.,0
+enablePayOut,When true and `shopperReference` is provided the payment details will be tokenized for payouts.,0
+enableRecurring,When true and `shopperReference` is provided the payment details will be tokenized for recurring payments.,0
+entityType,The type of the entity the payment is processed for.,0
+lineItems,Price and product information about the purchased items to be included on the invoice sent to the shopper.> This field is required for 3x 4x Oney Affirm Afterpay Clearpay Klarna Ratepay Zip and Atome.,0
+mandate,The mandate details to initiate recurring transaction.,0
+origin,Required for the Web integration.Set this parameter to the origin URL of the page that you are loading the SDK from.,1
+recurringExpiry,Date after which no further authorisations shall be performed. Only for 3D Secure 2.,0
+recurringFrequency,Minimum number of days between authorisations. Only for 3D Secure 2.,0
+returnUrl,The URL to return to in case of a redirection.The format depends on the channel. This URL can have a maximum of 1024 characters.* For web include the protocol `http://` or `https://`. You can also include your own additional query parameters for example shopper ID or order reference number.Example: `https://your-company.com/checkout?shopperOrder=12xy`* For iOS use the custom URL for your app. To know more about setting custom URL schemes refer to the [Apple Developer documentation](https://developer.apple.com/documentation/uikit/inter-process_communication/allowing_apps_and_websites_to_link_to_your_content/defining_a_custom_url_scheme_for_your_app).Example: `my-app://`* For Android use a custom URL handled by an Activity on your app. You can configure it with an [intent filter](https://developer.android.com/guide/components/intents-filters).Example: `my-app://your.package.name`,1
+riskData,Contains risk data such as client-side data used to identify risk for a transaction.,0
+sdkVersion,The version of the SDK you are using (for Web SDK integrations only).,0
+sessionValidity,The date and time until when the session remains valid in [ISO 8601](https://www.w3.org/TR/NOTE-datetime) format.For example: 2020-07-18T15:42:40.428+01:00,0
+token,The token obtained when initializing the SDK.> This parameter is required for iOS and Android; not required for Web.,0
+mpiData,Authentication data produced by an MPI (Mastercard SecureCode Visa Secure or Cartes Bancaires).,0
+order,Contains the order information which is required for partial payments.,0
+origin,Required for the 3D Secure 2 `channel` **Web** integration.Set this parameter to the origin URL of the page that you are loading the 3D Secure Component from.,1
+paymentMethod,The type and required details of a payment method to use.,0
+redirectFromIssuerMethod,Specifies the redirect method (GET or POST) when redirecting back from the issuer.,0
+redirectToIssuerMethod,Specifies the redirect method (GET or POST) when redirecting to the issuer.,0
+details,Use this collection to submit the details that were returned as a result of the `/payments` call.,0
+paymentData,The `paymentData` value from the `/payments` response. Required if the `/payments` response returns this value.,0
+threeDSAuthenticationOnly,Change the `authenticationOnly` indicator originally set in the `/payments` request. Only needs to be set if you want to modify the value set previously.,0
+payload,Encrypted and signed payment result data. You should receive this value from the Checkout SDK after the shopper completes the payment.,0
+amount,The updated amount. The `currency` must match the currency used in authorisation.,0
+reason,The reason for the amount update. Possible values: * **delayedCharge** * **noShow**,0
+reference,Your reference for the amount update request. Maximum length: 80 characters.,0
+splits,An array of objects specifying how the amount should be split between accounts when using Adyen for Platforms. For details refer to [Providing split information](https://docs.adyen.com/platforms/processing-payments#providing-split-information).,0
+amount,The amount that you want to capture. The `currency` must match the currency used in authorisation the `value` must be smaller than or equal to the authorised amount.,0
+reference,Your reference for the capture request. Maximum length: 80 characters.,0
+amount,The amount that you want to refund. The `currency` must match the currency used in authorisation the `value` must be smaller than or equal to the authorised amount.,0
+reference,Your reference for the refund request. Maximum length: 80 characters.,0
+reference,Your reference for the reversal request. Maximum length: 80 characters.,0
+assets,The number of assets,0
+assetsCovarianceMatrix,assetsCovarianceMatrix[i][j] is the covariance between the asset i and the asset j,0
+assetsAverageReturns,assetsAverageReturns[i] is the average return of asset i over an historical reference period,0
+assetsCovarianceMatrix,assetsCovarianceMatrix[i][j] is the covariance between the asset i and the asset j over an historical reference period,0
+assetsReturns,assetsReturns[i] is the return of asset i over a period different from the historical reference period,0
+assetsCorrelationMatrix,assetsCorrelationMatrix[i][j] is the correlation between the asset i and the asset j,0
+assetsGroup,assetsGroup[k] is the indexes of the assets belonging to the assets group k,0
+assetsCorrelationMatrixAspectRatio,The aspect ratio of the asset correlation matrix defined as the number of assets divided by the number of asset returns per asset used to compute the asset correlation matrix,0
+denoisingMethod,The method used to denoise the asset correlation matrix,0
+distanceMetric,The distance metric to use to compute the distance between the asset correlation matrix and the reference correlation matrix,0
+referenceCorrelationMatrix,referenceCorrelationMatrix[i][j] is the reference correlation between the asset i and the asset j,0
+distanceMetric,The distance metric to use to compute the informativeness of the asset correlation matrix,0
+assetsApproximateCorrelationMatrix,assetsApproximateCorrelationMatrix[i][i] is the approximate correlation between the asset i and the asset j,0
+assetsFixedCorrelations,assetsFixedCorrelations[k] is the couple of indices (ij) of the assets i and j for which to keep the approximate correlation assetsApproximateCorrelationMatrix[i][j] fixed,0
+clusteringMethod,The hierarchical clustering method to use,0
+decayFactor,The exponential decay factor,0
+bootstrapAverageBlockLength,The average length of the blocks to use in case the bootstrap method is 'stationaryBlock' in time periods; if not provided defaults to the inverse of 3.15 * the common length of the assetReturns arrays^1/3,0
+bootstrapBlockLength,The length of the blocks to use in case the bootstrap method is 'circularBlock' in time periods; if not provided defaults to [3.15 * the common length of the assetReturns arrays^1/3],0
+bootstrapMethod,The bootstrap method to use,0
+simulations,The number of simulations to perform,0
+simulationsLength,The number of time period(s) to simulate per simulation; if not provided defaults to the common length of the assetReturns arrays,0
+assetAverageReturnParameter,The mean parameter of the Cornish-Fisher distribution corresponding to the arithmetic average return of the asset,0
+assetKurtosisParameter,The (excess) kurtosis parameter of the Cornish-Fisher distribution corresponding approximately to the (excess) kurtosis of the asset returns,0
+assetSkewnessParameter,The skewness parameter of the Cornish-Fisher distribution corresponding approximately to the skewness of the asset returns,0
+assetVolatilityParameter,The volatility parameter of the Cornish-Fisher distribution corresponding approximately to the volatility of the asset returns,0
+simulationsLength,The number of time period(s) to simulate per simulation,0
+assetAverageReturn,The arithmetic average return of the asset corresponding to the mean of the corrected Cornish-Fisher distribution,0
+assetKurtosis,The kurtosis of the asset returns corresponding to the kurtosis of the Cornish-Fisher distribution,0
+assetSkewness,The skewness of the asset returns corresponding to the skewness of the Cornish-Fisher distribution,0
+assetVolatility,The volatility of the asset returns corresponding to the volatility of the Cornish-Fisher distribution,0
+assetAverageReturn,The arithmetic average return of the asset corresponding to the mean of the Gaussian distribution,0
+assetVolatility,The volatility of the asset returns corresponding to the standard deviation of the Gaussian distribution,0
+turbulenceThresholds,The turbulence threshold(s) in percentage; in case several turbulence thresholds are provided they must be provided in increasing order,0
+turbulenceThresholdsConversionMethod,The method to use to convert the turbulence threshold(s) into turbulence score(s),0
+residualizedFactor,The index of the factor to residualize,0
+assetsReturns,assetsReturns[i] is the arithmetic return of asset i,0
+factorsExtractionMethod,The method used to extract the uncorrelated risk factors from the asset covariance matrix,0
+portfolios,The number of portfolios to compute on the mean-variance efficient frontier,0
+portfolios,The number of portfolios to compute on the mean-variance minimum variance frontier,0
+riskFreeRate,The risk free rate,0
+confidenceIntervalType,The type of confidence interval to build,0
+confidenceLevel,The confidence level of the confidence interval to build in percentage,0
+benchmarkReturns,benchmarkReturns[t] is the return of the benchmark at the time t; the benchmarkReturns array must have the same length as all the portfolioReturns arrays,0
+confidenceLevel,The confidence level,0
+assetsGroupsWeights,assetsGroupsWeights[i] is the desired weight of the assets group k in the portfolio in percentage (can be null to indicate no specific desire); requires assetsGroups to be present,0
+assetsMinimumNotionalValues,assetsMinimumNotionalValues[i] is the minimum monetary value that the position in the asset i is required to represent when the asset i is included in the portfolio,0
+assetsMinimumPositions,assetsMinimumPositions[i] is the minimum number of shares of the asset i that is required to purchase when the asset i is included in the portfolio (usual values are the same as for assetsSizeLots),0
+assetsPrices,assetsPrices[i] is the price of the asset i,0
+assetsSizeLots,assetsSizeLots[i] is the number of shares by which it is required to purchase the asset i (usual values are 1 if the asset needs to be purchased share by share 100 if the asset needs to be purchased by an integer multiple of 100 shares and 1/1000000 - e.g. for Robinhood broker - if the asset can be purchased by fractional shares),0
+assetsWeights,assetsWeights[i] is the desired weight of the asset i in the portfolio in percentage (can be null to indicate no specific desire),0
+maximumAssetsGroupsWeights,maximumAssetsGroupsWeights[k] is the maximum desired weight of the assets group k in the portfolio in percentage (can be null to indicate no specific desire); requires assetsGroups to be present,0
+portfolioValue,The monetary value of the portfolio,0
+benchmarkReturns,benchmarkReturns[t] is the return of the benchmark at the time t; the benchmarkReturns array must have the same length as all the assetReturns arrays,0
+portfolios,The number of portfolios to construct,0
+assetsVolatilities,assetsVolatilities[i] is the volatility of the asset i,0
+clusteringOrdering,The order to impose on the hierarchical clustering tree leaves,0
+acrossClusterAllocationMethod,The allocation method to use across clusters,0
+clusters,The number of clusters to use in the hierarchical clustering tree; if not provided the number of clusters to use is computed using the gap statistic method as described in the first reference,0
+withinClusterAllocationMethod,The allocation method to use within clusters,0
+assetsVariances,assetsVariances[i] is the variance of the asset i,0
+subsetPortfolios,The number of subset portfolios to compute; only applicable if the enumeration method for the subset portfolios is random sampling,0
+subsetPortfoliosAggregationMethod,The method to aggregate the subset portfolios,0
+subsetPortfoliosEnumerationMethod,The method to enumerate the subset portfolios,0
+subsetSize,The number of assets to include in each subset portfolio; defaults to a value of order the square root of the total number of assets,0
+assetsCorrelationMatrix,assetsCorrelationMatrix[i][j] is the correlation between the asset i and the asset j; required if assetsReturns is not provided,0
+assetsVolatilities,assetsVariances[i] is the volatility of the asset i; required if assetsCorrelationMatrix is provided and assetsVariances is not provided,0
+portfolios,The number of portfolios to simulate,0
+name,Name of the country,0
+format,Format of the response,0
+code,Country code,0
+date,Date of the report.,0
+date-format,Date format. If you dont want to use ISO 8601 standard (YYYY-MM-DD) you can provide different format.,0
+code,Country code. Country code is by ISO 3166-1 standard. It can be 2 chars (Alpha-2) or 3 chars (Alpha-3) type.,0
+name,Country name.,0
+date,Date of the report. If you don't put this field all dates will be returned.,0
+format,Format of the response. If you don't put this field JSON will be response format.,0
+idempotency-key,The request's idempotency key,0
+uid,Optional unique identifier for the application,0
+get_if_exists,Get an existing application or create a new one if doesn't exist. It's two separate functions in the libs.,0
+eventId,Optional unique identifier for the message,0
+payloadRetentionPeriod,The retention period for the payload (in days).,0
+expiry,How many seconds until the old key is expired.,0
+schemas,The schema for the event type for a specific version as a JSON schema.,0
+contentId,The content Id,0
+rootContentId,The content Id,0
+userEmail,The user email,0
+contentId,The identifier for a specific version of a course,0
+rootContentId,Every time a course is republished it's assigned a new contentId. rootContentId is the first original contentId associated with a course.,0
+textPattern,Text pattern to search for (minimum of 3 characters length).,0
+$top,Returns only the first n results.,0
+$orderby,Sorts the results.,0
+$filter,Filters the results based on a Boolean condition.,0
+rootContentId,Every time a course is republished it is assigned a new contentId. rootContentId is the first original contentId associated with a course.,0
+pulseType,Filter pulse responses by type.,0
+responseTime,Filter pulse responses by responseTime. Lower then (`lt`) lower then or equal (`lte`) greater then (`gt`) and greater then or equal (`gte`) operators are available. Example of filtering by time range __gte__2017-03-14T07:30:00Z__,0
+pulseId,pulse's base id,0
+assessmentId,assessment's id,0
+documentId,documents's id,0
+userEmail,user's email,0
+days,days to assessment due date. Default is 3 days,0
+facilitators,If true facilitators are included in the results.,0
+learners,If true learners are included in the results.,0
+markers,If true markers are included in the results.,0
+markerEmail,marker's email,0
+client_id,A client ID obtained from the [Dashboard](https://dashboard.authentiq.com/).,0
+response_type,The OIDC response type to use for this authentication flow. Valid choices are `code` `id_token` `token` `token id_token` `code id_token` `code token` and `code token id_token` but a client can be configured with a more restricted set.,0
+scope,The space-separated identity claims to request from the end-user. Always include `openid` as a scope for compatibility with OIDC.,0
+redirect_uri,The location to redirect to after (un)successful authentication. See OIDC for the parameters passed in the query string (`response_mode=query`) or as fragments (`response_mode=fragment`). Unless the client is in test-mode this must be one of the registered redirect URLs.,1
+nonce,An nonce provided by the client (and opaque to Authentiq Connect) that will be included in any ID Token generated for this session. Clients should use the nonce to mitigate replay attacks.,0
+display,The authentication display mode which can be one of `page` `popup` or `modal`. Defaults to `page`.,0
+prompt,Space-delimited case sensitive list of ASCII string values that specifies whether the Authorization Server prompts the End-User for reauthentication and consent. The supported values are: `none` `login` `consent`. If `consent` the end-user is asked to (re)confirm what claims they share. Use `none` to check for an active session.,0
+max_age,Specifies the allowable elapsed time in seconds since the last time the end-user was actively authenticated.,0
+ui_locales,Specifies the preferred language to use on the authorization page as a space-separated list of BCP47 language tags. Ignored at the moment.,0
+client_id,The registered client ID.,0
+client_secret,The registered client ID secret.,0
+grant_type,The authorization grant type must be `authorization_code`.,0
+redirect_uri,The redirect URL that was used previously with the Authentication endpoint.,1
+Authorization,HTTP Basic authorization header.,0
+description,Description for the new role,0
+attributes,Array of attributes,0
+attributekey,Key of the attribute,0
+limit,Limit the number of results,0
+marker,Offset in the result list,0
+createServerBody,Server data (note that serverid serverpk and validtime are generated by the server),0
+serverid,Base64 encoded server id,0
+server,Server data (note that serverid and serverpk cannot be changed),0
+filter,Filter users based on an attribute. Takes the format *attributename=attributevalue*. You can filter for multiple values at once e.g. *group=in:group1group2*,0
+sort,Sort the results by column. You can also specify ascending (default if not specified) or descending e.g. *column:asc* . You can also sort by multiple columns e.g. *column1:desccolumn2:asc*,0
+accountid,Account id,0
+blocked,True if the account is blocked,0
+X-nonce,Base64 encoded nonce to identify the browser/webserver session,0
+userContext,Session information to display to user,0
+userid,User name,0
+roleid,Base64 encoded role id,0
+permissions,Array of new permissions,0
+X-nonce,Nonce to identify the browser/webserver session,0
+name,Name to forward to the nextAuth app for this account,0
+userid,User name to register this user under,0
+HtmlFooterBody,Additional sessions that should be monitored through the websocket.,0
+userContext,Session information to display to user.,0
+img,png' for a PNG image not set for raw data in the qr code,0
+s,size in pixels of the qr code defaults to 500,0
+img,"""png"" for a PNG image not set for raw data in the qr code",0
+userid,Username to register,0
+transactionid,Base64 encoded transaction id,0
+search,Search for a username LIKE %search%,0
+data,"The text to be checked given as a JSON document that specifies what's text and what's markup. This or 'text' is required. Markup will be ignored when looking for errors. Example text: <pre>A &lt;b>test&lt;/b></pre>JSON for the example text: <pre>{""annotation"":[ {""text"": ""A ""} {""markup"": ""&lt;b>""} {""text"": ""test""} {""markup"": ""&lt;/b>""}]}</pre> <p>If you have markup that should be interpreted as whitespace like <tt>&lt;p&gt;</tt> in HTML you can have it interpreted like this: <pre>{""markup"": ""&lt;p&gt;"" ""interpretAs"": ""\n\n""}</pre><p>The 'data' feature is not limited to HTML or XML it can be used for any kind of markup. Entities will need to be expanded in this input.",0
+dicts,Comma-separated list of dictionaries to include words from; uses special default dictionary if this is unset,0
+preferredVariants,Comma-separated list of preferred language variants. The language detector used with `language=auto` can detect e.g. English but it cannot decide whether British English or American English is used. Thus this parameter can be used to specify the preferred variants like `en-GB` and `de-AT`. Only available with `language=auto`. You should set variants for at least German and English as otherwise the spell checking will not work for those as no spelling dictionary can be selected for just `en` or `de`.,0
+level,If set to `picky` additional rules will be activated i.e. rules that you might only find useful when checking formal text.,0
+offset,Offset of where to start in the list of words. Defaults to 0.,0
+limit,Maximum number of words to return. Defaults to 10.,0
+username,Your username as used to log in at languagetool.org.,0
+word,The word to be added. Must not be a phrase i.e. cannot contain white space. The word is added to a global dictionary that applies to all languages.,0
+dict,Name of the dictionary to add the word to; non-existent dictionaries are created after calling this; if unset adds to special default dictionary,0
+word,The word to be removed.,0
+dict,Name of the dictionary to remove the word from; if the dictionary is empty upon calling this it is deleted; if unset removes from special default dictionary,0
+email,The user's email address,0
+tvmaze_id,The show's TVmaze ID,0
+thetvdb_id,The show's TheTVDB ID,0
+imdb_id,The show's IMDB ID,0
+show_id,Only return episodes from this specific show,0
+embed,Embed full network info,0
+embed,Embed full person info,0
+vote,The vote number,0
+voted_at,Epoch timestamp for when the user voted for the episode,0
+url,document URL,1
+promotionImageUrl,Required for CODED_COUPON MARKDOWN_SALE and ORDER_DISCOUNT promotions populate this field with a URL that points to an image to be used with the promotion. This image is displayed on the seller's <b>All Offers</b> page. The URL must point to either JPEG or PNG image and it must be a minimum of 500x500 pixels in dimension and cannot exceed 12Mb in size.,1
+promotionImageUrl,Required for CODED_COUPON MARKDOWN_SALE and ORDER_DISCOUNT promotions and not valid for VOLUME_DISCOUNT promotions.  <br><br>Populate this field with a URL that points to an image to be used with the promotion. This image is displayed on the seller's <b>All Offers</b> page. The URL must point to either JPEG or PNG image and it must be a minimum of 500x500 pixels in dimension and cannot exceed 12Mb in size.,1
+image_url,A URL to an image that you wish to analyze,1
+ApiUrl,The URL of your endpoint. To this endpoint all the values are send to.,1
+url,specific URL to perform load test time,1
+uri,The URI to the metadata file. Currently only the ```cddrive``` scheme is supported.,1
+imageCdDriveUri,The URI to the piece image content in CD Drive. Format should be 'cddrive:id:{value}' or 'cddrive://{path}'. This property is only used on modification and is not returned.,1
+cdDriveUri,The URI to the segment content in CD Drive. Format should be 'cddrive:id:{value}' or 'cddrive://{path}'.,1
+url,The url of target article,1
+hd,Retrieve the URL for the high resolution image,1
+bigcommerceapi_api_path,BigCommerce API URL,1
+bridge_url,This parameter allows to set up store with custom bridge url (also you must use store_root parameter if a bridge folder is not in the root folder of the store),1
+store_url,A web address of a store that you would like to connect to API2Cart,1
+store_url,A web address of a store,1
+callback,Callback url that returns shipping rates. It should be able to accept POST requests with json data.,1
+ApiPath,BigCommerce API URL,1
+url,Defines URL of the image that has to be added,1
+files,File Url,1
+image_url,Image Url,1
+url,Defines unique product's URL,1
+url,Defines unique product variant's URL,1
+imageUrl,The URL of the image to be analyzed.,1
+imageUrl,The URL of the image to be classified.,1
+url,The URL of the recipe page.,1
+url,Webhooks can only be configured for URLs using the `https` protocol. `http` is not allowed.,1
+url,Uploads the image from the supplied URL.,1
+file_url,Path to your CSV import file.,1
+file_urls,Campaign file urls. You can submit max 2 file urls.,1
+file_url,Your URL to your PDF file.,1
+file_urls,Postcard file urls. You can submit max 2 file urls.,1
+url_to_shorten,The URL you want to shorten (only required when using this feature). This must be only `http` or `https`.,1
+url,WebHook callback URL,1
+fileURL,missing documentation,1
+drCallBackUrl,The webhook URL that Vonage makes a request to when a delivery receipt is available  for an SMS sent by one of your Vonage numbers.Send an empty string to unset this value.,1
+moCallBackUrl,The default webhook URL for inbound SMS. If an SMS is received at a Vonage number  that does not have its own inbound SMS webhook configured Vonage makes a request here.Send an empty string to unset this value.,1
+url,The URL of the metrics endpoint.,1
+url,The URL of the file that Mux should download and use.* For `audio` tracks the URL is the location of the audio file for Mux to download for example an M4A WAV or MP3 file. Mux supports most audio file formats and codecs but for fastest processing you should [use standard inputs wherever possible](https://docs.mux.com/guides/video/minimize-processing-time).* For `text` tracks the URL is the location of subtitle/captions file. Mux supports [SubRip Text (SRT)](https://en.wikipedia.org/wiki/SubRip) and [Web Video Text Tracks](https://www.w3.org/TR/webvtt1/) formats for ingesting Subtitles and Closed Captions.,1
+reconnect_slate_url,The URL of the image file that Mux should download and use as slate media during interruptions of the live stream media. This file will be downloaded each time a new recorded asset is created from the live stream. If this is not set the default slate media will be used.,1
+reconnect_slate_url,The URL of the image file that Mux should download and use as slate media during interruptions of the live stream media. This file will be downloaded each time a new recorded asset is created from the live stream. Set this to a blank string to clear the value so that the default slate media will be used.,1
+url,RTMP hostname including application name for the third party live streaming service. Example: `rtmp://live.example.com/app`.,1
+background,URL of an image to display as the background of the broadcast. Its dimensions should match the provided resolution.,1
+member_fields,all or a comma-separated list of: avatarHash bio bioData confirmed fullName idPremOrgsAdmin initials memberType products status url or username,1
+memberCreator_fields,all or a comma-separated list of: avatarHash bio bioData confirmed fullName idPremOrgsAdmin initials memberType products status url or username,1
+urls,list of API v1 GET routes not including the version prefix,1
+urlSource,A URL starting with http:// or https:// or null,1
+fields,all or a comma-separated list of: bytes date edgeColor idMember isUpload mimeType name previews or url,1
+url,A URL starting with http:// or https:// or null,1
+card_member_fields,all or a comma-separated list of: avatarHash bio bioData confirmed fullName idPremOrgsAdmin initials memberType products status url or username,1
+board_organization_fields,all or a comma-separated list of: billableMemberCount desc descData displayName idBoards invitations invited logoHash memberships name powerUps prefs premiumFeatures products url or website,1
+boardsInvited_fields,all or a comma-separated list of: closed dateLastActivity dateLastView desc descData idOrganization invitations invited labelNames memberships name pinned powerUps prefs shortLink shortUrl starred subscribed or url,1
+organizationsInvited_fields,all or a comma-separated list of: billableMemberCount desc descData displayName idBoards invitations invited logoHash memberships name powerUps prefs premiumFeatures products url or website,1
+notification_memberCreator_fields,all or a comma-separated list of: avatarHash bio bioData confirmed fullName idPremOrgsAdmin initials memberType products status url or username,1
+website,A URL starting with http:// or https:// or null,1
+callbackURL,A valid URL that is reachable with a HEAD request,1
+url,Returns a json with the `url` in it instead of redirecting,1
+url,The URL of the track,1
+url,URL of a status,1
+url,The URL ZEIT will post to when events happen,1
+icon_url,The string representation of the URL pointing to the app's icon,1
+client_callback,The callback URL that the client can optionally provide to get status updates for the current symbol upload,1
+url,The URL to retrieve the OpenAPI 3.0.x definition from,1
+url,The URL to retrieve the OpenAPI 2.0 definition from,1
+url,URL that will be opened by the user's client. If you have created a [Game](https://core.telegram.org/bots/api/#game) and accepted the conditions via [@Botfather](https://t.me/botfather) specify the URL that opens your game — note that this will only work if the query comes from a [*callback\_game*](https://core.telegram.org/bots/api/#inlinekeyboardbutton) button.  Otherwise you may use links like `t.me/your_bot?start=XXXX` that open your bot with a parameter.,1
+photo_url,URL of the product photo for the invoice. Can be a photo of the goods or a marketing image for a service. People like it better when they see what they are paying for.,1
+url,The URL of a file to use as an image for the emoji. Square images under 128KB and with transparent backgrounds work best.,1
+image_url,Image URL for the icon,1
+icon_url,URL to an image to use as the icon for this message. Must be used in conjunction with `as_user` set to false otherwise ignored. See [authorship](#authorship) below.,1
+external_url,URL of the remote file.,1
+url,Provide the details of the player URL to create in the body of the request.,1
+url,Provide the details of the player URL to update in the body of the request.,1
+url,URL of the current user page,1
+uri,uri of the video channels to subscribe to,1
+targetUrl,Filter on import target URL,1
+url,The url of the page to check,1
+contentCheckUrl,The URL that the Web Content monitor type must evaluate for the specified conditions.,1
+gotifyApiUrl,The API URL name for the Gotify service (https://example.com) - (do not include the path /message/createMessage).,1
+mercureHubUrl,The URL for the hub for the Mercure service.,1
+webhookUrl,The URL for the Webhook service.,1
+absoluteUrl,The full URL to match against,1
+url,The path and query to match exactly against,1
+url,The path and query to match exactly against. Only one of url urlPattern urlPath or urlPathPattern may be specified.,1
+urlPath,The path to match exactly against. Only one of url urlPattern urlPath or urlPathPattern may be specified.,1
+urlPathPattern,The path regex to match against. Only one of url urlPattern urlPath or urlPathPattern may be specified.,1
+urlPattern,The path and query regex to match against. Only one of url urlPattern urlPath or urlPathPattern may be specified.,1
+url,The URL to load,1
+host,A domain name hostname FQDN URL HTML link or email address to lookup,1
+image-url,The URL or Base64 encoded Data URL for the source image. You can also upload an image file directly using multipart/form-data,1
+watermark-url,The URL or Base64 encoded Data URL for the watermark image. You can also upload an image file directly using multipart/form-data,1
+audio-url,A URL to a valid audio file. Accepted audio formats are: <ul> <li>MP3</li> <li>WAV</li> <li>OGG</li> </ul>You can use the following MP3 URL for testing: <br>https://www.neutrinoapi.com/test-files/test1.mp3,1
+url,The URL to probe,1
+page_url,The livestream page URL.,1
+stream_url,Streaming URL.,1
+audio_url,The global dial-in URL for a TSP enabled account. The URL must be valid with a max-length of 512 characters.,1
+path,The URL path,1
+url,The URL of the server,1
+url,The log drain url,1
+idOrUrl,The unique identifier or hostname of the deployment.,1
+url,A Deployment or Alias URL. In case it is passed the ID will be ignored,1
+url,The url where you will receive logs. The protocol must be `https://` or `http://` when type is `json` and `ndjson` and `syslog+tls:` or `syslog:` when the type is `syslog`.,1
+repoUrl,Filter results by Repository URL.,1
+redirectUrl,When completing OAuth flow to gain an access token some API sometimes requires to verify that the app re-send the redirectUrl that was used when consent was given.,1
+redirectUrl,The url to redirect to after getting the user consent,1
+url,url,1
+url,The URL from which to get `ClaimReview` markup. There will be at most one result. If markup is associated with a more canonical version of the URL provided we will return that URL instead. Cannot be specified along with an organization.,1
+pageUrl,The URL of the page associated with this `ClaimReview` markup. While every individual `ClaimReview` has its own URL field semantically this is a page-level field and each `ClaimReview` on this page will use this value unless individually overridden. Corresponds to `ClaimReview.url`,1
+sourceArchiveUrl,The Google Cloud Storage URL starting with `gs://` pointing to the zip archive which contains the function.,1
+sourceUploadUrl,The Google Cloud Storage signed URL used for source uploading generated by calling [google.cloud.functions.v1.GenerateUploadUrl]. The signature is validated on write methods (Create Update) The signature is stripped from the Function object on read methods (Get List),1
+url,Output only. The deployed url for the function.,1
+uri,Required. The URI to be checked for matches.,1
+uri,Required. The URI that is being reported for malicious content to be analyzed.,1
+specLocation,Optional. Location of the custom connector spec. The location can be either a public url like `https://public-url.com/spec` Or a Google Cloud Storage location like `gs:///`,1
+uri,Output only. Server-defined URI for this resource.,1
+graphqlEndpointUrl,Optional. DEPRECATED: manage documentation through the `getDocumentation` and `updateDocumentation` methods,1
+imageUrl,Optional. Location of the image used for the catalog item in the catalog. For portal files this can have the format `/files/{filename}`. Max length is 2083 characters.,1
+callbackUrl,Callback URL used by OAuth 2.0 authorization servers to communicate authorization codes back to developer apps.,1
+gcsUri,Input only. The Google Cloud Storage signed URL returned from GenerateUploadUrl and used to upload the Archive zip file.,1
+uri,The uniform resource identifier of the artifact file. May be empty if there is no actual artifact file.,1
+analysisInstanceSchemaUri,YAML schema file uri describing the format of a single instance that you want Tensorflow Data Validation (TFDV) to analyze. If this field is empty all the feature data types are inferred from predict_instance_schema_uri meaning that TFDV will use the data in the exact format(data type) as prediction request/response. If there are any data type differences between predict instance and TFDV instance this field can be used to override the schema. For models trained with Vertex AI this field must be set as all the fields in predict instance formatted as string.,1
+predictInstanceSchemaUri,YAML schema file uri describing the format of a single instance which are given to format this Endpoint's prediction (and explanation). If not set we will generate predict schema from collected predict requests.,1
+templateUri,A template uri from where the PipelineJob.pipeline_spec if empty will be downloaded. Currently only uri from Vertex Template Registry & Gallery is supported. Reference to https://cloud.google.com/vertex-ai/docs/pipelines/create-pipeline-template.,1
+url,The URL to fetch and analyze,1
+url,Required. The URL to fetch and analyze,1
+uri,The URL including cgi-parameters but excluding the hash fragment with a length limit of 5000 characters. This is often more useful than the referer URL because many browsers only send the domain for third-party requests.,1
+spreadsheetUrl,The url of the spreadsheet. This field is read-only.,1
+continueUrl,The url to continue to the Gitkit app,1
+photoUrl,The photo url of the user.,1
+externalUri,The URI that if available points to a web page outside of Security Command Center where additional information about the finding can be found. This field is guaranteed to be either empty or a well formed URL.,1
+matchedUrl,Output only. A URL in `spaces.messages.text` that matches a link preview pattern. For more information see [Preview links](https://developers.google.com/chat/how-tos/preview-links).,1
+contentUri,The URI where the file content is located. For documents stored in Google Cloud Storage these URIs must have the form `gs:///`. NOTE: External URLs must correspond to public webpages i.e. they must be indexed by Google Search. In particular URLs for showing documents in Google Cloud Storage (i.e. the URL in your browser) are not supported. Instead use the `gs://` format URI described above.,1
+contentUri,Optional. The path of gcs source file for reloading document content. For now only gcs uri is supported. For documents stored in Google Cloud Storage these URIs must have the form `gs:///`.,1
+websiteUrl,The website url for the store or merchant.,1
+additionalImageLinks,Additional URLs of images of the item.,1
+imageLink,URL of an image of the item.,1
+uri,Optional. The url including cgi-parameters but excluding the hash fragment. The URL must be truncated to 1.5K bytes to conservatively be under the 2K bytes. This is often more useful than the referer url because many browsers only send the domain for 3rd party requests.,1
+profile,Required. The canonical URL of a profile that this resource should be validated against. For example to validate a Patient resource against the US Core Patient profile this parameter would be `http://hl7.org/fhir/us/core/StructureDefinition/us-core-patient`. A StructureDefinition with this canonical URL must exist in the FHIR store.,1
+_page_token,"Used to retrieve the next page of results when using pagination. Set `_page_token` to the value of _page_token set in next page links' url. Next page are returned in the response bundle's links field where `link.relation` is ""next"". Omit `_page_token` if no previous request has been made.",1
+url,The canonical url of the concept map to use. If unset the source and target is used to search for concept maps.,1
+inspectionUrl,"Required. URL to inspect. Must be under the property specified in ""site_url"".",1
+url,URL for inspection.,1
+siteUrl,The URI of the property as defined in Search Console. **Examples:** `http://www.example.com/` or `sc-domain:example.com`.,1
+siteUrl,The URL of the site to add.,1
+siteUrl,The site's URL including protocol. For example: `http://www.example.com/`.,1
+url,URL of this landing page. This is a required field.,1
+url,URL of this directory site.,1
+url,Payload URL for this event tag. The URL on a click-through event tag should have a landing page URL appended to the end of it. This field is required on insertion.,1
+uri,The uri the activity relates to.,1
+url,Default preview page url for the environment. @mutable tagmanager.accounts.containers.environments.create @mutable tagmanager.accounts.containers.environments.update,1
+thumbnailPhotoUrl,Output only. The URL of the user's profile photo. The URL might be temporary or private.,1
+uri,Editable. Print server URI.,1
+uri,Editable. Printer URI.,1
+logUrl,Output only. URL to logs for this build in Google Cloud Console.,1
+hostUrl,The URL of the github enterprise host the configuration is for.,1
+inputUri,Input only. Specify the `input_uri` to populate empty `uri` fields in each element of `Job.config.inputs` or `JobTemplate.config.inputs` when using template. URI of the media. Input files must be at least 5 seconds in duration and stored in Cloud Storage (for example `gs://bucket/inputs/file.mp4`). See [Supported input and output formats](https://cloud.google.com/transcoder/docs/concepts/supported-input-and-output-formats).,1
+outputUri,Input only. Specify the `output_uri` to populate an empty `Job.config.output.uri` or `JobTemplate.config.output.uri` when using template. URI for the output file(s). For example `gs://my-bucket/outputs/`. See [Supported input and output formats](https://cloud.google.com/transcoder/docs/concepts/supported-input-and-output-formats).,1
+inputUri,Input only. Specify the `input_uri` to populate empty `uri` fields in each element of `Job.config.inputs` or `JobTemplate.config.inputs` when using template. URI of the media. Input files must be at least 5 seconds in duration and stored in Cloud Storage (for example `gs://bucket/inputs/file.mp4`).,1
+outputUri,Input only. Specify the `output_uri` to populate an empty `Job.config.output.uri` or `JobTemplate.config.output.uri` when using template. URI for the output file(s). For example `gs://my-bucket/outputs/`.,1
+imageLink,The URL of a collection’s image. [image_link attribute](https://support.google.com/merchants/answer/9703236),1
+link,A collection’s landing page. URL directly linking to your collection's page on your website. [link attribute](https://support.google.com/merchants/answer/9673983),1
+mobileLink,A collection’s mobile-optimized landing page when you have a different URL for mobile and desktop traffic. [mobile_link attribute](https://support.google.com/merchants/answer/9646123),1
+promotionUrl,URL to the page on the merchant's site where the promotion shows. Local Inventory ads promotions throw an error if no promo url is included. URL is used to confirm that the promotion is valid and can be redeemed.,1
+returnPolicyUri,The return policy uri. This can used by Google to do a sanity check for the policy.,1
+origin,"The url pattern ""origin"" refers to a url pattern that is the origin of a website. Examples: ""https://example.com"" ""https://cloud.google.com""",1
+url,"The url pattern ""url"" refers to a url pattern that is any arbitrary url. Examples: ""https://example.com/"" ""https://cloud.google.com/why-google-cloud/""",1
+uri,Canonical URL directly linking to the product detail page. It is strongly recommended to provide a valid uri for the product otherwise the service performance could be significantly degraded. This field must be a UTF-8 encoded string with a length limit of 5000 characters. Otherwise an INVALID_ARGUMENT error is returned. Corresponding properties: Google Merchant Center property [link](https://support.google.com/merchants/answer/6324416). Schema.org property [Offer.url](https://schema.org/url).,1
+uri,The URL including cgi-parameters but excluding the hash fragment with a length limit of 5000 characters. This is often more useful than the referer URL because many browsers only send the domain for 3rd party requests.,1
+uri,Complete URL (window.location.href) of the user's current page. When using the client side event reporting with JavaScript pixel and Google Tag Manager this value is filled in automatically. Maximum length 5000 characters.,1
+uri,Required. The Google Cloud Storage URI of the reference image. The URI must start with `gs://`.,1
+viewUrl,Specify the full view URL to find the corresponding item. The maximum length is 2048 characters.,1
+returnResultThumbnailUrls,With each result we should return the URI for its thumbnail (when applicable),1
+url,Output only. The URL at which the content of this channel's current release can be viewed. This URL is a Firebase-provided subdomain of `web.app`. The content of this channel's current release can also be viewed at the Firebase-provided subdomain of `firebaseapp.com`. If this channel is the `live` channel for the Hosting site then the content of this channel's current release can also be viewed at any connected custom domains.,1
+websiteUrl,The URL of the user's hosted website.,1
+callbackUrl,The URL to redirect the user to once association is completed. It receives a token parameter that can then be used to retrieve the associated account.,1
+videoURL,The URL to fetch a video ad. If set HTMLSnippet videoVastXML and nativeAd should not be set. Note this is different from resource.native_ad.video_url above.,1
+videoURL,The URL to fetch a video ad. If set HTMLSnippet and the nativeAd should not be set.,1
+videoURL,The url to fetch a video ad. If set HTMLSnippet should not be set.,1
+thumbnailUrl,Output only. The thumbnail URL for showing a preview of the given photo.,1
+url,URL to clone the repository from Google Cloud Source Repositories. Read-only field.,1
+url,Output only. URL of the broker OSB-compliant endpoint for example:https://servicebroker.googleapis.com/projects/<project>/brokers/<broker>,1
+websiteUri,Optional. A URL for this business. If possible use a URL that represents this individual business location instead of a generic website/URL that represents all locations or the brand.,1
+redirectUri,Redirect uri of the auth code request,1
+destinationAddress,The URL of the destination address to move to. This can be a full or partial URL. For example the following are all valid URLs to a address: - https://www.googleapis.com/compute/v1/projects/project /global/addresses/address - projects/project/global/addresses/address Note that destination project must be different from the source project. So /global/addresses/address is not valid partial url.,1
+destinationAddress,The URL of the destination address to move to. This can be a full or partial URL. For example the following are all valid URLs to a address: - https://www.googleapis.com/compute/v1/projects/project/regions/region /addresses/address - projects/project/regions/region/addresses/address Note that destination project must be different from the source project. So /regions/region/addresses/address is not valid partial url.,1
+serviceClassUri,Output only. The service class uri this ServiceConnectionMap is for.,1
+url,URL that is being queried.,1
+url,The object of this notification. The URL must be owned by the publisher of this notification and in case of `URL_UPDATED` notifications it _must_ be crawlable by Google.,1
+uri,Output only. The main URI in which this Service is serving traffic.,1
+url,The URL that this Page is displayed at.,1
+url,The URL where this Post is displayed.,1
+uri,Required. The link uri. The same uri can be reused for different action types across different locations. However only one place action link is allowed for each unique combination of (uri place action type location).,1
+websiteUrl,Website url for this web property.,1
+url,Only return products with the given url.,1
+url,A URL of a publicly-accessible webpage for this product.,1
+url,The URL of the webhook endpoint.,1
+url,Link,1
+url,Url of the page to convert to PDF. Must start with http:// or https://.,1
+url,The url that the webhook sends the request to,1
+url,The url that the wehbook sends the request,1
+url,The url to generate pdf from. Url has precedence over HtmlBase64String value if both are set.,1
+useSplashUrl,[optional] Boolean indicating whether the user will be redirected to the custom splash url. A custom splash URL must be set if this is true. Note that depending on your SSID's access control settings it may not be possible to use the custom splash URL.,1
+url,The URL of the HTTP server. Once set cannot be updated.,1
+url,The URL where the test webhook will be sent,1
+useSplashUrl,[optional] Boolean indicating whether the users will be redirected to the custom splash url. A custom splash URL must be set if this is true. Note that depending on your SSID's access control settings it may not be possible to use the custom splash URL.,1
+url,The URL the webhook was sent to,1
+listCallbackUrl,Which callback url to list.,1
+url,The URL of the file to be uploaded,1
+url,A webhook URL that will receive notifications POST requests.,1
+url,URL of the page to get a screenshot for,1
+url,URL of the page to get a screenshot for. You can specify multiple url parameters (up to 10).,1
+url,look for a string matching the URL requested,1
+thumbnail_url,when type=image the url for the thumbnail image / preview,1
+url,when type=image the url,1
+url,For advanced tier (uMSPs) only,1
+eddystone_url,eddystone url used to filter assets,1
+return_to,the url the user should be redirected back to,1
+eddystone_url,Eddystone-URL url,1
+url,if `type`==`curl`,1
+url,URL to show optional,1
+failureRedirectUrl,The url to redirect if the geomark could not be created. The URL will include a <fieldName>_Error parameter with the error message for the field that caused the error.,1
+url,Destination URL for events,1
+source,If you add a video already on the web this is where you enter the url for the video.,1
+url,The the url to which HTTP notifications are sent. It could be any http or https URL.,1
+uri,This is the unique identifier of the document.,1
+url,SAML-P sign-on endpoint,1
+url,"The URL that this web link links to. Must start with`""http://""` or `""https://""`.",1
+url,"The new URL that the web link links to. Must start with`""http://""` or `""https://""`.",1
+url,If message relates to a HTTP request you may send the URL of that request. If you don't provide us with an URL we will try to find a key named URL in serverVariables.,1
+AutoCreation.WebhookUrl,For type `webhook` the url for the webhook request.,1
+PostWebhookUrl,The absolute url the post-event webhook request should be sent to.,1
+PreWebhookUrl,The absolute url the pre-event webhook request should be sent to.,1
+Configuration.Url,The absolute url the webhook request should be sent to.,1
+VoiceFallbackUrl,The URL that we should call when an error occurs retrieving or executing the TwiML requested by `url`.,1
+FallbackUrl,The URL that we call using the `fallback_method` if an error occurs when requesting or executing the TwiML at `url`. If an `application_sid` parameter is present this parameter is ignored.,1
+Url,The absolute URL that returns the TwiML instructions for the call. We will call this URL using the `method` when the call connects. For more information see the [Url Parameter](https://www.twilio.com/docs/voice/make-calls#specify-a-url-parameter) section in [Making Calls](https://www.twilio.com/docs/voice/make-calls).,1
+Url,Relative or absolute url where WebSocket connection will be established.,1
+Method,The HTTP method we should use when calling the `url`. Can be: `GET` or `POST` and the default is `POST`. If an `application_sid` parameter is present this parameter is ignored.,1
+FallbackUrl,Any requests we receive to this domain that do not match an existing shortened message will be redirected to the fallback url. These will likely be either expired messages random misdirected traffic or intentional scraping.,1
+FallbackUrl,The URL that we call using `fallback_method` if an error occurs while retrieving or executing the TwiML from the Inbound Request URL. If the `use_inbound_webhook_on_number` field is enabled then the webhook url defined on the phone number will override the `fallback_url` defined for the Messaging Service.,1
+InboundRequestUrl,The URL we call using `inbound_method` when a message is received by any phone number or short code in the Service. When this property is `null` receiving inbound messages is disabled. All messages sent to the Twilio phone number or short code will not be logged and received on the Account. If the `use_inbound_webhook_on_number` field is enabled then the webhook url defined on the phone number will override the `inbound_request_url` defined for the Messaging Service.,1
+WebhookUrl,The optional webhook url called on completion of the job. If this is supplied `WebhookMethod` must also be supplied. If you set neither webhook nor email you will have to check your job's status manually.,1
+review-url,An informative back-link to an external system.,1
+callback-url,The callback URL for LGTM to post to on completion of the review.When the code review is complete the API sends an HTTP POST request to the callback URL with the result of the code review in the request body. The code review results in the request body are identical to the results accessed through the [`/codereviews/{review-id}`](https://lgtm.com/help/lgtm/api/api-v1#opIdgetCodeReview) end-point.If you specify a `callback-secret` the request also includes an `x-lgtm-signature` header with a digital signature of the request's contents.,1
+active,Indicates whether you want the webhook activated.If the value is `true` the webhook at the given `url` will be invoked with an empty array (`[]`) as part of the validation process.If the webhook responds with a `2xx` status code the submission is accepted; if not the webhook is not created (or updated).If the value is `false` the webhook will be inactive and it will not be invoked when messages are `SENT` or `RECEIVED`.The default value is `true`.,1
+url,The location of the webhook.In addition to being a [valid URI](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier#Syntax) the url must also start with `http` or `https`.,1
+url,The full URL address (including HTTP/HTTPS) of a web page that you want to save as PDF,1
+url,The full URL address (including HTTP/HTTPS) of a web page that you want to capture,1
+url,Specify URL to download.,1
+url,url holds the link to a Search Engine to use and other optional parameters like languages or country.,1
+q,"The query string needs to be url encoded and is made up of the following options:- Search term. This is just a string. Usually it would be the first item in the query.- `@<username>`: Use the `@` followed by the username to specify posts by this user.- `#<category>`: Use the `#` followed by the category slug to search within this category.- `tags:`: `apisolved` or for posts that have all the specified tags `api+solved`.- `before:`: `yyyy-mm-dd`- `after:`: `yyyy-mm-dd`- `order:`: `latest` `likes` `views` `latest_topic`- `assigned:`: username (without `@`)- `in:`: `title` `likes` `personal` `messages` `seen` `unseen` `posted` `created` `watching` `tracking` `bookmarks` `assigned` `unassigned` `first` `pinned` `wiki`- `with:`: `images`- `status:`: `open` `closed` `public` `archived` `noreplies` `single_user` `solved` `unsolved`- `group:`: group_name or group_id- `group_messages:`: group_name or group_id- `min_posts:`: 1- `max_posts:`: 10- `min_views:`: 1- `max_views:`: 10If you are using cURL you can use the `-G` and the `--data-urlencode` flags to encode the query:```curl -i -sS -X GET -G ""http://localhost:4200/search.json"" \--data-urlencode 'q=wordpress @scossar #fun after:2020-01-01'```",1
+url,"A member object URL such as ""https://graph.windows.net/0b1f9851-1bf0-433f-aec3-cb9272f093dc/directoryObjects/f260bbc4-c254-447b-94cf-293b5ec434dd"" where ""0b1f9851-1bf0-433f-aec3-cb9272f093dc"" is the tenantId and ""f260bbc4-c254-447b-94cf-293b5ec434dd"" is the objectId of the member (user application servicePrincipal group) to be added.",1
+search.db_bookmarks.url,URL,1
+url,URL of a web site detail page of the entity,1
+report_url,Credentials for accessing the result. Includes password username and url,1
+url,The URL to render as an image or video,1
+url,URL to install the extension from,1
+url,The complete URL of a specific news item URL-encoded or backslash-escaped,1
+url,The url of the requested product.,1
+url,The URL you'd like us to send webhooks to.,1
+url,The URL of the website to query,1
+url,The URL of the website to create screenshot of,1
+url,The URL to get the data of,1
+url,A valid URL for the Webhook.,1
+url,When importing a campaign the URL where the HTML lives.,1
+url,The URL for a product.,1
+url,The URL for a product image.,1
+url,The URL for a product variant.,1
+redemption_url,The url that should be used in the promotion campaign restricted to UTF-8 characters with max length 2000.,1
+url,For custom identities an optional link to the profile on the source system,1
+linkedin_url,Full LinkedIn url,1
+imageUrl,The image url.,1
+url,The URL of the notification.,1
+AppStoreUrl,Gets or sets the app store url.,1
+IconUrl,Gets or sets the icon url.,1
+MessageCallbackUrl,Gets or sets the message callback url.,1
+response_format,The format in which the generated images are returned. Must be one of `url` or `b64_json`.,1
+vendor[url],Website,1
+data,Component <code>data</code> contains inline YAML document content for the component. Alternatively you can specify the <code>uri</code> of a YAML document file stored in Amazon S3. However you cannot specify both properties.,1
+uri,<p>The <code>uri</code> of a YAML component document file. This must be an S3 URL (<code>s3://bucket/key</code>) and the requester must have permission to access the S3 bucket it points to. If you use Amazon S3 you can specify component content up to your service quota.</p> <p>Alternatively you can specify the YAML document inline using the component <code>data</code> property. You cannot specify both properties.</p>,1
+data,The data of the component. Used to specify the data inline. Either <code>data</code> or <code>uri</code> can be used to specify the data within the component.,1
+uri,The uri of the component. Must be an Amazon S3 URL and the requester must have permission to access the Amazon S3 bucket. If you use Amazon S3 you can specify component content up to your service quota. Either <code>data</code> or <code>uri</code> can be used to specify the data within the component.,1
+documentSource,<p>An S3 link to the job document to use in the template. Required if you don't specify a value for <code>document</code>.</p> <note> <p>If the job document resides in an S3 bucket you must use a placeholder link when specifying the document.</p> <p>The placeholder link is of the following form:</p> <p> <code>${aws:iot:s3-presigned-url:https://s3.amazonaws.com/<i>bucket</i>/<i>key</i>}</code> </p> <p>where <i>bucket</i> is your bucket name and <i>key</i> is the object in the bucket to which you are linking.</p> </note>,1
+uri,Specifies Uniform Resource Identifier (URI) of the integration endpoint. For HTTP or <code>HTTP_PROXY</code> integrations the URI must be a fully formed encoded HTTP(S) URL according to the RFC-3986 specification for either standard integration where <code>connectionType</code> is not <code>VPC_LINK</code> or private integration where <code>connectionType</code> is <code>VPC_LINK</code>. For a private HTTP integration the URI is not used for routing. For <code>AWS</code> or <code>AWS_PROXY</code> integrations the URI is of the form <code>arn:aws:apigateway:{region}:{subdomain.service|service}:path|action/{service_api</code>}. Here {Region} is the API Gateway region (e.g. us-east-1); {service} is the name of the integrated Amazon Web Services service (e.g. s3); and {subdomain} is a designated subdomain supported by certain Amazon Web Services service for fast host-name lookup. action can be used for an Amazon Web Services service action-based API using an Action={name}&amp;{p1}={v1}&amp;p2={v2}... query string. The ensuing {service_api} refers to a supported action {name} plus any required input parameters. Alternatively path can be used for an Amazon Web Services service path-based API. The ensuing service_api refers to the path to an Amazon Web Services service resource including the region of the integrated Amazon Web Services service if applicable. For example for integration with the S3 API of <code>GetObject</code> the <code>uri</code> can be either <code>arn:aws:apigateway:us-west-2:s3:action/GetObject&amp;Bucket={bucket}&amp;Key={key}</code> or <code>arn:aws:apigateway:us-west-2:s3:path/{bucket}/{key}</code>.,1
+url,URL to download the new file from.,1
+url,Search for given URL,1
+eventDetailsUrl,The url that will be used to fetch marketing event details by id. Must contain a `%s` character sequence that will be substituted with the event id. For example: `https://my.event.app/events/%s`,1
+url,Your webhook callback url,1
+url,The url of the stream,1
+id,Playlist id (always 11 characters e.g. m1pe7z60bsw).You can get the podcast id from the url of a playlist e.g.m1pe7z60bsw is the playlist id of listennotes.com/listen/podcasts-about-podcasting-m1pe7z60bsw,1
+rss,A valid podcast rss url.,1
+urlId,Id of url to fetch,1
+url,URL (must begin with the `HTTPS` scheme),1
+url,The URL to send the request to,1
+url,The URL to the JIRA project which is being linked to this GitLab project e.g. https://jira.example.com,1
+url,URL to redirect the user back to your app from the recovery email. Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.,1
+url,URL to redirect the user back to your app from the verification email. Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.,1
+url,Website URL which you want to fetch the favicon from.,1
+url,Image URL which you want to crop.,1
+url,URL to redirect the user back to your app from the invitation email.  Only URLs from hostnames in your project platform list are allowed. This requirement helps to prevent an [open redirect](https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html) attack against your project API.,1
+googleAuthReturnUrl,Google calendar authorization return url,1
+outlookAuthReturnUrl,Outlook calendar authorization return url,1
+url,URL-encoded URL of the page for which the number of shares is requested.,1
+url,Company url,1
+uri,URI of the notifier for the 'complete' action. Currently only a GET method HTTP(s) URL is supported. 1 to 250 characters long. Every slash in the URI must be replaced by a ~,1
+url,URL value,1
+uri,Private URIs of the user.,1
+url,Public URL where webhooks will be sent for example **https://www.domain.com/webhook-endpoint**.,1
+redirect_uri,Redirect uri,1
+url,Url used to check CVE,1
+url,Url used to update CVE will default to one set in config,1
+thumbnailUri,Gets the thumbnail url representing the image.,1
+url,Url of the image.,1
+thumbnailUri,Gets the thumbnail url representing the project,1
+ThumbnailUri,Gets the thumbnail url representing the image,1
+thumbnailUri,Gets the thumbnail url representing the project.,1
+url,URL of the company,1
+url,Forwards http(s) traffic to this destination url (ex. http://www.somedomain.com/),1
+callbackUrl,Callback url registered/replaced to receive stateful actions,1
+url,URL must be a url encoded value,1
