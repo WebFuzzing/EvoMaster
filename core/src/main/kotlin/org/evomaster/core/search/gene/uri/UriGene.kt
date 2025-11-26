@@ -87,6 +87,10 @@ class UriGene(name: String,
         return gene.unsafeCopyValueFrom(other)
     }
 
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return gene.unsafeSetFromStringValue(value)
+    }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
