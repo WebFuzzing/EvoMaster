@@ -23,6 +23,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Peer-Reviewed Publications
 
+### 2026
+
+* S. Seran, G. Bhandari, A. Arcuri. 
+  *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  (To appear)
+
 ### 2025
 
 * A. Golmohammadi, M. Zhang, A. Arcuri. 

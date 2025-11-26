@@ -79,11 +79,7 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
 
     fun forceNewTaints(){
         seeTopGenes().forEach { g ->
-            g.flatView().forEach { r ->
-                if(r is TaintableGene && !r.isDependentTaint()){
-                    r.forceNewTaintId()
-                }
-            }
+            g.forceNewTaints()
         }
     }
 
