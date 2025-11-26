@@ -529,8 +529,21 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                     else -> lines.add(".$send(\"$body\")")
                 }
+            } else if (bodyParam.isXml()) {
+
+                val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+
+                when {
+
+                    format.isCsharp() -> {
+                        lines.append("new StringContent($xml, Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                    }
+                    format.isPython() -> {
+                        lines.add("body = $xml")
+                    }
+                    else -> lines.add(".$send($xml)")
+                }
             } else {
-                //TODO XML
                 LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
             }
         }
