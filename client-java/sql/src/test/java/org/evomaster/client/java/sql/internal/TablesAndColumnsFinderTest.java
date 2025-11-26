@@ -640,4 +640,29 @@ class TablesAndColumnsFinderTest {
         assertEquals(0, finder.getBaseTableReferences().size());
 
     }
+
+    @Test
+    void testDeleteFromWithSubquery() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "DELETE FROM Employees WHERE department_id IN (SELECT id FROM Departments)";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
+        SqlBaseTableReference departmentsTableReference = new SqlBaseTableReference("Departments");
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+        assertTrue(finder.containsColumnReferences(departmentsTableReference));
+
+        assertEquals(1, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
+
+        assertEquals(1, finder.getColumnReferences(departmentsTableReference).size());
+        assertTrue(finder.getColumnReferences(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "id")));
+
+
+    }
+
 }
