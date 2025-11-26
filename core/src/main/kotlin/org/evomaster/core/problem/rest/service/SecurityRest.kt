@@ -6,8 +6,6 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.enterprise.DetectedFault
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
@@ -22,16 +20,12 @@ import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
-import org.evomaster.core.search.action.ActionResult
-import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
