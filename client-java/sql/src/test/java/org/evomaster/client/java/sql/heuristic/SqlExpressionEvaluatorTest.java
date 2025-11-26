@@ -1681,5 +1681,48 @@ class SqlExpressionEvaluatorTest {
         assertEquals(NowFunction.CANONICAL_NOW_VALUE, actual);
     }
 
+    @Test
+    public void testLower() {
+        String sql = "LOWER('HELLO')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
 
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("hello", value);
+    }
+
+    @Test
+    public void testLowerCaseInsensitive() {
+        String sql = "lower('HELLO')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("hello", value);
+    }
+
+    @Test
+    public void testUpperCaseInsenstive() {
+        String sql = "upper('hello')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals("HELLO", value);
+    }
 }

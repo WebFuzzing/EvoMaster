@@ -27,6 +27,7 @@ public class FunctionFinder {
         super();
         this.addFunction(new TimeFunction());
         this.addFunction(new UpperFunction());
+        this.addFunction(new LowerFunction());
         this.addFunction(new StringDecodeFunction());
         this.addFunction(new CoalesceFunction());
         this.addFunction(new DateTruncFunction());
