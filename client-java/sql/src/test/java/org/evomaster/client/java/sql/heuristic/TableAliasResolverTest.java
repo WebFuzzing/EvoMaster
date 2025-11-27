@@ -1,7 +1,10 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -472,4 +475,20 @@ class TableAliasResolverTest {
         assertEquals(0, resolver.getContextDepth());
     }
 
+
+    @Test
+    void testCommonTableExpressionWithAliasForEmployees() throws JSQLParserException {
+        String sql = "WITH EmployeeCTE AS (SELECT first_name, salary FROM employees WHERE salary > 50000) " +
+                "SELECT e.first_name FROM EmployeeCTE e WHERE e.first_name='John' ";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        TableAliasResolver resolver = new TableAliasResolver();
+        resolver.enterTableAliasContext(select);
+
+        assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
+        SqlTableReference withTableReference = resolver.resolveTableReference("e");
+        assertTrue(withTableReference instanceof SqlDerivedTableReference);
+        assertEquals("SELECT first_name, salary FROM employees WHERE salary > 50000",
+                ((SqlDerivedTableReference) withTableReference).getSelect().getPlainSelect().toString());
+
+    }
 }

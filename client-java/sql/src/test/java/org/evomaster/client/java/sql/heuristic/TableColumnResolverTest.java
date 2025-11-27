@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
@@ -798,4 +799,26 @@ class TableColumnResolverTest {
         SqlColumnReference columnReference = resolver.resolve(column);
         assertNull(columnReference);
     }
+
+    @Test
+    void testCommonTableExpressionWithAliasForEmployees() throws JSQLParserException {
+        String sql = "WITH EmployeeCTE AS (SELECT first_name, salary FROM employees WHERE salary > 50000) " +
+                "SELECT e.first_name FROM EmployeeCTE e WHERE e.first_name='John' ";
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column column = new Column();
+        column.setColumnName("first_name");
+        column.setTable(new Table("e"));
+
+        SqlColumnReference columnReference = resolver.resolve(column);
+        assertNotNull(columnReference);
+        assertEquals("first_name", columnReference.getColumnName());
+        assertTrue(columnReference.getTableReference() instanceof SqlDerivedTableReference);
+        SqlDerivedTableReference derivedTableReference = (SqlDerivedTableReference) columnReference.getTableReference();
+        assertEquals("(SELECT first_name, salary FROM employees WHERE salary > 50000)", derivedTableReference.getSelect().toString());
+    }
+
+
+
 }

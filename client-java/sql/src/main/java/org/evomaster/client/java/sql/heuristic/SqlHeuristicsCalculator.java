@@ -916,40 +916,41 @@ public class SqlHeuristicsCalculator {
     }
 
     private QueryResult createQueryResult(FromItem fromItem) {
-        final QueryResult tableData;
         if (fromItem == null) {
-            tableData = new QueryResult(Collections.emptyList());
+            return new QueryResult(Collections.emptyList());
         } else {
             if (!SqlParserUtils.isTable(fromItem)) {
                 throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + fromItem);
             }
             String tableName = SqlParserUtils.getTableName(fromItem);
 
-            if (fromItem.getAlias() != null) {
-                tableData = QueryResultUtils.addAliasToQueryResult(sourceQueryResultSet.getQueryResultForNamedTable(tableName), fromItem.getAlias().getName());
-            } else {
-                Table table = (Table) fromItem;
-                if (this.tableColumnResolver.resolve(table)!=null) {
-                    SqlTableReference sqlTableReference = this.tableColumnResolver.resolve(table);
-                    if (sqlTableReference instanceof SqlBaseTableReference) {
-                        SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
-                        SqlTableId sqlTableId = sqlBaseTableReference.getTableId();
-                        tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableId());
-                    } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                        SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                        Select select = sqlDerivedTableReference.getSelect();
-                        SqlHeuristicResult sqlHeuristicResult = this.computeHeuristic(select);
-                        tableData = sqlHeuristicResult.getQueryResult();
-                    } else {
-                        throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + table);
-                    }
-
+            final QueryResult tableData;
+            Table table = (Table) fromItem;
+            if (this.tableColumnResolver.resolve(table) != null) {
+                SqlTableReference sqlTableReference = this.tableColumnResolver.resolve(table);
+                if (sqlTableReference instanceof SqlBaseTableReference) {
+                    SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
+                    SqlTableId sqlTableId = sqlBaseTableReference.getTableId();
+                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableId());
+                } else if (sqlTableReference instanceof SqlDerivedTableReference) {
+                    SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
+                    Select select = sqlDerivedTableReference.getSelect();
+                    SqlHeuristicResult sqlHeuristicResult = this.computeHeuristic(select);
+                    tableData = sqlHeuristicResult.getQueryResult();
                 } else {
-                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
+                    throw new IllegalArgumentException("Cannot compute Truthness for form item that it is not a table " + table);
                 }
+            } else {
+                // if no table reference is found for the table, then we default to base table
+                tableData = sourceQueryResultSet.getQueryResultForNamedTable(tableName);
+            }
+            if (fromItem.getAlias() != null) {
+                // add alias to table data
+                return QueryResultUtils.addAliasToQueryResult(tableData, fromItem.getAlias().getName());
+            } else {
+                return tableData;
             }
         }
-        return tableData;
     }
 
 

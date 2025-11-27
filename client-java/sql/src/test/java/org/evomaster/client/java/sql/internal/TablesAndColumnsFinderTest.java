@@ -661,8 +661,45 @@ class TablesAndColumnsFinderTest {
 
         assertEquals(1, finder.getColumnReferences(departmentsTableReference).size());
         assertTrue(finder.getColumnReferences(departmentsTableReference).contains(new SqlColumnReference(departmentsTableReference, "id")));
+    }
+
+    @Test
+    void testCommonTableExpression() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "WITH EmployeeCTE AS (SELECT name, department_id FROM Employees WHERE department_id > 0) " +
+                "SELECT name FROM EmployeeCTE";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+
+        assertEquals(2, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
+    }
 
 
+    @Test
+    void testCommonTableExpressionWithWhere() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "WITH EmployeeCTE AS (SELECT name, department_id FROM Employees WHERE department_id > 0) " +
+                "SELECT name FROM EmployeeCTE empCTE WHERE empCTE.name='John'";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        SqlBaseTableReference employeesTableReference = new SqlBaseTableReference("Employees");
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(employeesTableReference));
+
+        assertEquals(2, finder.getColumnReferences(employeesTableReference).size());
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
+        assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
     }
 
 }

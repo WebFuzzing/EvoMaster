@@ -13,11 +13,10 @@ import java.util.*;
  * Every time a new SQL alias context (e.g. subselect) is entered, the
  * method enterAliasContext should be called. Every time the context is exited,
  * the method exitAliasContext should be called.
- *
+ * <p>
  * Alias resolution is case-insensitive.
  */
 class TableAliasResolver {
-
 
 
     /**
@@ -148,7 +147,17 @@ class TableAliasResolver {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {
                 final String lowerCaseAliasName = table.getAlias().getName().toLowerCase();
-                stackOfTableAliases.peek().put(lowerCaseAliasName, new SqlBaseTableReference(table.getFullyQualifiedName()));
+                final String fullyQualifiedTableName = table.getFullyQualifiedName();
+                final SqlTableReference tableReference;
+                if (isAliasDeclaredInCurrentContext(fullyQualifiedTableName)) {
+                    // if there is an alias, then we need to resolve to the actual table reference
+                    // (e.g. could be an alias to a common table expression)
+                    tableReference = this.resolveTableReference(fullyQualifiedTableName);
+                } else {
+                    // if no alias is declared in the current context, we can safely assume that it is a table from the schema
+                    tableReference = new SqlBaseTableReference(fullyQualifiedTableName);
+                }
+                stackOfTableAliases.peek().put(lowerCaseAliasName, tableReference);
             }
         } else if (fromItem instanceof ParenthesedSelect) {
             ParenthesedSelect subSelect = (ParenthesedSelect) fromItem;
