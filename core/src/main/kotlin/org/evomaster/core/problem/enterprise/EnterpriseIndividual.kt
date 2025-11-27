@@ -180,6 +180,8 @@ abstract class EnterpriseIndividual(
      */
     fun ensureFlattenedStructure() : Boolean{
 
+        Lazy.assert { verifyValidity(); true }
+
         val before = seeAllActions().size
 
         val issues = doFlattenStructure()
