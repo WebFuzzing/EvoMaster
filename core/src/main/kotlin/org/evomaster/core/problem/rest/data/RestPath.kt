@@ -329,7 +329,7 @@ class RestPath(path: String) {
                     gene.getViewOfElements()
                         .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
                 } else {
-                    val value = encode(gene!!.getValueAsRawString())
+                    val value = encode(gene.getValueAsRawString())
                     "$name=$value"
                 }
             }
