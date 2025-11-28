@@ -17,7 +17,7 @@ internal class RegexHandlerTest{
 
     @Disabled("Needs to hande lookahead in regex")
     @Test
-    fun testFamilieBaSakIssue(){
+    fun testLanguageTool(){
         val s = "^((?iu)@.+)$"
         RegexHandler.createGeneForJVM(s)
     }
