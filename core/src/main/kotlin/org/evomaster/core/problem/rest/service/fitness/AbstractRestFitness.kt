@@ -877,8 +877,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     it is or not a valid char.
                     Furthermore, likely needed to be done in resolveLocation,
                     or at least check how RestAssured would behave
+                    TODO update RestPathTest, check TODO there, once fixed
                  */
                 //it.replace("\"", "")
+                //FIXME outputFormat shouldn't really be used here
                 GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
             }
 
