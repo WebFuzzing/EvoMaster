@@ -1344,4 +1344,28 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(1, queryResult.seeRows().size());
         assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
     }
+
+    @Test
+    public void testSelectWithParenthesisSelectItem() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT (p.name) FROM Person p";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isFalse());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(0, queryResult.size());
+
+    }
+
 }

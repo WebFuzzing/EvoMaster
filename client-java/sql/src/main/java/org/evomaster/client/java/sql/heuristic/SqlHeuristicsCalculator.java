@@ -2,6 +2,7 @@ package org.evomaster.client.java.sql.heuristic;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Function;
+import net.sf.jsqlparser.expression.Parenthesis;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -736,6 +737,9 @@ public class SqlHeuristicsCalculator {
                     }
                 }
             }
+        } else if (expression instanceof Parenthesis) {
+            Parenthesis parenthesisExpression = (Parenthesis) expression;
+            return hasAnyTableColumn(parenthesisExpression.getExpression());
         }
         return false;
     }
