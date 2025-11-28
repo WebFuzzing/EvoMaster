@@ -10,12 +10,32 @@ import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.glassfish.jersey.uri.internal.JerseyUriBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URISyntaxException
+import org.junit.jupiter.api.assertThrows
 
 internal class RestPathTest{
+
+    @Test
+    fun testFamilieBaSakIssue(){
+
+        val x = "/api/satsendring/kjorsatsendring?EMextraParam123=42/Trigget satsendring for fagsakene []"
+
+        assertThrows<Exception>{JerseyUriBuilder.fromUri(x).build()}
+
+        val path = RestPath("/api/satsendring/kjorsatsendring")
+        val q = QueryParam("EMextraParam123", StringGene("EMextraParam123", "42/Trigget satsendring for fagsakene []"))
+
+        val uri = path.resolve(listOf(q))
+
+        assertNotEquals(x, uri)
+
+        JerseyUriBuilder.fromUri(uri).build()
+    }
 
 
     @Test

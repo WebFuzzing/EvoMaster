@@ -883,17 +883,31 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
 
 
-        val builder = if (a.produces.isEmpty()) {
-            log.debug("No 'produces' type defined for {}", path)
-            client.target(fullUri).request("*/*")
+        val builder = try {
+            if (a.produces.isEmpty()) {
+                log.debug("No 'produces' type defined for {}", path)
+                client.target(fullUri).request("*/*")
 
-        } else {
-            /*
+            } else {
+                /*
                 TODO: This only considers the first in the list of produced responses
                 This is fine for endpoints that only produce one type of response.
                 Could be a problem in future
             */
-            client.target(fullUri).request(a.produces.first())
+                client.target(fullUri).request(a.produces.first())
+            }
+        } catch (e: Exception) {
+            /*
+                FIXME we need to solve this issue somehow, as location values might be invalid...
+                but i guess that should be done in resolveLocation
+             */
+            throw RuntimeException("""
+                Failed to build HTTP invocation. 
+                Resolved path: $path
+                Location header: $locationHeader
+                Resolved location: $fullUri
+                Error: ${e.message}
+            """.trimIndent(), e)
         }
 
         handleHeaders(a, builder, cookies, tokens)
