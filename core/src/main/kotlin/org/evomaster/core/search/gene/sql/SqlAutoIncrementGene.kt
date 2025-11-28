@@ -58,7 +58,13 @@ class SqlAutoIncrementGene(name: String) : SimpleGene(name) {
         if (other !is SqlAutoIncrementGene) {
             return false
         }
-        return this === other
+
+        /*
+            auto-increment are always unique... but need to satisfy invariants on copyFrom...
+            TODO  might check for side-effects, and see if need more complex handling
+         */
+        //return this === other
+        return true
     }
 
     override fun isMutable() = false
