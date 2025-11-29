@@ -598,6 +598,10 @@ class EMConfig {
             throw ConfigProblemException("The use of 'ssrf' requires 'security'")
         }
 
+        if(!security && xss) {
+            throw ConfigProblemException("The use of 'xss' requires 'security'")
+        }
+
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
             !languageModelConnector) {
@@ -2596,6 +2600,10 @@ class EMConfig {
     @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
     var ssrf = false
+
+    @Experimental
+    @Cfg("To apply XSS detection as part of security testing.")
+    var xss = false
 
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +

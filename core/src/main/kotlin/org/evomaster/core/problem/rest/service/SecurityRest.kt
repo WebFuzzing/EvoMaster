@@ -285,7 +285,7 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if (!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
             LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
         } else {
             handleXSSCheck()
