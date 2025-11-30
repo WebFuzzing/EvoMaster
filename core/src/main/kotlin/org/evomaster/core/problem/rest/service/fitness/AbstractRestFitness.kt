@@ -1345,7 +1345,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if(!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
             return
         }
 
