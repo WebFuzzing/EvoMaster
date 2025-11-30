@@ -106,8 +106,9 @@ class GeneToDto(
                     result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, childDtoCall.varName))
                 }
                 else -> {
-                    if (leafGene is EnumGene<*> && it is ChoiceGene<*>) {
-                        val children = it.getViewOfChildren()
+                    val parent = leafGene.parent
+                    if (leafGene is EnumGene<*> && parent is ChoiceGene<*>) {
+                        val children = parent.getViewOfChildren()
                         val otherChoice = children.find { child -> child != leafGene }
                         result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(otherChoice)}"))
                     } else {
