@@ -63,7 +63,10 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 import javax.ws.rs.ProcessingException
@@ -881,9 +884,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                  */
                 //it.replace("\"", "")
                 //FIXME outputFormat shouldn't really be used here
+                //FIXME in resolveLocation
                 GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
             }
 
+        Lazy.assert { URI.create(fullUri).isAbsolute }
 
         val builder = try {
             if (a.produces.isEmpty()) {
@@ -1020,8 +1025,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val id = rcr.getResourceId()
 
                 if (id != null) {
-                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+
+                    //FIXME tmp fix. need to be handled properly, also in generated tests with test-utils-*
+                    val escapedId = URLEncoder.encode(id.value, StandardCharsets.UTF_8)
+                        .replace("+", "%20");
+
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,escapedId)
                     if(location != null) {
+                        /*
+                            FIXME this case seems ignored in RestTestCaseWriter.handleLocationHeader.
+                            Need proper handling + E2E for all these cases
+                         */
                         rcr.setHeuristicsForChainedLocation(true)
                     }
                 }

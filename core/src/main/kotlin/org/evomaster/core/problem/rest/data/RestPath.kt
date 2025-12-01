@@ -391,6 +391,12 @@ class RestPath(path: String) {
                         it.value.name == t.name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.PATH)
                     }?.key
 
+                    /*
+                        TODO are these correct??? are we properly escaping?
+                        also, URI does not comply with RFC 3968... :(
+                        need more testing
+                     */
+
                     if(variable != null){
                         /*
                             reserved characters need to be encoded
