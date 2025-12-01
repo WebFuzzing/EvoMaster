@@ -58,10 +58,18 @@ where T : Gene {
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        //TODO
-        LoggingUtil.uniqueWarn(log,"unsafeCopyValueFrom() not implemented for FlexibleMapGene")
 
-        return false
+        if(other !is FlexibleMapGene<*>) {
+            return false
+        }
+
+        killAllChildren()
+        val elements = other.elements
+            .mapNotNull { it.copy() as? PairGene<T, FlexibleGene> }
+            .toMutableList()
+        elements.forEach { it.resetLocalIdRecursively() }
+        addChildren(elements)
+        return true
     }
 
     override fun isPrintable(): Boolean {

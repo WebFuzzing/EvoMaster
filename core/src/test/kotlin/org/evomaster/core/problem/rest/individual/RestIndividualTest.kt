@@ -33,6 +33,10 @@ class RestIndividualTest {
         assertEquals(2, fakeInd.getResourceCalls().size)
         assertTrue(fakeInd.seeInitializingActions().isEmpty())
 
+        fakeInd.resetLocalIdRecursively()
+        fakeInd.doInitializeLocalId()
+        fakeInd.doInitialize()
+
         fakeInd.ensureFlattenedStructure()
 
         assertTrue(fakeInd.getResourceCalls().isEmpty())

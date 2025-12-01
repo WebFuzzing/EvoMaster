@@ -142,6 +142,11 @@ class SqlForeignKeyGene(
         return true
     }
 
+    override fun isPrintable(): Boolean {
+        //TODO what about pk? anyway, likely PK/FK will need a major overhaul...
+        return isBound() || nullable
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         if (!isBound()) {
