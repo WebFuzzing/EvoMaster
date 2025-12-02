@@ -4,8 +4,8 @@
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
+import org.evomaster.client.java.instrumentation.dynamosa.AnnotatedLabel;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.BranchPool;
-import org.evomaster.client.java.instrumentation.AnnotatedLabel;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import org.evomaster.client.java.utils.SimpleLogger;

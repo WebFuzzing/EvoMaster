@@ -4,9 +4,8 @@
  */
 package org.evomaster.client.java.instrumentation.dynamosa.visitor;
 
+import org.evomaster.client.java.instrumentation.dynamosa.AnnotatedMethodNode;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.CFGGenerator;
-
-import org.evomaster.client.java.instrumentation.AnnotatedMethodNode;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.analysis.Analyzer;
