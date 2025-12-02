@@ -15,6 +15,7 @@
     <modules>
         <module>e2e-tests</module>
         <module>integration-tests</module>
+        <module>jdk-8</module>
     </modules>
 
     <properties>
