@@ -459,6 +459,12 @@ public class SqlHandler {
 
         buffer.append(variables);
         buffer.append(" FROM ");
+        if (tableId.getCatalogName()!=null) {
+            buffer.append(tableId.getCatalogName()).append(".");
+        }
+        if (tableId.getSchemaName()!=null) {
+            buffer.append(tableId.getSchemaName()).append(".");
+        }
         buffer.append(tableId.getTableName());
 
         return buffer.toString();
