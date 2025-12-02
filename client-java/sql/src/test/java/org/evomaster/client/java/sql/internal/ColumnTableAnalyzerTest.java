@@ -26,7 +26,8 @@ public class ColumnTableAnalyzerTest {
 
         Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
 
-        assertEquals(new SqlTableId("Bar.Foo"), data.getKey());
+        assertEquals("bar", data.getKey().getSchemaName());
+        assertEquals("foo", data.getKey().getTableName());
     }
 
 
@@ -77,13 +78,15 @@ public class ColumnTableAnalyzerTest {
         DbInfoDto schema = new DbInfoDto();
         TableDto tableDto = new TableDto();
         tableDto.id = new TableIdDto();
-        tableDto.id.name = "v1.Foo";
+        tableDto.id.schema = "v1";
+        tableDto.id.name = "Foo";
         schema.tables.add(tableDto);
 
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
 
         assertNotNull(deletedTableId);
-        assertEquals(new SqlTableId("v1.Foo"), deletedTableId);
+        assertEquals("v1", deletedTableId.getSchemaName());
+        assertEquals("foo", deletedTableId.getTableName());
     }
 
 
@@ -124,7 +127,6 @@ public class ColumnTableAnalyzerTest {
         assertEquals(1, customersColumns.size());
         assertTrue(customersColumns.contains(new SqlColumnId(("*"))));
     }
-
 
 
 }

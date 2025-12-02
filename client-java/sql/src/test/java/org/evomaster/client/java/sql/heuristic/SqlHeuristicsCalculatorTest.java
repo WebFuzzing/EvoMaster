@@ -773,10 +773,10 @@ public class SqlHeuristicsCalculatorTest {
         tableColumnResolver.enterStatementeContext(select);
 
         SqlColumnReference nameSqlColumnReference = tableColumnResolver.resolve(nameColumn);
-        assertTrue(nameSqlColumnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertTrue(nameSqlColumnReference.getTableReference() instanceof SqlDerivedTable);
 
         SqlColumnReference incomeSqlColumnReference = tableColumnResolver.resolve(incomeColumn);
-        assertTrue(incomeSqlColumnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertTrue(incomeSqlColumnReference.getTableReference() instanceof SqlDerivedTable);
 
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName(nameSqlColumnReference.getColumnName()));
         assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName(incomeSqlColumnReference.getColumnName()));

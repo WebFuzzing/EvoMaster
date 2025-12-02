@@ -345,8 +345,13 @@ public class SqlHandler {
     private List<QueryResult> getQueryResultsForComputingSqlDistance(final Map<SqlTableId, Set<SqlColumnId>> columnsInWhere) throws SQLException {
         List<QueryResult> queryResults = new ArrayList<>();
         // we sort the table and column identifiers to improve testeability (i.e. allow mocking)
-        for (SqlTableId tableId : columnsInWhere.keySet().stream().sorted().collect(Collectors.toList())) {
-            List<SqlColumnId> columnIds = columnsInWhere.get(tableId).stream().sorted().collect(Collectors.toList());
+        for (SqlTableId tableId : columnsInWhere.keySet()
+                .stream()
+                .sorted(Comparator.comparing(Object::toString))
+                .collect(Collectors.toList())) {
+            List<SqlColumnId> columnIds = columnsInWhere.get(tableId).stream()
+                    .sorted(Comparator.comparing(Object::toString))
+                    .collect(Collectors.toList());
             final String select;
             if (columnIds.isEmpty()) {
                 // the table is required but no specific column was required.

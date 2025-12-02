@@ -146,10 +146,10 @@ public class TableColumnResolver {
                     if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                         return new SqlColumnReference(sqlBaseTableReference, column.getColumnName());
                     }
-                } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                    final SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                    if (findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), column.getColumnName()) != null) {
-                        return new SqlColumnReference(sqlDerivedTableReference, column.getColumnName());
+                } else if (sqlTableReference instanceof SqlDerivedTable) {
+                    final SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) sqlTableReference;
+                    if (findBaseTableColumnReference(sqlDerivedTable.getSelect(), column.getColumnName()) != null) {
+                        return new SqlColumnReference(sqlDerivedTable, column.getColumnName());
                     }
                 } else {
                     throw new IllegalArgumentException("Unknown table reference type: " + sqlTableReference.getClass().getName());
@@ -210,7 +210,7 @@ public class TableColumnResolver {
         } else if (contextStatement instanceof Select) {
             Select select = (Select) contextStatement;
             if (findBaseTableColumnReference(select, columnName) != null) {
-                return new SqlColumnReference(new SqlDerivedTableReference(select), columnName);
+                return new SqlColumnReference(new SqlDerivedTable(select), columnName);
             }
         }
         // column was not found in this context statement
@@ -256,7 +256,7 @@ public class TableColumnResolver {
             ParenthesedFromItem parenthesedFromItem = (ParenthesedFromItem) fromItem;
             return createColumnReference(parenthesedFromItem.getFromItem(), columnName);
         } else {
-            return new SqlColumnReference(new SqlDerivedTableReference((Select) fromItem), columnName);
+            return new SqlColumnReference(new SqlDerivedTable((Select) fromItem), columnName);
         }
     }
 
@@ -274,18 +274,21 @@ public class TableColumnResolver {
 
         // 1. Explicitly qualified table → always a base reference
         if (schemaName != null) {
-            return new SqlBaseTableReference(null, schemaName, tableName);
+            // if schema is used, assume table is a base table
+            TableIdDto tableIdDto = findFirstTableIdDto(schemaName, tableName);
+            return new SqlBaseTableReference(tableIdDto.catalog, tableIdDto.schema, tableIdDto.name);
         }
 
         // 2. No schema → maybe it's an alias?
         if (tableAliasResolver.isAliasDeclaredInAnyContext(tableName)) {
-            SqlTableReference tableReference = tableAliasResolver.resolveTableReference(tableName);
-            if (tableReference instanceof SqlBaseTableReference) {
-                SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
-                Table sourceAliasTable = new Table(sqlBaseTableReference.getTableId().getSchemaName(), sqlBaseTableReference.getTableId().getTableName());
-                return resolve(sourceAliasTable);
+            SqlTableReference tableReference = tableAliasResolver.resolveAlias(tableName);
+            if (tableReference instanceof SqlTableName) {
+                SqlTableName sqlTableName = (SqlTableName) tableReference;
+                return resolve(sqlTableName.getTable());
+            } else if (tableReference instanceof SqlDerivedTable) {
+                return (SqlDerivedTable) tableReference;
             } else {
-                return tableReference;
+                throw new IllegalArgumentException("Unexpected table reference type: " + tableReference.getClass().getName());
             }
         }
 
@@ -322,9 +325,9 @@ public class TableColumnResolver {
                 if (hasColumn(sqlBaseTableReference.getTableId(), columnId)) {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
-            } else if (sqlTableReference instanceof SqlDerivedTableReference) {
-                SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
-                if (findBaseTableColumnReference(sqlDerivedTableReference.getSelect(), columnName) != null) {
+            } else if (sqlTableReference instanceof SqlDerivedTable) {
+                SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) sqlTableReference;
+                if (findBaseTableColumnReference(sqlDerivedTable.getSelect(), columnName) != null) {
                     return new SqlColumnReference(sqlTableReference, columnName);
                 }
             } else {
@@ -419,7 +422,7 @@ public class TableColumnResolver {
                        defines the column name, then the column is
                        defined within the current SELECT (i.e., a derived table)
                      */
-                    return new SqlColumnReference(new SqlDerivedTableReference(plainSelect), columnName);
+                    return new SqlColumnReference(new SqlDerivedTable(plainSelect), columnName);
                 }
             }
         }

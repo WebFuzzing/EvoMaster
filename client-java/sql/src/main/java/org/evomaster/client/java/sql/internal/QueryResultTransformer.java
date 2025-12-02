@@ -46,7 +46,13 @@ public class QueryResultTransformer {
         }
 
         // sort maps based on its key, ie, table name
-        List<List<QueryResult>> qrPerTable = cartesianProduct(maps.keySet().stream().sorted().map(maps::get).collect(Collectors.toList()));
+        List<List<QueryResult>> qrPerTable = cartesianProduct(maps
+                .keySet()
+                .stream()
+                .sorted(Comparator.comparing(Object::toString))
+                .map(maps::get)
+                .collect(Collectors.toList()));
+
         if (qrPerTable == null)
             return null;
 

@@ -29,7 +29,7 @@ public class ColumnTableAnalyzer {
 
         Table table = stmt.getTable();
         if (table != null) {
-            SqlTableId sqlTableId = new SqlTableId(table.getFullyQualifiedName());
+            SqlTableId sqlTableId = new SqlTableId(null, table.getSchemaName(),table.getName());
             return sqlTableId;
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
@@ -48,7 +48,7 @@ public class ColumnTableAnalyzer {
         Table table = stmt.getTable();
         if (table != null) {
             Map.Entry<SqlTableId, Set<SqlColumnId>> insertedDataFields = new AbstractMap.SimpleEntry<>(
-                    new SqlTableId(table.getFullyQualifiedName()),
+                    new SqlTableId(null, table.getSchemaName(), table.getName()),
                     Collections.singleton(new SqlColumnId("*")));
             return insertedDataFields;
         } else {

@@ -22,7 +22,7 @@ class TableAliasResolverTest {
         TableAliasResolver resolver = new TableAliasResolver();
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
 
@@ -35,10 +35,10 @@ class TableAliasResolverTest {
         TableAliasResolver resolver = new TableAliasResolver();
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery"));
-        SqlTableReference sqlTableReference = resolver.resolveTableReference("subquery");
-        assertTrue(sqlTableReference instanceof SqlDerivedTableReference);
-        assertEquals("SELECT * FROM Employees", ((SqlDerivedTableReference) sqlTableReference).getSelect().getPlainSelect().toString());
-        ParenthesedSelect parenthesedSelect = (ParenthesedSelect) ((SqlDerivedTableReference) sqlTableReference).getSelect();
+        SqlTableReference sqlTableReference = resolver.resolveAlias("subquery");
+        assertTrue(sqlTableReference instanceof SqlDerivedTable);
+        assertEquals("SELECT * FROM Employees", ((SqlDerivedTable) sqlTableReference).getSelect().getPlainSelect().toString());
+        ParenthesedSelect parenthesedSelect = (ParenthesedSelect) ((SqlDerivedTable) sqlTableReference).getSelect();
         assertEquals("subquery", parenthesedSelect.getAlias().getName());
         assertEquals(1, resolver.getContextDepth());
 
@@ -59,8 +59,8 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
     }
@@ -73,15 +73,15 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery2"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("subquery1"));
-        assertEquals("SELECT * FROM (SELECT * FROM Employees) AS subquery1", ((SqlDerivedTableReference) resolver.resolveTableReference("subquery2")).getSelect().getPlainSelect().toString());
+        assertEquals("SELECT * FROM (SELECT * FROM Employees) AS subquery1", ((SqlDerivedTable) resolver.resolveAlias("subquery2")).getSelect().getPlainSelect().toString());
 
-        Select subquery2 = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery2")).getSelect().getPlainSelect();
+        Select subquery2 = ((SqlDerivedTable) resolver.resolveAlias("subquery2")).getSelect().getPlainSelect();
         resolver.enterTableAliasContext(subquery2);
         assertFalse(resolver.isAliasDeclaredInCurrentContext("subquery2"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery1"));
-        assertEquals("SELECT * FROM Employees", ((SqlDerivedTableReference) resolver.resolveTableReference("subquery1")).getSelect().getPlainSelect().toString());
+        assertEquals("SELECT * FROM Employees", ((SqlDerivedTable) resolver.resolveAlias("subquery1")).getSelect().getPlainSelect().toString());
 
-        Select selectFromEmployees = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery1")).getSelect().getPlainSelect();
+        Select selectFromEmployees = ((SqlDerivedTable) resolver.resolveAlias("subquery1")).getSelect().getPlainSelect();
         resolver.enterTableAliasContext(selectFromEmployees);
         assertFalse(resolver.isAliasDeclaredInCurrentContext("subquery2"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("subquery1"));
@@ -106,13 +106,13 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(0));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(1));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -127,7 +127,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery"));
 
-        Select subquery = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery")).getSelect();
+        Select subquery = ((SqlDerivedTable) resolver.resolveAlias("subquery")).getSelect();
         assertEquals("(SELECT * FROM Employees)", subquery.toString());
 
         resolver.enterTableAliasContext(subquery);
@@ -156,10 +156,10 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals("SELECT * FROM Departments", ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect().toString());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("SELECT * FROM Departments", ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect().toString());
 
-        Select subSelect = ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect();
+        Select subSelect = ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect();
         resolver.enterTableAliasContext(subSelect);
         assertFalse(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
@@ -179,10 +179,10 @@ class TableAliasResolverTest {
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery1"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery2"));
 
-        Select subquery1 = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery1")).getSelect();
+        Select subquery1 = ((SqlDerivedTable) resolver.resolveAlias("subquery1")).getSelect();
         assertEquals("(SELECT * FROM Employees)", subquery1.toString());
 
-        Select subquery2 = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery2")).getSelect();
+        Select subquery2 = ((SqlDerivedTable) resolver.resolveAlias("subquery2")).getSelect();
         assertEquals("(SELECT * FROM Departments)", subquery2.toString());
 
         resolver.enterTableAliasContext(subquery1);
@@ -211,12 +211,12 @@ class TableAliasResolverTest {
         TableAliasResolver resolver = new TableAliasResolver();
         resolver.enterTableAliasContext(select);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery1"));
-        final Select subquery1 = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery1")).getSelect();
+        final Select subquery1 = ((SqlDerivedTable) resolver.resolveAlias("subquery1")).getSelect();
         assertEquals("(WITH subquery2 AS (SELECT * FROM Departments) SELECT * FROM subquery2)", subquery1.toString());
 
         resolver.enterTableAliasContext(subquery1.getPlainSelect());
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery2"));
-        final Select subquery2 = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery2")).getSelect();
+        final Select subquery2 = ((SqlDerivedTable) resolver.resolveAlias("subquery2")).getSelect();
         assertEquals("(SELECT * FROM Departments)", subquery2.toString());
 
         resolver.exitTableAliasContext();
@@ -237,15 +237,15 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(0));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(select.getSetOperationList().getSelects().get(1));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals("SELECT * FROM Departments", ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect().toString());
+        assertEquals("SELECT * FROM Departments", ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect().toString());
 
-        Select subSelect = ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect();
+        Select subSelect = ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect();
         resolver.enterTableAliasContext(subSelect);
         assertFalse(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
@@ -266,7 +266,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("subquery"));
-        Select subquery = ((SqlDerivedTableReference) resolver.resolveTableReference("subquery")).getSelect().getPlainSelect();
+        Select subquery = ((SqlDerivedTable) resolver.resolveAlias("subquery")).getSelect().getPlainSelect();
         assertEquals("SELECT e.name, d.name FROM Employees e JOIN Departments d ON e.department_id = d.department_id", subquery.toString());
 
         resolver.enterTableAliasContext(subquery);
@@ -274,8 +274,8 @@ class TableAliasResolverTest {
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
 
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -303,28 +303,28 @@ class TableAliasResolverTest {
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
 
-        assertTrue(resolver.resolveTableReference("e") instanceof SqlDerivedTableReference);
-        assertTrue(resolver.resolveTableReference("d") instanceof SqlDerivedTableReference);
+        assertTrue(resolver.resolveAlias("e") instanceof SqlDerivedTable);
+        assertTrue(resolver.resolveAlias("d") instanceof SqlDerivedTable);
 
         assertEquals("SELECT id, first_name, department_id FROM employees e WHERE e.status = 'active'",
-                ((SqlDerivedTableReference) resolver.resolveTableReference("e")).getSelect().getPlainSelect().toString());
+                ((SqlDerivedTable) resolver.resolveAlias("e")).getSelect().getPlainSelect().toString());
         assertEquals("SELECT id, department_name FROM departments e WHERE e.is_active = 1",
-                ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect().toString());
+                ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect().toString());
 
-        Select e = ((SqlDerivedTableReference) resolver.resolveTableReference("e")).getSelect().getPlainSelect();
-        Select d = ((SqlDerivedTableReference) resolver.resolveTableReference("d")).getSelect().getPlainSelect();
+        Select e = ((SqlDerivedTable) resolver.resolveAlias("e")).getSelect().getPlainSelect();
+        Select d = ((SqlDerivedTable) resolver.resolveAlias("d")).getSelect().getPlainSelect();
 
         resolver.enterTableAliasContext(e);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertTrue(resolver.resolveTableReference("e") instanceof SqlBaseTableReference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertTrue(resolver.resolveAlias("e") instanceof SqlTableName);
+        assertEquals("employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.enterTableAliasContext(d);
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertFalse(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("departments", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -339,7 +339,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(delete);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -353,7 +353,7 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(update);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -368,8 +368,8 @@ class TableAliasResolverTest {
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -384,8 +384,8 @@ class TableAliasResolverTest {
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -401,14 +401,14 @@ class TableAliasResolverTest {
 
         // Verify the alias in WITH clause
         assertTrue(resolver.isAliasDeclaredInCurrentContext("dept_to_delete"));
-        SqlTableReference withTableReference = resolver.resolveTableReference("dept_to_delete");
-        assertTrue(withTableReference instanceof SqlDerivedTableReference);
+        SqlTableReference withTableReference = resolver.resolveAlias("dept_to_delete");
+        assertTrue(withTableReference instanceof SqlDerivedTable);
         assertEquals("SELECT id FROM Departments WHERE name = 'HR'",
-                ((SqlDerivedTableReference) withTableReference).getSelect().getPlainSelect().toString());
+                ((SqlDerivedTable) withTableReference).getSelect().getPlainSelect().toString());
 
         // Verify the alias in the DELETE statement
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -424,8 +424,8 @@ class TableAliasResolverTest {
         // Verify the aliases for both tables
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         assertEquals(0, resolver.getContextDepth());
@@ -440,7 +440,7 @@ class TableAliasResolverTest {
 
         // Verify alias in the main query
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
         // Access the subquery in IN expression
         InExpression inExpression = (InExpression) ((PlainSelect) select).getWhere();
@@ -449,7 +449,7 @@ class TableAliasResolverTest {
 
         // Verify alias in the subquery
         assertTrue(resolver.isAliasDeclaredInCurrentContext("d"));
-        assertEquals(new SqlTableId("Departments"), ((SqlBaseTableReference) resolver.resolveTableReference("d")).getTableId());
+        assertEquals("Departments", ((SqlTableName) resolver.resolveAlias("d")).getTable().getName());
 
         resolver.exitTableAliasContext();
         resolver.exitTableAliasContext();
@@ -466,7 +466,7 @@ class TableAliasResolverTest {
         // Check case-sensitive alias resolution
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
         assertTrue(resolver.isAliasDeclaredInCurrentContext("E")); // Case-sensitive check
-        assertEquals(new SqlTableId("Employees"), ((SqlBaseTableReference) resolver.resolveTableReference("e")).getTableId());
+        assertEquals("Employees", ((SqlTableName) resolver.resolveAlias("e")).getTable().getName());
 
 
         resolver.exitTableAliasContext();
@@ -483,10 +483,10 @@ class TableAliasResolverTest {
         resolver.enterTableAliasContext(select);
 
         assertTrue(resolver.isAliasDeclaredInCurrentContext("e"));
-        SqlTableReference withTableReference = resolver.resolveTableReference("e");
-        assertTrue(withTableReference instanceof SqlDerivedTableReference);
+        SqlTableReference withTableReference = resolver.resolveAlias("e");
+        assertTrue(withTableReference instanceof SqlDerivedTable);
         assertEquals("SELECT first_name, salary FROM employees WHERE salary > 50000",
-                ((SqlDerivedTableReference) withTableReference).getSelect().getPlainSelect().toString());
+                ((SqlDerivedTable) withTableReference).getSelect().getPlainSelect().toString());
 
     }
 
@@ -495,12 +495,12 @@ class TableAliasResolverTest {
         String sql = "SELECT u.user_id FROM public.users u";
         TableAliasResolver resolver = new TableAliasResolver();
         resolver.enterTableAliasContext(CCJSqlParserUtil.parse(sql));
-        SqlTableReference tableReference = resolver.resolveTableReference("u");
+        SqlTableReference tableReference = resolver.resolveAlias("u");
         assertNotNull(tableReference);
-        assertTrue(tableReference instanceof SqlBaseTableReference);
-        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
-        assertEquals("public",baseTableReference.getTableId().getSchemaName());
-        assertEquals("users",baseTableReference.getTableId().getTableName());
+        assertTrue(tableReference instanceof SqlTableName);
+        SqlTableName tableNameReference = (SqlTableName) tableReference;
+        assertEquals("public", tableNameReference.getTable().getSchemaName());
+        assertEquals("users", tableNameReference.getTable().getName());
 
     }
 }

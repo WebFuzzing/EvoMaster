@@ -107,7 +107,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
                 SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
                 addColumnReference(baseTableReference, columnReference);
-            } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
+            } else if (columnReference.getTableReference() instanceof SqlDerivedTable) {
                 /*
                  * If the table is a derived table, the columns
                  * that are used are collected when processing the
@@ -126,7 +126,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     public void visit(AllTableColumns allTableColumns) {
         super.visit(allTableColumns);
         SqlTableReference tableReference = tableColumnResolver.resolve(allTableColumns.getTable());
-        if (tableReference instanceof SqlDerivedTableReference) {
+        if (tableReference instanceof SqlDerivedTable) {
             /*
              * If the table is a derived table, the columns
              * that are used are collected when processing the
@@ -182,7 +182,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
                 .findFirst()
                 .map(t -> t.columns.stream()
                         .map(c -> new SqlColumnReference(
-                                new SqlBaseTableReference(null, t.id.schema, t.id.name), c.name))
+                                new SqlBaseTableReference(t.id.catalog, t.id.schema, t.id.name), c.name))
                         .collect(Collectors.toSet()))
                 .orElse(Collections.emptySet());
     }
@@ -199,9 +199,9 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
                 if (tableReference instanceof SqlBaseTableReference) {
                     SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
                     return findColumnReferences(sqlBaseTableReference.getTableId());
-                } else if (tableReference instanceof SqlDerivedTableReference) {
-                    SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) tableReference;
-                    return findColumnReferences(sqlDerivedTableReference.getSelect());
+                } else if (tableReference instanceof SqlDerivedTable) {
+                    SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) tableReference;
+                    return findColumnReferences(sqlDerivedTable.getSelect());
                 } else {
                     throw new IllegalArgumentException("Cannot handle reference of class " + tableReference.getClass().getName());
                 }

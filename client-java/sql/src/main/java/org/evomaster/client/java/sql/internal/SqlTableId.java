@@ -20,7 +20,10 @@ public class SqlTableId {
      */
     public SqlTableId(String catalogName, String schemaName, String tableName) {
         Objects.requireNonNull(tableName);
-        this.catalogName = catalogName;
+        if (tableName.contains(".")) {
+            throw new IllegalArgumentException("Table name cannot contain dots: " + tableName);
+        }
+        this.catalogName = catalogName ==null ? null : catalogName.toLowerCase();
         this.schemaName = schemaName == null ? null : schemaName.toLowerCase();
         this.tableName = tableName.toLowerCase();
     }
