@@ -1,25 +1,9 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
-import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.BranchPool;
 
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -35,7 +19,6 @@ import static java.util.Comparator.comparingInt;
  * nodes. From each such instruction there is an edge to each possible
  * instruction the control flow can reach immediately after that instruction.
  *
- * @author Andre Mis
  */
 public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
 
@@ -86,16 +69,6 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
                 .orElse(null);
     }
 
-    // @Override
-    // public BytecodeInstruction getBranch(int branchId) {
-    // for (BytecodeInstruction v : vertexSet()) {
-    // if (v.isBranch() && v.getControlDependentBranchId() == branchId) {
-    // return v;
-    // }
-    // }
-    // return null;
-    // }
-
     /**
      * <p>
      * addEdge
@@ -112,7 +85,7 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
         SimpleLogger.debug("Adding edge to RawCFG of " + className + "." + methodName + ": " + this.vertexCount());
 
         if (BranchPool.getInstance(classLoader).isKnownAsBranch(src) && src.isBranch()) {
-            return addBranchEdge(src, target, isExceptionEdge);
+                return addBranchEdge(src, target, isExceptionEdge);
         }
 
         return addUnlabeledEdge(src, target, isExceptionEdge);
@@ -275,6 +248,36 @@ public class RawControlFlowGraph extends ControlFlowGraph<BytecodeInstruction> {
 
         return r;
 
+    }
+
+    /**
+     * <p>
+     * determineBranches
+     * </p>
+     *
+     * @return Set containing all nodes with out degree > 1
+     */
+    public Set<BytecodeInstruction> determineBranches() {
+        Set<BytecodeInstruction> r = new HashSet<>();
+        for (BytecodeInstruction instruction : vertexSet())
+            if (outDegreeOf(instruction) > 1)
+                r.add(instruction);
+        return r;
+    }
+
+    /**
+     * <p>
+     * determineJoins
+     * </p>
+     *
+     * @return Set containing all nodes with in degree > 1
+     */
+    public Set<BytecodeInstruction> determineJoins() {
+        Set<BytecodeInstruction> r = new HashSet<>();
+        for (BytecodeInstruction instruction : vertexSet())
+            if (inDegreeOf(instruction) > 1)
+                r.add(instruction);
+        return r;
     }
 
     /**

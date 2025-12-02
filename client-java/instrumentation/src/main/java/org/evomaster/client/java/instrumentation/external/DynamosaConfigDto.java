@@ -6,5 +6,3 @@ public class DynamosaConfigDto implements Serializable {
     public Boolean enableGraphs;
     public Boolean writeCfg;
 }
-
-

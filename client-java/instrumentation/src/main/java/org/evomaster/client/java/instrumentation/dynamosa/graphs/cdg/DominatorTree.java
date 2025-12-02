@@ -1,25 +1,10 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cdg;
 
-import org.evomaster.client.java.instrumentation.dynamosa.graphs.EvoSuiteGraph;
+import org.evomaster.client.java.instrumentation.dynamosa.graphs.EvoMasterGraph;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ControlFlowGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -52,9 +37,8 @@ import java.util.Set;
  * Dependence Graph" RON CYTRON, JEANNE FERRANTE, BARRY K. ROSEN, and MARK N.
  * WEGMAN IBM Research Division and F. KENNETH ZADECK Brown University 1991
  *
- * @author Andre Mis
  */
-public class DominatorTree<V> extends EvoSuiteGraph<DominatorNode<V>, DefaultEdge> {
+public class DominatorTree<V> extends EvoMasterGraph<DominatorNode<V>, DefaultEdge> {
 
     private int nodeCount = 0;
     private final ControlFlowGraph<V> cfg;

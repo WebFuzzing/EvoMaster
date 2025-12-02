@@ -1,28 +1,18 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
-package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
+package org.evomaster.client.java.instrumentation.dynamosa.visitor;
+
+import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.CFGGenerator;
 
 import org.evomaster.client.java.instrumentation.AnnotatedMethodNode;
 import org.objectweb.asm.*;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
+import org.objectweb.asm.tree.analysis.SourceInterpreter;
+import org.objectweb.asm.tree.analysis.SourceValue;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.Arrays;
@@ -30,15 +20,14 @@ import java.util.List;
 
 /**
  * Create a minimized control flow graph for the method and store it. In
- * addition, this adapter also adds instrumentation for branch distance
+ * addition, this visitor also adds instrumentation for branch distance
  * measurement
  * <p>
  * defUse, concurrency and LCSAJs instrumentation is also added (if the
  * properties are set).
  *
- * @author Gordon Fraser
  */
-public class CFGMethodAdapter extends MethodVisitor {
+public class CFGMethodVisitor extends MethodVisitor {
 
     /**
      * Methods to skip during CFG analysis.
@@ -61,7 +50,7 @@ public class CFGMethodAdapter extends MethodVisitor {
 
     /**
      * <p>
-     * Constructor for CFGMethodAdapter.
+     * Constructor for CFGMethodVisitor.
      * </p>
      *
      * @param className  a {@link java.lang.String} object.
@@ -72,7 +61,7 @@ public class CFGMethodAdapter extends MethodVisitor {
      * @param exceptions an array of {@link java.lang.String} objects.
      * @param mv         a {@link org.objectweb.asm.MethodVisitor} object.
      */
-    public CFGMethodAdapter(ClassLoader classLoader, String className, int access,
+    public CFGMethodVisitor(ClassLoader classLoader, String className, int access,
                             String name, String desc, String signature, String[] exceptions,
                             MethodVisitor mv) {
 
@@ -105,20 +94,32 @@ public class CFGMethodAdapter extends MethodVisitor {
             return;
         }
         SimpleLogger.info("Analyzing method " + methodName + " in class " + className);
-        BytecodeAnalyzer bytecodeAnalyzer = new BytecodeAnalyzer();
+        CFGGenerator cfgGenerator = new CFGGenerator(classLoader, className, methodName, mn);
         SimpleLogger.info("Generating CFG for method " + methodName);
         try {
-            bytecodeAnalyzer.analyze(classLoader, className, methodName, mn);
+            Analyzer<SourceValue> analyzer = new Analyzer<SourceValue>(new SourceInterpreter()) {
+                @Override
+                protected void newControlFlowEdge(int src, int dst) {
+                    cfgGenerator.registerControlFlowEdge(src, dst, getFrames(), false);
+                }
+
+                @Override
+                protected boolean newControlFlowExceptionEdge(int src, int dst) {
+                    cfgGenerator.registerControlFlowEdge(src, dst, getFrames(), true);
+                    return true;
+                }
+            };
+            analyzer.analyze(className, mn);
             SimpleLogger.debug("Method graph for "
                     + className
                     + "."
                     + methodName
                     + " contains "
-                    + bytecodeAnalyzer.retrieveCFGGenerator().getRawGraph().vertexSet().size()
-                    + " nodes for " + bytecodeAnalyzer.getFrames().length
+                    + cfgGenerator.getRawGraph().vertexSet().size()
+                    + " nodes for " + analyzer.getFrames().length
                     + " instructions");
             // compute Raw and ActualCFG and put both into GraphPool
-            bytecodeAnalyzer.retrieveCFGGenerator().registerCFGs();
+            cfgGenerator.registerCFGs();
             SimpleLogger.info("Created CFG for method " + methodName);
         } catch (AnalyzerException e) {
             SimpleLogger.error("Analyzer exception while analyzing " + className + "."

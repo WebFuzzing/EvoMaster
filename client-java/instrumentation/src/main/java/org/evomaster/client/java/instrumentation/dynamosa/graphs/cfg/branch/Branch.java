@@ -1,26 +1,10 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch;
 
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction;
-import org.objectweb.asm.tree.LabelNode;
 
 import java.io.Serializable;
 
@@ -28,58 +12,35 @@ import java.io.Serializable;
  * An object of this class corresponds to a Branch inside the class under test.
  *
  * <p>
- * Branches are created by the {@code CFGMethodAdapter} via the {@code BranchPool}. Each Branch
+ * Branches are created by the {@code CFGMethodVisitor} via the {@code BranchPool}. Each Branch
  * holds its corresponding {@code BytecodeInstruction} from the {@code RawControlFlowGraph} and
  * is associated with a unique {@code actualBranchId}.
  *
  * <p>
  * A Branch can either come from a jump instruction, as defined in
- * {@code BytecodeInstruction.isBranch()} - which will be called normal branches - or it
- * can be associated with a case: of a switch statement as defined in
- * {@code BytecodeInstruction.isSwitch()} - which will be called switch case branches.
+ * {@code BytecodeInstruction.isBranch()}.
  * Only {@code BytecodeInstructions} satisfying {@code BytecodeInstruction.isActualbranch()} are
  * expected to be associated with a {@code Branch} object.
  *
- * <p>
- * For SWITCH statements each case <key>: block corresponds to a {@code Branch} that can
- * be created by constructing a {@code Branch} with the SWITCH statement and the <key>
- * as the targetCaseValue. The default: case of switch statement can also be
- * modeled this way - it has the {@code targetCaseValue} set to {@code null}.
- *
- * @author Andre Mis
  */
-public class Branch implements Serializable, Comparable<Branch> {
+public class Branch implements Serializable {
 
     private static final long serialVersionUID = -4732587925060748263L;
 
     private final int actualBranchId;
 
-    private boolean isSwitch = false;
-
-    // for switch branches this value indicates to which case of the switch this
-    // branch belongs. if this value is null and this is in fact a switch this
-    // means this branch is the default: case of that switch
-    private Integer targetCaseValue = null;
-
     private final BytecodeInstruction instruction;
-
-    /**
-     * Keep track of branches that were introduced as part of TT
-     */
-    private boolean isInstrumented = false;
 
     /**
      * Canonical identifiers matching the descriptive ids used in {@code ObjectiveNaming}.
      */
     private String thenObjectiveId;
     private String elseObjectiveId;
-    private Integer branchOrdinalInLine;
 
     /**
-     * Constructor for usual jump instruction Branches, that are not SWITCH
-     * instructions.
+     * Constructor for usual jump instruction Branches.
      *
-     * @param branchInstruction a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
+     * @param branchInstruction a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction} object.
      * @param actualBranchId    a int.
      */
     public Branch(BytecodeInstruction branchInstruction, int actualBranchId) {
@@ -88,34 +49,6 @@ public class Branch implements Serializable, Comparable<Branch> {
 
         this.instruction = branchInstruction;
         this.actualBranchId = actualBranchId;
-
-        if (this.actualBranchId < 1)
-            throw new IllegalStateException(
-                    "expect branch to have actualBranchId set to positive value");
-    }
-
-    /**
-     * Constructor for switch case branches
-     *
-     * @param switchInstruction a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
-     * @param targetCaseValue   a {@link java.lang.Integer} object.
-     * @param targetLabel       a {@link org.objectweb.asm.tree.LabelNode} object.
-     * @param actualBranchId    a int.
-     */
-    public Branch(BytecodeInstruction switchInstruction, Integer targetCaseValue,
-                  LabelNode targetLabel, int actualBranchId) {
-        if (!switchInstruction.isSwitch())
-            throw new IllegalArgumentException("switch instruction expected");
-        if (targetLabel == null)
-            throw new IllegalArgumentException(
-                    "expect targetLabel to not be null for case branches");
-
-        this.instruction = switchInstruction;
-        this.actualBranchId = actualBranchId;
-
-        // this.targetLabel = targetLabel;
-        this.targetCaseValue = targetCaseValue;
-        this.isSwitch = true;
 
         if (this.actualBranchId < 1)
             throw new IllegalStateException(
@@ -134,48 +67,11 @@ public class Branch implements Serializable, Comparable<Branch> {
     }
 
     /**
-     * Tells whether this branch corresponds to the {@code default} case within a Java
-     * {@code switch} statement.
-     *
-     * @return {@code true} if this branch represents the {@code default} case
-     */
-    public boolean isDefaultCase() {
-        return isSwitch && targetCaseValue == null;
-    }
-
-    /**
-     * Tells whether this branch corresponds to a statement labeled with {@code case} within a Java
-     * {@code switch} statement.
-     *
-     * @return {@code true} if the statement represented by this branch is labeled with {@code case}
-     * @see Branch#isDefaultCase()
-     */
-    public boolean isActualCase() {
-        return isSwitch && targetCaseValue != null;
-    }
-
-    /**
-     * <p>
-     * Getter for the field <code>targetCaseValue</code>.
-     * </p>
-     *
-     * @return a {@link java.lang.Integer} object.
-     */
-    public Integer getTargetCaseValue() {
-        // in order to avoid confusion when targetCaseValue is null
-        if (!isSwitch)
-            throw new IllegalStateException(
-                    "method only allowed to be called on non-switch-Branches");
-
-        return targetCaseValue; // null for default case
-    }
-
-    /**
      * <p>
      * Getter for the field <code>instruction</code>.
      * </p>
      *
-     * @return a {@link org.evosuite.graphs.cfg.BytecodeInstruction} object.
+     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction} object.
      */
     public BytecodeInstruction getInstruction() {
         return instruction;
@@ -204,17 +100,6 @@ public class Branch implements Serializable, Comparable<Branch> {
     }
 
     /**
-     * <p>
-     * isSwitchCaseBranch
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean isSwitchCaseBranch() {
-        return isSwitch;
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -223,9 +108,6 @@ public class Branch implements Serializable, Comparable<Branch> {
         int result = 1;
         result = prime * result + actualBranchId;
         result = prime * result + ((instruction == null) ? 0 : instruction.hashCode());
-        result = prime * result + (isSwitch ? 1231 : 1237);
-        result = prime * result
-                + ((targetCaseValue == null) ? 0 : targetCaseValue.hashCode());
         return result;
     }
 
@@ -248,19 +130,7 @@ public class Branch implements Serializable, Comparable<Branch> {
                 return false;
         } else if (!instruction.equals(other.instruction))
             return false;
-        if (isSwitch != other.isSwitch)
-            return false;
-        if (targetCaseValue == null) {
-            return other.targetCaseValue == null;
-        } else return targetCaseValue.equals(other.targetCaseValue);
-    }
-
-    /* (non-Javadoc)
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
-    @Override
-    public int compareTo(Branch other) {
-        return instruction.getLineNumber() - other.getInstruction().getLineNumber();
+        return true;
     }
 
     /**
@@ -271,55 +141,25 @@ public class Branch implements Serializable, Comparable<Branch> {
         String r = "I" + instruction.getInstructionId();
         r += " Branch " + getActualBranchId();
         r += " " + instruction.getInstructionType();
-        if (isSwitch) {
             r += " L" + instruction.getLineNumber();
-            if (targetCaseValue != null)
-                r += " Case " + targetCaseValue;
-            else
-                r += " Default-Case";
-        } else
-            r += " L" + instruction.getLineNumber();
+
+        if (thenObjectiveId != null || elseObjectiveId != null) {
+             r += " [" + (thenObjectiveId == null ? "null" : thenObjectiveId) +
+                  ", " + (elseObjectiveId == null ? "null" : elseObjectiveId) + "]";
+        }
 
         return r;
     }
 
     /**
-     * <p>
-     * isInstrumented
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean isInstrumented() {
-        return isInstrumented;
-    }
-
-    /**
-     * <p>
-     * setInstrumented
-     * </p>
-     *
-     * @param isInstrumented a boolean.
-     */
-    public void setInstrumented(boolean isInstrumented) {
-        this.isInstrumented = isInstrumented;
-    }
-
-    /**
      * Store the descriptive identifiers associated with this branch.
      *
-     * @param ordinalInLine index of this branch on its source line (0-based)
-     * @param thenId        descriptive id for the "true" outcome
-     * @param elseId        descriptive id for the "false" outcome
+     * @param thenId descriptive id for the "true" outcome
+     * @param elseId descriptive id for the "false" outcome
      */
-    public void setObjectiveIds(int ordinalInLine, String thenId, String elseId) {
-        this.branchOrdinalInLine = ordinalInLine;
+    public void setObjectiveIds(String thenId, String elseId) {
         this.thenObjectiveId = thenId;
         this.elseObjectiveId = elseId;
-    }
-
-    public Integer getBranchOrdinalInLine() {
-        return branchOrdinalInLine;
     }
 
     public String getThenObjectiveId() {
@@ -330,13 +170,4 @@ public class Branch implements Serializable, Comparable<Branch> {
         return elseObjectiveId;
     }
 
-    private boolean ignoreFalse = false;
-
-    public boolean ignoreFalseBranch() {
-        return ignoreFalse;
-    }
-
-    public void setIgnoreFalse(boolean value) {
-        ignoreFalse = value;
-    }
 }

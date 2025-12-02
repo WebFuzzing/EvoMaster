@@ -23,5 +23,6 @@ public enum Command implements Serializable {
     BOOT_TIME_INFO,
     EXTRACT_JVM_DTO,
     BOOTING_SUT,
-    SET_DYNAMOSA_CONFIG
+    SET_DYNAMOSA_CONFIG,
+    DYNAMOSA_CDG_SNAPSHOT
 }

@@ -4,13 +4,19 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.SearchAlgorithm
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.logging.LoggingUtil
 import java.util.ArrayList
+import com.google.inject.Inject
+import org.evomaster.core.remote.service.RemoteController
 
 
 
 /**
- * Implementation of DYMOSA
+ * Implementation of DYNAMOSA from:
+ * Automated Test Case Generation as a Many-Objective Optimisation Problem with Dynamic Selection of the Targets
+ * This algorithm is a variant of the MOSA algorithm that uses a dynamic, reduced focus set of targets per generation.
+ * The dynamic focus set of targets is computed using the branch dependency graph.
  */
 class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
@@ -22,6 +28,16 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     private var population: MutableList<Data> = mutableListOf()
 
+    // Dynamic subset of objectives to optimize this generation
+    private var focusTargets: MutableSet<Int> = mutableSetOf()
+    private lateinit var goalsManager: MulticriteriaManager
+    @Inject
+    lateinit var idMapper: IdMapper
+    @Inject
+    lateinit var remoteController: RemoteController
+
+    private val log = LoggingUtil.getInfoLogger()
+
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.DYNAMOSA
     }
@@ -30,16 +46,26 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         population.clear()
 
-        initPopulation()
-        sortPopulation()
+        goalsManager = MulticriteriaManager(archive, idMapper)
 
+        initPopulation()
+
+        val newCdgs = remoteController.getDynamosaControlDependenceGraphs()
+        if (newCdgs.isNotEmpty()) {
+            goalsManager.addControlDependenceGraphs(newCdgs)
+        }
+
+        sortPopulation()
     }
 
     override fun searchOnce() {
 
+        val newCdgs = remoteController.getDynamosaControlDependenceGraphs()
+        if (newCdgs.isNotEmpty()) {
+            goalsManager.addControlDependenceGraphs(newCdgs)
+        }
 
         val n = config.populationSize
-
 
             //new generation
 
@@ -61,20 +87,33 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             nextPop.add(Data(ie as EvaluatedIndividual))
 
             population.addAll(nextPop)
+
+            val moreCdgs = remoteController.getDynamosaControlDependenceGraphs()
+            if (moreCdgs.isNotEmpty()) {
+                goalsManager.addControlDependenceGraphs(moreCdgs)
+            }
+
             sortPopulation()
     }
 
 
     private fun sortPopulation() {
 
-        val notCovered = archive.notCoveredTargets()
+        // Use manager-computed uncovered goals from complete CFGs
+        val notCovered = goalsManager.getUncoveredGoals()
 
         if(notCovered.isEmpty()){
             //Trivial problem: everything covered in first population
             return
         }
 
-        val fronts = preferenceSorting(notCovered, population)
+        // DynaMOSA: use MultiCriteriaManager to get dynamic goals (branch roots among uncovered)
+        goalsManager.refreshGoals()
+        val dynamic = goalsManager.getCurrentGoals()
+        focusTargets.clear()
+        focusTargets.addAll(dynamic)
+
+        val fronts = preferenceSorting(focusTargets, population)
 
         var remain: Int = config.populationSize
         var index = 0
@@ -85,7 +124,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         while (front!=null && remain > 0 && remain >= front.size && front.isNotEmpty()) {
             // Assign crowding distance to individuals
-            subvectorDominance(notCovered, front)
+            subvectorDominance(focusTargets, front)
             // Add the individuals of this front
             for (d in front) {
                 population.add(d)
@@ -103,7 +142,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         // Remain is less than front(index).size, insert only the best one
         if (remain > 0 && front!=null && front.isNotEmpty()) {
-            subvectorDominance(notCovered, front)
+            subvectorDominance(focusTargets, front)
             var front2 = front.sortedWith(compareBy<Data> { - it.crowdingDistance })
                      .toMutableList()
            for (k in 0..remain - 1) {
@@ -242,7 +281,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         else if (dominatesX)
             return -1
 
-        else (dominatesY)
+        else // (dominatesY)
             return +1
     }
 
@@ -306,3 +345,5 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 ?.also { archive.addIfNeeded(it) }
     }
 }
+
+

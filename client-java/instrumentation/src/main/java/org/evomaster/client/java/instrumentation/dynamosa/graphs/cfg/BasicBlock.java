@@ -1,32 +1,14 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.GraphPool;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cdg.ControlDependenceGraph;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This class is used to represent basic blocks in the control flow graph.
@@ -52,8 +34,7 @@ import java.util.stream.Collectors;
  * Dependence Graph" RON CYTRON, JEANNE FERRANTE, BARRY K. ROSEN, and MARK N.
  * WEGMAN IBM Research Division and F. KENNETH ZADECK Brown University 1991
  *
- * @author Andre Mis
- * @see cfg.ActualControlFlowGraph
+ * @see org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ActualControlFlowGraph
  */
 public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
 
@@ -66,20 +47,11 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
     protected String className;
     protected String methodName;
 
-    // experiment: since finding the control dependent branches in the CDG might
-    // take a little to long, we might want to remember them
     private Set<ControlDependency> controlDependencies;
-    private Set<Integer> controlDependentBranchIDs;
 
     protected boolean isAuxiliaryBlock = false;
 
     private final List<BytecodeInstruction> instructions = new ArrayList<>();
-
-    // DONE reference each BytecodeInstruction's BasicBlock at the instruction
-    // DONE determine ControlDependentBranches once for each BasicBlock, then
-    // ask BasicBloc, whenever instruction is asked
-    // TODO remember distance to each control dependent Branch in order to speed
-    // up ControlFlowDistance calculation even more
 
     /**
      * <p>
@@ -101,8 +73,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
 
         setId();
         setInstructions(blockNodes);
-
-        checkSanity();
     }
 
     /**
@@ -138,29 +108,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
                     "expect GraphPool to know CDG for every method for which an instruction is known");
 
         return myCDG;
-    }
-
-    /**
-     * Returns all branchIds of Branches this instruction is directly control
-     * dependent on as determined by the ControlDependenceGraph for this
-     * instruction's method.
-     * <p>
-     * If this instruction is control dependent on the root branch the id -1
-     * will be contained in this set
-     *
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<Integer> getControlDependentBranchIds() {
-
-        ControlDependenceGraph myDependence = getCDG();
-
-        if (controlDependentBranchIDs == null) {
-            controlDependentBranchIDs = myDependence.getControlDependentBranchIds(this);
-            //be sure we can iterate over it deterministically
-            controlDependentBranchIDs =
-                    controlDependentBranchIDs.stream().sorted().collect(Collectors.toCollection(LinkedHashSet::new));
-        }
-        return controlDependentBranchIDs;
     }
 
     /**
@@ -225,17 +172,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
             throw new IllegalArgumentException(
                     "a basic block can not contain the same element twice");
 
-        // not sure if this holds:
-        // .. apparently it doesn't. at least check
-        // fails for java2.util2.Pattern TODO
-
-        // BytecodeInstruction previousInstruction = getLastInstruction();
-        // if (previousInstruction != null
-        // && instruction.getInstructionId() < previousInstruction
-        // .getInstructionId())
-        // throw new IllegalStateException(
-        // "expect instructions in a basic block to be ordered by their instructionId");
-
         instruction.setBasicBlock(this);
 
         return instructions.add(instruction);
@@ -261,22 +197,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
             throw new IllegalArgumentException("null given");
 
         return instructions.contains(instruction);
-    }
-
-    /**
-     * <p>
-     * constainsInstruction
-     * </p>
-     *
-     * @param insnNode a {@link org.objectweb.asm.tree.AbstractInsnNode} object.
-     * @return a boolean.
-     */
-    public boolean constainsInstruction(AbstractInsnNode insnNode) {
-        for (BytecodeInstruction instruction : instructions) {
-            if (instruction.getASMNode().equals(insnNode))
-                return true;
-        }
-        return false;
     }
 
     /**
@@ -372,26 +292,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
         return methodName;
     }
 
-    /**
-     * <p>
-     * explain
-     * </p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String explain() {
-        StringBuilder r = new StringBuilder();
-        r.append(getName() + ":\n");
-
-        int i = 0;
-        for (BytecodeInstruction instruction : instructions) {
-            i++;
-            r.append("\t" + i + ")\t" + instruction.toString() + "\n");
-        }
-
-        return r.toString();
-    }
-
     // inherited from Object
 
     /**
@@ -464,32 +364,6 @@ public class BasicBlock implements Serializable, Iterable<BytecodeInstruction> {
         if (isEntryBlock() != other.isEntryBlock())
             return false;
         return isExitBlock() == other.isExitBlock();
-    }
-
-    /**
-     * <p>
-     * checkSanity
-     * </p>
-     */
-    public void checkSanity() {
-
-        SimpleLogger.debug("checking sanity of " + this);
-
-        // TODO
-
-        // not true, there are branches that don't really jump
-        // for example if you have no statement in a then-part:
-        // if (exp) { ; }
-        // you will not have a second outgoing edge for that if
-
-        // for(BytecodeInstruction instruction : instructions) {
-        // if (!instruction.equals(getLastInstruction())
-        // && instruction.isActualBranch())
-        // throw new IllegalStateException(
-        // "expect actual branches to always end a basic block: "+instruction.toString()+" \n"+explain());
-        // }
-
-        // TODO handle specialBlocks
     }
 
     /**

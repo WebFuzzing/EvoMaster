@@ -1,19 +1,23 @@
-package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
+/*
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
+ */
+package org.evomaster.client.java.instrumentation.dynamosa.visitor;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 /**
- * Minimal class adapter that wraps each method with CFGMethodAdapter to build graphs,
+ * Minimal class visitor that wraps each method with CFGMethodVisitor to build graphs,
  * while delegating to the downstream visitor chain unchanged.
  */
-public class CFGClassAdapter extends ClassVisitor {
+public class CFGClassVisitor extends ClassVisitor {
 
     private final ClassLoader classLoader;
     private String classNameWithDots;
 
-    public CFGClassAdapter(ClassLoader classLoader, ClassVisitor cv) {
+    public CFGClassVisitor(ClassLoader classLoader, ClassVisitor cv) {
         super(Opcodes.ASM9, cv);
         this.classLoader = classLoader;
     }
@@ -27,7 +31,7 @@ public class CFGClassAdapter extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String descriptor, String signature, String[] exceptions) {
         MethodVisitor downstream = super.visitMethod(access, name, descriptor, signature, exceptions);
-        return new CFGMethodAdapter(
+        return new CFGMethodVisitor(
                 classLoader,
                 classNameWithDots,
                 access,

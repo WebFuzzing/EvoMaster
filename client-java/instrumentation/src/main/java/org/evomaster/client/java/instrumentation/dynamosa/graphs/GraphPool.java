@@ -1,38 +1,36 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs;
 
 import org.evomaster.client.java.instrumentation.ClassesToExclude;
-import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cdg.ControlDependenceGraph;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ActualControlFlowGraph;
+import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction;
+import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ControlDependency;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.RawControlFlowGraph;
-import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
+import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch;
+import org.evomaster.client.java.instrumentation.external.DynamosaControlDependenceSnapshot;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto.BranchObjectiveDto;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto.DependencyEdgeDto;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Gives access to all Graphs computed during CUT analysis such as CFGs created
- * by the CFGGenerator and BytcodeAnalyzer in the CFGMethodAdapter
+ * by the CFGGenerator and BytcodeAnalyzer in the CFGMethodVisitor
  * <p>
  * For each CUT and each of their methods a Raw- and an ActualControlFlowGraph
  * instance are stored within this pool. Additionally a ControlDependenceGraph
@@ -40,11 +38,12 @@ import java.util.Map;
  * <p>
  * This pool stores per-method CFGs and CDGs computed during analysis.
  *
- * @author Andre Mis
  */
 public class GraphPool {
 
     private static final Map<ClassLoader, GraphPool> instanceMap = new HashMap<>();
+    private static final List<ControlDependenceGraphDto> exportedCdgs = new ArrayList<>();
+    private static final Object exportLock = new Object();
 
     private final ClassLoader classLoader;
 
@@ -122,24 +121,6 @@ public class GraphPool {
 
     /**
      * <p>
-     * Getter for the field <code>rawCFGs</code>.
-     * </p>
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return a {@link java.util.Map} object.
-     */
-    public Map<String, RawControlFlowGraph> getRawCFGs(String className) {
-        if (rawCFGs.get(className) == null) {
-            SimpleLogger.warn("Class unknown: " + className);
-            SimpleLogger.warn(rawCFGs.keySet().toString());
-            return null;
-        }
-
-        return rawCFGs.get(className);
-    }
-
-    /**
-     * <p>
      * getActualCFG
      * </p>
      *
@@ -170,6 +151,14 @@ public class GraphPool {
             return null;
 
         return controlDependencies.get(className).get(methodName);
+    }
+
+    public static DynamosaControlDependenceSnapshot exportSnapshotFromIndex(int fromIndex) {
+        synchronized (exportLock) {
+            int start = Math.max(0, Math.min(fromIndex, exportedCdgs.size()));
+            List<ControlDependenceGraphDto> slice = new ArrayList<>(exportedCdgs.subList(start, exportedCdgs.size()));
+            return new DynamosaControlDependenceSnapshot(slice, exportedCdgs.size());
+        }
     }
 
     // register graphs
@@ -223,7 +212,6 @@ public class GraphPool {
         }
         Map<String, ActualControlFlowGraph> methods = actualCFGs.get(className);
         SimpleLogger.debug("Added CFG for class " + className + " and method " + methodName);
-        cfg.finalise();
         methods.put(methodName, cfg);
 
         if (isWriteCfgEnabled())
@@ -257,6 +245,11 @@ public class GraphPool {
         cds.put(methodName, cd);
         if (isWriteCfgEnabled())
             cd.toDot();
+
+        ControlDependenceGraphDto dto = buildControlDependenceDto(className, methodName, cd);
+        if (dto != null) {
+            appendExportLog(dto);
+        }
     }
 
     /**
@@ -310,6 +303,141 @@ public class GraphPool {
 
     public static void clearAll() {
         instanceMap.clear();
+        synchronized (exportLock) {
+            exportedCdgs.clear();
+        }
+    }
+
+    public static void refreshAllCdgs() {
+        synchronized (exportLock) {
+            exportedCdgs.clear();
+        }
+        instanceMap.values().forEach(GraphPool::refreshCdgs);
+    }
+
+    private void refreshCdgs() {
+        for (String className : controlDependencies.keySet()) {
+            for (String methodName : controlDependencies.get(className).keySet()) {
+                ControlDependenceGraph cdg = controlDependencies.get(className).get(methodName);
+                ControlDependenceGraphDto dto = buildControlDependenceDto(className, methodName, cdg);
+                if (dto != null) {
+                    appendExportLog(dto);
+                }
+            }
+        }
+    }
+
+    private static void appendExportLog(ControlDependenceGraphDto dto) {
+        if (dto == null) {
+            return;
+        }
+        synchronized (exportLock) {
+            exportedCdgs.add(dto);
+        }
+    }
+
+    private ControlDependenceGraphDto buildControlDependenceDto(String className,
+                                                                String methodName,
+                                                                ControlDependenceGraph cdg) {
+        if (cdg == null) {
+            return null;
+        }
+        ActualControlFlowGraph cfg = getActualCFG(className, methodName);
+        if (cfg == null) {
+            SimpleLogger.warn("Cannot export CDG for " + className + "#" + methodName + " as ActualCFG is missing");
+            return null;
+        }
+
+        Map<Integer, BranchObjectiveDto> objectiveMap = new LinkedHashMap<>();
+        Set<Integer> rootObjectives = new LinkedHashSet<>();
+        Map<Integer, LinkedHashSet<Integer>> adjacency = new HashMap<>();
+
+        // Iterate over all branches in the ActualCFG.
+        for (BytecodeInstruction branchInstruction : cfg.getBranches()) {
+            // Branches are stored in the BranchPool as they are instrumented.
+            // Here we retrieve the Branch object from the BranchPool, by its BytecodeInstruction.
+            // Branch also stores the descriptive identifiers for the "true" and "false" outcomes.
+            Branch branch = branchInstruction.toBranch();
+            if (branch == null) {
+                continue;
+            }
+
+
+            List<Integer> branchObjectives = collectObjectiveIds(branch, objectiveMap);
+            if (branchObjectives.isEmpty()) {
+                continue;
+            }
+
+            Set<ControlDependency> dependencies = branchInstruction.getControlDependencies();
+            if (dependencies == null || dependencies.isEmpty()) {
+                rootObjectives.addAll(branchObjectives);
+                continue;
+            }
+
+            for (ControlDependency dependency : dependencies) {
+                Branch parent = dependency.getBranch();
+                if (parent == null) {
+                    continue;
+                }
+                Integer parentObjective = resolveParentObjectiveId(parent, dependency.getBranchExpressionValue(), objectiveMap);
+                if (parentObjective == null) {
+                    continue;
+                }
+
+                adjacency.computeIfAbsent(parentObjective, key -> new LinkedHashSet<>())
+                        .addAll(branchObjectives);
+            }
+        }
+
+        if (objectiveMap.isEmpty() && adjacency.isEmpty()) {
+            return null;
+        }
+
+        List<DependencyEdgeDto> edges = new ArrayList<>();
+        adjacency.forEach((parent, childrenIds) -> {
+            for (Integer child : childrenIds) {
+                edges.add(new DependencyEdgeDto(parent, child));
+            }
+        });
+
+        ControlDependenceGraphDto dto = new ControlDependenceGraphDto();
+        dto.setClassName(className);
+        dto.setMethodName(methodName);
+        dto.setObjectives(new ArrayList<>(objectiveMap.values()));
+        dto.setRootObjectiveIds(new ArrayList<>(rootObjectives));
+        dto.setEdges(edges);
+        return dto;
+    }
+
+    private List<Integer> collectObjectiveIds(Branch branch,
+                                              Map<Integer, BranchObjectiveDto> objectiveMap) {
+        List<Integer> ids = new ArrayList<>(2);
+        if (branch.getThenObjectiveId() != null) {
+            ids.add(registerObjective(branch.getThenObjectiveId(), objectiveMap));
+        }
+        if (branch.getElseObjectiveId() != null) {
+            ids.add(registerObjective(branch.getElseObjectiveId(), objectiveMap));
+        }
+        return ids;
+    }
+
+    private Integer resolveParentObjectiveId(Branch branch,
+                                             boolean branchExpressionValue,
+                                             Map<Integer, BranchObjectiveDto> objectiveMap) {
+        String descriptiveId = branchExpressionValue
+                ? branch.getThenObjectiveId()
+                : branch.getElseObjectiveId();
+        if (descriptiveId == null) {
+            return null;
+        }
+        return registerObjective(descriptiveId, objectiveMap);
+    }
+
+    private Integer registerObjective(String descriptiveId,
+                                      Map<Integer, BranchObjectiveDto> objectiveMap) {
+        int id = ObjectiveRecorder.getMappedId(descriptiveId);
+        objectiveMap.computeIfAbsent(id, key -> new BranchObjectiveDto(id, descriptiveId));
+        return id;
     }
 
 }

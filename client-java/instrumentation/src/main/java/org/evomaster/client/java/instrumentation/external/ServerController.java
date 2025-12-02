@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.external;
 
 import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -11,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -34,6 +36,7 @@ public class ServerController {
     private Socket socket;
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
+    private int dynamosaCdgIndex = 0;
 
     public synchronized int startServer() {
 
@@ -46,6 +49,7 @@ public class ServerController {
             throw new IllegalStateException(e);
         }
 
+        dynamosaCdgIndex = 0;
         return server.getLocalPort();
     }
 
@@ -58,6 +62,7 @@ public class ServerController {
                 socket = null;
                 in = null;
                 out = null;
+                dynamosaCdgIndex = 0;
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -293,6 +298,34 @@ public class ServerController {
         }
 
         return (List<AdditionalInfo>) response;
+    }
+
+    public synchronized List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
+
+        boolean sent = sendCommand(Command.DYNAMOSA_CDG_SNAPSHOT);
+        if (!sent) {
+            SimpleLogger.error("Failed to send Dynamosa CDG request");
+            return Collections.emptyList();
+        }
+
+        if (!sendObject(dynamosaCdgIndex)) {
+            SimpleLogger.error("Failed to send Dynamosa CDG index");
+            return Collections.emptyList();
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read Dynamosa CDG response");
+            return Collections.emptyList();
+        }
+
+        if (!(response instanceof DynamosaControlDependenceSnapshot)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, DynamosaControlDependenceSnapshot.class.getSimpleName()));
+        }
+
+        DynamosaControlDependenceSnapshot snapshot = (DynamosaControlDependenceSnapshot) response;
+        dynamosaCdgIndex = snapshot.getNextIndex();
+        return snapshot.getGraphs();
     }
 
     public synchronized BootTimeObjectiveInfo handleBootTimeObjectiveInfo() {

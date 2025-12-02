@@ -5,12 +5,14 @@ import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
+import org.evomaster.client.java.instrumentation.external.DynamosaControlDependenceSnapshot;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -112,6 +114,9 @@ public class AgentController {
                         break;
                     case EXTRACT_JVM_DTO:
                         handleExtractingSpecifiedDto();
+                        break;
+                    case DYNAMOSA_CDG_SNAPSHOT:
+                        handleDynamosaControlDependenceSnapshot();
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
@@ -243,6 +248,24 @@ public class AgentController {
             InstrumentationController.extractSpecifiedDto(dtoNames);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling extracting specified dto: "+e.getMessage());
+        }
+    }
+
+    private static void handleDynamosaControlDependenceSnapshot(){
+        try {
+            Object msg = in.readObject();
+            int fromIndex = 0;
+            if (msg instanceof Integer) {
+                fromIndex = (Integer) msg;
+            }
+            DynamosaControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(fromIndex);
+            sendObject(snapshot);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling Dynamosa CDG snapshot: "+e.getMessage());
+            try {
+                sendObject(new DynamosaControlDependenceSnapshot(Collections.emptyList(), 0));
+            } catch (IOException ignored) {
+            }
         }
     }
 

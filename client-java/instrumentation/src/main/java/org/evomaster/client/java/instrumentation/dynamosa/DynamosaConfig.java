@@ -1,3 +1,7 @@
+/*
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
+ */
 package org.evomaster.client.java.instrumentation.dynamosa;
 
 /**

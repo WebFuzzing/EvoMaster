@@ -8,7 +8,6 @@ import org.evomaster.core.logging.LoggingUtil
 import java.util.ArrayList
 
 
-
 /**
  * Implementation of MOSA from
  * "Automated Test Case Generation as a Many-Objective Optimisation Problem with Dynamic
@@ -244,7 +243,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         else if (dominatesX)
             return -1
 
-        else (dominatesY)
+        else // (dominatesY)
             return +1
     }
 

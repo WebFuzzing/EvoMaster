@@ -8,7 +8,7 @@ import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
-import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.CFGClassAdapter;
+import org.evomaster.client.java.instrumentation.dynamosa.visitor.CFGClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -67,16 +67,15 @@ public class Instrumentator {
         ClassNode cn = new ClassNode();
         reader.accept(cn, readFlags);
 
-        if(canInstrumentForCoverage(className)){
+        boolean canCollectCoverage = canInstrumentForCoverage(className);
+        if(canCollectCoverage){
+            if (DynamosaConfig.isGraphsEnabled()){
+                cv = new CFGClassVisitor(classLoader, cv);
+            }
             cv = new CoverageClassVisitor(cv, className);
         } else {
             cv = new ThirdPartyClassVisitor(cv, className);
-        }
-
-        boolean dynamosaGraphs = DynamosaConfig.isGraphsEnabled();
-        if (dynamosaGraphs) {
-            cv = new CFGClassAdapter(classLoader, cv);
-        }
+        }   
 
         try {
             cn.accept(cv);

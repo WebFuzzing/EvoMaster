@@ -1,21 +1,6 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
@@ -50,7 +35,6 @@ import java.util.List;
  * It should contain a Vertex for each BytecodeInstruction inside the specified
  * method and an edge for every possible transition between these instructions
  *
- * @author Andre Mis
  */
 public class CFGGenerator {
 
@@ -145,19 +129,14 @@ public class CFGGenerator {
      *                        objects.
      * @param isExceptionEdge a boolean.
      */
-    public void registerControlFlowEdge(int src, int dst, Frame[] frames,
+    public void registerControlFlowEdge(int src, int dst, Frame<?>[] frames,
                                         boolean isExceptionEdge) {
         if (!nodeRegistered)
             throw new IllegalStateException(
                     "CFGGenrator.registerControlFlowEdge() cannot be called unless registerMethodNode() was called first");
         if (frames == null)
             throw new IllegalArgumentException("null given");
-        CFGFrame srcFrame = (CFGFrame) frames[src];
-        Frame dstFrame = frames[dst];
-
-        if (srcFrame == null)
-            throw new IllegalArgumentException(
-                    "expect given frames to know srcFrame for " + src);
+        Frame<?> dstFrame = frames[dst];
 
         if (dstFrame == null) {
             // documentation of getFrames() tells us the following:
@@ -175,8 +154,6 @@ public class CFGGenerator {
             return;
         }
 
-        srcFrame.successors.put(dst, (CFGFrame) dstFrame);
-
         AbstractInsnNode srcNode = currentMethod.instructions.get(src);
         AbstractInsnNode dstNode = currentMethod.instructions.get(dst);
 
@@ -189,8 +166,6 @@ public class CFGGenerator {
                 methodName,
                 dst,
                 dstNode);
-
-        srcInstruction.setCFGFrame(srcFrame);
 
         if (dstInstruction == null)
             throw new IllegalStateException(
@@ -209,9 +184,6 @@ public class CFGGenerator {
      * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ActualControlFlowGraph} object.
      */
     public ActualControlFlowGraph computeActualCFG() {
-        BytecodeInstructionPool.getInstance(classLoader).logInstructionsIn(className,
-                methodName);
-
         return new ActualControlFlowGraph(rawGraph);
     }
 
@@ -224,7 +196,7 @@ public class CFGGenerator {
      *
      * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.RawControlFlowGraph} object.
      */
-    protected RawControlFlowGraph getRawGraph() {
+    public RawControlFlowGraph getRawGraph() {
         return rawGraph;
     }
 

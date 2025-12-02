@@ -1,21 +1,6 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
@@ -26,27 +11,21 @@ import org.evomaster.client.java.instrumentation.dynamosa.graphs.GraphPool;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cdg.ControlDependenceGraph;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
-import org.objectweb.asm.tree.analysis.SourceValue;
+import org.objectweb.asm.util.Printer;
 
 import java.io.Serializable;
 import java.util.Set;
 
 /**
  * Internal representation of a BytecodeInstruction
- * <p>
- * Extends ASMWrapper which serves as an interface to the ASM library.
- * <p>
- * Known super classes are DefUse and Branch which yield specific functionality
- * needed to achieve theirs respective coverage criteria
- * <p>
- * Old: Node of the control flow graph
- *
- * @author Gordon Fraser, Andre Mis
  */
-public class BytecodeInstruction extends ASMWrapper implements Serializable,
+public class BytecodeInstruction implements Serializable,
         Comparable<BytecodeInstruction> {
 
     private static final long serialVersionUID = 3630449183355518857L;
+
+    // from ASM library
+    protected AbstractInsnNode asmNode;
 
     // identification of a byteCode instruction inside EvoSuite
     protected ClassLoader classLoader;
@@ -102,7 +81,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
 
         this(wrap.classLoader, wrap.className, wrap.methodName, wrap.instructionId,
                 wrap.bytecodeOffset, wrap.asmNode, wrap.lineNumber, wrap.basicBlock);
-        this.frame = wrap.frame;
     }
 
     /**
@@ -166,23 +144,11 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
         this.className = className;
     }
 
-    /**
-     * <p>
-     * setCFGFrame
-     * </p>
-     *
-     * @param frame a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.CFGFrame} object.
-     */
-    public void setCFGFrame(CFGFrame frame) {
-        this.frame = frame;
-    }
-
     // --- Field Management ---
 
     /**
      * {@inheritDoc}
      */
-    @Override
     public int getInstructionId() {
         return instructionId;
     }
@@ -201,7 +167,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
     /**
      * {@inheritDoc}
      */
-    @Override
     public String getMethodName() {
         return methodName;
     }
@@ -213,20 +178,8 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
      *
      * @return a {@link java.lang.String} object.
      */
-    @Override
     public String getClassName() {
         return className;
-    }
-
-    /**
-     * <p>
-     * getName
-     * </p>
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    public String getName() {
-        return "BytecodeInstruction " + instructionId + " in " + methodName;
     }
 
     /**
@@ -283,7 +236,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
     /**
      * {@inheritDoc}
      */
-    @Override
     public int getLineNumber() {
 
         if (lineNumber == -1 && isLineNumber())
@@ -308,7 +260,7 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
             return;
 
         if (isLineNumber()) {
-            int asmLine = super.getLineNumber();
+            int asmLine = getASMLineNumber();
             // sanity check
             if (lineNumber != -1 && asmLine != lineNumber)
                 throw new IllegalStateException(
@@ -347,7 +299,7 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
      */
     private void retrieveLineNumber() {
         if (isLineNumber()) {
-            int asmLine = super.getLineNumber();
+            int asmLine = getASMLineNumber();
             // sanity check
             if (this.lineNumber != -1 && asmLine != this.lineNumber)
                 throw new IllegalStateException(
@@ -436,20 +388,7 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
         return myBlock.getControlDependencies();
     }
 
-    /**
-     * This method returns a random Branch among all Branches this instruction
-     * is control dependent on
-     * <p>
-     * If this instruction is only dependent on the root branch, this method
-     * returns null
-     * <p>
-     * Since EvoSuite was previously unable to detect multiple control
-     * dependencies for one instruction this method serves as a backwards
-     * compatibility bridge
-     *
-     * @return a {@link org.evomaster.client.java.coverage.branch.Branch} object.
-     */
-    public Branch getControlDependentBranch() {
+        public Branch getControlDependentBranch() {
 
         Set<ControlDependency> controlDependentBranches = getControlDependencies();
 
@@ -457,216 +396,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
             return cd.getBranch();
 
         return null; // root branch
-    }
-
-    /**
-     * Returns all branchIds of Branches this instruction is directly control
-     * dependent on as determined by the ControlDependenceGraph for this
-     * instruction's method.
-     * <p>
-     * If this instruction is control dependent on the root branch the id -1
-     * will be contained in this set
-     *
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<Integer> getControlDependentBranchIds() {
-
-        BasicBlock myBlock = getBasicBlock();
-
-        return myBlock.getControlDependentBranchIds();
-    }
-
-    /**
-     * Determines whether or not this instruction is control dependent on the
-     * root branch of it's method by calling getControlDependentBranchIds() to
-     * see if the return contains -1.
-     *
-     * @return a boolean.
-     */
-    public boolean isRootBranchDependent() {
-        return getControlDependencies().isEmpty();
-    }
-
-    /**
-     * This method returns a random branchId among all branchIds this
-     * instruction is control dependent on.
-     * <p>
-     * This method returns -1 if getControlDependentBranch() returns null,
-     * otherwise that Branch's branchId is returned
-     * <p>
-     * Note: The returned branchExpressionValue comes from the same Branch
-     * getControlDependentBranch() and getControlDependentBranchId() return
-     * <p>
-     * Since EvoSuite was previously unable to detect multiple control
-     * dependencies for one instruction this method serves as a backwards
-     * compatibility bridge
-     *
-     * @return a int.
-     */
-    public int getControlDependentBranchId() {
-
-        Branch b = getControlDependentBranch();
-        if (b == null)
-            return -1;
-
-        return b.getActualBranchId();
-    }
-
-    /**
-     * This method returns the branchExpressionValue from a random Branch among
-     * all Branches this instruction is control dependent on.
-     * <p>
-     * This method returns true if getControlDependentBranch() returns null,
-     * otherwise that Branch's branchExpressionValue is returned
-     * <p>
-     * Note: The returned branchExpressionValue comes from the same Branch
-     * getControlDependentBranch() and getControlDependentBranchId() return
-     * <p>
-     * Since EvoSuite was previously unable to detect multiple control
-     * dependencies for one instruction this method serves as a backwards
-     * compatibility bridge
-     *
-     * @return a boolean.
-     */
-    public boolean getControlDependentBranchExpressionValue() {
-
-        Branch b = getControlDependentBranch();
-        return getBranchExpressionValue(b);
-    }
-
-    /**
-     * <p>
-     * getBranchExpressionValue
-     * </p>
-     *
-     * @param b a {@link org.evomaster.client.java.coverage.branch.Branch} object.
-     * @return a boolean.
-     */
-    public boolean getBranchExpressionValue(Branch b) {
-        if (!isDirectlyControlDependentOn(b))
-            throw new IllegalArgumentException(
-                    "this method can only be called for branches that this instruction is directly control dependent on.");
-
-        if (b == null)
-            return true; // root branch special case
-
-        return getControlDependency(b).getBranchExpressionValue();
-    }
-
-    /**
-     * Determines whether this BytecodeInstruction is directly control dependent
-     * on the given Branch. Meaning within this instruction CDG there is an
-     * incoming ControlFlowEdge to this instructions BasicBlock holding the
-     * given Branch as it's branchInstruction.
-     * <p>
-     * If the given Branch is null, this method checks whether the this
-     * instruction is control dependent on the root branch of it's method.
-     *
-     * @param branch a {@link org.evomaster.client.java.coverage.branch.Branch} object.
-     * @return a boolean.
-     */
-    public boolean isDirectlyControlDependentOn(Branch branch) {
-        if (branch == null)
-            return getControlDependentBranchIds().contains(-1);
-
-        for (ControlDependency cd : getControlDependencies())
-            if (cd.getBranch().equals(branch))
-                return true;
-
-        return false;
-    }
-
-    /**
-     * <p>
-     * getControlDependency
-     * </p>
-     *
-     * @param branch a {@link org.evomaster.client.java.coverage.branch.Branch} object.
-     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ControlDependency} object.
-     */
-    public ControlDependency getControlDependency(Branch branch) {
-        if (!isDirectlyControlDependentOn(branch))
-            throw new IllegalArgumentException(
-                    "instruction not directly control dependent on given branch");
-
-        for (ControlDependency cd : getControlDependencies())
-            if (cd.getBranch().equals(branch))
-                return cd;
-
-        throw new IllegalStateException(
-                "expect getControlDependencies() to contain a CD for each branch that isDirectlyControlDependentOn() returns true on");
-    }
-
-    // /**
-    // * WARNING: better don't user this method right now TODO
-    // *
-    // * Determines whether the CFGVertex is transitively control dependent on
-    // the
-    // * given Branch
-    // *
-    // * A CFGVertex is transitively control dependent on a given Branch if the
-    // * Branch and the vertex are in the same method and the vertex is either
-    // * directly control dependent on the Branch - look at
-    // * isDirectlyControlDependentOn(Branch) - or the CFGVertex of the control
-    // * dependent branch of this CFGVertex is transitively control dependent on
-    // * the given branch.
-    // *
-    // */
-    // public boolean isTransitivelyControlDependentOn(Branch branch) {
-    // if (!getClassName().equals(branch.getClassName()))
-    // return false;
-    // if (!getMethodName().equals(branch.getMethodName()))
-    // return false;
-    //
-    // // TODO: this method does not take into account, that there might be
-    // // multiple branches this instruction is control dependent on
-    //
-    // BytecodeInstruction vertexHolder = this;
-    // do {
-    // if (vertexHolder.isDirectlyControlDependentOn(branch))
-    // return true;
-    // vertexHolder = vertexHolder.getControlDependentBranch()
-    // .getInstruction();
-    // } while (vertexHolder != null);
-    //
-    // return false;
-    // }
-
-    // /**
-    // * WARNING: better don't user this method right now TODO
-    // *
-    // * Determines the number of branches that have to be passed in order to
-    // pass
-    // * this CFGVertex
-    // *
-    // * Used to determine TestFitness difficulty
-    // */
-
-    /**
-     * <p>
-     * getCDGDepth
-     * </p>
-     *
-     * @return a int.
-     */
-    public int getCDGDepth() {
-        int min = Integer.MAX_VALUE;
-        Set<ControlDependency> dependencies = getControlDependencies();
-        if (dependencies.isEmpty())
-            min = 1;
-        for (ControlDependency dependency : dependencies) {
-            int depth = getCDG().getControlDependenceDepth(dependency);
-            if (depth < min)
-                min = depth;
-        }
-        return min;
-        /*
-         * // TODO: this method does not take into account, that there might be
-         * // multiple branches this instruction is control dependent on Branch
-         * current = getControlDependentBranch(); int r = 1; while (current !=
-         * null) { r++; current =
-         * current.getInstruction().getControlDependentBranch(); } return r;
-         */
     }
 
     // String methods
@@ -709,13 +438,7 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
         String type = getType();
         String opcode = getInstructionType();
 
-        String stack = "";
-        if (frame == null)
-            stack = "null";
-        else
-            for (int i = 0; i < frame.getStackSize(); i++) {
-                stack += frame.getStack(i) + ",";
-            }
+        String stack = "n/a";
 
         if (asmNode instanceof LabelNode) {
             return "LABEL " + ((LabelNode) asmNode).getLabel().toString();
@@ -778,41 +501,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
             return "Unknown node" + " Type=" + type + ", Opcode=" + opcode;
     }
 
-    /**
-     * <p>
-     * printFrameInformation
-     * </p>
-     */
-    public void printFrameInformation() {
-        System.out.println("Frame STACK:");
-        for (int i = 0; i < frame.getStackSize(); i++) {
-            SourceValue v = (SourceValue) frame.getStack(i);
-            System.out.print(" " + i + "(" + v.insns.size() + "): ");
-            for (Object n : v.insns) {
-                AbstractInsnNode node = (AbstractInsnNode) n;
-                BytecodeInstruction ins = BytecodeInstructionPool.getInstance(classLoader).getInstruction(className,
-                        methodName,
-                        node);
-                System.out.print(ins.toString() + ", ");
-            }
-            System.out.println();
-        }
-
-        System.out.println("Frame LOCALS:");
-        for (int i = 1; i < frame.getLocals(); i++) {
-            SourceValue v = (SourceValue) frame.getLocal(i);
-            System.out.print(" " + i + "(" + v.insns.size() + "): ");
-            for (Object n : v.insns) {
-                AbstractInsnNode node = (AbstractInsnNode) n;
-                BytecodeInstruction ins = BytecodeInstructionPool.getInstance(classLoader).getInstruction(className,
-                        methodName,
-                        node);
-                System.out.print(ins.toString() + ", ");
-            }
-            System.out.println();
-        }
-    }
-
     // --- Inherited from Object ---
 
     /**
@@ -841,7 +529,7 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
      * <p>
      * Otherwise this method will return null;
      *
-     * @return a {@link org.evomaster.client.java.coverage.branch.Branch} object.
+     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch} object.
      */
     public Branch toBranch() {
 
@@ -850,36 +538,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
         } catch (Exception e) {
             return null;
         }
-    }
-
-    /**
-     * <p>
-     * proceedsOwnConstructorInvocation
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean proceedsOwnConstructorInvocation() {
-
-        RawControlFlowGraph cfg = getRawCFG();
-        for (BytecodeInstruction other : cfg.vertexSet())
-            if (other.isConstructorInvocation()
-                    && other.isMethodCallOnSameObject())
-                if (getInstructionId() < other.getInstructionId())
-                    return true;
-
-        return false;
-    }
-
-    /**
-     * <p>
-     * isWithinConstructor
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean isWithinConstructor() {
-        return getMethodName().startsWith("<init>");
     }
 
     /**
@@ -902,241 +560,6 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
      */
     public boolean canBeExitPoint() {
         return canReturnFromMethod() || isLastInstructionInMethod();
-    }
-
-    /**
-     * Returns the RawCFG of the method called by this instruction
-     *
-     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.RawControlFlowGraph} object.
-     */
-    public RawControlFlowGraph getCalledCFG() {
-        if (!isMethodCall())
-            return null;
-
-        return GraphPool.getInstance(classLoader).getRawCFG(getCalledMethodsClass(),
-                getCalledMethod());
-    }
-
-    /**
-     * Determines whether this instruction calls a method on its own Object
-     * ('this')
-     * <p>
-     * This is done using the getSourceOfMethodInvocationInstruction() method
-     * and checking if the return of that method loads this using loadsReferenceToThis()
-     *
-     * @return a boolean.
-     */
-    public boolean isMethodCallOnSameObject() {
-        BytecodeInstruction srcInstruction = getSourceOfMethodInvocationInstruction();
-        if (srcInstruction == null)
-            return false;
-        return srcInstruction.loadsReferenceToThis();
-    }
-
-    /**
-     * Determines whether this instruction calls a method on a field variable
-     * <p>
-     * This is done using the getSourceOfMethodInvocationInstruction() method
-     * and checking if the return of that method is a field use instruction
-     *
-     * @return a boolean.
-     */
-
-
-    public boolean isMethodCallOfField() {
-        if (!this.isMethodCall())
-            return false;
-        if (this.isInvokeStatic())
-            return false;
-        // If the instruction belongs to static initialization block of the
-        // class, then the method call cannot be done on a fields.
-        if (this.methodName.contains("<clinit>"))
-            return false;
-        BytecodeInstruction srcInstruction = getSourceOfMethodInvocationInstruction();
-        if (srcInstruction == null)
-            return false;
-
-        //is a field use? But field uses are also "GETSTATIC"
-        if (srcInstruction.isFieldNodeUse()) {
-
-            //is static? if not, return yes. This control is not necessary in theory, but you never know...
-            if (srcInstruction.isStaticDefUse()) {
-                //is static, check if the name of the class that contain the static field is equals to the current class name
-                //if is equals, return true, otherwise we are in a case where we are calling a field over an external static class
-                //e.g. System.out
-                if (srcInstruction.asmNode instanceof FieldInsnNode) {
-                    String classNameField = ((FieldInsnNode) srcInstruction.asmNode).owner;
-                    classNameField = classNameField.replace('/', '.');
-                    return classNameField.equals(className);
-                }
-            } else {
-                return true;
-            }
-        }
-        return false;
-
-    }
-
-    /**
-     * Determines the name of the field variable this method call is invoked on
-     * <p>
-     * This is done using the getSourceOfMethodInvocationInstruction() method
-     * and returning its variable name
-     *
-     * @return a {@link java.lang.String} object.
-     */
-    @Override
-    public String getFieldMethodCallName() {
-        BytecodeInstruction srcInstruction = getSourceOfMethodInvocationInstruction();
-        if (srcInstruction == null)
-            return null;
-        return srcInstruction.getVariableName();
-    }
-
-    /**
-     * If this is a method call instruction this method will return the
-     * instruction that loaded the reference of the Object the method is invoked
-     * onto the stack.
-     * <p>
-     * This is done using getSourceOfStackInstruction()
-     * <p>
-     * The reference is found on top of the stack minus the number of the called
-     * methods argument
-     */
-    public BytecodeInstruction getSourceOfMethodInvocationInstruction() {
-        if (!isMethodCall())
-            return null;
-
-        // the object on which this method is called is on top of the stack
-        // minus the number of arguments the called method has
-        return getSourceOfStackInstruction(getCalledMethodsArgumentCount());
-    }
-
-    /**
-     * If this instruction is an array instruction this method will return the
-     * BytecodeInstruction that loaded the reference of the array onto the
-     * stack.
-     * <p>
-     * This is done using getSourceOfStackMethod()
-     * <p>
-     * The reference is found on top of the stack minus two
-     */
-    public BytecodeInstruction getSourceOfArrayReference() {
-        if (isArrayStoreInstruction()) {
-            // when reaching an array store instruction the stack should end in
-            // <arrayref>,<index>,<value>. so the array reference is on top of the
-            // stack minus two
-            return getSourceOfStackInstruction(2);
-
-        } else if (isArrayLoadInstruction()) {
-            // when reaching an array store instruction the stack should end in
-            // <arrayref>,<index>. so the array reference is on top of the
-            // stack minus one
-            return getSourceOfStackInstruction(1);
-
-        } else {
-            return null;
-        }
-
-    }
-
-    /**
-     * This method returns the BytecodeInstruction that loaded the reference
-     * which is located on top of the stack minus positionFromTop when this
-     * instruction is executed.
-     * <p>
-     * This is done using the CFGFrame created by the SourceInterpreter() of the
-     * BytecodeAnalyzer via the CFGGenerator
-     * <p>
-     * Note that this method may return null. This can happen when aliasing is
-     * involved. For example for method invocations on objects this can happen
-     * when you first store the object in a local variable and then call a
-     * method on that variable
-     * <p>
-     * see PairTestClass.sourceCallerTest() for an even worse example.
-     * <p>
-     * TODO: this could be done better by following the SourceValues even
-     * further.
-     */
-    public BytecodeInstruction getSourceOfStackInstruction(int positionFromTop) {
-        if (frame == null)
-            throw new IllegalStateException(
-                    "expect each BytecodeInstruction to have its CFGFrame set");
-
-        int stackPos = frame.getStackSize() - (1 + positionFromTop);
-        if (stackPos < 0) {
-            StackTraceElement[] se = new Throwable().getStackTrace();
-            int t = 0;
-            System.out.println("Stack trace: ");
-            while (t < se.length) {
-                System.out.println(se[t]);
-                t++;
-            }
-            return null;
-        }
-        SourceValue source = (SourceValue) frame.getStack(stackPos);
-        if (source.insns.size() != 1) {
-            // we don't know for sure, let's be conservative
-            return null;
-        }
-        Object sourceIns = source.insns.iterator().next();
-        AbstractInsnNode sourceInstruction = (AbstractInsnNode) sourceIns;
-        BytecodeInstruction src = BytecodeInstructionPool.getInstance(classLoader).getInstruction(className,
-                methodName,
-                sourceInstruction);
-        return src;
-    }
-
-    /**
-     * <p>
-     * isCallToPublicMethod
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean isCallToPublicMethod() {
-        if (!isMethodCall())
-            return false;
-
-        if (getCalledCFG() == null) {
-            // TODO not sure if I am supposed to throw an Exception at this
-            // point
-            return false;
-        }
-
-        return getCalledCFG().isPublicMethod();
-    }
-
-    /**
-     * <p>
-     * isCallToStaticMethod
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean isCallToStaticMethod() {
-        if (!isMethodCall())
-            return false;
-
-        if (getCalledCFG() == null) {
-            // TODO not sure if I am supposed to throw an Exception at this
-            // point
-            return false;
-        }
-
-        return getCalledCFG().isStaticMethod();
-    }
-
-    /**
-     * <p>
-     * canBeInstrumented
-     * </p>
-     *
-     * @return a boolean.
-     */
-    public boolean canBeInstrumented() {
-        // System.out.println("i cant be instrumented "+toString());
-        return !isWithinConstructor() || !proceedsOwnConstructorInvocation();
     }
 
     /**
@@ -1188,6 +611,168 @@ public class BytecodeInstruction extends ASMWrapper implements Serializable,
     @Override
     public int compareTo(BytecodeInstruction o) {
         return getLineNumber() - o.getLineNumber();
+    }
+
+    /**
+     * <p>
+     * getASMNode
+     * </p>
+     *
+     * @return a {@link org.objectweb.asm.tree.AbstractInsnNode} object.
+     */
+    public AbstractInsnNode getASMNode() {
+        return asmNode;
+    }
+
+    /**
+     * <p>
+     * getInstructionType
+     * </p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getInstructionType() {
+
+        if (asmNode.getOpcode() >= 0 && asmNode.getOpcode() < Printer.OPCODES.length)
+            return Printer.OPCODES[asmNode.getOpcode()];
+
+        if (isLineNumber())
+            return "LINE " + this.getLineNumber();
+
+        return getType();
+    }
+
+    /**
+     * <p>
+     * getType
+     * </p>
+     *
+     * @return a {@link java.lang.String} object.
+     */
+    public String getType() {
+        // TODO explain
+        String type = "";
+        if (asmNode.getType() >= 0 && asmNode.getType() < Printer.TYPES.length)
+            type = Printer.TYPES[asmNode.getType()];
+
+        return type;
+    }
+
+    /**
+     * <p>
+     * canReturnFromMethod
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean canReturnFromMethod() {
+        return isReturn() || isThrow();
+    }
+
+    /**
+     * <p>
+     * isReturn
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isReturn() {
+        switch (asmNode.getOpcode()) {
+            case Opcodes.RETURN:
+            case Opcodes.ARETURN:
+            case Opcodes.IRETURN:
+            case Opcodes.LRETURN:
+            case Opcodes.DRETURN:
+            case Opcodes.FRETURN:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * <p>
+     * isThrow
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isThrow() {
+        // TODO: Need to check if this is a caught exception?
+        return asmNode.getOpcode() == Opcodes.ATHROW;
+    }
+
+    /**
+     * <p>
+     * isJump
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isJump() {
+        return (asmNode instanceof JumpInsnNode);
+    }
+
+    /**
+     * <p>
+     * isGoto
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isGoto() {
+        if (asmNode instanceof JumpInsnNode) {
+            return (asmNode.getOpcode() == Opcodes.GOTO);
+        }
+        return false;
+    }
+
+    /**
+     * <p>
+     * isBranch
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isBranch() {
+        return (isJump() && !isGoto());
+    }
+
+    /**
+     * Determines if this instruction is a line number instruction
+     * <p>
+     * More precisely this method checks if the underlying asmNode is a
+     * LineNumberNode
+     *
+     * @return a boolean.
+     */
+    public boolean isLineNumber() {
+        return (asmNode instanceof LineNumberNode);
+    }
+
+    /**
+     * <p>
+     * getASMLineNumber
+     * </p>
+     *
+     * @return a int.
+     */
+    public int getASMLineNumber() {
+        if (!isLineNumber())
+            return -1;
+
+        return ((LineNumberNode) asmNode).line;
+    }
+
+    /**
+     * <p>
+     * isLabel
+     * </p>
+     *
+     * @return a boolean.
+     */
+    public boolean isLabel() {
+        return asmNode instanceof LabelNode;
     }
 
 }

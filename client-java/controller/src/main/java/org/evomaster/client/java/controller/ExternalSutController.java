@@ -13,6 +13,7 @@ import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
 import org.evomaster.client.java.instrumentation.external.ServerController;
 import org.evomaster.client.java.instrumentation.external.DynamosaConfigDto;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -446,6 +447,15 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
         return getBootTimeInfoDto(serverController.handleBootTimeObjectiveInfo());
+    }
+
+    @Override
+    public List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
+        if (!isInstrumentationActivated()){
+            return Collections.emptyList();
+        }
+        List<ControlDependenceGraphDto> graphs = serverController.getDynamosaControlDependenceGraphs();
+        return graphs != null ? graphs : Collections.emptyList();
     }
 
     @Override

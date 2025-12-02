@@ -1,21 +1,6 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs;
 
@@ -34,31 +19,7 @@ import java.util.*;
 
 import static java.util.stream.Collectors.toCollection;
 
-/**
- * Supposed to become the super class of all kinds of graphs used within
- * EvoSuite Examples are the raw and minimal Control Flow Graph and hopefully at
- * one point the Control Dependency Tree
- * <p>
- * This class is supposed to hide the jGraph library from the rest of EvoSuite
- * and is supposed to serve as an interface for all kinds of primitive graph-
- * functionality such as asking for information about the nodes and edges of the
- * graph and the relations between them.
- * <p>
- * Hopefully at some point only this class and it's sub classes are the only
- * files in EvoSuite that import anything from the jGraph library - at least
- * that's the idea This is very similar to the way cfg.ASMWrapper is supposed to
- * hide the ASM library and serve as an interface for BytecodeInstrucions
- * <p>
- * So most of this class' methods are just wrappers that redirect the specific
- * call to the corresponding jGraph-method
- * <p>
- * For now an EvoSuiteGraph can always be represented by a DefaultDirectedGraph
- * from the jGraph library - that is a directed graph not allowed to contain
- * multiple edges between to nodes but allowed to contain cycles
- *
- * @author Andre Mis
- */
-public abstract class EvoSuiteGraph<V, E extends DefaultEdge> {
+public abstract class EvoMasterGraph<V, E extends DefaultEdge> {
 
     private static int evoSuiteGraphs = 0;
     protected int graphId;
@@ -66,17 +27,10 @@ public abstract class EvoSuiteGraph<V, E extends DefaultEdge> {
     protected DirectedGraph<V, E> graph;
     protected Class<E> edgeClass;
 
-    // for .dot functionality
-    // TODO need jgrapht-0.8.3
     ComponentAttributeProvider<V> vertexAttributeProvider = null;
     ComponentAttributeProvider<E> edgeAttributeProvider = null;
 
-    /**
-     * <p>Constructor for EvoSuiteGraph.</p>
-     *
-     * @param edgeClass a {@link java.lang.Class} object.
-     */
-    protected EvoSuiteGraph(Class<E> edgeClass) {
+        protected EvoMasterGraph(Class<E> edgeClass) {
 
         graph = new DefaultDirectedGraph<>(edgeClass);
         this.edgeClass = edgeClass;
@@ -84,13 +38,7 @@ public abstract class EvoSuiteGraph<V, E extends DefaultEdge> {
         setId();
     }
 
-    /**
-     * <p>Constructor for EvoSuiteGraph.</p>
-     *
-     * @param graph     a {@link org.jgrapht.DirectedGraph} object.
-     * @param edgeClass a {@link java.lang.Class} object.
-     */
-    protected EvoSuiteGraph(DirectedGraph<V, E> graph, Class<E> edgeClass) {
+        protected EvoMasterGraph(DirectedGraph<V, E> graph, Class<E> edgeClass) {
         if (graph == null || edgeClass == null)
             throw new IllegalArgumentException("null given");
 
@@ -268,12 +216,7 @@ public abstract class EvoSuiteGraph<V, E extends DefaultEdge> {
 
     // building the graph
 
-    /**
-     * <p>addVertices</p>
-     *
-     * @param other a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.EvoSuiteGraph} object.
-     */
-    protected void addVertices(EvoSuiteGraph<V, E> other) {
+        protected void addVertices(EvoMasterGraph<V, E> other) {
 
         addVertices(other.vertexSet());
     }
@@ -810,7 +753,7 @@ public abstract class EvoSuiteGraph<V, E extends DefaultEdge> {
      * @return a {@link java.lang.String} object.
      */
     public String getName() {
-        return "EvoSuiteGraph_" + graphId;
+        return "EvoMasterGraph_" + graphId;
     }
 
     /**

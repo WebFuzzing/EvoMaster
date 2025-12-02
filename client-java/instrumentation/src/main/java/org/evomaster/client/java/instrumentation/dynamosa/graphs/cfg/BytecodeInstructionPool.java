@@ -1,21 +1,6 @@
 /*
- * Copyright (C) 2010-2018 Gordon Fraser, Andrea Arcuri and EvoSuite
- * contributors
- *
- * This file is part of EvoSuite.
- *
- * EvoSuite is free software: you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation, either version 3.0 of the License, or
- * (at your option) any later version.
- *
- * EvoSuite is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with EvoSuite. If not, see <http://www.gnu.org/licenses/>.
+ * Adapted from the EvoSuite project (https://github.com/EvoSuite/evosuite)
+ * and modified for use in EvoMaster's Dynamosa module.
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg;
 
@@ -32,7 +17,6 @@ import java.util.*;
  * BytecodeInstructionPool class.
  * </p>
  *
- * @author Andre Mis
  */
 public class BytecodeInstructionPool {
 
@@ -56,8 +40,6 @@ public class BytecodeInstructionPool {
     // BytecodeInstructions
     private final Map<String, Map<String, List<BytecodeInstruction>>> instructionMap = new LinkedHashMap<>();
 
-    private final List<MethodNode> knownMethodNodes = new ArrayList<>();
-
     // fill the pool
 
     /**
@@ -78,8 +60,6 @@ public class BytecodeInstructionPool {
      */
     public List<BytecodeInstruction> registerMethodNode(MethodNode node,
                                                         String className, String methodName) {
-        registerMethodNode(node);
-
         int lastLineNumber = -1;
         int bytecodeOffset = 0;
 
@@ -103,7 +83,7 @@ public class BytecodeInstructionPool {
             bytecodeOffset += getBytecodeIncrement(instructionNode);
 
             if (!instruction.isLabel() && !instruction.isLineNumber()
-                    && !instruction.isFrame()) {
+                    && !(instruction.getASMNode() instanceof FrameNode)) {
                 bytecodeOffset++;
             }
 
@@ -208,14 +188,6 @@ public class BytecodeInstructionPool {
         return 0;
     }
 
-    private void registerMethodNode(MethodNode node) {
-        for (MethodNode mn : knownMethodNodes)
-            if (mn == node)
-                SimpleLogger.debug("CFGGenerator.analyze() apparently got called for the same MethodNode twice");
-
-        knownMethodNodes.add(node);
-    }
-
     /**
      * <p>
      * registerInstruction
@@ -253,7 +225,7 @@ public class BytecodeInstructionPool {
             }
         }
 
-        if (instruction.isActualBranch()) {
+        if (instruction.isBranch()) {
             BranchPool.getInstance(classLoader).registerAsBranch(instruction);
         }
     }
@@ -276,7 +248,7 @@ public class BytecodeInstructionPool {
 
         BytecodeInstruction r = getInstruction(className, methodName, instructionId);
 
-        assert r == null || (r.sanityCheckAbstractInsnNode(asmNode));
+        assert r == null || (asmNode != null && asmNode.equals(r.getASMNode()));
 
         return r;
     }
@@ -356,41 +328,6 @@ public class BytecodeInstructionPool {
 
     /**
      * <p>
-     * knownClasses
-     * </p>
-     *
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<String> knownClasses() {
-        return new LinkedHashSet<>(instructionMap.keySet());
-    }
-
-    /**
-     * <p>
-     * knownMethods
-     * </p>
-     *
-     * @param className a {@link java.lang.String} object.
-     * @return a {@link java.util.Set} object.
-     */
-    public Set<String> knownMethods(String className) {
-        Set<String> r = new LinkedHashSet<>();
-
-        if (instructionMap.get(className) != null)
-            r.addAll(instructionMap.get(className).keySet());
-
-        return r;
-    }
-
-    public boolean hasMethod(String className, String methodName) {
-        if (instructionMap.get(className) != null)
-            return instructionMap.get(className).containsKey(methodName);
-
-        return false;
-    }
-
-    /**
-     * <p>
      * getInstructionsIn
      * </p>
      *
@@ -421,115 +358,6 @@ public class BytecodeInstructionPool {
         return r;
     }
 
-    public List<BytecodeInstruction> getAllInstructions() {
-        List<BytecodeInstruction> r = new ArrayList<>();
-        for (String className : instructionMap.keySet()) {
-            Map<String, List<BytecodeInstruction>> methodMap = instructionMap.get(className);
-            for (List<BytecodeInstruction> methodInstructions : methodMap.values()) {
-                r.addAll(methodInstructions);
-            }
-        }
-
-        return r;
-    }
-
-    /**
-     * <p>
-     * logInstructionsIn
-     * </p>
-     *
-     * @param className  a {@link java.lang.String} object.
-     * @param methodName a {@link java.lang.String} object.
-     */
-    public void logInstructionsIn(String className, String methodName) {
-
-        SimpleLogger.debug("Printing instructions in " + className + "." + methodName + ":");
-
-        List<BytecodeInstruction> instructions = getInstructionsIn(className, methodName);
-        if (instructions == null) {
-            SimpleLogger.debug("..unknown method");
-        } else {
-            for (BytecodeInstruction instruction : instructions) {
-                SimpleLogger.debug("\t" + instruction);
-            }
-        }
-
-    }
-
-    /**
-     * <p>
-     * createFakeInstruction
-     * </p>
-     *
-     * @param className  a {@link java.lang.String} object.
-     * @param methodName a {@link java.lang.String} object.
-     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction} object.
-     */
-    public BytecodeInstruction createFakeInstruction(String className, String methodName) {
-
-        AbstractInsnNode fakeNode = new InsnNode(Opcodes.NOP);
-
-        int instructionId = getInstructionsIn(className, methodName).size();
-
-        BytecodeInstruction instruction = new BytecodeInstruction(classLoader, className,
-                methodName, instructionId, -1, fakeNode);
-
-        registerInstruction(instruction);
-
-        return instruction;
-
-    }
-
-    /**
-     * <p>
-     * clear
-     * </p>
-     */
-    public void clear() {
-        instructionMap.clear();
-        knownMethodNodes.clear();
-    }
-
-    public static void clearAll() {
-        BytecodeInstructionPool.instanceMap.clear();
-    }
-
-    /**
-     * <p>
-     * clear
-     * </p>
-     *
-     * @param className a {@link java.lang.String} object.
-     */
-    public void clear(String className) {
-        instructionMap.remove(className);
-    }
-
-    public static void clearAll(String className) {
-        for (BytecodeInstructionPool pool : instanceMap.values()) {
-            pool.clear(className);
-        }
-    }
-
-    /**
-     * <p>
-     * clear
-     * </p>
-     *
-     * @param className  a {@link java.lang.String} object.
-     * @param methodName a {@link java.lang.String} object.
-     */
-    public void clear(String className, String methodName) {
-        if (instructionMap.containsKey(className))
-            instructionMap.get(className).remove(methodName);
-    }
-
-    public static void clearAll(String className, String methodName) {
-        for (BytecodeInstructionPool pool : instanceMap.values()) {
-            pool.clear(className, methodName);
-        }
-    }
-
     /**
      * <p>
      * forgetInstruction
@@ -547,37 +375,5 @@ public class BytecodeInstructionPool {
         return instructionMap.get(ins.getClassName()).get(ins.getMethodName()).remove(ins);
     }
 
-    public int getFirstLineNumberOfMethod(String className, String methodName) {
-        if (instructionMap.get(className) == null)
-            throw new IllegalArgumentException("unknown class " + className);
-        if (instructionMap.get(className).get(methodName) == null)
-            throw new IllegalArgumentException("unknown method " + methodName
-                    + " in class " + className);
-        if (instructionMap.get(className).get(methodName).isEmpty())
-            throw new IllegalArgumentException("no instructions in method " + methodName
-                    + " in class " + className);
-
-        int r = Integer.MAX_VALUE;
-        for (BytecodeInstruction ins : instructionMap.get(className).get(methodName)) {
-            if (ins.getLineNumber() < r)
-                r = ins.getLineNumber();
-        }
-        return r;
-    }
-
-    public BytecodeInstruction getFirstInstructionAtLineNumber(String className, String methodName, int lineNumber) {
-        // TODO
-        if (instructionMap.get(className) == null)
-            return null;
-        if (instructionMap.get(className).get(methodName) == null)
-            return null;
-        if (instructionMap.get(className).get(methodName).isEmpty())
-            return null;
-
-        for (BytecodeInstruction ins : instructionMap.get(className).get(methodName)) {
-            if (ins.getLineNumber() == lineNumber)
-                return ins;
-        }
-        return null;
-    }
 }
+

@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
@@ -47,6 +48,7 @@ class RemoteControllerImplementation() : RemoteController{
     private var extractSqlExecutionInfo = true
 
     private var cachedSutInfoDto : SutInfoDto? = null
+    private val pendingDynamosaCdgs: MutableList<ControlDependenceGraphDto> = mutableListOf()
 
     @Inject
     private lateinit var config: EMConfig
@@ -369,7 +371,15 @@ class RemoteControllerImplementation() : RemoteController{
             return null
         }
 
-        return getData(dto)
+        val result = getData(dto)
+
+        if (result != null && result.dynamosaCdgs.isNotEmpty()) {
+                synchronized(pendingDynamosaCdgs) {
+                pendingDynamosaCdgs.addAll(result.dynamosaCdgs)
+                }
+            }
+
+        return result
     }
 
     override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>) : List<DeriveParamResponseDto>{
@@ -387,6 +397,17 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         return dto?.data ?: listOf()
+    }
+
+    override fun getDynamosaControlDependenceGraphs(): List<ControlDependenceGraphDto> {
+        synchronized(pendingDynamosaCdgs) {
+            if (pendingDynamosaCdgs.isEmpty()) {
+                return emptyList()
+            }
+            val copy = pendingDynamosaCdgs.toList()
+            pendingDynamosaCdgs.clear()
+            return copy
+        }
     }
 
 

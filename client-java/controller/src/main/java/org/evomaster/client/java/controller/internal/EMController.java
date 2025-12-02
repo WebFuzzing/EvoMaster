@@ -19,6 +19,7 @@ import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -253,7 +254,6 @@ public class EMController {
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
-
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
@@ -592,6 +592,12 @@ public class EMController {
                     String msg = "Failed to collect additional info";
                     SimpleLogger.error(msg);
                     return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+                }
+
+            List<ControlDependenceGraphDto> dynamosaCdgs =
+                    noKillSwitch(() -> sutController.getDynamosaControlDependenceGraphs());
+            if (dynamosaCdgs != null && !dynamosaCdgs.isEmpty()) {
+                dto.dynamosaCdgs.addAll(dynamosaCdgs);
                 }
 //            }
 //        else {
