@@ -128,6 +128,6 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun setVulnerableForSSRF(on: Boolean) = addResultValue(VULNERABLE_SSRF, on.toString())
     fun getVulnerableForSSRF() : Boolean = getResultValue(VULNERABLE_SSRF)?.toBoolean() ?: false
 
-    fun setResponseTime(responseTime: Long) = addResultValue(RESPONSE_TIME, responseTime.toString())
+    fun setResponseTime(responseTime: Long?) = addResultValue(RESPONSE_TIME, responseTime.toString())
     fun getResponseTime(): Long = getResultValue(RESPONSE_TIME)?.toLong() ?: 0
 }

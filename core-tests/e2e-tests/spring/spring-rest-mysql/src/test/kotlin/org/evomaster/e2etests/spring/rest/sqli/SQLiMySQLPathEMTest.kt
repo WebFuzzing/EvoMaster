@@ -27,6 +27,7 @@ class SQLiMySQLPathEMTest : SpringTestBase() {
             100
         ) { args ->
             setOption(args, "security", "true")
+            setOption(args, "sqli", "true")
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.isNotEmpty())

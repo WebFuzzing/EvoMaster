@@ -29,6 +29,7 @@ class SQLiPathH2EMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+            setOption(args, "sqli", "true")
 
 
             val solution = initAndRun(args)

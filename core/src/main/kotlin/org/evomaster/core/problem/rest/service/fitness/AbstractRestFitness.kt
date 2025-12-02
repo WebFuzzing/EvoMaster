@@ -597,11 +597,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
+            val call = createInvocation(a, chainState, cookies, tokens)
+
             SearchTimeController.measureTimeMillis(
                 { t, res ->
                     rcr.setResponseTime(t)
                 },
-                {createInvocation(a, chainState, cookies, tokens).invoke()}
+                {
+                    call.invoke()
+                }
             )
 
         } catch (e: ProcessingException) {
@@ -1360,7 +1364,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
             return
         }
 
@@ -1370,11 +1374,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
                 ?: continue
 
-//            if(!r.getTimedout()){
-//                continue
-//            }
-
-            if(r.getResponseTime() < config.sqlInjectionMaxResponseTimeMs && !r.getTimedout()){
+            if(r.getResponseTime() < config.sqlInjectionMaxResponseTimeMs && !r.getTimedout()) {
                 continue
             }
 
@@ -1415,7 +1415,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
             return
         }
 

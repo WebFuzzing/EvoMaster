@@ -283,7 +283,7 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        if (!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
             LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
         } else {
             handleXSSCheck()
@@ -369,11 +369,17 @@ class SecurityRest {
                     val leafGene = gene.getLeafGene()
                     if(leafGene !is StringGene) return@forEach
 
-                    // we need to do this way because we need to append our paylod
+                    // we need to do this way because we need to append our payload
+
+                    //check invalid chars
                     val hasInvalidChars = leafGene.invalidChars.any { payload.contains(it) }
-                    if(!hasInvalidChars){
+
+                    //check max length
+                    val hasMaxLength = (leafGene.getPhenotype().getValueAsRawString().length + payload.length) > leafGene.maxLength
+
+                    if(!hasInvalidChars && !hasMaxLength){
                         // append the SQLi payload value
-                        leafGene.value = leafGene.value + payload
+                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + payload)
                         anySuccess = true
                     }
                 }

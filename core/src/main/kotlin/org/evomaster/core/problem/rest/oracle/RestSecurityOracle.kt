@@ -222,7 +222,11 @@ object RestSecurityOracle {
         return true
     }
 
-    // Simple SQLi payloads
+    /**
+     * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
+     * The payloads are designed to introduce delays in the database response,
+     * which can be detected by measuring the response time of the application.
+     */
     val SQLI_PAYLOADS = listOf(
         "' OR (WITH RECURSIVE r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i < 10000000) SELECT COUNT(*) FROM r)>0--",
         "' OR SLEEP(5)-- -",
