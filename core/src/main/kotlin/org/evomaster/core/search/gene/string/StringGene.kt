@@ -822,9 +822,10 @@ class StringGene(
                       try {
                               toAddGenes.add(RegexHandler.createGeneForJVM(regex))
                               log.trace("Regex, added specification for: {}", regex)
-
                           } catch (e: Exception) {
                               LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+                          } catch (e: java.lang.StackOverflowError){
+                              LoggingUtil.uniqueWarn(log, "Failed to handle regex, as it gives a stack overflow error: $regex")
                           }
                       }
 

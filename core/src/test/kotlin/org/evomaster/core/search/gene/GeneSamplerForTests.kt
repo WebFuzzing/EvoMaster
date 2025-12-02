@@ -481,10 +481,13 @@ object GeneSamplerForTests {
 
         //TODO update after refactoring SeededGene with ChoiceGene (to implement)
 
+        val seeds = EnumGene<StringGene>("rand EnumGene ${rand.nextInt()}",
+            listOf(StringGene("A"), StringGene("B"), StringGene("C")))
+
         return SeededGene(
                 name = "rand SeededGene",
                 gene = sampleStringGene(rand),
-                seeded = sampleEnumGene(rand) as EnumGene<StringGene>,
+                seeded = seeds,
                 employSeeded = rand.nextBoolean()
         )
     }

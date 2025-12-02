@@ -8,11 +8,19 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.util.regex.Pattern
 
 internal class RegexHandlerTest{
+
+    @Disabled("Needs to hande lookahead in regex")
+    @Test
+    fun testLanguageTool(){
+        val s = "^((?iu)@.+)$"
+        RegexHandler.createGeneForJVM(s)
+    }
 
 
     @Test

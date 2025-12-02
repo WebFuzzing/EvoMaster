@@ -876,12 +876,16 @@ abstract class Gene(
     /**
      * Genes might contain a value that is also stored
      * in another gene of the same type.
+     *
+     * If the type of [other] is different, this method might throw an [IllegalArgumentException]
+     *
+     * TODO refactor, in which type-check is done here
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
     /**
-     * evaluate whether [this] and [gene] belong to one evolution during search
+     * evaluate whether `this` and [gene] belong to one evolution during search
      */
     open fun possiblySame(gene: Gene): Boolean = gene.name == name && gene::class == this::class
 
@@ -1210,8 +1214,7 @@ abstract class Gene(
             //revert back
             val success = unsafeCopyValueFrom(current)
             //reversion should always work... if fails, it is a bug
-            // FIXME put back once all are implemented, eg, TaintedMapGene currently missing
-            //assert(success)
+            assert(success)
             return false
         }
         return true

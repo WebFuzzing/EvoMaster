@@ -50,7 +50,7 @@ class PatternCharacterBlockGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is PatternCharacterBlockGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return this.stringBlock == other.stringBlock
     }
