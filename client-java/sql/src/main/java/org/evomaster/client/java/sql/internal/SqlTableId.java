@@ -3,47 +3,63 @@ package org.evomaster.client.java.sql.internal;
 import java.util.Objects;
 
 /**
- * A class representing a SQL table identifier
- * from a physical database table.
- * This class simply is a wrapper class for the string for the table id.
- *
- * No case sensitivity is considered when comparing this class.
+ * Represents an identifier for a SQL table, including an optional catalog and schema.
+ * This class is immutable and supports case-insensitive comparisons for schema and table IDs.
  */
-public class SqlTableId implements Comparable<SqlTableId> {
+public class SqlTableId {
 
-    private final String tableId;
+    private final String catalogName;
+    private final String schemaName;
+    private final String tableName;
 
-    public SqlTableId(String tableId) {
-        Objects.requireNonNull(tableId);
-        this.tableId = tableId.toLowerCase();
+    /**
+     *
+     * @param catalogName
+     * @param schemaName
+     * @param tableName
+     */
+    public SqlTableId(String catalogName, String schemaName, String tableName) {
+        Objects.requireNonNull(tableName);
+        this.catalogName = catalogName;
+        this.schemaName = schemaName == null ? null : schemaName.toLowerCase();
+        this.tableName = tableName.toLowerCase();
     }
 
-    public String getTableId() {
-        return tableId;
+    public SqlTableId(String tableName) {
+        this(null, null, tableName);
     }
 
-    public String toString() {
-        return tableId;
+    public String getTableName() {
+        return tableName;
     }
 
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof SqlTableId) {
-            SqlTableId other = (SqlTableId) obj;
-            return tableId.equalsIgnoreCase(other.tableId);
-        }
-        return false;
+    public String getSchemaName() {
+        return schemaName;
     }
 
-    public int hashCode() {
-        return tableId.hashCode();
+    public String getCatalogName() {
+        return catalogName;
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof SqlTableId)) return false;
+        SqlTableId that = (SqlTableId) o;
+        return Objects.equals(getCatalogName(), that.getCatalogName())
+                && Objects.equals(getSchemaName(), that.getSchemaName())
+                && Objects.equals(getTableName(), that.getTableName());
     }
 
     @Override
-    public int compareTo(SqlTableId o) {
-        Objects.requireNonNull(o);
-        return this.getTableId().compareTo(o.getTableId());
+    public int hashCode() {
+        return Objects.hash(getCatalogName(), getSchemaName(), getTableName());
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(catalogName) + '.' +
+                String.valueOf(schemaName) + '.' + tableName;
+    }
+
 }

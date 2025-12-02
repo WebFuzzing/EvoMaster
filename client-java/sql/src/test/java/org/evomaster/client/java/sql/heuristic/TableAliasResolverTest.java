@@ -3,8 +3,6 @@ package org.evomaster.client.java.sql.heuristic;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.ParenthesedSelect;
 import net.sf.jsqlparser.statement.select.PlainSelect;
@@ -489,6 +487,20 @@ class TableAliasResolverTest {
         assertTrue(withTableReference instanceof SqlDerivedTableReference);
         assertEquals("SELECT first_name, salary FROM employees WHERE salary > 50000",
                 ((SqlDerivedTableReference) withTableReference).getSelect().getPlainSelect().toString());
+
+    }
+
+    @Test
+    void testAliasToSchemaBaseTable() throws JSQLParserException {
+        String sql = "SELECT u.user_id FROM public.users u";
+        TableAliasResolver resolver = new TableAliasResolver();
+        resolver.enterTableAliasContext(CCJSqlParserUtil.parse(sql));
+        SqlTableReference tableReference = resolver.resolveTableReference("u");
+        assertNotNull(tableReference);
+        assertTrue(tableReference instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
+        assertEquals("public",baseTableReference.getTableId().getSchemaName());
+        assertEquals("users",baseTableReference.getTableId().getTableName());
 
     }
 }

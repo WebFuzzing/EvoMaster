@@ -35,7 +35,7 @@ public class QueryResultTransformer {
         Map<SqlTableId, List<QueryResult>> maps = new HashMap<>();
         for (SqlTableId tableId : columns.keySet()) {
             List<QueryResult> kresults = new ArrayList<>();
-            insertionDtos.stream().filter(d -> d.targetTable.equalsIgnoreCase(tableId.getTableId())).forEach(insertionDto -> {
+            insertionDtos.stream().filter(d -> d.targetTable.equalsIgnoreCase(tableId.getTableName())).forEach(insertionDto -> {
                 QueryResult qr = convertInsertionDtoToQueryResult(insertionDto, tableId, columns.get(tableId), schemaDto, kresults);
                 if (qr != null && (!qr.isEmpty()))
                     kresults.add(qr);
@@ -145,18 +145,18 @@ public class QueryResultTransformer {
 
             final QueryResult existingQueryResult;
             if (!existingQueryResults.isEmpty())
-                existingQueryResult = existingQueryResults.stream().filter(qr -> qr.sameVariableNames(relatedColumnNames, tableId.getTableId())).findAny().orElse(null);
+                existingQueryResult = existingQueryResults.stream().filter(qr -> qr.sameVariableNames(relatedColumnNames, tableId.getTableName())).findAny().orElse(null);
             else
                 existingQueryResult = null;
 
             final QueryResult queryResult;
             if (existingQueryResult == null)
-                queryResult = new QueryResult(relatedColumnNames, tableId.getTableId());
+                queryResult = new QueryResult(relatedColumnNames, tableId.getTableName());
             else
                 queryResult = existingQueryResult;
 
             Optional<TableDto> foundTableSchema = dto.tables.stream()
-                    .filter(t -> SqlDtoUtils.matchByName(t, tableId.getTableId()))
+                    .filter(t -> SqlDtoUtils.matchByName(t, tableId.getTableName()))
                     .findFirst();
 
             if (foundTableSchema.isPresent()) {
@@ -173,7 +173,7 @@ public class QueryResultTransformer {
                         throw new IllegalArgumentException("Cannot find column schema of " + relatedColumnNames.get(i) + " in Table " + tableId);
                     values.add(getColumnValueBasedOnPrintableValue(printableValue.get(i), columnDto));
                 }
-                queryResult.addRow(relatedColumnNames, tableId.getTableId(), values);
+                queryResult.addRow(relatedColumnNames, tableId.getTableName(), values);
 
             } else {
                 throw new IllegalArgumentException("Cannot find table schema of " + tableId);
@@ -243,7 +243,7 @@ public class QueryResultTransformer {
         QueryResultSet queryResultSet = new QueryResultSet();
         for (SqlTableId tableId : columns.keySet()) {
             TableDto tableDto = schema.tables.stream()
-                    .filter(t -> t.id.name.equalsIgnoreCase(tableId.getTableId()))
+                    .filter(t -> t.id.name.equalsIgnoreCase(tableId.getTableName()))
                     .findFirst().orElseThrow(() -> new IllegalArgumentException("Cannot find table schema of " + tableId));
 
             List<VariableDescriptor> variableDescriptors = tableDto.columns.stream()
@@ -252,7 +252,7 @@ public class QueryResultTransformer {
 
             QueryResult queryResult = new QueryResult(variableDescriptors);
             for (InsertionDto dto : insertionDtos) {
-                if (tableId.getTableId().equalsIgnoreCase(dto.targetTable)) {
+                if (tableId.getTableName().equalsIgnoreCase(dto.targetTable)) {
                     List<Object> concreteValues = new ArrayList<>();
                     for (VariableDescriptor variableDescriptor : variableDescriptors) {
                         Object concreteValueOrNull = findConcreteValueOrNull(variableDescriptor.getColumnName(), tableDto, dto.data);

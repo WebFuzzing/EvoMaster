@@ -192,7 +192,7 @@ public class SqlHandler {
         sqlExecutionsDto.failedWhere.putAll(getTableToColumnsMap(failedWhere));
         sqlExecutionsDto.insertedData.putAll(getTableToColumnsMap(insertedData));
         sqlExecutionsDto.updatedData.putAll(getTableToColumnsMap(updatedData));
-        sqlExecutionsDto.deletedData.addAll(deletedData.stream().map(SqlTableId::getTableId).collect(Collectors.toSet()));
+        sqlExecutionsDto.deletedData.addAll(deletedData.stream().map(SqlTableId::getTableName).collect(Collectors.toSet()));
         sqlExecutionsDto.numberOfSqlCommands = this.numberOfSqlCommands;
         sqlExecutionsDto.sqlParseFailureCount = this.sqlParseFailureCount;
         sqlExecutionsDto.sqlExecutionLogDtoList.addAll(executedSqlCommands);
@@ -202,7 +202,7 @@ public class SqlHandler {
     private static Map<String, Set<String>> getTableToColumnsMap(Map<SqlTableId, Set<SqlColumnId>> originalMap) {
         Map<String, Set<String>> result = new HashMap<>();
         for (Map.Entry<SqlTableId, Set<SqlColumnId>> originalEntry : originalMap.entrySet()) {
-            result.put(originalEntry.getKey().getTableId(), originalEntry.getValue().stream().map(SqlColumnId::getColumnId).collect(Collectors.toSet()));
+            result.put(originalEntry.getKey().getTableName(), originalEntry.getValue().stream().map(SqlColumnId::getColumnId).collect(Collectors.toSet()));
         }
         return result;
     }
@@ -454,7 +454,7 @@ public class SqlHandler {
 
         buffer.append(variables);
         buffer.append(" FROM ");
-        buffer.append(tableId.getTableId());
+        buffer.append(tableId.getTableName());
 
         return buffer.toString();
     }

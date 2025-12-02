@@ -29,30 +29,35 @@ class TableColumnResolverTest {
     void setUp() {
 
         schema = new DbInfoDto();
-        TableDto employeesTable = createTableDto("employees");
+        TableDto employeesTable = createTableDto(null, "employees");
         employeesTable.columns.add(createColumnDto("employees", "id"));
         employeesTable.columns.add(createColumnDto("employees", "first_name"));
         employeesTable.columns.add(createColumnDto("employees", "department_id"));
         employeesTable.columns.add(createColumnDto("employees", "salary"));
 
-        TableDto departmentsTable = createTableDto("departments");
+        TableDto departmentsTable = createTableDto(null, "departments");
         departmentsTable.columns.add(createColumnDto("departments", "id"));
         departmentsTable.columns.add(createColumnDto("departments", "department_name"));
 
-        TableDto ordersTable = createTableDto("orders");
+        TableDto ordersTable = createTableDto(null, "orders");
         ordersTable.columns.add(createColumnDto("orders", "order_id"));
         ordersTable.columns.add(createColumnDto("orders", "order_date"));
         ordersTable.columns.add(createColumnDto("orders", "customer_id"));
 
-        TableDto customersTable = createTableDto("customers");
+        TableDto customersTable = createTableDto(null, "customers");
         customersTable.columns.add(createColumnDto("customers", "customer_id"));
         customersTable.columns.add(createColumnDto("customers", "customer_name"));
+
+        TableDto usersTable = createTableDto("public", "users");
+        usersTable.columns.add(createColumnDto("users", "user_id"));
+        usersTable.columns.add(createColumnDto("users", "user_name"));
 
 
         schema.tables.add(employeesTable);
         schema.tables.add(departmentsTable);
         schema.tables.add(ordersTable);
         schema.tables.add(customersTable);
+        schema.tables.add(usersTable);
 
         resolver = new TableColumnResolver(schema);
     }
@@ -64,9 +69,10 @@ class TableColumnResolverTest {
         return column;
     }
 
-    private static TableDto createTableDto(String tableName) {
+    private static TableDto createTableDto(String schemaName, String tableName) {
         TableDto table = new TableDto();
         table.id = new TableIdDto();
+        table.id.schema = schemaName;
         table.id.name = tableName;
         return table;
     }
@@ -766,7 +772,7 @@ class TableColumnResolverTest {
 
         Assumptions.assumeTrue(this.schema.tables.stream()
                 .filter(t -> t.id.name.equals("Foo"))
-                .count()==0);
+                .count() == 0);
 
         String sql = "SELECT * FROM Foo";
 
@@ -786,7 +792,7 @@ class TableColumnResolverTest {
 
         Assumptions.assumeTrue(this.schema.tables.stream()
                 .filter(t -> t.id.name.equals("Foo"))
-                .count()==0);
+                .count() == 0);
 
         String sql = "SELECT * FROM Foo";
 
@@ -820,5 +826,82 @@ class TableColumnResolverTest {
     }
 
 
+    @Test
+    void testResolveTableWithExplicitSchema() throws Exception {
 
+        String sql = "SELECT user_id FROM public.users";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+
+        Table publicUsers = new Table("public", "users");
+        SqlTableReference tableReference = resolver.resolve(publicUsers);
+        assertNotNull(tableReference);
+        assertTrue(tableReference instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
+
+        assertEquals("users", baseTableReference.getTableId().getTableName());
+        assertEquals("public", baseTableReference.getTableId().getSchemaName());
+    }
+
+
+    @Test
+    void testResolveColumnFromExplicitSchema() throws Exception {
+
+        String sql = "SELECT user_id FROM public.users";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+
+        Column userIdColumn = new Column(null, "user_id");
+        SqlColumnReference columnReference = resolver.resolve(userIdColumn);
+        assertNotNull(columnReference);
+        assertNotNull(columnReference.getTableReference());
+        assertTrue(columnReference.getTableReference() instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
+
+        assertEquals("user_id", columnReference.getColumnName());
+        assertEquals("users", baseTableReference.getTableId().getTableName());
+        assertEquals("public", baseTableReference.getTableId().getSchemaName());
+    }
+
+    @Test
+    void testResolveColumnFromImplicitSchema() throws Exception {
+
+        String sql = "SELECT user_id FROM users";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Column userIdColumn = new Column(null, "user_id");
+        SqlColumnReference columnReference = resolver.resolve(userIdColumn);
+        assertNotNull(columnReference);
+        assertNotNull(columnReference.getTableReference());
+        assertTrue(columnReference.getTableReference() instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
+
+        assertEquals("user_id", columnReference.getColumnName());
+        assertEquals("users", baseTableReference.getTableId().getTableName());
+        assertEquals("public", baseTableReference.getTableId().getSchemaName());
+    }
+
+    @Test
+    void testResolveTableAlias() throws Exception {
+
+        String sql = "SELECT u.user_id FROM public.users u";
+
+        Select select = (Select) CCJSqlParserUtil.parse(sql);
+        resolver.enterStatementeContext(select);
+
+        Table tableAlias = new Table(null, "u");
+        SqlTableReference tableReference = resolver.resolve(tableAlias);
+        assertNotNull(tableReference);
+        assertTrue(tableReference instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
+
+        assertEquals("users", baseTableReference.getTableId().getTableName());
+        assertEquals("public", baseTableReference.getTableId().getSchemaName());
+    }
 }

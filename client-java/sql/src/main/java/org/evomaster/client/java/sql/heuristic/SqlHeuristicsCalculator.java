@@ -935,7 +935,7 @@ public class SqlHeuristicsCalculator {
                 if (sqlTableReference instanceof SqlBaseTableReference) {
                     SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) sqlTableReference;
                     SqlTableId sqlTableId = sqlBaseTableReference.getTableId();
-                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableId());
+                    tableData = sourceQueryResultSet.getQueryResultForNamedTable(sqlTableId.getTableName());
                 } else if (sqlTableReference instanceof SqlDerivedTableReference) {
                     SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) sqlTableReference;
                     Select select = sqlDerivedTableReference.getSelect();

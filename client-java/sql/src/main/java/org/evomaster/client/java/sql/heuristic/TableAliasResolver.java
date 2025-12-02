@@ -147,15 +147,18 @@ class TableAliasResolver {
             Table table = (Table) fromItem;
             if (table.getAlias() != null) {
                 final String lowerCaseAliasName = table.getAlias().getName().toLowerCase();
-                final String fullyQualifiedTableName = table.getFullyQualifiedName();
+                final String schemaName = table.getSchemaName();
+                final String tableName = table.getName();
+
                 final SqlTableReference tableReference;
-                if (isAliasDeclaredInCurrentContext(fullyQualifiedTableName)) {
+                if (schemaName == null && isAliasDeclaredInCurrentContext(tableName)) {
                     // if there is an alias, then we need to resolve to the actual table reference
                     // (e.g. could be an alias to a common table expression)
-                    tableReference = this.resolveTableReference(fullyQualifiedTableName);
+                    tableReference = this.resolveTableReference(tableName);
+
                 } else {
                     // if no alias is declared in the current context, we can safely assume that it is a table from the schema
-                    tableReference = new SqlBaseTableReference(fullyQualifiedTableName);
+                    tableReference = new SqlBaseTableReference(null, schemaName, tableName);
                 }
                 stackOfTableAliases.peek().put(lowerCaseAliasName, tableReference);
             }

@@ -63,6 +63,13 @@ class TablesAndColumnsFinderTest {
         dbBaseTable.columns.add(createColumnDto("id", "db_base"));
         dbBaseTable.columns.add(createColumnDto("name", "db_base"));
 
+        TableDto agentsTable = new TableDto();
+        agentsTable.id = new TableIdDto();
+        agentsTable.id.schema = "public";
+        agentsTable.id.name = "agents";
+        agentsTable.columns.add(createColumnDto("name", "agents"));
+        agentsTable.columns.add(createColumnDto("age", "agents"));
+
 
         schema.tables.add(usersTable);
         schema.tables.add(employeesTable);
@@ -70,6 +77,7 @@ class TablesAndColumnsFinderTest {
         schema.tables.add(votingTable);
         schema.tables.add(groupsTable);
         schema.tables.add(dbBaseTable);
+        schema.tables.add(agentsTable);
         return schema;
     }
 
@@ -701,5 +709,42 @@ class TablesAndColumnsFinderTest {
         assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "name")));
         assertTrue(finder.getColumnReferences(employeesTableReference).contains(new SqlColumnReference(employeesTableReference, "department_id")));
     }
+
+    @Test
+    void testSelectWithExplicitSchema() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT name, age FROM public.agents WHERE age > 18";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        SqlBaseTableReference publicUsersTableReference = new SqlBaseTableReference(null, "public","agents");
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(publicUsersTableReference));
+
+        assertEquals(2, finder.getColumnReferences(publicUsersTableReference).size());
+        assertTrue(finder.getColumnReferences(publicUsersTableReference).contains(new SqlColumnReference(publicUsersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(publicUsersTableReference).contains(new SqlColumnReference(publicUsersTableReference, "age")));
+    }
+
+    @Test
+    void testSelectAllWithExplicitSchema() throws JSQLParserException {
+        DbInfoDto schema = createSchema();
+        String sql = "SELECT * FROM public.agents";
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        SqlBaseTableReference publicUsersTableReference = new SqlBaseTableReference(null, "public","agents");
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        assertTrue(finder.containsColumnReferences(publicUsersTableReference));
+
+        assertEquals(2, finder.getColumnReferences(publicUsersTableReference).size());
+        assertTrue(finder.getColumnReferences(publicUsersTableReference).contains(new SqlColumnReference(publicUsersTableReference, "name")));
+        assertTrue(finder.getColumnReferences(publicUsersTableReference).contains(new SqlColumnReference(publicUsersTableReference, "age")));
+    }
+
 
 }

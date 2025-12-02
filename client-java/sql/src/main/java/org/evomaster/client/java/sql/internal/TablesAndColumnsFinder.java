@@ -136,9 +136,10 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
              */
         } else if (tableReference instanceof SqlBaseTableReference) {
             SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
-
+            String schemaName = baseTableReference.getTableId().getSchemaName();
+            String tableName = baseTableReference.getTableId().getTableName();
             this.schema.tables.stream()
-                    .filter(t -> new SqlTableId(t.id.name).equals(baseTableReference.getTableId()))
+                    .filter(t -> new TableNameMatcher(t.id).matches(schemaName, tableName))
                     .flatMap(t -> t.columns.stream())
                     .map(c -> new SqlColumnReference(baseTableReference, c.name))
                     .forEach(c -> addColumnReference(baseTableReference, c));
@@ -174,12 +175,16 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     private Set<SqlColumnReference> findColumnReferences(SqlTableId baseTableId) {
         Objects.requireNonNull(baseTableId);
-
+        String schemaName = baseTableId.getSchemaName();
+        String tableName = baseTableId.getTableName();
         return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.id.name).equals(baseTableId))
-                .flatMap(t -> t.columns.stream())
-                .map(c -> new SqlColumnReference(new SqlBaseTableReference(c.table), c.name))
-                .collect(Collectors.toSet());
+                .filter(t -> new TableNameMatcher(t.id).matches(schemaName, tableName))
+                .findFirst()
+                .map(t -> t.columns.stream()
+                        .map(c -> new SqlColumnReference(
+                                new SqlBaseTableReference(null, t.id.schema, t.id.name), c.name))
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
     }
 
     private Set<SqlColumnReference> findColumnReferences(FromItem fromItem) {
