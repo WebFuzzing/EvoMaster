@@ -803,6 +803,9 @@ class Main {
                 EMConfig.Algorithm.OnePlusLambdaLambdaGA ->
                     Key.get(object : TypeLiteral<OnePlusLambdaLambdaGeneticAlgorithm<RestIndividual>>() {})
 
+                EMConfig.Algorithm.CRO ->
+                    Key.get(object : TypeLiteral<CroAlgorithm<RestIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
         }

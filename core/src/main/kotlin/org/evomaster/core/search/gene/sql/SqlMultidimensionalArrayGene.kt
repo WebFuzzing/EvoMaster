@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -267,29 +266,6 @@ class SqlMultidimensionalArrayGene<T>(
     }
 
 
-    /**
-     * A multidimensional array gene can only bind to other multidimensional array genes
-     * with the same template and number of dimensions.
-     */
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene !is SqlMultidimensionalArrayGene<*>) {
-            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
-            return false
-        }
-        if (gene.template::class.java.simpleName != template::class.java.simpleName) {
-            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
-            return false
-        }
-        if (numberOfDimensions != gene.numberOfDimensions) {
-            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene of ${numberOfDimensions} dimensions to another multidimensional array gene of ${gene.numberOfDimensions}")
-            return false
-        }
-        killAllChildren()
-        val elements = gene.getViewOfChildren().mapNotNull { it.copy() as? T }.toMutableList()
-        addChildren(elements)
-        this.dimensionSizes = gene.dimensionSizes
-        return true
-    }
 
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
@@ -334,25 +310,36 @@ class SqlMultidimensionalArrayGene<T>(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlMultidimensionalArrayGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (numberOfDimensions != other.numberOfDimensions) {
-            throw IllegalArgumentException("Cannot copy value to array of  $numberOfDimensions dimensions from array of ${other.numberOfDimensions} dimensions")
-        }
+    /**
+     * A multidimensional array gene can only bind to other multidimensional array genes
+     * with the same template and number of dimensions.
+     */
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = getViewOfChildren()[0].copyValueFrom(other.getViewOfChildren()[0])
-                if (ok){
-                    this.dimensionSizes = other.dimensionSizes
-                }
-                ok
-            }, false
-        )
+        val gene = other.getPhenotype()
+
+        if (gene !is SqlMultidimensionalArrayGene<*>) {
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene to ${gene::class.java.simpleName}")
+            return false
+        }
+        if (gene.template::class.java.simpleName != template::class.java.simpleName) {
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}")
+            return false
+        }
+        if (numberOfDimensions != gene.numberOfDimensions) {
+            LoggingUtil.uniqueWarn(ArrayGene.log, "cannot bind SqlMultidimensionalArrayGene of ${numberOfDimensions} dimensions to another multidimensional array gene of ${gene.numberOfDimensions}")
+            return false
+        }
+        killAllChildren()
+        val elements = gene.getViewOfChildren().mapNotNull { it.copy() as? T }.toMutableList()
+        addChildren(elements)
+        this.dimensionSizes = gene.dimensionSizes
+        return true
     }
+
+
+
 
 
     /**

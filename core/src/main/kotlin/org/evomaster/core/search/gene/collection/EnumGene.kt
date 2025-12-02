@@ -1,11 +1,17 @@
 package org.evomaster.core.search.gene.collection
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
+import org.evomaster.core.search.gene.numeric.DoubleGene
+import org.evomaster.core.search.gene.numeric.FloatGene
+import org.evomaster.core.search.gene.numeric.IntegerGene
+import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.root.SimpleGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.impact.impactinfocollection.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -197,18 +203,36 @@ class EnumGene<T : Comparable<T>>(
         return valueNames?.get(index)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is EnumGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+    /**
+     * [EnumGene] can be used in DTOs when the API spec contains either example values or an enum.
+     * Since the [EnumGene] uses generics to hold values, this function returns the type to be used
+     * by the DTO writing mechanism.
+     *
+     * @param isKotlinOutput to format output as Int instead of Integer when values are int numbers
+     *
+     * @return the String class name of the type being represented in the [EnumGene]. Default is String.
+     */
+    fun getValueType(isKotlinOutput: Boolean): String {
+        return when {
+            values.isEmpty() -> "String"
+            parent is ChoiceGene<*> -> getTypeForExampleEnum(isKotlinOutput)
+            values.first() is Int && isKotlinOutput -> "Int"
+            else -> values.first().javaClass.simpleName
         }
-        val current = this.index
-        this.index = other.index
-        if (!isLocallyValid()){
-            this.index = current
-            return false
-        }
+    }
 
-        return true
+    // In this case whe need to check the other leaf in the ChoiceGene to extract the example type
+    private fun getTypeForExampleEnum(isKotlinOutput: Boolean): String {
+        val children = (parent as ChoiceGene<*>).getViewOfChildren()
+        val otherChoice = children.find { it != this }
+        return when (otherChoice) {
+            is IntegerGene -> if (isKotlinOutput) "Int" else "Integer"
+            is LongGene -> "Long"
+            is DoubleGene -> "Double"
+            is FloatGene -> "Float"
+            is BooleanGene -> "Boolean"
+            else -> "String"
+        }
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -219,21 +243,21 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        when {
-            gene is EnumGene<*> -> index == gene.index
-            gene is StringGene && gene.getSpecializationGene() != null -> return setValueBasedOn(gene.getSpecializationGene()!!)
+        val phenotype = other.getPhenotype()
+        when(phenotype) {
+            is EnumGene<*> -> index = phenotype.index
             else -> {
                 // since the binding is derived, it is not always true.
-                log.info("cannot bind EnumGene with ${gene::class.java.simpleName}")
+                log.info("cannot bind EnumGene with ${phenotype::class.java.simpleName}")
                 return false
             }
         }
         return true
     }
 
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         val target = values.indexOfFirst { it == value }
         if(target < 0){

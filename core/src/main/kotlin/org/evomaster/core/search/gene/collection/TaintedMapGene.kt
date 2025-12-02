@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.collection
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
@@ -217,23 +218,48 @@ class TaintedMapGene(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        //TODO
-
-        return false
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        //TODO
 
-        return false
+        if(other !is TaintedMapGene){
+            return false
+        }
+
+        if(this.elements.size != other.elements.size){
+            return false
+        }
+
+        for(e in this.elements){
+            val x = other.elements.find { it.first.name == e.first.name }
+                ?: return false
+            if(! e.second.containsSameValueAs(x.second)){
+                return false
+            }
+        }
+
+        return true
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        //TODO
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-        return false
+        if(other !is TaintedMapGene){
+            return false
+        }
+
+        killAllChildren()
+        learnedKeys.clear()
+        learnedKeys.addAll(other.learnedKeys)
+        learnedTypes.clear()
+        learnedTypes.putAll(other.learnedTypes)
+
+        other.elements.forEach {
+            addElement(it.copy() as PairGene<StringGene, Gene>)
+        }
+        taintId = other.taintId
+
+        return true
     }
+
 
     override fun getPossiblyTaintedValue(): String {
         return taintId

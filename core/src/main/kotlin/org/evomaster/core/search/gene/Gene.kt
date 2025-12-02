@@ -15,15 +15,9 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.search.RootElement
-import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.utils.GeneUtils
-import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
-import org.evomaster.core.search.gene.wrapper.FlexibleGene
-import org.evomaster.core.search.gene.wrapper.NullableGene
-import org.evomaster.core.search.gene.wrapper.OptionalGene
-import org.evomaster.core.search.gene.wrapper.SelectableWrapperGene
-import org.evomaster.core.search.gene.wrapper.WrapperGene
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
 
@@ -349,6 +343,17 @@ abstract class Gene(
         return this
     }
 
+    /**
+     * Return the gene used for the phenotype.
+     * Most of the time this would be `this` gene.
+     * Note, it is different from the concept of "wrapper", as the wrapper itself can impact
+     * the phenotype.
+     *
+     * This is mainly used to handle very special cases such as [StringGene] and [SeededGene]
+     */
+    open fun getPhenotype() : Gene{
+        return this
+    }
 
 
     protected fun matchingClass(klass: Class<*>, strict: Boolean): Boolean {
@@ -871,12 +876,16 @@ abstract class Gene(
     /**
      * Genes might contain a value that is also stored
      * in another gene of the same type.
+     *
+     * If the type of [other] is different, this method might throw an [IllegalArgumentException]
+     *
+     * TODO refactor, in which type-check is done here
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
 
     /**
-     * evaluate whether [this] and [gene] belong to one evolution during search
+     * evaluate whether `this` and [gene] belong to one evolution during search
      */
     open fun possiblySame(gene: Gene): Boolean = gene.name == name && gene::class == this::class
 
@@ -906,19 +915,22 @@ abstract class Gene(
      * sync [bindingGenes] based on [this]
      */
     fun syncBindingGenesBasedOnThis(all: MutableSet<Gene> = mutableSetOf()) {
-        if (bindingGenes.isEmpty()) return
+        if (bindingGenes.isEmpty()){
+            return
+        }
         all.add(this)
         bindingGenes.filterNot { all.contains(it) }.forEach { b ->
             all.add(b)
-            if (!b.setValueBasedOn(this))
-                LoggingUtil.uniqueWarn(
-                    log,
-                    "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName}) based on this gene (${this.name} with ${this::class.java.simpleName})"
-                )
+            if (!b.copyValueFrom(this)) {
+                LoggingUtil.uniqueWarn(log, "fail to bind the gene (${b.name} with the type ${b::class.java.simpleName})" +
+                            " based on this gene (${this.name} with ${this::class.java.simpleName})")
+            }
             b.syncBindingGenesBasedOnThis(all)
         }
 
-        children.filterNot { all.contains(it) }.forEach { it.syncBindingGenesBasedOnThis(all) }
+        children.filterNot { all.contains(it) }.forEach {
+            it.syncBindingGenesBasedOnThis(all)
+        }
     }
 
     /**
@@ -1110,53 +1122,43 @@ abstract class Gene(
      * The type of genes can be different.
      * However, there is no check if constraints are kept satisfied.
      * So, this method should not be called directly.
-     * Rather use [setFromDifferentGene], which internally it calls this method,
+     * Rather use [copyValueFrom], which internally it calls this method,
      * and then revert in case of constraint violations.
      *
-     * @return whether the binding performs successfully.
+     * @return whether the value is copied based on [other] successfully.
+     * This is based only on the gene type.
+     * _WARNING_:
+     * - `true` might still leave the gene in an inconsistent state (ie violated constraints)
+     * - `false` might still apply partial updates (eg, think of an objects with several fields)
+     *
+     * Do not call directly outside this package. Call [copyValueFrom]
      *
      * TODO unfortunately, Kotlin has major design flows that do not allow package-level and true protected-level
      * scope, like in Java :(
      * This is a case in which is much worse than Java.
      * But it could be simulated with Detekt and a rule like @PackagePrivate
      */
-    @Deprecated("Do not call directly outside this package. Call setFromDifferentGene")
-    //TODO remove deprecated once we integrate @PackagePrivate
-    internal abstract fun setValueBasedOn(gene: Gene): Boolean
+    abstract fun unsafeCopyValueFrom(other: Gene): Boolean
 
 
-    /**
-     * copy value based on [other]
-     * in some case, the [other] might not satisfy constraints of [this gene],
-     * then copying will not be performed successfully
-     *
-     * FIXME unclear if side-effects or not
-     *
-     * @return whether the value is copied based on [other] successfully
-     */
-    abstract fun copyValueFrom(other: Gene): Boolean
-
+    fun forceNewTaints(){
+        flatView().forEach { r ->
+            if(r is TaintableGene && !r.isDependentTaint()){
+                r.forceNewTaintId()
+            }
+        }
+    }
 
     /**
-     * Update current value of this gene, base on other gene.
-     * This is not [copyValueFrom], as the gene could be different.
-     * FIXME that comment seems wrong
+     * Update current value of this gene, base on [other] gene.
      * If for any reason the update fails, there is not going to be any side-effects.
+     * A successful update must guarantee that the gene remains valid (ie, no violated constraints).
      *
      * @return if the update was successful
      */
-    fun setFromDifferentGene(gene: Gene, undoIfUpdateFails: Boolean = true): Boolean {
-
-        //FIXME current implementation leads to infinite loops. must fix copyValueFrom
-        //return updateValueOnlyIfValid( { setValueBasedOn(gene) } , undoIfUpdateFails)
-        //TODO update once fixed
-        return setValueBasedOn(gene)
+    fun copyValueFrom(gene: Gene): Boolean {
+        return updateValueOnlyIfValid( { unsafeCopyValueFrom(gene) }, true)
     }
-
-    /*
-        FIXME: looks like redundancies and inconsistencies between copyValueFrom and setFromDifferentGene.
-        TODO once fixed, update
-     */
 
     /**
      * Given a string value, apply it to the current state of this gene (and possibly recursively to its children).
@@ -1165,7 +1167,7 @@ abstract class Gene(
      * is violated.
      */
     fun setFromStringValue(value: String, undoIfUpdateFails: Boolean = true): Boolean {
-        return updateValueOnlyIfValid({ setValueBasedOn(value) }, undoIfUpdateFails)
+        return updateValueOnlyIfValid({ unsafeSetFromStringValue(value) }, undoIfUpdateFails)
     }
 
     /**
@@ -1181,7 +1183,7 @@ abstract class Gene(
      * TODO @PackagePrivate
      */
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
-    internal open fun setValueBasedOn(value: String): Boolean {
+    internal open fun unsafeSetFromStringValue(value: String): Boolean {
         //TODO in future this should be abstract, to force each gene to handle it.
         //few implementations can be based on AbstractParser class for Postman
         throw IllegalStateException("setValueBasedOn() is not implemented for gene ${this::class.simpleName}")
@@ -1189,25 +1191,33 @@ abstract class Gene(
 
 
     /**
-     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) isLocallyValid is true
+     * here `valid` means that 1) [updateValue] performs correctly, ie, returns true AND 2) [isGloballyValid] is true
      *
      * @param updateValue lambda performs update of value of the gene
-     * @param undoIfUpdateFails represents whether it needs to undo the value update if [undoIfUpdateFails] returns false
+     * @param undoIfUpdateFails represents whether it needs to undo the value update if [updateValue] returns false
      *
-     * @return if the value is updated with [updateValue]
+     * @return if the value is updated with [updateValue]. note if for any reason the current gene was not valid,
+     *         the validity of the update will not be checked.
      */
     fun updateValueOnlyIfValid(updateValue: () -> Boolean, undoIfUpdateFails: Boolean): Boolean {
+
+        if(!undoIfUpdateFails) {
+            return updateValue()
+        }
+
+        val currentlyValid = isGloballyValid()
+
         val current = copy()
         val ok = updateValue()
-        if (!ok && !undoIfUpdateFails) return false
 
-        if (!ok || !isLocallyValid()) {
-            val success = copyValueFrom(current)
+        if (!ok || (currentlyValid && !isGloballyValid())) {
+            //revert back
+            val success = unsafeCopyValueFrom(current)
+            //reversion should always work... if fails, it is a bug
             assert(success)
             return false
         }
         return true
-
     }
 
     /**

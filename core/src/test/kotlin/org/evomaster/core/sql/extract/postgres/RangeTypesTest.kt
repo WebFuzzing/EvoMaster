@@ -169,12 +169,12 @@ class RangeTypesTest : ExtractTestBasePostgres() {
             isRightClosed = BooleanGene("right", value = true)
         )
 
-        genes[0].copyValueFrom(int4rangeGene)
-        genes[1].copyValueFrom(int8rangeGene)
-        genes[2].copyValueFrom(numrangeGene)
-        genes[3].copyValueFrom(timestamprangeGene)
-        genes[4].copyValueFrom(timestamprangeGene)
-        genes[5].copyValueFrom(daterangeGene)
+        genes[0].unsafeCopyValueFrom(int4rangeGene)
+        genes[1].unsafeCopyValueFrom(int8rangeGene)
+        genes[2].unsafeCopyValueFrom(numrangeGene)
+        genes[3].unsafeCopyValueFrom(timestamprangeGene)
+        genes[4].unsafeCopyValueFrom(timestamprangeGene)
+        genes[5].unsafeCopyValueFrom(daterangeGene)
 
         val dbCommandDto = SqlActionTransformer.transform(actions)
         SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)

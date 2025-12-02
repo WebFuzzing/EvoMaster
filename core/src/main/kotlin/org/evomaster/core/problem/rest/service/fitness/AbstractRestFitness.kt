@@ -31,6 +31,7 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -62,7 +63,10 @@ import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 import javax.ws.rs.ProcessingException
@@ -876,23 +880,41 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     it is or not a valid char.
                     Furthermore, likely needed to be done in resolveLocation,
                     or at least check how RestAssured would behave
+                    TODO update RestPathTest, check TODO there, once fixed
                  */
                 //it.replace("\"", "")
+                //FIXME outputFormat shouldn't really be used here
+                //FIXME in resolveLocation
                 GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
             }
 
+        Lazy.assert { URI.create(fullUri).isAbsolute }
 
-        val builder = if (a.produces.isEmpty()) {
-            log.debug("No 'produces' type defined for {}", path)
-            client.target(fullUri).request("*/*")
+        val builder = try {
+            if (a.produces.isEmpty()) {
+                log.debug("No 'produces' type defined for {}", path)
+                client.target(fullUri).request("*/*")
 
-        } else {
-            /*
+            } else {
+                /*
                 TODO: This only considers the first in the list of produced responses
                 This is fine for endpoints that only produce one type of response.
                 Could be a problem in future
             */
-            client.target(fullUri).request(a.produces.first())
+                client.target(fullUri).request(a.produces.first())
+            }
+        } catch (e: Exception) {
+            /*
+                FIXME we need to solve this issue somehow, as location values might be invalid...
+                but i guess that should be done in resolveLocation
+             */
+            throw RuntimeException("""
+                Failed to build HTTP invocation. 
+                Resolved path: $path
+                Location header: $locationHeader
+                Resolved location: $fullUri
+                Error: ${e.message}
+            """.trimIndent(), e)
         }
 
         handleHeaders(a, builder, cookies, tokens)
@@ -1003,8 +1025,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val id = rcr.getResourceId()
 
                 if (id != null) {
-                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+
+                    //FIXME tmp fix. need to be handled properly, also in generated tests with test-utils-*
+                    val escapedId = URLEncoder.encode(id.value, StandardCharsets.UTF_8)
+                        .replace("+", "%20");
+
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,escapedId)
                     if(location != null) {
+                        /*
+                            FIXME this case seems ignored in RestTestCaseWriter.handleLocationHeader.
+                            Need proper handling + E2E for all these cases
+                         */
                         rcr.setHeuristicsForChainedLocation(true)
                     }
                 }
@@ -1214,6 +1245,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
+        handleXSSCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1334,6 +1366,46 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
                 r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleXSSCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+            return
+        }
+
+        // Check if this individual has XSS vulnerability
+        if(!RestSecurityOracle.hasXSS(individual, actionResults)){
+            return
+        }
+
+        // Find the action(s) where XSS payload appears in the response
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+            if(!StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                continue
+            }
+
+            val responseBody = r.getBody() ?: continue
+
+            // Check if any XSS payload is present in this response
+            for(payload in XSS_PAYLOADS){
+                if(responseBody.contains(payload, ignoreCase = false)){
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, index)
+                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    break // Only add one fault per action
+                }
             }
         }
     }

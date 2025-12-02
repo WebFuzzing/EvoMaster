@@ -243,7 +243,14 @@ abstract class MapGene<K, V>(
             TODO support other types if needed
          */
         if (isElementApplicableToUniqueCheck(geneValue)){
-            return elements.filter { ParamUtil.getValueGene(it.first).containsSameValueAs(ParamUtil.getValueGene(geneValue)) }
+            return elements.filter {
+                try {
+                    //TODO need refactoring/cleanup... should avoid try/catch
+                    ParamUtil.getValueGene(it.first).containsSameValueAs(ParamUtil.getValueGene(geneValue))
+                }catch (e: Exception){
+                    false
+                }
+            }
         }
         return listOf()
     }
