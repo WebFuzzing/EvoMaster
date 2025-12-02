@@ -5,7 +5,7 @@ import com.foo.rest.examples.spring.resource.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 /** automatically created on 2019-08-29 */
 @RestController
@@ -14,7 +14,7 @@ public class RpRRestAPI {
   @Autowired private RpRRepository rpRRepository;
   @Autowired private RdRepository rdRepository;
 
-  @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+  @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity createRpREntity(@RequestBody RpR rpR) {
     if (rpRRepository.findById(rpR.id).isPresent()) return ResponseEntity.status(400).build();
     RpREntity node = new RpREntity();
@@ -31,7 +31,7 @@ public class RpRRestAPI {
   @RequestMapping(
       value = "/{rpRId}",
       method = RequestMethod.GET,
-      produces = MediaType.APPLICATION_JSON)
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<RpR> getRpREntity(@PathVariable(name = "rpRId") Long rpRId) {
     if (!rpRRepository.findById(rpRId).isPresent()) return ResponseEntity.status(400).build();
     RpR dto = rpRRepository.findById(rpRId).get().getDto();

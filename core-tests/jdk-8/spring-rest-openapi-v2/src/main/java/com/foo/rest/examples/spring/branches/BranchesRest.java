@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping(path = "/api/branches")
@@ -20,8 +20,8 @@ public class BranchesRest {
     @RequestMapping(
             value = "/pos",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON,
-            consumes = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public BranchesResponseDto pos(@ApiParam("x and y inputs")
                                        @RequestBody BranchesPostDto dto){
@@ -38,8 +38,8 @@ public class BranchesRest {
     @RequestMapping(
             value = "/neg",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON,
-            consumes = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public BranchesResponseDto neg(@ApiParam("x and y inputs")
                                        @RequestBody BranchesPostDto dto){
@@ -55,8 +55,8 @@ public class BranchesRest {
     @RequestMapping(
             value = "/eq",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON,
-            consumes = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE,
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public BranchesResponseDto eq(@ApiParam("x and y inputs")
                                       @RequestBody BranchesPostDto dto){

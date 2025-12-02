@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.Objects;
 
 @RestController
@@ -18,7 +18,7 @@ public class WireMockRest {
     @RequestMapping(
             value = "/equalsFoo/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public boolean equalsFoo(
             @PathVariable("s") String s
@@ -29,7 +29,7 @@ public class WireMockRest {
     @RequestMapping(
             value = "/external",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public boolean externalCall() {
         boolean responseDto = false;

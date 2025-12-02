@@ -3,7 +3,7 @@ package com.foo.rest.examples.spring.namedresource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,7 +21,7 @@ public class NamedResourceRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity create(@PathVariable("id") String id,
                                  @RequestBody NamedResourceDto dto) {
@@ -35,7 +35,7 @@ public class NamedResourceRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<NamedResourceDto> get(@PathVariable("id") String id) {
 
@@ -67,7 +67,7 @@ public class NamedResourceRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.PUT,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity replace(@PathVariable("id") String id,
                                   @RequestBody NamedResourceDto dto) {
@@ -85,7 +85,7 @@ public class NamedResourceRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.PATCH,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity update(@PathVariable("id") String id,
                                  @RequestBody NamedResourceDto dto) {

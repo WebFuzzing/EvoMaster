@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping(path = "/api/strings")
@@ -15,7 +15,7 @@ public class StringsRest {
     @RequestMapping(
             value = "/equalsFoo/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public StringsResponseDto equalsFoo(
             @PathVariable("s") String s
@@ -33,7 +33,7 @@ public class StringsRest {
     @RequestMapping(
             value = "/startEnds/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public StringsResponseDto startsEnd(
             @PathVariable("s") String s
@@ -54,7 +54,7 @@ public class StringsRest {
     @RequestMapping(
             value = "/contains/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public StringsResponseDto contains(
             @PathVariable("s") String s
@@ -75,7 +75,7 @@ public class StringsRest {
     @RequestMapping(
             value = "/nope/{s}",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public StringsResponseDto nope(
             @PathVariable("s") String s

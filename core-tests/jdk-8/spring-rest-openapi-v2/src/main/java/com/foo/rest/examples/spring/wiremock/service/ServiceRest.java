@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -20,7 +20,7 @@ public class ServiceRest {
     @RequestMapping(
             value = "/external",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseDto> dummyExternalCall() {
         ResponseDto responseDto = new ResponseDto();
@@ -67,7 +67,7 @@ public class ServiceRest {
     @RequestMapping(
             value = "/external/complex",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ResponseDto> complexExternalCalls() {
         ResponseDto responseDto = new ResponseDto();

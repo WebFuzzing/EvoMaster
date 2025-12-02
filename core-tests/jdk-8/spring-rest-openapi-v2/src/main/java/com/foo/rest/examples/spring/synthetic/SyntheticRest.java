@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +19,7 @@ public class SyntheticRest {
     @RequestMapping(
             value = "/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String equalsFoo(
             @PathVariable("s") String s

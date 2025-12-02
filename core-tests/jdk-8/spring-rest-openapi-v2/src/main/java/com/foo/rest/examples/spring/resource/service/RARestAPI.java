@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 /** automatically created on 2019-08-29 */
 @RestController
@@ -15,7 +15,7 @@ import javax.ws.rs.core.MediaType;
 public class RARestAPI {
   @Autowired private RARepository rARepository;
 
-  @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON)
+  @RequestMapping(value = "", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity createRAEntity(@Valid @RequestBody RA rA) {
     if (rARepository.findById(rA.id).isPresent()) return ResponseEntity.status(400).build();
     RAEntity node = new RAEntity();
@@ -29,7 +29,7 @@ public class RARestAPI {
   @RequestMapping(
       value = "/{rAId}",
       method = RequestMethod.GET,
-      produces = MediaType.APPLICATION_JSON)
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<RA> getRAEntity(@PathVariable(name = "rAId") Long rAId) {
     if (!rARepository.findById(rAId).isPresent()) return ResponseEntity.status(400).build();
     RA dto = rARepository.findById(rAId).get().getDto();

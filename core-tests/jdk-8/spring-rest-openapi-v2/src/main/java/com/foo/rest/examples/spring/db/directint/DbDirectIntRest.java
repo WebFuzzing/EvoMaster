@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.List;
 
 @RestController
@@ -32,7 +32,7 @@ public class DbDirectIntRest {
     @RequestMapping(
             path = "/{x}/{y}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity get(@PathVariable("x") int x, @PathVariable("y") int y) {
 

@@ -4,7 +4,7 @@ package com.foo.rest.examples.spring.headerlocation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +18,7 @@ public class HeaderLocationRest {
 
     @RequestMapping(
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity create(@RequestBody HeaderLocationDto dto) {
 
@@ -31,7 +31,7 @@ public class HeaderLocationRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<HeaderLocationDto> get(@PathVariable("id") String id) {
 
@@ -63,7 +63,7 @@ public class HeaderLocationRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.PUT,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity replace(@PathVariable("id") String id,
                                   @RequestBody HeaderLocationDto dto) {
@@ -81,7 +81,7 @@ public class HeaderLocationRest {
     @RequestMapping(
             value = "/{id}",
             method = RequestMethod.PATCH,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity update(@PathVariable("id") String id,
                                  @RequestBody HeaderLocationDto dto) {

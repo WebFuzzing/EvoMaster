@@ -1,10 +1,7 @@
 package com.foo.rest.examples.spring.scheduled;
 
-import com.foo.rest.examples.spring.strings.StringsResponseDto;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
-
-import javax.ws.rs.core.MediaType;
 
 
 @RestController

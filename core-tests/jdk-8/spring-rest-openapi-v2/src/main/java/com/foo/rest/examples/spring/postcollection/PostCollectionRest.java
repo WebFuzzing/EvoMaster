@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -18,7 +18,7 @@ public class PostCollectionRest {
 
     @RequestMapping(
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity create(@RequestBody CreateDto dto) {
 
@@ -32,7 +32,7 @@ public class PostCollectionRest {
 
     @RequestMapping(
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<ValuesDto> get() {
 

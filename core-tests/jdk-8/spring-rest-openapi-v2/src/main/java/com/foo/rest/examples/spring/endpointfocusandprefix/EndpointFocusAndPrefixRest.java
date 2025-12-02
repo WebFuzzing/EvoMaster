@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.util.HtmlUtils;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,7 +27,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet/{petId}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String getPetById(    @ApiParam("Value to retrieve")
                                  @PathVariable("petId")
@@ -39,7 +39,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet/{petId}",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String updatePetById(    @ApiParam("Value to store")
                                     @PathVariable("petId")
@@ -51,7 +51,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet/{petId}",
             method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String deletePetById(    @ApiParam("Value to delete")
                                     @PathVariable("petId")
@@ -63,7 +63,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet/{petId}/uploadImage",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String uploadImageForPet(    @ApiParam("Pet ID to upload")
                                         @PathVariable("petId")
@@ -75,7 +75,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String addNewPet() {
         return "A new pet has been added";
@@ -85,7 +85,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet",
             method = RequestMethod.PUT,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String updatePet() {
         return "An existing pet has been updated";
@@ -95,7 +95,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/pet/findByStatus",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<String> findByStatus() {
         return Arrays.asList("pet1", "pet2", "pet3", "pet4");
@@ -105,7 +105,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/store/inventory",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<String> getStoreInventory() {
         return Arrays.asList("item", "item2", "item3");
@@ -116,7 +116,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/store/order/{orderID}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String findStoreOrderById(    @ApiParam("order ID to check")
                                          @PathVariable("orderID")
@@ -128,7 +128,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/store/order/{orderID}",
             method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String deleteStoreOrderById(    @ApiParam("order ID to check")
                                            @PathVariable("orderID")
@@ -140,7 +140,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/store/order",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String placeOrder() {
         return "Order Placed";
@@ -150,7 +150,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/{username}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String getUserByName(    @ApiParam("username to retrieve")
                                     @PathVariable("username")
@@ -162,7 +162,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/{username}",
             method = RequestMethod.PUT,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String updateUserInformation(
             @ApiParam("username to update")
@@ -175,7 +175,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/{username}",
             method = RequestMethod.DELETE,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String deleteUserInformation(
             @ApiParam("username to delete")
@@ -188,7 +188,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String createUser() {
         return "Created a new user";
@@ -198,7 +198,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/createWithList",
             method = RequestMethod.POST,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String createUserWithList(
             @RequestBody List<EndpointFocusAndPrefixRestDTO>
@@ -225,7 +225,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/login",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String userLogin() {
 
@@ -236,7 +236,7 @@ public class EndpointFocusAndPrefixRest {
     @RequestMapping(
             value = "/api/user/logout",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String userLogout() {
 

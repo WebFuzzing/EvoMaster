@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.time.LocalDate;
 import java.util.*;
 /** automatically created on 2020-10-22 */
@@ -19,7 +19,7 @@ public class FooRestAPI {
   @RequestMapping(
       value = "/foos/{x}",
       method = RequestMethod.POST,
-      consumes = MediaType.APPLICATION_JSON)
+      consumes = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity createFoo(
       @PathVariable(name = "x") Integer x, @RequestParam String y, @Valid @RequestBody Info z) {
     if (fooRepository.count() < 3)
@@ -53,7 +53,7 @@ public class FooRestAPI {
   @RequestMapping(
       value = "/foos/{x}",
       method = RequestMethod.GET,
-      produces = MediaType.APPLICATION_JSON)
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<Foo> getFooById(@PathVariable(name = "x") Integer x) {
     if (!fooRepository.findById(x).isPresent()) return ResponseEntity.status(404).build();
     Foo dto = fooRepository.findById(x).get().getDto();
@@ -63,7 +63,7 @@ public class FooRestAPI {
   @RequestMapping(
       value = "/foos",
       method = RequestMethod.GET,
-      produces = MediaType.APPLICATION_JSON)
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity<List<Foo>> getAllFoo() {
     List<Foo> allDtos = new ArrayList<>();
     for (FooEntity e : fooRepository.findAll()) {
@@ -75,7 +75,7 @@ public class FooRestAPI {
   @RequestMapping(
       value = "/foos/{x}",
       method = RequestMethod.DELETE,
-      produces = MediaType.APPLICATION_JSON)
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public ResponseEntity deleteFoo(@PathVariable(name = "x") Integer x) {
     // an entity with id x should exist
     if (!fooRepository.findById(x).isPresent()) return ResponseEntity.status(404).build();

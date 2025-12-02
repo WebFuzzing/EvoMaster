@@ -5,7 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping(path = "/api/pi")
@@ -15,7 +15,7 @@ public class PositiveIntegerRest {
     @RequestMapping(
             value = "/{value}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseDto checkIfPositive(
             @ApiParam("The value to check")
@@ -33,8 +33,8 @@ public class PositiveIntegerRest {
     @RequestMapping(
             value = "",
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON,
-            produces = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseDto checkIfPositive(@RequestBody PostDto postDto){
 

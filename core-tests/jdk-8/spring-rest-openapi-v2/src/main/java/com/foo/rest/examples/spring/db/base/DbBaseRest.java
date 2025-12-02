@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,7 +22,7 @@ public class DbBaseRest {
     @RequestMapping(
             path = "/entities",
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity create(@NotNull @RequestBody DbBaseDto dto) {
 
@@ -38,7 +38,7 @@ public class DbBaseRest {
     @RequestMapping(
             path = "/entities",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public List<DbBaseDto> getAll() {
 
@@ -50,7 +50,7 @@ public class DbBaseRest {
     @RequestMapping(
             path = "/entities/{id}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<DbBaseDto> get(@PathVariable("id") Long id) {
 
@@ -71,7 +71,7 @@ public class DbBaseRest {
     @RequestMapping(
             path = "/entitiesByName/{name}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ResponseEntity<List<DbBaseDto>> getByName(@PathVariable String name) {
 

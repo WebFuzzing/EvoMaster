@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.Size;
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 
 @Validated
 @RestController
@@ -21,7 +21,7 @@ public class StringMinLengthRest {
     @RequestMapping(
             value = "/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public String min20(
             @PathVariable("s") @Valid @Size(min = 20) String s
