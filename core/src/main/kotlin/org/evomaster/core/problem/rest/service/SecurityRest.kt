@@ -379,7 +379,7 @@ class SecurityRest {
 
                     if(!hasInvalidChars && !hasMaxLength){
                         // append the SQLi payload value
-                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + payload)
+                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDuration))
                         anySuccess = true
                     }
                 }

@@ -2602,16 +2602,25 @@ class EMConfig {
     var ssrf = false
 
     @Experimental
-    @Cfg("Maximum response time (in milliseconds) to consider a potential SQL Injection vulnerability.")
-    var sqlInjectionMaxResponseTimeMs = 2000
-
-    @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
     var xss = false
 
     @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
     var sqli = false
+
+    @Experimental
+    @Cfg("Maximum response time (in milliseconds) to consider a potential SQL Injection vulnerability.")
+    var sqlInjectionMaxResponseTimeMs = 2000
+
+    @Experimental
+    @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
+    var sqliInjectedSleepDuration = 5
+
+    @Experimental
+    @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    var sqliBaselineMaxResponseTimeMs = 2000
+
 
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
