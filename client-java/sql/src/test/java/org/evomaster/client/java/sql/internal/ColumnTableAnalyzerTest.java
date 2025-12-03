@@ -30,6 +30,16 @@ public class ColumnTableAnalyzerTest {
         assertEquals("foo", data.getKey().getTableName());
     }
 
+    @Test
+    public void testSimpleUpdateWithQualifier() {
+
+        String sql = "UPDATE Bar.Foo SET x=42";
+
+        Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getUpdatedDataFields(sql);
+
+        assertEquals("bar", data.getKey().getSchemaName());
+        assertEquals("foo", data.getKey().getTableName());
+    }
 
     @Test
     public void testInsertInSimpleTable() {
@@ -38,7 +48,7 @@ public class ColumnTableAnalyzerTest {
 
         Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
 
-        assertEquals(new SqlTableId("Foo"), data.getKey());
+        assertEquals(new SqlTableId(null,null,"Foo"), data.getKey());
 
     }
 
@@ -49,7 +59,7 @@ public class ColumnTableAnalyzerTest {
 
         Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getUpdatedDataFields(sql);
 
-        assertEquals(new SqlTableId("Foo"), data.getKey());
+        assertEquals(new SqlTableId(null,null,"Foo"), data.getKey());
         //TODO check on actual fields when implemented
     }
 
@@ -67,7 +77,7 @@ public class ColumnTableAnalyzerTest {
         SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
 
         assertNotNull(deletedTableId);
-        assertEquals(new SqlTableId("Foo"), deletedTableId);
+        assertEquals(new SqlTableId(null,null,"Foo"), deletedTableId);
     }
 
     @Test
@@ -97,7 +107,7 @@ public class ColumnTableAnalyzerTest {
         Map<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getSelectReadDataFields(select);
 
         assertEquals(1, data.size());
-        Set<SqlColumnId> columns = data.get(new SqlTableId("Foo"));
+        Set<SqlColumnId> columns = data.get(new SqlTableId(null,null,"Foo"));
 
         assertEquals(1, columns.size());
         assertTrue(columns.contains(new SqlColumnId("*")));
@@ -115,13 +125,13 @@ public class ColumnTableAnalyzerTest {
 
         assertEquals(2, data.size());
 
-        final Set<SqlColumnId> ordersColumns = data.get(new SqlTableId("Orders"));
+        final Set<SqlColumnId> ordersColumns = data.get(new SqlTableId(null,null,"Orders"));
 
         //FIXME: once supporting actual fields instead of *
         assertEquals(1, ordersColumns.size());
         assertTrue(ordersColumns.contains(new SqlColumnId("*")));
 
-        final Set<SqlColumnId> customersColumns = data.get(new SqlTableId("Customers"));
+        final Set<SqlColumnId> customersColumns = data.get(new SqlTableId(null,null,"Customers"));
 
         //FIXME: once supporting actual fields instead of *
         assertEquals(1, customersColumns.size());

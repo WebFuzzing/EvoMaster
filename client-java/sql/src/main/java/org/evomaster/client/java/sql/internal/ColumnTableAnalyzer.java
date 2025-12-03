@@ -29,7 +29,9 @@ public class ColumnTableAnalyzer {
 
         Table table = stmt.getTable();
         if (table != null) {
-            SqlTableId sqlTableId = new SqlTableId(null, table.getSchemaName(),table.getName());
+            final String schemaName = table.getSchemaName();
+            final String tableName = table.getName();
+            SqlTableId sqlTableId = new SqlTableId(null, schemaName, tableName);
             return sqlTableId;
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
@@ -47,8 +49,10 @@ public class ColumnTableAnalyzer {
         Insert stmt = (Insert) SqlParserUtils.parseSqlCommand(insert);
         Table table = stmt.getTable();
         if (table != null) {
+            final String schemaName = table.getSchemaName();
+            final String tableName = table.getName();
             Map.Entry<SqlTableId, Set<SqlColumnId>> insertedDataFields = new AbstractMap.SimpleEntry<>(
-                    new SqlTableId(null, table.getSchemaName(), table.getName()),
+                    new SqlTableId(null, schemaName, tableName),
                     Collections.singleton(new SqlColumnId("*")));
             return insertedDataFields;
         } else {
@@ -68,8 +72,10 @@ public class ColumnTableAnalyzer {
 
         Table table = stmt.getTable();
         if (table != null) {
+            final String schemaName = table.getSchemaName();
+            final String tableName = table.getName();
             Map.Entry<SqlTableId, Set<SqlColumnId>> updatedDataFields = new AbstractMap.SimpleEntry<>(
-                    new SqlTableId(table.getFullyQualifiedName()),
+                    new SqlTableId(null, schemaName, tableName),
                     Collections.singleton(new SqlColumnId("*")));
             return updatedDataFields;
         } else {
@@ -125,7 +131,10 @@ public class ColumnTableAnalyzer {
     }
 
     private static void handleTable(Map<SqlTableId, Set<SqlColumnId>> map, Table table) {
-        Set<SqlColumnId> columns = map.computeIfAbsent(new SqlTableId(table.getFullyQualifiedName()), k -> new HashSet<>());
+        final String schemaName = table.getSchemaName();
+        final String tableName = table.getName();
+        final SqlTableId tableId = new SqlTableId(null, schemaName, tableName);
+        Set<SqlColumnId> columns = map.computeIfAbsent(tableId, k -> new HashSet<>());
         //TODO: should check actual fields... would likely need to pass SelectBody as input as well
         if (!columns.contains("*")) {
             columns.add(new SqlColumnId("*"));

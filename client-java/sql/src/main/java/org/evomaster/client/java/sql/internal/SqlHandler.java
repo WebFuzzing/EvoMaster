@@ -499,17 +499,17 @@ public class SqlHandler {
             @Override
             public void visit(Column column) {
 
-                String tableName = context.getFullyQualifiedTableName(column);
+                String fullyQualifiedTableName = context.getFullyQualifiedTableName(column);
 //                String tableName = context.getTableName(column);
 
-                if (tableName.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
+                if (fullyQualifiedTableName.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)) {
                     // TODO handle it properly when ll have support for sub-selects
                     return;
                 }
 
                 String columnName = column.getColumnName().toLowerCase();
 
-                if (!context.hasColumn(tableName, columnName)) {
+                if (!context.hasColumn(fullyQualifiedTableName, columnName)) {
 
                     /*
                         This is an issue with the JsqlParser library. Until we upgrade it, or fix it if not fixed yet,
@@ -529,13 +529,13 @@ public class SqlHandler {
                         //case in which a boolean constant is wrongly treated as a column name.
                         //TODO not sure what we can really do here without modifying the parser
                     } else {
-                        SimpleLogger.warn("Cannot find column '" + columnName + "' in table '" + tableName + "'");
+                        SimpleLogger.warn("Cannot find column '" + columnName + "' in table '" + fullyQualifiedTableName + "'");
                     }
                     return;
                 }
-
-                result.putIfAbsent(new SqlTableId(tableName), new HashSet<>());
-                Set<SqlColumnId> columnIds = result.get(new SqlTableId(tableName));
+                final SqlTableId tableId = SqlTableIdParser.parseFullyQualifiedTableName(fullyQualifiedTableName);
+                result.putIfAbsent(tableId, new HashSet<>());
+                Set<SqlColumnId> columnIds = result.get(tableId);
                 columnIds.add(new SqlColumnId(columnName));
             }
         };

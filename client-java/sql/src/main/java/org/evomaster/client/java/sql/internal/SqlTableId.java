@@ -28,10 +28,6 @@ public class SqlTableId {
         this.tableName = tableName.toLowerCase();
     }
 
-    public SqlTableId(String tableName) {
-        this(null, null, tableName);
-    }
-
     public String getTableName() {
         return tableName;
     }

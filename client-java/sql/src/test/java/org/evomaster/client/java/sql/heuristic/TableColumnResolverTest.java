@@ -89,7 +89,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -106,7 +106,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -124,7 +124,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference referenceE = resolver.resolve(columnE);
         assertNotNull(referenceE);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) referenceE.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) referenceE.getTableReference()).getTableId());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnD = new Column();
@@ -133,7 +133,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference referenceD = resolver.resolve(columnD);
         assertNotNull(referenceD);
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) referenceD.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"departments"), ((SqlBaseTableReference) referenceD.getTableReference()).getTableId());
         assertEquals("department_name", referenceD.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -206,7 +206,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference sqlColumnReference = resolver.resolve(column);
         assertEquals("id", sqlColumnReference.getColumnName());
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getTableId());
 
         resolver.exitCurrentStatementContext();
     }
@@ -239,7 +239,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference referenceE = resolver.resolve(columnE);
         assertNotNull(referenceE);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) referenceE.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) referenceE.getTableReference()).getTableId());
         assertEquals("first_name", referenceE.getColumnName());
 
         Column columnSubquery = new Column();
@@ -265,7 +265,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference sqlColumnReference = resolver.resolve(column);
         assertEquals("department_name", sqlColumnReference.getColumnName());
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"departments"), ((SqlBaseTableReference) sqlColumnReference.getTableReference()).getTableId());
 
         resolver.exitCurrentStatementContext();
     }
@@ -331,7 +331,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference referenceDepartmentName = resolver.resolve(columnDepartmentName);
         assertNotNull(referenceDepartmentName);
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) referenceDepartmentName.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"departments"), ((SqlBaseTableReference) referenceDepartmentName.getTableReference()).getTableId());
         assertEquals("department_name", referenceDepartmentName.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -415,7 +415,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
         assertEquals("first_name", reference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -463,7 +463,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference referenceD = resolver.resolve(columnD);
         assertNotNull(referenceD);
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) referenceD.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"departments"), ((SqlBaseTableReference) referenceD.getTableReference()).getTableId());
         assertEquals("department_name", referenceD.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -534,7 +534,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
         assertEquals("department_id", reference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -552,7 +552,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference setReference = resolver.resolve(setColumn);
         assertNotNull(setReference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) setReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) setReference.getTableReference()).getTableId());
         assertEquals("salary", setReference.getColumnName());
 
         // Resolve column in WHERE clause
@@ -561,7 +561,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference whereReference = resolver.resolve(whereColumn);
         assertNotNull(whereReference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) whereReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) whereReference.getTableReference()).getTableId());
         assertEquals("department_id", whereReference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -579,7 +579,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference reference = resolver.resolve(column);
         assertNotNull(reference);
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) reference.getTableReference()).getTableId());
         assertEquals("department_id", reference.getColumnName());
 
         // Resolve alias 'dept_id' in the subquery
@@ -605,7 +605,7 @@ class TableColumnResolverTest {
         SqlColumnReference subqueryReference = resolver.resolve(d_id_column);
 
         assertNotNull(subqueryReference);
-        assertEquals(new SqlTableId("departments"), ((SqlBaseTableReference) subqueryReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"departments"), ((SqlBaseTableReference) subqueryReference.getTableReference()).getTableId());
         assertEquals("id", subqueryReference.getColumnName());
 
         resolver.exitCurrentStatementContext();
@@ -627,7 +627,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference orderIdReference = resolver.resolve(orderIdColumn);
         assertNotNull(orderIdReference);
-        assertEquals(new SqlTableId("orders"), ((SqlBaseTableReference) orderIdReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"orders"), ((SqlBaseTableReference) orderIdReference.getTableReference()).getTableId());
         assertEquals("order_id", orderIdReference.getColumnName());
 
         // Resolve Customers.CustomerName
@@ -637,7 +637,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference customerNameReference = resolver.resolve(customerNameColumn);
         assertNotNull(customerNameReference);
-        assertEquals(new SqlTableId("customers"), ((SqlBaseTableReference) customerNameReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"customers"), ((SqlBaseTableReference) customerNameReference.getTableReference()).getTableId());
         assertEquals("customer_name", customerNameReference.getColumnName());
 
         // Resolve Orders.OrderDate
@@ -647,7 +647,7 @@ class TableColumnResolverTest {
 
         SqlColumnReference orderDateReference = resolver.resolve(orderDateColumn);
         assertNotNull(orderDateReference);
-        assertEquals(new SqlTableId("orders"), ((SqlBaseTableReference) orderDateReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"orders"), ((SqlBaseTableReference) orderDateReference.getTableReference()).getTableId());
         assertEquals("order_date", orderDateReference.getColumnName());
 
         // Resolve Customer.CustomerId
@@ -658,7 +658,7 @@ class TableColumnResolverTest {
         SqlColumnReference customerIdReference = resolver.resolve(customerIdColumn);
         assertNotNull(customerIdReference);
         assertEquals("customer_id", customerIdReference.getColumnName());
-        assertEquals(new SqlTableId("customers"), ((SqlBaseTableReference) customerIdReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"customers"), ((SqlBaseTableReference) customerIdReference.getTableReference()).getTableId());
 
         resolver.exitCurrentStatementContext();
     }
@@ -719,7 +719,7 @@ class TableColumnResolverTest {
         assertNotNull(outerReference);
         assertTrue(outerReference.getTableReference() instanceof SqlBaseTableReference);
         assertEquals("first_name", outerReference.getColumnName());
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) outerReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) outerReference.getTableReference()).getTableId());
 
         String innerSql = "SELECT 1 FROM departments WHERE first_name = department_name";
         Select innerSelect = (Select) SqlParserUtils.parseSqlCommand(innerSql);
@@ -729,7 +729,7 @@ class TableColumnResolverTest {
         assertNotNull(innerReference);
         assertTrue(innerReference.getTableReference() instanceof SqlBaseTableReference);
         assertEquals("first_name", innerReference.getColumnName());
-        assertEquals(new SqlTableId("employees"), ((SqlBaseTableReference) innerReference.getTableReference()).getTableId());
+        assertEquals(new SqlTableId(null,null,"employees"), ((SqlBaseTableReference) innerReference.getTableReference()).getTableId());
 
         resolver.exitCurrentStatementContext();
         resolver.exitCurrentStatementContext();
