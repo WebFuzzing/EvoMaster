@@ -3,6 +3,7 @@ package com.opensearch.students;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,14 +23,16 @@ public class OpenSearchStudentsRest {
     }
 
     @GetMapping("{lastName}")
-    public List<Student> findByLastName(@PathVariable("lastName") String lastName) throws IOException {
-        return students.findByLastName(lastName);
+    public ResponseEntity<List<Student>> findByLastName(@PathVariable("lastName") String lastName) throws IOException {
+        List<Student> results = students.findByLastName(lastName);
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 
     @PostMapping("addAndGetJorge")
-    public List<Student> postAndGet() throws IOException {
+    public ResponseEntity<List<Student>> postAndGet() throws IOException {
         Student s = new Student("Jorge", "Ramirez");
         students.index(s);
-        return students.findByFirstName("Jorge");
+        List<Student> results = students.findByFirstName("Jorge");
+        return results.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(results);
     }
 }
