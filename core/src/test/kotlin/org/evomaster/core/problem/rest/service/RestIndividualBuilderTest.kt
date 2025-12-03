@@ -14,6 +14,8 @@ import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class RestIndividualBuilderTest {
@@ -168,9 +170,16 @@ class RestIndividualBuilderTest {
         // initializing SQL actions should contain both sql1 and sql2
         val inits = merged.seeInitializingActions().filterIsInstance<SqlAction>()
         assertEquals(4, inits.size)
-        // check their table names preserved and order: first's sql then second's sql
-        assertEquals("T1", inits[0].table.name)
-        assertEquals("T2", inits[1].table.name)
+        /*
+            check their table names preserved and order: first's sql then second's sql.
+            however, existing data is always at the beginning
+         */
+        assertTrue(inits[0].representExistingData)
+        assertTrue(inits[1].representExistingData)
+        assertFalse(inits[2].representExistingData)
+        assertFalse(inits[3].representExistingData)
+        assertEquals("T1", inits[2].table.name)
+        assertEquals("T2", inits[3].table.name)
 
         // merged total actions should be sum of both initial individuals
         val before = first.seeAllActions().size + second.seeAllActions().size

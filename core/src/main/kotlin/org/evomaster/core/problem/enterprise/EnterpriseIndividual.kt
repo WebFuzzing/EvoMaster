@@ -409,10 +409,24 @@ abstract class EnterpriseIndividual(
      * if [relativePosition] = -1, append the [actions] at the end
      */
     fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
-        if (relativePosition < 0)  {
-            addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
-        } else{
-            addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+        /*
+            SQL actions representing existing data must ALWAYS be at the beginning.
+            Recall those are only used for FKs.
+         */
+        val (existing, others) = actions.partition { it is SqlAction && it.representExistingData }
+
+        if(existing.isNotEmpty()){
+            addChildrenToGroup(getFirstIndexOfDbActionToAdd(), existing, GroupsOfChildren.INITIALIZATION_SQL)
+            //TODO shall we check for duplications???
+        }
+
+        if(others.isNotEmpty()) {
+            val pos = if (relativePosition < 0) {
+                getLastIndexOfDbActionToAdd()
+            } else {
+                getFirstIndexOfDbActionToAdd() + relativePosition
+            }
+            addChildrenToGroup(pos, others, GroupsOfChildren.INITIALIZATION_SQL)
         }
     }
 
