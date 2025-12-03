@@ -14,10 +14,10 @@
     <name>${project.groupId}:${project.artifactId}</name>
 
     <modules>
+        <module>instrumentation-shared</module>
         <module>controller</module>
         <module>controller-api</module>
         <module>instrumentation</module>
-        <module>instrumentation-shared</module>
         <module>client-util</module>
         <module>ci-utils</module>
         <module>dependencies</module>
