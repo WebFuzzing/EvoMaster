@@ -443,13 +443,25 @@ public class SqlHeuristicsCalculator {
                             plainSelect.getOrderByElements(),
                             plainSelect.getLimit());
                 } else {
-                    heuristicResult = computeHeuristicSelect(
+                    SqlHeuristicResult heuristicResultBeforeDistinct = computeHeuristicSelect(
                             plainSelect.getSelectItems(),
                             fromItem,
                             joins,
                             whereClause,
                             plainSelect.getOrderByElements(),
                             plainSelect.getLimit());
+
+                    if (plainSelect.getDistinct() != null) {
+                        QueryResult distinctQueryResult;
+                        if (plainSelect.getDistinct().getOnSelectItems() != null && !plainSelect.getDistinct().getOnSelectItems().isEmpty()) {
+                            distinctQueryResult = createQueryResultDistinctOn(heuristicResultBeforeDistinct.getQueryResult(), plainSelect.getDistinct().getOnSelectItems());
+                        } else {
+                            distinctQueryResult = QueryResultUtils.createDistinctQueryResult(heuristicResultBeforeDistinct.getQueryResult());
+                        }
+                        heuristicResult = new SqlHeuristicResult(heuristicResultBeforeDistinct.getTruthness(), distinctQueryResult);
+                    } else {
+                        heuristicResult = heuristicResultBeforeDistinct;
+                    }
                 }
             } else {
                 throw new IllegalArgumentException("Cannot calculate heuristics for SQL command of type " + select.getClass().getName());
@@ -902,6 +914,35 @@ public class SqlHeuristicsCalculator {
         return evaluateAll(conditions, row, null);
     }
 
+    private QueryResult createQueryResultDistinctOn(QueryResult queryResult, List<SelectItem<?>> distinctOnSelectItems) {
+        if (distinctOnSelectItems == null || distinctOnSelectItems.isEmpty()) {
+            throw new IllegalArgumentException("Cannot evaluate empty DISTINCT ON select items");
+        }
+
+        QueryResult result = new QueryResult(queryResult.seeVariableDescriptors());
+
+        // LinkedHashSet keeps insertion order (important: DISTINCT ON keeps FIRST matching row)
+        Set<List<Object>> seenKeys = new LinkedHashSet<>();
+
+        for (DataRow row : queryResult.seeRows()) {
+
+            List<Object> key = new ArrayList<>(distinctOnSelectItems.size());
+            for (SelectItem selectItem : distinctOnSelectItems) {
+                Expression expression = selectItem.getExpression();
+                Object value = evaluate(expression, row);
+                key.add(value);
+            }
+
+            // If this combination of values hasn't been seen, collect the row
+            if (!seenKeys.contains(key)) {
+                seenKeys.add(key);
+                result.addRow(row);
+            }
+        }
+        return result;
+    }
+
+
     private QueryResult createQueryResultOrderBy(QueryResult queryResult, List<OrderByElement> orderByElements) {
         if (orderByElements == null || orderByElements.isEmpty()) {
             throw new IllegalArgumentException("Cannot evaluate empty orderBy elements");
@@ -956,7 +997,6 @@ public class SqlHeuristicsCalculator {
             }
         }
     }
-
 
     private class OrderByComparator implements Comparator<DataRow> {
 

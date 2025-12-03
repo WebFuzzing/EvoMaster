@@ -1368,4 +1368,154 @@ public class SqlHeuristicsCalculatorTest {
 
     }
 
+    /**
+     * SELECT DISTINCT ON (name)
+     * *
+     * FROM person
+     * ORDER BY name, updated_at DESC;
+     */
+
+    @Test
+    public void testSelectDistinctOn() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT ON (p.name) p.* FROM Person p ORDER BY p.name";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 30, 50_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 35, 55_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 28, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 40, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Charly", 22, 30_000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+
+        assertEquals("Alice", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals(30, queryResult.seeRows().get(0).getValueByName("age"));
+        assertEquals(50_000, queryResult.seeRows().get(0).getValueByName("salary"));
+
+        assertEquals("Bob", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals(28, queryResult.seeRows().get(1).getValueByName("age"));
+        assertEquals(45_000, queryResult.seeRows().get(1).getValueByName("salary"));
+
+        assertEquals("Charly", queryResult.seeRows().get(2).getValueByName("name"));
+        assertEquals(22, queryResult.seeRows().get(2).getValueByName("age"));
+        assertEquals(30_000, queryResult.seeRows().get(2).getValueByName("salary"));
+
+    }
+
+    @Test
+    public void testSelectDistinctWithOrderBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT name FROM Person p ORDER BY p.name ASC";
+
+        // Input data for the query: notice duplicate names to test DISTINCT
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "John", "Person"));  // duplicate
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));  // duplicate
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder =
+                new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+
+        SqlHeuristicsCalculator calculator = builder
+                .withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult =
+                calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+
+        // We expect 3 DISTINCT values: Jane, Joe, John
+        assertEquals(3, queryResult.size());
+
+        // Sorted alphabetically because of ORDER BY
+        assertEquals("Jane", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("John", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
+    @Test
+    public void testGroupByOrderBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT department_id, COUNT(*) AS department_count FROM Employees GROUP BY department_id ORDER BY department_id";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "Employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("John", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Jane", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Joe", 2));
+
+
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(2, queryResult.size());
+        assertEquals(1, ((Number) queryResult.seeRows().get(0).getValueByName("department_id")).intValue());
+        assertEquals(2, ((Number) queryResult.seeRows().get(0).getValueByName("department_count")).intValue());
+
+        assertEquals(2, ((Number) queryResult.seeRows().get(1).getValueByName("department_id")).intValue());
+        assertEquals(1, ((Number) queryResult.seeRows().get(1).getValueByName("department_count")).intValue());
+    }
+
+
+    @Test
+    public void tesDistinctGroupByOrderBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT department_id, COUNT(*) AS department_count FROM Employees GROUP BY department_id ORDER BY department_id";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "Employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("John", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Jane", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Joe", 2));
+
+
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(2, queryResult.size());
+        assertEquals(1, ((Number) queryResult.seeRows().get(0).getValueByName("department_id")).intValue());
+        assertEquals(2, ((Number) queryResult.seeRows().get(0).getValueByName("department_count")).intValue());
+
+        assertEquals(2, ((Number) queryResult.seeRows().get(1).getValueByName("department_id")).intValue());
+        assertEquals(1, ((Number) queryResult.seeRows().get(1).getValueByName("department_count")).intValue());
+    }
+
 }
