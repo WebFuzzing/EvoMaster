@@ -546,9 +546,11 @@ public class SqlHeuristicsCalculator {
         final List<Truthness> truthnesses = new ArrayList<>();
         for (QueryResult groupByQueryResult : groupByQueryResults.values()) {
             QueryResult aggregatedQueryResult = createQueryResult(groupByQueryResult, selectItems);
-            if (aggregatedQueryResult.size() != 1) {
-                throw new IllegalStateException("An aggregated query result cannot have " + aggregatedQueryResult.size() + "rows");
+            if (aggregatedQueryResult.isEmpty()) {
+                throw new IllegalStateException("An aggregated query result cannot be empty");
             }
+            // If more than one row is present, we always pick the first one.
+            // This is the semantics of the SELECT DISTINCT ON (columns) in PostgreSQL
             DataRow dataRow = aggregatedQueryResult.seeRows().get(0);
             if (having != null) {
                 final Truthness truthness = evaluateAll(Collections.singletonList(having), groupByQueryResult);

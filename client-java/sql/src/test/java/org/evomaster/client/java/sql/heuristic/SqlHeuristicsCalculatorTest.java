@@ -1518,4 +1518,41 @@ public class SqlHeuristicsCalculatorTest {
         assertEquals(1, ((Number) queryResult.seeRows().get(1).getValueByName("department_count")).intValue());
     }
 
+    @Test
+    public void testSelectGroupBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT  name, age FROM Person p GROUP BY p.name ORDER BY p.name ASC";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 30, 50_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 35, 55_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 28, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 40, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Charly", 22, 30_000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+
+        assertEquals("Alice", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals(30, queryResult.seeRows().get(0).getValueByName("age"));
+
+        assertEquals("Bob", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals(28, queryResult.seeRows().get(1).getValueByName("age"));
+
+        assertEquals("Charly", queryResult.seeRows().get(2).getValueByName("name"));
+        assertEquals(22, queryResult.seeRows().get(2).getValueByName("age"));
+
+    }
+
 }
