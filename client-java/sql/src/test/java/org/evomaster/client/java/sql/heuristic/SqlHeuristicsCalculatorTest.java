@@ -1566,7 +1566,7 @@ public class SqlHeuristicsCalculatorTest {
 
 
         QueryResult contents = new QueryResult(Arrays.asList("project_id", "project_name", "project_start_time"), "projects");
-        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(1, "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00") ));
+        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(1, "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00")));
 
         QueryResultSet queryResultSet = new QueryResultSet();
         queryResultSet.addQueryResult(contents);
@@ -1581,6 +1581,33 @@ public class SqlHeuristicsCalculatorTest {
 
         QueryResult queryResult = heuristicResult.getQueryResult();
         assertEquals(1, queryResult.size());
-
     }
+
+    @Test
+    public void testUUID() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "SELECT project_id, project_name FROM projects WHERE project_id = '00000000-0000-015f-0000-00000000014e'::uuid";
+
+        QueryResult contents = new QueryResult(Arrays.asList("project_id", "project_name", "project_start_time"), "projects");
+        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(UUID.fromString("00000000-0000-015f-0000-00000000014e"), "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00")));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
+        UUID expectedUUID = UUID.fromString("00000000-0000-015f-0000-00000000014e");
+        assertEquals(expectedUUID, queryResult.seeRows().get(0).getValueByName("project_id"));
+        assertEquals("ProjectX", queryResult.seeRows().get(0).getValueByName("project_name"));
+    }
+
 }

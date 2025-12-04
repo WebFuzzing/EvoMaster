@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -1739,6 +1740,22 @@ class SqlExpressionEvaluatorTest {
         expression.accept(evaluator);
         Object value = evaluator.getEvaluatedValue();
         assertEquals(java.sql.Date.valueOf("2025-01-14"), value);
+    }
+
+    @Test
+    public void testUUID() {
+        String sql = "'00000000-0000-015f-0000-00000000014e'::uuid";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object actual = evaluator.getEvaluatedValue();
+        UUID expected = UUID.fromString("00000000-0000-015f-0000-00000000014e");
+        assertEquals(expected, actual);
     }
 
 }

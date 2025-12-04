@@ -305,6 +305,8 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetTime || concreteRightValue instanceof OffsetTime) {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), comparisonOperatorType);
+            } else if (concreteLeftValue instanceof UUID || concreteRightValue instanceof UUID) {
+                truthnessOfExpression = calculateTruthnessForUUIDComparison(convertToUUID(concreteLeftValue), convertToUUID(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof Object[] && concreteRightValue instanceof Object[]) {
                 truthnessOfExpression = calculateTruthnessForArrayComparison((Object[]) concreteLeftValue, (Object[]) concreteRightValue, comparisonOperatorType);
             } else {
@@ -317,6 +319,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             }
         }
         return truthness;
+    }
+
+    private static Truthness calculateTruthnessForUUIDComparison(UUID left, UUID right, ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(left);
+        Objects.requireNonNull(right);
+
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
+                return TruthnessUtils.getEqualityTruthness(left, right);
+            case NOT_EQUALS_TO:
+                return TruthnessUtils.getEqualityTruthness(left, right).invert();
+            default:
+                throw new IllegalArgumentException("Unsupported UUID binary operator: " + comparisonOperatorType);
+        }
     }
 
     private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
@@ -381,6 +397,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     }
 
     public static Truthness getEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
         if (a.equals(b)) {
             return TRUE_TRUTHNESS;
         } else {
@@ -537,7 +556,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         } else {
             super.visit(function);
             final List<Object> values;
-            if (function.getParameters()!=null && !function.getParameters().isEmpty()) {
+            if (function.getParameters() != null && !function.getParameters().isEmpty()) {
                 List<Object> concreteParameters = popAsListOfValues();
                 if (function.getParameters().size() != concreteParameters.size()) {
                     throw new IllegalStateException(
