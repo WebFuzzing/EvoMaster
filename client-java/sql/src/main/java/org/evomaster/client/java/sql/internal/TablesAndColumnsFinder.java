@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import net.sf.jsqlparser.expression.operators.relational.IsBooleanExpression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -8,6 +9,7 @@ import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import net.sf.jsqlparser.statement.update.UpdateSet;
 import net.sf.jsqlparser.util.TablesNamesFinder;
+import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.heuristic.*;
 
@@ -269,5 +271,26 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         }
     }
 
+    /**
+     * This should be implemented in the superclass. It looks
+     * as a bug in TablesNamesFinder.
+     *
+     * @param isNullExpression
+     */
+    @Override
+    public void visit(IsNullExpression isNullExpression) {
+        isNullExpression.getLeftExpression().accept(this);
+    }
+
+    /**
+     * This should be implemented in the superclass. It looks
+     * as a bug in TablesNamesFinder.
+     *
+     * @param isBooleanExpression
+     */
+    @Override
+    public void visit(IsBooleanExpression isBooleanExpression) {
+        isBooleanExpression.getLeftExpression().accept(this);
+    }
 
 }
