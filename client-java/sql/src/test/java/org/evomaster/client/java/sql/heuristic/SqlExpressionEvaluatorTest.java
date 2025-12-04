@@ -1725,4 +1725,20 @@ class SqlExpressionEvaluatorTest {
         Object value = evaluator.getEvaluatedValue();
         assertEquals("HELLO", value);
     }
+
+    @Test
+    public void testDate() {
+        String sql = "date('2025-01-14 12:00:00')";
+        Expression expression = assertDoesNotThrow(() -> CCJSqlParserUtil.parseExpression(sql));
+
+        SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder builder = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder();
+        SqlExpressionEvaluator evaluator = builder
+                .withTableColumnResolver(new TableColumnResolver(new DbInfoDto()))
+                .build();
+
+        expression.accept(evaluator);
+        Object value = evaluator.getEvaluatedValue();
+        assertEquals(java.sql.Date.valueOf("2025-01-14"), value);
+    }
+
 }

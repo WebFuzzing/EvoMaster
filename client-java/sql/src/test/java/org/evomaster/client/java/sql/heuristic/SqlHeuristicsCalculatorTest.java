@@ -19,6 +19,7 @@ import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
@@ -567,6 +568,7 @@ public class SqlHeuristicsCalculatorTest {
         TableDto projectsTable = createTableDto("Projects");
         projectsTable.columns.add(createColumnDto("project_id"));
         projectsTable.columns.add(createColumnDto("project_name"));
+        projectsTable.columns.add(createColumnDto("project_start_time"));
 
 
         TableDto tableA = createTableDto("TableA");
@@ -1555,4 +1557,30 @@ public class SqlHeuristicsCalculatorTest {
 
     }
 
+
+    @Test
+    public void testDate() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "SELECT project_name FROM projects WHERE DATE(project_start_time)>'2023-08-22 00:00:00.000000'";
+
+
+        QueryResult contents = new QueryResult(Arrays.asList("project_id", "project_name", "project_start_time"), "projects");
+        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(1, "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00") ));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
+
+    }
 }
