@@ -1368,13 +1368,29 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
-        // Find the action(s) where XSS payload appears in the response
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
                 ?: continue
 
-            if(r.getResponseTime() < config.sqlInjectionMaxResponseTimeMs && !r.getTimedout()) {
+            val baseline = a.baseResponseTime
+            val afterPayload = r.getResponseTime()
+            val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+            val N = config.sqliInjectedSleepDuration * 1000          // N: expected delay introduced by the injected sleep payload
+
+            // Baseline must be fast enough (baseline < K)
+            val baselineIsFast = baseline!! < K
+
+            // Response after injection must be slow enough (response > N)
+            val responseIsSlowEnough = afterPayload > N
+
+            // Timeout is also considered a potential vulnerability indicator
+            val isTimeout = r.getTimedout()
+
+            // If baseline is fast AND the response after payload is slow enough (or timed out),
+            // then we consider this a potential time-based SQL injection vulnerability.
+            // Otherwise, skip this result.
+            if (!(baselineIsFast && (responseIsSlowEnough || isTimeout))) {
                 continue
             }
 

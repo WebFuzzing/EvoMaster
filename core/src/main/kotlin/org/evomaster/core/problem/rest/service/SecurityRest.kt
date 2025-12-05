@@ -348,7 +348,7 @@ class SecurityRest {
                 target.individual,
                 actionIndex
             )
-
+            val responseTime = target.evaluatedMainActions()[actionIndex].result.getResultValue("RESPONSE_TIME")?.toLong()
             // Try each sqli payload (but only add one test per endpoint)
             for(payload in SQLI_PAYLOADS){
 
@@ -387,6 +387,7 @@ class SecurityRest {
                 if(!anySuccess){
                     continue
                 }
+                actionCopy.baseResponseTime = responseTime
 
                 copy.modifySampleType(SampleType.SECURITY)
                 copy.ensureFlattenedStructure()
