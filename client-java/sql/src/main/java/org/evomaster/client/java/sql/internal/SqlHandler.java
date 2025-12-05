@@ -356,9 +356,9 @@ public class SqlHandler {
             if (columnIds.isEmpty()) {
                 // the table is required but no specific column was required.
                 // Therefore, we need to fetch all columns for DELETE and UPDATE.
-                select = createSelectForSingleTable(tableId, Collections.singletonList(new SqlColumnId("*")));
+                select = SqlSelectBuilder.buildSelect(schema.databaseType, tableId, Collections.singletonList(new SqlColumnId("*")));
             } else {
-                select = createSelectForSingleTable(tableId, columnIds);
+                select = SqlSelectBuilder.buildSelect(schema.databaseType, tableId, columnIds);
             }
             QueryResult queryResult = SqlScriptRunner.execCommand(connection, select);
             queryResults.add(queryResult);
@@ -436,7 +436,7 @@ public class SqlHandler {
                 tableName = tableToColumns.getKey();
                 columnNames = tableToColumns.getValue().stream().sorted().collect(Collectors.toList());
             }
-            select = createSelectForSingleTable(tableName, columnNames);
+            select = SqlSelectBuilder.buildSelect(schema.databaseType, tableName, columnNames);
         }
 
         QueryResult data;
@@ -448,26 +448,6 @@ public class SqlHandler {
         }
 
         return HeuristicsCalculator.computeDistance(sqlCommand, schema, taintHandler, data);
-    }
-
-    private static String createSelectForSingleTable(SqlTableId tableId, List<SqlColumnId> columnIds) {
-
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("SELECT ");
-
-        String variables = columnIds.stream().map(SqlColumnId::getColumnId).collect(Collectors.joining(", "));
-
-        buffer.append(variables);
-        buffer.append(" FROM ");
-        if (tableId.getCatalogName()!=null) {
-            buffer.append(tableId.getCatalogName()).append(".");
-        }
-        if (tableId.getSchemaName()!=null) {
-            buffer.append(tableId.getSchemaName()).append(".");
-        }
-        buffer.append(tableId.getTableName());
-
-        return buffer.toString();
     }
 
     /**
