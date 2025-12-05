@@ -16,7 +16,7 @@ public class ControlDependency {
     /**
      * <p>Constructor for ControlDependency.</p>
      *
-     * @param branch                a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.Branch} object.
+     * @param branch                a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch} object.
      * @param branchExpressionValue a boolean.
      */
     public ControlDependency(Branch branch, boolean branchExpressionValue) {
@@ -31,7 +31,7 @@ public class ControlDependency {
     /**
      * <p>Getter for the field <code>branch</code>.</p>
      *
-     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.Branch} object.
+     * @return a {@link org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch.Branch} object.
      */
     public Branch getBranch() {
         return branch;
