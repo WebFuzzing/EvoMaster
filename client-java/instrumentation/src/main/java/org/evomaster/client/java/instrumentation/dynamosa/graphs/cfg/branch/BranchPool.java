@@ -4,6 +4,7 @@
  */
 package org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.branch;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.BytecodeInstruction;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -42,6 +43,16 @@ public class BranchPool {
         }
 
         return instanceMap.get(classLoader);
+    }
+
+    @VisibleForTesting
+    public static void resetForTesting(ClassLoader classLoader) {
+        BranchPool pool = instanceMap.remove(classLoader);
+        if (pool != null) {
+            pool.registeredNormalBranches.clear();
+            pool.branchOrdinalCounters.clear();
+            pool.branchCounter = 0;
+        }
     }
     // fill the pool
 

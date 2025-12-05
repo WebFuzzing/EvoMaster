@@ -5,6 +5,7 @@
 package org.evomaster.client.java.instrumentation.dynamosa.graphs;
 
 import org.evomaster.client.java.instrumentation.ClassesToExclude;
+import com.google.common.annotations.VisibleForTesting;
 import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cdg.ControlDependenceGraph;
 import org.evomaster.client.java.instrumentation.dynamosa.graphs.cfg.ActualControlFlowGraph;
@@ -64,6 +65,14 @@ public class GraphPool {
         }
 
         return instanceMap.get(classLoader);
+    }
+
+    @VisibleForTesting
+    public static void resetForTesting(ClassLoader classLoader) {
+        instanceMap.remove(classLoader);
+        synchronized (exportLock) {
+            exportedCdgs.clear();
+        }
     }
 
     /**

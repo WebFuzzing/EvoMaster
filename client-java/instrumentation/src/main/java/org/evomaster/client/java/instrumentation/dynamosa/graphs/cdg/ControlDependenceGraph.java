@@ -207,4 +207,13 @@ public class ControlDependenceGraph extends EvoMasterGraph<BasicBlock, ControlFl
     public String getMethodName() {
         return methodName;
     }
+
+    /**
+     * Exposes the underlying {@link ActualControlFlowGraph}
+     *
+     * @return the CFG used to build this CDG.
+     */
+    public ActualControlFlowGraph getCFG() {
+        return cfg;
+    }
 }

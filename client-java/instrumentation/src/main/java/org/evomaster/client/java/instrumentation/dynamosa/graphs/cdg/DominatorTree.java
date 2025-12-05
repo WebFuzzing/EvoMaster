@@ -104,7 +104,6 @@ public class DominatorTree<V> extends EvoMasterGraph<DominatorNode<V>, DefaultEd
         // check tree is connected
         if (!isConnected())
             throw new IllegalStateException("dominator tree expected to be connected");
-        // TODO more sanity checks - no one likes to be insane ;)
     }
 
     private void computeDominatorFrontiers(DominatorNode<V> currentNode) {
