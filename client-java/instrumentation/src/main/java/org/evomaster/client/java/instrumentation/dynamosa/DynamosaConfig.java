@@ -10,8 +10,8 @@ package org.evomaster.client.java.instrumentation.dynamosa;
  */
 public class DynamosaConfig {
 
-    private static volatile boolean enableGraphs = true;
-    private static volatile boolean writeCfg = true;
+    private static volatile boolean enableGraphs = false;
+    private static volatile boolean writeCfg = false;
 
     
     public static boolean isGraphsEnabled() {
