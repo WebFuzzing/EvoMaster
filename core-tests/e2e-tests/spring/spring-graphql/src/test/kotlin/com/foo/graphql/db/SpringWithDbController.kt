@@ -26,11 +26,21 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
 
     var dbconnection : Connection? = null
 
+    fun nextDbID(): Int {
+        if (dbID == Int.MAX_VALUE) {
+            dbID = 0
+        }
+        dbID++
+        return dbID
+    }
 
     override fun startSut(): String {
         //lot of problem if using same H2 instance. see:
         //https://github.com/h2database/h2database/issues/227
-        val rand = dbID++ //nextInt()
+        val currDbID = nextDbID() //nextInt()
+
+        // currDbID is always positive
+        val databaseName = "testdb_"+ currDbID
 
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
@@ -40,7 +50,7 @@ abstract class SpringWithDbController(applicationClass: Class<*>) : SpringContro
              * MODE=LEGACY can be removed when Spring-boot is upgraded to 2.6.4
              * https://github.com/hibernate/hibernate-orm/pull/4524
              */
-            "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;MODE=LEGACY",
+            "--spring.datasource.url=jdbc:h2:mem:${databaseName};DB_CLOSE_DELAY=-1;MODE=LEGACY",
             "--spring.jpa.database-platform=" + H2Dialect::class.java.name,
             "--spring.datasource.username=sa",
             "--spring.datasource.password",
