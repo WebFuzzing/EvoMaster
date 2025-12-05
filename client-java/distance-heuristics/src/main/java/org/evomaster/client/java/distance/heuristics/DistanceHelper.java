@@ -7,14 +7,15 @@ import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Date;
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * All generic distance functions on JVM types should be defined here.
  * Recall the distinction between "distance" and "heuristic" terms in EvoMaster:
- *
+ * <p>
  * - distance: a value between 0 and MAX. If 0, constraint is solved.
  * - heuristic: a value between 0 and 1. If 0, constraint is NOT solved. If solved, value is 1.
- *
+ * <p>
  * The "distance"s are what usually used in literature.
  * However, in EvoMaster we need [0,1] "heuristic"s (due to the handling of Many Objective Optimization).
  */
@@ -44,23 +45,23 @@ public class DistanceHelper {
      * @param delta
      * @return
      */
-    public static double increasedDistance(double distance, double delta){
+    public static double increasedDistance(double distance, double delta) {
 
-        if(distance < 0){
+        if (distance < 0) {
             throw new IllegalArgumentException("Negative distance: " + distance);
         }
-        if(delta < 0){
+        if (delta < 0) {
             throw new IllegalArgumentException("Invalid negative delta: " + delta);
         }
-        if(delta == 0){
+        if (delta == 0) {
             throw new IllegalArgumentException("Meaningless 0 delta");
         }
 
-        if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
+        if (Double.isInfinite(distance) || distance == Double.MAX_VALUE) {
             return distance;
         }
 
-        if(distance > (Double.MAX_VALUE - delta)){
+        if (distance > (Double.MAX_VALUE - delta)) {
             return Double.MAX_VALUE;
         }
 
@@ -75,10 +76,10 @@ public class DistanceHelper {
      * @return
      */
     public static double addDistances(double a, double b) {
-        if(a < 0){
+        if (a < 0) {
             throw new IllegalArgumentException("Negative distance: " + a);
         }
-        if(b < 0){
+        if (b < 0) {
             throw new IllegalArgumentException("Negative distance: " + b);
         }
         double sum = a + b;
@@ -92,36 +93,37 @@ public class DistanceHelper {
 
     /**
      * Return a h=[0,1] heuristics from a scaled distance, taking into account a starting base
+     *
      * @param base
      * @param distance
      * @return
      */
-    public static double heuristicFromScaledDistanceWithBase(double base, double distance){
+    public static double heuristicFromScaledDistanceWithBase(double base, double distance) {
 
-        if(base < 0 || base >= 1){
+        if (base < 0 || base >= 1) {
             throw new IllegalArgumentException("Invalid base: " + base);
         }
-        if(distance < 0){
+        if (distance < 0) {
             throw new IllegalArgumentException("Negative distance: " + distance);
         }
 
-        if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
+        if (Double.isInfinite(distance) || distance == Double.MAX_VALUE) {
             return base;
         }
 
-       return base + ((1 - base) / (distance + 1));
+        return base + ((1 - base) / (distance + 1));
     }
 
-    public static double scaleHeuristicWithBase(double heuristic, double base){
+    public static double scaleHeuristicWithBase(double heuristic, double base) {
 
-        if(heuristic < 0 || heuristic >= 1){
+        if (heuristic < 0 || heuristic >= 1) {
             throw new IllegalArgumentException("Invalid heuristic: " + base);
         }
-        if(base < 0 || base >= 1){
+        if (base < 0 || base >= 1) {
             throw new IllegalArgumentException("Invalid base: " + base);
         }
 
-        return base + ((1-base)*heuristic);
+        return base + ((1 - base) * heuristic);
     }
 
     public static int distanceToDigit(char c) {
@@ -144,7 +146,7 @@ public class DistanceHelper {
 
         //1 of 2 will be necessarily a 0
         long dist = Math.max(diffAfter, 0) + Math.max(diffBefore, 0);
-        if(dist > Integer.MAX_VALUE){
+        if (dist > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
         }
         assert (dist >= 0);
@@ -166,7 +168,7 @@ public class DistanceHelper {
             dist += Math.abs(a.charAt(i) - b.charAt(i));
         }
 
-        if(dist < 0){
+        if (dist < 0) {
             dist = Long.MAX_VALUE; // overflow
         }
 
@@ -242,10 +244,10 @@ public class DistanceHelper {
 
     public static double getDistance(Object left, Object right) {
 
-        if(left == null && right == null){
+        if (left == null && right == null) {
             return 0;
         }
-        if(left == null || right == null){
+        if (left == null || right == null) {
             return Double.MAX_VALUE;
         }
 
@@ -329,5 +331,20 @@ public class DistanceHelper {
         }
 
         return distance;
+    }
+
+    /**
+     * Computes the Hamming distance between two UUIDs. The Hamming distance is determined by
+     * counting the number of differing bits between the most and least significant bits
+     * of the two UUIDs.
+     *
+     * @param left the first UUID
+     * @param right the second UUID
+     * @return the Hamming distance between the two UUIDs
+     */
+    public static int getDistance(UUID left, UUID right) {
+        long diff1 = left.getMostSignificantBits() ^ right.getMostSignificantBits();
+        long diff2 = left.getLeastSignificantBits() ^ right.getLeastSignificantBits();
+        return Long.bitCount(diff1) + Long.bitCount(diff2);
     }
 }

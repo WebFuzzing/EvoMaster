@@ -7,11 +7,11 @@ import net.sf.jsqlparser.statement.select.Select;
  * Derived tables are temporary tables created within a query.
  * A derived table is defined by a subquery in the FROM clause, or an the WHERE clause.
  */
-public class SqlDerivedTableReference extends SqlTableReference{
+public class SqlDerivedTable extends SqlTableReference {
 
     private final Select select;
 
-    public SqlDerivedTableReference(Select select) {
+    public SqlDerivedTable(Select select) {
         this.select = select;
     }
 
