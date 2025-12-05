@@ -2610,10 +2610,6 @@ class EMConfig {
     var sqli = false
 
     @Experimental
-    @Cfg("Maximum response time (in milliseconds) to consider a potential SQL Injection vulnerability.")
-    var sqlInjectionMaxResponseTimeMs = 2000
-
-    @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
     var sqliInjectedSleepDuration = 5
 
