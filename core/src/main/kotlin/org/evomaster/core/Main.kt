@@ -639,6 +639,9 @@ class Main {
 
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<GraphQLIndividual>>() {})
+                
+                EMConfig.Algorithm.DYNAMOSA ->
+                    Key.get(object : TypeLiteral<DynaMosaAlgorithm<GraphQLIndividual>>() {})
 
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<GraphQLIndividual>>() {})
@@ -684,6 +687,9 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RPCIndividual>>() {})
 
+                EMConfig.Algorithm.DYNAMOSA ->
+                    Key.get(object : TypeLiteral<DynaMosaAlgorithm<RPCIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<RPCIndividual>>() {})
                 EMConfig.Algorithm.LIPS ->
@@ -724,6 +730,9 @@ class Main {
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<WebIndividual>>() {})
 
+                EMConfig.Algorithm.DYNAMOSA ->
+                    Key.get(object : TypeLiteral<DynaMosaAlgorithm<WebIndividual>>() {})
+
                 EMConfig.Algorithm.RW ->
                     Key.get(object : TypeLiteral<RandomWalkAlgorithm<WebIndividual>>() {})
                 EMConfig.Algorithm.LIPS ->
@@ -763,6 +772,9 @@ class Main {
 
                 EMConfig.Algorithm.MOSA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
+                EMConfig.Algorithm.DYNAMOSA ->
+                    Key.get(object : TypeLiteral<DynaMosaAlgorithm<RestIndividual>>() {})
 
                 EMConfig.Algorithm.StandardGA ->
                     Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
