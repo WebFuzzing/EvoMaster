@@ -46,6 +46,7 @@ class SqlPolygonGene(
         val pointList = mutableListOf<SqlPointGene>()
         repeat(minLengthOfPolygonRing) {
             val newGene = points.template.copy() as SqlPointGene
+            newGene.doInitialize(randomness)
             pointList.add(newGene)
             do {
                 newGene.randomize(randomness, tryToForceNewValue)
@@ -53,7 +54,7 @@ class SqlPolygonGene(
         }
         points.randomize(randomness, tryToForceNewValue)
         points.killAllChildren()
-        pointList.map { points.addChild(it) }
+        pointList.forEach { points.addChild(it) }
         assert(isLocallyValid())
     }
 

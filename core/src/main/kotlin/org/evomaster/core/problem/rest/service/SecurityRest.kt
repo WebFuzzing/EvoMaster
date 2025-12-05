@@ -6,7 +6,8 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
@@ -18,12 +19,16 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
-import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
@@ -278,6 +283,12 @@ class SecurityRest {
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
+        }
+
+        if (!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
@@ -861,7 +872,159 @@ class SecurityRest {
         }
     }
 
+    /**
+     * XSS (Cross-Site Scripting) check.
+     *
+     * Creates test cases for both reflected and stored XSS by injecting malicious payloads
+     * into string parameters. For each endpoint with a 2xx response:
+     * - Injects XSS payload into string fields (body, query, path parameters)
+     * - For POST/PUT/PATCH: attempts to add a GET on the same path for stored XSS detection
+     *
+     */
 
+    private fun handleXSSCheck(){
+
+        mainloop@ for(action in actionDefinitions){
+
+
+            // Find individuals with 2xx response for this endpoint
+            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(successfulIndividuals.isEmpty()){
+                continue
+            }
+
+            // Take the smallest successful individual
+            val target = successfulIndividuals.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Slice to keep only up to the target action
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            // Try each XSS payload (but only add one test per endpoint)
+            for(payload in XSS_PAYLOADS){
+
+                // Create a copy of the individual
+                var copy = sliced.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+
+                val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
+                    .filter { it.staticCheckIfImpactPhenotype() }
+
+                if(genes.isEmpty()){
+                    continue
+                }
+
+                val anySuccess = genes.map { gene ->
+                    gene.setFromStringValue(payload)
+                }.any { it }
+
+                if(!anySuccess){
+                    continue
+                }
+
+                // Try to add a linked GET operation for stored XSS detection
+                //TODO to properly handle POST, we need first to finish the work on CallGraphService
+                if(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT || action.verb == HttpVerb.PATCH){
+                    copy = tryAttachLinkedGetForStoredXSS(
+                        ind = copy,
+                        path = actionCopy.path,
+                        payload = payload
+                    ) ?: copy
+                }
+
+                copy.modifySampleType(SampleType.SECURITY)
+                copy.ensureFlattenedStructure()
+
+                try {
+                    val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+
+                    if (evaluatedIndividual == null) {
+                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        continue@mainloop
+                    }
+
+                    val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+                    if(DefinedFaultCategory.XSS in faultsCategories){
+                        archive.addIfNeeded(evaluatedIndividual)
+                        continue@mainloop
+                    }
+                } catch(e: Exception){
+                    // For certain malformed or encoded requests (such as /api/cleanup/items/<img src=x onerror=alert('XSS')>
+                    // which becomes /api/cleanup/items/%3Cimg%20src=x%20onerror=alert('XSS')%3E), the framework may throw
+                    // a "URI is not absolute" error due to invalid or non-absolute path handling. Such cases can occur when
+                    // XSS-like payloads are injected or when user input is not properly sanitized. The try-catch block ensures
+                    // that these exceptions do not interrupt the main processing loop.
+
+                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun tryAttachLinkedGetForStoredXSS(
+        ind: RestIndividual,
+        path: RestPath,
+        payload: String
+    ): RestIndividual? {
+        //TODO to properly handle POST, we need first to finish the work on CallGraphService
+        val getIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            individualsInSolution,
+            HttpVerb.GET,
+            path,
+            statusGroup = StatusGroup.G_2xx
+        )
+        if (getIndividuals.isEmpty()) return null
+
+        val getInd = getIndividuals.first()
+        val getActionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+            getInd,
+            HttpVerb.GET,
+            path,
+            statusGroup = StatusGroup.G_2xx
+        )
+        if (getActionIndex < 0) return null
+
+        val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+            getInd.individual,
+            getActionIndex
+        )
+
+        val getAction = second.seeMainExecutableActions().last() as RestCallAction
+        getAction.resetLocalIdRecursively()
+
+        val genes = GeneUtils.getAllStringFields(getAction.parameters)
+            .filter { it.staticCheckIfImpactPhenotype() }
+        if (genes.isEmpty()) return null
+
+        val anySuccess = genes.map { gene ->
+            gene.setFromStringValue(payload)
+        }.any { it }
+
+        if (!anySuccess) return null
+
+        return RestIndividualBuilder.merge(ind, second)
+
+    }
 
     /**
      * @return a test where last action is for given path and verb returning 403.

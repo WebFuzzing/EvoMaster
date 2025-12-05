@@ -220,16 +220,44 @@ class TaintedMapGene(
 
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        //TODO
 
-        return false
+        if(other !is TaintedMapGene){
+            return false
+        }
+
+        if(this.elements.size != other.elements.size){
+            return false
+        }
+
+        for(e in this.elements){
+            val x = other.elements.find { it.first.name == e.first.name }
+                ?: return false
+            if(! e.second.containsSameValueAs(x.second)){
+                return false
+            }
+        }
+
+        return true
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
-        //TODO
-        LoggingUtil.uniqueWarn(log,"unsafeCopyValueFrom() not implemented for TaintedMapGene")
 
-        return false
+        if(other !is TaintedMapGene){
+            return false
+        }
+
+        killAllChildren()
+        learnedKeys.clear()
+        learnedKeys.addAll(other.learnedKeys)
+        learnedTypes.clear()
+        learnedTypes.putAll(other.learnedTypes)
+
+        other.elements.forEach {
+            addElement(it.copy() as PairGene<StringGene, Gene>)
+        }
+        taintId = other.taintId
+
+        return true
     }
 
 
