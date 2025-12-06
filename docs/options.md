@@ -309,7 +309,6 @@ There are 3 types of options:
 |`seedTestCases`| __Boolean__. Whether to seed EvoMaster with some initial test cases. These test cases will be used and evolved throughout the search process. *Default value*: `false`.|
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
-|`sqlInjectionMaxResponseTimeMs`| __Int__. Maximum response time (in milliseconds) to consider a potential SQL Injection vulnerability. *Default value*: `2000`.|
 |`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Default value*: `false`.|
 |`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Default value*: `2000`.|
 |`sqliInjectedSleepDuration`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Default value*: `5`.|
