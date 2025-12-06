@@ -222,7 +222,29 @@ object RestSecurityOracle {
         return true
     }
 
-    
+    /**
+     * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
+     * The payloads are designed to introduce delays in the database response,
+     * which can be detected by measuring the response time of the application.
+     */
+    val SQLI_PAYLOADS = listOf(
+        "' OR (WITH RECURSIVE r(i) AS (SELECT 1 UNION ALL SELECT i+1 FROM r WHERE i < 10000000) SELECT COUNT(*) FROM r)>0--",
+        "' OR SLEEP(%d)-- -",
+        "\" OR SLEEP(%d)-- -",
+        "' union select sleep(%d)-- -",
+        "\" union select sleep(%d)-- -",
+        "' OR pg_sleep(%d)-- -",
+        "\" OR pg_sleep(%d)-- -",
+        "' union select pg_sleep(%d)-- -",
+        "\" union select pg_sleep(%d)-- -"
+        // for h2 database
+//        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B, INFORMATION_SCHEMA.COLUMNS C)>0--",
+//        "' OR (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS A, INFORMATION_SCHEMA.COLUMNS B)>0--",
+//        it takes extremely long.
+//        "' OR (SELECT SUM(a.ORDINAL_POSITION*b.ORDINAL_POSITION*c.ORDINAL_POSITION) FROM INFORMATION_SCHEMA.COLUMNS a, INFORMATION_SCHEMA.COLUMNS b, INFORMATION_SCHEMA.COLUMNS c)>1 --",
+    )
+
+
     // Simple XSS payloads inspired by big-list-of-naughty-strings
     // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
     val XSS_PAYLOADS = listOf(

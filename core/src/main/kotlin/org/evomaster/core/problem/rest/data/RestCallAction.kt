@@ -434,4 +434,5 @@ class RestCallAction(
         this.weakReference = wr
         return copy
     }
+    var baseResponseTime: Long? = 0
 }

@@ -31,6 +31,7 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -59,6 +60,7 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
@@ -595,7 +597,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
-            createInvocation(a, chainState, cookies, tokens).invoke()
+            val call = createInvocation(a, chainState, cookies, tokens)
+
+            SearchTimeController.measureTimeMillis(
+                { t, res ->
+                    rcr.setResponseTime(t)
+                },
+                {
+                    call.invoke()
+                }
+            )
+
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
@@ -1245,6 +1257,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
+        handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
     }
 
@@ -1346,6 +1359,49 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handleSQLiCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+            val baseline = a.baseResponseTime
+            val afterPayload = r.getResponseTime()
+            val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+            val N = config.sqliInjectedSleepDuration * 1000          // N: expected delay introduced by the injected sleep payload
+
+            // Baseline must be fast enough (baseline < K)
+            val baselineIsFast = baseline!! < K
+
+            // Response after injection must be slow enough (response > N)
+            val responseIsSlowEnough = afterPayload > N
+
+            // Timeout is also considered a potential vulnerability indicator
+            val isTimeout = r.getTimedout()
+
+            // If baseline is fast AND the response after payload is slow enough (or timed out),
+            // then we consider this a potential time-based SQL injection vulnerability.
+            // Otherwise, skip this result.
+            if (!(baselineIsFast && (responseIsSlowEnough || isTimeout))) {
+                continue
+            }
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, a.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, index)
+            r.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, a.getName(), null))
+            break // Only add one fault per action
+        }
+    }
 
     private fun handleStackTraceCheck(
         individual: RestIndividual,
@@ -1375,7 +1431,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
             return
         }
 
