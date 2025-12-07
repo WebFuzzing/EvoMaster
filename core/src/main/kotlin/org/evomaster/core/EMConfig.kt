@@ -2814,7 +2814,7 @@ class EMConfig {
     @Experimental
     @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
             "Only available for JVM languages")
-    var dtoForRequestPayload = false
+    var dtoForRequestPayload = true
 
     @Cfg("Override the value of externalEndpointURL in auth configurations." +
             " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
