@@ -228,14 +228,16 @@ object RestSecurityOracle {
      * which can be detected by measuring the response time of the application.
      */
     val SQLI_PAYLOADS = listOf(
+        // Simple sleep-based payloads for MySQL
         "' OR SLEEP(%d)-- -",
         "\" OR SLEEP(%d)-- -",
-        "' union select sleep(%d)-- -",
-        "\" union select sleep(%d)-- -",
-        "' OR pg_sleep(%d)-- -",
-        "\" OR pg_sleep(%d)-- -",
-        "' union select pg_sleep(%d)-- -",
-        "\" union select pg_sleep(%d)-- -"
+        "' OR SLEEP(%d)=0-- -",
+        "\" OR SLEEP(%d)=0-- -",
+        // Simple sleep-based payloads for PostgreSQL
+        "' OR select pg_sleep(%d)-- -",
+        "\" OR select pg_sleep(%d)-- -",
+        "' OR (select pg_sleep(%d)) IS NULL-- -",
+        "\' OR (select pg_sleep(%d)) IS NULL-- -",
     )
 
 
