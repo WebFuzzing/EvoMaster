@@ -441,7 +441,7 @@ public abstract class EnterpriseTestBase {
                 "--expectationsActive", "TRUE",
                 "--executiveSummary", summary,
                 "--createConfigPathIfMissing", "false",
-                "--dtoForRequestPayload", ""+active
+                "--dtoForRequestPayload", "true"
         ));
     }
 
