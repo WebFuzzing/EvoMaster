@@ -30,9 +30,9 @@ class GeneToDto(
 ) {
 
     private var dtoOutput: DtoOutput = if (outputFormat.isJava()) {
-        JavaDtoOutput()
+        JavaDtoOutput(outputFormat)
     } else if (outputFormat.isKotlin()){
-        KotlinDtoOutput()
+        KotlinDtoOutput(outputFormat)
     } else {
         throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
     }
