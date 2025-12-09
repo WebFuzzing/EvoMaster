@@ -12,6 +12,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
 import org.evomaster.client.java.instrumentation.external.ServerController;
+import org.evomaster.client.java.instrumentation.external.DynamosaConfigDto;
+import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -448,6 +450,15 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
+        if (!isInstrumentationActivated()){
+            return Collections.emptyList();
+        }
+        List<ControlDependenceGraphDto> graphs = serverController.getDynamosaControlDependenceGraphs();
+        return graphs != null ? graphs : Collections.emptyList();
+    }
+
+    @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
             serverController.setAction(new Action(
@@ -520,6 +531,28 @@ public abstract class ExternalSutController extends SutController {
         serverController.setExecutingInitMongo(executingInitMongo);
         // sync executingInitMongo on the local ExecutionTracer
         ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
+    /**
+     * Send Dynamosa configuration to the Java Agent.
+     */
+    public final void setDynamosaGraphsEnabled(boolean enableGraphs) {
+        checkInstrumentation();
+        DynamosaConfigDto dto = new DynamosaConfigDto();
+        dto.enableGraphs = enableGraphs;
+        dto.writeCfg = null;
+        serverController.setDynamosaConfig(dto);
+    }
+
+    /**
+     * Control whether the agent writes DOT/PNG graphs to disk.
+     */
+    public final void setWriteCfgEnabled(boolean writeCfg) {
+        checkInstrumentation();
+        DynamosaConfigDto dto = new DynamosaConfigDto();
+        dto.enableGraphs = null;
+        dto.writeCfg = writeCfg;
+        serverController.setDynamosaConfig(dto);
     }
 
     @Override
