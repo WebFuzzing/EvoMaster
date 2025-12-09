@@ -91,7 +91,6 @@ class UriGene(name: String,
         return gene.unsafeSetFromStringValue(value)
     }
 
-
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,
