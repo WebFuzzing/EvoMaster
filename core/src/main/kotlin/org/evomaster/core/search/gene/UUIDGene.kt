@@ -92,7 +92,7 @@ class UUIDGene(
         val gene = other.getPhenotype()
 
         if (gene !is UUIDGene) {
-            throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
+            return false
         }
         return this.mostSigBits.unsafeCopyValueFrom(gene.mostSigBits)
                 && this.leastSigBits.unsafeCopyValueFrom(gene.leastSigBits)

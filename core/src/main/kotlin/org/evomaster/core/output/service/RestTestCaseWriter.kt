@@ -436,6 +436,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     "\"$path\""
                 }
 
+                //FIXME this should be same algorithm as in AbstractRestFitness
                 val idPointer = res.getResourceId()?.pointer ?: "/id"
 
                 val extract = extractValueFromJsonResponse(resVarName, idPointer)

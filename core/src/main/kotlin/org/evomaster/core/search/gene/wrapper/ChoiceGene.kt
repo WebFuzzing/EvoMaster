@@ -199,6 +199,20 @@ class ChoiceGene<T>(
             TODO this is bit limited... what about if there are wrapper genes involved?
         */
 
+        //first check if can find gene of same type
+        for(i in geneChoices.indices){
+            val g = geneChoices[i]
+
+            if(g.javaClass == x.javaClass) {
+                val updated = g.copyValueFrom(x)
+                if (updated) {
+                    this.activeGeneIndex = i
+                    return true
+                }
+            }
+        }
+
+        //if none found, check at any other possibly compatible types
         for(i in geneChoices.indices){
             val g = geneChoices[i]
 
@@ -208,11 +222,12 @@ class ChoiceGene<T>(
                 of them would be fine. also if one works, we should not break validity of the other
                 options even if not selected
              */
-            val updated = g.copyValueFrom(x)
-            g.forceNewTaints()
-            if(updated){
-                this.activeGeneIndex = i
-                return true
+            if(g.javaClass != x.javaClass) {
+                val updated = g.copyValueFrom(x)
+                if (updated) {
+                    this.activeGeneIndex = i
+                    return true
+                }
             }
         }
 
@@ -240,12 +255,9 @@ class ChoiceGene<T>(
         if (other !is ChoiceGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        if (this.activeGeneIndex != other.activeGeneIndex) {
-            return false
-        }
 
-        return this.geneChoices[activeGeneIndex]
-            .containsSameValueAs(other.geneChoices[activeGeneIndex])
+        return this.activeGene().javaClass == other.activeGene().javaClass
+                && this.activeGene().containsSameValueAs(other.activeGene())
     }
 
     /**

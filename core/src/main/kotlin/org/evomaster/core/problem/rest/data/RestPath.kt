@@ -329,7 +329,7 @@ class RestPath(path: String) {
                     gene.getViewOfElements()
                         .joinToString("&") { "$name=${encode(it.getValueAsRawString())}" }
                 } else {
-                    val value = encode(gene!!.getValueAsRawString())
+                    val value = encode(gene.getValueAsRawString())
                     "$name=$value"
                 }
             }
@@ -390,6 +390,12 @@ class RestPath(path: String) {
                     val variable = variables.entries.find {
                         it.value.name == t.name && (it.value.scope == null || it.value.scope == RestLinkParameter.Scope.PATH)
                     }?.key
+
+                    /*
+                        TODO are these correct??? are we properly escaping?
+                        also, URI does not comply with RFC 3968... :(
+                        need more testing
+                     */
 
                     if(variable != null){
                         /*

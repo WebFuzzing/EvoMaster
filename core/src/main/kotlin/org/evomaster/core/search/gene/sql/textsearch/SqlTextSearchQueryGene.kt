@@ -78,6 +78,7 @@ class SqlTextSearchQueryGene(
          */
         if (queryLexemes.getViewOfElements().isEmpty()) {
             val stringGene = StringGene("lexeme")
+            stringGene.doInitialize(randomness)
             stringGene.randomize(randomness, tryToForceNewValue)
             queryLexemes.addElement(stringGene)
         }

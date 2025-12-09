@@ -200,7 +200,9 @@ class QuantifierRxGene(
         }
 
         for (i in 0 until other.atoms.size) {
-            if (!this.atoms[i].containsSameValueAs(other.atoms[i])) {
+            val x = this.atoms[i]
+            val y = other.atoms[i]
+            if (!x.possiblySame(y) || !x.containsSameValueAs(y)) {
                 return false
             }
         }

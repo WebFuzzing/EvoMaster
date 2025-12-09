@@ -114,15 +114,14 @@ class SeededGene<T>(
         if (other !is SeededGene<*>)
            return false
 
+        this.employSeeded = other.employSeeded
+        this.isEmploySeededMutable = other.isEmploySeededMutable
+
         val ok = if (employSeeded)
             this.seeded.unsafeCopyValueFrom(other.seeded)
         else
             this.gene.unsafeCopyValueFrom(other.gene as Gene)
 
-        if (ok){
-            this.employSeeded = other.employSeeded
-            this.isEmploySeededMutable = other.isEmploySeededMutable
-        }
         return ok
     }
 
