@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.authenticatedswaggeraccess;
 
-import org.evomaster.client.java.controller.AuthUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
