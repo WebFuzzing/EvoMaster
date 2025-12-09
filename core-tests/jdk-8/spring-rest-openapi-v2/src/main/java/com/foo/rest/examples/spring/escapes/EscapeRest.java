@@ -2,7 +2,7 @@ package com.foo.rest.examples.spring.escapes;
 
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.MediaType;
+import org.springframework.http.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -13,7 +13,7 @@ public class EscapeRest {
     @RequestMapping(
             value = "/containsDollar/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public EscapeResponseDto containsDollar(
             @PathVariable("s") Boolean s
@@ -33,7 +33,7 @@ public class EscapeRest {
     @RequestMapping(
             value = "/containsQuote/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public EscapeResponseDto containsQuote(
             @PathVariable("s") Boolean s
@@ -72,7 +72,7 @@ public class EscapeRest {
     @RequestMapping(
             value = "/trickyJson/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public HashMap trickyJson(
             @PathVariable("s") String s
@@ -88,7 +88,7 @@ public class EscapeRest {
     @RequestMapping(
             value = "/containsSlash/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public EscapeResponseDto containsSlash(
             @PathVariable("s") Boolean s
@@ -107,7 +107,7 @@ public class EscapeRest {
     @RequestMapping(
             value = "/escapesJson/{s}",
             method = RequestMethod.GET,
-            produces = MediaType.APPLICATION_JSON
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
     public ArrayList<String> escapesJson(
             @PathVariable("s") Boolean s
