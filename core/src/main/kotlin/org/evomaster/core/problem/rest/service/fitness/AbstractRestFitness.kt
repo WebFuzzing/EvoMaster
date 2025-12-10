@@ -60,6 +60,7 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.ExecutionStats
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
@@ -102,6 +103,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var callGraphService: CallGraphService
 
+    @Inject
+    protected lateinit var executionStats: ExecutionStats
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -601,7 +604,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             SearchTimeController.measureTimeMillis(
                 { t, res ->
-                    rcr.setResponseTime(t)
+                    rcr.setResponseTimeMs(t)
+                    executionStats.record(a.id, t)
                 },
                 {
                     call.invoke()
@@ -1373,24 +1377,25 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
                 ?: continue
 
-            val baseline = a.baseResponseTime
-            val afterPayload = r.getResponseTime()
+            val baseline = executionStats.getStats(a.id)?.mean()
+                ?: continue
+
+            val afterPayload = r.getResponseTimeMs() ?:continue
+
+
             val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
-            val N = config.sqliInjectedSleepDuration * 1000          // N: expected delay introduced by the injected sleep payload
+            val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
 
             // Baseline must be fast enough (baseline < K)
-            val baselineIsFast = baseline!! < K
+            val baselineIsFast = baseline < K
 
             // Response after injection must be slow enough (response > N)
             val responseIsSlowEnough = afterPayload > N
 
-            // Timeout is also considered a potential vulnerability indicator
-            val isTimeout = r.getTimedout()
-
-            // If baseline is fast AND the response after payload is slow enough (or timed out),
+            // If baseline is fast AND the response after payload is slow enough,
             // then we consider this a potential time-based SQL injection vulnerability.
             // Otherwise, skip this result.
-            if (!(baselineIsFast && (responseIsSlowEnough || isTimeout))) {
+            if (!(baselineIsFast && responseIsSlowEnough)) {
                 continue
             }
 

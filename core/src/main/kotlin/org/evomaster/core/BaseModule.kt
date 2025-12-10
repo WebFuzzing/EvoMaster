@@ -89,6 +89,9 @@ class BaseModule(val args: Array<String>, val noTests: Boolean = false) : Abstra
         bind(SMTLibZ3DbConstraintSolver::class.java)
             .asEagerSingleton()
 
+        bind(ExecutionStats::class.java)
+            .asEagerSingleton()
+
         //no longer needed if TestSuiteWriter is moved out?
 //        if(noTests){
 //            bind(TestCaseWriter::class.java)

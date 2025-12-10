@@ -379,7 +379,7 @@ class SecurityRest {
 
                     if(!hasInvalidChars && !hasMaxLength){
                         // append the SQLi payload value
-                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDuration))
+                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0))
                         anySuccess = true
                     }
                 }
@@ -387,7 +387,6 @@ class SecurityRest {
                 if(!anySuccess){
                     continue
                 }
-                actionCopy.baseResponseTime = responseTime
 
                 copy.modifySampleType(SampleType.SECURITY)
                 copy.ensureFlattenedStructure()
@@ -395,7 +394,7 @@ class SecurityRest {
                 val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
                 if (evaluatedIndividual == null) {
-                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                    log.warn("Failed to evaluate constructed individual in handleSqlICheck")
                     continue@mainloop
                 }
 
@@ -1061,7 +1060,7 @@ class SecurityRest {
                     val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
                     if (evaluatedIndividual == null) {
-                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        log.warn("Failed to evaluate constructed individual in handleXSSCheck")
                         continue@mainloop
                     }
 
@@ -1078,7 +1077,7 @@ class SecurityRest {
                     // XSS-like payloads are injected or when user input is not properly sanitized. The try-catch block ensures
                     // that these exceptions do not interrupt the main processing loop.
 
-                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck: ${e.message}")
+                    log.warn("Failed to evaluate constructed individual in handleXSSCheck: ${e.message}")
                 }
             }
         }

@@ -2611,7 +2611,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
-    var sqliInjectedSleepDuration = 5
+    var sqliInjectedSleepDurationMs = 5500
 
     @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
