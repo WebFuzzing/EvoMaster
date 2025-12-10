@@ -261,7 +261,7 @@ class SecurityRest {
     private fun accessControlBasedOnRESTGuidelines() {
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for forbidden but ok others as disabled in configuration")
+            log.debug("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
             handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
@@ -270,39 +270,39 @@ class SecurityRest {
         }
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for existence leakage as disabled in configuration")
+            log.debug("Skipping security test for existence leakage as disabled in configuration")
         } else {
             // getting 404 instead of 403
             handleExistenceLeakage()
         }
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for not recognized authenticated as disabled in configuration")
+            log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
         }
 
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
-            LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
+            log.debug("Skipping security test for XSS as disabled in configuration")
         } else {
             handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for forgotten authentication as disabled in configuration")
+            log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
         if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for stack traces as disabled in configuration")
+            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             handleStackTraceCheck()
         }
 
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for sql injection as disabled in configuration")
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
             handleSqlICheck()
         }
@@ -371,17 +371,11 @@ class SecurityRest {
 
                     // we need to do this way because we need to append our payload
 
-                    var newPlayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
-                    //check invalid chars
-                    val hasInvalidChars = leafGene.invalidChars.any { newPlayload.contains(it) }
+                    var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
-                    //check max length
-                    val hasMaxLength = newPlayload.length > leafGene.maxLength
-
-                    if(!hasInvalidChars && !hasMaxLength){
                         // append the SQLi payload value
-                        leafGene.getPhenotype().setFromStringValue(newPlayload)
-                        anySuccess = true
+                    leafGene.getPhenotype().setFromStringValue(newPayload).also {
+                        if(it) anySuccess = true
                     }
                 }
 

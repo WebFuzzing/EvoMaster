@@ -31,8 +31,8 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.hasSQLiPayload
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -1376,6 +1376,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             val a = individual.seeMainExecutableActions()[index]
             val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
                 ?: continue
+
+            // check if it contains sqli payload
+            if(!hasSQLiPayload(a, config.sqliInjectedSleepDurationMs/1000.0))
+                continue
 
             val baseline = executionStats.getStats(a.id)?.mean()
                 ?: continue

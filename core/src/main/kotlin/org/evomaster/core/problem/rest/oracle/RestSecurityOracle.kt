@@ -222,6 +222,16 @@ object RestSecurityOracle {
         return true
     }
 
+    fun hasSQLiPayload(action: RestCallAction, duration: Double): Boolean {
+        val allValues = action.seeTopGenes()
+            .map { it.getValueAsRawString() }
+            .joinToString(" ")
+
+        return SQLI_PAYLOADS.any { payload ->
+            allValues.contains(String.format(payload, duration), ignoreCase = true)
+        }
+    }
+
     /**
      * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
      * The payloads are designed to introduce delays in the database response,
