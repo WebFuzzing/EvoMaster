@@ -348,7 +348,7 @@ class SecurityRest {
                 target.individual,
                 actionIndex
             )
-            val responseTime = target.evaluatedMainActions()[actionIndex].result.getResultValue("RESPONSE_TIME")?.toLong()
+
             // Try each sqli payload (but only add one test per endpoint)
             for(payload in SQLI_PAYLOADS){
 
@@ -371,15 +371,16 @@ class SecurityRest {
 
                     // we need to do this way because we need to append our payload
 
+                    var newPlayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
                     //check invalid chars
-                    val hasInvalidChars = leafGene.invalidChars.any { payload.contains(it) }
+                    val hasInvalidChars = leafGene.invalidChars.any { newPlayload.contains(it) }
 
                     //check max length
-                    val hasMaxLength = (leafGene.getPhenotype().getValueAsRawString().length + payload.length) > leafGene.maxLength
+                    val hasMaxLength = newPlayload.length > leafGene.maxLength
 
                     if(!hasInvalidChars && !hasMaxLength){
                         // append the SQLi payload value
-                        leafGene.getPhenotype().setFromStringValue(leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0))
+                        leafGene.getPhenotype().setFromStringValue(newPlayload)
                         anySuccess = true
                     }
                 }
