@@ -163,7 +163,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
             //Execute the action if the classifier is still weak
-            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.5)){
+            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.2)){
 
                 println("The classifier is weak for $endPoint")
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
