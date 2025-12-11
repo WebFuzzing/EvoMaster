@@ -143,7 +143,7 @@ class AIResponseClassifier : AIModel {
          * for steering repairs. In such cases, the call is executed without modification so the
          * classifier can gather additional informative samples and improve over time.
          */
-        if (!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.2)) {
+        if (!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.1 && metrics.mcc > 0.1)) {
             //do nothing
             return
         }
