@@ -44,8 +44,9 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         ok2xx: List<RestCallAction>,
         fail400: List<RestCallAction>,
         threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
-        minimalOverallAccuracy: Double = 0.5,
-        minimalOverallF1Score400: Double = 0.2
+        minimalOverallAccuracy: Double = 0.6,
+        minimalOverallF1Score400: Double = 0.1,
+        minimalOverallMCC: Double = 0.1,
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
@@ -60,6 +61,10 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         val overallF1Score400 = overallMetrics.f1Score400
         assertTrue(overallF1Score400 >= minimalOverallF1Score400, "Too low F1-Score $overallF1Score400." +
                 " Minimal accepted is $minimalOverallF1Score400")
+
+        val overallMCC = overallMetrics.mcc
+        assertTrue(overallMCC >= minimalOverallMCC, "Too low MCC $overallMCC." +
+                " Minimal accepted is $minimalOverallMCC")
 
         for(ok in ok2xx){
             val resOK = evaluateAction(injector, ok)
