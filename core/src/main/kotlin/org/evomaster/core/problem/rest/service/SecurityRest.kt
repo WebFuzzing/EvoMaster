@@ -369,6 +369,9 @@ class SecurityRest {
                     val leafGene = gene.getLeafGene()
                     if(leafGene !is StringGene) return@forEach
 
+                    //TODO check if gene is linked with previous actions that create resources with IDs
+
+
                     // we need to do this way because we need to append our payload
 
                     var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
@@ -383,10 +386,12 @@ class SecurityRest {
                     continue
                 }
 
-                copy.modifySampleType(SampleType.SECURITY)
-                copy.ensureFlattenedStructure()
+                val newInd = RestIndividualBuilder.merge(sliced, copy)
 
-                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
+                newInd.modifySampleType(SampleType.SECURITY)
+                newInd.ensureFlattenedStructure()
+
+                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(newInd)
 
                 if (evaluatedIndividual == null) {
                     log.warn("Failed to evaluate constructed individual in handleSqlICheck")

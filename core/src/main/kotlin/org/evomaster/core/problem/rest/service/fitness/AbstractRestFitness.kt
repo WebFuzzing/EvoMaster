@@ -1372,44 +1372,90 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
-                ?: continue
+        val foundPair = findSQLiPayloadPair(individual)
 
-            // check if it contains sqli payload
-            if(!hasSQLiPayload(a, config.sqliInjectedSleepDurationMs/1000.0))
-                continue
+        if(foundPair == null){
+            //no pair found, cannot do baseline comparison
+            return
+        }
 
-            val baseline = executionStats.getStats(a.id)?.mean()
-                ?: continue
+        val (actionWithoutPayload, actionWithPayload) = foundPair
+        val baselineResult = actionResults.find { it.sourceLocalId == actionWithoutPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val baselineTime = baselineResult.getResponseTimeMs() ?: return
 
-            val afterPayload = r.getResponseTimeMs() ?:continue
+        val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val injectedTime = injectedResult.getResponseTimeMs() ?: return
 
+        val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+        val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
 
-            val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
-            val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
+        // Baseline must be fast enough (baseline < K)
+        val baselineIsFast = baselineTime < K
 
-            // Baseline must be fast enough (baseline < K)
-            val baselineIsFast = baseline < K
+        // Response after injection must be slow enough (response > N)
+        val responseIsSlowEnough = injectedTime > N
 
-            // Response after injection must be slow enough (response > N)
-            val responseIsSlowEnough = afterPayload > N
+        // If baseline is fast AND the response after payload is slow enough,
+        // then we consider this a potential time-based SQL injection vulnerability.
+        // Otherwise, skip this result.
+        if (!(baselineIsFast && responseIsSlowEnough)) {
+            return
+        }
 
-            // If baseline is fast AND the response after payload is slow enough,
-            // then we consider this a potential time-based SQL injection vulnerability.
-            // Otherwise, skip this result.
-            if (!(baselineIsFast && responseIsSlowEnough)) {
-                continue
+        // Find the index of the action with payload to report it correctly
+        val index = individual.seeMainExecutableActions().indexOf(actionWithPayload)
+        if (index < 0) {
+            log.warn("Failed to find index of action with SQLi payload")
+            return
+        }
+
+        val scenarioId = idMapper.handleLocalTarget(
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, index)
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+    }
+
+    /**
+     * Finds a pair of actions in the individual that have the same path and verb,
+     * where one contains a SQLi payload and the other does not.
+     *
+     * This is useful for comparing baseline response times (without payload) against
+     * response times with SQLi payload to detect time-based SQL injection vulnerabilities.
+     *
+     * @param individual The test individual to search
+     * @return A pair of (actionWithoutPayload, actionWithPayload), or null if no such pair exists
+     */
+    private fun findSQLiPayloadPair(
+        individual: RestIndividual
+    ): Pair<RestCallAction, RestCallAction>? {
+
+        val actions = individual.seeMainExecutableActions()
+            .filterIsInstance<RestCallAction>()
+
+        // Group actions by path and verb
+        val actionsByPathAndVerb = actions
+            .groupBy { it.path.toString() to it.verb }
+
+        // Find a pair where one has SQLi payload and one doesn't
+        for ((pathVerb, actionsForPath) in actionsByPathAndVerb) {
+            if (actionsForPath.size < 2) continue
+
+            val withPayload = actionsForPath.filter {
+                hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+            val withoutPayload = actionsForPath.filter {
+                !hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
             }
 
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, a.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, index)
-            r.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, a.getName(), null))
-            break // Only add one fault per action
+            if (withPayload.isNotEmpty() && withoutPayload.isNotEmpty()) {
+                return Pair(withoutPayload.first(), withPayload.first())
+            }
         }
+
+        return null
     }
 
     private fun handleStackTraceCheck(
