@@ -135,8 +135,8 @@ class AIResponseClassifier : AIModel {
          * Reliability is assessed using accuracy, F1-score, and MCC (see [ModelEvaluation]).
          *
          * - Accuracy > 0.5 ensures the model performs better than random guessing overall.
-         * - F1-score > 0.2 indicates the minimal ability to recognize 400 responses.
-         * - MCC > 0.2 confirms that the classifier has at least weak but non-random
+         * - F1-score > 0.1 indicates the minimal ability to recognize 400 responses.
+         * - MCC > 0.1 confirms that the classifier has at least weak but non-random
          *   discriminative power, especially important under the class imbalance.
          *
          * If any of these thresholds are not met, the classifier is considered unreliable

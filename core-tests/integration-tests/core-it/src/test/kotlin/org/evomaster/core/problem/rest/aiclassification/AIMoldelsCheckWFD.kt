@@ -163,14 +163,16 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
             //Execute the action if the classifier is still weak
-            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.2)){
+            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.1)){
 
                 println("The classifier is weak for $endPoint")
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
 
                 println("Updating the classifier!")
-                aiGlobalClassifier.updateModel(action, result)
+                if(result.getStatusCode()!=null) {
+                    aiGlobalClassifier.updateModel(action, result)
+                }
 
             }else{
 
@@ -206,8 +208,10 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
 
-                println("Updating the classifier!")
-                aiGlobalClassifier.updateModel(action, result)
+                if(result.getStatusCode()!=null) {
+                    println("Updating the classifier!")
+                    aiGlobalClassifier.updateModel(action, result)
+                }
 
             }
 
