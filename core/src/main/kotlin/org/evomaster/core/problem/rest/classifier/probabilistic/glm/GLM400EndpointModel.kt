@@ -107,8 +107,7 @@ class GLM400EndpointModel(
         /**
          * Updating model parameters
          */
-        val trueStatusCode = output.getStatusCode()
-        val y = if (trueStatusCode == 400) 0.0 else 1.0
+        val y = if (output.getStatusCode() == 400) 0.0 else 1.0
 
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prediction = sigmoid(z)

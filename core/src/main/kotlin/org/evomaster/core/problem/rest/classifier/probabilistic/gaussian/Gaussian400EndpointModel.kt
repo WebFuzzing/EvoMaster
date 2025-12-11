@@ -147,8 +147,7 @@ class Gaussian400EndpointModel (
         /**
          * Updating the density functions based on the real observation
          */
-        val trueStatusCode = output.getStatusCode()
-        if (trueStatusCode == 400) {
+        if (output.getStatusCode() == 400) {
             density400!!.update(inputVector)
         } else {
             densityNot400!!.update(inputVector)

@@ -133,8 +133,7 @@ class KDE400EndpointModel (
         /**
          * Updating the KDEs based on the real observation
          */
-        val trueStatusCode = output.getStatusCode()
-        if (trueStatusCode == 400) {
+        if (output.getStatusCode() == 400) {
             density400!!.add(inputVector)
         } else {
             densityNot400!!.add(inputVector)

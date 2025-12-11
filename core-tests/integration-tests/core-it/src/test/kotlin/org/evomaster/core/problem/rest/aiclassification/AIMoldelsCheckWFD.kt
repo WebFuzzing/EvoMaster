@@ -54,8 +54,10 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
     val filePathReport = "AIModelsCheckWFDReport.txt"
 
     val baseUrlOfSut = "http://localhost:8080"
-    val swaggerUrl = "http://localhost:8080/v2/api-docs"
+//    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
+//    val swaggerUrl ="../WFD_Dataset/openapi-swagger/youtube-mock.yaml"
+    val swaggerUrl ="../WFD_Dataset/openapi-swagger/languagetool.json"
 
     @Inject
     lateinit var randomness: Randomness

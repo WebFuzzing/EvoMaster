@@ -142,9 +142,8 @@ class NN400EndpointModel(
          * Updating classifier metrics such as accuracy and precision based on its prediction
          */
         updateModelMetrics(input, result = output)
-
-        val trueStatusCode = output.getStatusCode()
-        val yIndex = if (trueStatusCode == 400) 0 else 1
+        
+        val yIndex = if (output.getStatusCode() == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }
 
         val (hidden, outputProbs) = forward(inputVector.toDoubleArray())
