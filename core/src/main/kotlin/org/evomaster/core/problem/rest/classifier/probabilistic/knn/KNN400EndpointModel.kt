@@ -91,8 +91,8 @@ class KNN400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
-        // Ignore empty action
-        if (input.parameters.isEmpty()) {
+        // Skip empty action or null response
+        if (input.parameters.isEmpty() || output.getStatusCode()==null) {
             return
         }
 
