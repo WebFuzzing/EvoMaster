@@ -91,8 +91,11 @@ class KNN400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
-        // Ignore empty action
-        if (input.parameters.isEmpty()) {
+        // Skip update if status code is null
+        val trueStatusCode = output.getStatusCode() ?: return
+
+        // Skip if: no parameters or server-side error (500)
+        if (input.parameters.isEmpty() || trueStatusCode==500) {
             return
         }
 
@@ -113,7 +116,6 @@ class KNN400EndpointModel (
         /**
          * Store only classes of interest (i.e., 400 and not 400 groups)
          */
-        val trueStatusCode = output.getStatusCode()
         val label = if (trueStatusCode == 400) 400 else NOT_400
 
         /**

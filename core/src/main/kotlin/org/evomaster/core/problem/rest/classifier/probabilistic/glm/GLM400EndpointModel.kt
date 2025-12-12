@@ -85,8 +85,11 @@ class GLM400EndpointModel(
 
         verifyEndpoint(input.endpoint)
 
-        // Ignore empty action
-        if (input.parameters.isEmpty()) {
+        // Skip update if status code is null
+        val trueStatusCode = output.getStatusCode() ?: return
+
+        // Skip if: no parameters or server-side error (500)
+        if (input.parameters.isEmpty() || trueStatusCode==500) {
             return
         }
 
@@ -107,7 +110,6 @@ class GLM400EndpointModel(
         /**
          * Updating model parameters
          */
-        val trueStatusCode = output.getStatusCode()
         val y = if (trueStatusCode == 400) 0.0 else 1.0
 
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias

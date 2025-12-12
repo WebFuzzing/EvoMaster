@@ -111,8 +111,11 @@ class KDE400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
-        // Ignore empty action
-        if (input.parameters.isEmpty()) {
+        // Skip update if status code is null
+        val trueStatusCode = output.getStatusCode() ?: return
+
+        // Skip if: no parameters or server-side error (500)
+        if (input.parameters.isEmpty() || trueStatusCode==500) {
             return
         }
 
@@ -133,7 +136,6 @@ class KDE400EndpointModel (
         /**
          * Updating the KDEs based on the real observation
          */
-        val trueStatusCode = output.getStatusCode()
         if (trueStatusCode == 400) {
             density400!!.add(inputVector)
         } else {
