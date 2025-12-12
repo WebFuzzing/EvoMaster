@@ -32,6 +32,7 @@ import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.hasSQLiPayload
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -59,6 +60,8 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
@@ -100,6 +103,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var callGraphService: CallGraphService
 
+    @Inject
+    protected lateinit var executionStats: ExecutionStats
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -595,7 +600,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
-            createInvocation(a, chainState, cookies, tokens).invoke()
+            val call = createInvocation(a, chainState, cookies, tokens)
+
+            SearchTimeController.measureTimeMillis(
+                { t, res ->
+                    rcr.setResponseTimeMs(t)
+                    executionStats.record(a.id, t)
+                },
+                {
+                    call.invoke()
+                }
+            )
+
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
@@ -1245,6 +1261,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
+        handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
     }
 
@@ -1346,6 +1363,100 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handleSQLiCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            return
+        }
+
+        val foundPair = findSQLiPayloadPair(individual)
+
+        if(foundPair == null){
+            //no pair found, cannot do baseline comparison
+            return
+        }
+
+        val (actionWithoutPayload, actionWithPayload) = foundPair
+        val baselineResult = actionResults.find { it.sourceLocalId == actionWithoutPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val baselineTime = baselineResult.getResponseTimeMs() ?: return
+
+        val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val injectedTime = injectedResult.getResponseTimeMs() ?: return
+
+        val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+        val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
+
+        // Baseline must be fast enough (baseline < K)
+        val baselineIsFast = baselineTime < K
+
+        // Response after injection must be slow enough (response > N)
+        val responseIsSlowEnough = injectedTime > N
+
+        // If baseline is fast AND the response after payload is slow enough,
+        // then we consider this a potential time-based SQL injection vulnerability.
+        // Otherwise, skip this result.
+        if (!(baselineIsFast && responseIsSlowEnough)) {
+            return
+        }
+
+        // Find the index of the action with payload to report it correctly
+        val index = individual.seeMainExecutableActions().indexOf(actionWithPayload)
+        if (index < 0) {
+            log.warn("Failed to find index of action with SQLi payload")
+            return
+        }
+
+        val scenarioId = idMapper.handleLocalTarget(
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, index)
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+    }
+
+    /**
+     * Finds a pair of actions in the individual that have the same path and verb,
+     * where one contains a SQLi payload and the other does not.
+     *
+     * This is useful for comparing baseline response times (without payload) against
+     * response times with SQLi payload to detect time-based SQL injection vulnerabilities.
+     *
+     * @param individual The test individual to search
+     * @return A pair of (actionWithoutPayload, actionWithPayload), or null if no such pair exists
+     */
+    private fun findSQLiPayloadPair(
+        individual: RestIndividual
+    ): Pair<RestCallAction, RestCallAction>? {
+
+        val actions = individual.seeMainExecutableActions()
+            .filterIsInstance<RestCallAction>()
+
+        // Group actions by path and verb
+        val actionsByPathAndVerb = actions
+            .groupBy { it.path.toString() to it.verb }
+
+        // Find a pair where one has SQLi payload and one doesn't
+        for ((pathVerb, actionsForPath) in actionsByPathAndVerb) {
+            if (actionsForPath.size < 2) continue
+
+            val withPayload = actionsForPath.filter {
+                hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+            val withoutPayload = actionsForPath.filter {
+                !hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+
+            if (withPayload.isNotEmpty() && withoutPayload.isNotEmpty()) {
+                return Pair(withoutPayload.first(), withPayload.first())
+            }
+        }
+
+        return null
+    }
 
     private fun handleStackTraceCheck(
         individual: RestIndividual,
@@ -1375,7 +1486,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
             return
         }
 
