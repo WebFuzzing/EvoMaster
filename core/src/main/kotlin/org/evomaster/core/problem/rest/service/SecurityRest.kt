@@ -373,7 +373,6 @@ class SecurityRest {
 
 
                     // we need to do this way because we need to append our payload
-
                     var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
                         // append the SQLi payload value
