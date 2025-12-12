@@ -43,13 +43,13 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
         }
     }
 
-    val modelName = "KNN" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
+    val modelName = "KDE" // Choose "GAUSSIAN", "GLM", "KDE", "KNN", "NN", etc.
     val encoderType = "RAW" // Choose "RAW" or "NORMAL"
-    val decisionMaking = "PROBABILITY" // Choose "PROBABILITY" or "THRESHOLD"
+    val decisionMaking = "THRESHOLD" // Choose "PROBABILITY" or "THRESHOLD"
     val warmUpRep = 10
     val maxAttemptRepair = 100 // i.e., the classifier has 10 times the chances to pick an action with non-400 response
 
-    val runIterations = 5000
+    val runIterations = 1000
     val saveReport = false
     val filePathReport = "AIModelsCheckWFDReport.txt"
 
@@ -165,14 +165,14 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
             //Execute the action if the classifier is still weak
-            if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.1)){
+            if(!(metrics.accuracy > 0.6 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.1)){
 
                 println("The classifier is weak for $endPoint")
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
 
                 println("Updating the classifier!")
-                if(result.getStatusCode()!=null) {
+                if(result.getStatusCode()!=null && result.getStatusCode()!=500) {
                     aiGlobalClassifier.updateModel(action, result)
                 }
 
@@ -210,7 +210,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
                 val result = ExtraTools.executeRestCallAction(action, "$baseUrlOfSut")
                 println("True Response: ${result.getStatusCode()}")
 
-                if(result.getStatusCode()!=null) {
+                if(result.getStatusCode()!=null && result.getStatusCode()!=500) {
                     println("Updating the classifier!")
                     aiGlobalClassifier.updateModel(action, result)
                 }

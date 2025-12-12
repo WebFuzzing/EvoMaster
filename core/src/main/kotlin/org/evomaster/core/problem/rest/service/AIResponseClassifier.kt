@@ -89,8 +89,8 @@ class AIResponseClassifier : AIModel {
 
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        // Skip empty action or null response
-        if (input.parameters.isEmpty() || output.getStatusCode()==null) {
+        // Skip if: no parameters, missing status code, or server-side error (500)
+        if (input.parameters.isEmpty() || output.getStatusCode()==null || output.getStatusCode()==500) {
             return
         }
         if(enabledLearning) {
