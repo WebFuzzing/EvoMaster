@@ -208,9 +208,13 @@ class AIResponseClassifier : AIModel {
         // skip if no input parameters
         if (input.parameters.isEmpty()) return true
 
-        // skip if the status code is null, or we have a server side error
-        return output.getStatusCode() == null || output.getStatusCode() == 500
+        // Get the status code and skip if it is null
+        val trueStatusCode = output.getStatusCode() ?: return true
+
+        // optionally skip if server-side error (500)
+        return trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500
     }
+
 
     /**
      * Only needed during testing to avoid modifying the model while evaluating manually crafted actions
