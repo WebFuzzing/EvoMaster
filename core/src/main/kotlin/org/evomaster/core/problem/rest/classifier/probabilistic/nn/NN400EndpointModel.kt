@@ -116,6 +116,7 @@ class NN400EndpointModel(
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
         if (input.parameters.isEmpty()) {
             return
         }
@@ -123,8 +124,8 @@ class NN400EndpointModel(
         val encoder = InputEncoderUtilWrapper(input, encoderType = encoderType)
         val inputVector = encoder.encode()
 
-        // Skip training if unsupported or empty
         if (encoder.areAllGenesUnSupported() || inputVector.isEmpty()) {
+            // Skip training if unsupported or empty
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
             modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
             modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
@@ -142,7 +143,8 @@ class NN400EndpointModel(
          */
         updateModelMetrics(input, result = output)
 
-        val yIndex = if (output.getStatusCode() == 400) 0 else 1
+        val trueStatusCode = output.getStatusCode()
+        val yIndex = if (trueStatusCode == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }
 
         val (hidden, outputProbs) = forward(inputVector.toDoubleArray())

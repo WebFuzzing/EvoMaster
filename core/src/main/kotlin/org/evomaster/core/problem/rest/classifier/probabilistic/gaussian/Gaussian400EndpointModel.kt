@@ -123,6 +123,7 @@ class Gaussian400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
         if (input.parameters.isEmpty()) {
             return
         }
@@ -146,7 +147,8 @@ class Gaussian400EndpointModel (
         /**
          * Updating the density functions based on the real observation
          */
-        if (output.getStatusCode() == 400) {
+        val trueStatusCode = output.getStatusCode()
+        if (trueStatusCode == 400) {
             density400!!.update(inputVector)
         } else {
             densityNot400!!.update(inputVector)

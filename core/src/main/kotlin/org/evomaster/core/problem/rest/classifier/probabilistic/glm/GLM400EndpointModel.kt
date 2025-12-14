@@ -85,6 +85,7 @@ class GLM400EndpointModel(
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
         if (input.parameters.isEmpty()) {
             return
         }
@@ -106,7 +107,8 @@ class GLM400EndpointModel(
         /**
          * Updating model parameters
          */
-        val y = if (output.getStatusCode() == 400) 0.0 else 1.0
+        val trueStatusCode = output.getStatusCode()
+        val y = if (trueStatusCode == 400) 0.0 else 1.0
 
         val z = inputVector.zip(weights!!) { xi, wi -> xi * wi }.sum() + bias
         val prediction = sigmoid(z)

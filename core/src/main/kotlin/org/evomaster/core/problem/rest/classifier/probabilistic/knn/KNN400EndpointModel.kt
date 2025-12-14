@@ -91,6 +91,7 @@ class KNN400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
         if (input.parameters.isEmpty()) {
             return
         }
@@ -112,7 +113,8 @@ class KNN400EndpointModel (
         /**
          * Store only classes of interest (i.e., 400 and not 400 groups)
          */
-        val label = if (output.getStatusCode() == 400) 400 else NOT_400
+        val trueStatusCode = output.getStatusCode()
+        val label = if (trueStatusCode == 400) 400 else NOT_400
 
         /**
          * Keep the sample list bounded using reservoir sampling.

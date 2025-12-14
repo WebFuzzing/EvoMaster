@@ -111,6 +111,7 @@ class KDE400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
+        // Ignore empty action
         if (input.parameters.isEmpty()) {
             return
         }
@@ -132,7 +133,8 @@ class KDE400EndpointModel (
         /**
          * Updating the KDEs based on the real observation
          */
-        if (output.getStatusCode() == 400) {
+        val trueStatusCode = output.getStatusCode()
+        if (trueStatusCode == 400) {
             density400!!.add(inputVector)
         } else {
             densityNot400!!.add(inputVector)
