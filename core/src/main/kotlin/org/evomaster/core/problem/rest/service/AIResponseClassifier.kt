@@ -87,12 +87,12 @@ class AIResponseClassifier : AIModel {
         }
     }
 
-
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        // Skip if: no parameters, missing status code, or server-side error (500)
-        if (input.parameters.isEmpty() || output.getStatusCode()==null || output.getStatusCode()==500) {
+
+        if (skipUpdate(input, output)) {
             return
         }
+
         if(enabledLearning) {
             delegate.updateModel(input, output)
         } else {
@@ -187,7 +187,6 @@ class AIResponseClassifier : AIModel {
         //TODO
     }
 
-
     private fun repairAction(
         call: RestCallAction,
         classification: AIResponseClassification
@@ -199,6 +198,18 @@ class AIResponseClassifier : AIModel {
             This information might be available when using a Decision Tree, but likely not for a Neural Network.
             Anyway, AIResponseClassification would need to be extended to handle this extra info, when available.
          */
+    }
+
+    /**
+     * Decide whether based on the observation, the model update should be skipped or not.
+     */
+    private fun skipUpdate(input: RestCallAction, output: RestCallResult): Boolean {
+
+        // skip if no input parameters
+        if (input.parameters.isEmpty()) return true
+
+        // skip if the status code is null, or we have a server side error
+        return output.getStatusCode() == null || output.getStatusCode() == 500
     }
 
     /**

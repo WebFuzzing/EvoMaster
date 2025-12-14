@@ -111,7 +111,7 @@ class KDE400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
-        if (skipUpdate(input, output)) {
+        if (input.parameters.isEmpty()) {
             return
         }
 

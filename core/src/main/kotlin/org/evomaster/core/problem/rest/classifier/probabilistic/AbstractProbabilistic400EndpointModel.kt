@@ -42,17 +42,6 @@ abstract class AbstractProbabilistic400EndpointModel(
         }
     }
 
-    /** Decide whether based on the observation, the model update should be skipped or not.*/
-    protected fun skipUpdate(input: RestCallAction, output: RestCallResult): Boolean {
-
-        // skip if no input parameters
-        if (input.parameters.isEmpty()) return true
-
-        // skip if the status code is null, or we have a server side error
-        return output.getStatusCode() == null || output.getStatusCode() == 500
-    }
-
-
     /** Initialize dimension once, validate consistency */
     open fun initializeIfNeeded(inputVector: List<Double>) {
         if (dimension == null) {
