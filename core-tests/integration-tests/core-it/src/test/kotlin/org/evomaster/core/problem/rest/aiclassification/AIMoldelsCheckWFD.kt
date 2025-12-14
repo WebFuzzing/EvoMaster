@@ -56,8 +56,9 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
     val baseUrlOfSut = "http://localhost:8080"
 //    val swaggerUrl = "http://localhost:8080/v2/api-docs"
 //    val swaggerUrl = "http://localhost:8080/api/v3/openapi.json"
-//    val swaggerUrl ="../WFD_Dataset/openapi-swagger/youtube-mock.yaml"
-    val swaggerUrl ="../WFD_Dataset/openapi-swagger/languagetool.json"
+    val swaggerUrl ="../WFD_Dataset/openapi-swagger/youtube-mock.yaml"
+//    val swaggerUrl ="../WFD_Dataset/openapi-swagger/languagetool.json"
+//    val swaggerUrl = "../Documents/WFD_Dataset/openapi-swagger/rest-ncs.json"
 
     @Inject
     lateinit var randomness: Randomness
@@ -165,6 +166,7 @@ class AIModelsCheckWFD : IntegrationTestRestBase() {
             val metrics = aiGlobalClassifier.estimateMetrics(action.endpoint)
 
             //Execute the action if the classifier is still weak
+//            if(!(metrics.accuracy > 0.6 && metrics.f1Score400 > 0.2)){
             if(!(metrics.accuracy > 0.6 && metrics.f1Score400 > 0.2 && metrics.mcc > 0.1)){
 
                 println("The classifier is weak for $endPoint")

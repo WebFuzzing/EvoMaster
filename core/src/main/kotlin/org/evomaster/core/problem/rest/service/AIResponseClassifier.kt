@@ -134,16 +134,18 @@ class AIResponseClassifier : AIModel {
          * Skips repair when the classifier is still too weak to provide meaningful guidance.
          * Reliability is assessed using accuracy, F1-score, and MCC (see [ModelEvaluation]).
          *
-         * - Accuracy > 0.6 ensures the model performs better than random guessing.
-         * - F1-score > 0.1 indicates the minimal ability to recognize 400 responses.
-         * - MCC > 0.1 confirms that the classifier has at least weak but non-random
+         * - Accuracy > 0.5 ensures the model performs better than random guessing.
+         * - F1-score > 0.0 indicates the minimal ability to recognize 400 responses.
+         * - MCC > 0.0 confirms that the classifier has at least weak but non-random
          *   discriminative power, especially important under the class imbalance.
          *
          * If any of these thresholds are not met, the classifier is considered unreliable
          * for steering repairs. In such cases, the call is executed without modification so the
          * classifier can gather additional informative samples and improve over time.
          */
-        if (!(metrics.accuracy > 0.6 && metrics.f1Score400 > 0.1 && metrics.mcc > 0.1)) {
+        if (!(metrics.accuracy > 0.5
+            && metrics.f1Score400 > 0.0
+            && metrics.mcc > 0.0)) {
             //do nothing
             return
         }
