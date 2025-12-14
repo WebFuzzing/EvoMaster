@@ -123,11 +123,7 @@ class Gaussian400EndpointModel (
 
         verifyEndpoint(input.endpoint)
 
-        // Skip update if status code is null
-        val trueStatusCode = output.getStatusCode() ?: return
-
-        // Skip if: no parameters or server-side error (500)
-        if (input.parameters.isEmpty() || trueStatusCode==500) {
+        if (skipUpdate(input, output)) {
             return
         }
 
@@ -150,7 +146,7 @@ class Gaussian400EndpointModel (
         /**
          * Updating the density functions based on the real observation
          */
-        if (trueStatusCode == 400) {
+        if (output.getStatusCode() == 400) {
             density400!!.update(inputVector)
         } else {
             densityNot400!!.update(inputVector)

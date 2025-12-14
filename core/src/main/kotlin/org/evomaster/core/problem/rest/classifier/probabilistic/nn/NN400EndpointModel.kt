@@ -116,11 +116,7 @@ class NN400EndpointModel(
 
         verifyEndpoint(input.endpoint)
 
-        // Skip update if status code is null
-        val trueStatusCode = output.getStatusCode() ?: return
-
-        // Skip if: no parameters or server-side error (500)
-        if (input.parameters.isEmpty() || trueStatusCode==500) {
+        if (skipUpdate(input, output)) {
             return
         }
 
@@ -130,8 +126,8 @@ class NN400EndpointModel(
         // Skip training if unsupported or empty
         if (encoder.areAllGenesUnSupported() || inputVector.isEmpty()) {
             val predictedStatusCode = if(randomness.nextBoolean()) 400 else NOT_400
-            modelMetrics.updatePerformance(predictedStatusCode,trueStatusCode)
-            modelMetrics.updatePerformance(predictedStatusCode, trueStatusCode)
+            modelMetrics.updatePerformance(predictedStatusCode,output.getStatusCode()?:-1)
+            modelMetrics.updatePerformance(predictedStatusCode, output.getStatusCode()?:-1)
             return
         }
 
@@ -146,7 +142,7 @@ class NN400EndpointModel(
          */
         updateModelMetrics(input, result = output)
 
-        val yIndex = if (trueStatusCode == 400) 0 else 1
+        val yIndex = if (output.getStatusCode() == 400) 0 else 1
         val target = DoubleArray(outputSize) { if (it == yIndex) 1.0 else 0.0 }
 
         val (hidden, outputProbs) = forward(inputVector.toDoubleArray())
