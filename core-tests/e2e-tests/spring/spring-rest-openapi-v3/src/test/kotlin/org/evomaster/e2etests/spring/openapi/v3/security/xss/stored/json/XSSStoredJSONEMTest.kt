@@ -29,6 +29,7 @@ class XSSStoredJSONEMTest : SpringTestBase() {
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
+            setOption(args, "xss", "true")
 
 
             val solution = initAndRun(args)

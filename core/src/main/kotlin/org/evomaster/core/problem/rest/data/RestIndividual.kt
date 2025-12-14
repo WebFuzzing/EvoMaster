@@ -155,6 +155,11 @@ class RestIndividual(
         }
 
         /*
+            Can't do this, as it can change how the test behave when there are bounded tainted values
+         */
+        //seeAllActions().forEach { it.forceNewTaints() }
+
+        /*
             if we move any environment action to the beginning of the individual, it might impact the fitness
          */
         return dnsActions.isNotEmpty() || sqlActions.isNotEmpty() || mongoDbActions.isNotEmpty()

@@ -112,11 +112,10 @@ class ObjectGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!isFixed){
-            Lazy.assert {
-                template != null && additionalFields != null
-            }
-            if (additionalFields!!.isNotEmpty())
+            Lazy.assert { template != null && additionalFields != null }
+            if (additionalFields!!.isNotEmpty()) {
                 killChildren(additionalFields!!)
+            }
             val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
             repeat(num){
                 val added = sampleElementToAdd(randomness)
@@ -265,9 +264,12 @@ class ObjectGene(
         }
 
         if(!isFixed){
-            //TODO what if there is a mismatch here? semantic of this function is unclear
-            for (i in additionalFields!!.indices){
-                ok = ok && this.additionalFields!![i].unsafeCopyValueFrom(other.additionalFields!![i])
+            if (additionalFields!!.isNotEmpty()) {
+                killChildren(additionalFields!!)
+            }
+            val otherAdditionalFields = other.additionalFields
+            otherAdditionalFields?.forEach {
+                addChild(it.copy())
             }
         }
 

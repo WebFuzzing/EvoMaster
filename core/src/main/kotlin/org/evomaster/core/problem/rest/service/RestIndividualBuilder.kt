@@ -103,6 +103,7 @@ class RestIndividualBuilder {
             other.resetLocalIdRecursively()
 
             //avoid possible taint id conflicts
+            base.seeAllActions().forEach { it.forceNewTaints() }
             other.seeAllActions().forEach { it.forceNewTaints() }
 
             val duplicates = base.addInitializingActions(other.seeInitializingActions())
@@ -122,7 +123,7 @@ class RestIndividualBuilder {
             //merge shouldn't lose any actions
             assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
 
-            base.verifyValidity()
+            base.verifyValidity(true)
 
             return base
         }
