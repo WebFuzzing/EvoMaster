@@ -2612,6 +2612,19 @@ class EMConfig {
     @Cfg("To apply XSS detection as part of security testing.")
     var xss = false
 
+    @Experimental
+    @Cfg("To apply SQLi detection as part of security testing.")
+    var sqli = false
+
+    @Experimental
+    @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
+    var sqliInjectedSleepDurationMs = 5500
+
+    @Experimental
+    @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    var sqliBaselineMaxResponseTimeMs = 2000
+
+
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
                 "By default, all oracles are enabled."
@@ -2954,6 +2967,14 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        if(category == DefinedFaultCategory.XSS && !xss){
+            return false;
+        }
+
+        if(category == DefinedFaultCategory.SQL_INJECTION && !sqli){
+            return false;
+        }
+
         return category !in getDisabledOracleCodesList()
     }
 
