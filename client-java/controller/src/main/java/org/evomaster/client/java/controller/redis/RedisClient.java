@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.redis;
 
+import org.evomaster.client.java.utils.SimpleLogger;
+
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -21,6 +23,8 @@ public class RedisClient {
 
             Method createUri = redisURIClass.getMethod("create", String.class);
             Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
+
+            SimpleLogger.debug("Connecting to Redis with PORT: " + port);
 
             Method createClient = redisClientClass.getMethod("create", redisURIClass);
             this.redisClient = createClient.invoke(null, uri);
@@ -79,12 +83,6 @@ public class RedisClient {
         invoke("hset", key, field, value);
     }
 
-    /** HEXISTS key field */
-    public boolean hashFieldExists(String key, String field) {
-        Object result = invoke("hexists", key, field);
-        return result instanceof Boolean && (Boolean) result;
-    }
-
     /** SMEMBERS key */
     public Set<String> getSetMembers(String key) {
         Object result = invoke("smembers", key);
@@ -126,5 +124,10 @@ public class RedisClient {
 
     public void flushAll() {
         invoke("flushall");
+    }
+
+    public Map<String, String> getHashFields(String key) {
+        Object result = invoke("hgetall", key);
+        return (Map<String, String>) result;
     }
 }

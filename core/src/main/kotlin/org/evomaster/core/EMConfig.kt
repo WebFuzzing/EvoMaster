@@ -1621,6 +1621,10 @@ class EMConfig {
     @Cfg("Tracking of Mongo commands to improve test generation")
     var heuristicsForMongo = true
 
+    @Experimental
+    @Cfg("Tracking of Redis commands to improve test generation")
+    var heuristicsForRedis = false
+
     @Cfg("Enable extracting SQL execution info")
     var extractSqlExecutionInfo = true
 
@@ -1781,6 +1785,12 @@ class EMConfig {
             " on the JVM.")
     @Experimental
     var instrumentMR_OPENSEARCH = false
+
+    @Cfg("Execute instrumentation for method replace with category REDIS." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_REDIS = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -2879,6 +2889,7 @@ class EMConfig {
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
+        if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
         return categories.joinToString(",")
     }
 

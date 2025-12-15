@@ -53,7 +53,8 @@ public class RedisHeuristicsCalculator {
 
                 case HGET: {
                     String key = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForFieldInHash(key, redisInfo);
+                    String field = redisCommand.extractArgs().get(1);
+                    return calculateDistanceForFieldInHash(key, field, redisInfo);
                 }
 
                 case SINTER: {
@@ -152,6 +153,7 @@ public class RedisHeuristicsCalculator {
      */
     private RedisDistanceWithMetrics calculateDistanceForFieldInHash(
             String targetKey,
+            String targetField,
             List<RedisInfo> keys
     ) {
         if (keys.isEmpty()) {
@@ -165,7 +167,7 @@ public class RedisHeuristicsCalculator {
             try {
                 String key = k.getKey();
                 long keyDist = DistanceHelper.getLeftAlignmentDistance(targetKey, key);
-                double fieldDist = k.hasField() ? 0d : MAX_REDIS_DISTANCE;
+                double fieldDist = calculateDistanceForField(targetField, k.getFields().keySet());
                 double combined = TruthnessUtils.normalizeValue(keyDist + fieldDist);
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(targetKey, key, false);
@@ -182,6 +184,34 @@ public class RedisHeuristicsCalculator {
         }
 
         return new RedisDistanceWithMetrics(minDist, evaluated);
+    }
+
+    /**
+     * Computes the distance of target field to each field in hash.
+     *
+     * @param targetField Field searched in query.
+     * @param fields Fields in hash.
+     * @return double
+     */
+    private double calculateDistanceForField(String targetField, Set<String> fields) {
+        if (fields.isEmpty()) {
+            return Long.MAX_VALUE;
+        }
+
+        double minDist = Long.MAX_VALUE;
+
+        for (String field : fields) {
+            try {
+                long fieldDist = DistanceHelper.getLeftAlignmentDistance(targetField, field);
+                if (taintHandler != null) {
+                    taintHandler.handleTaintForStringEquals(targetField, field, false);
+                }
+                minDist = Math.min(minDist, fieldDist);
+            } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed FIELD distance on " + targetField + ": " + ex.getMessage());
+            }
+        }
+        return minDist;
     }
 
     /**

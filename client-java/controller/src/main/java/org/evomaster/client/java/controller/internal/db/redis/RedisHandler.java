@@ -32,14 +32,9 @@ public class RedisHandler {
     private volatile boolean calculateHeuristics;
 
     /**
-     * Whether to use execution's info or not
-     */
-    private volatile boolean extractRedisExecution;
-
-    /**
      * The client must be created through a connection factory.
      */
-    private RedisClient redisClient = null;
+    private Object redisClient = null;
 
     private final RedisHeuristicsCalculator calculator = new RedisHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
@@ -49,7 +44,6 @@ public class RedisHandler {
 
     public RedisHandler() {
         operations = new ArrayList<>();
-        extractRedisExecution = true;
         calculateHeuristics = true;
     }
 
@@ -62,29 +56,19 @@ public class RedisHandler {
         return calculateHeuristics;
     }
 
-    public boolean isExtractRedisExecution() {
-        return extractRedisExecution;
-    }
-
     public void setCalculateHeuristics(boolean calculateHeuristics) {
         this.calculateHeuristics = calculateHeuristics;
     }
 
-    public void setExtractRedisExecution(boolean extractRedisExecution) {
-        this.extractRedisExecution = extractRedisExecution;
-    }
-
     public void handle(RedisCommand info) {
-        if (extractRedisExecution) {
-            operations.add(info);
-        }
+        operations.add(info);
     }
 
     public List<RedisCommandEvaluation> getEvaluatedRedisCommands() {
         operations.stream()
             .filter(command -> command.getType().shouldCalculateHeuristic())
             .forEach(redisCommand -> {
-                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
+                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, (RedisClient) redisClient);
                 evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
         });
         operations.clear();
@@ -165,11 +149,11 @@ public class RedisHandler {
     private List<RedisInfo> createRedisInfoForKeysByField(String field, RedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(REDIS_HASH_TYPE);
         List<RedisInfo> redisData = new ArrayList<>();
-        keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.hashFieldExists(key, field))));
+        keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.getHashFields(key))));
         return redisData;
     }
 
-    public void setRedisClient(RedisClient redisClient) {
+    public void setRedisClient(Object redisClient) {
         this.redisClient = redisClient;
     }
 }

@@ -35,7 +35,6 @@ class RedisHandlerIntegrationTest {
         handler = new RedisHandler();
         handler.setRedisClient(client);
         handler.setCalculateHeuristics(true);
-        handler.setExtractRedisExecution(true);
         client.flushAll();
     }
 
