@@ -51,7 +51,10 @@ public class SutRunDto {
     public Boolean enableControlDependenceGraphs;
 
     /**
-     * Whether to write generated graphs (DOT/PNGs) to disk on the agent side
+     * Whether to write generated graphs (DOT/PNGs) to disk on the agent side.
+     * <p>
+     * <b>Debugging only</b>: when enabled, graph files are written to a fixed location,
+     * so running multiple experiments in parallel will cause file overwrites.
      */
     public Boolean writeCfg;
 
