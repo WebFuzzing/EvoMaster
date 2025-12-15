@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
@@ -48,7 +48,7 @@ class RemoteControllerImplementation() : RemoteController{
     private var extractSqlExecutionInfo = true
 
     private var cachedSutInfoDto : SutInfoDto? = null
-    private val pendingDynamosaCdgs: MutableList<ControlDependenceGraphDto> = mutableListOf()
+    private val pendingControlDependenceGraphs: MutableList<ControlDependenceGraphDto> = mutableListOf()
 
     @Inject
     private lateinit var config: EMConfig
@@ -261,8 +261,8 @@ class RemoteControllerImplementation() : RemoteController{
         )
         requestDto.advancedHeuristics = config.heuristicsForSQLAdvanced
         
-        // Pass Dynamosa settings from core to controller/driver
-        requestDto.enableDynamosaGraphs = config.algorithm.toString() == "DYNAMOSA"
+        // Pass CDG settings from core to controller/driver
+        requestDto.enableControlDependenceGraphs = config.algorithm.toString() == "DYNAMOSA"
         requestDto.writeCfg = config.writeCfg
 
         val response = try {
@@ -373,9 +373,9 @@ class RemoteControllerImplementation() : RemoteController{
 
         val result = getData(dto)
 
-        if (result != null && result.dynamosaCdgs.isNotEmpty()) {
-                synchronized(pendingDynamosaCdgs) {
-                pendingDynamosaCdgs.addAll(result.dynamosaCdgs)
+        if (result != null && result.controlDependenceGraphs.isNotEmpty()) {
+                synchronized(pendingControlDependenceGraphs) {
+                pendingControlDependenceGraphs.addAll(result.controlDependenceGraphs)
                 }
             }
 
@@ -399,13 +399,13 @@ class RemoteControllerImplementation() : RemoteController{
         return dto?.data ?: listOf()
     }
 
-    override fun getDynamosaControlDependenceGraphs(): List<ControlDependenceGraphDto> {
-        synchronized(pendingDynamosaCdgs) {
-            if (pendingDynamosaCdgs.isEmpty()) {
+    override fun getControlDependenceGraphs(): List<ControlDependenceGraphDto> {
+        synchronized(pendingControlDependenceGraphs) {
+            if (pendingControlDependenceGraphs.isEmpty()) {
                 return emptyList()
             }
-            val copy = pendingDynamosaCdgs.toList()
-            pendingDynamosaCdgs.clear()
+            val copy = pendingControlDependenceGraphs.toList()
+            pendingControlDependenceGraphs.clear()
             return copy
         }
     }

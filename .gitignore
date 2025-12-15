@@ -159,3 +159,4 @@ client-java/sql-dto/target
 client-java/distance-heuristics/target
 client-java/test-old-libraries/target
 core-tests/e2e-tests/spring/spring-rest-mysql/target
+client-java/instrumentation/evosuite-graphs/

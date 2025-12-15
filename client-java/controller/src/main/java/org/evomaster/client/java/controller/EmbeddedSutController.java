@@ -6,8 +6,8 @@ import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.*;
-import org.evomaster.client.java.instrumentation.external.DynamosaControlDependenceSnapshot;
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceSnapshot;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  */
 public abstract class EmbeddedSutController extends SutController {
 
-    private int dynamosaCdgIndex = 0;
+    private int controlDependenceGraphIndex = 0;
 
     @Override
     public final void setupForGeneratedTest(){
@@ -144,15 +144,15 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
-        DynamosaControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(dynamosaCdgIndex);
-        dynamosaCdgIndex = snapshot.getNextIndex();
+    public List<ControlDependenceGraphDto> getControlDependenceGraphs() {
+        ControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(controlDependenceGraphIndex);
+        controlDependenceGraphIndex = snapshot.getNextIndex();
         return snapshot.getGraphs();
     }
 
     @Override
-    public void setDynamosaGraphsEnabled(boolean enableGraphs) {
-        InstrumentationController.setDynamosaGraphsEnabled(enableGraphs);
+    public void setControlDependenceGraphsEnabled(boolean enableGraphs) {
+        InstrumentationController.setControlDependenceGraphsEnabled(enableGraphs);
     }
 
     @Override

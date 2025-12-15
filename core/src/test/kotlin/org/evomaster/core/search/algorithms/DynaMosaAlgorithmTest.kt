@@ -21,7 +21,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ActionResponseDto
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -88,7 +88,7 @@ private class DummyRemoteController : RemoteController {
     override fun address(): String = "dummy"
     override fun close() {}
     override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>): List<DeriveParamResponseDto> = emptyList()
-    override fun getDynamosaControlDependenceGraphs(): List<ControlDependenceGraphDto> = emptyList()
+    override fun getControlDependenceGraphs(): List<ControlDependenceGraphDto> = emptyList()
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean = true
     override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? = null

@@ -3,7 +3,9 @@ package org.evomaster.core.search.algorithms
 import io.mockk.every
 import io.mockk.mockk
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.BranchObjectiveDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.DependencyEdgeDto
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
@@ -91,18 +93,18 @@ class MulticriteriaManagerTest {
         dto.className = "TestClass"
         dto.methodName = "testMethod"
         
-        val rootObj = ControlDependenceGraphDto.BranchObjectiveDto()
+        val rootObj = BranchObjectiveDto()
         rootObj.id = rootId
         rootObj.descriptiveId = ObjectiveNaming.BRANCH + "_$rootId"
         
-        val childObj = ControlDependenceGraphDto.BranchObjectiveDto()
+        val childObj = BranchObjectiveDto()
         childObj.id = childId
         childObj.descriptiveId = ObjectiveNaming.BRANCH + "_$childId"
         
         dto.objectives = listOf(rootObj, childObj)
         dto.rootObjectiveIds = listOf(rootId)
         
-        val edge = ControlDependenceGraphDto.DependencyEdgeDto()
+        val edge = DependencyEdgeDto()
         edge.parentObjectiveId = rootId
         edge.childObjectiveId = childId
         
@@ -116,7 +118,7 @@ class MulticriteriaManagerTest {
         dto.className = "TestClass"
         dto.methodName = "testMethod"
         
-        val obj = ControlDependenceGraphDto.BranchObjectiveDto()
+        val obj = BranchObjectiveDto()
         obj.id = id
         obj.descriptiveId = ObjectiveNaming.BRANCH + "_$id"
         

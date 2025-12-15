@@ -4,8 +4,8 @@ import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
-import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
-import org.evomaster.client.java.instrumentation.external.DynamosaControlDependenceSnapshot;
+import org.evomaster.client.java.instrumentation.graphs.ControlDependenceGraphConfig;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceSnapshot;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -68,8 +68,8 @@ public class AgentController {
                         InstrumentationController.resetForNewSearch();
                         sendCommand(Command.ACK);
                         break;
-                    case SET_DYNAMOSA_CONFIG:
-                        handleDynamosaConfig();
+                    case SET_CDG_CONFIG:
+                        handleControlDependenceGraphConfig();
                         sendCommand(Command.ACK);
                         break;
                     case NEW_TEST:
@@ -115,8 +115,8 @@ public class AgentController {
                     case EXTRACT_JVM_DTO:
                         handleExtractingSpecifiedDto();
                         break;
-                    case DYNAMOSA_CDG_SNAPSHOT:
-                        handleDynamosaControlDependenceSnapshot();
+                    case CDG_SNAPSHOT:
+                        handleControlDependenceSnapshot();
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
@@ -131,18 +131,18 @@ public class AgentController {
         thread.start();
     }
 
-    private static void handleDynamosaConfig() {
+    private static void handleControlDependenceGraphConfig() {
         try {
             Object msg = in.readObject();
-            DynamosaConfigDto dto = (DynamosaConfigDto) msg;
+            ControlDependenceGraphConfigDto dto = (ControlDependenceGraphConfigDto) msg;
             if (dto.enableGraphs != null) {
-                DynamosaConfig.setEnableGraphs(dto.enableGraphs);
+                ControlDependenceGraphConfig.setEnableGraphs(dto.enableGraphs);
             }
             if (dto.writeCfg != null) {
-                DynamosaConfig.setWriteCfgEnabled(dto.writeCfg);
+                ControlDependenceGraphConfig.setWriteCfgEnabled(dto.writeCfg);
             }
         } catch (Exception e) {
-            SimpleLogger.error("Failure in handling DYNAMOSA config: "+e.getMessage());
+            SimpleLogger.error("Failure in handling CDG config: "+e.getMessage());
         }
     }
 
@@ -251,19 +251,19 @@ public class AgentController {
         }
     }
 
-    private static void handleDynamosaControlDependenceSnapshot(){
+    private static void handleControlDependenceSnapshot(){
         try {
             Object msg = in.readObject();
             int fromIndex = 0;
             if (msg instanceof Integer) {
                 fromIndex = (Integer) msg;
             }
-            DynamosaControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(fromIndex);
+            ControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(fromIndex);
             sendObject(snapshot);
         } catch (Exception e){
-            SimpleLogger.error("Failure in handling Dynamosa CDG snapshot: "+e.getMessage());
+            SimpleLogger.error("Failure in handling CDG snapshot: "+e.getMessage());
             try {
-                sendObject(new DynamosaControlDependenceSnapshot(Collections.emptyList(), 0));
+                sendObject(new ControlDependenceSnapshot(Collections.emptyList(), 0));
             } catch (IOException ignored) {
             }
         }

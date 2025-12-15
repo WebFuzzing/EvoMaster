@@ -1,6 +1,6 @@
 package org.evomaster.core.search.algorithms
 
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
 import org.evomaster.core.search.service.IdMapper
 import java.util.LinkedHashMap
 import java.util.LinkedHashSet

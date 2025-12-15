@@ -1,7 +1,7 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.logging.LoggingUtil

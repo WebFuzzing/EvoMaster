@@ -1,7 +1,7 @@
 package org.evomaster.client.java.instrumentation.external;
 
 import org.evomaster.client.java.instrumentation.*;
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -36,7 +36,7 @@ public class ServerController {
     private Socket socket;
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
-    private int dynamosaCdgIndex = 0;
+    private int controlDependenceGraphIndex = 0;
 
     public synchronized int startServer() {
 
@@ -49,7 +49,7 @@ public class ServerController {
             throw new IllegalStateException(e);
         }
 
-        dynamosaCdgIndex = 0;
+        controlDependenceGraphIndex = 0;
         return server.getLocalPort();
     }
 
@@ -62,7 +62,7 @@ public class ServerController {
                 socket = null;
                 in = null;
                 out = null;
-                dynamosaCdgIndex = 0;
+                controlDependenceGraphIndex = 0;
             } catch (IOException e) {
                 throw new IllegalStateException(e);
             }
@@ -221,8 +221,8 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.BOOTING_SUT, isBooting);
     }
 
-    public boolean setDynamosaConfig(DynamosaConfigDto dto){
-        return sendWithDataAndExpectACK(Command.SET_DYNAMOSA_CONFIG, dto);
+    public boolean setControlDependenceGraphConfig(ControlDependenceGraphConfigDto dto){
+        return sendWithDataAndExpectACK(Command.SET_CDG_CONFIG, dto);
     }
 
 //    public synchronized List<TargetInfo> getAllCoveredTargetsInfo() {
@@ -300,31 +300,31 @@ public class ServerController {
         return (List<AdditionalInfo>) response;
     }
 
-    public synchronized List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
+    public synchronized List<ControlDependenceGraphDto> getControlDependenceGraphs() {
 
-        boolean sent = sendCommand(Command.DYNAMOSA_CDG_SNAPSHOT);
+        boolean sent = sendCommand(Command.CDG_SNAPSHOT);
         if (!sent) {
-            SimpleLogger.error("Failed to send Dynamosa CDG request");
+            SimpleLogger.error("Failed to send CDG request");
             return Collections.emptyList();
         }
 
-        if (!sendObject(dynamosaCdgIndex)) {
-            SimpleLogger.error("Failed to send Dynamosa CDG index");
+        if (!sendObject(controlDependenceGraphIndex)) {
+            SimpleLogger.error("Failed to send CDG index");
             return Collections.emptyList();
         }
 
         Object response = waitAndGetResponse();
         if (response == null) {
-            SimpleLogger.error("Failed to read Dynamosa CDG response");
+            SimpleLogger.error("Failed to read CDG response");
             return Collections.emptyList();
         }
 
-        if (!(response instanceof DynamosaControlDependenceSnapshot)) {
-            throw new IllegalStateException(errorMsgExpectingResponse(response, DynamosaControlDependenceSnapshot.class.getSimpleName()));
+        if (!(response instanceof ControlDependenceSnapshot)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, ControlDependenceSnapshot.class.getSimpleName()));
         }
 
-        DynamosaControlDependenceSnapshot snapshot = (DynamosaControlDependenceSnapshot) response;
-        dynamosaCdgIndex = snapshot.getNextIndex();
+        ControlDependenceSnapshot snapshot = (ControlDependenceSnapshot) response;
+        controlDependenceGraphIndex = snapshot.getNextIndex();
         return snapshot.getGraphs();
     }
 

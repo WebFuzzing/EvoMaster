@@ -2,7 +2,9 @@ package org.evomaster.core.search.algorithms
 
 import io.mockk.mockk
 import io.mockk.verify
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.BranchObjectiveDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
+import org.evomaster.client.java.controller.api.dto.DependencyEdgeDto
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -92,14 +94,14 @@ class BranchDependencyGraphTest {
         dto.methodName = "method"
 
         dto.objectives = objectives.map { id ->
-            ControlDependenceGraphDto.BranchObjectiveDto().apply {
+            BranchObjectiveDto().apply {
                 this.id = id
                 this.descriptiveId = "desc_$id"
             }
         }
         dto.rootObjectiveIds = rootIds
         dto.edges = edges.map { (parent, child) ->
-            ControlDependenceGraphDto.DependencyEdgeDto().apply {
+            DependencyEdgeDto().apply {
                 parentObjectiveId = parent
                 childObjectiveId = child
             }

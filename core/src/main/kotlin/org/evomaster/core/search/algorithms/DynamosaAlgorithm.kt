@@ -50,7 +50,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         initPopulation()
 
-        val newCdgs = remoteController.getDynamosaControlDependenceGraphs()
+        val newCdgs = remoteController.getControlDependenceGraphs()
         if (newCdgs.isNotEmpty()) {
             goalsManager.addControlDependenceGraphs(newCdgs)
         }
@@ -60,7 +60,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     override fun searchOnce() {
 
-        val newCdgs = remoteController.getDynamosaControlDependenceGraphs()
+        val newCdgs = remoteController.getControlDependenceGraphs()
         if (newCdgs.isNotEmpty()) {
             goalsManager.addControlDependenceGraphs(newCdgs)
         }
@@ -88,7 +88,7 @@ class DynaMosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             population.addAll(nextPop)
 
-            val moreCdgs = remoteController.getDynamosaControlDependenceGraphs()
+            val moreCdgs = remoteController.getControlDependenceGraphs()
             if (moreCdgs.isNotEmpty()) {
                 goalsManager.addControlDependenceGraphs(moreCdgs)
             }

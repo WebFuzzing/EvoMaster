@@ -46,9 +46,9 @@ public class SutRunDto {
     public String methodReplacementCategories;
 
     /**
-     * Whether to enable Dynamosa graphs generation in the Java agent
+     * Whether to enable Control Dependence Graph generation in the Java agent
      */
-    public Boolean enableDynamosaGraphs;
+    public Boolean enableControlDependenceGraphs;
 
     /**
      * Whether to write generated graphs (DOT/PNGs) to disk on the agent side

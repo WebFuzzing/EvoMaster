@@ -12,8 +12,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
 import org.evomaster.client.java.instrumentation.external.ServerController;
-import org.evomaster.client.java.instrumentation.external.DynamosaConfigDto;
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceGraphConfigDto;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -450,11 +450,11 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public List<ControlDependenceGraphDto> getDynamosaControlDependenceGraphs() {
+    public List<ControlDependenceGraphDto> getControlDependenceGraphs() {
         if (!isInstrumentationActivated()){
             return Collections.emptyList();
         }
-        List<ControlDependenceGraphDto> graphs = serverController.getDynamosaControlDependenceGraphs();
+        List<ControlDependenceGraphDto> graphs = serverController.getControlDependenceGraphs();
         return graphs != null ? graphs : Collections.emptyList();
     }
 
@@ -534,14 +534,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     /**
-     * Send Dynamosa configuration to the Java Agent.
+     * Send CDG configuration to the Java Agent.
      */
-    public final void setDynamosaGraphsEnabled(boolean enableGraphs) {
+    public final void setControlDependenceGraphsEnabled(boolean enableGraphs) {
         checkInstrumentation();
-        DynamosaConfigDto dto = new DynamosaConfigDto();
+        ControlDependenceGraphConfigDto dto = new ControlDependenceGraphConfigDto();
         dto.enableGraphs = enableGraphs;
         dto.writeCfg = null;
-        serverController.setDynamosaConfig(dto);
+        serverController.setControlDependenceGraphConfig(dto);
     }
 
     /**
@@ -549,10 +549,10 @@ public abstract class ExternalSutController extends SutController {
      */
     public final void setWriteCfgEnabled(boolean writeCfg) {
         checkInstrumentation();
-        DynamosaConfigDto dto = new DynamosaConfigDto();
+        ControlDependenceGraphConfigDto dto = new ControlDependenceGraphConfigDto();
         dto.enableGraphs = null;
         dto.writeCfg = writeCfg;
-        serverController.setDynamosaConfig(dto);
+        serverController.setControlDependenceGraphConfig(dto);
     }
 
     @Override

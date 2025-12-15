@@ -1,11 +1,11 @@
 package org.evomaster.client.java.instrumentation;
 
-import org.evomaster.client.java.instrumentation.dynamosa.graphs.GraphPool;
+import org.evomaster.client.java.instrumentation.graphs.GraphPool;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
-import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
-import org.evomaster.client.java.instrumentation.external.DynamosaControlDependenceSnapshot;
+import org.evomaster.client.java.instrumentation.graphs.ControlDependenceGraphConfig;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceSnapshot;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -149,16 +149,16 @@ public class InstrumentationController {
         UnitsInfoRecorder.registerSpecifiedDtoSchema(ExtractJvmClass.extractAsSchema(dtoNames));
     }
 
-    public static DynamosaControlDependenceSnapshot getControlDependenceSnapshot(int fromIndex){
+    public static ControlDependenceSnapshot getControlDependenceSnapshot(int fromIndex){
         return GraphPool.exportSnapshotFromIndex(fromIndex);
     }
 
-    public static void setDynamosaGraphsEnabled(boolean enableGraphs) {
-        DynamosaConfig.setEnableGraphs(enableGraphs);
+    public static void setControlDependenceGraphsEnabled(boolean enableGraphs) {
+        ControlDependenceGraphConfig.setEnableGraphs(enableGraphs);
     }
 
     public static void setWriteCfgEnabled(boolean writeCfg) {
-        DynamosaConfig.setWriteCfgEnabled(writeCfg);
+        ControlDependenceGraphConfig.setWriteCfgEnabled(writeCfg);
     }
 
 }

@@ -7,8 +7,8 @@ import org.evomaster.client.java.instrumentation.coverage.visitor.classv.ThirdPa
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
-import org.evomaster.client.java.instrumentation.dynamosa.DynamosaConfig;
-import org.evomaster.client.java.instrumentation.dynamosa.visitor.CFGClassVisitor;
+import org.evomaster.client.java.instrumentation.graphs.ControlDependenceGraphConfig;
+import org.evomaster.client.java.instrumentation.graphs.visitor.CFGClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -69,7 +69,7 @@ public class Instrumentator {
 
         boolean canCollectCoverage = canInstrumentForCoverage(className);
         if(canCollectCoverage){
-            if (DynamosaConfig.isGraphsEnabled()){
+            if (ControlDependenceGraphConfig.isGraphsEnabled()){
                 cv = new CFGClassVisitor(classLoader, cv);
             }
             cv = new CoverageClassVisitor(cv, className);

@@ -19,7 +19,7 @@ import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
 import org.evomaster.client.java.instrumentation.*;
-import org.evomaster.client.java.instrumentation.shared.dto.ControlDependenceGraphDto;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -377,9 +377,9 @@ public class EMController {
                     if (!noKillSwitch(() -> sutController.isSutRunning())) {
                         noKillSwitch(() -> sutController.bootingSut(true));
                         baseUrlOfSUT = noKillSwitch(() -> sutController.startSut());
-                        // Configure Dynamosa graphs on the agent, if requested by core
-                        Boolean enableGraphs = dto.enableDynamosaGraphs;
-                        if (enableGraphs != null) noKillSwitch(() -> sutController.setDynamosaGraphsEnabled(enableGraphs));
+                        // Configure CDG generation on the agent, if requested by core
+                        Boolean enableGraphs = dto.enableControlDependenceGraphs;
+                        if (enableGraphs != null) noKillSwitch(() -> sutController.setControlDependenceGraphsEnabled(enableGraphs));
                         Boolean writeCfg = dto.writeCfg;
                         if (writeCfg != null) noKillSwitch(() -> sutController.setWriteCfgEnabled(writeCfg));
                         noKillSwitch(() -> sutController.bootingSut(false));
@@ -594,10 +594,10 @@ public class EMController {
                     return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                 }
 
-            List<ControlDependenceGraphDto> dynamosaCdgs =
-                    noKillSwitch(() -> sutController.getDynamosaControlDependenceGraphs());
-            if (dynamosaCdgs != null && !dynamosaCdgs.isEmpty()) {
-                dto.dynamosaCdgs.addAll(dynamosaCdgs);
+            List<ControlDependenceGraphDto> cdgs =
+                    noKillSwitch(() -> sutController.getControlDependenceGraphs());
+            if (cdgs != null && !cdgs.isEmpty()) {
+                dto.controlDependenceGraphs.addAll(cdgs);
                 }
 //            }
 //        else {
