@@ -222,7 +222,45 @@ object RestSecurityOracle {
         return true
     }
 
-    
+    fun hasSQLiPayload(action: RestCallAction, duration: Double): Boolean {
+        val allValues = action.seeTopGenes()
+            .map { it.getValueAsRawString() }
+            .joinToString(" ")
+
+        return SQLI_PAYLOADS.any { payload ->
+            allValues.contains(String.format(payload, duration), ignoreCase = true)
+        }
+    }
+
+    /**
+     * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
+     * The payloads are designed to introduce delays in the database response,
+     * which can be detected by measuring the response time of the application.
+     */
+    val SQLI_PAYLOADS = listOf(
+        // Simple sleep-based payloads for MySQL
+        "' OR SLEEP(%.2f)-- -",
+        "\" OR SLEEP(%.2f)-- -",
+        "' OR SLEEP(%.2f)=0-- -",
+        "\" OR SLEEP(%.2f)=0-- -",
+        // Integer-based delays
+        "' OR SLEEP(%.0f)-- -",
+        "\" OR SLEEP(%.0f)-- -",
+        "' OR SLEEP(%.0f)=0-- -",
+        "\" OR SLEEP(%.0f)=0-- -",
+        // Simple sleep-based payloads for PostgreSQL
+        "' OR select pg_sleep(%.2f)-- -",
+        "\" OR select pg_sleep(%.2f)-- -",
+        "' OR (select pg_sleep(%.2f)) IS NULL-- -",
+        "\' OR (select pg_sleep(%.2f)) IS NULL-- -",
+        // Integer-based delays
+        "' OR select pg_sleep(%.0f)-- -",
+        "\" OR select pg_sleep(%.0f)-- -",
+        "' OR (select pg_sleep(%.0f)) IS NULL-- -",
+        "\' OR (select pg_sleep(%.0f)) IS NULL-- -",
+    )
+
+
     // Simple XSS payloads inspired by big-list-of-naughty-strings
     // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
     val XSS_PAYLOADS = listOf(
