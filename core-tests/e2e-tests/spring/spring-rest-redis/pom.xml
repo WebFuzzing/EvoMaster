@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>evomaster-e2e-tests</artifactId>
+        <artifactId>evomaster-e2e-tests-spring</artifactId>
         <groupId>org.evomaster</groupId>
         <version>4.0.1-SNAPSHOT</version>
     </parent>
@@ -52,10 +52,6 @@
             <version>2.0.1.Final</version>
         </dependency>
         <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
@@ -63,12 +59,6 @@
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
             <version>5.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>1.17.6</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.springfox</groupId>
@@ -90,7 +80,6 @@
         </dependency>
     </dependencies>
 
-
     <build>
         <plugins>
             <plugin>
@@ -110,5 +99,6 @@
             </plugin>
         </plugins>
     </build>
+
 
 </project>

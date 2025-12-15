@@ -28,6 +28,7 @@
         <module>spring-graphql-bb</module>
         <module>spring-rest-multidb</module>
         <module>spring-rest-opensearch</module>
+        <module>spring-rest-redis</module>
         <module>spring-rest-rsa</module>
         <module>spring-rpc-grpc</module>
         <module>spring-rpc-thrift</module>

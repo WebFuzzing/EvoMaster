@@ -35,7 +35,6 @@ public class RedisLettuceController {
 
     @PostMapping("/string/{key}")
     public ResponseEntity<Void> saveData(@PathVariable String key) {
-        System.out.println("POST /string/"+ key);
         sync.set(key, "value");
         return ResponseEntity.status(200).build();
     }
