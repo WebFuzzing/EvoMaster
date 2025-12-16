@@ -12,6 +12,37 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.LoggerFactory
 
+private fun stringToListOfCharPairs(s: String) : List<Pair<Char, Char>> {
+    return s.map { it to it }
+}
+
+private val digitS = listOf('0' to '9')
+private val asciiLetterS = listOf('a' to 'z', 'A' to 'Z')
+private val wordS = listOf('_' to '_') + asciiLetterS + digitS
+private val spaceS = stringToListOfCharPairs(" \t\r\n\u000C\u000b")
+private val horizontalSpaceS = listOf(0x2000.toChar() to 0x200a.toChar()) +
+        stringToListOfCharPairs(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
+private val verticalSpaceS = stringToListOfCharPairs("\n\u000B\u000C\r\u0085\u2028\u2029")
+private val punctuationS = stringToListOfCharPairs("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
+
+// US-ASCII POSIX character classes (\p{X})
+private val posixCharClassCC = mapOf(
+    "Lower" to listOf('a' to 'z'),
+    "Upper" to listOf('A' to 'Z'),
+    "ASCII" to listOf(0.toChar() to 0x7f.toChar()),
+    "Alpha" to asciiLetterS,
+    "Digit" to digitS,
+    "Alnum" to digitS + asciiLetterS,
+    "Punct" to punctuationS,
+    "Graph" to digitS + asciiLetterS + punctuationS,
+    "Print" to digitS + asciiLetterS + punctuationS + stringToListOfCharPairs("\u0020"),
+    "Blank" to stringToListOfCharPairs(" \t"),
+    "Cntrl" to listOf(0.toChar() to 0x1f.toChar()) + stringToListOfCharPairs("\u007f"),
+    "XDigit" to listOf('0' to '9', 'a' to 'f', 'A' to 'F'),
+    "Space" to spaceS,
+    "Pe" to stringToListOfCharPairs(")]}")
+)
+
 /*
 \w	Find a word character
 \W	Find a non-word character
@@ -30,11 +61,33 @@ class CharacterClassEscapeRxGene(
     }
 
     var value: String = ""
+    var charClassRepr: CharacterRangeRxGene
 
     init {
         if (!listOf("w", "W", "d", "D", "s", "S", "v", "V", "h", "H").contains(type) && 'p' != type[0]) {
             throw IllegalArgumentException("Invalid type: $type")
         }
+
+        val charSet = when(type[0].lowercaseChar()){
+            'd' -> digitS
+            'w' -> wordS
+            's' -> spaceS
+            'v' -> verticalSpaceS
+            'h' -> horizontalSpaceS
+            'p' -> {
+                if (type.substring(2,type.length-1) !in posixCharClassCC){
+                    throw IllegalArgumentException("$type invalid/unsupported POSIX character class")
+                } else {
+                    posixCharClassCC[type.substring(2,type.length-1)]!!
+                }
+            }
+            else ->
+                //this should never happen due to check in init
+                throw IllegalStateException("Type '\\$type' not supported yet")
+        }
+        val isNegated = type[0].isUpperCase()
+
+        charClassRepr = CharacterRangeRxGene(isNegated, charSet)
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -55,22 +108,9 @@ class CharacterClassEscapeRxGene(
 
         val previous = value
 
-        value = when(type[0]){
-            'd' -> randomness.nextDigitChar()
-            'D' -> randomness.nextNonDigitChar()
-            'w' -> randomness.nextWordChar()
-            'W' -> randomness.nextNonWordChar()
-            's' -> randomness.nextSpaceChar()
-            'S' -> randomness.nextNonSpaceChar()
-            'v' -> randomness.nextVerticalSpaceChar()
-            'V' -> randomness.nextNonVerticalSpaceChar()
-            'h' -> randomness.nextHorizontalSpaceChar()
-            'H' -> randomness.nextNonHorizontalSpaceChar()
-            'p' -> randomness.nextPosixCharClassChar(type)
-            else ->
-                //this should never happen due to check in init
-                throw IllegalStateException("Type '\\$type' not supported yet")
-        }.toString()
+        charClassRepr.randomize(randomness, tryToForceNewValue)
+
+        value = charClassRepr.value.toString()
 
         if(tryToForceNewValue && previous == value){
             randomize(randomness, tryToForceNewValue)
