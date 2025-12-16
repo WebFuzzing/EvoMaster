@@ -254,30 +254,36 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val list = mutableListOf<Pair<Char,Char>>()
 
-        val startText = ctx.classAtom()[0].text
-        assert(startText.length == 1 || startText.length==2) // single chars or \+ and \. escaped chars
-
-        val start : Char
-        val end: Char
-
-        if (startText.length==1) {
-            start = startText[0]
-            end = if (ctx.classAtom().size == 2) {
-                ctx.classAtom()[1].text[0]
-            } else {
-                //single char, not an actual range
-                start
-            }
+        if (ctx.classAtom()[0]?.classAtomNoDash()?.classEscape() != null){
+            if (ctx.classAtom().size == 2) throw IllegalArgumentException("Not implemented yet")
+            val rec = ctx.classAtom()[0].accept(this).data as List<Pair<Char,Char>>
+            list.addAll(rec)
         } else {
-            // This case handles the \. and \+ cases
-            // wheren . and + should be treated as
-            // regular chars
-            assert(startText=="\\+" || startText=="\\.")
-            start = startText[1]
-            end = start
-        }
+            val startText = ctx.classAtom()[0].text
+            assert(startText.length == 1 || startText.length==2) // single chars or \+ and \. escaped chars
 
-        list.add(Pair(start, end))
+            val start : Char
+            val end: Char
+
+            if (startText.length==1) {
+                start = startText[0]
+                end = if (ctx.classAtom().size == 2) {
+                    ctx.classAtom()[1].text[0]
+                } else {
+                    //single char, not an actual range
+                    start
+                }
+            } else {
+                // This case handles the \. and \+ cases
+                // wheren . and + should be treated as
+                // regular chars
+                assert(startText=="\\+" || startText=="\\.")
+                start = startText[1]
+                end = start
+            }
+
+            list.add(Pair(start, end))
+        }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
             val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
@@ -308,8 +314,13 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         } else {
 
-            val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
-            list.add(Pair(char, char))
+            if (ctx.classAtom()?.classAtomNoDash()?.classEscape() != null || ctx.classAtomNoDash()?.classEscape() != null){
+                val rec = (ctx.classAtom() ?: ctx.classAtomNoDash()).accept(this).data as List<Pair<Char,Char>>
+                list.addAll(rec)
+            } else {
+                val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
+                list.add(Pair(char, char))
+            }
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
@@ -325,6 +336,28 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val res = VisitResult()
         res.data = list
 
+        return res
+    }
+
+    override fun visitClassEscape(ctx: RegexJavaParser.ClassEscapeContext): VisitResult {
+
+        val res = VisitResult()
+        res.data = if(ctx.atomEscape() != null) {
+            when (val rec = ctx.atomEscape().accept(this).genes[0]) {
+                is CharacterClassEscapeRxGene -> {
+                    rec.charClassRepr.internalRanges
+                }
+
+                is PatternCharacterBlockGene -> {
+                    if (rec.stringBlock.length > 1) throw IllegalArgumentException("CharClass element cannot be strings")
+                    else listOf(rec.stringBlock[0] to rec.stringBlock[0])
+                }
+
+                else -> throw IllegalArgumentException("Unexpected CharClass content")
+            }
+        } else {
+            throw IllegalArgumentException("Not implemented yet")
+        }
         return res
     }
 

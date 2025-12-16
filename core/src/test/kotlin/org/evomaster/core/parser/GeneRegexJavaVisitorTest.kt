@@ -103,4 +103,12 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("""\p{Lower}\p{Upper}\p{ASCII}\p{Alpha}\p{Digit}\p{Alnum}\p{Punct}\p{Graph}
             |\p{Print}\p{Blank}\p{Cntrl}\p{XDigit}\p{Space}""".trimMargin())
     }
+
+    @Test
+    fun testPredefinedCharClassInsideCharClass(){
+        checkSameAsJava("""[\V\p{Lower}\P{Upper}\W\d]""")
+        checkSameAsJava("""[a\p{Pe}]""")
+        checkSameAsJava("""[\u00BB\u2019\u201D\u203A"'\p{Pe}\u0002¹²³]""")
+        checkCanSample("""[a\p{Pe}b]""", ")", 100_000)
+    }
 }

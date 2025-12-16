@@ -22,7 +22,7 @@ class CharacterRangeRxGene(
         private val log = LoggerFactory.getLogger(CharacterRangeRxGene::class.java)
     }
 
-    private var internalRanges = mutableListOf<Pair<Char, Char>>()
+    var internalRanges = mutableListOf<Pair<Char, Char>>()
 
     init {
         if(ranges.isEmpty()){
@@ -43,6 +43,10 @@ class CharacterRangeRxGene(
             }
         }
 
+        if(internalRanges.isEmpty()){
+            throw IllegalArgumentException("No defined ranges")
+        }
+
         ranges.forEach {
             if(it.first.code > it.second.code){
                 LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.first}' is greater than '${it.second}'")
@@ -60,8 +64,8 @@ class CharacterRangeRxGene(
 
         for ((start, end) in internalRanges.sortedBy { it.first }){
             when {
-                end < currentStart - 1 -> newInternalRanges += start to end
-                start > currentEnd + 1 -> {
+                end.code < currentStart.code - 1 -> newInternalRanges += start to end
+                start.code > currentEnd.code + 1 -> {
                     if (!merged) {
                         newInternalRanges += currentStart to currentEnd
                         merged = true
