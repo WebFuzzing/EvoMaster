@@ -88,7 +88,7 @@ atom
  : quote
  | patternCharacter+
  | DOT
- | AtomEscape
+ | atomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
  // These two rules are added to handle the . and + symbols in emails
@@ -119,13 +119,13 @@ quoteChar
 ;
 
 //TODO
-fragment CharacterEscape
- : ControlEscape
- | 'c' ControlLetter
- | HexEscapeSequence
- | UnicodeEscapeSequence
- | OctalEscapeSequence
- | 'p' BRACE_open PosixCharacterClassLabel BRACE_close
+CharacterEscape
+ : SLASH ControlEscape
+ | SLASH 'c' ControlLetter
+ | SLASH HexEscapeSequence
+ | SLASH UnicodeEscapeSequence
+ | SLASH OctalEscapeSequence
+ | SLASH 'p' BRACE_open PosixCharacterClassLabel BRACE_close
  //| IdentityEscape
  ;
 
@@ -233,6 +233,12 @@ decimalDigits
  ;
 
 
+atomEscape
+ : CharacterClassEscape
+ | CharacterEscape
+// TODO
+// | '\\' DecimalEscape
+ ;
 
 //------ LEXER ------------------------------
 // Lexer rules have first letter in upper-case
@@ -241,17 +247,9 @@ DecimalDigit
  : [0-9]
  ;
 
-
-AtomEscape
- : '\\' CharacterClassEscape
- //TODO
-// | '\\' DecimalEscape
- | '\\' CharacterEscape
- ;
-
-fragment CharacterClassEscape
+CharacterClassEscape
  //one of d D s S w W
- : [dDsSwWvVhH]
+ : SLASH [dDsSwWvVhH]
  ;
 
 

@@ -180,56 +180,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             return VisitResult(gene)
         }
 
-        if(ctx.AtomEscape() != null){
-            val txt = ctx.AtomEscape().text
-            when {
-                txt[1] == '0' -> {
-                    val octalValue = txt.substring(2).toInt(8)
-                    return VisitResult(
-                        PatternCharacterBlockGene(
-                            txt,
-                            String(Character.toChars(octalValue))
-                        )
-                    )
-                }
-                txt[1]== 'c' -> {
-                    val controlLetterValue = if (txt[2].isLowerCase()){
-                        txt[2].uppercaseChar().code.xor(0x60)
-                    } else {
-                        txt[2].code.xor(0x40)
-                    }
-                    return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
-                }
-                txt[1] in "aefnrt" -> {
-                    val escape = when {
-                        txt[1] == 'a' -> "\u0007"
-                        txt[1] == 'e' -> "\u001B"
-                        txt[1] == 'f' -> "\u000C"
-                        txt[1] == 'n' -> "\u000A"
-                        txt[1] == 'r' -> "\u000D"
-                        else -> "\u0009"
-                    }
-                    return VisitResult(PatternCharacterBlockGene(txt, escape))
-                }
-                txt[1] == 'x' || txt[1] == 'u' -> {
-                    val hexValue = when {
-                        txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}'
-                            -> txt.substring(3, txt.length - 1).toInt(16)
-                        else -> txt.substring(2).toInt(16)
-                    }
-                    if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
-                        throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
-                    }
-                    return VisitResult(
-                        PatternCharacterBlockGene(
-                            txt,
-                            String(Character.toChars(hexValue))
-                        )
-                    )
-                }
-                else -> return VisitResult(CharacterClassEscapeRxGene(txt.substring(1)))
-            }
-        }
+        if(ctx.atomEscape() != null)
+            return ctx.atomEscape().accept(this)
 
         if(ctx.disjunction() != null){
 
@@ -376,4 +328,52 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         return res
     }
 
+    override fun visitAtomEscape(ctx: RegexJavaParser.AtomEscapeContext): VisitResult {
+
+        val txt = ctx.text
+
+        return VisitResult(when (txt[1]) {
+            '0' -> {
+                val octalValue = txt.substring(2).toInt(8)
+                PatternCharacterBlockGene(
+                        txt,
+                        String(Character.toChars(octalValue))
+                )
+            }
+            'c' -> {
+                val controlLetterValue = if (txt[2].isLowerCase()){
+                    txt[2].uppercaseChar().code.xor(0x60)
+                } else {
+                    txt[2].code.xor(0x40)
+                }
+                PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString())
+            }
+            in "aefnrt" -> {
+                val escape = when {
+                    txt[1] == 'a' -> "\u0007"
+                    txt[1] == 'e' -> "\u001B"
+                    txt[1] == 'f' -> "\u000C"
+                    txt[1] == 'n' -> "\u000A"
+                    txt[1] == 'r' -> "\u000D"
+                    else -> "\u0009"
+                }
+                PatternCharacterBlockGene(txt, escape)
+            }
+            in "xu" -> {
+                val hexValue = if (txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}') {
+                    txt.substring(3, txt.length - 1).toInt(16)
+                } else {
+                    txt.substring(2).toInt(16)
+                }
+                if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
+                    throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
+                }
+                PatternCharacterBlockGene(
+                        txt,
+                        String(Character.toChars(hexValue))
+                )
+            }
+            else -> CharacterClassEscapeRxGene(txt.substring(1))
+        })
+    }
 }
