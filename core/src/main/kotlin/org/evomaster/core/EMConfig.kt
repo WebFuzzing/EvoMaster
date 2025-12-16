@@ -1446,8 +1446,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates when the response " +
-            "indicates a server-side error with status code 500. Such responses can be considered non-informative, " +
-            "as they can be caused by both valid and invalid requests.")
+            "indicates a server-side error with status code 500.")
     var skipAIModelUpdateWhenResponseIs500 = false
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
