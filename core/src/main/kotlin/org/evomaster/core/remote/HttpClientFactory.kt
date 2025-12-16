@@ -1,5 +1,7 @@
 package org.evomaster.core.remote
 
+import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
+import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import java.security.SecureRandom
@@ -49,13 +51,15 @@ object HttpClientFactory {
         //HttpsURLConnection.setDefaultHostnameVerifier(allHostsValid)
         //SSLContext.setDefault(sc)
 
+        val config = ClientConfig()
+            .connectorProvider(ApacheConnectorProvider())
+
         return ClientBuilder.newBuilder()
+            .withConfig(config)
             .sslContext(sc)
             .hostnameVerifier(allHostsValid)
             .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
             .property(ClientProperties.READ_TIMEOUT, readTimeout)
-            //workaround bug in Jersey client
-            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
             .property(ClientProperties.FOLLOW_REDIRECTS, followRedirects)
             // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
             .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
