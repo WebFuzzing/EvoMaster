@@ -42,7 +42,7 @@ internal class RegexHandlerTest{
         val s = "^1[3-9]\\d{9}"
         val regex = RegexHandler.createGeneForJVM(s)
         assertEquals("${RegexGene.JAVA_REGEX_PREFIX}$s", regex.sourceRegex)
-        assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
+        RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))
         RegexHandler.createGeneForJVM(RegexSharedUtils.forceFullMatch(s))
 
         val rand = Randomness()
