@@ -45,7 +45,17 @@
             <version>2.14.3</version>
         </dependency>
 
-<!--        <dependency>-->
+        <!--  FIXME this should be in core!!! not here in the tests-->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.13</version>
+            <scope>compile</scope>
+        </dependency>
+
+
+
+        <!--        <dependency>-->
 <!--            <groupId>org.evomaster</groupId>-->
 <!--            <artifactId>evomaster-client-java-controller</artifactId>-->
 <!--        </dependency>-->
@@ -206,11 +216,6 @@
 <!--        <dependency>-->
 <!--            <groupId>com.alibaba</groupId>-->
 <!--            <artifactId>dns-cache-manipulator</artifactId>-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>org.apache.httpcomponents</groupId>-->
-<!--            <artifactId>httpclient</artifactId>-->
-<!--            <version>4.5.13</version>-->
 <!--        </dependency>-->
 <!--        <dependency>-->
 <!--            <groupId>com.squareup.okhttp3</groupId>-->
