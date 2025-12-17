@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql.internal;
 
+import net.sf.jsqlparser.expression.operators.relational.IsBooleanExpression;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
@@ -8,6 +9,7 @@ import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 import net.sf.jsqlparser.statement.update.UpdateSet;
 import net.sf.jsqlparser.util.TablesNamesFinder;
+import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.sql.heuristic.*;
 
@@ -107,7 +109,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
             if (columnReference.getTableReference() instanceof SqlBaseTableReference) {
                 SqlBaseTableReference baseTableReference = (SqlBaseTableReference) columnReference.getTableReference();
                 addColumnReference(baseTableReference, columnReference);
-            } else if (columnReference.getTableReference() instanceof SqlDerivedTableReference) {
+            } else if (columnReference.getTableReference() instanceof SqlDerivedTable) {
                 /*
                  * If the table is a derived table, the columns
                  * that are used are collected when processing the
@@ -126,7 +128,7 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
     public void visit(AllTableColumns allTableColumns) {
         super.visit(allTableColumns);
         SqlTableReference tableReference = tableColumnResolver.resolve(allTableColumns.getTable());
-        if (tableReference instanceof SqlDerivedTableReference) {
+        if (tableReference instanceof SqlDerivedTable) {
             /*
              * If the table is a derived table, the columns
              * that are used are collected when processing the
@@ -136,9 +138,10 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
              */
         } else if (tableReference instanceof SqlBaseTableReference) {
             SqlBaseTableReference baseTableReference = (SqlBaseTableReference) tableReference;
-
+            String schemaName = baseTableReference.getTableId().getSchemaName();
+            String tableName = baseTableReference.getTableId().getTableName();
             this.schema.tables.stream()
-                    .filter(t -> new SqlTableId(t.id.name).equals(baseTableReference.getTableId()))
+                    .filter(t -> new TableNameMatcher(t.id).matches(schemaName, tableName))
                     .flatMap(t -> t.columns.stream())
                     .map(c -> new SqlColumnReference(baseTableReference, c.name))
                     .forEach(c -> addColumnReference(baseTableReference, c));
@@ -174,12 +177,16 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
 
     private Set<SqlColumnReference> findColumnReferences(SqlTableId baseTableId) {
         Objects.requireNonNull(baseTableId);
-
+        String schemaName = baseTableId.getSchemaName();
+        String tableName = baseTableId.getTableName();
         return this.schema.tables.stream()
-                .filter(t -> new SqlTableId(t.id.name).equals(baseTableId))
-                .flatMap(t -> t.columns.stream())
-                .map(c -> new SqlColumnReference(new SqlBaseTableReference(c.table), c.name))
-                .collect(Collectors.toSet());
+                .filter(t -> new TableNameMatcher(t.id).matches(schemaName, tableName))
+                .findFirst()
+                .map(t -> t.columns.stream()
+                        .map(c -> new SqlColumnReference(
+                                new SqlBaseTableReference(t.id.catalog, t.id.schema, t.id.name), c.name))
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
     }
 
     private Set<SqlColumnReference> findColumnReferences(FromItem fromItem) {
@@ -194,9 +201,9 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
                 if (tableReference instanceof SqlBaseTableReference) {
                     SqlBaseTableReference sqlBaseTableReference = (SqlBaseTableReference) tableReference;
                     return findColumnReferences(sqlBaseTableReference.getTableId());
-                } else if (tableReference instanceof SqlDerivedTableReference) {
-                    SqlDerivedTableReference sqlDerivedTableReference = (SqlDerivedTableReference) tableReference;
-                    return findColumnReferences(sqlDerivedTableReference.getSelect());
+                } else if (tableReference instanceof SqlDerivedTable) {
+                    SqlDerivedTable sqlDerivedTable = (SqlDerivedTable) tableReference;
+                    return findColumnReferences(sqlDerivedTable.getSelect());
                 } else {
                     throw new IllegalArgumentException("Cannot handle reference of class " + tableReference.getClass().getName());
                 }
@@ -264,5 +271,26 @@ public class TablesAndColumnsFinder extends TablesNamesFinder {
         }
     }
 
+    /**
+     * This should be implemented in the superclass. It looks
+     * as a bug in TablesNamesFinder.
+     *
+     * @param isNullExpression
+     */
+    @Override
+    public void visit(IsNullExpression isNullExpression) {
+        isNullExpression.getLeftExpression().accept(this);
+    }
+
+    /**
+     * This should be implemented in the superclass. It looks
+     * as a bug in TablesNamesFinder.
+     *
+     * @param isBooleanExpression
+     */
+    @Override
+    public void visit(IsBooleanExpression isBooleanExpression) {
+        isBooleanExpression.getLeftExpression().accept(this);
+    }
 
 }
