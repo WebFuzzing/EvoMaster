@@ -984,6 +984,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             null
         }
 
+        if(bodyEntity != null) {
+            builder.header("Content-Type", bodyEntity.mediaType)
+        }
+
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
 //            HttpVerb.DELETE -> builder.buildDelete()

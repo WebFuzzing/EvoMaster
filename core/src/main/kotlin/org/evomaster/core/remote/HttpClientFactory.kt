@@ -1,5 +1,6 @@
 package org.evomaster.core.remote
 
+import org.glassfish.jersey.apache.connector.ApacheClientProperties
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -53,6 +54,7 @@ object HttpClientFactory {
 
         val config = ClientConfig()
             .connectorProvider(ApacheConnectorProvider())
+            .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
         return ClientBuilder.newBuilder()
             .withConfig(config)

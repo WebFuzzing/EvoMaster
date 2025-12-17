@@ -130,6 +130,10 @@ object AuthUtils {
 
         x.headers.forEach { builder.header(it.name, it.value) }
 
+        if(mediaType!=null){
+            builder.header("Content-Type", mediaType)
+        }
+
         //TODO duplicated code, should put in a utility
         val invocation = if(bodyEntity != null) {
             when (x.verb) {
