@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
@@ -47,6 +48,7 @@ class RemoteControllerImplementation() : RemoteController{
     private var extractSqlExecutionInfo = true
 
     private var cachedSutInfoDto : SutInfoDto? = null
+    private val pendingControlDependenceGraphs: MutableList<ControlDependenceGraphDto> = mutableListOf()
 
     @Inject
     private lateinit var config: EMConfig
@@ -258,6 +260,10 @@ class RemoteControllerImplementation() : RemoteController{
             config.methodReplacementCategories()
         )
         requestDto.advancedHeuristics = config.heuristicsForSQLAdvanced
+        
+        // Pass CDG settings from core to controller/driver
+        requestDto.enableControlDependenceGraphs = config.algorithm.toString() == "DYNAMOSA"
+        requestDto.writeCfg = config.writeCfg
 
         val response = try {
             makeHttpCall {
@@ -365,7 +371,15 @@ class RemoteControllerImplementation() : RemoteController{
             return null
         }
 
-        return getData(dto)
+        val result = getData(dto)
+
+        if (result != null && result.controlDependenceGraphs.isNotEmpty()) {
+                synchronized(pendingControlDependenceGraphs) {
+                pendingControlDependenceGraphs.addAll(result.controlDependenceGraphs)
+                }
+            }
+
+        return result
     }
 
     override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>) : List<DeriveParamResponseDto>{
@@ -383,6 +397,17 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         return dto?.data ?: listOf()
+    }
+
+    override fun getControlDependenceGraphs(): List<ControlDependenceGraphDto> {
+        synchronized(pendingControlDependenceGraphs) {
+            if (pendingControlDependenceGraphs.isEmpty()) {
+                return emptyList()
+            }
+            val copy = pendingControlDependenceGraphs.toList()
+            pendingControlDependenceGraphs.clear()
+            return copy
+        }
     }
 
 
