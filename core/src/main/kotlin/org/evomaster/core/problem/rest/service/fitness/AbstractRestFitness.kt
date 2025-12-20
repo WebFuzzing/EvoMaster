@@ -989,16 +989,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
 
         val invocation = when (a.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
             /*
                 As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
                 https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
              */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.GET -> builder.build("GET", bodyEntity)
             HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)

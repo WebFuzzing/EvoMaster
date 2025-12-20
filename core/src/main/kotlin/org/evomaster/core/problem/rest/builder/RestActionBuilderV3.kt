@@ -694,12 +694,6 @@ object RestActionBuilderV3 {
                     " although they are technically valid for HTTP (RFC 9110).")
             //https://swagger.io/docs/specification/describing-request-body/
             //https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-            if(verb == HttpVerb.GET){
-                //currently cannot handle it due to bud in Jersey :(
-                //TODO check once upgrading Jersey
-                //TODO update AbstractRestFitness accordingly
-                return
-            }
         }
 
         // Handle dereferencing if requestBody is referenced

@@ -53,6 +53,10 @@ object HttpClientFactory {
         //SSLContext.setDefault(sc)
 
         val config = ClientConfig()
+            /*
+                must use this connector, because default of Jersey has problems,
+                eg, it does not handle PATCH properly and body payloads in GET/DELETE
+             */
             .connectorProvider(ApacheConnectorProvider())
             .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
