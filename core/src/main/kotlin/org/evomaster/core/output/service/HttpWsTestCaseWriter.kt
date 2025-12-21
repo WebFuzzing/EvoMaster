@@ -408,7 +408,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines.addSingleCommentLine("$varName stores the start time in milliseconds")
 
         if(format.isJava()){
-            lines.addStatement("long $varName = System.currentTimeMillis();")
+            lines.addStatement("long $varName = System.currentTimeMillis()")
         } else if (format.isKotlin()) {
             lines.addStatement("val $varName = System.currentTimeMillis()")
         } else if(format.isPython()) {
@@ -427,7 +427,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         lines.addSingleCommentLine("$finalVarName stores the total execution time in milliseconds")
         if(format.isJava()){
-            lines.addStatement("long $finalVarName = System.currentTimeMillis() - $varName;")
+            lines.addStatement("long $finalVarName = System.currentTimeMillis() - $varName")
         } else if (format.isKotlin()) {
             lines.addStatement("val $finalVarName = System.currentTimeMillis() - $varName")
         } else if(format.isPython()) {
@@ -442,16 +442,16 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         {
             lines.addSingleCommentLine("Note: SQL Injection vulnerability detected in this call. Expected response time (sqliInjectedSleepDurationMs) should be greater than ${config.sqliInjectedSleepDurationMs} ms.")
             when{
-                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName > ${config.sqliInjectedSleepDurationMs});")
-                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs});")
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName > ${config.sqliInjectedSleepDurationMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs})")
                 format.isPython() -> lines.addStatement("assert $finalVarName > ${config.sqliInjectedSleepDurationMs}")
                 else -> {}
             }
         }else {
             lines.addSingleCommentLine("Note: No SQL Injection vulnerability detected in this call. Expected response time (sqliBaselineMaxResponseTimeMs) should be less than ${config.sqliBaselineMaxResponseTimeMs} ms.")
             when{
-                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName < ${config.sqliBaselineMaxResponseTimeMs});")
-                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs});")
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName < ${config.sqliBaselineMaxResponseTimeMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
                 format.isPython() -> lines.addStatement("assert $finalVarName < ${config.sqliBaselineMaxResponseTimeMs}")
                 else -> {}
             }

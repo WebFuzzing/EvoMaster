@@ -155,6 +155,12 @@
             <artifactId>auth0</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.3</version>
+        </dependency>
+
         <!--  Shouldn't be necessary, but currently weird issue about it on GA...  -->
         <dependency>
             <groupId>org.evomaster</groupId>

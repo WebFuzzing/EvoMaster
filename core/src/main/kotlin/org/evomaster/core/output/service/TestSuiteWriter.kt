@@ -537,6 +537,11 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+
+            if(config.sqli){
+                lines.add("import time")
+            }
+
             if (config.testTimeout > 0) {
                 //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
                 lines.add("import os")
