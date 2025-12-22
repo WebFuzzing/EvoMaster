@@ -301,6 +301,13 @@
             <version>${project.version}</version>
             <type>test-jar</type>
         </dependency>
+        <!-- Should had been imported transitively from client... but it was not? -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
 
 
     </dependencies>
