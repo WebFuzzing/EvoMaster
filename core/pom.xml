@@ -33,23 +33,6 @@
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
         </dependency>
-        <dependency>
-            <!--
-                This is only needed for testing, when accessing some SQL
-                code. But might be removed in future if all SQL code is
-                moved into Core
-            -->
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-java-controller</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-ci-utils</artifactId>
-            <scope>test</scope>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-        </dependency>
 
 
         <dependency>
@@ -298,6 +281,35 @@
             <artifactId>solver</artifactId>
             <scope>compile</scope>
         </dependency>
+
+
+        <!-- Trying to move deps at botton to avoid mess with Jersey shaded from client-->
+        <dependency>
+            <!--
+                This is only needed for testing, when accessing some SQL
+                code. But might be removed in future if all SQL code is
+                moved into Core
+            -->
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-ci-utils</artifactId>
+            <scope>test</scope>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+        </dependency>
+        <!-- Should had been imported transitively from client... but it was not? -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
+
+
     </dependencies>
 
 

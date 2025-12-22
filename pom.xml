@@ -40,27 +40,6 @@
 
     <profiles>
         <profile>
-            <id>Configs for JDK >= 17</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <!--
-                Unfortunately, recent versions of Kotlin led to crashes due JDK 17 module access shenanigans :(
-                setting up .mvn/jvm.config is not a viable option, as it messes up build in JDK 8
-                so, need to use something like
-                MAVEN_OPTS="-Xmx4g - -add-opens=java.base/java.lang=ALL-UNNAMED - -add-opens=java.base/java.io=ALL-UNNAMED"  mvn
-                when running "mvn" on command line for JDK 17 :( what a mess...
-                (btw, note that XML above does not like 2 - - together... so command cannot be directly copy&pasted)
-                for CI, this is handled directly there
-
-                Check following in case Kotlin Plugin will avoid this issues in the future:
-                https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
-            -->
-            <properties>
-                <addOpens> --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
-            </properties>
-        </profile>
-        <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
@@ -110,7 +89,7 @@
     </licenses>
 
     <properties>
-        <addOpens></addOpens> <!-- overridden in profile -->
+        <addOpens>  --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
