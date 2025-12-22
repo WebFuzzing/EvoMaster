@@ -54,6 +54,8 @@ object AuthUtils {
             }
 
             val body = response.readEntity(String::class.java)
+            response.close()
+
             val jackson = ObjectMapper()
             val tree = jackson.readTree(body)
             var token = tree.at(tl.token!!.extractFromField).asText()
@@ -98,6 +100,7 @@ object AuthUtils {
 
             val response = makeCall(client, cl, baseUrl)
                 ?: continue
+            response.close()
 
             if (response.cookies.isEmpty()) {
                 log.warn("Cookie-based login request did not give back any new cookie")
@@ -129,6 +132,10 @@ object AuthUtils {
         val builder =  client.target(x.getUrl(baseUrl)).request()
 
         x.headers.forEach { builder.header(it.name, it.value) }
+
+        if(mediaType!=null){
+            builder.header("Content-Type", mediaType)
+        }
 
         //TODO duplicated code, should put in a utility
         val invocation = if(bodyEntity != null) {
