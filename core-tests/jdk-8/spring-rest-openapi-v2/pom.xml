@@ -23,6 +23,11 @@
 
     <dependencies>
 
+        <!--  FIXME Trying to  debug fuckup of shaded Jersey !?!-->
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core</artifactId>
+        </dependency>
         <dependency>
             <!-- FIXME this bring in the core. TODO remove after refactoring-->
             <groupId>org.evomaster</groupId>
