@@ -1,5 +1,6 @@
 package org.evomaster.core.remote
 
+import org.evomaster.core.Lazy
 import org.glassfish.jersey.apache.connector.ApacheClientProperties
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
 import org.glassfish.jersey.client.ClientConfig
@@ -60,7 +61,7 @@ object HttpClientFactory {
             .connectorProvider(ApacheConnectorProvider())
             .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
-        return ClientBuilder.newBuilder()
+        val client = ClientBuilder.newBuilder()
             .withConfig(config)
             .sslContext(sc)
             .hostnameVerifier(allHostsValid)
@@ -70,5 +71,13 @@ object HttpClientFactory {
             // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
             .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
             .build()
+
+        Lazy.assert {
+            //using Jersey is a shitshow... based on classpath misconfiguration, can pick up wrong provider
+            //regardless of what you specify here, doing it silently... WTF !?!
+            (client.configuration as ClientConfig).connectorProvider.javaClass == ApacheConnectorProvider::class.java
+        }
+
+        return client
     }
 }

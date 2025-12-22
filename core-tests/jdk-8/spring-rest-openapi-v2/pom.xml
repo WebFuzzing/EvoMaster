@@ -24,10 +24,10 @@
     <dependencies>
 
         <!--  FIXME Trying to  debug fuckup of shaded Jersey !?!-->
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-core</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.evomaster</groupId>-->
+<!--            <artifactId>evomaster-core</artifactId>-->
+<!--        </dependency>-->
         <dependency>
             <!-- FIXME this bring in the core. TODO remove after refactoring-->
             <groupId>org.evomaster</groupId>
@@ -50,7 +50,7 @@
             <version>2.14.3</version>
         </dependency>
 
-        <!--  FIXME this should be in core!!! not here in the tests-->
+        <!--  FIXME this should be in core!!! not here in the tests. but fuckup with classpath !?!-->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
@@ -60,7 +60,12 @@
         <dependency>
             <groupId>org.glassfish.jersey.connectors</groupId>
             <artifactId>jersey-apache-connector</artifactId>
-            <version>2.33</version>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-client</artifactId>
+            <version>${jersey.version}</version>
         </dependency>
 
 
