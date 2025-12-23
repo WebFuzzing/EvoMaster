@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
-import org.evomaster.client.java.controller.redis.RedisClient;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
 import org.evomaster.client.java.controller.redis.RedisInfo;
 import org.evomaster.client.java.instrumentation.RedisCommand;
@@ -32,9 +32,9 @@ public class RedisHandler {
     private volatile boolean calculateHeuristics;
 
     /**
-     * The client must be created through a connection factory.
+     * The client must be created given both host and port for Redis DB.
      */
-    private Object redisClient = null;
+    private ReflectionBasedRedisClient redisClient = null;
 
     private final RedisHeuristicsCalculator calculator = new RedisHeuristicsCalculator(new TaintHandlerExecutionTracer());
 
@@ -68,7 +68,7 @@ public class RedisHandler {
         operations.stream()
             .filter(command -> command.getType().shouldCalculateHeuristic())
             .forEach(redisCommand -> {
-                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, (RedisClient) redisClient);
+                RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
                 evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
         });
         operations.clear();
@@ -76,7 +76,7 @@ public class RedisHandler {
         return evaluatedRedisCommands;
     }
 
-    private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, RedisClient redisClient) {
+    private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, ReflectionBasedRedisClient redisClient) {
         RedisCommand.RedisCommandType type = redisCommand.getType();
         try {
             switch (type) {
@@ -122,7 +122,7 @@ public class RedisHandler {
         }
     }
 
-    private List<RedisInfo> createRedisInfoForIntersection(List<String> keys, RedisClient redisClient) {
+    private List<RedisInfo> createRedisInfoForIntersection(List<String> keys, ReflectionBasedRedisClient redisClient) {
         List<RedisInfo> redisData = new ArrayList<>();
         keys.forEach(
                 key -> redisData.add(new RedisInfo(key, redisClient.getType(key), redisClient.getSetMembers(key))
@@ -130,7 +130,7 @@ public class RedisHandler {
         return redisData;
     }
 
-    private List<RedisInfo> createRedisInfoForAllKeys(RedisClient redisClient) {
+    private List<RedisInfo> createRedisInfoForAllKeys(ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getAllKeys();
         List<RedisInfo> redisData = new ArrayList<>();
         keys.forEach(
@@ -139,21 +139,21 @@ public class RedisHandler {
         return redisData;
     }
 
-    private List<RedisInfo> createRedisInfoForKeysByType(String type, RedisClient redisClient) {
+    private List<RedisInfo> createRedisInfoForKeysByType(String type, ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(type);
         List<RedisInfo> redisData = new ArrayList<>();
         keys.forEach(key -> redisData.add(new RedisInfo(key)));
         return redisData;
     }
 
-    private List<RedisInfo> createRedisInfoForKeysByField(String field, RedisClient redisClient) {
+    private List<RedisInfo> createRedisInfoForKeysByField(String field, ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(REDIS_HASH_TYPE);
         List<RedisInfo> redisData = new ArrayList<>();
         keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.getHashFields(key))));
         return redisData;
     }
 
-    public void setRedisClient(Object redisClient) {
+    public void setRedisClient(ReflectionBasedRedisClient redisClient) {
         this.redisClient = redisClient;
     }
 }

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.instrumentation.RedisCommand;
-import org.evomaster.client.java.controller.redis.RedisClient;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.junit.jupiter.api.*;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -15,7 +15,7 @@ class RedisHandlerIntegrationTest {
 
     private static final int REDIS_PORT = 6379;
     private GenericContainer<?> redisContainer;
-    private RedisClient client;
+    private ReflectionBasedRedisClient client;
     private RedisHandler handler;
     private int port;
 
@@ -27,7 +27,7 @@ class RedisHandlerIntegrationTest {
 
         port = redisContainer.getMappedPort(REDIS_PORT);
 
-        client = new RedisClient("localhost", port);
+        client = new ReflectionBasedRedisClient("localhost", port);
     }
 
     @BeforeEach

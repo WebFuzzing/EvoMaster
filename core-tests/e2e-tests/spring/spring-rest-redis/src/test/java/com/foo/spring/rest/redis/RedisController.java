@@ -3,12 +3,11 @@ package com.foo.spring.rest.redis;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.redis.RedisClient;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import redis.clients.jedis.Jedis;
@@ -113,7 +112,7 @@ public abstract class RedisController extends EmbeddedSutController {
     }
 
     @Override
-    public RedisClient getRedisConnection() {
-        return new RedisClient(this.host, this.port);
+    public ReflectionBasedRedisClient getRedisConnection() {
+        return new ReflectionBasedRedisClient(this.host, this.port);
     }
 }

@@ -30,6 +30,7 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
 import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -350,7 +351,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void initRedisHandler() {
-        Object connection = getRedisConnection();
+        ReflectionBasedRedisClient connection = getRedisConnection();
         redisHandler.setRedisClient(connection);
 
         List<AdditionalInfo> list = getAdditionalInfoList();
