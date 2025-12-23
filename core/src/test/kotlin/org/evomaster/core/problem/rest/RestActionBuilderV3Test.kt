@@ -1135,7 +1135,7 @@ class RestActionBuilderV3Test{
             "/metrics", "/metrics.json", "/metrics/{name}",
             "/trace", "/trace.json"
         )
-        checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
+        checkNumOfRootGene(map, skipInEM, 74, 106,24, 82, 14)
 
         checkNumResource(map, skipInEM, 56, 20)
 
