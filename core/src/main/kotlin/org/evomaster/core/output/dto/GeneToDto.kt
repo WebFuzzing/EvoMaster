@@ -85,7 +85,7 @@ class GeneToDto(
         val result = mutableListOf<String>()
         result.add(dtoOutput.getNewObjectStatement(dtoName, dtoVarName))
 
-        val includedFields = gene.fields.filter {
+        val includedFields = gene.fixedFields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         } .filter { it.isPrintable() }
 

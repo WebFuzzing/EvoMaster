@@ -45,6 +45,8 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/items-components", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/enum-type", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/enum-examples", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-inline", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-ref", "OK")
         }
 
         assertPrimitiveTypeDtoCreated()
@@ -55,6 +57,7 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertOneOfDtoCreated()
         assertEnumTypeDtoCreated()
         assertEnumExampleDtoCreated()
+//        assertAdditionalPropertiesDtoCreated()
     }
 
     private fun assertPrimitiveTypeDtoCreated() {
@@ -119,6 +122,15 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
     }
 
     private fun assertEnumExampleDtoCreated() {
+        val (klass, instance) = initDtoClass("EnumExample")
+        assertProperty(klass, instance, "textValue", "A text value")
+        assertProperty(klass, instance, "flagValue", true)
+        assertProperty(klass, instance, "countValue", 33)
+        assertProperty(klass, instance, "scoreValue", 3.14f)
+        assertProperty(klass, instance, "listValue", mutableListOf("s1", "s2", "s3"))
+    }
+
+    private fun assertAdditionalPropertiesDtoCreated() {
         val (klass, instance) = initDtoClass("EnumExample")
         assertProperty(klass, instance, "textValue", "A text value")
         assertProperty(klass, instance, "flagValue", true)

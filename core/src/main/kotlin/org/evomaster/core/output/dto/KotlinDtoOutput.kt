@@ -34,18 +34,41 @@ class KotlinDtoOutput: JvmDtoOutput() {
 
     private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
-        lines.add("class $dtoFilename(")
+        lines.add("class $dtoFilename {")
         addVariables(lines, dtoClass)
-        lines.add(")")
+        lines.add("}")
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
+//        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${it.name}\")")
-                lines.add("var ${it.name}: ${it.type}? = null,")
+                lines.add("@JsonProperty(\"${it.key}\")")
+                lines.add("var ${it.key}: ${it.value.type}? = null")
             }
             lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties) {
+            lines.indented {
+                lines.add("@JsonIgnore")
+//                lines.add("val additionalProperties: MutableMap<String, ${dtoClass.name}_ap> = mutableMapOf<String, ${dtoClass.name}_ap>()")
+                lines.add("private val additionalProperties: MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> = mutableMapOf()")
+                lines.addEmpty()
+                lines.add("@JsonAnyGetter")
+                lines.add("fun getAdditionalProperties(): MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> {")
+                lines.indented {
+                    lines.add("return additionalProperties")
+                }
+                lines.add("}")
+                lines.addEmpty()
+                lines.add("@JsonAnySetter")
+                lines.add("fun addAdditionalProperty(name: String, value: ${dtoClass.additionalPropertiesDtoName}) {")
+                lines.indented {
+                    lines.add("additionalProperties[name] = value")
+                }
+                lines.add("}")
+                lines.addEmpty()
+            }
         }
     }
 

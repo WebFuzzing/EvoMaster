@@ -51,20 +51,30 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
+//        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${it.name}\")")
-                lines.add("private Optional<${it.type}> ${it.name};")
+                lines.add("@JsonProperty(\"${it.key}\")")
+                lines.add("private Optional<${it.value.type}> ${it.key};")
+            }
+            lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties) {
+            lines.indented {
+                lines.add("@JsonIgnore")
+                lines.add("private Map<String, ${dtoClass.name}_ap> additionalProperties = new HashMap<>();")
             }
             lines.addEmpty()
         }
     }
 
     private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
-            val varName = it.name
-            val varType = it.type
-            val capitalizedVarName = StringUtils.capitalization(varName)
+//        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
+            val varName = it.key
+            val varType = it.value.type
+//            val capitalizedVarName = StringUtils.capitalization(varName)
+            val capitalizedVarName = capitalizeFirstChar(varName)
             lines.indented {
                 lines.add("public Optional<${varType}> get${capitalizedVarName}() {")
                 lines.indented {
@@ -75,6 +85,24 @@ class JavaDtoOutput: JvmDtoOutput() {
                 lines.add("public void set${capitalizedVarName}(${varType} ${varName}) {")
                 lines.indented {
                     lines.add("this.${varName} = Optional.ofNullable(${varName});")
+                }
+                lines.add("}")
+            }
+            lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties) {
+            lines.indented {
+                lines.add("@JsonAnyGetter")
+                lines.add("public Map<String, ${dtoClass.additionalPropertiesDtoName}> getAdditionalProperties() {")
+                lines.indented {
+                    lines.add("return additionalProperties;")
+                }
+                lines.add("}")
+                lines.addEmpty()
+                lines.add("@JsonAnySetter")
+                lines.add("public void addAdditionalProperty(String name, ${dtoClass.additionalPropertiesDtoName} value) {")
+                lines.indented {
+                    lines.add("this.additionalProperties.put(name, value);")
                 }
                 lines.add("}")
             }

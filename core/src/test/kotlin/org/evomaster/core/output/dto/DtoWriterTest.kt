@@ -15,6 +15,7 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.action.Action
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.hasItem
+import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -107,7 +108,8 @@ class DtoWriterTest {
             assertEquals(collectedDtos.size, 1)
             val oneOfDto = collectedDtos[collectedDtos.keys.first()]
             assertNotNull(oneOfDto)
-            val dtoFields = oneOfDto?.fields?:emptyList()
+//            val dtoFields = oneOfDto?.fields?:emptyList()
+            val dtoFields = oneOfDto?.fieldsMap?:emptyMap()
             assertEquals(dtoFields.size, 2)
             assertDtoFieldIn(dtoFields, "dog", STRING)
             assertDtoFieldIn(dtoFields, "cat", STRING)
@@ -125,7 +127,8 @@ class DtoWriterTest {
         assertEquals(collectedDtos.size, 1)
         val anyOfDto = collectedDtos[collectedDtos.keys.first()]
         assertNotNull(anyOfDto)
-        val dtoFields = anyOfDto?.fields?:emptyList()
+//        val dtoFields = anyOfDto?.fields?:emptyList()
+        val dtoFields = anyOfDto?.fieldsMap?:emptyMap()
         assertEquals(dtoFields.size, 2)
         assertDtoFieldIn(dtoFields, "email", STRING)
         assertDtoFieldIn(dtoFields, "numbers", "List<Integer>")
@@ -136,6 +139,10 @@ class DtoWriterTest {
         val actionCluster = mutableMapOf<String, Action>()
         RestActionBuilderV3.addActionsFromSwagger(restSchema, actionCluster, options = options)
         return actionCluster
+    }
+
+    private fun assertDtoFieldIn(dtoFields: Map<String, DtoField>, targetName: String, targetType: String) {
+        assertThat(dtoFields[targetName], `is`(DtoField(targetName, targetType)))
     }
 
     private fun assertDtoFieldIn(dtoFields: List<DtoField>, targetName: String, targetType: String) {
