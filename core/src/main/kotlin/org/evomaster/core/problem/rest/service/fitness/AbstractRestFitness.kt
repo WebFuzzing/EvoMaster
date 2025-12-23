@@ -968,7 +968,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
                 when objects like WebRequest are used. So we default to urlencoded
              */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            Entity.entity("", MediaType.APPLICATION_JSON_TYPE)
         } else if (a.verb == HttpVerb.POST && body == null) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
@@ -979,7 +979,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             /*
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            Entity.entity("", MediaType.APPLICATION_JSON_TYPE)
         } else {
             null
         }
