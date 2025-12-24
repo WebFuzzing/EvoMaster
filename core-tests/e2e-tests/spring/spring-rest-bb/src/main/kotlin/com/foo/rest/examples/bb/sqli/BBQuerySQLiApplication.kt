@@ -35,9 +35,9 @@ open class BBQuerySQLiApplication {
     @GetMapping("/vulnerable")
     @Operation(summary = "SQL Injection - Query Parameter")
     fun timeBasedQuery(@RequestParam username: String): ResponseEntity<String> {
-        CoveredTargets.cover("sqli")
-        if(username.contains("\' OR (select pg_sleep(5.50)) IS NULL-- -")) {
+        if(username.contains("pg_sleep")) {
             //simulating delay
+            CoveredTargets.cover("sqli")
             Thread.sleep(5500)
         }
 
