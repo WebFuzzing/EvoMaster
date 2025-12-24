@@ -940,14 +940,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -966,10 +966,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
-            Entity.entity("", MediaType.APPLICATION_JSON_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -979,7 +979,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             /*
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
-            Entity.entity("", MediaType.APPLICATION_JSON_TYPE)
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {
             null
         }
