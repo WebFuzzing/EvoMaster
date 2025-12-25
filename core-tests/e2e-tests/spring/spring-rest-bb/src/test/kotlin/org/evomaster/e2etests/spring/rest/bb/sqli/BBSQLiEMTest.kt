@@ -27,8 +27,8 @@ class BBSQLiEMTest : SpringTestBase() {
         executeAndEvaluateBBTest(
             outputFormat,
             "bbsqli",
-            20,
-            3,
+            100,
+            6,
             "sqli"
         ){ args: MutableList<String> ->
 
