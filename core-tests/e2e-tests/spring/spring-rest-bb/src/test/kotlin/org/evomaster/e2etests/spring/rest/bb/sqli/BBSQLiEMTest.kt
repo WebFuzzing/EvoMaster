@@ -34,6 +34,8 @@ class BBSQLiEMTest : SpringTestBase() {
 
             setOption(args, "security", "true")
             setOption(args, "sqli", "true")
+            setOption(args, "sqliBaselineMaxResponseTimeMs", "5000")
+            setOption(args, "sqliInjectedSleepDurationMs", "8000")
 
             val solution = initAndRun(args)
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)

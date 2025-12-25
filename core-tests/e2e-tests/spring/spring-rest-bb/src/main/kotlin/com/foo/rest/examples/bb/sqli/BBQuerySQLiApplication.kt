@@ -38,7 +38,7 @@ open class BBQuerySQLiApplication {
         if(username.contains("pg_sleep")) {
             //simulating delay
             CoveredTargets.cover("sqli")
-            Thread.sleep(5500)
+            Thread.sleep(8000)
         }
 
         return ResponseEntity.ok("OK")
