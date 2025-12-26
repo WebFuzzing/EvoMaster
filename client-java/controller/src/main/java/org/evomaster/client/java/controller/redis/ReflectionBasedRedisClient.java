@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.redis;
 
+import org.evomaster.client.java.utils.SimpleLogger;
+
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -8,13 +10,13 @@ import java.util.stream.Collectors;
  * RedisClient that uses Lettuce dynamically via reflection, avoiding
  * compile-time dependency on Spring or Lettuce.
  */
-public class RedisClient {
+public class ReflectionBasedRedisClient {
 
-    private final Object redisClient;      // io.lettuce.core.RedisClient
+    private final Object lettuceClient;      // io.lettuce.core.RedisClient
     private final Object connection;       // io.lettuce.core.api.StatefulRedisConnection
     private final Object syncCommands;     // io.lettuce.core.api.sync.RedisCommands
 
-    public RedisClient(String host, int port) {
+    public ReflectionBasedRedisClient(String host, int port) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
             Class<?> redisURIClass = Class.forName("io.lettuce.core.RedisURI");
@@ -22,11 +24,13 @@ public class RedisClient {
             Method createUri = redisURIClass.getMethod("create", String.class);
             Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
 
+            SimpleLogger.debug("Connecting to Redis with PORT: " + port);
+
             Method createClient = redisClientClass.getMethod("create", redisURIClass);
-            this.redisClient = createClient.invoke(null, uri);
+            this.lettuceClient = createClient.invoke(null, uri);
 
             Method connectMethod = redisClientClass.getMethod("connect");
-            this.connection = connectMethod.invoke(redisClient);
+            this.connection = connectMethod.invoke(lettuceClient);
 
             Class<?> statefulConnClass = Class.forName("io.lettuce.core.api.StatefulRedisConnection");
             Method syncMethod = statefulConnClass.getMethod("sync");
@@ -43,9 +47,9 @@ public class RedisClient {
                 Method close = connection.getClass().getMethod("close");
                 close.invoke(connection);
             }
-            if (redisClient != null) {
-                Method shutdown = redisClient.getClass().getMethod("shutdown");
-                shutdown.invoke(redisClient);
+            if (lettuceClient != null) {
+                Method shutdown = lettuceClient.getClass().getMethod("shutdown");
+                shutdown.invoke(lettuceClient);
             }
         } catch (Exception ignored) {}
     }
@@ -77,12 +81,6 @@ public class RedisClient {
     /** HSET key field value */
     public void hashSet(String key, String field, String value) {
         invoke("hset", key, field, value);
-    }
-
-    /** HEXISTS key field */
-    public boolean hashFieldExists(String key, String field) {
-        Object result = invoke("hexists", key, field);
-        return result instanceof Boolean && (Boolean) result;
     }
 
     /** SMEMBERS key */
@@ -126,5 +124,10 @@ public class RedisClient {
 
     public void flushAll() {
         invoke("flushall");
+    }
+
+    public Map<String, String> getHashFields(String key) {
+        Object result = invoke("hgetall", key);
+        return (Map<String, String>) result;
     }
 }

@@ -82,6 +82,11 @@ class Statistics : SearchListener {
     private var mongoHeuristicEvaluationFailureCount = 0
     private val mongoDocumentsAverageCalculator = IncrementalAverage()
 
+    // redis heuristic evaluation statistic
+    private var redisHeuristicEvaluationSuccessCount = 0
+    private var redisHeuristicEvaluationFailureCount = 0
+    private val redisDocumentsAverageCalculator = IncrementalAverage()
+
    class Pair(val header: String, val element: String)
 
 
@@ -168,6 +173,10 @@ class Statistics : SearchListener {
         mongoDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
     }
 
+    fun reportNumberOfEvaluatedDocumentsForRedisHeuristic(numberOfEvaluatedDocuments: Int) {
+        redisDocumentsAverageCalculator.addValue(numberOfEvaluatedDocuments)
+    }
+
     fun reportSqlParsingFailures(numberOfParsingFailures: Int) {
         if (numberOfParsingFailures<0) {
             throw IllegalArgumentException("Invalid number of parsing failures: $numberOfParsingFailures")
@@ -191,6 +200,14 @@ class Statistics : SearchListener {
         mongoHeuristicEvaluationFailureCount++
     }
 
+    fun reportRedisHeuristicEvaluationSuccess() {
+        redisHeuristicEvaluationSuccessCount++
+    }
+
+    fun reportRedisHeuristicEvaluationFailure() {
+        redisHeuristicEvaluationFailureCount++
+    }
+
     fun getMongoHeuristicsEvaluationCount(): Int = mongoHeuristicEvaluationSuccessCount + mongoHeuristicEvaluationFailureCount
 
     fun getSqlHeuristicsEvaluationCount(): Int = sqlHeuristicEvaluationSuccessCount + sqlHeuristicEvaluationFailureCount
@@ -198,6 +215,10 @@ class Statistics : SearchListener {
     fun averageNumberOfEvaluatedRowsForSqlHeuristics(): Double = sqlRowsAverageCalculator.mean
 
     fun averageNumberOfEvaluatedDocumentsForMongoHeuristics(): Double = mongoDocumentsAverageCalculator.mean
+
+    fun getRedisHeuristicsEvaluationCount(): Int = redisHeuristicEvaluationSuccessCount + redisHeuristicEvaluationFailureCount
+
+    fun averageNumberOfEvaluatedDocumentsForRedisHeuristics(): Double = redisDocumentsAverageCalculator.mean
 
     override fun newActionEvaluated() {
         if (snapshotThreshold <= 0) {
