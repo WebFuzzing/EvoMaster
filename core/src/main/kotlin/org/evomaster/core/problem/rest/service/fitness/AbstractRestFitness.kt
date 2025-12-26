@@ -883,8 +883,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
