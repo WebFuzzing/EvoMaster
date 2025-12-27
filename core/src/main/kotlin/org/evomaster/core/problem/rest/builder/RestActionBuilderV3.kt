@@ -703,7 +703,6 @@ object RestActionBuilderV3 {
             body
         }
 
-        val name = "body"
         val description = operation.description ?: null
 
         val bodies = resolvedBody.content?.filter {
@@ -742,8 +741,12 @@ object RestActionBuilderV3 {
             listOf()
         }
 
-        var gene = getGene("body", obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
+        val deref = obj.schema.`$ref`?.let { ref -> val name = ref.substringAfterLast("/")
+            SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
 
+        val name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
+
+        var gene = getGene(name, obj.schema, schemaHolder,currentSchema, referenceClassDef = null, options = options, messages = messages, examples = examples)
 
         if (resolvedBody.required != true && gene !is OptionalGene) {
             gene = OptionalGene(name, gene)
@@ -938,7 +941,40 @@ object RestActionBuilderV3 {
             }
 
             "object" -> {
-                return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
+                val properties = schema.properties ?: emptyMap()
+
+                val attributeNames = properties
+                    .filterValues { it.xml?.attribute == true }
+                    .keys
+
+                if (attributeNames.isNotEmpty()) {
+                    val fields = properties.map { (propName, propSchema) ->
+                        getGene(
+                            propName,
+                            propSchema,
+                            schemaHolder,
+                            currentSchema,
+                            history,
+                            referenceClassDef,
+                            options,
+                            false,
+                            examples,
+                            messages
+                        )
+                    }
+
+                    return ObjectWithAttributesGene(
+                        name = schema.xml?.name ?: name,
+                        fixedFields = fields,
+                        refType = referenceClassDef,
+                        isFixed = true,
+                        template = null,
+                        additionalFields = mutableListOf(),
+                        attributeNames = attributeNames
+                    )
+                }else{
+                    return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
+                }
             }
             //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             //FIXME is this even a standard type???
@@ -1094,6 +1130,23 @@ object RestActionBuilderV3 {
                 "template",
                 StringGene("keyTemplate"),
                 valueTemplate.copy())
+        }
+
+        val attributeNames = schema.properties
+            ?.filter { (_, propSchema) -> propSchema.xml?.attribute == true }
+            ?.map { it.key }
+            ?: emptyList()
+
+        if (attributeNames.isNotEmpty()) {
+            return ObjectWithAttributesGene(
+                name = name,
+                fixedFields = fields,
+                refType = if (schema is ObjectSchema) referenceTypeName ?: schema.title else null,
+                isFixed = false,
+                template = additionalFieldTemplate,
+                additionalFields = mutableListOf(),
+                attributeNames = attributeNames.toSet()
+            )
         }
 
         return assembleObjectGeneWithConstraints(
