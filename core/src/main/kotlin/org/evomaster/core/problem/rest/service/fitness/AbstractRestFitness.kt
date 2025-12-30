@@ -1527,7 +1527,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
     }
-    
+
     private fun handleAnonymousWriteCheck(
         individual: RestIndividual,
         actionResults: List<ActionResult>,

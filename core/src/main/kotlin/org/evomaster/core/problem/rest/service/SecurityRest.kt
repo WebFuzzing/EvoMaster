@@ -308,7 +308,7 @@ class SecurityRest {
         }
 
         if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
-            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+            log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             handleAnonymousWriteCheck()
         }
