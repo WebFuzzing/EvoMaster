@@ -883,8 +883,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -940,14 +950,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -966,10 +976,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -980,12 +991,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
         if(bodyEntity != null) {
-            builder.header("Content-Type", bodyEntity.mediaType)
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
         }
 
         val invocation = when (a.verb) {

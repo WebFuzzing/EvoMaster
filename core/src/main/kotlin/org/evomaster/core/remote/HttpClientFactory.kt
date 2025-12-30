@@ -59,6 +59,7 @@ object HttpClientFactory {
                 eg, it does not handle PATCH properly and body payloads in GET/DELETE
              */
             .connectorProvider(ApacheConnectorProvider())
+            .register(org.glassfish.jersey.jackson.JacksonFeature::class.java)
             .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
         val client = ClientBuilder.newBuilder()

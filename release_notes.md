@@ -18,7 +18,7 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 
 - #1263: Unable to insert data into MySQL 
-
+- #1400: EvoMaster crashes with "invalid start or end" error during Dolibarr API testing
 
 # Version 4.0.0
 

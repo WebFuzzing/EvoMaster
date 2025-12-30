@@ -24,9 +24,18 @@ public class TcpPortMicronautLatestEMTest extends RestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlaky("TcpPortMicronautLatestEMTest", "com.foo.TcpPortMicronautLatestEMTest", 1000, true, (args) -> {
+        Integer[] counter = {0};
+
+        runTestHandlingFlaky(
+                "TcpPortMicronautLatestEMTest",
+                "com.foo.TcpPortMicronautLatestEMTest",
+                1000,
+                true,
+                (args) -> {
             args.add("--killSwitch");
             args.add("false");
+
+            counter[0]++;
 
             Solution<RestIndividual> solution = initAndRun(args);
 
@@ -39,12 +48,15 @@ public class TcpPortMicronautLatestEMTest extends RestTestBase {
 
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
+        counter[0]++;
+        int portsUsed = counter[0]; // 1 from each search, and 1 here from RestAssured
+
         given().contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/tcpPort")
                 .then()
                 .statusCode(200)
-                .body("size()", is(2)); // 1 from search, and 1 here from RestAssured
+                .body("size()", is(portsUsed));
 
         /*
             Below test checks for keep-alive header even when the server crashes.
