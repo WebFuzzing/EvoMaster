@@ -1269,6 +1269,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleStackTraceCheck(individual, actionResults, fv)
         handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
+        handleAnonymousWriteCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1523,6 +1524,50 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
                     break // Only add one fault per action
                 }
+            }
+        }
+    }
+    
+    private fun handleAnonymousWriteCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)){
+            return
+        }
+
+        // Get all write operation paths (PUT, PATCH, DELETE)
+        val writePaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = writePaths.filter { RestSecurityOracle.hasAnonymousWrite(it, individual, actionResults) }
+
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
+                && faultyPaths.contains(a.path)
+                && a.auth is NoAuth
+                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+
+                // For PUT, check if it's 201 (resource creation - might be OK)
+                if(a.verb == HttpVerb.PUT && r.getStatusCode() == 201){
+                    continue
+                }
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName(), null))
             }
         }
     }

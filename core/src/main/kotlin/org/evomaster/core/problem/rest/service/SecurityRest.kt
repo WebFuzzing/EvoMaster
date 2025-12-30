@@ -307,6 +307,12 @@ class SecurityRest {
             handleSqlICheck()
         }
 
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleAnonymousWriteCheck()
+        }
+
         //TODO other rules. See FaultCategory
         //etc.
     }
@@ -470,6 +476,87 @@ class SecurityRest {
         }
     }
 
+    /**
+     * Anonymous Write Check - Detects missing authentication on write operations.
+     *
+     * This check flags:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     */
+    private fun handleAnonymousWriteCheck(){
+        mainloop@ for(action in actionDefinitions){
+            if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.DELETE){
+                continue
+            }
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            // Take the smallest suspicious individual
+            val target = suspicious.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Check if this is a vulnerability
+            val actionResult = target.evaluatedMainActions()[actionIndex].result as? RestCallResult
+            if(actionResult == null){
+                continue
+            }
+
+            val statusCode = actionResult.getStatusCode()
+
+            // For PUT: only flag if it's NOT 201 (resource creation might be OK, update is not)
+            if(action.verb == HttpVerb.PUT && statusCode == 201){
+                continue
+            }
+
+            // This is a vulnerability: write operation without authentication
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            sliced.modifySampleType(SampleType.SECURITY)
+            sliced.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(sliced)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleAnonymousWriteCheck")
+                continue@mainloop
+            }
+
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                assert(added)
+                continue@mainloop
+            }
+        }
+    }
     /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
      * In theory, a bug. But, could be false positive if A is misconfigured.
