@@ -7,6 +7,8 @@ import org.evomaster.client.java.instrumentation.coverage.visitor.classv.ThirdPa
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.graphs.ControlDependenceGraphConfig;
+import org.evomaster.client.java.instrumentation.graphs.visitor.CFGClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -65,11 +67,15 @@ public class Instrumentator {
         ClassNode cn = new ClassNode();
         reader.accept(cn, readFlags);
 
-        if(canInstrumentForCoverage(className)){
+        boolean canCollectCoverage = canInstrumentForCoverage(className);
+        if(canCollectCoverage){
+            if (ControlDependenceGraphConfig.isGraphsEnabled()){
+                cv = new CFGClassVisitor(classLoader, cv);
+            }
             cv = new CoverageClassVisitor(cv, className);
         } else {
             cv = new ThirdPartyClassVisitor(cv, className);
-        }
+        }   
 
         try {
             cn.accept(cv);

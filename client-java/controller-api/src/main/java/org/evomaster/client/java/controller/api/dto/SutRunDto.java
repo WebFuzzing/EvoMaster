@@ -45,6 +45,19 @@ public class SutRunDto {
      */
     public String methodReplacementCategories;
 
+    /**
+     * Whether to enable Control Dependence Graph generation in the Java agent
+     */
+    public Boolean enableControlDependenceGraphs;
+
+    /**
+     * Whether to write generated graphs (DOT/PNGs) to disk on the agent side.
+     * <p>
+     * <b>Debugging only</b>: when enabled, graph files are written to a fixed location,
+     * so running multiple experiments in parallel will cause file overwrites.
+     */
+    public Boolean writeCfg;
+
 
     public SutRunDto() {
     }

@@ -22,5 +22,7 @@ public enum Command implements Serializable {
     EXECUTING_ACTION,
     BOOT_TIME_INFO,
     EXTRACT_JVM_DTO,
-    BOOTING_SUT
+    BOOTING_SUT,
+    SET_CDG_CONFIG,
+    CDG_SNAPSHOT
 }
