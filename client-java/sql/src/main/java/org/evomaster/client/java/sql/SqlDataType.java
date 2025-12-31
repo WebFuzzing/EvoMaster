@@ -52,6 +52,9 @@ public enum SqlDataType {
     VARCHAR_IGNORECASE,
     MEDIUMTEXT,
 
+    // UUID Type
+    UUID,
+
     // Binary Types
     LONGBLOB,
     MEDIUMBLOB,
@@ -165,6 +168,10 @@ public enum SqlDataType {
             default:
                 return false;
         }
+    }
+
+    public static boolean isUUIDType(SqlDataType dataType) {
+        return dataType == SqlDataType.UUID;
     }
 
 }

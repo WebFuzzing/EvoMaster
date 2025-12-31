@@ -118,6 +118,8 @@ public class SqlParserUtils {
         }
     }
 
+
+
     /**
      * This method assumes that the SQL command can be successfully parsed.
      *
@@ -218,5 +220,16 @@ public class SqlParserUtils {
             }
         }
         return fromAndJoinItems;
+    }
+
+    /**
+     * Extracts the limit value from a JSQLParser Limit object.
+     *
+     * @param limit the Limit object from which to extract the limit value
+     * @return the limit value as a long
+     * @throws IllegalArgumentException if the row count is not a LongValue
+     */
+    public static long getLimitValue(Limit limit) {
+        return ((net.sf.jsqlparser.expression.LongValue) limit.getRowCount()).getValue();
     }
 }

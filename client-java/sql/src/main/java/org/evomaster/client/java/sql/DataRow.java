@@ -9,6 +9,7 @@ import java.sql.Clob;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEndsWithIgnoreCase;
 import static org.evomaster.client.java.sql.heuristic.SqlStringUtils.nullSafeEqualsIgnoreCase;
 
 /**
@@ -102,10 +103,10 @@ public class DataRow {
          * since 'y','n','on','off', 'yes' and 'no'
          * are also considered boolean literals.
          */
-        if (n!=null && n.equalsIgnoreCase("true")) {
+        if (n != null && n.equalsIgnoreCase("true")) {
             return true;
         }
-        if (n!= null && n.equalsIgnoreCase("false")) {
+        if (n != null && n.equalsIgnoreCase("false")) {
             return false;
         }
 
@@ -128,11 +129,11 @@ public class DataRow {
             boolean matchColumnName = nullSafeEqualsIgnoreCase(n, desc.getColumnName())
                     || nullSafeEqualsIgnoreCase(n, desc.getAliasColumnName());
 
-            if (!matchColumnName){
+            if (!matchColumnName) {
                 continue;
             }
             //no defined table, or exact match
-            if(t == null || t.isEmpty() || nullSafeEqualsIgnoreCase(t, desc.getTableName()) ){
+            if (t == null || t.isEmpty() || nullSafeEqualsIgnoreCase(t, desc.getTableName())) {
                 return getValue(i);
             }
             /*
@@ -141,20 +142,20 @@ public class DataRow {
                 with same column names. At this moment, we would not
                 be able to distinguish them
              */
-            if(nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)){
+            if (nullSafeEqualsIgnoreCase(t, SqlNameContext.UNNAMED_TABLE)) {
                 candidates.add(i);
             }
 
-            if(!t.contains(".") && desc.getTableName().toLowerCase().endsWith("."+t.toLowerCase())){
+            if (!t.contains(".") && nullSafeEndsWithIgnoreCase(desc.getTableName(), "." + t)) {
                 candidates.add(i);
             }
         }
 
-        if(candidates.size() > 1){
+        if (candidates.size() > 1) {
             SimpleLogger.uniqueWarn("More than one table candidate for: " + t);
         }
 
-        if(candidates.size() >= 1){
+        if (candidates.size() >= 1) {
             return getValue(candidates.get(0));
         }
 
