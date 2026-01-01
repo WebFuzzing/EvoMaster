@@ -1135,7 +1135,7 @@ class RestActionBuilderV3Test{
             "/metrics", "/metrics.json", "/metrics/{name}",
             "/trace", "/trace.json"
         )
-        checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
+        checkNumOfRootGene(map, skipInEM, 74, 106,24, 82, 14)
 
         checkNumResource(map, skipInEM, 56, 20)
 
@@ -1998,7 +1998,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
-        val isSet = x.setValueBasedOn(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -2017,7 +2017,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
-        val isSet = x.setValueBasedOn(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)

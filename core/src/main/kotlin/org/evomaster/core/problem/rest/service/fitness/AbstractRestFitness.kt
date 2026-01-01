@@ -31,6 +31,8 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.hasSQLiPayload
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -58,11 +60,16 @@ import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.DataPool
+import org.evomaster.core.search.service.ExecutionStats
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.taint.TaintAnalysis
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
 import java.net.URL
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import javax.annotation.PostConstruct
 import javax.inject.Inject
 import javax.ws.rs.ProcessingException
@@ -96,6 +103,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var callGraphService: CallGraphService
 
+    @Inject
+    protected lateinit var executionStats: ExecutionStats
 
     private lateinit var schemaOracle: RestSchemaOracle
 
@@ -591,7 +600,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val appliedLink = handleLinks(a, all,actionResults)
 
         val response = try {
-            createInvocation(a, chainState, cookies, tokens).invoke()
+            val call = createInvocation(a, chainState, cookies, tokens)
+
+            SearchTimeController.measureTimeMillis(
+                { t, res ->
+                    rcr.setResponseTimeMs(t)
+                    executionStats.record(a.id, t)
+                },
+                {
+                    call.invoke()
+                }
+            )
+
         } catch (e: ProcessingException) {
 
             log.debug("There has been an issue in the evaluation of a test: ${e.message}", e)
@@ -863,8 +883,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -876,23 +906,41 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     it is or not a valid char.
                     Furthermore, likely needed to be done in resolveLocation,
                     or at least check how RestAssured would behave
+                    TODO update RestPathTest, check TODO there, once fixed
                  */
                 //it.replace("\"", "")
+                //FIXME outputFormat shouldn't really be used here
+                //FIXME in resolveLocation
                 GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
             }
 
+        Lazy.assert { URI.create(fullUri).isAbsolute }
 
-        val builder = if (a.produces.isEmpty()) {
-            log.debug("No 'produces' type defined for {}", path)
-            client.target(fullUri).request("*/*")
+        val builder = try {
+            if (a.produces.isEmpty()) {
+                log.debug("No 'produces' type defined for {}", path)
+                client.target(fullUri).request("*/*")
 
-        } else {
-            /*
+            } else {
+                /*
                 TODO: This only considers the first in the list of produced responses
                 This is fine for endpoints that only produce one type of response.
                 Could be a problem in future
             */
-            client.target(fullUri).request(a.produces.first())
+                client.target(fullUri).request(a.produces.first())
+            }
+        } catch (e: Exception) {
+            /*
+                FIXME we need to solve this issue somehow, as location values might be invalid...
+                but i guess that should be done in resolveLocation
+             */
+            throw RuntimeException("""
+                Failed to build HTTP invocation. 
+                Resolved path: $path
+                Location header: $locationHeader
+                Resolved location: $fullUri
+                Error: ${e.message}
+            """.trimIndent(), e)
         }
 
         handleHeaders(a, builder, cookies, tokens)
@@ -902,14 +950,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -928,10 +976,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -942,21 +991,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
+        if(bodyEntity != null) {
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
+        }
+
         val invocation = when (a.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
             /*
                 As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
                 https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
              */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.GET -> builder.build("GET", bodyEntity)
             HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
@@ -1003,8 +1057,17 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 val id = rcr.getResourceId()
 
                 if (id != null) {
-                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,id.value)
+
+                    //FIXME tmp fix. need to be handled properly, also in generated tests with test-utils-*
+                    val escapedId = URLEncoder.encode(id.value, StandardCharsets.UTF_8)
+                        .replace("+", "%20");
+
+                    location = callGraphService.resolveLocationForChildOperationUsingCreatedResource(a,escapedId)
                     if(location != null) {
+                        /*
+                            FIXME this case seems ignored in RestTestCaseWriter.handleLocationHeader.
+                            Need proper handling + E2E for all these cases
+                         */
                         rcr.setHeuristicsForChainedLocation(true)
                     }
                 }
@@ -1214,6 +1277,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleNotRecognizedAuthenticated(individual, actionResults, fv)
         handleForgottenAuthentication(individual, actionResults, fv)
         handleStackTraceCheck(individual, actionResults, fv)
+        handleSQLiCheck(individual, actionResults, fv)
+        handleXSSCheck(individual, actionResults, fv)
+        handleAnonymousWriteCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1314,6 +1380,100 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
+    private fun handleSQLiCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            return
+        }
+
+        val foundPair = findSQLiPayloadPair(individual)
+
+        if(foundPair == null){
+            //no pair found, cannot do baseline comparison
+            return
+        }
+
+        val (actionWithoutPayload, actionWithPayload) = foundPair
+        val baselineResult = actionResults.find { it.sourceLocalId == actionWithoutPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val baselineTime = baselineResult.getResponseTimeMs() ?: return
+
+        val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val injectedTime = injectedResult.getResponseTimeMs() ?: return
+
+        val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+        val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
+
+        // Baseline must be fast enough (baseline < K)
+        val baselineIsFast = baselineTime < K
+
+        // Response after injection must be slow enough (response > N)
+        val responseIsSlowEnough = injectedTime > N
+
+        // If baseline is fast AND the response after payload is slow enough,
+        // then we consider this a potential time-based SQL injection vulnerability.
+        // Otherwise, skip this result.
+        if (!(baselineIsFast && responseIsSlowEnough)) {
+            return
+        }
+
+        // Find the index of the action with payload to report it correctly
+        val index = individual.seeMainExecutableActions().indexOf(actionWithPayload)
+        if (index < 0) {
+            log.warn("Failed to find index of action with SQLi payload")
+            return
+        }
+
+        val scenarioId = idMapper.handleLocalTarget(
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, index)
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+    }
+
+    /**
+     * Finds a pair of actions in the individual that have the same path and verb,
+     * where one contains a SQLi payload and the other does not.
+     *
+     * This is useful for comparing baseline response times (without payload) against
+     * response times with SQLi payload to detect time-based SQL injection vulnerabilities.
+     *
+     * @param individual The test individual to search
+     * @return A pair of (actionWithoutPayload, actionWithPayload), or null if no such pair exists
+     */
+    private fun findSQLiPayloadPair(
+        individual: RestIndividual
+    ): Pair<RestCallAction, RestCallAction>? {
+
+        val actions = individual.seeMainExecutableActions()
+            .filterIsInstance<RestCallAction>()
+
+        // Group actions by path and verb
+        val actionsByPathAndVerb = actions
+            .groupBy { it.path.toString() to it.verb }
+
+        // Find a pair where one has SQLi payload and one doesn't
+        for ((pathVerb, actionsForPath) in actionsByPathAndVerb) {
+            if (actionsForPath.size < 2) continue
+
+            val withPayload = actionsForPath.filter {
+                hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+            val withoutPayload = actionsForPath.filter {
+                !hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+
+            if (withPayload.isNotEmpty() && withoutPayload.isNotEmpty()) {
+                return Pair(withoutPayload.first(), withPayload.first())
+            }
+        }
+
+        return null
+    }
 
     private fun handleStackTraceCheck(
         individual: RestIndividual,
@@ -1334,6 +1494,90 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
                 r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleXSSCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+            return
+        }
+
+        // Check if this individual has XSS vulnerability
+        if(!RestSecurityOracle.hasXSS(individual, actionResults)){
+            return
+        }
+
+        // Find the action(s) where XSS payload appears in the response
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+            if(!StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                continue
+            }
+
+            val responseBody = r.getBody() ?: continue
+
+            // Check if any XSS payload is present in this response
+            for(payload in XSS_PAYLOADS){
+                if(responseBody.contains(payload, ignoreCase = false)){
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, index)
+                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    break // Only add one fault per action
+                }
+            }
+        }
+    }
+
+    private fun handleAnonymousWriteCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)){
+            return
+        }
+
+        // Get all write operation paths (PUT, PATCH, DELETE)
+        val writePaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = writePaths.filter { RestSecurityOracle.hasAnonymousWrite(it, individual, actionResults) }
+
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
+                && faultyPaths.contains(a.path)
+                && a.auth is NoAuth
+                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+
+                // For PUT, check if it's 201 (resource creation - might be OK)
+                if(a.verb == HttpVerb.PUT && r.getStatusCode() == 201){
+                    continue
+                }
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName(), null))
             }
         }
     }

@@ -112,11 +112,10 @@ class ObjectGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!isFixed){
-            Lazy.assert {
-                template != null && additionalFields != null
-            }
-            if (additionalFields!!.isNotEmpty())
+            Lazy.assert { template != null && additionalFields != null }
+            if (additionalFields!!.isNotEmpty()) {
                 killChildren(additionalFields!!)
+            }
             val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
             repeat(num){
                 val added = sampleElementToAdd(randomness)
@@ -189,41 +188,7 @@ class ObjectGene(
         return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ObjectGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (other.isFixed != isFixed)
-            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
-
-        if (!isFixed && !template!!.possiblySame(other.template!!))
-            throw IllegalArgumentException("different template ${other.template.javaClass}")
-
-        //TODO what if they have a different number of fields, or name not match???
-        // semantic of this function is unclear, really need TODO refactoring
-
-        val updateOk = updateValueOnlyIfValid(
-            {
-                var ok = true
-
-                for (i in fixedFields.indices) {
-                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
-                }
-
-                if(!isFixed){
-                    //TODO what if there is a mismatch here? semantic of this function is unclear
-                    for (i in additionalFields!!.indices){
-                        ok = ok && this.additionalFields!![i].copyValueFrom(other.additionalFields!![i])
-                    }
-                }
-
-                ok
-            }, true
-        )
-
-        return updateOk
-    }
 
 
     /**
@@ -278,36 +243,40 @@ class ObjectGene(
         )
     }
 
-    override fun setValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectGene
-                && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
-                && isFixed == gene.isFixed
-                && (isFixed || template!!.possiblySame(gene.template!!))) {
-
-            var result = true
-            (fixedFields.indices).forEach {
-                val r = fixedFields[it].setValueBasedOn(gene.fixedFields[it])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
-                result = result && r
-            }
-            if(!isFixed){
-                (additionalFields!!.indices).forEach {
-                    val r = additionalFields!![it].setValueBasedOn(gene.additionalFields!![it])
-                    if (!r)
-                        LoggingUtil.uniqueWarn(log, "cannot bind the field ${additionalFields!![it].name}")
-                    result = result && r
-                }
-            }
-            if (!result)
-                LoggingUtil.uniqueWarn(log, "fail to fully bind field values with the ObjectGene")
-
-            return result
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is ObjectGene) {
+            return false
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
-        return false
+        if (other.isFixed != isFixed)
+            return false
+
+        if (!isFixed && !template!!.possiblySame(other.template!!))
+            return false
+
+        //TODO what if they have a different number of fields, or name not match???
+        // semantic of this function is unclear, really need TODO refactoring
+
+        var ok = true
+
+        for (i in fixedFields.indices) {
+            ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
+        }
+
+        if(!isFixed){
+            if (additionalFields!!.isNotEmpty()) {
+                killChildren(additionalFields!!)
+            }
+            val otherAdditionalFields = other.additionalFields
+            otherAdditionalFields?.forEach {
+                addChild(it.copy())
+            }
+        }
+
+        return ok
     }
+
+
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
@@ -624,7 +593,7 @@ class ObjectGene(
 
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
-    override fun setValueBasedOn(value: String): Boolean {
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         val tree = mapper.readTree(value)
 
@@ -652,7 +621,7 @@ class ObjectGene(
                     but, in this latter case, it would need quite a bit of refactoring
                  */
                 val input = GeneUtils.removeEnclosedQuotationMarks(text)
-                ok = ok && it.setValueBasedOn(input)
+                ok = ok && it.unsafeSetFromStringValue(input)
             }
         }
 
@@ -685,8 +654,8 @@ class ObjectGene(
                 if(this.initialized){
                     x.markAllAsInitialized()
                 }
-                x.first.setValueBasedOn(it.key)
-                x.second.setValueBasedOn(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
+                x.first.unsafeSetFromStringValue(it.key)
+                x.second.unsafeSetFromStringValue(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
                 addChild(x)
             }
         }

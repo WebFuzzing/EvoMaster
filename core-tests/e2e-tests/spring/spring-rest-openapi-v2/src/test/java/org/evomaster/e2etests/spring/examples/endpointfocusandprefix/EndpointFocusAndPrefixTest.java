@@ -255,7 +255,7 @@ public class EndpointFocusAndPrefixTest extends SpringTestBase {
                     assertAllSolutionsHavePathFocusOrPrefixList(solution, pathsToCheck, false);
 
                     // The solution should include 8 solutions, 7 endpoints and 1 failure case
-                    assertEquals(solution.getIndividuals().size(), 8);
+                    assertEquals(8, solution.getIndividuals().size());
 
                     // write test into the output folder
                     compile(outputFolder);

@@ -180,7 +180,7 @@ abstract class Individual(
      * All invariants should always be satisfied after any modification of the individual.
      * If not, this is a bug.
      */
-    fun verifyValidity(){
+    fun verifyValidity(checkForTaints: Boolean = false){
 
         groupsView()?.verifyGroups()
 
@@ -202,10 +202,20 @@ abstract class Individual(
             throw IllegalStateException("There are invalid local ids:\n" + localIdErrors.joinToString("\n"))
         }
 
-        val taintIdErrors = verifyTaintIds()
-        if(taintIdErrors.isNotEmpty()){
-            throw IllegalStateException("There are invalid taint ids:\n" + taintIdErrors.joinToString("\n"))
-        }
+        /*
+            We cannot really verify it all the time.
+            Duplicates might exist due to bounded genes.
+            But flattening (done at minimization, for example) removes the binding, leading
+            this check to fail.
+            further problem, many phases (eg security) are done _after_ minimization...
+         */
+        //TODO put back after fix
+//        if(checkForTaints) {
+//            val taintIdErrors = verifyTaintIds()
+//            if (taintIdErrors.isNotEmpty()) {
+//                throw IllegalStateException("There are invalid taint ids:\n" + taintIdErrors.joinToString("\n"))
+//            }
+//        }
     }
 
     override fun copyContent(): Individual {
@@ -527,7 +537,7 @@ abstract class Individual(
                       y !=x && !y.hasAnyBindingRelationship(x)
                }
            }){
-               errors.add("Taint id ${d.key} has duplicate genes that are not related}")
+               errors.add("Taint id ${d.key} has duplicate genes that are not related")
            }
         }
         return errors
