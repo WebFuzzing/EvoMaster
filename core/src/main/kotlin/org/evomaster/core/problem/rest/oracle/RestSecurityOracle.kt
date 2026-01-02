@@ -102,6 +102,72 @@ object RestSecurityOracle {
         return (a403.isNotEmpty() || a401.isNotEmpty()) && a2xxWithoutAuth.isNotEmpty()
     }
 
+    /**
+     * Check for anonymous write vulnerability - write operations without authentication.
+     *
+     * Flags as vulnerability:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     *
+     * @param path the REST path to check
+     * @param individual the test individual (must be of SampleType.SECURITY)
+     * @param actionResults the results of executing the actions
+     * @return true if anonymous write vulnerability is detected
+     */
+    fun hasAnonymousWrite(
+        path: RestPath,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean{
+
+        verifySampleType(individual)
+
+        // Get all write operations (PUT, PATCH, DELETE) on the given path
+        val actions = individual.seeMainExecutableActions().filter {
+            (it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE)
+            && it.path.isEquivalent(path)
+        }
+
+        val actionsWithResults = actions.filter {
+            //can be null if sequence was stopped
+            actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null
+        }
+
+        if(actions.size != actionsWithResults.size){
+            assert(actionResults.any { it.stopping }) {
+                "Not all actions have results, but sequence was not stopped"
+            }
+        }
+
+        // Check for write operations without authentication that return 2xx
+        val anonymousWriteActions = actionsWithResults.filter {
+            it.auth is NoAuth &&
+            StatusGroup.G_2xx.isInGroup((actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode())
+        }
+
+        if(anonymousWriteActions.isEmpty()){
+            return false
+        }
+
+        // For PUT, check if it's 201 (resource creation - might be OK) or other 2xx (update - vulnerability)
+        // For PATCH/DELETE: any 2xx is a vulnerability
+        return anonymousWriteActions.any { action ->
+            val statusCode = (actionResults.find { r -> r.sourceLocalId == action.getLocalId() } as RestCallResult)
+                .getStatusCode()
+
+            when(action.verb){
+                HttpVerb.PUT -> statusCode != 201  // Only flag if NOT creating new resource
+                HttpVerb.PATCH, HttpVerb.DELETE -> true  // Any 2xx is a vulnerability
+                else -> false
+            }
+        }
+    }
+
     fun hasExistenceLeakage(
         path: RestPath,
         individual: RestIndividual,
