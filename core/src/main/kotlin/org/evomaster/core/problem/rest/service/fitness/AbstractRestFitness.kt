@@ -1433,6 +1433,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         )
         fv.updateTarget(scenarioId, 1.0, index)
         injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.setVulnerableForSQLI(true)
     }
 
     /**

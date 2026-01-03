@@ -107,16 +107,23 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     //actions
                     c.second.forEach { a ->
                         val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, false)
                     }
                 }
             }else{
+                val isSQLi = hasSQLi(ind)
                 ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
-                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                  handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, addTimeMeasurement = isSQLi)
                 }
             }
 
         }
+    }
+
+    private fun hasSQLi(ind: EvaluatedIndividual<*>): Boolean {
+        return ind.evaluatedMainActions().any { evaluatedAction ->
+                (evaluatedAction.result as HttpWsCallResult).getVulnerableForSQLI()
+            }
     }
 
     protected fun locationVar(id: String): String {
