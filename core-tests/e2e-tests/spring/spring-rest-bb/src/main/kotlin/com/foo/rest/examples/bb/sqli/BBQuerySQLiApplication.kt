@@ -35,8 +35,9 @@ open class BBQuerySQLiApplication {
     @GetMapping("/vulnerable")
     @Operation(summary = "SQL Injection - Query Parameter")
     fun timeBasedQuery(@RequestParam username: String): ResponseEntity<String> {
+        // Simulate a delay here because the real database cannot currently run in GitHub Actions due to Docker issues on the OS.
+        // TODO Replace this with the real database once Docker can be safely used in GitHub Actions.
         if(username.contains("pg_sleep")) {
-            //simulating delay
             CoveredTargets.cover("sqli")
             Thread.sleep(8000)
         }
