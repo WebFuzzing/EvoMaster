@@ -58,8 +58,15 @@
 
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-client-java-instrumentation</artifactId>
+            <artifactId>evomaster-e2e-tests-utils</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
             <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-util</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
 

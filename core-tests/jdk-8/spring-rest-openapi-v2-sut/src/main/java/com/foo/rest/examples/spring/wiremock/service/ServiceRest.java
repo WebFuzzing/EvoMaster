@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
 import com.foo.rest.examples.spring.wiremock.base.ResponseDto;
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -90,7 +89,7 @@ public class ServiceRest {
                 responseDto.valid = secondConnection.getResponseCode() == 200;
             }
         } catch (IOException e) {
-            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+            System.out.println(e.getLocalizedMessage());
         }
 
         // Note: Response will not be useful at this, since there is no mutation happening

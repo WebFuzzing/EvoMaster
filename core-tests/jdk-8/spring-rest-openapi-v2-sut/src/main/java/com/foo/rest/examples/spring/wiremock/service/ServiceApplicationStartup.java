@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.wiremock.service;
 
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
@@ -23,12 +22,12 @@ public class ServiceApplicationStartup implements ApplicationListener<Applicatio
             connection.setRequestProperty("accept", "application/json");
 
             if (connection.getResponseCode() == 200) {
-                SimpleLogger.info("External service call at start-up is a success");
+                System.out.println("External service call at start-up is a success");
             } else {
-                SimpleLogger.info("External service call at start-up is a failure");
+                System.out.println("External service call at start-up is a failure");
             }
         } catch (IOException e) {
-            SimpleLogger.uniqueWarn(e.getLocalizedMessage());
+            System.out.println(e.getLocalizedMessage());
         }
     }
 }

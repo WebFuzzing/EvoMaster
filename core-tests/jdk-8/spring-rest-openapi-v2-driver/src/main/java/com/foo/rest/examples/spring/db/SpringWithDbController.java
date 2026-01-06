@@ -1,7 +1,7 @@
 package com.foo.rest.examples.spring.db;
 
 import com.foo.rest.examples.spring.SpringController;
-import kotlin.random.Random;
+import java.util.Random;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.sql.DbSpecification;
 import org.hibernate.dialect.H2Dialect;
@@ -40,7 +40,7 @@ public class SpringWithDbController extends SpringController {
 
         //lot of problem if using same H2 instance. see:
         //https://github.com/h2database/h2database/issues/227
-        int rand = Random.Default.nextInt();
+        int rand = new Random().nextInt();
 
         List<String> inputs = new ArrayList<>();
         inputs.addAll(Arrays.asList(
