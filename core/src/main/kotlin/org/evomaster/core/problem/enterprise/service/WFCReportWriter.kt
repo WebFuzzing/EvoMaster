@@ -123,7 +123,7 @@ class WFCReportWriter {
 
             rest.outputHttpCalls = solution.individuals.sumOf { it.individual.size() }
             //TODO make sure that auth is counted here if making calls... i am quite sure it is currently not :(
-            //TODO might need to collect auth counter separately, and then added here
+            //TODO might need to collect auth counter separately, and then added here, or maybe not?
             rest.evaluatedHttpCalls = getElement(data, Statistics.EVALUATED_ACTIONS).toInt()
             rest.endpointIds = sampler.getActionDefinitions().map { it.getName() }.toSet()
 
