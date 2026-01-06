@@ -1,9 +1,9 @@
 package org.evomaster.e2etests.spring.examples.triangle;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foo.rest.examples.spring.triangle.TriangleClassification;
 import com.foo.rest.examples.spring.triangle.TriangleController;
 import com.foo.rest.examples.spring.triangle.TriangleResponseDto;
-import org.evomaster.client.java.instrumentation.example.triangle.TriangleClassification;
 import org.evomaster.core.problem.rest.data.RestCallResult;
 import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
