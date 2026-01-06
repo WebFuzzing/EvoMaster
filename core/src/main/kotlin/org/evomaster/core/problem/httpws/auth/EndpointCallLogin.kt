@@ -127,12 +127,11 @@ class EndpointCallLogin(
         )
 
         private fun computeTokenHandling(dto: com.webfuzzing.commons.auth.TokenHandling) = TokenHandling(
-            //TODO extractFrom
-            extractFromField = dto.extractSelector,
-            //TODO sendIn
-            httpHeaderName = dto.sendName,
-            //FIXME this would not work
-            headerPrefix = dto.sendTemplate
+            extractFrom = TokenHandling.ExtractFrom.valueOf(dto.extractFrom.toString().uppercase()),
+            extractSelector = dto.extractSelector,
+            sendIn = TokenHandling.SendIn.valueOf(dto.sendIn.toString().uppercase()),
+            sendName = dto.sendName,
+            sendTemplate = dto.sendTemplate
         )
 
 

@@ -240,7 +240,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //headers from schema
         call.parameters.filterIsInstance<HeaderParam>()
             .filter { !prechosenAuthHeaders.contains(it.name) }
-            .filter { elc?.token == null || !(it.name.equals(elc.token.httpHeaderName, true)) }
+            .filter { elc?.token == null || !(it.name.equals(elc.token.sendName, true)) }
             .filter { it.isInUse() }
             .forEach {
                 val x = it.getRawValue()
@@ -256,11 +256,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if (elc != null) {
 
             if (!elc.expectsCookie()) {
-                val tokenHeader = elc.token!!.httpHeaderName
+                //TODO should check for sendIn
+                val tokenHeader = elc.token!!.sendName
                 if (format.isPython()) {
-                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.authPayloadName(elc)} # ${call.auth.name}")
                 } else {
-                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.authPayloadName(elc)}) // ${call.auth.name}")
                 }
             } else {
                 when {
