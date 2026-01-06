@@ -13,7 +13,9 @@
 
 
     <modules>
-        <module>spring-rest-openapi-v2</module>
+        <module>spring-rest-openapi-v2-sut</module>
+        <module>spring-rest-openapi-v2-driver</module>
+        <module>spring-rest-openapi-v2-tests</module>
     </modules>
 
     <dependencyManagement>

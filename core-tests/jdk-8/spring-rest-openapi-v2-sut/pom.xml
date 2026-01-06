@@ -8,7 +8,7 @@
         <version>4.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-core-tests-jdk-8-spring-rest-openapi-v2</artifactId>
+    <artifactId>evomaster-core-tests-jdk-8-spring-rest-openapi-v2-sut</artifactId>
     <packaging>jar</packaging>
 
     <properties>
