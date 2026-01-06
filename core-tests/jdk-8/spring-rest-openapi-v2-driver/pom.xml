@@ -19,7 +19,6 @@
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
         </dependency>
 
         <dependency>
