@@ -181,6 +181,9 @@
                 <configuration>
                     <!--  Otherwise tests using mvn will not work  -->
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <SKIP_INSTRUMENTATION>true</SKIP_INSTRUMENTATION>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

@@ -35,6 +35,7 @@ class Statistics : SearchListener {
         const val TOTAL_BRANCHES = "numberOfBranches"
         const val COVERED_LINES = "coveredLines"
         const val COVERED_BRANCHES = "coveredBranches"
+        const val ELAPSED_SECONDS = "elapsedSeconds"
     }
 
     @Inject
@@ -270,7 +271,7 @@ class Statistics : SearchListener {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
             add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
             add(Pair(EVALUATED_ACTIONS, "" + time.evaluatedActions))
-            add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
+            add(Pair(ELAPSED_SECONDS, "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + targetsInfo.total))
