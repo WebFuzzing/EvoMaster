@@ -101,10 +101,10 @@ object TokenWriter {
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = token.extractSelector
                     if (format.isJavaScript()) {
-                        lines.add(".then(res => {${tokenName(k)} = res.headers[\"$header\"];},")
+                        lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")
                         lines.indented { lines.add("error => {console.log(error.response.headers); throw Error(\"Auth failed.\")})") }
                     } else if (format.isPython()) {
-                        lines.add("${tokenName(k)} =  ${responseName(k)}.headers()[\"$header\"]")
+                        lines.add("${tokenName(k)} =  ${responseName(k)}.headers[\"$header\"]")
                     }else if (format.isJavaOrKotlin()) {
                         lines.add(".then().extract().response().header(\"$header\")")
                         if(format.isKotlin()) {
