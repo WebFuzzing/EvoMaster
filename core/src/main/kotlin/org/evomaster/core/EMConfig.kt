@@ -2965,12 +2965,16 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && !xss){
-            return false;
+        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+            return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && !sqli){
-            return false;
+        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+            return false
+        }
+
+        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+            return false
         }
 
         return category !in getDisabledOracleCodesList()

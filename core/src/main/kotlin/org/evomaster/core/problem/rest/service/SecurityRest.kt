@@ -23,6 +23,7 @@ import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
@@ -71,7 +72,10 @@ class SecurityRest {
     private lateinit var builder: RestIndividualBuilder
 
     @Inject
-    protected lateinit var config: EMConfig
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -117,6 +121,7 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
+        //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
         //SQLi, XSS, SSRF, etc.
         addForInjections()
 
@@ -274,6 +279,10 @@ class SecurityRest {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
             handleSqlICheck()
+        }
+
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            ssrfAnalyser.apply()
         }
     }
 
