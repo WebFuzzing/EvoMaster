@@ -28,7 +28,7 @@ class TokenHandling (
     val sendTemplate: String
 ){
 
-    enum class ExtractFrom { BODY, QUERY}
+    enum class ExtractFrom { BODY, HEADER}
 
     enum class SendIn {HEADER, QUERY}
 
