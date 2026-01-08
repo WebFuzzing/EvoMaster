@@ -53,27 +53,10 @@ object TokenWriter {
                 format.isJava() -> lines.add("final String ${tokenName(k)} = ")
                 format.isKotlin() -> lines.add("val ${tokenName(k)} : String = ")
                 format.isJavaScript() -> lines.add("let ${tokenName(k)} = ")
-                //format.isPython() -> lines.add("${tokenName(k)} = ")
             }
-
-//            //FIXME require template handling
-//            if(k.token!!.sendTemplate.isNotEmpty()) {
-//                lines.append("\"${k.token!!.sendTemplate}\"")
-//            }else{
-//                lines.append("\"\"")
-//            }
-
-//            if (!format.isPython()) {
-//                if (format.isJavaScript()){
-//                    lines.appendSemicolon()
-//                }else{
-//                    lines.append(" + ")
-//                }
-//            }
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
-                //format.isPython() -> lines.append("\"\"")
                 format.isJavaScript() -> {
                     lines.append("\"\"")
                     lines.appendSemicolon()
@@ -100,19 +83,39 @@ object TokenWriter {
                 path = endPath
             }
 
-            if (format.isJavaScript()) {
-                lines.add(".then(res => {${tokenName(k)} = res.body.$path;},")
-                lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")});") }
-            } else if (format.isPython()) {
-                lines.add("${tokenName(k)} =  ${responseName(k)}.json()$path")
-            }else if (format.isJavaOrKotlin()) {
-                lines.add(".then().extract().response().path(\"$path\")")
-                if(format.isKotlin()) {
-                    lines.append("!!")
+            when(token.extractFrom){
+                TokenHandling.ExtractFrom.BODY -> {
+                    if (format.isJavaScript()) {
+                        lines.add(".then(res => {${tokenName(k)} = res.body.$path;},")
+                        lines.indented { lines.add("error => {console.log(error.response.body); throw Error(\"Auth failed.\")})") }
+                    } else if (format.isPython()) {
+                        lines.add("${tokenName(k)} =  ${responseName(k)}.json()$path")
+                    }else if (format.isJavaOrKotlin()) {
+                        lines.add(".then().extract().response().path(\"$path\")")
+                        if(format.isKotlin()) {
+                            lines.append("!!")
+                        }
+                    }
+                    lines.appendSemicolon()
+                }
+                TokenHandling.ExtractFrom.HEADER -> {
+                    val header = token.extractSelector
+                    if (format.isJavaScript()) {
+                        lines.add(".then(res => {${tokenName(k)} = res.get(\"$header\");},")
+                        lines.indented { lines.add("error => {console.log(error.response.headers); throw Error(\"Auth failed.\")})") }
+                    } else if (format.isPython()) {
+                        lines.add("${tokenName(k)} =  ${responseName(k)}.headers[\"$header\"]")
+                    }else if (format.isJavaOrKotlin()) {
+                        lines.add(".then().extract().response().header(\"$header\")")
+                        if(format.isKotlin()) {
+                            lines.append("!!")
+                        }
+                    }
+                    lines.appendSemicolon()
                 }
             }
-            lines.appendSemicolon()
             lines.addEmpty()
+
 
             if (!format.isPython()) {
                 lines.deindent(2)
