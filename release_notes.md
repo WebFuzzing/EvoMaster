@@ -18,6 +18,7 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 
 - #1263: Unable to insert data into MySQL 
+- #1299: A feature request to extract authentication token from a response header
 - #1400: EvoMaster crashes with "invalid start or end" error during Dolibarr API testing
 
 # Version 4.0.0
