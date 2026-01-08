@@ -2,9 +2,13 @@
 
 Under development in `master` branch.
 
-### Changes
+### Breaking Changes
 
 - _core_ process is moved to JDK 17, while _driver_ is still on 8 (and it will be for the foreseeable future). If you run EM from its installers or Docker, you will see no difference. However, if you run it via its jar file with '_java -jar_', then you need to make sure to have JDK 17 (or 21, but not 25). 
+
+- _auth_ declarations have been updated to latest _WFC_ version __0.2.0__. 
+  Those have breaking changes in the name of fields in the settings of _TokenHandler_. 
+  See WFC for updated documentation.
 
 ### New Features
 
