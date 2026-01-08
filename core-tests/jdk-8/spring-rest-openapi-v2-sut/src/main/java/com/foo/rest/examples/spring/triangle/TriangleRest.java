@@ -1,7 +1,6 @@
 package com.foo.rest.examples.spring.triangle;
 
 
-import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.PathVariable;

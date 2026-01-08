@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.branches;
 
-import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.RequestBody;

@@ -1,6 +1,4 @@
-package com.foo.somedifferentpackage.examples.triangle;
-
-import com.foo.rest.examples.spring.triangle.TriangleClassification;
+package com.foo.rest.examples.spring.triangle;
 
 public class TriangleClassificationImpl implements TriangleClassification{
 

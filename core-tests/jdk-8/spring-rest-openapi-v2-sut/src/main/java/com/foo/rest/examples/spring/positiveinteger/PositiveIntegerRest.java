@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.positiveinteger;
 
-import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;

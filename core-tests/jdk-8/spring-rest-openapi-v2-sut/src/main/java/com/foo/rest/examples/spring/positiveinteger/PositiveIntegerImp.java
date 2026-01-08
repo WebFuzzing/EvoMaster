@@ -1,6 +1,4 @@
-package com.foo.somedifferentpackage.examples.positiveinteger;
-
-import com.foo.rest.examples.spring.positiveinteger.PositiveInteger;
+package com.foo.rest.examples.spring.positiveinteger;
 
 public class PositiveIntegerImp implements PositiveInteger {
 

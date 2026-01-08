@@ -1,6 +1,4 @@
-package com.foo.somedifferentpackage.examples.branches;
-
-import com.foo.rest.examples.spring.branches.Branches;
+package com.foo.rest.examples.spring.branches;
 
 public class BranchesImp implements Branches{
 
