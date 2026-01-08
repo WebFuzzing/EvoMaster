@@ -58,14 +58,14 @@ object AuthUtils {
 
             val jackson = ObjectMapper()
             val tree = jackson.readTree(body)
-            var token = tree.at(tl.token!!.extractFromField).asText()
+            var token = tree.at(tl.token!!.extractSelector).asText()
             if(token == null || token.isEmpty()){
-                log.warn("Failed login. Cannot extract token '${tl.token!!.extractFromField}' from response: $body")
+                log.warn("Failed login. Cannot extract token '${tl.token!!.extractSelector}' from response: $body")
                 continue
             }
 
-            if(tl.token!!.headerPrefix.isNotEmpty()){
-                token = tl.token!!.headerPrefix + token
+            if(tl.token.sendTemplate.isNotEmpty()){
+                token = tl.token.sendTemplate.replace("{token}",  token)
             }
 
             map[tl.name] = token
@@ -212,7 +212,7 @@ object AuthUtils {
                 if (token.isNullOrEmpty()) {
                     log.warn("No auth token for ${ecl.name}")
                 } else {
-                    builder.header(ecl.token!!.httpHeaderName, token)
+                    builder.header(ecl.token!!.sendName, token)
                 }
             }
         }
