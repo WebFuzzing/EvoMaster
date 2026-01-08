@@ -1,6 +1,10 @@
 package org.evomaster.core.remote.service
 
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.core.problem.enterprise.param.DerivedParamChangeReq
+import org.evomaster.core.scheduletask.ScheduleTaskExecutor
 import org.evomaster.core.sql.DatabaseExecutor
 
 
@@ -8,7 +12,7 @@ import org.evomaster.core.sql.DatabaseExecutor
  * Class used to communicate with the remote RestController that does
  * handle the SUT.
  */
-interface RemoteController : DatabaseExecutor {
+interface RemoteController : DatabaseExecutor, ScheduleTaskExecutor {
 
     /**
      * Return all information regarding the System Under Test (SUT),
@@ -55,4 +59,6 @@ interface RemoteController : DatabaseExecutor {
     fun address() : String
 
     fun close()
+
+    fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>) : List<DeriveParamResponseDto>
 }

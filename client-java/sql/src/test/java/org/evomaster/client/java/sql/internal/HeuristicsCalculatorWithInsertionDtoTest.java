@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
 import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,8 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
     private DbInfoDto createSchemaDtoWithFooTableAndXColumn(String xDataType){
         DbInfoDto schemaDto = new DbInfoDto();
         TableDto tableDto = new TableDto();
-        tableDto.name = "Foo";
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = "Foo";
         ColumnDto dto = new ColumnDto();
         dto.name = "x";
         dto.type = xDataType;
@@ -29,7 +31,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         return schemaDto;
     }
 
-    private final Map<String, Set<String>> selectWhereXofFoo = new HashMap<String, Set<String>>(){{put("Foo", Collections.singleton("x"));}};
+    private final Map<SqlTableId, Set<SqlColumnId>> selectWhereXofFoo = new HashMap<SqlTableId, Set<SqlColumnId>>(){{put(new SqlTableId("Foo"), Collections.singleton(new SqlColumnId("x")));}};
 
 
     @Test
@@ -54,7 +56,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
     private void checkIncreasingTillCovered(String name,
                                             List<Object> values,
                                             List<InsertionDto> insertionDtos,
-                                            Map<String, Set<String>> columns,
+                                            Map<SqlTableId, Set<SqlColumnId>> columns,
                                             DbInfoDto dto,
                                             String sql) {
 

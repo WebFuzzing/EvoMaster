@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.network
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -60,43 +59,22 @@ class MacAddrGene(
     }
 
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is MacAddrGene -> {
-                var result = true
-                repeat(octets.size) {
-                    result = result && octets[it].bindValueBasedOn(gene.octets[it])
-                }
-                result
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
-
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is MacAddrGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         if (octets.size != other.octets.size) {
-            throw IllegalArgumentException(
-                    "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
-            )
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                repeat(octets.size) {
-                    ok = ok && octets[it].copyValueFrom(other.octets[it])
-                }
-                ok
-            }, true
-        )
+        var ok = true
+
+        repeat(octets.size) {
+            ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
+        }
+        return ok
     }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is MacAddrGene) {

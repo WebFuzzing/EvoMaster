@@ -52,6 +52,17 @@ class LongGene(
     }
 
 
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+
+        try{
+            this.value = value.toLong()
+        }catch (e: NumberFormatException){
+            return false
+        }
+
+        return true
+    }
+
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         value = NumberMutatorUtils.randomizeLong(value, min, max, randomness, tryToForceNewValue)
     }
@@ -72,20 +83,6 @@ class LongGene(
         return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberLong\":\"$stringValue\"}" else stringValue
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is LongGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is LongGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -93,8 +90,10 @@ class LongGene(
         return this.value == other.value
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+        val gene = other.getPhenotype()
+
         when(gene){
             is LongGene -> value = gene.value
             is FloatGene -> value = gene.value.toLong()
@@ -114,11 +113,8 @@ class LongGene(
             is SqlPrimaryKeyGene ->{
                 value = gene.uniqueId
             }
-            is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
-            }
             is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
+                return this.unsafeCopyValueFrom(gene.number)
             }
             else -> {
                 log.info("Do not support to bind long gene with the type: ${gene::class.java.simpleName}")

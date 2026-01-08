@@ -6,7 +6,7 @@ And there are several different mechanism to do authentication.
 In _EvoMaster_, few mechanisms are supported, as discussed next.
 How to set them up will depend on whether you are doing _white_ or _black_ box testing. 
 
-__NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/EMResearch/EvoMaster/issues).     
+> __NOTE:__ If the type of authentication you need is not currently supported, please open a new feature request on [our issue page](https://github.com/WebFuzzing/EvoMaster/issues).     
 
 
 The following documentation is divided on whether the tested API is a REST/GraphQL one, or RPC.
@@ -14,6 +14,8 @@ The following documentation is divided on whether the tested API is a REST/Graph
 ## REST/GraphQL APIs
 
 ### Black-Box Testing
+
+> __NOTE__: since version `4.0.0`, for black-box testing of  APIs we support authentication configurations expressed in [WFC format](https://github.com/WebFuzzing/Commons). For the most updated documentation, we suggest to read the documentation on the WFC site as well.     
 
 Since version `1.3.0`, it is possible to specify custom HTTP headers (e.g., to pass auth tokens), using the options from `--header0` to `--header2` (in case more than one HTTP header is needed).
 
@@ -66,6 +68,23 @@ There are several pieces of information that would be the same for both users:
 * `contentType`: specify how the payload will be sent (e.g., JSON in this case).
 * `expectCookies`: tell _EvoMaster_ that from the login endpoint we expect to get a cookie for the authentication.
 
+Note that, at times, username/password information might be passed via header (e.g., with `Basic`), instead of with a body payload.
+This is supported with the array `headers`, in which each header can be specified with a `name` and `value`. 
+For example:
+
+```
+auth:
+  - name: test
+    loginEndpointAuth:
+      endpoint: /api/login
+      verb: POST
+      headers:
+        - name: Authorization
+          value: "Basic dGVzdDp0ZXN0Cg=="
+```
+
+
+
 If instead of cookies we have a token to be extracted from the JSON response of the login endpoint, we can use something like:
 
 ```
@@ -88,7 +107,7 @@ The different fields are then validated on load.
 To read the documentation of such fields, you can look at the [JavaDocs for that class](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller-api/latest/index.html).
 Note: the previous link is for the documentation of released versions of _EvoMaster_. 
 If you are using latest SNAPSHOT (e.g., built directly from latest `master` branch of the Git repository), the DTO definitions could be updated (e.g., there was major refactoring after version `2.0.0`). 
-In such case, you could directly look at the documentation in the [AuthenticationDto class](https://github.com/EMResearch/EvoMaster/blob/master/client-java/controller-api/src/main/java/org/evomaster/client/java/controller/api/dto/auth/AuthenticationDto.java). 
+In such case, you could directly look at the documentation in the [AuthenticationDto class](https://github.com/WebFuzzing/EvoMaster/blob/master/client-java/controller-api/src/main/java/org/evomaster/client/java/controller/api/dto/auth/AuthenticationDto.java). 
 
 
 
@@ -104,7 +123,7 @@ This DTOs can be instantiated directly.
 The `org.evomaster.client.java.controller.AuthUtils` can be used to simplify the creation of such
 configuration objects, e.g., by using methods like `getForDefaultSpringFormLogin()`.
 Consider the following example from the `proxyprint` case study
-in the [EMB repository](https://github.com/EMResearch/EMB).
+in the [EMB repository](https://github.com/WebFuzzing/EMB).
 
 ```
 @Override

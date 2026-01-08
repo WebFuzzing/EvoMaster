@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
 
+private const val EOF_TOKEN = "<EOF>"
 /**
  * Created by arcuri82 on 11-Sep-19.
  */
@@ -16,7 +17,8 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
+        // we remove the <EOF> token from end of the string to store as sourceRegex
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0, text.length - EOF_TOKEN.length)}")
 
         return VisitResult(gene)
     }
@@ -179,8 +181,54 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         }
 
         if(ctx.AtomEscape() != null){
-            val char = ctx.AtomEscape().text[1].toString()
-            return VisitResult(CharacterClassEscapeRxGene(char))
+            val txt = ctx.AtomEscape().text
+            when {
+                txt[1] == '0' -> {
+                    val octalValue = txt.substring(2).toInt(8)
+                    return VisitResult(
+                        PatternCharacterBlockGene(
+                            txt,
+                            String(Character.toChars(octalValue))
+                        )
+                    )
+                }
+                txt[1]== 'c' -> {
+                    val controlLetterValue = if (txt[2].isLowerCase()){
+                        txt[2].uppercaseChar().code.xor(0x60)
+                    } else {
+                        txt[2].code.xor(0x40)
+                    }
+                    return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
+                }
+                txt[1] in "aefnrt" -> {
+                    val escape = when {
+                        txt[1] == 'a' -> "\u0007"
+                        txt[1] == 'e' -> "\u001B"
+                        txt[1] == 'f' -> "\u000C"
+                        txt[1] == 'n' -> "\u000A"
+                        txt[1] == 'r' -> "\u000D"
+                        else -> "\u0009"
+                    }
+                    return VisitResult(PatternCharacterBlockGene(txt, escape))
+                }
+                txt[1] == 'x' || txt[1] == 'u' -> {
+                    val hexValue = when {
+                        txt[1] == 'x' && txt.length > 4 && txt[2] == '{' && txt[txt.length - 1] == '}'
+                            -> txt.substring(3, txt.length - 1).toInt(16)
+                        else -> txt.substring(2).toInt(16)
+                    }
+                    if(hexValue !in Character.MIN_CODE_POINT..Character.MAX_CODE_POINT){
+                        throw IllegalArgumentException("Hexadecimal escape out of range: ${ctx.text}")
+                    }
+                    return VisitResult(
+                        PatternCharacterBlockGene(
+                            txt,
+                            String(Character.toChars(hexValue))
+                        )
+                    )
+                }
+                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
+            }
         }
 
         if(ctx.disjunction() != null){

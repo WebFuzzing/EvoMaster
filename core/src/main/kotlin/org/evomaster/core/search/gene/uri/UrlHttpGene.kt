@@ -1,14 +1,13 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.network.InetGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -80,16 +79,6 @@ class UrlHttpGene(
         return "$s://$h$p/$e"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UrlHttpGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({scheme.copyValueFrom(other.scheme) &&
-                host.copyValueFrom(other.host) &&
-                port.copyValueFrom(other.port) &&
-                path.copyValueFrom(other.path)}, true)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is UrlHttpGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -100,8 +89,36 @@ class UrlHttpGene(
                 && path.containsSameValueAs(other.path)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return false
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is UrlHttpGene) {
+            return false
+        }
+        return scheme.unsafeCopyValueFrom(other.scheme) &&
+                host.unsafeCopyValueFrom(other.host) &&
+                port.unsafeCopyValueFrom(other.port) &&
+                path.unsafeCopyValueFrom(other.path)
+    }
+
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * If the provided string is a valid, URL method will return
+     * true, otherwise false.
+     */
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return try {
+            val url = URL(value)
+            scheme.unsafeSetFromStringValue(url.protocol)
+            host.unsafeSetFromStringValue(url.host)
+            port.unsafeSetFromStringValue(url.port.toString())
+            // This to make the String similar to what is expected in ArrayGene
+            val pathValues = url.path.drop(1).replace("/", ",")
+            path.unsafeSetFromStringValue(pathValues)
+            true
+        } catch (e: java.lang.Exception) {
+            false
+        }
     }
 
     override fun customShouldApplyShallowMutation(

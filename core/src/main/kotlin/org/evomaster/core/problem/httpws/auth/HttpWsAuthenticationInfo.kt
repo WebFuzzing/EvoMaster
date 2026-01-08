@@ -2,8 +2,7 @@ package org.evomaster.core.problem.httpws.auth
 
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.core.problem.enterprise.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.search.action.Action
 
 /**
@@ -38,7 +37,11 @@ open class HttpWsAuthenticationInfo(
 
     companion object{
 
-        fun fromDto(dto: AuthenticationDto) : HttpWsAuthenticationInfo{
+        /**
+         * @param dto the DTO to convert into internal representation
+         * @param externalEndpointURL optionally override the value for externalEndpointURL in the DTO
+         */
+        fun fromDto(dto: AuthenticationDto, externalEndpointURL: String? = null) : HttpWsAuthenticationInfo{
 
             if (dto.name == null || dto.name.isBlank()) {
                 throw IllegalArgumentException("Missing name in authentication info")
@@ -58,7 +61,7 @@ open class HttpWsAuthenticationInfo(
 
             val endpointCallLogin = if(dto.loginEndpointAuth != null){
                 try {
-                    EndpointCallLogin.fromDto(dto.name, dto.loginEndpointAuth)
+                    EndpointCallLogin.fromDto(dto.name, dto.loginEndpointAuth, externalEndpointURL)
                 } catch (e: Exception){
                     throw IllegalArgumentException("Issue when parsing auth info for '${dto.name}': ${e.message}")
                 }

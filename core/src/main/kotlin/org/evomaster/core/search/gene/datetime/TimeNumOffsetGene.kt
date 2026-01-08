@@ -74,15 +74,6 @@ class TimeNumOffsetGene(
         return "${sign.getValueAsRawString()}${GeneUtils.padded(hour.value, 2)}:${GeneUtils.padded(minute.value, 2)}"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is TimeNumOffsetGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            { sign.copyValueFrom(other.sign) && minute.copyValueFrom(other.minute) && hour.copyValueFrom(other.hour) },
-            true)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is TimeNumOffsetGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -92,8 +83,15 @@ class TimeNumOffsetGene(
                 && minute.containsSameValueAs(other.minute)
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        //TODO
-        return false
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is TimeNumOffsetGene) {
+            return false
+        }
+        return  sign.unsafeCopyValueFrom(other.sign)
+                && minute.unsafeCopyValueFrom(other.minute)
+                && hour.unsafeCopyValueFrom(other.hour)
+
     }
+
 }

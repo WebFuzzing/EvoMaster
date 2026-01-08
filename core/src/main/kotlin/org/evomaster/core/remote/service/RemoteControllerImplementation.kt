@@ -5,6 +5,11 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.*
+import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto
+import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
+import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -31,7 +36,7 @@ import javax.ws.rs.core.Response
 class RemoteControllerImplementation() : RemoteController{
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(RemoteController::class.java)
+        val log: Logger = LoggerFactory.getLogger(RemoteControllerImplementation::class.java)
     }
 
     lateinit var host: String
@@ -363,6 +368,23 @@ class RemoteControllerImplementation() : RemoteController{
         return getData(dto)
     }
 
+    override fun deriveParams(deriveParams: List<DerivedParamChangeReqDto>) : List<DeriveParamResponseDto>{
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.DERIVE_PARAMS)
+                .request()
+                .post(Entity.entity(deriveParams, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<List<DeriveParamResponseDto>>>() {})
+
+        if (!checkResponse(response, dto, "Failed to execute call to fetch derived params")) {
+            return listOf()
+        }
+
+        return dto?.data ?: listOf()
+    }
+
 
     /**
      * execute [actionDto] through [ControllerConstants.NEW_ACTION] endpoints of EMController,
@@ -436,6 +458,29 @@ class RemoteControllerImplementation() : RemoteController{
         }
 
         return true
+    }
+
+
+    override fun invokeScheduleTasksAndGetResults(invocationDto: ScheduleTaskInvocationsDto): ScheduleTaskInvocationsResult? {
+
+        log.trace("Going to execute schedule tasks. size={}",invocationDto.tasks.size)
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.SCHEDULE_TASKS_COMMAND)
+                // shall we set `killSwitch` as true?
+                .queryParam("queryFromDatabase", !config.useInsertionForSqlHeuristics)
+                .request()
+                .post(Entity.entity(invocationDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response,  object : GenericType<WrappedResponseDto<ScheduleTaskInvocationsResult>>() {})
+
+        if (!checkResponse(response, dto, "Failed to invoke schedule tasks")) {
+            return null
+        }
+
+        return dto?.data
     }
 
     private fun handleFailedResponse(response: Response, endpoint: String, textWarning: String) : Boolean{

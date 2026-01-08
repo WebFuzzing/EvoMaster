@@ -1,0 +1,30 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-core-parent</artifactId>
+        <version>4.0.1-SNAPSHOT</version>
+        <relativePath>../core-parent</relativePath>
+    </parent>
+
+    <artifactId>evomaster-core-tests</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>e2e-tests</module>
+        <module>integration-tests</module>
+        <module>jdk-8</module>
+    </modules>
+
+    <properties>
+        <!--
+            Spring the framework of choice for writing IT and E2E tests, as it is the most popular framework.
+            When unsure what to use for a test, use Spring
+        -->
+        <springdoc.version>1.6.9</springdoc.version>
+        <springboot.version>2.5.4</springboot.version>
+    </properties>
+
+</project>

@@ -13,17 +13,71 @@ Also, some of these papers provides full replication packages, which are linked 
 
 ## Recent arXiv Technical Reports, not Peer-Reviewed (Yet)
 
-  
-* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
-  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
-  [[arXiv](https://arxiv.org/abs/2208.03988)]
+* P. Garrett, J. P. Galeotti, A. Arcuri, A. Poth, O. Rrjolli.
+  *Generating REST API Tests With Descriptive Names*. 
+  [[arxiv]()]
 
-
+* O. Sahin, M. Zhang, A. Arcuri. 
+  *WFC/WFD: Web Fuzzing Commons, Dataset and Guidelines to Support Experimentation in REST API Fuzzing*. 
+  [[arxiv](https://arxiv.org/abs/2509.01612)]
 
 
 ## Peer-Reviewed Publications
 
+### 2026
+
+* H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
+  *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
+  ACM/IEEE International Conference on Automation of Software Test (AST).
+  (To appear)
+
+* S. Seran, G. Bhandari, A. Arcuri. 
+  *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  (To appear)
+
 ### 2025
+
+* A. Golmohammadi, M. Zhang, A. Arcuri. 
+  *Tools and Benchmarks Evolve: What is their Impact on Parameter Tuning in SBSE Experiments?*.
+  Empirical Software Engineering (EMSE).
+  [[PDF](publications/2025_emse_tuning.pdf)]
+
+* F. F. Susilo.
+  *Human-Centered Evaluation of REST API Fuzzing Tools: Bridging Academia and Industry*.
+  IEEE/ACM International Conference on Automated Software Engineering (ASE), Doctoral Symposium.
+  [[PDF](publications/2025_ase_ds.pdf)]
+
+* A. Arcuri, O. Sahin, M. Zhang.
+  *Fuzzing for Detecting Access Policy Violations in REST APIs*.
+  IEEE International Symposium on Software Reliability Engineering (ISSRE).
+  [[PDF](publications/2025_issre.pdf)]
+
+* O. Sahin, M. Zhang, A. Arcuri.
+  *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
+  Automated Software Engineering (AUSE).
+  [[PDF](publications/2025_ause.pdf)]
+
+* M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
+  *Fuzzing Microservices: A Series of User Studies in Industry on Industrial Systems with EvoMaster*.
+  Science of Computer Programming (SCP).
+  [[PDF](publications/2025_scp.pdf)]
+
+* S. Seran, M. Zhang, O. Duman, A. Arcuri.
+  *Handling Web Service Interactions in Fuzzing with Search-Based Mock-Generation*.
+   ACM Transactions on Software Engineering and Methodology (TOSEM).
+   [[PDF](publications/2025_tosem_wm.pdf)][[Scripts](exp/2025_tosem_wm.py)]
+
+* A. Arcuri, P. Garrett, J.P. Galeotti, M . Zhang.
+  *Widening The Adoption of Web API Fuzzing: Docker, GitHub Action and Python Support for EvoMaster*.
+  ACM International Conference on the Foundations of Software Engineering (FSE), Demo Track.
+  [[PDF](publications/2025_fse_tool.pdf)]
+
+* G. Fraser, A. Arcuri.
+  *A Retrospective on Whole Test Suite Generation: On the Role of SBST in the Age of LLMs*.
+  IEEE Transactions on Software Engineering (TSE).
+  [[PDF](publications/2025_tse.pdf)]
+
 * A. Arcuri, A. Poth, O. Rrjolli.
   *Introducing Black-Box Fuzz Testing for REST APIs in Industry: Challenges and Solutions*.
   IEEE International Conference on Software Testing, Validation and Verification (ICST), Industry Track.
@@ -32,7 +86,7 @@ Also, some of these papers provides full replication packages, which are linked 
 * S. Seran, O. Duman, A. Arcuri.
   *Multi-Phase Taint Analysis for JSON Inference in Search-Based Fuzzing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
-  *(To appear)*
+  [[PDF](publications/2025_sbft.pdf)]
 
 ### 2024
 

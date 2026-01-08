@@ -1,7 +1,7 @@
 package org.evomaster.core.search.gene.collection
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
-import org.evomaster.core.Lazy
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
@@ -18,8 +18,6 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  *
  * This is needed in 2-phase marshalling, where a string is marshalled into an array of maps,
  * and then each map value is marshalled into a DTO.
- *
- * TODO needs refactoring
  */
 class TaintedArrayGene(
 
@@ -99,22 +97,7 @@ class TaintedArrayGene(
         return arrayGene!!.getValueAsPrintableString(previousGenes,mode,targetFormat,extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if(other !is TaintedArrayGene){
-            throw IllegalArgumentException("Other is not a TaintedArray: ${other::class.java}")
-        }
 
-        return updateValueOnlyIfValid(
-            {
-                val ok = this.arrayGene?.copyValueFrom(other.arrayGene!!)?:true
-                if (ok){
-                    this.taintedValue = other.taintedValue
-                    this.isActive = other.isActive
-                }
-                ok
-            }, false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is TaintedArrayGene){
@@ -139,16 +122,15 @@ class TaintedArrayGene(
         return this.taintedValue == other.taintedValue
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene !is TaintedArrayGene){
-            throw IllegalArgumentException("Other is not a TaintedArray: ${gene::class.java}")
+
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if(other !is TaintedArrayGene){
+           return false
         }
 
-        if(arrayGene != null && gene.arrayGene != null){
-            return arrayGene!!.bindValueBasedOn(gene.arrayGene!!)
-        }
-
-        return false
+        return this.arrayGene?.unsafeCopyValueFrom(other.arrayGene!!)
+            ?: true
     }
 
     override fun getPossiblyTaintedValue(): String {
@@ -159,10 +141,17 @@ class TaintedArrayGene(
     }
 
     override fun hasDormantGenes(): Boolean {
-        return isResolved() && !isActive //TODO double-check
+        return isResolved() && !isActive
     }
 
     override fun forceNewTaintId() {
-        //TODO
+        taintedValue = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+    }
+
+    override fun evolve() {
+        if(!hasDormantGenes()){
+            return
+        }
+        activate()
     }
 }

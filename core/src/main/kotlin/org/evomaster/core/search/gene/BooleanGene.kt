@@ -33,7 +33,7 @@ class BooleanGene(
         this.value = value.toBoolean()
     }
 
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
         try{
             this.value = value.toBoolean()
             return true
@@ -62,20 +62,6 @@ class BooleanGene(
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is BooleanGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is BooleanGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -84,10 +70,10 @@ class BooleanGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SeededGene<*>){
-            return this.bindValueBasedOn(gene.getPhenotype()as Gene)
-        }
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         if (gene !is BooleanGene){
             LoggingUtil.uniqueWarn(log, "Do not support to bind boolean gene with the type: ${gene::class.java.simpleName}")
             return false

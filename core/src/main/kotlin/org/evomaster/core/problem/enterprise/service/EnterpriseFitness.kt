@@ -5,29 +5,29 @@ import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.StaticCounter
-import org.evomaster.core.sql.DatabaseExecution
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
-import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.mongo.MongoDbActionTransformer
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.AdditionalTargetCollector
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.TargetInfo
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.*
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
 
 abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual {
 
@@ -44,9 +44,42 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
     @Inject
     protected lateinit var searchTimeController: SearchTimeController
 
+    @Inject
+    protected lateinit var sampler: EnterpriseSampler<T>
+
+    private val additionalTargetCollectors = mutableListOf<AdditionalTargetCollector>()
+
+    @PostConstruct
+    private fun initialize(){
+
+        //TODO populate additionalTargetCollectors based on config
+    }
+
+    fun goingToStartExecutingNewTest(){
+        additionalTargetCollectors.forEach {it.goingToStartExecutingNewTest()}
+    }
+
+    fun reportActionIndex(actionIndex: Int){
+        additionalTargetCollectors.forEach {it.reportActionIndex(actionIndex)}
+    }
+
+    fun handleFurtherFitnessFunctions(fv: FitnessValue){
+
+        val targets = additionalTargetCollectors.flatMap { it.testFinishedCollectResult() }
+        if (targets.isEmpty()){
+            return
+        }
+
+        targets.forEach {
+            val id = idMapper.handleLocalTarget(it.descriptiveId)
+            fv.updateTarget(id, it.value, it.actionIndex)
+        }
+    }
+
 
     /**
-     * @param allSqlActions specified the db actions to be executed
+     * @param allSqlActions specified the db actions to be executed.
+     *        This requires that, if any is representExistingData, they should all be at beginning of list
      * @param sqlIdMap indicates the map id of pk to generated id
      * @param allSuccessBefore indicates whether all SQL before this [allSqlActions] are executed successfully
      * @param previous specified the previous db actions which have been executed
@@ -63,6 +96,11 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             return true
         }
 
+        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+        if(!SqlActionUtils.verifyExistingDataFirst(allSqlActions)){
+            throw IllegalArgumentException("SQLAction representing existing data are not in order")
+        }
+
         val dbresults = (allSqlActions).map { SqlActionResult(it.getLocalId()) }
         actionResults.addAll(dbresults)
 
@@ -74,23 +112,33 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                 existing data (which of course should not be re-inserted...)
              */
             // other dbactions might bind with the representExistingData, so we still need to record sqlId here.
-            allSqlActions.filter { it.representExistingData }.flatMap { it.seeTopGenes() }.filterIsInstance<SqlPrimaryKeyGene>().forEach {
-                sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
-            }
+            allSqlActions.filter { it.representExistingData }
+                .flatMap { it.seeTopGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .forEach {
+                    sqlIdMap.putIfAbsent(it.uniqueId, it.uniqueId)
+                }
             previous.addAll(allSqlActions)
             return true
         }
 
-        val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
+
         val dto = try {
             SqlActionTransformer.transform(allSqlActions, sqlIdMap, previous)
-        }catch (e : IllegalArgumentException){
+        }catch (e : Exception){
             // the failure might be due to previous failure
             if (!allSuccessBefore){
                 previous.addAll(allSqlActions)
-                return false
-            } else
-                throw e
+            } else {
+                log.warn("Failed to create SQL command from internal representation: ${e.message}",e)
+                assert(false)
+            /*
+                shouldn't happen in tests... but don't crash EM either... as
+                support for SQL is still not fully
+                TODO check again once we fully support FKs
+             */
+            }
+            return false
         }
         dto.idCounter = StaticCounter.getAndIncrease()
 
@@ -255,10 +303,13 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         if (configuration.extractSqlExecutionInfo) {
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
-                val databaseExecution = DatabaseExecution.fromDto(extra.sqlSqlExecutionsDto)
-                fv.setDatabaseExecution(i, databaseExecution)
-                if (databaseExecution.sqlParseFailureCount>0) {
-                    statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                val sdto = extra.sqlSqlExecutionsDto
+                if(sampler.sqlInsertBuilder != null && sdto != null) {
+                    val databaseExecution = DatabaseExecution.fromDto(sdto, sampler.sqlInsertBuilder!!.getTableNames())
+                    fv.setDatabaseExecution(i, databaseExecution)
+                    if (databaseExecution.sqlParseFailureCount > 0) {
+                        statistics.reportSqlParsingFailures(databaseExecution.sqlParseFailureCount)
+                    }
                 }
             }
             fv.aggregateDatabaseData()

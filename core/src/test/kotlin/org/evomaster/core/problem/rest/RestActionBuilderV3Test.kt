@@ -1,12 +1,18 @@
 package org.evomaster.core.problem.rest
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.parser.OpenAPIParser
 import org.evomaster.client.java.instrumentation.shared.ClassToSchemaUtils.OPENAPI_REF_PATH
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.ResourceCluster
+import org.evomaster.core.problem.rest.schema.OpenApiAccess
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.BooleanGene
@@ -17,11 +23,10 @@ import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.TaintedMapGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
-import org.evomaster.core.search.gene.datetime.TimeGene
 import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.ChoiceGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
@@ -272,7 +277,7 @@ class RestActionBuilderV3Test{
         (gene as ObjectGene).apply {
             assertEquals(4, fixedFields.size)
             //assertTrue(template!!.second is FixedMapGene<*, *>)
-            assertTrue(template!!.second is TaintedMapGene)
+            assertTrue(template!!.second is TaintedMapGene, "Template is of type ${template!!.second::class.simpleName}")
         }
     }
 
@@ -827,16 +832,19 @@ class RestActionBuilderV3Test{
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int, options: RestActionBuilderV3.Options)
             : MutableMap<String, Action> {
 
-        val schema = OpenAPIParser().readLocation(resourcePath, null, null).openAPI
+        val holder = RestSchema(OpenApiAccess.getOpenAPIFromResource(resourcePath))
 
         val actions: MutableMap<String, Action> = mutableMapOf()
 
-        RestActionBuilderV3.addActionsFromSwagger(schema, actions, options=options)
+        val errors = RestActionBuilderV3.addActionsFromSwagger(holder, actions, options=options)
+        errors.forEach {
+            println(it)
+        }
 
         assertEquals(expectedNumberOfActions, actions.size)
 
         //should not crash
-        RestActionBuilderV3.getModelsFromSwagger(schema, mutableMapOf(), options = options)
+        //RestActionBuilderV3.getModelsFromSwagger(holder.main.schemaParsed, mutableMapOf(), options = options)
 
         return actions
     }
@@ -1127,7 +1135,7 @@ class RestActionBuilderV3Test{
             "/metrics", "/metrics.json", "/metrics/{name}",
             "/trace", "/trace.json"
         )
-        checkNumOfRootGene(map, skipInEM, 74, 100,22, 78, 14)
+        checkNumOfRootGene(map, skipInEM, 74, 106,24, 82, 14)
 
         checkNumResource(map, skipInEM, 56, 20)
 
@@ -1437,6 +1445,98 @@ class RestActionBuilderV3Test{
         assertEquals("42", output)
     }
 
+
+    @ParameterizedTest
+    @ValueSource(strings = [
+        "/swagger/artificial/defaultandexamples/examples_object_single_in.yaml",
+        "/swagger/artificial/defaultandexamples/examples_object_single_out.yaml",
+        "/swagger/artificial/defaultandexamples/default_object_single.yaml"
+    ])
+    fun testExampleObjectSingle(path: String){
+        val a = loadAndAssertActions(path, 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42Pos = false
+        var Bar42Neg = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar" && dto.extra != null){
+                if(dto.extra!! >= 0){
+                    Bar42Pos = true
+                } else {
+                    Bar42Neg = true
+                }
+            }
+
+            if(Bar42Pos && Bar42Neg){
+                break
+            }
+        }
+
+        assertTrue(Bar42Pos)
+        assertTrue(Bar42Neg)
+
+    }
+
+
+    @Test
+    fun testExampleObjectMulti(){
+        val a = loadAndAssertActions("/swagger/artificial/defaultandexamples/examples_object_multi.yaml", 1, RestActionBuilderV3.Options(probUseExamples = 0.5, probUseDefault = 0.5))
+            .values.first()
+
+        val rand = Randomness()
+        a.doInitialize(rand)
+
+        var Bar42 = false
+        var Foo123 = false
+
+        data class ObjectSingleDto(
+            var id: Int?,
+            var name: String?,
+            var extra: Int?
+        ){
+            constructor() : this(null,null,null)
+        }
+        val mapper = ObjectMapper()
+
+        for(i in 0..1000){
+            a.randomize(rand,false)
+            val s = a.seeTopGenes().first().getValueAsRawString()
+
+            val dto = mapper.readValue(s, ObjectSingleDto::class.java)
+
+            if(dto.id == 42 && dto.name=="Bar"){
+                Bar42 = true
+            }
+            if(dto.id == 123 && dto.name == "Foo" && dto.extra == 77){
+                Foo123 = true
+            }
+
+            if(Bar42 && Foo123){
+                break
+            }
+        }
+
+        assertTrue(Bar42)
+        assertTrue(Foo123)
+    }
 
     @ParameterizedTest
     @ValueSource(strings = ["/swagger/artificial/defaultandexamples/examples_string_in.yml",
@@ -1898,7 +1998,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(ChoiceGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -1917,7 +2017,7 @@ class RestActionBuilderV3Test{
         val target = "foo"
 
         val x = child.parameters.find { it is PathParam }!!.primaryGene().getWrappedGene(StringGene::class.java)!!
-        val isSet = x.setFromStringValue(target)
+        val isSet = x.unsafeSetFromStringValue(target)
         assertTrue(isSet)
 
         parent.bindToSamePathResolution(child)
@@ -1961,4 +2061,40 @@ class RestActionBuilderV3Test{
             assertEquals(1, stringGene.maxLength)
         }
     }
+
+
+    @Test
+    fun testRefLinkRef() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/linkref.yaml", 2, true)
+
+        val post = map["POST:/users"] as RestCallAction
+        assertEquals(1, post.links.size)
+        assertTrue(post.links.all { it.canUse() })
+    }
+
+    @Test
+    fun testRefCycle() {
+        val map = loadAndAssertActions("/swagger/artificial/ref/cycleA.yaml", 1, true)
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertTrue(get.produces.any { it.contains("xml") })
+        assertEquals(1, get.parameters.size)
+    }
+
+    @Test
+    fun testPathItem(){
+        val map = loadAndAssertActions(
+            "/swagger/artificial/ref/pathitem.yaml",
+            1,
+            RestActionBuilderV3.Options(probUseExamples = 1.0))
+
+        val get = map["GET:/users/{id}"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val certain = map.values.first()
+            .seeTopGenes().first()
+        val output = certain.getValueAsRawString()
+        assertEquals("FOO", output)
+    }
+
 }

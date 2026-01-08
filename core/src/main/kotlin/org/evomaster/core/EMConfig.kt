@@ -1,5 +1,7 @@
 package org.evomaster.core
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
+import com.webfuzzing.commons.faults.FaultCategory
 import joptsimple.*
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
@@ -13,6 +15,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.output.sorting.SortingStrategy
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.search.impact.impactinfocollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.LoggerFactory
@@ -48,7 +51,7 @@ class EMConfig {
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
 
         private const val headerRegex = "(.+:.+)|(^$)"
-
+        private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
@@ -70,7 +73,7 @@ class EMConfig {
         private const val _eip_s = "^${lz}127"
         // other numbers could be anything between 0 and 255
         private const val _eip_e = "(\\.${lz}(25[0-5]|2[0-4][0-9]|1?[0-9]?[0-9])){3}$"
-        // first four numbers (127.0.0.0 to 127.0.0.3) are reserved
+        // the first four numbers (127.0.0.0 to 127.0.0.3) are reserved
         // this is done with a negated lookahead ?!
         private const val _eip_n = "(?!${_eip_s}(\\.${lz}0){2}\\.${lz}[0123]$)"
 
@@ -82,9 +85,9 @@ class EMConfig {
 
         private val defaultOutputFormatForBlackBox = OutputFormat.PYTHON_UNITTEST
 
-        private val defaultTestCaseNamingStrategy = NamingStrategy.NUMBERED
+        private val defaultTestCaseNamingStrategy = NamingStrategy.ACTION
 
-        private val defaultTestCaseSortingStrategy = SortingStrategy.COVERED_TARGETS
+        private val defaultTestCaseSortingStrategy = SortingStrategy.TARGET_INCREMENTAL
 
         fun validateOptions(args: Array<String>): OptionParser {
 
@@ -355,9 +358,16 @@ class EMConfig {
             LoggingUtil.uniqueUserInfo("Loading configuration file from: ${Path(configPath).toAbsolutePath()}")
         }
 
-        val cf = ConfigUtil.readFromFile(configPath)
-        cf.validateAndNormalizeAuth()
-        return cf
+        try {
+            val cf = ConfigUtil.readFromFile(configPath)
+            cf.validateAndNormalizeAuth()
+            return cf
+        }catch (e: Exception){
+            val cause = if(e.cause!=null) "\nCause:${e.cause!!.message}" else ""
+            throw ConfigProblemException("Failed when reading configuration file at $configPath." +
+                    "\nError: ${e.message}" +
+                    "$cause")
+        }
     }
 
     private fun applyConfigFromFile(cff: ConfigsFromFile) {
@@ -572,6 +582,9 @@ class EMConfig {
         if (saveMockedResponseAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
             throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save mocked responses in separated files (ie, saveMockedResponseAsSeparatedFile=true)")
 
+        if (saveScheduleTaskInvocationAsSeparatedFile && testResourcePathToSaveMockedResponse.isBlank())
+            throw ConfigProblemException("testResourcePathToSaveMockedResponse cannot be empty if it is required to save schedule task invocation in separated files (ie, saveScheduleTaskInvocationAsSeparatedFile=true)")
+
         if (probRestDefault + probRestExamples > 1) {
             throw ConfigProblemException("Invalid combination of probabilities for probRestDefault and probRestExamples. " +
                     "Their sum should be lower or equal to 1.")
@@ -579,6 +592,28 @@ class EMConfig {
 
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
+        }
+
+        if(!security && ssrf) {
+            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+        }
+
+        if(!security && xss) {
+            throw ConfigProblemException("The use of 'xss' requires 'security'")
+        }
+
+        if (ssrf &&
+            vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
+            !languageModelConnector) {
+            throw ConfigProblemException("Language model connector is disabled. Unable to run the input classification using LLM.")
+        }
+
+        if (languageModelConnector && languageModelServerURL.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model server URL cannot be empty.")
+        }
+
+        if (languageModelConnector && languageModelName.isNullOrEmpty()) {
+            throw ConfigProblemException("Language model name cannot be empty.")
         }
 
         if(prematureStop.isNotEmpty() && stoppingCriterion != StoppingCriterion.TIME){
@@ -597,9 +632,16 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        if(writeWFCReport && !createTests){
-            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-        }
+        /*
+            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
+            like writeWFCReport.
+            TODO however, we should issue some WARN message.
+            ie. we should have a distinction between @Requires (which should crash) and something like
+            @DependOn that does not lead to a crash, but just a warning
+         */
+//        if(writeWFCReport && !createTests){
+//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
+//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -770,6 +812,8 @@ class EMConfig {
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
+
+    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
 
     fun experimentalFeatures(): List<String> {
 
@@ -1061,6 +1105,13 @@ class EMConfig {
     var endpointPrefix: String? = null
 
     @Important(5.2)
+    @Cfg("Comma-separated list of endpoints for excluding endpoints." +
+            " This is useful for excluding endpoints that are not relevant for testing, " +
+            " such as those used for health checks or metrics. If no such endpoint is specified, " +
+            " then no endpoints are excluded from the search.")
+    var endpointExclude: String? = null
+
+    @Important(5.3)
     @Cfg("Comma-separated list of OpenAPI/Swagger 'tags' definitions." +
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
@@ -1114,7 +1165,8 @@ class EMConfig {
     var avoidNonDeterministicLogs = false
 
     enum class Algorithm {
-        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW
+        DEFAULT, SMARTS, MIO, RANDOM, WTS, MOSA, RW,
+        StandardGA, MonotonicGA, SteadyStateGA, BreederGA, CellularGA, OnePlusLambdaLambdaGA, MuLambdaEA, MuPlusLambdaEA, LIPS, CRO // GA variants still work-in-progress.
     }
 
     @Cfg("The algorithm used to generate test cases. The default depends on whether black-box or white-box testing is done.")
@@ -1249,9 +1301,161 @@ class EMConfig {
     var statisticsFile = "statistics.csv"
 
 
+    enum class AIResponseClassifierModel {
+        /**
+         * No classification is performed.
+         */
+        NONE,
+
+        /**
+         * Gaussian Model.
+         * Assumes the data follows a bell-shaped curve, parameterized by mean and variance.
+         */
+        GAUSSIAN,
+
+        /**
+         * Kernel Density Estimation (KDE).
+         * A non-parametric method for estimating the probability density function.
+         */
+        KDE,
+
+        /**
+         * K-Nearest Neighbors (KNN).
+         * Classifies a point based on the majority label among its k closest neighbors.
+         */
+        KNN,
+
+        /**
+         * Neural Network (NN).
+         * A computational model inspired by biological neural systems, consisting of layers of interconnected neurons.
+         * Neural networks learn patterns from data to capture underlying nonlinear relationships
+         * and to perform flexible classification
+         */
+        NN,
+
+        /**
+         * Generalized Linear Model (GLM).
+         * Extends linear regression to handle non-normal response distributions.
+         */
+        GLM,
+
+        /**
+         * Rule-Based Deterministic Model.
+         * Uses predefined, fixed rules for classification,
+         * providing clear and structured decision logic as an
+         * alternative to probabilistic or statistical methods.
+         */
+        DETERMINISTIC
+    }
+
+
+
     @Experimental
-    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format.")
-    var writeWFCReport = false
+    @Cfg("Model used to learn input constraints and infer response status before making request.")
+    var aiModelForResponseClassification = AIResponseClassifierModel.NONE
+
+    @Experimental
+    @Cfg("Learning rate controlling the step size during parameter updates in classifiers. " +
+            "Relevant for gradient-based models such as GLM and neural networks. " +
+            "A smaller value ensures stable but slower convergence, while a larger value speeds up " +
+            "training but may cause instability.")
+    var aiResponseClassifierLearningRate: Double = 0.01
+
+    @Experimental
+    @Cfg(
+        "Maximum number of stored samples for classifiers such as KNN and KDE models that rely " +
+                "on retaining encoded inputs. " +
+                "This value specifies the maximum number of samples stored for each endpoint. " +
+                "A higher value can improve classification accuracy by leveraging more historical data, " +
+                "but also increases memory usage. " +
+                "A lower value reduces memory consumption but may limit the classifier’s knowledge base. " +
+                "Typically, it is safe to keep this value between 10,000 and 50,000 when the encoded input vector " +
+                "is usually a list of doubles with a length under 20. " +
+                "Reservoir sampling is applied independently for each endpoint: if this maximum number is exceeded, " +
+                "new samples randomly replace existing ones, ensuring an unbiased selection of preserved data. " +
+                "As an example, for an API with 100 endpoints and an input vector of size 20, " +
+                "a maximum of 10,000 samples per endpoint would require roughly 200 MB of memory.")
+    var aiResponseClassifierMaxStoredSamples: Int = 10_000
+
+    @Experimental
+    @Cfg("Number of training iterations required to update classifier parameters. " +
+                "For example, in the Gaussian model this affects mean and variance updates. " +
+                "For neural network (NN) models, the warm-up should typically be larger than 1000.")
+    var aiResponseClassifierWarmup : Int = 10
+
+
+    enum class EncoderType {
+
+        /** Use raw values without any transformation. */
+        RAW,
+
+        /** Normalize values to a standard scale (e.g., zero mean and unit variance). */
+        NORMAL,
+
+        /** Scale the vector to have unit length, making it a point on the unit sphere. */
+        UNIT_NORMAL
+    }
+
+    @Experimental
+    @Cfg("The encoding strategy applied to transform raw data to the encoded version.")
+    var aiEncoderType = EncoderType.RAW
+
+
+    @Experimental
+    @Min(1.0)
+    @Cfg("When the Response Classifier determines an action is going to fail, specify how many attempts will" +
+            " be tried at fixing it.")
+    var maxRepairAttemptsInResponseClassification = 100
+
+    enum class AIClassificationRepairActivation{
+        /*
+            TODO we might think of other techniques as well... and then experiment with them
+         */
+        PROBABILITY, THRESHOLD
+    }
+
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
+            " All classifications with probability equal or above such threshold value will be accepted.")
+    var classificationRepairThreshold = 0.8
+
+    @Experimental
+    @Cfg("Specify how the classification of actions's response will be used to execute a possible repair on the action.")
+    var aiClassifierRepairActivation = AIClassificationRepairActivation.THRESHOLD
+
+
+    enum class AIClassificationMetrics {
+
+        /**
+         * Evaluates metrics (accuracy, F1, etc.) over a recent sliding time window.
+         * This highlights short-term classifier behavior and adapts to changes in data distribution.
+          */
+        TIME_WINDOW,
+
+        /**
+         * Evaluates metrics over the entire lifetime of the classifier,
+         * capturing its cumulative long-term performance without forgetting older data.
+         */
+        FULL_HISTORY
+    }
+
+    @Experimental
+    @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
+    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+
+    @Experimental
+    @Cfg("Determines whether the AI response classifier skips model updates when the response " +
+            "indicates a server-side error with status code 500.")
+    var skipAIModelUpdateWhenResponseIs500 = false
+
+    @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
+            " This also includes a index.html web application to visualize such data.")
+    var writeWFCReport = true
+
+    @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
+            " the JSON report file will be created.")
+    var writeWFCReportExcludeWebApp = false
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
@@ -1357,6 +1561,17 @@ class EMConfig {
     @Min(1.0)
     var populationSize = 30
 
+    @Cfg("Define the probability of happening mutation in the genetic algorithms")
+    @Probability
+    var fixedRateMutation = 0.04
+
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ+λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muPlusLambdaOffspringSize = 30
+    @Cfg("Define the number of offspring (λ) generated per generation in (μ,λ) Evolutionary Algorithm")
+    @Min(1.0)
+    var muLambdaOffspringSize = 30
+
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
     var maxSearchSuiteSize = 50
@@ -1368,6 +1583,27 @@ class EMConfig {
     @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
     @Min(1.0)
     var tournamentSize = 10
+
+    // --- Chemical Reaction Optimization (CRO) parameters ---
+    @Cfg("CRO: Molecular collision rate c_r (probability of binary reactions)")
+    @Probability
+    var croMolecularCollisionRate: Double = 0.2
+
+    @Cfg("CRO: Kinetic energy loss rate k_r (lower bound of retained fraction after on-wall)")
+    @Probability
+    var croKineticEnergyLossRate: Double = 0.2
+
+    @Cfg("CRO: Initial kinetic energy assigned to each molecule")
+    @Min(0.0)
+    var croInitialKineticEnergy: Double = 1000.0
+
+    @Cfg("CRO: Decomposition threshold d_t (min number of collisions before decomposition)")
+    @Min(0.0)
+    var croDecompositionThreshold: Int = 500
+
+    @Cfg("CRO: Synthesis KE threshold s_t (molecule can synthesize if KE ≤ s_t)")
+    @Min(0.0)
+    var croSynthesisThreshold: Double = 10.0
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
     @Probability
@@ -1545,6 +1781,11 @@ class EMConfig {
     @Experimental
     var instrumentMR_NET = false
 
+    @Cfg("Execute instrumentation for method replace with category OPENSEARCH." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_OPENSEARCH = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -1621,6 +1862,12 @@ class EMConfig {
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
     @Probability
     var probOfApplySQLActionToCreateResources = 0.1
+
+
+    @Experimental
+    @Cfg("Probability of sampling a new individual with schedule tasks. Note that schedule task is only enabled for RPCProblem")
+    @Probability
+    var probOfSamplingScheduleTask = 0.0
 
     @Experimental
     @Cfg("Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most")
@@ -1988,7 +2235,7 @@ class EMConfig {
     @Max(stringLengthHardLimit.toDouble())
     @Cfg("The maximum length allowed for evolved strings. Without this limit, strings could in theory be" +
             " billions of characters long")
-    var maxLengthForStrings = 200
+    var maxLengthForStrings = 1024
 
 
     @Min(0.0)
@@ -2204,7 +2451,7 @@ class EMConfig {
         NONE,
 
         /**
-         * Default will assign 127.0.0.3
+         * Default will assign 127.0.0.5
          */
         DEFAULT,
 
@@ -2219,16 +2466,16 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Specify a method to select the first external service spoof IP address.")
     @Experimental
+    @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
+    @Experimental
     @Cfg("User provided external service IP." +
             " When EvoMaster mocks external services, mock server instances will run on local addresses starting from" +
             " this provided address." +
             " Min value is ${defaultExternalServiceIP}." +
             " Lower values like ${ExternalServiceSharedUtils.RESERVED_RESOLVED_LOCAL_IP} and ${ExternalServiceSharedUtils.DEFAULT_WM_LOCAL_IP} are reserved.")
-    @Experimental
     @Regex(externalServiceIPRegex)
     var externalServiceIP : String = defaultExternalServiceIP
 
@@ -2236,9 +2483,18 @@ class EMConfig {
     @Cfg("Whether to apply customized method (i.e., implement 'customizeMockingRPCExternalService' for external services or 'customizeMockingDatabase' for database) to handle mock object.")
     var enableCustomizedMethodForMockObjectHandling = false
 
+
+    @Experimental
+    @Cfg("Whether to apply customized method (i.e., implement 'customizeScheduleTaskInvocation' for invoking schedule task) to invoke schedule task.")
+    var enableCustomizedMethodForScheduleTaskHandling = false
+
     @Experimental
     @Cfg("Whether to save mocked responses as separated files")
     var saveMockedResponseAsSeparatedFile = false
+
+    @Experimental
+    @Cfg("Whether to save schedule task invocation as separated files")
+    var saveScheduleTaskInvocationAsSeparatedFile = false
 
     @Experimental
     @Cfg("Specify test resource path where to save mocked responses as separated files")
@@ -2250,26 +2506,24 @@ class EMConfig {
     @Probability(true)
     var useExtraSqlDbConstraintsProbability = 0.9
 
-
-    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Experimental
+    @Cfg("a probability of harvesting actual responses from external services as seeds.")
     @Probability(activating = true)
     var probOfHarvestingResponsesFromActualExternalServices = 0.0
 
-
-    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Experimental
+    @Cfg("a probability of prioritizing to employ successful harvested actual responses from external services as seeds (e.g., 2xx from HTTP external service).")
     @Probability(activating = true)
     var probOfPrioritizingSuccessfulHarvestedActualResponses = 0.0
 
-    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Experimental
+    @Cfg("a probability of mutating mocked responses based on actual responses")
     @Probability(activating = true)
     var probOfMutatingResponsesBasedOnActualResponse = 0.0
 
+    @Experimental
     @Cfg("Number of threads for external request harvester. No more threads than numbers of processors will be used.")
     @Min(1.0)
-    @Experimental
     var externalRequestHarvesterNumberOfThreads: Int = 2
 
 
@@ -2298,8 +2552,8 @@ class EMConfig {
         RANDOM
     }
 
-    @Cfg("Harvested external request response selection strategy")
     @Experimental
+    @Cfg("Harvested external request response selection strategy")
     var externalRequestResponseSelectionStrategy = ExternalRequestResponseSelectionStrategy.EXACT
 
     @Cfg("Whether to employ constraints specified in API schema (e.g., OpenAPI) in test generation")
@@ -2345,9 +2599,78 @@ class EMConfig {
     @Cfg("When generating data, allow in some cases to use invalid values on purpose")
     var allowInvalidData: Boolean = true
 
-    @Experimental
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
-    var security = false
+    var security = true
+
+    @Experimental
+    @Cfg("To apply SSRF detection as part of security testing.")
+    var ssrf = false
+
+    @Experimental
+    @Cfg("To apply XSS detection as part of security testing.")
+    var xss = false
+
+    @Experimental
+    @Cfg("To apply SQLi detection as part of security testing.")
+    var sqli = false
+
+    @Experimental
+    @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
+    var sqliInjectedSleepDurationMs = 5500
+
+    @Experimental
+    @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    var sqliBaselineMaxResponseTimeMs = 2000
+
+
+    @Regex(faultCodeRegex)
+    @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
+                "By default, all oracles are enabled."
+    )
+    var disabledOracleCodes = ""
+
+    @Cfg("Enables experimental oracles. When true, ExperimentalFaultCategory items are included alongside standard ones. " +
+            "Experimental oracles may be unstable or unverified and should only be used for testing or evaluation purposes. " +
+            "When false, all experimental oracles are disabled.")
+    var useExperimentalOracles = false
+
+    enum class VulnerableInputClassificationStrategy {
+        /**
+         * Uses the manual methods to select the vulnerable inputs.
+         */
+        MANUAL,
+
+        /**
+         * Use LLMs to select potential vulnerable inputs.
+         */
+        LLM,
+    }
+
+    @Experimental
+    @Cfg("Strategy to classify inputs for potential vulnerability classes related to an REST endpoint.")
+    var vulnerableInputClassificationStrategy = VulnerableInputClassificationStrategy.MANUAL
+
+    @Experimental
+    @Cfg("HTTP callback verifier hostname. Default is set to 'localhost'. If the SUT is running inside a " +
+            "container (i.e., Docker), 'localhost' will refer to the container. This can be used to change the hostname.")
+    var callbackURLHostname = "localhost"
+
+    @Experimental
+    @Cfg("Enable language model connector")
+    var languageModelConnector = false
+
+    @Experimental
+    @Cfg("Large-language model external service URL. Default is set to Ollama local instance URL.")
+    var languageModelServerURL: String = "http://localhost:11434/"
+
+    @Experimental
+    @Cfg("Large-language model name as listed in Ollama")
+    var languageModelName: String = "llama3.2:latest"
+
+    @Experimental
+    @Cfg("Number of threads for language model connector. No more threads than numbers of processors will be used.")
+    @Min(1.0)
+    var languageModelConnectorNumberOfThreads: Int = 2
 
 
     @Cfg("If there is no configuration file, create a default template at given configPath location." +
@@ -2365,6 +2688,12 @@ class EMConfig {
 
     @Cfg("Apply more advanced coverage criteria for black-box testing. This can result in larger generated test suites.")
     var advancedBlackBoxCoverage = true
+
+    @Cfg("In black-box testing, aim at adding calls to reset the state of the SUT after it has been modified by the test." +
+            " For example, in REST APIs, DELETE operations are added (if any exist) after each successful POST/PUT." +
+            " However, this is done heuristically." +
+            " There is no guarantee the state will be properly cleaned-up, this is just a best effort attempt.")
+    var blackBoxCleanUp = true
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
@@ -2430,13 +2759,19 @@ class EMConfig {
     @Cfg("Specify the naming strategy for test cases.")
     var namingStrategy = defaultTestCaseNamingStrategy
 
-    @Experimental
+    @Cfg("Specify the hard limit for test case name length")
+    var maxTestCaseNameLength = 120
+
     @Cfg("Specify if true boolean query parameters are included in the test case name." +
             " Used for test case naming disambiguation. Only valid for Action based naming strategy.")
-    var nameWithQueryParameters = false
+    var nameWithQueryParameters = true
 
     @Cfg("Specify the test case sorting strategy")
     var testCaseSortingStrategy = defaultTestCaseSortingStrategy
+
+    @Experimental
+    @Cfg("Adds TestMethodOrder annotation for JUnit 5 tests")
+    var useTestMethodOrder = false
 
     @Experimental
     @Probability(true)
@@ -2456,6 +2791,57 @@ class EMConfig {
     @Cfg("Max length for test comments. Needed when enumerating some names/values, making comments too long to be" +
             " on a single line")
     var maxLengthForCommentLine = 80
+
+    @Cfg(description = "Number of elite individuals to be preserved when forming the next population in population-based search algorithms that do not use an archive, like for example Genetic Algorithms")
+    @Min(0.0)
+    var elitesCount: Int = 1
+
+    // Cellular GA neighborhood configuration
+    enum class CGANeighborhoodModel {
+        RING, L5, C9, C13
+    }
+
+    @Experimental
+    @Cfg("Cellular GA: neighborhood model (RING, L5, C9, C13)")
+    var cgaNeighborhoodModel: CGANeighborhoodModel = CGANeighborhoodModel.RING
+
+    /**
+     * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
+     */
+    @Experimental
+    @PercentageAsProbability
+    @Cfg("Breeder GA: fraction of top individuals to keep in parents pool (truncation).")
+    var breederTruncationFraction: Double = 0.5
+
+    /**
+     * Breeder GA: minimum number of parents to keep after truncation.
+     */
+    @Experimental
+    @Min(2.0)
+    @Cfg("Breeder GA: minimum number of individuals in parents pool after truncation.")
+    var breederParentsMin: Int = 2
+
+    /**
+     * OnePlusLambdaLambda GA: number of offspring (λ).
+     */
+    @Experimental
+    @Min(1.0)
+    @Cfg("1+(λ,λ) GA: number of offspring (λ) per generation")
+    var onePlusLambdaLambdaOffspringSize: Int = 4
+
+    @Experimental
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
+
+    @Cfg("Override the value of externalEndpointURL in auth configurations." +
+            " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
+            " are run in parallel, to avoid creating/modifying auth configuration files." +
+            " If what provided is a URL starting with 'http', then full replacement will occur." +
+            " Otherwise, the input will be treated as a 'hostname:port', and only that info will be updated (e.g.," +
+            " path element of the URL will not change).")
+    var overrideAuthExternalEndpointURL : String? = null
+
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
@@ -2510,6 +2896,7 @@ class EMConfig {
         if (instrumentMR_EXT_0) categories.add(ReplacementCategory.EXT_0.toString())
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
+        if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
         return categories.joinToString(",")
     }
 
@@ -2554,4 +2941,106 @@ class EMConfig {
     fun isEnabledResourceSizeHandling() = isUsingAdvancedTechniques() && probOfHandlingLength > 0 && maxSizeOfHandlingResource > 0
 
     fun getTagFilters() = endpointTagFilter?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun getExcludeEndpoints() = endpointExclude?.split(",")?.map { it.trim() } ?: listOf()
+
+    fun isEnabledAIModelForResponseClassification() = aiModelForResponseClassification != AIResponseClassifierModel.NONE
+
+    /**
+     * Source to build the final GA solution when evolving full test suites (not single tests).
+     * ARCHIVE: use current behavior (take tests from the archive).
+     * POPULATION: for GA algorithms, take the best suite (individual) from the final population.
+     */
+    enum class GASolutionSource { ARCHIVE, POPULATION }
+
+    /**
+     * Controls how GA algorithms produce the final solution.
+     * Default preserves current behavior.
+     */
+    var gaSolutionSource: GASolutionSource = GASolutionSource.ARCHIVE
+
+
+    /**
+     * Not all oracles are active by default.
+     * Some might be experimental, while others might be explicitly excluded by the user
+     */
+    fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        if(category == DefinedFaultCategory.XSS && !xss){
+            return false;
+        }
+
+        if(category == DefinedFaultCategory.SQL_INJECTION && !sqli){
+            return false;
+        }
+
+        return category !in getDisabledOracleCodesList()
+    }
+
+    private fun isFaultCodeActive(
+        code: Int,
+        disabledCodes: Set<Int>
+    ): Boolean {
+        val isExperimental = ExperimentalFaultCategory.entries.any { it.code == code }
+        if (isExperimental && !useExperimentalOracles) return false
+        if (code in disabledCodes) return false
+        return true
+    }
+
+    private fun parseDisabledCodesOrThrow(
+        disabledOracleCodes: String,
+    ): Set<Int> {
+        if (disabledOracleCodes.isBlank()) return emptySet()
+
+        val tokens = disabledOracleCodes
+            .split(",")
+            .mapNotNull { it.trim().takeIf { s -> s.isNotEmpty() } }
+
+        val codes = tokens.map { token ->
+            token.toIntOrNull() ?: throw ConfigProblemException("Invalid number: $token")
+        }
+
+        val definedCodes = DefinedFaultCategory.entries.map { it.code }.toSet()
+        val experimentalCodes = ExperimentalFaultCategory.entries.map { it.code }.toSet()
+        val knownCodes = definedCodes + experimentalCodes
+
+        val unknown = codes.filter { it !in knownCodes }
+        if (unknown.isNotEmpty()) {
+            val message = buildString {
+                appendLine("Invalid fault code(s): ${unknown.joinToString(", ")}")
+                appendLine("All available defined codes:")
+                appendLine(DefinedFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                appendLine("All available experimental codes:")
+                appendLine(ExperimentalFaultCategory.entries.joinToString("\n") { "${it.code} (${it.name})" })
+                if (!useExperimentalOracles) {
+                    appendLine("Note: Experimental oracles are currently disabled (useExperimentalOracles=false).")
+                }
+            }
+            throw ConfigProblemException(message)
+        }
+
+        return codes.toSet()
+    }
+
+    private var disabledOracleCodesList: List<FaultCategory>? = null
+
+    private fun getDisabledOracleCodesList(): List<FaultCategory> {
+        if (disabledOracleCodesList != null) {
+            return disabledOracleCodesList!!
+        }
+
+        val definedCategories = DefinedFaultCategory.entries
+        val experimentalCategories = ExperimentalFaultCategory.entries
+
+        val allCategories: List<FaultCategory> = definedCategories + experimentalCategories
+
+        val userDisabledCodes: Set<Int> = parseDisabledCodesOrThrow(disabledOracleCodes)
+
+        val disabled: List<FaultCategory> = allCategories.filter { category ->
+            !isFaultCodeActive(category.code, userDisabledCodes)
+        }
+
+        disabledOracleCodesList = disabled.distinct()
+        return disabledOracleCodesList!!
+    }
+
 }

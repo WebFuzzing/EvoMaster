@@ -3,7 +3,12 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.service.SecurityRest.Companion
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Archive
@@ -176,6 +181,7 @@ class HttpSemanticsService {
                     ?: return@forEach // we have a DELETE but no GET on this endpoint?
                 val getOp = getDef.copy() as RestCallAction
                 getOp.doInitialize(randomness)
+                getOp.forceNewTaints()
                 getOp.bindToSamePathResolution(last)
                 getOp.auth = last.auth
                 //TODO: what if the GET needs WM handling?

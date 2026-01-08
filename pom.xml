@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>3.4.1-SNAPSHOT</version>
+    <version>4.0.1-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -18,54 +18,27 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>dbconstraint</module>
+        <module>core-parent</module>
         <module>core</module>
-        <module>core-driver-it</module>
-        <module>core-it</module>
-        <module>core-graphql-it</module>
+        <module>core-extra</module>
+        <module>core-tests</module>
         <module>client-java</module>
-        <module>e2e-tests</module>
-        <module>report</module>
-        <module>test-old-libraries</module>
-        <module>solver</module>
         <module>test-utils</module>
-        <module>wfc</module> <!-- TODO remove once moved in own repository-->
     </modules>
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/EMResearch/evomaster/issues</url>
+        <url>https://github.com/WebFuzzing/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
-        <url>https://github.com/EMResearch/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/WebFuzzing/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/WebFuzzing/evomaster.git</developerConnection>
+        <url>https://github.com/WebFuzzing/evomaster/tree/master</url>
     </scm>
 
 
     <profiles>
-        <profile>
-            <id>Configs for JDK >= 17</id>
-            <activation>
-                <jdk>[17,)</jdk>
-            </activation>
-            <!--
-                Unfortunately, recent versions of Kotlin led to crashes due JDK 17 module access shenanigans :(
-                setting up .mvn/jvm.config is not a viable option, as it messes up build in JDK 8
-                so, need to use something like
-                MAVEN_OPTS="-Xmx4g - -add-opens=java.base/java.lang=ALL-UNNAMED - -add-opens=java.base/java.io=ALL-UNNAMED"  mvn
-                when running "mvn" on command line for JDK 17 :( what a mess...
-                (btw, note that XML above does not like 2 - - together... so command cannot be directly copy&pasted)
-                for CI, this is handled directly there
-
-                Check following in case Kotlin Plugin will avoid this issues in the future:
-                https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
-            -->
-            <properties>
-                <addOpens> --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
-            </properties>
-        </profile>
         <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
@@ -86,8 +59,8 @@
                         <artifactId>maven-gpg-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
             </build>
@@ -116,25 +89,19 @@
     </licenses>
 
     <properties>
-        <addOpens></addOpens> <!-- overridden in profile -->
+        <addOpens>  --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-        <kotlin.version>1.8.20</kotlin.version>
+        <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
+        <!--  SpringBoot 2.x does not like JDK 21 -->
+        <java.version>17</java.version>
+        <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
+        <wfc.version>0.2.0</wfc.version>
         <junit.jupiter.version>5.7.2</junit.jupiter.version>
         <junit.platform.version>1.7.2</junit.platform.version>
-        <dropwizard.version>1.3.7</dropwizard.version>
-        <swagger.version>1.6.1</swagger.version>
-        <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
-        <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
-        <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
-        <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
-        <swagger.annotations.version>2.2.7</swagger.annotations.version>
-        <springboot.version>2.5.4</springboot.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
-        <springdoc.version>1.6.9</springdoc.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
         <slf4j.version>1.7.24</slf4j.version>
         <jersey.version>2.33</jersey.version>
@@ -148,11 +115,13 @@
             https://www.logicbig.com/tutorials/core-java-tutorial/java-9-changes/multi-release-jars.html
         -->
         <jackson.version>2.14.3</jackson.version>
-        <asm.version>9.7</asm.version>
-        <testcontainers.version>1.17.6</testcontainers.version>
+        <asm.version>9.9</asm.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
-        <selenium.version>4.7.2</selenium.version>
+<!--        <selenium.version>4.31.0</selenium.version>-->
+        <!--  TODO 4.11 latest version supporting JDK 8. now on 11. update once update EM-->
+        <selenium.version>4.11.0</selenium.version>
         <jetbrains.annotations.version>20.1.0</jetbrains.annotations.version>
         <antlr.version>4.9.2</antlr.version>
         <nlp.version>4.3.1</nlp.version>
@@ -177,11 +146,12 @@
         <jakarta.validation-api.version>3.0.2</jakarta.validation-api.version>
         <jakarta.persistence-api.version>3.1.0</jakarta.persistence-api.version>
         <jakarta.ws.rs-api.version>3.1.0</jakarta.ws.rs-api.version>
-        <micronaut.version>3.2.7</micronaut.version>
-        <micronaut.openapi.version>3.2.0</micronaut.openapi.version>
-        <micronaut.test.version>3.0.5</micronaut.test.version>
         <org.mongodb.version>4.2.3</org.mongodb.version>
         <org.locationtech.jts.version>1.19.0</org.locationtech.jts.version>
+        <org.opensearch.version>3.1.0</org.opensearch.version>
+        <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
+        <org.springframework.data.version>2.6.6</org.springframework.data.version>
+        <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
     </properties>
 
 
@@ -281,6 +251,12 @@
                 <scope>test</scope>
             </dependency>
 
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>commons</artifactId>
+                <version>${wfc.version}</version>
+            </dependency>
+
 
             <!-- Kotlin -->
             <dependency>
@@ -319,28 +295,7 @@
             </dependency>
 
 
-            <!-- Dependency Injection -->
-            <dependency>
-                <groupId>com.google.inject</groupId>
-                <artifactId>guice</artifactId>
-                <version>5.0.1</version>
-            </dependency>
-            <dependency> <!-- This is needed as Guice has no LifeCycle management -->
-                <groupId>com.netflix.governator</groupId>
-                <artifactId>governator</artifactId>
-                <version>1.17.12</version>
-                <exclusions>
-                    <!--It looks like it uses quite a few old versions -->
-                    <exclusion>
-                        <groupId>org.hibernate</groupId>
-                        <artifactId>hibernate-validator</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+
 
             <!--  JVM  -->
             <dependency> <!-- For bytecode instrumentation -->
@@ -368,8 +323,8 @@
             <!-- Misc -->
             <dependency>
                 <!--
-                    We do not (and SHOULD NOT) use it directly... but as it brought in transitively
-                    by different libraries, we force a specific version here to avoid conflicts (which for
+                   it brought in transitively by few
+                    different libraries, we force a specific version here to avoid conflicts (which for
                     example happened when updating Guice)
                 -->
                 <groupId>com.google.guava</groupId>
@@ -426,6 +381,12 @@
                 <groupId>net.sf.jgrapht</groupId>
                 <artifactId>jgrapht</artifactId>
                 <version>${jgrapht.version}</version>
+            </dependency>
+            <dependency>
+                <!--  Needed to avoid issues with Docker on Mac -->
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.17.0</version>
             </dependency>
 <!--            <dependency> &lt;!&ndash; Needed for Process handling in Windows for JDK 8&ndash;&gt;-->
 <!--                <groupId>net.java.dev.jna</groupId>-->
@@ -531,11 +492,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-toml</artifactId>
                 <version>${jackson.version}</version>
@@ -551,11 +507,6 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-kotlin</artifactId>
                 <version>${jackson.version}</version>
@@ -567,149 +518,6 @@
                 <version>${jersey.version}</version>
             </dependency>
 
-
-            <!-- DropWizard -->
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-core</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-assets</artifactId>
-                <version>${dropwizard.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-testing</artifactId>
-                <version>${dropwizard.version}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.dropwizard</groupId>
-                <artifactId>dropwizard-jetty</artifactId>
-                <version>${dropwizard.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <!-- Spring -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-web</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-jpa</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-security</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-validation</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-test</artifactId>
-                <scope>test</scope>
-                <version>${springboot.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-mongodb</artifactId>
-                <version>${springboot.version}</version>
-            </dependency>
-
-
-            <!--  SpringFox: Swagger documentation for SpringBoot-->
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-swagger2</artifactId>
-                <version>${springfox.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.springfox</groupId>
-                <artifactId>springfox-spring-web</artifactId>
-                <version>${springfox.version}</version>
-            </dependency>
-
-            <!--  SpringDoc: Swagger/OpenApi documentation for SpringBoot-->
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-security</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-kotlin</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-
-            <!--
-                Swagger for JaxRS
-
-                TODO: at the moment, only used for Dropwizard test.
-                We ll need to update to v3 version
-              -->
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-jaxrs</artifactId>
-                <version>${swagger.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-jersey2-jaxrs</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-hibernate-validations</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-
-
-            <!--  OpenApi/Swagger Parser-->
-            <dependency>
-                <groupId>io.swagger</groupId>
-                <artifactId>swagger-parser</artifactId>
-                <version>${swagger.parser-v2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.swagger.parser.v3</groupId>
-                <artifactId>swagger-parser</artifactId>
-                <version>${swagger.parser-v3.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.atlassian.oai</groupId>
-                <artifactId>swagger-request-validator-core</artifactId>
-                <version>2.42.0</version>
-            </dependency>
 
             <!-- databases -->
             <dependency>
@@ -767,6 +575,27 @@
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
                 <version>${org.mongodb.version}</version>
+            </dependency>
+
+            <!-- Redis/Lettuce -->
+            <dependency>
+                <groupId>io.lettuce</groupId>
+                <artifactId>lettuce-core</artifactId>
+                <version>${io.lettuce.core.version}</version>
+            </dependency>
+
+            <!-- OpenSearch -->
+            <dependency>
+                <groupId>org.opensearch.client</groupId>
+                <artifactId>opensearch-java</artifactId>
+                <version>${org.opensearch.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.opensearch</groupId>
+                <artifactId>opensearch-testcontainers</artifactId>
+                <version>${org.opensearch.testcontainers.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <!--   XML  -->
@@ -973,61 +802,6 @@
                 <version>${dns.cache.manipulator.version}</version>
             </dependency>
 
-            <!-- Micronaut -->
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-bom</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-inject</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-validation</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut.test</groupId>
-                <artifactId>micronaut-test-junit5</artifactId>
-                <version>${micronaut.test.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http-client</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-http-server-netty</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-jackson-databind</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-runtime</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micronaut</groupId>
-                <artifactId>micronaut-core</artifactId>
-                <version>${micronaut.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations</artifactId>
-                <version>${swagger.annotations.version}</version>
-            </dependency>
-
-
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>mockserver</artifactId>
@@ -1048,6 +822,35 @@
                 <artifactId>itu</artifactId>
                 <version>1.10.2</version>
             </dependency>
+
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>1.59</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>1.7</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>fastjson</artifactId>
+                <version>1.2.83</version>
+            </dependency>
+
+            <!--
+                We shouldn't use Lombok in EM, but some E2E from external contributors do
+             -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.30</version>
+            </dependency>
+
+
 
         </dependencies>
     </dependencyManagement>
@@ -1102,11 +905,13 @@
                             Fucking JDK 17!!! And fuck you JEP 403!!!
                             https://bugs.openjdk.java.net/browse/JDK-8266851
                         -->
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
-                        <!-- Needed for some weird bug in JDK used in CircleCI-->
-                        <!--  Commented out, as no longer using CircleCI-->
-                        <!--  <useSystemClassLoader>false</useSystemClassLoader>-->
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Xss4m -Dfile.encoding=UTF-8 -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
                         <runOrder>alphabetical</runOrder>
+                        <excludes>
+                            <!-- Do NOT run integration tests with surefire... use failsafe!!!-->
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*IT.kt</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
 
@@ -1114,13 +919,14 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>3.0.0-M4</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <forkCount>1</forkCount>
-                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true ${addOpens}</argLine>
-                        <useSystemClassLoader>false</useSystemClassLoader>
+                        <trimStackTrace>false</trimStackTrace>
+                        <argLine>@{argLine} -ea -Xms1024m -Xmx4096m -Djdk.attach.allowAttachSelf=true -Duser.language=en -Duser.country=GB ${addOpens}</argLine>
+                        <runOrder>alphabetical</runOrder>
                     </configuration>
                     <executions>
                         <execution>
@@ -1178,10 +984,9 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+                    <version>3.14.1</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
+                        <release>${java.version}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
 
                     </configuration>
@@ -1257,16 +1062,18 @@
                     </executions>
                 </plugin>
 
-                <!-- We deploy to SonaType, which then sync to Maven Central -->
+                <!-- To deploy to Maven Central
+                    https://central.sonatype.com/account
+                    https://central.sonatype.org/publish/publish-portal-maven/
+                -->
                 <plugin>
-                    <groupId>org.sonatype.plugins</groupId>
-                    <artifactId>nexus-staging-maven-plugin</artifactId>
-                    <version>1.6.8</version>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.8.0</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <serverId>ossrh</serverId>
-                        <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                        <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        <publishingServerId>central</publishingServerId>
+                        <autoPublish>true</autoPublish>
                     </configuration>
                 </plugin>
 

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.impact.impactinfocollection.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.impact.impactinfocollection.*
 import org.evomaster.core.search.impact.impactinfocollection.value.numeric.BinaryGeneImpact
 

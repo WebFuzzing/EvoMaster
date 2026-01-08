@@ -14,7 +14,7 @@ import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildResou
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.RestTestCaseWriter
 import org.evomaster.core.problem.enterprise.SampleType
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
@@ -25,6 +25,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.UUIDGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.MediaType
@@ -269,7 +270,7 @@ class TestCaseWriterTest : WriterTestBase(){
         val id = 0L
 
         val integerGene = IntegerGene(idColumn.name, 42, 0, 100)
-        val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable", integerGene, 10)
+        val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, TableId("myTable"), integerGene, 10)
         val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
         val insertIntoTableAction = SqlAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
@@ -316,8 +317,8 @@ class TestCaseWriterTest : WriterTestBase(){
         val pkGeneUniqueId = 12345L
 
         val integerGene = IntegerGene(idColumn.name, 42, 0, 100)
-        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, pkGeneUniqueId)
-        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, TableId("Table0"), integerGene, pkGeneUniqueId)
+        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, TableId("Table1"), integerGene, 10)
 
 
         val firstInsertionId = 1001L

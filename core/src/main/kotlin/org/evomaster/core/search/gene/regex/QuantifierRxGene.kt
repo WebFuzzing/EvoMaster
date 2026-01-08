@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
@@ -189,33 +188,7 @@ class QuantifierRxGene(
                 .joinToString("")
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is QuantifierRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {
-                if (this.atoms.size == other.atoms.size) {
-                    //same size, so just copy over the values
-                    var ok = true
-                    for (i in 0 until other.atoms.size) {
-                        ok = ok && this.atoms[i].copyValueFrom(other.atoms[i])
-                    }
-                    ok
-                } else {
-                    //different size, so clear and create new copies
-                    this.killAllChildren()
-                    other.atoms.forEach{
-                        val a = it.copy()
-                        a.resetLocalIdRecursively()
-                        this.addChild(a)
-                    }
-                    true
-                }
-            }, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is QuantifierRxGene) {
@@ -227,7 +200,9 @@ class QuantifierRxGene(
         }
 
         for (i in 0 until other.atoms.size) {
-            if (!this.atoms[i].containsSameValueAs(other.atoms[i])) {
+            val x = this.atoms[i]
+            val y = other.atoms[i]
+            if (!x.possiblySame(y) || !x.containsSameValueAs(y)) {
                 return false
             }
         }
@@ -242,30 +217,27 @@ class QuantifierRxGene(
     }
 
 
-    /*
-        Note that value binding cannot be performed on the [atoms]
-     */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is QuantifierRxGene){
-            var result = true
-            if(atoms.size == gene.atoms.size){
-                atoms.indices.forEach {
-                    val r = atoms[it].bindValueBasedOn(gene.atoms[it])
-                    if (!r)
-                        LoggingUtil.uniqueWarn(log, "value binding for QuantifierRxGene does not perform successfully at index $it")
-                    result =  r && result
-                }
-            }else{
-                this.killAllChildren()
-                gene.atoms.forEach{
-                    val a = it.copy()
-                    a.resetLocalIdRecursively()
-                    this.addChild(a)
-                }
-            }
-            return result
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is QuantifierRxGene) {
+            return false
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind the QuantifierRxGene with ${gene::class.java.simpleName}")
-        return false
+
+        return if (this.atoms.size == other.atoms.size) {
+            //same size, so just copy over the values
+            var ok = true
+            for (i in 0 until other.atoms.size) {
+                ok = ok && this.atoms[i].unsafeCopyValueFrom(other.atoms[i])
+            }
+            ok
+        } else {
+            //different size, so clear and create new copies
+            this.killAllChildren()
+            other.atoms.forEach{
+                val a = it.copy()
+                a.resetLocalIdRecursively()
+                this.addChild(a)
+            }
+            true
+        }
     }
 }

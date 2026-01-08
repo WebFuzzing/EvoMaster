@@ -3,26 +3,33 @@ package org.evomaster.core.problem.rest.individual
 import com.google.inject.*
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.resource.ResourceCluster
 import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.service.*
+import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
+import org.evomaster.core.problem.rest.service.fitness.RestFitness
+import org.evomaster.core.problem.rest.service.module.ResourceRestModule
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.problem.util.BindingBuilder
 import org.evomaster.core.problem.util.BindingBuilder.isExtraTaintParam
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
+import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.impact.impactinfocollection.ImpactsOfIndividual
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.Assertions.*
@@ -83,7 +90,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
     override fun getFitnessFunction(): AbstractRestFitness = ff
 
     private fun sampleDbAction(table : Table) : List<SqlAction>{
-        val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.name)
+        val actions = sqlInsertBuilder!!.createSqlInsertionAction(table.id)
         return actions.map { it.copy() as SqlAction }
     }
 
@@ -99,7 +106,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
         }
     }
 
-    private fun sampleRestIndividual(dbSize : Int, resourceSize: Int): RestIndividual{
+    private fun sampleRestIndividual(dbSize : Int, resourceSize: Int): RestIndividual {
         val sqlActions = mutableListOf<SqlAction>()
         val resoureCalls = mutableListOf<RestResourceCalls>()
         do {
@@ -132,6 +139,7 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
 
             val ind = sampleRestIndividual(dbSize, resourceSize)
             assertEquals(dbSize + resourceSize, ind.getViewOfChildren().size)
+            ind.doInitializeLocalId()
 
             val call = sampleResourceCall()
 
@@ -234,10 +242,13 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
                     assertEquals((postBody1 as ObjectGene).refType, (postBody2 as ObjectGene).refType)
 
                     (postBody1 as ObjectGene).fields.forEachIndexed { index, g->
-                        val gene1 = ParamUtil.getValueGene(g)
-                        val gene2 = ParamUtil.getValueGene((postBody2 as ObjectGene).fields[index])
-                        assertTrue(gene1.isDirectBoundWith(gene2))
-                        assertTrue(gene2.isDirectBoundWith(gene1))
+                        if(!postBody1.isAdditionalField(g)){
+                            val gene1 = ParamUtil.getValueGene(g)
+                            val gene2 = ParamUtil.getValueGene((postBody2 as ObjectGene).fields[index])
+                            assertTrue(gene1.isDirectBoundWith(gene2))
+                            assertTrue(gene2.isDirectBoundWith(gene1))
+                        }
+
                     }
 
                 }
@@ -308,7 +319,11 @@ class RestResourceIndividualDisabledHMTest : RestIndividualTestBase(){
             val allGene = call.seeActions(ActionFilter.ALL)
                 .flatMap { it.seeTopGenes() }
                 .filter { !isExtraTaintParam(it.name) && it.isMutable() && it !is SqlPrimaryKeyGene && it !is SqlForeignKeyGene }
-                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }.filter { it.getViewOfChildren().isEmpty() }
+                .flatMap { it.flatView{g: Gene -> g is DateGene || g is DateTimeGene || g is TimeGene} }
+                .filter {
+                    it.getViewOfChildren().isEmpty() &&
+                            (it is CompositeConditionalFixedGene && it.isFixed) // skip flexible gene
+                }
 
             allGene.groupBy { it.name }.forEach { (t, u) ->
                 if (u.size > 1){

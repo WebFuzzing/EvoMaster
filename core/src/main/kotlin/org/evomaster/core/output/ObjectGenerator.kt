@@ -1,25 +1,24 @@
 package org.evomaster.core.output
 
 import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 
 class ObjectGenerator {
 
     private lateinit var swagger: OpenAPI
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    fun setSwagger(sw: OpenAPI,
-                   enableConstraintHandling: Boolean){
-        swagger = sw
-        modelCluster.clear()
-        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
-    }
+//    fun setSwagger(sw: OpenAPI,
+//                   enableConstraintHandling: Boolean){
+//        swagger = sw
+//        modelCluster.clear()
+//        RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster, RestActionBuilderV3.Options(enableConstraintHandling=enableConstraintHandling))
+//    }
 
     fun getSwagger(): OpenAPI{
         return swagger
@@ -54,7 +53,7 @@ class ObjectGenerator {
                 val extendedName = "$k${fieldName}"
                 // even if there are not characters in common, a matching field should still have
                 // a probability of being chosen (albeit a small one).
-                val temp = (1.toLong() + longestCommonSubsequence(parameter.toLowerCase(), extendedName.toLowerCase())
+                val temp = (1.toLong() + longestCommonSubsequence(parameter.lowercase(), extendedName.lowercase())
                         .length.toFloat())/ (1.toLong() + Integer.max(parameter.length, extendedName.length).toFloat())
                 result[Pair(k, fieldName)] = temp
                 sum += temp

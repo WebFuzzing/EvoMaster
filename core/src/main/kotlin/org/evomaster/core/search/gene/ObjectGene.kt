@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -7,8 +8,8 @@ import org.evomaster.core.problem.graphql.GqlConst
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.collection.TupleGene
-import org.evomaster.core.search.gene.optional.FlexibleGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.root.CompositeConditionalFixedGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -77,6 +78,8 @@ class ObjectGene(
         private const val PROB_MODIFY_SIZE_ADDITIONAL_FIELDS = 0.1
         // the default maximum size for additional fields
         private const val MAX_SIZE_ADDITIONAL_FIELDS = 5
+
+        private val mapper = ObjectMapper()
     }
 
     val fields : List<out Gene>
@@ -109,11 +112,10 @@ class ObjectGene(
                 .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!isFixed){
-            Lazy.assert {
-                template != null && additionalFields != null
-            }
-            if (additionalFields!!.isNotEmpty())
+            Lazy.assert { template != null && additionalFields != null }
+            if (additionalFields!!.isNotEmpty()) {
                 killChildren(additionalFields!!)
+            }
             val num = randomness.nextInt(MAX_SIZE_ADDITIONAL_FIELDS)
             repeat(num){
                 val added = sampleElementToAdd(randomness)
@@ -186,37 +188,7 @@ class ObjectGene(
         return additionalFields!!.any { it.first.value == fieldToAdd.first.value}
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ObjectGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (other.isFixed != isFixed)
-            throw IllegalArgumentException("cannot copy value for ObjectGene if their isFixed is different")
-
-        val updateOk = updateValueOnlyIfValid(
-            {
-                var ok = true
-
-                for (i in fixedFields.indices) {
-                    ok = ok && this.fixedFields[i].copyValueFrom(other.fixedFields[i])
-                }
-                ok
-            }, true
-        )
-
-        if (!updateOk) return updateOk
-
-        if (isFixed) return true
-
-        if (!template!!.possiblySame(other.template!!))
-            throw IllegalArgumentException("different template ${other.template.javaClass}")
-
-
-        //TODO for additional fields
-
-        return true
-    }
 
 
     /**
@@ -261,7 +233,7 @@ class ObjectGene(
 
         if (other.isFixed != isFixed) return false
 
-        if (!isFixed && template!!.possiblySame(other.template!!))
+        if (!isFixed && ! template!!.possiblySame(other.template!!))
             throw IllegalArgumentException("different template ${other.template.javaClass}")
 
         return this.fixedFields.size == other.fixedFields.size
@@ -271,36 +243,51 @@ class ObjectGene(
         )
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is ObjectGene
-                && (fixedFields.indices).all { fixedFields[it].possiblySame(gene.fixedFields[it]) }
-                && isFixed == gene.isFixed
-                && (isFixed || template!!.possiblySame(gene.template!!))) {
-
-            var result = true
-            (fixedFields.indices).forEach {
-                val r = fixedFields[it].bindValueBasedOn(gene.fixedFields[it])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the field ${fixedFields[it].name}")
-                result = result && r
-            }
-            if (!result)
-                LoggingUtil.uniqueWarn(log, "fail to fully bind field values with the ObjectGene")
-
-            //TODO bind additional fields
-
-            return result
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is ObjectGene) {
+            return false
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind the ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
-        return false
+        if (other.isFixed != isFixed)
+            return false
+
+        if (!isFixed && !template!!.possiblySame(other.template!!))
+            return false
+
+        //TODO what if they have a different number of fields, or name not match???
+        // semantic of this function is unclear, really need TODO refactoring
+
+        var ok = true
+
+        for (i in fixedFields.indices) {
+            ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
+        }
+
+        if(!isFixed){
+            if (additionalFields!!.isNotEmpty()) {
+                killChildren(additionalFields!!)
+            }
+            val otherAdditionalFields = other.additionalFields
+            otherAdditionalFields?.forEach {
+                addChild(it.copy())
+            }
+        }
+
+        return ok
     }
+
+
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
         if (additionalGeneMutationInfo.impact != null
                 && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
-            val impacts = internalGenes.map { additionalGeneMutationInfo.impact.fixedFields.getValue(it.name) }
+            val impacts = internalGenes.map {
+                /*
+                  TODO here we need to consider genes which belongs to fixedFiled or not
+                 */
+                additionalGeneMutationInfo.impact.fixedFields.getValue(it.name)
+            }
             val selected = mwc.selectSubGene(
                     internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
@@ -326,7 +313,7 @@ class ObjectGene(
             throw IllegalStateException("do not support getValueAsPrintableString with mode ($mode) for non-fixed ObjectGene")
         val buffer = StringBuffer()
 
-        val includedFields = fields.filter {
+        val includedFields = fixedFields.filter {
             it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         } .filter { it.isPrintable() }
 
@@ -605,5 +592,80 @@ class ObjectGene(
     private fun closeXml(tagName: String) = "</$tagName>"
 
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
+        val tree = mapper.readTree(value)
+
+        if(! tree.isObject){
+            return false
+        }
+
+        val fields = tree.fields().asSequence().toList()
+
+        var ok = true
+
+        this.fixedFields.forEach {
+
+            val optional = it.getWrappedGene(OptionalGene::class.java)
+            val matchingEntry = fields.find { f -> f.key == it.name }
+
+            if(optional != null && matchingEntry == null) {
+                optional.isActive = false
+            }
+
+            if(matchingEntry != null) {
+                val text = matchingEntry.value.toString()
+                /*
+                    TODO unsure if this should be handled here, or rather as part of setValueBasedOn.
+                    but, in this latter case, it would need quite a bit of refactoring
+                 */
+                val input = GeneUtils.removeEnclosedQuotationMarks(text)
+                ok = ok && it.unsafeSetFromStringValue(input)
+            }
+        }
+
+        val names = this.fixedFields.map { it.name }
+        val extraInputs = fields.filter { !names.contains(it.key) }
+
+        if(isFixed && extraInputs.isNotEmpty()) {
+            /*
+                TODO: Refactor. do we really need to have boolean returned in this function?
+                ie, need to distinguish between "must" make modifications exactly as asked, and when
+                a "best-effort" is enough
+             */
+            //return false
+        }
+
+        if(!isFixed){
+            //first remove all
+            val extra = additionalFields!!
+            extra.forEach {
+                killChild(it)
+            }
+
+            extraInputs.forEach {
+                val x = template!!.copy() as PairGene<StringGene, Gene>
+                /*
+                    WARNING: as we do not have access to randomness here, there is no guarantee
+                    that, if any entry was not fully specified, the resulting copied gene will be
+                    locally valid
+                 */
+                if(this.initialized){
+                    x.markAllAsInitialized()
+                }
+                x.first.unsafeSetFromStringValue(it.key)
+                x.second.unsafeSetFromStringValue(GeneUtils.removeEnclosedQuotationMarks(it.value.toString()))
+                addChild(x)
+            }
+        }
+
+        return ok
+    }
+
+
+    fun isAdditionalField(gene: Gene) : Boolean{
+        if (gene !is PairGene<*,*>) return false
+        return additionalFields?.contains(gene) ?: false
+    }
 }

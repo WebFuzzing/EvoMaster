@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.network
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -12,6 +11,7 @@ import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMuta
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.InetAddress
 
 class InetGene(
         name: String,
@@ -48,40 +48,42 @@ class InetGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is InetGene -> {
-                var result = true
-                repeat(octets.size) {
-                    result = result && octets[it].bindValueBasedOn(gene.octets[it])
-                }
-                result
+
+
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * Set value from a string of [InetAddress].
+     * If the string is valid, returns true, otherwise false.
+     */
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return try {
+            val address = value.split(".")
+            if (address.size != INET_SIZE) return false
+            var result = true
+            address.forEachIndexed { i, v ->
+                result = result && octets[i].unsafeSetFromStringValue(v.toInt().toString())
             }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind MacAddrGene with ${gene::class.java.simpleName}")
-                false
-            }
+            result
+        } catch (e: Exception) {
+            false
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is InetGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         if (octets.size != other.octets.size) {
-            throw IllegalArgumentException(
-                    "cannot bind MacAddrGene${octets.size} with MacAddrGene${other.octets.size}"
-            )
+            return false
         }
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                repeat(octets.size) {
-                    ok = ok && octets[it].copyValueFrom(other.octets[it])
-                }
-                ok
-            }, true
-        )
+
+        var ok = true
+
+        repeat(octets.size) {
+            ok = ok && octets[it].unsafeCopyValueFrom(other.octets[it])
+        }
+        return ok
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

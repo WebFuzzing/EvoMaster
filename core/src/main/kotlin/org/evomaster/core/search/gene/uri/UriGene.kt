@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.uri
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
@@ -69,12 +68,6 @@ class UriGene(name: String,
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat, extraCheck)
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is UriGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({gene.copyValueFrom(other.gene)}, false)
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is UriGene){
@@ -83,10 +76,17 @@ class UriGene(name: String,
         return gene.containsSameValueAs(other.gene)
     }
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return gene.bindValueBasedOn(gene)
+    override fun getPhenotype(): Gene {
+        return gene
     }
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if(other is UriGene){
+            return gene.unsafeCopyValueFrom(other.gene)
+        }
+        return gene.unsafeCopyValueFrom(other)
+    }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

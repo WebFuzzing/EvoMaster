@@ -8,8 +8,8 @@ import org.evomaster.core.search.action.ActionTree
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.mongo.MongoDbAction
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
@@ -200,6 +200,7 @@ class RestResourceCalls(
             ActionFilter.ONLY_MONGO -> mongoDbActions
             ActionFilter.ONLY_DNS -> dnsActions
             ActionFilter.ONLY_DB -> sqlActions.plus(mongoDbActions)
+            ActionFilter.ONLY_SCHEDULE_TASK -> throw IllegalStateException("schedule task is not support in resource-based solution for REST Problem")
         }
     }
 

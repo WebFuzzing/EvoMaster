@@ -52,6 +52,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var harvestResponseHandler: HarvestActualHttpWsResponseHandler
 
+    @Inject
+    protected lateinit var sampler : Sampler<T>
+
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
@@ -156,7 +159,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 log.trace("now it is {}th, do addInitializingActions ends", i)
             }
 
-            Lazy.assert{current.individual.verifyValidity(); true}
+            Lazy.assert{current.individual.verifyValidity(true); true}
 
             // skip to mutate the individual if any new harvested external actions are added
             val mutatedInd = if (!anyHarvestedExternalServiceActions)
@@ -166,7 +169,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
-            Lazy.assert{mutatedInd.verifyValidity(); true}
+            sampler.applyDerivedParamModifications(mutatedInd)
+
+            Lazy.assert{mutatedInd.verifyValidity(true); true}
 
             //FIXME: why setOf()??? are we skipping coverage collection here???
             // or always added non-covered from archive? if so, name "targets" is confusing

@@ -25,7 +25,7 @@ import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.collection.EnumGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.service.Randomness
 import org.glassfish.jersey.client.ClientConfig
@@ -532,10 +532,11 @@ class HarvestActualHttpWsResponseHandler {
         try {
             val template = getACopyOfItsActualResponseIfExist(geneToMutate, probability)?.responseBody ?: return false
 
-            val v = ParamUtil.getValueGene(geneToMutate)
-            val t = ParamUtil.getValueGene(template)
+            val v = geneToMutate.getLeafGene()
+            val t = template.getLeafGene()
             if (v::class.java == t::class.java) {
                 v.copyValueFrom(t)
+                v.forceNewTaints()
                 return true
             } else if (v is StringGene) {
                 // add template as part of specialization

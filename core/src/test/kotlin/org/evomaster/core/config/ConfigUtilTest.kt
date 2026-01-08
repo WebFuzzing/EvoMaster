@@ -1,6 +1,6 @@
 package org.evomaster.core.config
 
-import org.evomaster.client.java.controller.api.dto.auth.HttpVerb
+import com.webfuzzing.commons.auth.LoginEndpoint
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -71,7 +71,7 @@ class ConfigUtilTest{
         assertEquals(2, config.auth.size)
         for(a in config.auth){
             assertEquals("/login", a.loginEndpointAuth.endpoint)
-            assertEquals(HttpVerb.POST, a.loginEndpointAuth.verb)
+            assertEquals(LoginEndpoint.HttpVerb.POST, a.loginEndpointAuth.verb)
             assertEquals( "application/json", a.loginEndpointAuth.contentType)
             assertEquals(true, a.loginEndpointAuth.expectCookies)
         }
@@ -79,5 +79,15 @@ class ConfigUtilTest{
         assertTrue(config.auth.any { it.name == "bar" })
         assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd == null && it.loginEndpointAuth.payloadRaw != null})
         assertTrue(config.auth.any { it.loginEndpointAuth.payloadUserPwd != null && it.loginEndpointAuth.payloadRaw == null})
+    }
+
+
+    @Test
+    fun testIssue1159(){
+
+        val path = "${basePath}/issue1159.yaml"
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            val config = ConfigUtil.readFromFile(path)
+        }
     }
 }

@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.time
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -66,38 +65,21 @@ class SqlTimeIntervalGene(
         return "${days.value} days ${time.getValueAsRawString()}"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {this.days.copyValueFrom(other.days)
-                    && this.time.copyValueFrom(other.time)}, true
-        )
+        return this.days.unsafeCopyValueFrom(other.days)
+                    && this.time.unsafeCopyValueFrom(other.time)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlTimeIntervalGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return this.days.containsSameValueAs(other.days)
                 && this.time.containsSameValueAs(other.time)
-    }
-
-
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlTimeIntervalGene -> {
-                days.bindValueBasedOn(gene.days) &&
-                        time.bindValueBasedOn(gene.time)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind IntervalGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

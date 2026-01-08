@@ -1,0 +1,72 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster</artifactId>
+        <version>4.0.1-SNAPSHOT</version>
+    </parent>
+
+    <groupId>org.evomaster</groupId>
+    <artifactId>evomaster-core-parent</artifactId>
+    <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
+
+    <properties>
+        <!--   upgrading to 1.0.68  breaks Spring... TODO would need try upgrading in own branch    -->
+        <swagger.parser-v2.version>1.0.61</swagger.parser-v2.version>
+        <!--   upgrading to 2.1.18  breaks Spring... TODO would need try upgrading in own branch -->
+        <swagger.parser-v3.version>2.1.8</swagger.parser-v3.version>
+        <swagger.annotations.version>2.2.7</swagger.annotations.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Dependency Injection -->
+            <dependency>
+                <groupId>com.google.inject</groupId>
+                <artifactId>guice</artifactId>
+                <version>5.0.1</version>
+            </dependency>
+            <dependency> <!-- This is needed as Guice has no LifeCycle management -->
+                <groupId>com.netflix.governator</groupId>
+                <artifactId>governator</artifactId>
+                <version>1.17.12</version>
+                <exclusions>
+                    <!--It looks like it uses quite a few old versions -->
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-validator</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!--  OpenApi/Swagger Parser-->
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-parser</artifactId>
+                <version>${swagger.parser-v2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.parser.v3</groupId>
+                <artifactId>swagger-parser</artifactId>
+                <version>${swagger.parser-v3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger.annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.atlassian.oai</groupId>
+                <artifactId>swagger-request-validator-core</artifactId>
+                <version>2.44.9</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

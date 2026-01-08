@@ -5,12 +5,12 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>3.4.1-SNAPSHOT</version>
+        <version>4.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-controller</artifactId>
     <packaging>jar</packaging>
-
+    <name>${project.groupId}:${project.artifactId}</name>
 
     <dependencies>
         <!--
@@ -197,6 +197,11 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongodb-driver-sync</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.lettuce</groupId>
+            <artifactId>lettuce-core</artifactId>
             <scope>test</scope>
         </dependency>
 

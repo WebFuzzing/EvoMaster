@@ -1,5 +1,6 @@
 package org.evomaster.core.output.service
 
+import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
 import org.evomaster.core.output.Lines
@@ -8,23 +9,36 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.TestWriterUtils.formatJsonWithEscapes
 import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
+import org.evomaster.core.output.dto.DtoCall
+import org.evomaster.core.output.dto.GeneToDto
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.security.data.ActionStubMapping
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.action.EvaluatedAction
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import javax.ws.rs.core.MediaType
+import kotlin.collections.filter
 
 
 abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
+
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
     companion object {
         private val log = LoggerFactory.getLogger(HttpWsTestCaseWriter::class.java)
@@ -54,12 +68,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
-
         CookieWriter.handleGettingCookies(format, ind, lines, baseUrlOfSut, this)
         TokenWriter.handleGettingTokens(format, ind, lines, baseUrlOfSut, this)
+
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
     }
 
     protected fun handlePreCallSetup(call: HttpWsAction, lines: Lines, res: HttpWsCallResult) {
@@ -106,12 +121,54 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
+    private fun writeDto(call: HttpWsAction, lines: Lines): String {
+        val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
+        if (bodyParam != null && bodyParam.isJson()) {
+
+            val primaryGene = bodyParam.primaryGene()
+            val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
+            val actionName = call.getName()
+            if (choiceGene != null) {
+                // We only generate DTOs for ChoiceGene objects that contain either an ObjectGene or ArrayGene in their
+                // genes. This check is necessary since when using `example` and `default` entries,
+                // "primitive" genes are represented as ChoiceGene with  an EnumGene and the actual
+                // String/Integer/Number/etc gene
+                if (hasObjectOrArrayGene(choiceGene)) {
+                    return generateDtoCall(choiceGene, actionName, lines).varName
+                }
+            } else {
+                val leafGene = primaryGene.getLeafGene()
+                if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
+                    return generateDtoCall(leafGene, actionName, lines).varName
+                }
+            }
+
+        }
+        return ""
+    }
+
+    private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
+        val geneToDto = GeneToDto(format)
+
+        val dtoName = geneToDto.getDtoName(gene, actionName, false)
+        val dtoCall = geneToDto.getDtoCall(gene, dtoName, mutableListOf(counter++), false)
+
+        dtoCall.objectCalls.forEach {
+            lines.add(it)
+        }
+        lines.addEmpty()
+        return dtoCall
+    }
+
+    private fun hasObjectOrArrayGene(gene: ChoiceGene<*>): Boolean {
+        return gene.getViewOfChildren().any { it is ObjectGene || it is ArrayGene<*> }
+    }
 
     protected fun isVerbWithPossibleBodyPayload(verb: String): Boolean {
 
         val verbs = arrayOf("post", "put", "patch")
 
-        if (verbs.contains(verb.toLowerCase()))
+        if (verbs.contains(verb.lowercase()))
             return true;
         return false;
     }
@@ -183,7 +240,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //headers from schema
         call.parameters.filterIsInstance<HeaderParam>()
             .filter { !prechosenAuthHeaders.contains(it.name) }
-            .filter { elc?.token == null || !(it.name.equals(elc.token.httpHeaderName, true)) }
+            .filter { elc?.token == null || !(it.name.equals(elc.token.sendName, true)) }
             .filter { it.isInUse() }
             .forEach {
                 val x = it.getRawValue()
@@ -199,11 +256,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if (elc != null) {
 
             if (!elc.expectsCookie()) {
-                val tokenHeader = elc.token!!.httpHeaderName
+                //TODO should check for sendIn
+                val tokenHeader = elc.token!!.sendName
                 if (format.isPython()) {
-                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.authPayloadName(elc)} # ${call.auth.name}")
                 } else {
-                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.authPayloadName(elc)}) // ${call.auth.name}")
                 }
             } else {
                 when {
@@ -273,7 +331,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines: Lines,
         testCaseName: String,
         testSuitePath: Path?,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        addTimeMeasurement: Boolean,
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -300,10 +359,30 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val call = evaluatedAction.action as HttpWsAction
         val res = evaluatedAction.result as HttpWsCallResult
 
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaultsPrologue(lines, call)
+        }
+
+        var timeStartName = ""
+
+        if(addTimeMeasurement)
+        {
+            timeStartName = handleExecutionTimePrologue(lines);
+        }
+
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
+        }
+
+        if(addTimeMeasurement)
+        {
+            handleExecutionTimeEpilogue(lines, timeStartName, res.getVulnerableForSQLI())
+        }
+
+        if (config.ssrf && res.getVulnerableForSSRF()) {
+            handleSSRFFaultsEpilogue(lines, call)
         }
 
         // reset all used external service action
@@ -322,6 +401,64 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
+
+    private fun handleExecutionTimePrologue(lines: Lines):String {
+
+        var varName = createUniqueResponseVariableName() + "_ms"
+        lines.addEmpty(1)
+        lines.addSingleCommentLine("$varName stores the start time in milliseconds")
+
+        if(format.isJava()){
+            lines.addStatement("long $varName = System.currentTimeMillis()")
+        } else if (format.isKotlin()) {
+            lines.addStatement("val $varName = System.currentTimeMillis()")
+        } else if(format.isPython()) {
+            lines.addStatement("$varName = time.perf_counter() * 1000")
+        } else if(format.isJavaScript()) {
+            lines.addStatement("$varName = performance.now()")
+        }
+        lines.addEmpty(1)
+
+        return varName
+    }
+
+    private fun handleExecutionTimeEpilogue(lines: Lines, varName: String, isVulnerable: Boolean) {
+        var finalVarName = createUniqueResponseVariableName() + "_ms"
+        lines.addEmpty(1)
+
+        lines.addSingleCommentLine("$finalVarName stores the total execution time in milliseconds")
+        if(format.isJava()){
+            lines.addStatement("long $finalVarName = System.currentTimeMillis() - $varName")
+        } else if (format.isKotlin()) {
+            lines.addStatement("val $finalVarName = System.currentTimeMillis() - $varName")
+        } else if(format.isPython()) {
+            lines.addStatement("$finalVarName = (time.perf_counter() * 1000) - $varName")
+        } else if(format.isJavaScript()) {
+            lines.addStatement("$finalVarName = performance.now() - $varName")
+        }
+
+        lines.addEmpty(1)
+
+        if(isVulnerable)
+        {
+            lines.addSingleCommentLine("Note: SQL Injection vulnerability detected in this call. Expected response time (sqliInjectedSleepDurationMs) should be greater than ${config.sqliInjectedSleepDurationMs} ms.")
+            when{
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName > ${config.sqliInjectedSleepDurationMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs})")
+                format.isPython() -> lines.addStatement("assert $finalVarName > ${config.sqliInjectedSleepDurationMs}")
+                else -> {}
+            }
+        }else {
+            lines.addSingleCommentLine("Note: No SQL Injection vulnerability detected in this call. Expected response time (sqliBaselineMaxResponseTimeMs) should be less than ${config.sqliBaselineMaxResponseTimeMs} ms.")
+            when{
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName < ${config.sqliBaselineMaxResponseTimeMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
+                format.isPython() -> lines.addStatement("assert $finalVarName < ${config.sqliBaselineMaxResponseTimeMs}")
+                else -> {}
+            }
+        }
+    }
+
     protected fun makeHttpCall(call: HttpWsAction, lines: Lines, res: HttpWsCallResult, baseUrlOfSut: String): String {
         //first handle the first line
         val responseVariableName = createUniqueResponseVariableName()
@@ -332,13 +469,18 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add(getAcceptHeader(call, res))
         }
 
+        var dtoVar: String? = null
+        if (config.dtoSupportedForPayload()) {
+            dtoVar = writeDto(call, lines)
+        }
+
         handleFirstLine(call, lines, res, responseVariableName)
 
         when {
             format.isJavaOrKotlin() -> {
                 lines.indent(2)
                 handleHeaders(call, lines)
-                handleBody(call, lines)
+                handleBody(call, lines, dtoVar)
                 handleVerbEndpoint(baseUrlOfSut, call, lines)
             }
 
@@ -383,7 +525,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    protected open fun handleBody(call: HttpWsAction, lines: Lines) {
+    protected open fun handleBody(call: HttpWsAction, lines: Lines, dtoVar: String? = null) {
 
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
@@ -410,7 +552,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
                 val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
 
-                printSendJsonBody(json, lines)
+                printSendJsonBody(json, lines, dtoVar)
 
             } else if (bodyParam.isTextPlain()) {
 
@@ -466,7 +608,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
     }
 
-    fun printSendJsonBody(json: String, lines: Lines) {
+    fun printSendJsonBody(json: String, lines: Lines, dtoVar: String? = null) {
 
         if(json.isEmpty()){
             //nothing is sent
@@ -485,7 +627,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
                 }
-                else -> lines.add(".$send(${bodyLines.first()})")
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
             }
         } else {
             when {
@@ -509,17 +652,38 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.add("${bodyLines.last()}")
                     }
                 }
-                else -> {
-                    lines.add(".$send(${bodyLines.first()} + ")
-                    lines.indented {
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()})")
-                    }
-                }
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
+                else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
             }
         }
+    }
+
+    private fun writeJavaOrKotlinJsonBody(lines: Lines, send: String, bodyLines: List<String>, dtoVar: String?, isMultiLine: Boolean) {
+        // TODO: When performing robustness testing, we'll need to check the individual type and send data
+        //  as stringified JSON instead of DTO, allowing for wrong payloads being tested
+        if (shouldUseDtoForPayload(dtoVar)) {
+            lines.add(".$send(${dtoVar})")
+        } else {
+            writeStringifiedPayload(lines, send, bodyLines, isMultiLine)
+        }
+    }
+
+    private fun shouldUseDtoForPayload(dtoVar: String?): Boolean {
+        return config.dtoSupportedForPayload() && dtoVar?.isNotEmpty() == true
+    }
+
+    private fun writeStringifiedPayload(lines: Lines, send: String, bodyLines: List<String>, isMultiLine: Boolean) {
+        lines.add(".$send(${bodyLines.first()}")
+        if (isMultiLine) {
+            lines.append(" + ")
+            lines.indented {
+                (1 until bodyLines.lastIndex).forEach { i ->
+                    lines.add("${bodyLines[i]} + ")
+                }
+                lines.add("${bodyLines.last()}")
+            }
+        }
+        lines.append(")")
     }
 
     /**
@@ -619,7 +783,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.add("dynamic $bodyVarName = ")
         }
 
-        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
+        if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().lowercase().contains("+json")) {
 
             if (format.isCsharp()) {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
@@ -712,4 +876,67 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             else -> throw IllegalStateException("Unsupported format $format")
         }
     }
+
+    /**
+     * Method to set up stub for HttpCallbackVerifier to the test case.
+     */
+    private fun handleSSRFFaultsPrologue(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            if (format.isJava()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning())")
+            }
+            if (format.isKotlin()) {
+                lines.addStatement("assertNotNull(${verifier.getVerifierName()}.isRunning)")
+            }
+            lines.addEmpty(1)
+
+            //Reset verifier before test execution.
+            lines.addStatement("${verifier.getVerifierName()}.resetAll()")
+
+            lines.add("${verifier.getVerifierName()}.stubFor(")
+            lines.indented {
+                lines.add("get(\"${verifier.stub}\")")
+                lines.indented {
+                    lines.add(".withMetadata(Metadata.metadata().attr(SSRF_METADATA_TAG, \"${action.getName()}\"))")
+                    lines.add(".atPriority(1)")
+                    lines.add(".willReturn(")
+                    lines.indented {
+                        lines.add("aResponse()")
+                        lines.indented {
+                            lines.add(".withStatus(${HttpCallbackVerifier.SSRF_RESPONSE_STATUS_CODE})")
+                            lines.add(".withBody(\"${HttpCallbackVerifier.SSRF_RESPONSE_BODY}\")")
+                        }
+                    }
+                    lines.add(")")
+                }
+            }
+            lines.addStatement(")")
+            lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, false)
+            lines.addEmpty(1)
+        }
+    }
+
+    private fun handleSSRFFaultsEpilogue(lines: Lines, action: Action) {
+        val verifier = httpCallbackVerifier.getActionVerifierMapping(action.getName())
+
+        if (verifier != null) {
+            lines.addEmpty(1)
+            handleCallbackVerifierRequests(lines, action, verifier, true)
+        }
+    }
+
+    private fun handleCallbackVerifierRequests(lines: Lines, action: Action, verifier: ActionStubMapping, assertTrue: Boolean) {
+        val verifierHasReceivedRequestsCheck = "verifierHasReceivedRequests(${verifier.getVerifierName()}, \"${action.getName()}\")"
+        if (assertTrue) {
+            lines.addSingleCommentLine("Verifying that the request is successfully made to HttpCallbackVerifier after test execution.")
+            lines.addStatement("assertTrue($verifierHasReceivedRequestsCheck)")
+        } else {
+            lines.addSingleCommentLine("Verifying that there are no requests made to HttpCallbackVerifier before test execution.")
+            lines.addStatement("assertFalse($verifierHasReceivedRequestsCheck)")
+        }
+    }
+
 }

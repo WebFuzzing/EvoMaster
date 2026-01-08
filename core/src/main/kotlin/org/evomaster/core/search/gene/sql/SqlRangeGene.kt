@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -53,8 +52,8 @@ class SqlRangeGene<T>(
 
     private fun swapLeftRightValues() {
         val copyOfLeftGene = left.copy()
-        left.copyValueFrom(right)
-        right.copyValueFrom(copyOfLeftGene)
+        left.unsafeCopyValueFrom(right)
+        right.unsafeCopyValueFrom(copyOfLeftGene)
     }
 
     /**
@@ -87,24 +86,18 @@ class SqlRangeGene<T>(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {isLeftClosed.copyValueFrom(other.isLeftClosed) &&
-                    left.copyValueFrom(other.left as Gene) &&
-                    right.copyValueFrom(other.right as Gene) &&
-                    isRightClosed.copyValueFrom(other.isRightClosed)}, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        return isLeftClosed.containsSameValueAs(other.isRightClosed)
+
+        if(this.template.javaClass != other.template.javaClass) {
+            return false
+        }
+
+        return isLeftClosed.containsSameValueAs(other.isLeftClosed)
                 && left.containsSameValueAs(other.left as Gene)
                 && right.containsSameValueAs(other.right as Gene)
                 && isRightClosed.containsSameValueAs(other.isRightClosed)
@@ -152,19 +145,17 @@ class SqlRangeGene<T>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlRangeGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName) {
-            this.isLeftClosed.bindValueBasedOn(gene.isLeftClosed)
-            this.left.bindValueBasedOn(gene.left as Gene)
-            this.right.bindValueBasedOn(gene.right as Gene)
-            this.isRightClosed.bindValueBasedOn(gene.isRightClosed)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlRangeGene<*>) {
+            return false
         }
-        LoggingUtil.uniqueWarn(
-                log,
-                "cannot bind SqlNumericRangeGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
-        )
-        return false
+
+        return isLeftClosed.unsafeCopyValueFrom(other.isLeftClosed) &&
+                    left.unsafeCopyValueFrom(other.left as Gene) &&
+                    right.unsafeCopyValueFrom(other.right as Gene) &&
+                    isRightClosed.unsafeCopyValueFrom(other.isRightClosed)
     }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

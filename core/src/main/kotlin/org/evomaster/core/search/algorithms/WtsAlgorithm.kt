@@ -19,7 +19,7 @@ import org.evomaster.core.search.service.SearchAlgorithm
  * of search algorithms, and not really something to
  * use regularly in EvoMaster
  */
-class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
+open class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()

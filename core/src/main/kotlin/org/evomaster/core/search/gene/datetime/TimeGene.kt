@@ -4,7 +4,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -155,20 +155,7 @@ class TimeGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is TimeGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid(
-            {this.hour.copyValueFrom(other.hour)
-                    && this.minute.copyValueFrom(other.minute)
-                    && this.second.copyValueFrom(other.second)
-                    && this.millisecond.copyValueFrom(other.millisecond)
-                    && this.offset.copyValueFrom(other.offset)
-            }, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is TimeGene) {
@@ -207,22 +194,27 @@ class TimeGene(
 
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is TimeGene -> {
-                hour.bindValueBasedOn(gene.hour) &&
-                        second.bindValueBasedOn(gene.minute) &&
-                        minute.bindValueBasedOn(gene.second)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
+        return when (gene) {
+            is TimeGene -> {
+                hour.unsafeCopyValueFrom(gene.hour)
+                        && second.unsafeCopyValueFrom(gene.second)
+                        && minute.unsafeCopyValueFrom(gene.minute)
+                        && millisecond.unsafeCopyValueFrom(gene.millisecond)
+                        && offset.unsafeCopyValueFrom(gene.offset)
             }
-            gene is DateTimeGene -> bindValueBasedOn(gene.time)
-            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype()  as Gene)
+
+            is DateTimeGene -> unsafeCopyValueFrom(gene.time)
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind TimeGene with ${gene::class.java.simpleName}")
                 false
             }
         }
     }
+
 
     override fun repair() {
         if (hour.value < 0) {

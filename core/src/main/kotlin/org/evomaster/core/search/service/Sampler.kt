@@ -6,7 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.tracer.TrackOperator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -76,7 +76,16 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         if (config.seedTestCases && seededIndividuals.isNotEmpty()){
             pickingUpLastSeed = seededIndividuals.size == 1
-            return seededIndividuals.removeLast()
+            /*
+                java.lang.NoSuchMethodError exception for removeLast,
+                then change it with removeAt
+
+                see
+                https://slack-chats.kotlinlang.org/t/26911259/latest-version-of-kotlin-2-1-10-removefrist-on-a-non-empty-l
+                https://youtrack.jetbrains.com/issue/KT-71375/Prevent-Kotlins-removeFirst-and-removeLast-from-causing-crashes-on-Android-14-and-below-after-upgrading-to-Android-API-Level-35
+
+             */
+            return seededIndividuals.removeAt(seededIndividuals.lastIndex)
         }
 
         val ind = if (forceRandomSample) {
@@ -90,7 +99,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
 
         samplePostProcessing(ind)
 
-        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(true); true }
         return ind
     }
 
@@ -124,6 +133,12 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                     .forEach { it.isActive = on }
             }
         }
+
+        applyDerivedParamModifications(ind)
+    }
+
+    open fun applyDerivedParamModifications(ind: T){
+        // needs to be overridden
     }
 
     /**
@@ -195,12 +210,6 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
         }
     }
 
-    /**
-     * extract tables with additional FK tables
-     */
-    open fun extractFkTables(tables: Set<String>): Set<String>{
-        throw IllegalStateException("FK tables have not been not handled yet")
-    }
 
     /**
      * Return a list of pre-written individuals that will be added in the final solution.

@@ -3,9 +3,17 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.data.RestPath
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
+import javax.ws.rs.POST
 
 
 /**
@@ -20,7 +28,6 @@ class RestIndividualBuilder {
     @Inject
     private lateinit var randomness: Randomness
 
-
     companion object{
 
         fun sliceAllCallsInIndividualAfterAction(
@@ -32,7 +39,7 @@ class RestIndividualBuilder {
             statusCodes: List<Int>? = null,
             authenticated: Boolean? = null,
             authenticatedWith: String? = null
-        ) : RestIndividual{
+        ) : RestIndividual {
 
             val index = RestIndividualSelectorUtils.findIndexOfAction(
                 evaluatedIndividual, verb, path, status, statusGroup, statusCodes, authenticated, authenticatedWith)
@@ -87,11 +94,25 @@ class RestIndividualBuilder {
             val other = second.copy() as RestIndividual
             other.ensureFlattenedStructure()
 
-            base.addInitializingActions(base.seeInitializingActions().map { it.copy() as EnvironmentAction })
+            /*
+                we need to reset local ids in other, to avoid clashes with ids in base.
+                however, need to make sure no chain is broken
+             */
+            other.seeAllActions().filterIsInstance<RestCallAction>()
+                .forEach { it.revertToWeakReference() }
+            other.resetLocalIdRecursively()
+
+            //avoid possible taint id conflicts
+            base.seeAllActions().forEach { it.forceNewTaints() }
+            other.seeAllActions().forEach { it.forceNewTaints() }
+
+            val duplicates = base.addInitializingActions(other.seeInitializingActions())
 
             other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
-                base.addMainEnterpriseActionGroup(group.copy() as EnterpriseActionGroup<*>)
+                base.addMainEnterpriseActionGroup(group)
             }
+
+            base.resolveAllTempData()
 
             /*
                 TODO are links properly handled in such a merge???
@@ -100,12 +121,9 @@ class RestIndividualBuilder {
 
             val after = base.seeAllActions().size
             //merge shouldn't lose any actions
-            assert(before == after) { "$after!=$before" }
+            assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
 
-            base.resetLocalIdRecursively()
-            base.doInitializeLocalId()
-
-            base.verifyValidity()
+            base.verifyValidity(true)
 
             return base
         }
@@ -125,12 +143,13 @@ class RestIndividualBuilder {
      */
     fun createBoundActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
 
+        //TODO might need to relax this constraint
         if (!template.path.isSameOrAncestorOf(target.path)) {
             throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
                     "${template.path} vs ${target.path}")
         }
 
-        val res = template.copy() as RestCallAction
+        val res = template.copyKeepingSameWeakRef()
 
         res.resetLocalIdRecursively()
 
@@ -140,10 +159,52 @@ class RestIndividualBuilder {
             res.doInitialize(randomness)
         }
         res.auth = target.auth
+        res.forceNewTaints()
         res.bindToSamePathResolution(target)
 
         return res
     }
+
+
+    /**
+     *  Based on given [template], create new action that is bound to a previous operation.
+     *  For example:
+     *  template: DELETE /users/{id}
+     *  previous: POST   /users
+     *  would lead to return something like:
+     *            DELETE /users/42
+     */
+    fun createBoundActionOnPreviousCreate(template: RestCallAction, previous: RestCallAction): RestCallAction {
+
+        if(previous.verb != HttpVerb.POST && previous.verb != HttpVerb.PUT) {
+            throw IllegalArgumentException("'previous' is not a create operation: ${previous.verb}")
+        }
+
+        //We have relaxed this constraint to be able to handle real-world APIs
+//        if (!previous.path.isSameOrAncestorOf(template.path)) {
+//            throw IllegalArgumentException("Cannot create an action for unrelated paths: " +
+//                    "${previous.path} vs ${template.path}")
+//        }
+
+        val res = template.copyKeepingSameWeakRef()
+
+        res.resetLocalIdRecursively()
+
+        if(res.isInitialized()){
+            res.seeTopGenes().forEach { it.randomize(randomness, false) }
+        } else {
+            res.doInitialize(randomness)
+        }
+        res.auth = previous.auth
+        res.forceNewTaints()
+        if(res.path.isEquivalent(previous.path)) {
+            res.bindToSamePathResolution(previous)
+        }
+        CreateResourceUtils.linkDynamicCreateResource(previous, res)
+
+        return res
+    }
+
 
     /**
      * Make sure that what returned is different from the target.
@@ -243,6 +304,11 @@ class RestIndividualBuilder {
            }
         }
 
+        if(test.filter { it.path == template.path && it.verb == template.verb}.isNotEmpty()){
+            //we already have a resource creation for this path
+            return false
+        }
+
         val create = createBoundActionFor(template, target)
 
         if(template.verb == HttpVerb.PUT){
@@ -274,22 +340,9 @@ class RestIndividualBuilder {
             Once the create is fully initialized, need to fix
             links with target
          */
-        PostCreateResourceUtils.linkDynamicCreateResource(create, target)
+        CreateResourceUtils.linkDynamicCreateResource(create, target)
 
         return true
     }
-
-
-    /**
-     * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
-     */
-    fun hasParameterChild(a: RestCallAction): Boolean {
-        return sampler.seeAvailableActions()
-            .filterIsInstance<RestCallAction>()
-            .map { it.path }
-            .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
-    }
-
-
 
 }

@@ -1,15 +1,16 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.interfaces.WrapperGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -19,14 +20,17 @@ import org.slf4j.LoggerFactory
  * This is important to check Foreign Keys referencing it.
  */
 class SqlPrimaryKeyGene(name: String,
-                        val tableName: String,
+                        val tableName: TableId,
                         val gene: Gene,
                         /**
                          * Important for the Foreign Keys referencing it.
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : SqlWrapperGene, CompositeGene(name, mutableListOf(gene)) {
+) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {
+
+    @Deprecated("Rather use the one forcing TableId")
+    constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
 
 
     init {
@@ -69,15 +73,6 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlPrimaryKeyGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.gene.copyValueFrom(other.gene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -111,11 +106,13 @@ class SqlPrimaryKeyGene(name: String,
         return gene.isReferenceToNonPrintable(previousGenes)
     }
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        // do nothing
-        return true
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlPrimaryKeyGene) {
+            return false
+        }
+        return this.gene.unsafeCopyValueFrom(other.gene)
     }
+
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
@@ -126,4 +123,15 @@ class SqlPrimaryKeyGene(name: String,
         return false
     }
 
+    @Suppress("BOUNDS_NOT_ALLOWED_IF_BOUNDED_BY_TYPE_PARAMETER")
+    override fun <T,K> getWrappedGene(klass: Class<K>, strict: Boolean) : T?  where T : Gene, T: K{
+        if(matchingClass(klass,strict)){
+            return this as T
+        }
+        return gene.getWrappedGene(klass)
+    }
+
+    override fun getLeafGene(): Gene{
+        return gene.getLeafGene()
+    }
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.search.action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.StructuralElement
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -76,6 +77,12 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
         postRandomizedChecks(randomness)
     }
 
+    fun forceNewTaints(){
+        seeTopGenes().forEach { g ->
+            g.forceNewTaints()
+        }
+    }
+
     fun isInitialized(): Boolean {
         return seeTopGenes().all { it.initialized }
     }
@@ -95,4 +102,16 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
         return listOf(this)
     }
 
+    /**
+     * Check if this action is mounted inside an individual
+     */
+    fun isMounted(): Boolean = getRoot() is Individual
+
+    open fun isGloballyValid(): Boolean  = isMounted()
+
+    /**
+     * At times, we might need to have temporary data, that can only be finalized
+     * once an action is mounted inside an initialized individual
+     */
+    open fun resolveTempData() : Boolean = true
 }

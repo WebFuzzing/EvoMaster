@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.problem.rest.data.RestPath
 
 /**
  *  @param path is a list of path(s), which can be parsed with [RelatedTo.parseMultipleKey]
@@ -49,8 +50,11 @@ open class ResourceRelatedToResources(
  *          Note that related table might be derived based on token parser, not confirmed regarding evomaster driver.
  *          [confirmedSet] is used to represent whether the mutual relation is confirmed.
  */
-class MutualResourcesRelations(mutualResources: List<String>, probability: Double, var referredTables : MutableSet<String> = mutableSetOf())
-    : ResourceRelatedToResources(mutualResources, mutualResources.toMutableList(), probability, ""){
+class MutualResourcesRelations(
+    mutualResources: List<String>,
+    probability: Double,
+    var referredTables : MutableSet<TableId> = mutableSetOf()
+) : ResourceRelatedToResources(mutualResources, mutualResources.toMutableList(), probability, ""){
 
     override fun getName(): String {
         return "MutualRelations:${notateKey()}"

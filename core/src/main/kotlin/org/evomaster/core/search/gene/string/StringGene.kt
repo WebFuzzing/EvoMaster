@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.RegexSharedUtils
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.client.java.instrumentation.shared.TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.StaticCounter
@@ -12,19 +13,17 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestResponseFeeder
-import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.ChoiceGene
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.uri.UriGene
@@ -33,7 +32,6 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.GeneImpact
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.DataPool
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
@@ -173,6 +171,10 @@ class StringGene(
         return null
     }
 
+    override fun getPhenotype(): Gene {
+        return getSpecializationGene() ?: this
+    }
+
     override fun isMutable(): Boolean {
         //a specialization can always be undone... so previous check was wrong
 //        if (getSpecializationGene() != null) {
@@ -180,9 +182,14 @@ class StringGene(
 //        }
 //        return true
         return maxLength > 0 //otherwise there is only 1 value, the empty string ""
+                && !isDependentTaint()
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
+
+        /*
+            randomization does not apply any taint, and remove it if any is there
+         */
 
         /*
             Even if through mutation we can get large string, we should
@@ -229,7 +236,7 @@ class StringGene(
          */
         //assert(!tainted)
 
-        if(name == TaintInputName.TAINTED_MAP_EM_LABEL_IDENTIFIER){
+        if(isDependentTaint()){
             /*
                 TODO should have a better check to specify a StringGene is immutable.
                 If we end up in other cases for this, should add an "immutable" field to this gene
@@ -269,6 +276,12 @@ class StringGene(
             //not applied if used data pool
             if (!successfulDataPool && config.taintOnSampling) {
 
+                /*
+                    the method is called when gene is globally initialized, which is done when sampling.
+                    when sampling a new gene, and we want to use taint, when we can check if using
+                    global info or a direct taint value
+                 */
+
                 if (state.spa.hasInfoFor(name) && randomness.nextDouble() < state.config.useGlobalTaintInfoProbability) {
                     val spec = state.spa.chooseSpecialization(name, randomness)!!
                     assert(specializations.size == 0)
@@ -307,15 +320,28 @@ class StringGene(
     }
 
 
-    override fun shallowMutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl,
-                               selectionStrategy: SubsetGeneMutationSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) : Boolean{
+    override fun shallowMutate(
+        randomness: Randomness,
+        apc: AdaptiveParameterControl,
+        mwc: MutationWeightControl,
+        selectionStrategy: SubsetGeneMutationSelectionStrategy,
+        enableAdaptiveGeneMutation: Boolean,
+        additionalGeneMutationInfo: AdditionalGeneMutationInfo?
+    ) : Boolean{
 
         val allGenes = getAllGenesInIndividual()
 
         if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
+            additionalGeneMutationInfo
+                ?: throw IllegalArgumentException("archive-based gene mutation cannot be applied without AdditionalGeneMutationInfo")
+
             additionalGeneMutationInfo.archiveGeneMutator.mutateStringGene(
-                    this, allGenes = allGenes, selectionStrategy = selectionStrategy, targets = additionalGeneMutationInfo.targets, additionalGeneMutationInfo = additionalGeneMutationInfo, changeSpecSetting = PROB_CHANGE_SPEC
+                this,
+                allGenes = allGenes,
+                selectionStrategy = selectionStrategy,
+                targets = additionalGeneMutationInfo.targets,
+                additionalGeneMutationInfo = additionalGeneMutationInfo,
+                changeSpecSetting = PROB_CHANGE_SPEC
             )
             return true
         }
@@ -323,11 +349,11 @@ class StringGene(
         val didSpecializationMutation = standardSpecializationMutation(
                 randomness, apc, mwc, selectionStrategy, allGenes, enableAdaptiveGeneMutation, additionalGeneMutationInfo
         )
+
         if (!didSpecializationMutation){
-            standardValueMutation(
-                    randomness, allGenes, apc
-            )
+            standardValueMutation(randomness, allGenes, apc)
         }
+
         return true
     }
 
@@ -403,6 +429,11 @@ class StringGene(
         if(TaintInputName.isTaintInput(value)){
             //standard mutation on a tainted value makes little sense, so randomize instead
             randomize(randomness, true)
+            /*
+                TODO weird... if we return here (as logically we should do), few tests start failing...
+                is there really a logical bug? or those are just brittle, seed-dependent tests?
+             */
+            //return
         }
 
         val p = randomness.nextDouble()
@@ -465,12 +496,19 @@ class StringGene(
         handleBinding(allGenes)
     }
 
+    private fun verifyIfNewTaintWouldBeFine() : Boolean{
+        return TaintInputName.doesTaintNameSatisfiesLengthConstraints("${StaticCounter.get()}", actualMaxLength())
+    }
+
     fun redoTaint(apc: AdaptiveParameterControl, randomness: Randomness) : Boolean{
 
-        if(!TaintInputName.doesTaintNameSatisfiesLengthConstraints("${StaticCounter.get()}", actualMaxLength())){
+        if(!verifyIfNewTaintWouldBeFine()){
             return false
         }
 
+        // we start with a high value for probability of using a tained value.
+        // however, during search we decrease it, but not lower than specified minimum here, until start of focused search.
+        // when focus search starts, we no longer use taint values
         val minPforTaint = 0.1
         val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 
@@ -784,9 +822,10 @@ class StringGene(
                       try {
                               toAddGenes.add(RegexHandler.createGeneForJVM(regex))
                               log.trace("Regex, added specification for: {}", regex)
-
                           } catch (e: Exception) {
                               LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+                          } catch (e: java.lang.StackOverflowError){
+                              LoggingUtil.uniqueWarn(log, "Failed to handle regex, as it gives a stack overflow error: $regex")
                           }
                       }
 
@@ -894,42 +933,7 @@ class StringGene(
         return value
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
 
-        if(other is ChoiceGene<*>){
-            val x = other.activeGene()
-            return this.copyValueFrom(x)
-        }
-
-        val current = this.value
-
-        when(other){
-            is StringGene -> this.value = other.value
-            is EnumGene<*> -> this.value = other.getValueAsRawString()
-            else -> throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        if(other is StringGene) {
-            this.selectedSpecialization = other.selectedSpecialization
-
-            this.specializations.clear()
-            this.specializations.addAll(other.specializations)
-
-            killAllChildren()
-            addChildren(other.specializationGenes.map { it.copy() })
-
-            this.tainted = other.tainted
-            this.bindingIds.clear()
-            this.bindingIds.addAll(other.bindingIds)
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is StringGene) {
@@ -980,59 +984,74 @@ class StringGene(
      */
 
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+        /*
+            TODO aren't we ignoring here if this gene is using a specialization?
+         */
 
-        Lazy.assert { isLocallyValid() }
-        val current = value
+        //TODO should this be handled with phenotype or wrapper? need to double-check
+        if(other is ChoiceGene<*>){
+            val x = other.activeGene()
+            return this.unsafeCopyValueFrom(x)
+        }
+
+        val gene = other.getPhenotype()
 
         when(gene){
-            //shall I add the specification into the string if it applies?
             is StringGene -> value = gene.value
             is Base64StringGene -> value = gene.data.value
             is FloatGene -> value = gene.value.toString()
             is IntegerGene -> value = gene.value.toString()
             is LongGene -> value = gene.value.toString()
-            is DoubleGene -> {
-                value = gene.value.toString()
-            }
+            is DoubleGene -> { value = gene.value.toString() }
             is ImmutableDataHolderGene -> value = gene.value
-            is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toString()
-            }
+            is SqlPrimaryKeyGene ->{ value = gene.uniqueId.toString() }
             // might check toEngineeringString() and toPlainString()
             is BigDecimalGene -> value = gene.value.toString()
             is BigIntegerGene -> value = gene.value.toString()
-            is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
-            }
-            is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
-            }
+            is SeededGene<*> ->{ return this.unsafeCopyValueFrom(gene.getPhenotype() as Gene) }
+            is NumericStringGene ->{ return this.unsafeCopyValueFrom(gene.number) }
             else -> {
                 //return false
                 //Man: with taint analysis, g might be any other type.
                 if (gene is SqlForeignKeyGene){
-                    LoggingUtil.uniqueWarn(
-                        log,
-                        "attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}"
-                    )
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlForeignKeyGene ${gene.name} whose target table is ${gene.targetTable}")
                     value = "${gene.uniqueIdOfPrimaryKey}"
+                } else if(gene is SqlAutoIncrementGene){
+                    /*
+                        This happens in tiltaksgjennomforing, where a SqlAutoIncrementGene is not marked
+                        as a Primary Key.
+                        Might be an issue in current limited handling of primary keys.
+                        Or are there legitimate cases for this?
+                        TODO will need to investigate
+                     */
+                    LoggingUtil.uniqueWarn(log, "Attempt to bind $name with a SqlAutoIncrementGene ${gene.name}.")
+                    //do nothing
                 } else{
                     value = gene.getValueAsRawString()
                 }
             }
         }
 
-        if(!isLocallyValid()){
-            //this actually can happen when binding to Long, and goes above lenght limit of String
-            value = current
-            //TODO should we rather enforce this to never happen?
-            return false
-        }
+        //TODO would need updating...
+//        if(other is StringGene) {
+//            this.selectedSpecialization = other.selectedSpecialization
+//
+//            this.specializations.clear()
+//            this.specializations.addAll(other.specializations)
+//
+//            killAllChildren()
+//            addChildren(other.specializationGenes.map { it.copy() })
+//
+//            this.tainted = other.tainted
+//            this.bindingIds.clear()
+//            this.bindingIds.addAll(other.bindingIds)
+//        }
 
         return true
     }
+
 
     // need to check with Andrea if there is any further impact
     override fun compareTo(other: ComparableGene): Int {
@@ -1051,7 +1070,21 @@ class StringGene(
     }
 
     override fun forceNewTaintId() {
-        //TODO
+        if(!isDependentTaint()
+            && TaintInputName.isTaintInput(value)
+            && verifyIfNewTaintWouldBeFine()){
+            forceTaintedValue()
+            //note: selectedSpecialization is NOT modified here
+        }
+    }
+
+    override fun isDependentTaint(): Boolean{
+        return name == TAINTED_MAP_EM_LABEL_IDENTIFIER
+    }
+
+    override fun evolve() {
+        //there are a lot of edge cases here...
+        throw IllegalStateException("String genes should not be evolved directly, but via mutation")
     }
 
     /**
@@ -1066,18 +1099,10 @@ class StringGene(
     }
 
 
-    override fun setFromStringValue(value: String): Boolean {
-
-        val previousSpecialization = selectedSpecialization
-        val previousValue = value
+    override fun unsafeSetFromStringValue(value: String): Boolean {
 
         this.value = value
         selectedSpecialization = -1
-        if(!isLocallyValid() || !checkForGloballyValid()){
-            this.value = previousValue
-            this.selectedSpecialization = previousSpecialization
-            return false
-        }
 
         return true
     }

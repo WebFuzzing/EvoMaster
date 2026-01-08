@@ -53,7 +53,8 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
             Assertions.assertEquals(1, dto.deletedData.size());
-            Assertions.assertTrue(dto.deletedData.contains("Foo"));
+            String deletedTableName = dto.deletedData.iterator().next();
+            Assertions.assertTrue(deletedTableName.equalsIgnoreCase("Foo"));
 
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
@@ -79,7 +80,8 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             assertNotNull(dto);
             assertNotNull(dto.insertedData);
             Assertions.assertEquals(1, dto.insertedData.size());
-            Assertions.assertTrue(dto.insertedData.containsKey("Foo"));
+            final String insertedTableName = dto.insertedData.keySet().iterator().next();
+            Assertions.assertTrue(insertedTableName.equalsIgnoreCase("foo"));
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
@@ -103,7 +105,8 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
             Assertions.assertEquals(1, dto.updatedData.size());
-            Assertions.assertTrue(dto.updatedData.containsKey("Foo"));
+            String updatedTableName = dto.updatedData.keySet().iterator().next();
+            Assertions.assertTrue(updatedTableName.equalsIgnoreCase("foo"));
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());
@@ -169,7 +172,8 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
             Assertions.assertEquals(1, dto.deletedData.size());
-            Assertions.assertTrue(dto.deletedData.contains("Foo"));
+            String deletedTableName = dto.deletedData.iterator().next();
+            Assertions.assertTrue(deletedTableName.equalsIgnoreCase("foo"));
 
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
@@ -195,7 +199,8 @@ public interface SqlHandlerInDBTest extends DatabaseTestTemplate {
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
             Assertions.assertEquals(1, dto.updatedData.size());
-            Assertions.assertTrue(dto.updatedData.containsKey("Foo"));
+            String updatedTableName = dto.updatedData.keySet().iterator().next();
+            Assertions.assertTrue(updatedTableName.equalsIgnoreCase("foo"));
             // check info of executed sql
             assertNotNull(dto.sqlExecutionLogDtoList);
             Assertions.assertEquals(1, dto.sqlExecutionLogDtoList.size());

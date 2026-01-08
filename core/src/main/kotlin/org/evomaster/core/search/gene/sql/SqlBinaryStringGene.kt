@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -69,31 +68,21 @@ class SqlBinaryStringGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {binaryArrayGene.copyValueFrom(other.binaryArrayGene)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlBinaryStringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return binaryArrayGene.containsSameValueAs(other.binaryArrayGene)
     }
 
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is SqlBinaryStringGene) {
-            return binaryArrayGene.bindValueBasedOn(gene.binaryArrayGene)
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlBinaryStringGene) {
+            return false
         }
-        LoggingUtil.uniqueWarn(log, "cannot bind SqlBitstringGene with ${gene::class.java.simpleName}")
-        return false
+        return binaryArrayGene.unsafeCopyValueFrom(other.binaryArrayGene)
     }
+
 
     override fun copyContent() = SqlBinaryStringGene(name,
             minSize = minSize,

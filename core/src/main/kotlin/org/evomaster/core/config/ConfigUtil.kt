@@ -1,8 +1,9 @@
 package org.evomaster.core.config
 
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.dataformat.toml.TomlMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
-import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
+import com.webfuzzing.commons.auth.AuthenticationInfo
 import java.io.File
 import java.lang.reflect.Field
 import java.lang.reflect.ParameterizedType
@@ -29,6 +30,7 @@ object ConfigUtil {
             throw IllegalArgumentException("Specified configuration file path is not of valid type." +
                     " Supported types are YAML and TOML. Wrong path: $stringPath")
         }
+        mapper.enable(DeserializationFeature.READ_ENUMS_USING_TO_STRING);
 
         val cff = try{
             mapper.readValue(path.toFile(), ConfigsFromFile::class.java)
@@ -63,7 +65,7 @@ object ConfigUtil {
         file.appendText("### Template configuration file for EvoMaster.\n")
         file.appendText("### Most important parameters are already present here, commented out.\n")
         file.appendText("### Note that there are more parameters that can be configured. For a full list, see:\n")
-        file.appendText("### https://github.com/EMResearch/EvoMaster/blob/master/docs/options.md\n")
+        file.appendText("### https://github.com/WebFuzzing/EvoMaster/blob/master/docs/options.md\n")
         file.appendText("### or check them with the --help option.\n")
         file.appendText("\n")
         file.appendText("\n")
@@ -89,16 +91,16 @@ object ConfigUtil {
 
         file.appendText("\n\n\n")
         file.appendText("### Authentication configurations.\n")
-        file.appendText("### For each possible registered user, can provide an ${AuthenticationDto::class.simpleName}" +
+        file.appendText("### For each possible registered user, can provide an ${AuthenticationInfo::class.simpleName}" +
                 " object to define how to log them in.\n")
         file.appendText("### Different types of authentication mechanisms can be configured here.\n")
-        file.appendText("### For more information, read: https://github.com/EMResearch/EvoMaster/blob/master/docs/auth.md\n")
+        file.appendText("### For more information, read: https://github.com/WebFuzzing/EvoMaster/blob/master/docs/auth.md\n")
         file.appendText("\n")
 
         val auth = "auth"
 
         if(isToml(stringPath)) {
-            AuthenticationDto::class.java.fields
+            AuthenticationInfo::class.java.declaredFields
                     .filter { it.name != "name" }
                     .forEach {
                         file.appendText("# [[$auth]]\n")
@@ -111,8 +113,8 @@ object ConfigUtil {
             file.appendText("#auth:\n")
             val indent = "    "
             file.appendText("#  - name: ?\n")
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("loginEndpointAuth"))
         }
 
         file.appendText("\n\n")
@@ -131,8 +133,8 @@ object ConfigUtil {
         if(isYaml(stringPath)){
             file.appendText("#authTemplate:\n")
             val indent = "    "
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("fixedHeaders"))
-            printObjectDefinition(true, file, indent, AuthenticationDto::class.java.getField("loginEndpointAuth"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("fixedHeaders"))
+            printObjectDefinition(true, file, indent, AuthenticationInfo::class.java.getDeclaredField("loginEndpointAuth"))
         }
 
         file.appendText("\n")
@@ -140,13 +142,25 @@ object ConfigUtil {
 
     private fun printObjectDefinition(isYaml: Boolean, file: File, prefix: String, field: Field){
 
+        if(field.name == "additionalProperties"){
+            return
+        }
+
         var isCollection = false
 
         val type = if(List::class.java.isAssignableFrom(field.type)
             || Set::class.java.isAssignableFrom(field.type)
             || field.type.isArray){
             isCollection = true
-            (field.genericType as ParameterizedType).actualTypeArguments[0] as Class<*>
+            val actualType = if(field.genericType is ParameterizedType) {
+                (field.genericType as ParameterizedType).actualTypeArguments[0]
+            } else {
+                field.genericType
+            }
+            if(actualType !is Class<*>){
+                throw IllegalStateException("Cannot handle actual type: $actualType")
+            }
+            actualType as Class<*>
         } else {
             field.type
         }
@@ -178,7 +192,7 @@ object ConfigUtil {
             } else {
                 printIndentation(file, true, prefix)
                 file.appendText("${field.name}$sep\n")
-                type.fields.forEachIndexed { index, it ->
+                type.declaredFields.forEachIndexed { index, it ->
                     val p = if(index == 0 && isCollection) "  - " else "    "
                     printObjectDefinition(true, file, prefix+p, it)
                 }

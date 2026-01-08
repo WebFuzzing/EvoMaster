@@ -28,7 +28,13 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         return name
     }
 
-    override fun handleTestInitialization(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>) {
+    override fun handleTestInitialization(
+        lines: Lines,
+        baseUrlOfSut: String,
+        ind: EvaluatedIndividual<*>,
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
+    ) {
 
         //TODO: REFACTOR TO HANDLE MULTIPLE DATABASES
         val initializingSqlActions = ind.individual.seeInitializingActions().filterIsInstance<SqlAction>()
@@ -453,7 +459,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     "id",
                     "timestamp", //needed since timestamps will change between runs
                     "self" //TODO: temporary hack. Needed since ports might change between runs.
-            ).contains(fieldName.toLowerCase())
+            ).contains(fieldName.lowercase())
 
     /**
      * Some content may be lead to problems in the resultant test case.

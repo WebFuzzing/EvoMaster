@@ -1,0 +1,21 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "components": {
+    "parameters": {
+      "d": {
+        "name": "d",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "format": "int32",
+          "maximum": -1
+        }
+      }
+    }
+  }
+}

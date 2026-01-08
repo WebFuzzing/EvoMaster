@@ -6,8 +6,9 @@ import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.sql.schema.TableId
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -21,7 +22,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         assertEquals(3, genes.size)
@@ -35,7 +36,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -64,7 +65,7 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val schema = DbInfoExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val actions = builder.createSqlInsertionAction(TableId("people", openGroupName = MYSQL_DB_NAME), setOf("id", "name", "address"))
         val genes = actions[0].seeTopGenes()
 
         val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
@@ -72,8 +73,8 @@ class SqlTextColumnTest : ExtractTestBaseMySQL() {
         val oneQuoteStr = "'"
         val twoQuotesStr = "'hi'"
 
-        (genes[1] as StringGene).copyValueFrom(StringGene(genes[1].name, oneQuoteStr))
-        ((genes[2] as NullableGene).gene as StringGene).copyValueFrom(StringGene(genes[1].name, twoQuotesStr))
+        (genes[1] as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, oneQuoteStr))
+        ((genes[2] as NullableGene).gene as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, twoQuotesStr))
 
         val query = "Select * from people where id=%s".format(idValue)
 

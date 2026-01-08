@@ -28,7 +28,6 @@ object ConfigToMarkdown {
         return buffer.toString()
     }
 
-
     fun saveToDocs(markdownText: String) {
         val file = File("docs/options.md")
         file.delete()

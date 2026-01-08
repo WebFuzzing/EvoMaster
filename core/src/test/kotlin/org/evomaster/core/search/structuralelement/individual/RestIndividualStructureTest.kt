@@ -6,13 +6,14 @@ import org.evomaster.core.sql.schema.Column
 import org.evomaster.core.sql.schema.ColumnDataType
 import org.evomaster.core.sql.schema.ForeignKey
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.structuralelement.StructuralElementBaseTest
 import org.evomaster.core.search.structuralelement.resourcecall.ResourceNodeCluster
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -42,7 +43,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
             unique = false,
             databaseType = DatabaseType.H2)
 
-        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTable = foo.name)
+        val foreignKey = ForeignKey(sourceColumns = setOf(fkColumn), targetTableId = foo.id)
 
         val bar = Table("Bar", setOf(barIdColumn, fkColumn), setOf(foreignKey))
 
@@ -65,6 +66,7 @@ class RestIndividualStructureTest : StructuralElementBaseTest(){
 
 
         return RestIndividual(mutableListOf(call1, call2), SampleType.RANDOM, dbInitialization = mutableListOf(action0, action1))
+            .apply { doInitializeLocalId(); resolveAllTempData() }
 
     }
 

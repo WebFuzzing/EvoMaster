@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.textsearch
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -65,13 +64,12 @@ class SqlTextSearchVectorGene(
         return textLexeme.getValueAsRawString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlTextSearchVectorGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid(
-            {this.textLexeme.copyValueFrom(other.textLexeme)}, false
-        )
+
+        return this.textLexeme.unsafeCopyValueFrom(other.textLexeme)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -81,18 +79,6 @@ class SqlTextSearchVectorGene(
         return this.textLexeme.containsSameValueAs(other.textLexeme)
     }
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlTextSearchVectorGene -> {
-                textLexeme.bindValueBasedOn(gene.textLexeme)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

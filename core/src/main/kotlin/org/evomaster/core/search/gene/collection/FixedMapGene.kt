@@ -1,9 +1,8 @@
 package org.evomaster.core.search.gene.collection
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.optional.FlexibleGene
+import org.evomaster.core.search.gene.wrapper.FlexibleGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -40,23 +39,7 @@ class FixedMapGene<K, V>(
         )
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is FixedMapGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        return updateValueOnlyIfValid({
-            killAllChildren()
-            // maxSize
-            val copy = (if (maxSize!=null && other.elements.size > maxSize!!)
-                other.elements.subList(0, maxSize!!)
-            else other.elements)
-                .map { e -> e.copy() as PairGene<K, V> }
-                .toMutableList()
-            addChildren(copy)
-            true
-        },false)
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is FixedMapGene<*, *>) {
@@ -76,10 +59,13 @@ class FixedMapGene<K, V>(
     /*
         Note that value binding cannot be performed on the [elements]
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(gene: Gene): Boolean {
+
         if(gene is FixedMapGene<*, *> && gene.template::class.java.simpleName == template::class.java.simpleName){
             killAllChildren()
-            val elements = gene.elements.mapNotNull { it.copy() as? PairGene<K, V> }.toMutableList()
+            val elements = gene.elements
+                .mapNotNull { it.copy() as? PairGene<K, V> }
+                .toMutableList()
             elements.forEach { it.resetLocalIdRecursively() }
             addChildren(elements)
             return true

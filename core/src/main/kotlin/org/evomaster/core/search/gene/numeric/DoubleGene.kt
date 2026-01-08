@@ -86,20 +86,6 @@ class DoubleGene(name: String,
         return if(mode==GeneUtils.EscapeMode.EJSON) "{\"\$numberDouble\":\"$stringValue\"}" else stringValue
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DoubleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DoubleGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -107,8 +93,10 @@ class DoubleGene(name: String,
         return this.value == other.value
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun bindValueBasedOn(gene: Gene) : Boolean{
+        val gene = other.getPhenotype()
+
         when(gene){
             is DoubleGene -> value = gene.value
             is FloatGene -> value = gene.value.toDouble()
@@ -116,24 +104,11 @@ class DoubleGene(name: String,
             is LongGene -> value = gene.value.toDouble()
             is BigDecimalGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
             is BigIntegerGene -> value = try { gene.value.toDouble() } catch (e: Exception) { return false }
-            is StringGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
-            }
-            is Base64StringGene ->{
-                value = gene.data.value.toDoubleOrNull() ?: return false
-            }
-            is ImmutableDataHolderGene -> {
-                value = gene.value.toDoubleOrNull() ?: return false
-            }
-            is SqlPrimaryKeyGene ->{
-                value = gene.uniqueId.toDouble()
-            }
-            is SeededGene<*> ->{
-                return this.bindValueBasedOn(gene.getPhenotype() as Gene)
-            }
-            is NumericStringGene ->{
-                return this.bindValueBasedOn(gene.number)
-            }
+            is StringGene -> { value = gene.value.toDoubleOrNull() ?: return false }
+            is Base64StringGene ->{ value = gene.data.value.toDoubleOrNull() ?: return false }
+            is ImmutableDataHolderGene -> { value = gene.value.toDoubleOrNull() ?: return false }
+            is SqlPrimaryKeyGene ->{ value = gene.uniqueId.toDouble() }
+            is NumericStringGene ->{ return this.unsafeCopyValueFrom(gene.number) }
             else -> {
                 LoggingUtil.uniqueWarn(
                     log,
@@ -174,13 +149,14 @@ class DoubleGene(name: String,
     /**
      * Set Double Gene from string value
      */
-    override fun setFromStringValue(value: String) : Boolean{
+    override fun unsafeSetFromStringValue(value: String) : Boolean{
+
         try{
             this.value = value.toDouble()
-            return true
         }catch (e: NumberFormatException){
             return false
         }
+        return true
     }
 
     override fun getZero(): Double = 0.0

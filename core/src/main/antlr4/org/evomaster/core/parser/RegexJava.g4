@@ -23,7 +23,7 @@ grammar RegexJava;
 //------ PARSER ------------------------------
 // Parser rules have first letter in lower-case
 
-pattern : disjunction;
+pattern : disjunction EOF;
 
 
 disjunction
@@ -119,24 +119,23 @@ quoteChar
 ;
 
 //TODO
-//CharacterEscape
-// : ControlEscape
-// | 'c' ControlLetter
-// | HexEscapeSequence
-// | UnicodeEscapeSequence
+fragment CharacterEscape
+ : ControlEscape
+ | 'c' ControlLetter
+ | HexEscapeSequence
+ | UnicodeEscapeSequence
+ | OctalEscapeSequence
  //| IdentityEscape
-// ;
+ ;
 
-//TODO
-//ControlEscape
-// //one of f n r t v
-// : [fnrtv]
-// ;
+fragment ControlEscape
+ //one of f n r t v
+ : [aefnrt]
+ ;
 
-//TODO
-//ControlLetter
-// : [a-zA-Z]
-// ;
+fragment ControlLetter
+ : [?-_a-z]
+ ;
 
 
 //TODO
@@ -230,7 +229,7 @@ AtomEscape
  : '\\' CharacterClassEscape
  //TODO
 // | '\\' DecimalEscape
-// | '\\' CharacterEscape
+ | '\\' CharacterEscape
  ;
 
 fragment CharacterClassEscape
@@ -267,11 +266,28 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
-//TODO
-//HexEscapeSequence
-// : 'x' HexDigit HexDigit
-// ;
-//
+fragment OctalEscapeSequence
+ : '0' OctalDigit
+ | '0' OctalDigit OctalDigit
+ | '0' [0-3] OctalDigit OctalDigit
+;
+
+fragment UnicodeEscapeSequence:
+ 'u' HexDigit HexDigit HexDigit HexDigit
+;
+
+fragment HexEscapeSequence
+ : 'x' HexDigit HexDigit
+ | 'x' BRACE_open HexDigit+ BRACE_close
+ ;
+
+fragment HexDigit:
+ [a-fA-F0-9]
+ ;
+
+fragment OctalDigit:
+ [0-7]
+ ;
 
 //TODO
 //DecimalIntegerLiteral

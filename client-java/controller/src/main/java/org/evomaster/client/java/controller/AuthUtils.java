@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller;
 
+import com.webfuzzing.commons.auth.Header;
+import com.webfuzzing.commons.auth.LoginEndpoint;
+import com.webfuzzing.commons.auth.TokenHandling;
 import org.evomaster.client.java.controller.api.dto.auth.*;
 
 import java.io.UnsupportedEncodingException;
@@ -48,7 +51,10 @@ public class AuthUtils {
     public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.fixedHeaders.add(new HeaderDto("Authorization", authorizationValue));
+        Header header = new Header();
+        header.setName("Authorization");
+        header.setValue(authorizationValue);
+        dto.getFixedHeaders().add(header);
 
         return dto;
     }
@@ -67,13 +73,31 @@ public class AuthUtils {
      * @return a DTO
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
+        return getForDefaultSpringFormLogin(dtoName, username, password, "/login");
+    }
 
-        LoginEndpointDto cookie = new LoginEndpointDto();
 
-        cookie.endpoint = "/login";
-        cookie.verb = HttpVerb.POST;
-        cookie.contentType = "application/x-www-form-urlencoded";
-        cookie.expectCookies = true;
+    /**
+     * DTO representing the use of authentication via a X-WWW-FORM-URLENCODED POST submission.
+     * Assuming default names used in SpringSecurity for default formLogin() configuration.
+     *
+     * When using this kind of DTO, EM will first do a POST on such endpoint with valid credentials,
+     * and then use the resulting cookie for the following HTTP requests.
+     *
+     * @param dtoName a name used to identify this dto. Mainly needed for debugging
+     * @param username    the id of a user
+     * @param password  password for that user
+     * @param endpoint  the url of the endpoint to use for the login
+     * @return a DTO
+     */
+    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password, String endpoint){
+
+        LoginEndpoint cookie = new LoginEndpoint();
+
+        cookie.setEndpoint(endpoint);
+        cookie.setVerb(LoginEndpoint.HttpVerb.POST);
+        cookie.setContentType("application/x-www-form-urlencoded");
+        cookie.setExpectCookies(true);
         try {
             String payload;
             String usernameField = URLEncoder.encode("username", "UTF-8");
@@ -81,12 +105,12 @@ public class AuthUtils {
             payload = usernameField + "=" + URLEncoder.encode(username, "UTF-8");
             payload += "&";
             payload += passwordField + "="+ URLEncoder.encode(password, "UTF-8");
-            cookie.payloadRaw = payload;
+            cookie.setPayloadRaw(payload);
         }catch (UnsupportedEncodingException e){
             throw new RuntimeException(e); //ah, the joys of Java...
         }
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.loginEndpointAuth = cookie;
+        dto.setLoginEndpointAuth(cookie);
 
         return dto;
     }
@@ -118,21 +142,54 @@ public class AuthUtils {
             String extractFromField,
             String headerPrefix
     ){
+        return getForJsonToken(dtoName, postEndpoint, payload, extractFromField, headerPrefix,"application/json");
+    }
 
-        LoginEndpointDto le = new LoginEndpointDto();
+    /**
+     * Creates an AuthenticationDto object configured to obtain a JSON token from a login endpoint.
+     * The postEndpoint parameter can be interpreted in two different ways:
+     * <ul>
+     *   <li>If postEndpoint starts with "http://" or "https://", it is treated as a full external URL</li>
+     *   <li>Otherwise, it is treated as a relative path that will be combined with a base URL</li>
+     * </ul>
+     * @param dtoName The name to assign to the AuthenticationDto
+     * @param postEndpoint The endpoint URL or path (see description above for interpretation)
+     * @param payload The request payload to send to the login endpoint
+     * @param extractFromField The field in the response that contains the token
+     * @param headerPrefix The prefix to add to the token (e.g., "Bearer ")
+     * @param contentType The content type to use for the request
+     * @return Configured AuthenticationDto object with login endpoint settings
+     */
+    public static AuthenticationDto getForJsonToken(
+            String dtoName,
+            String postEndpoint,
+            String payload,
+            String extractFromField,
+            String headerPrefix,
+            String contentType
+    ){
 
-        le.endpoint = postEndpoint;
-        le.verb = HttpVerb.POST;
-        le.contentType = "application/json";
-        le.expectCookies = false;
-        le.payloadRaw = payload;
-        le.token = new TokenHandlingDto();
-        le.token.extractFromField = extractFromField;
-        le.token.headerPrefix = headerPrefix;
-        le.token.httpHeaderName = "Authorization";
+        LoginEndpoint le = new LoginEndpoint();
+
+        if(postEndpoint.startsWith("http://") || postEndpoint.startsWith("https://")){
+            le.setExternalEndpointURL(postEndpoint);
+        } else {
+            le.setEndpoint(postEndpoint);
+        }
+
+        le.setVerb(LoginEndpoint.HttpVerb.POST);
+        le.setContentType(contentType);
+        le.setExpectCookies(false);
+        le.setPayloadRaw(payload);
+        le.setToken(new TokenHandling());
+        le.getToken().setExtractFrom(TokenHandling.ExtractFrom.BODY);
+        le.getToken().setExtractSelector(extractFromField);
+        le.getToken().setSendIn(TokenHandling.SendIn.HEADER);
+        le.getToken().setSendName("Authorization");
+        le.getToken().setSendTemplate(headerPrefix+"{token}");
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.loginEndpointAuth = le;
+        dto.setLoginEndpointAuth(le);
 
         return dto;
     }

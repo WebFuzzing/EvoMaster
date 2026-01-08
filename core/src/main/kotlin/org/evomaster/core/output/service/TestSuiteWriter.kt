@@ -8,18 +8,22 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.output.TestWriterUtils.getWireMockVariableName
 import org.evomaster.core.output.TestWriterUtils.handleDefaultStubForAsJavaOrKotlin
+import org.evomaster.core.output.dto.DtoWriter
 import org.evomaster.core.output.naming.NumberedTestCaseNamingStrategy
 import org.evomaster.core.output.naming.TestCaseNamingStrategyFactory
 import org.evomaster.core.problem.api.ApiWsIndividual
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.externalservice.httpws.HttpWsExternalService
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.externalservice.httpws.service.HttpWsExternalServiceHandler
 import org.evomaster.core.problem.rest.BlackBoxUtils
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.security.service.HttpCallbackVerifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.sql.schema.TableId
 import org.evomaster.test.utils.EMTestUtils
 import org.evomaster.test.utils.SeleniumEMUtils
 import org.evomaster.test.utils.js.JsLoader
@@ -55,10 +59,10 @@ class TestSuiteWriter {
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "ems"
         private const val fixtureClass = "ControllerFixture"
         private const val fixture = "_fixture"
         private const val browser = "browser"
+        private var containsDtos = false
     }
 
     @Inject
@@ -82,9 +86,13 @@ class TestSuiteWriter {
     @Inject
     private lateinit var externalServiceHandler: HttpWsExternalServiceHandler
 
-    private var activePartialOracles = mutableMapOf<String, Boolean>()
+    @Inject
+    private lateinit var httpCallbackVerifier: HttpCallbackVerifier
 
 
+    fun writeTests(testSuiteCode: TestSuiteCode){
+        saveToDisk(testSuiteCode.code, Paths.get(config.outputFolder, testSuiteCode.testSuitePath))
+    }
 
     fun writeTests(
         solution: Solution<*>,
@@ -93,9 +101,9 @@ class TestSuiteWriter {
         snapshotTimestamp: String = ""
     ) {
 
-        val name = TestSuiteFileName(solution.getFileName())
+        val name = solution.getFileName()
         val content = convertToCompilableTestCode(solution, name, snapshotTimestamp, controllerName, controllerInput)
-        saveToDisk(content, getTestSuitePath(name, config))
+        saveToDisk(content.code, getTestSuitePath(name, config))
     }
 
     /**
@@ -120,13 +128,11 @@ class TestSuiteWriter {
         timestamp: String = "",
         controllerName: String?,
         controllerInput: String?
-    ): String {
+    ): TestSuiteCode {
 
         val lines = Lines(config.outputFormat)
         val testSuiteOrganizer = TestSuiteOrganizer()
         val namingStrategy = TestCaseNamingStrategyFactory(config).create(solution)
-
-       // activePartialOracles = partialOracles.activeOracles(solution.individuals)
 
         header(solution, testSuiteFileName, lines, timestamp, controllerName)
 
@@ -156,8 +162,8 @@ class TestSuiteWriter {
         }
 
         val testSuitePath = getTestSuitePath(testSuiteFileName, config)
-        for (test in tests) {
-            lines.addEmpty(2)
+
+        val tc = tests.mapNotNull { test ->
 
             // catch writing problems on an individual test case basis
             val testLines = try {
@@ -174,7 +180,16 @@ class TestSuiteWriter {
                 assert(false) // in our tests, this should not happen... but should not crash in production
                 Lines(config.outputFormat)
             }
-            lines.add(testLines)
+
+            if(testLines.isEmpty()){
+                null
+            } else {
+                lines.addEmpty(2)
+                val start = lines.nextLineNumber()
+                lines.add(testLines)
+                val end = lines.nextLineNumber() - 1
+                TestCaseCode(test.name,test.test,testLines.toString(), start, end)
+            }
         }
 
         if (!config.outputFormat.isJavaScript()) {
@@ -186,14 +201,31 @@ class TestSuiteWriter {
         // additional handling on generated tests
         testCaseWriter.additionalTestHandling(tests)
 
-        return lines.toString()
+        return TestSuiteCode(
+            solution.getFileName().name,
+            solution.getFileRelativePath(config.outputFormat),
+            lines.toString(),
+            tc
+        )
+    }
+
+    fun writeDtos(solution: Solution<*>) {
+        val solutionFilename = solution.getFileName().name
+        val testSuiteFileName = TestSuiteFileName(solutionFilename)
+        val testSuitePath = getTestSuitePath(testSuiteFileName, config).parent
+        val dtoWriter = DtoWriter(config.outputFormat)
+        dtoWriter.write(testSuitePath, testSuiteFileName.getPackage(), solution)
+        containsDtos = dtoWriter.containsDtos()
     }
 
     private fun handleResetDatabaseInput(solution: Solution<*>): String {
+        if(sampler !is EnterpriseSampler<*>){
+            throw IllegalArgumentException("Not dealing with an enterprise application")
+        }
         if (!config.outputFormat.isJavaOrKotlin())
             throw IllegalStateException("DO NOT SUPPORT resetDatabased for " + config.outputFormat)
 
-        val accessedTable = mutableSetOf<String>()
+        val accessedTable = mutableSetOf<TableId>()
         solution.individuals.forEach { e ->
             //TODO will need to be refactored when supporting Web Frontend
             if (e.individual is ApiWsIndividual) {
@@ -205,14 +237,17 @@ class TestSuiteWriter {
                 accessedTable.addAll(de.deletedData)
             }
         }
-        val all = sampler.extractFkTables(accessedTable)
+        val all = (sampler as EnterpriseSampler).extractFkTables(accessedTable)
 
-        //if (all.isEmpty()) return "null"
+        val schema = remoteController.getCachedSutInfo()?.sqlSchemaDto
 
-        val tableNamesInSchema = remoteController.getCachedSutInfo()?.sqlSchemaDto?.tables?.map { it.name }?.toSet()
+        val tableNamesInSchema = schema
+            ?.tables
+            ?.map { TableId.fromDto(schema.databaseType, it.id) }
+            ?.toSet()
             ?: setOf()
 
-        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y.equals(x,true) } }.sorted()
+        val missingTables = all.filter { x ->  tableNamesInSchema.none { y -> y == x } }.sortedBy { it.name }
         if(missingTables.isNotEmpty()){
             /*
                 Weird case... but actually seen it in familie-ba-sak, regarding table "task", which is in the migration
@@ -224,7 +259,10 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { x -> tableNamesInSchema.any{y -> y.equals(x,true)} }.sorted().joinToString(",") { "\"$it\"" }
+            else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
+                .map{it.getFullQualifyingTableName()}
+                .sorted()
+                .joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
@@ -356,6 +394,14 @@ class TestSuiteWriter {
             lines.addEmpty(1)
         }
 
+        lines.addMultiLineComment(listOf(
+            "LICENSE DISCLAIMER",
+            "This file has been generated by EvoMaster.",
+            "The content of this file is not subject to the license of EvoMaster itself, i.e., LGPL.",
+            "This generated software (i.e., the test suite in this file) can be freely used, modified, ",
+            "and distributed as you see fit without any restrictions."
+        ))
+
         if (name.hasPackage() && format.isJavaOrKotlin()) {
             addStatement("package ${name.getPackage()}", lines)
             lines.addEmpty(2)
@@ -368,6 +414,10 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.Test", lines)
             addImport("org.junit.jupiter.api.Timeout", lines)
             addImport("org.junit.jupiter.api.Assertions.*", lines, true)
+            if (config.useTestMethodOrder) {
+                addImport("org.junit.jupiter.api.MethodOrderer", lines)
+                addImport("org.junit.jupiter.api.TestMethodOrder", lines)
+            }
         }
         if (format.isJUnit4()) {
             addImport("org.junit.AfterClass", lines)
@@ -385,6 +435,12 @@ class TestSuiteWriter {
 
         if (format.isJavaOrKotlin()) {
 
+            if (config.dtoSupportedForPayload() && containsDtos) {
+                val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
+                addImport("${pkgPrefix}dto.*", lines)
+                addImport("java.util.ArrayList", lines)
+            }
+
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
@@ -395,9 +451,11 @@ class TestSuiteWriter {
                 addImport("io.restassured.response.ValidatableResponse", lines)
             }
 
-            if (config.isEnabledExternalServiceMocking() && solution.needWireMockServers()) {
+            if ((config.isEnabledExternalServiceMocking() && solution.needWireMockServers())
+                || (config.ssrf && solution.hasSsrfFaults())) {
                 addImport("com.github.tomakehurst.wiremock.client.WireMock.*", lines, true)
                 addImport("com.github.tomakehurst.wiremock.WireMockServer", lines)
+                addImport("com.github.tomakehurst.wiremock.common.Metadata", lines)
                 addImport("com.github.tomakehurst.wiremock.core.WireMockConfiguration", lines)
                 addImport(
                     "com.github.tomakehurst.wiremock.extension.responsetemplating.ResponseTemplateTransformer",
@@ -479,6 +537,11 @@ class TestSuiteWriter {
             lines.add("import json")
             lines.add("import unittest")
             lines.add("import requests")
+
+            if(config.sqli){
+                lines.add("import time")
+            }
+
             if (config.testTimeout > 0) {
                 //see https://stackoverflow.com/questions/32309683/timeout-decorator-is-it-possible-to-disable-or-make-it-work-on-windows
                 lines.add("import os")
@@ -581,6 +644,14 @@ class TestSuiteWriter {
                         addStatement("private static WireMockServer ${getWireMockVariableName(externalService)}", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private static WireMockServer ${v.getVerifierName()}", lines)
+                    addStatement("private static final String SSRF_METADATA_TAG = \"SSRF\"", lines)
+                }
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private static final BrowserWebDriverContainer $browser = new BrowserWebDriverContainer()")
                 lines.indented {
@@ -605,6 +676,15 @@ class TestSuiteWriter {
                         addStatement("private lateinit var ${getWireMockVariableName(action)}: WireMockServer", lines)
                     }
             }
+
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    addStatement("private lateinit var ${v.getVerifierName()}: WireMockServer", lines)
+                    addStatement("private const val SSRF_METADATA_TAG: String = \"SSRF\" ", lines)
+                }
+                assertionUtilFunctionForSSRF(lines, config.outputFormat)
+            }
+
             if(config.problemType == EMConfig.ProblemType.WEBFRONTEND){
                 lines.add("private val $browser : BrowserWebDriverContainer<*> =  BrowserWebDriverContainer()")
                 lines.indented {
@@ -775,6 +855,31 @@ class TestSuiteWriter {
                 }
             }
 
+            if (config.ssrf && solution.hasSsrfFaults()) {
+                httpCallbackVerifier.getActionVerifierMappings().forEach { v ->
+                    if (format.isJava()) {
+                        lines.add("${v.getVerifierName()} = new WireMockServer(new WireMockConfiguration()")
+                    }
+                    if (format.isKotlin()) {
+                        lines.add("${v.getVerifierName()} = WireMockServer(WireMockConfiguration()")
+                    }
+
+                    lines.indented {
+                        lines.add(".port(${v.port})")
+                        if (format.isJava()) {
+                            addStatement(".extensions(new ResponseTemplateTransformer(false)))", lines)
+                        }
+                        if (format.isKotlin()) {
+                            addStatement(".extensions(ResponseTemplateTransformer(false)))", lines)
+                        }
+                    }
+                    addStatement("${v.getVerifierName()}.start()", lines)
+                    addStatement("assertNotNull(${v.getVerifierName()})", lines)
+
+                    lines.addEmpty(1)
+                }
+            }
+
             testCaseWriter.addExtraInitStatement(lines)
         }
 
@@ -939,6 +1044,10 @@ class TestSuiteWriter {
 
         initTestMethod(solution, lines, testSuiteFileName)
         lines.addEmpty(2)
+
+        if (config.ssrf && solution.hasSsrfFaults() && config.outputFormat.isJavaOrKotlin()) {
+            assertionUtilFunctionForSSRF(lines, config.outputFormat)
+        }
     }
 
 
@@ -969,6 +1078,10 @@ class TestSuiteWriter {
         lines.addEmpty()
 
         val format = config.outputFormat
+
+        if (format.isKotlin() && format.isJUnit5() && config.useTestMethodOrder) {
+            lines.add("@TestMethodOrder(MethodOrderer.MethodName::class)")
+        }
 
         when {
             format.isJava() -> lines.append("public ")
@@ -1041,6 +1154,39 @@ class TestSuiteWriter {
             .map { it.value }
             .distinctBy { it.getSignature() }
             .toList()
+    }
+
+    private fun assertionUtilFunctionForSSRF(lines: Lines, format: OutputFormat) {
+        lines.addEmpty(1)
+
+        val methodComment = "Method to verify whether the HttpCallbackVerifier has received any requests."
+        when {
+            format.isKotlin() -> {
+                lines.addSingleCommentLine(methodComment)
+                lines.add("fun verifierHasReceivedRequests(verifier: WireMockServer, actionName: String) : Boolean")
+            }
+            format.isJava() -> {
+                lines.startCommentBlock()
+                lines.addBlockCommentLine(methodComment)
+                lines.endCommentBlock()
+                lines.add("public static boolean verifierHasReceivedRequests(WireMockServer verifier, String actionName)")
+            }
+        }
+        lines.block {
+            lines.add("return verifier")
+            lines.indented {
+                if (format.isKotlin()) {
+                    lines.add(".allServeEvents")
+                    lines.add(".filter { it.wasMatched && it.stubMapping.metadata != null }")
+                    lines.add(".any { it.stubMapping.metadata.getString(SSRF_METADATA_TAG) == actionName }")
+                }
+                if (format.isJava()) {
+                    lines.add(".getAllServeEvents()")
+                    lines.add(".stream().filter( r -> r.getWasMatched() && r.getStubMapping().getMetadata() != null)")
+                    lines.add(".anyMatch( r -> r.getStubMapping().getMetadata().getString(SSRF_METADATA_TAG).equals(actionName));")
+                }
+            }
+        }
     }
 
 }

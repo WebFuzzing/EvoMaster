@@ -21,8 +21,8 @@ import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.NullableGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.string.StringGene
@@ -77,9 +77,9 @@ object GraphQLActionBuilder {
 
         if (schemaObj.data.__schema.queryType != null || schemaObj.data.__schema.mutationType != null) {
             for (element in state.tables) {
-                if (schemaObj.data.__schema.queryType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                if (schemaObj.data.__schema.queryType?.name?.lowercase() == element.typeName.lowercase()) {
                     handleOperation(state, actionCluster, treeDepth, element, GQMethodType.QUERY)
-                } else if (schemaObj.data.__schema.mutationType?.name?.toLowerCase() == element.typeName.lowercase()) {
+                } else if (schemaObj.data.__schema.mutationType?.name?.lowercase() == element.typeName.lowercase()) {
                     handleOperation(state, actionCluster, treeDepth, element, GQMethodType.MUTATION)
                 }
             }

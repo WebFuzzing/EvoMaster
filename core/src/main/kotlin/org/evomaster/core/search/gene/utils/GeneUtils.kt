@@ -4,12 +4,15 @@ import org.apache.commons.text.StringEscapeUtils
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.util.ParamUtil
+import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.*
-import org.evomaster.core.search.gene.collection.TaintedMapGene.Companion
 import org.evomaster.core.search.gene.numeric.*
-import org.evomaster.core.search.gene.optional.*
+import org.evomaster.core.search.gene.wrapper.*
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
@@ -759,32 +762,7 @@ object GeneUtils {
     }
 
 
-    /**
-     * Traverse the children of a wrapper gene, and return the leaf gene
-     *
-     * Return can only be null if [checkIfInUse] is true.
-     */
-    fun getWrappedValueGene(gene: Gene, checkIfInUse: Boolean = false): Gene? {
 
-        if(checkIfInUse && gene is SelectableWrapperGene && !gene.isActive){
-            return null
-        }
-
-        if (gene is OptionalGene) {
-            return getWrappedValueGene(gene.gene)
-        } else if (gene is CustomMutationRateGene<*>)
-            return getWrappedValueGene(gene.gene)
-        else if (gene is SqlPrimaryKeyGene) {
-            if (gene.gene is SqlAutoIncrementGene)
-                return gene
-            else return getWrappedValueGene(gene.gene)
-        } else if (gene is NullableGene) {
-            return getWrappedValueGene(gene.gene)
-        } else if (gene is FlexibleGene){
-            return getWrappedValueGene(gene.gene)
-        }
-        return gene
-    }
 
     fun getBasicGeneBasedOnJavaTypeBytecodeName(typeName: String, geneName: String) : Gene?{
 
@@ -929,4 +907,66 @@ object GeneUtils {
 
     fun instantiateShortGene(name: String) =
         IntegerGene(name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+
+
+    /**
+     * Return all the "fields" of type string in the params.
+     * The returned genes are not necessarily of type StringGene, as they could be wrapped (eg, in an OptionalGene).
+     * If objects and arrays are encountered, those are analyzed recursively.
+     */
+    fun getAllStringFields(params: List<Param>) = getAllFields(params, StringGene::class.java)
+
+
+    fun <K:Gene> getAllFields(params: List<Param>, klass: Class<K>) : List<Gene>{
+
+        return params.flatMap { p ->
+            if(p is HeaderParam || p is QueryParam || p is BodyParam || p is PathParam){
+                // Note: PathParam was explicitly excluded, as not really representing possible fields.
+                //  Added to work with SSRF detection
+                getAllFields(p.primaryGene(), klass)
+            } else {
+                // PathParam are explicitly excluded, as not really representing possible fields
+                listOf()
+            }
+        }
+    }
+
+    /**
+     * Check the leaf of this gene, and return this gene in case the leaf is matching [klass].
+     * If the leaf is an array or an object, this process is applied recursively on their content.
+     */
+    fun <K: Gene> getAllFields(gene: Gene, klass: Class<K>) : List<Gene>{
+
+        val fields = mutableListOf<Gene>()
+
+        val leaf = gene.getLeafGene()
+
+        val parent = leaf.parent
+
+        if (parent is ChoiceGene<*>){
+            if (parent.getViewOfChildren().any { klass.isAssignableFrom(it.javaClass) }) {
+                fields.add(parent)
+            }
+        } else {
+            if (klass.isAssignableFrom(leaf.javaClass)) {
+                fields.add(gene)
+            }
+        }
+
+        // TODO: Need to check for ChoiceGene?
+        if(leaf is ObjectGene){
+            leaf.fields.forEach {
+                fields.addAll(getAllFields(it, klass))
+            }
+        }
+
+        if(leaf is ArrayGene<*> && !leaf.isEmpty()){
+            leaf.getViewOfElements().forEach {
+                fields.addAll(getAllFields(it, klass))
+            }
+        }
+
+        return fields
+    }
+
 }

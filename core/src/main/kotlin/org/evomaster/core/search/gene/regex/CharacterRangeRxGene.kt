@@ -122,19 +122,6 @@ class CharacterRangeRxGene(
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if(other !is CharacterRangeRxGene){
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.value
-        this.value = other.value
-        if (!isLocallyValid()){
-            this.value = current
-            return false
-        }
-
-        return true
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if(other !is CharacterRangeRxGene){
@@ -143,8 +130,10 @@ class CharacterRangeRxGene(
         return this.value == other.value
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+        val gene = other.getPhenotype()
+
         if(gene is CharacterRangeRxGene){
             value = gene.value
             return true

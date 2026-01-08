@@ -6,17 +6,28 @@ import org.evomaster.core.output.Lines
 import org.evomaster.core.output.SqlWriter
 import org.evomaster.core.output.TestCase
 import org.evomaster.core.output.TestWriterUtils
+import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.link.RestLinkParameter
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.interfaces.NamedExamplesGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.utils.StringUtils
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -30,6 +41,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     @Inject
     private lateinit var partialOracles: PartialOracles
+
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
 
     constructor() : super()
 
@@ -60,47 +75,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         lines: Lines,
         baseUrlOfSut: String,
         ind: EvaluatedIndividual<*>,
-        insertionVars: MutableList<Pair<String, String>>
+        insertionVars: MutableList<Pair<String, String>>,
+        testName: String
     ) {
-        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars)
-
-//        if (shouldCheckExpectations()) {
-//            addDeclarationsForExpectations(lines, ind as EvaluatedIndividual<RestIndividual>)
-//            //TODO: -> also check expectation generation before adding declarations
-//        }
-
-        if (hasChainedLocations(ind.individual)) {
-            assert(ind.individual is RestIndividual)
-            /*
-                If the "location" header of a HTTP response is used in a following
-                call, we need to save it in a variable.
-                We declare all such variables at the beginning of the test.
-
-                TODO: rather declare variable first time we access it?
-                Yes! can use location index for unique name
-                FIXME: refactor
-             */
-            lines.addEmpty()
-
-            ind.evaluatedMainActions().asSequence()
-                .map { it.action }
-                .filterIsInstance(RestCallAction::class.java)
-                .filter { it.usePreviousLocationId != null }
-                .map { it.usePreviousLocationId }
-                .distinct()
-                .forEach { id ->
-                    val name = locationVar(id!!)
-                    when {
-                        format.isJava() -> lines.add("String $name = \"\";")
-                        format.isKotlin() -> lines.add("var $name : String? = \"\"")
-                        format.isJavaScript() -> lines.add("let $name = \"\";")
-                        format.isCsharp() -> lines.add("var $name = \"\";")
-                        format.isPython() -> {} // no need to declare variables
-                        // should never happen
-                        else -> throw IllegalStateException("Unsupported format $format")
-                    }
-                }
-        }
+        super.handleTestInitialization(lines, baseUrlOfSut, ind, insertionVars,testName)
     }
 
     override fun handleActionCalls(
@@ -129,22 +107,31 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                     //actions
                     c.second.forEach { a ->
                         val exeuctionIndex = ind.individual.seeMainExecutableActions().indexOf(a.action)
-                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                        handleSingleCall(a, exeuctionIndex, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, false)
                     }
                 }
             }else{
+                val isSQLi = hasSQLi(ind)
                 ind.evaluatedMainActions().forEachIndexed { index, evaluatedAction ->
-                    handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                  handleSingleCall(evaluatedAction, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, addTimeMeasurement = isSQLi)
                 }
             }
 
         }
     }
 
+    private fun hasSQLi(ind: EvaluatedIndividual<*>): Boolean {
+        return ind.evaluatedMainActions().any { evaluatedAction ->
+                (evaluatedAction.result as HttpWsCallResult).getVulnerableForSQLI()
+            }
+    }
+
     protected fun locationVar(id: String): String {
-        //TODO make sure name is syntactically valid
-        //TODO use counters to make them unique
-        return "location_${id.trim().replace(" ", "_")}"
+        /*
+            Ids are supposed to be unique, but might have invalid characters for a variable
+         */
+        val suffix = TestWriterUtils.safeVariableName(id.trim().replace(Individual.LOCAL_ID_PREFIX_ACTION,""))
+        return "location_$suffix"
     }
 
 
@@ -176,10 +163,6 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
         handleResponseAfterTheCall(call, res, responseVariableName, lines)
 
         handleLinkInfo(call, res, responseVariableName, lines)
-
-//        if (shouldCheckExpectations() && !res.failedCall()) {
-//            handleExpectationSpecificLines(call, lines, res, responseVariableName)
-//        }
     }
 
     private fun handleLinkInfo(call: RestCallAction, res: RestCallResult, responseVariableName: String, lines: Lines) {
@@ -233,15 +216,10 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
     }
 
 
-//    private fun shouldCheckExpectations() =
-//    //for now Expectations are only supported on the JVM
-//        config.expectationsActive && config.outputFormat.isJavaOrKotlin()
-
-
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
 
         val call = _call as RestCallAction
-        val verb = call.verb.name.lowercase(Locale.getDefault())
+        val verb = call.verb.name.lowercase()
 
         if (format.isCsharp()) {
             lines.append(".${StringUtils.capitalization(verb)}Async(")
@@ -329,6 +307,12 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 if (bodyParam != null) {
                     lines.append(", data=body")
                 }
+                if(config.testTimeout > 0) {
+                    /*
+                        As timeout at test level does not work reliably in Python, we do timeout as well in each HTTP call.
+                    */
+                    lines.append(", timeout=${config.testTimeout}")
+                }
             }
         }
 
@@ -408,7 +392,7 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //using what present in the "location" HTTP header
 
-                val location = locationVar(call.postLocationId())
+                val location = locationVar(call.creationLocationId())
 
                 /*
                     If there is a "location" header, then it must be either empty or a valid URI.
@@ -423,12 +407,17 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
                 when {
                     format.isJavaOrKotlin() -> {
                         val extract = "$resVarName.extract().header(\"location\")"
-                        lines.add("$location = $extract")
+                        if(format.isJava()){
+                            lines.add("String ")
+                        } else {
+                            lines.add("val ")
+                        }
+                        lines.append("$location = $extract")
                         lines.appendSemicolon()
                         lines.add("assertTrue(isValidURIorEmpty($location));")
                     }
                     format.isJavaScript() -> {
-                        lines.add("$location = $resVarName.header['location'];")
+                        lines.add("const $location = $resVarName.header['location'];")
                         val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty($location)"
                         lines.add("expect($validCheck).toBe(true);")
                     }
@@ -445,56 +434,31 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
                 //trying to infer linked ids from HTTP response
 
-                val extraTypeInfo = when {
-                    format.isKotlin() -> "<Object>"
-                    else -> ""
-                }
                 val baseUri: String = if (call.usePreviousLocationId != null) {
                     /* A variable should NOT be enclosed by quotes */
                     locationVar(call.usePreviousLocationId!!)
                 } else {
                     /* Literals should be enclosed by quotes */
-                    "\"${call.path.resolveOnlyPath(call.parameters)}\""
+                    val path = callGraphService.resolveLocationForParentOfChildOperationUsingCreatedResource(call)
+                    "\"$path\""
                 }
 
-                //TODO JS
-                //TODO code here should use same algorithm as in res.getResourceId()
-                //TODO this is quite limited, would need proper refactoring
-                val extract = when {
-                    format.isPython() -> "str($resVarName.json()['${res.getResourceIdName()}'])"
-                    else -> "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
-                }
+                //FIXME this should be same algorithm as in AbstractRestFitness
+                val idPointer = res.getResourceId()?.pointer ?: "/id"
 
-                lines.add("${locationVar(call.postLocationId())} = $baseUri + \"/\" + $extract")
+                val extract = extractValueFromJsonResponse(resVarName, idPointer)
+
+                when{
+                    format.isJavaScript() -> lines.add("const ")
+                    format.isJava() -> lines.add("String ")
+                    format.isKotlin() -> lines.add("val ")
+                    format.isPython()  -> lines.add("")/* nothing to do in Python */
+                }
+                lines.append("${locationVar(call.creationLocationId())} = $baseUri + \"/\" + $extract")
                 lines.appendSemicolon()
             }
         }
     }
-
-//    private fun addDeclarationsForExpectations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>) {
-//        if (!partialOracles.generatesExpectation(individual)) {
-//            return
-//        }
-//
-//        if (!format.isJavaOrKotlin()) {
-//            //TODO will need to see if going to support JS and C# as well
-//            return
-//        }
-//
-//        lines.addEmpty()
-//        when {
-//            format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-//            format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-//        }
-//        lines.appendSemicolon()
-//    }
-//
-//    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String) {
-//        lines.addEmpty()
-//        if (partialOracles.generatesExpectation(call, res)) {
-//            partialOracles.addExpectations(call, lines, res, name, format)
-//        }
-//    }
 
     override fun addTestCommentBlock(lines: Lines, test: TestCase) {
 
@@ -591,9 +555,27 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
     private fun getAllUsedExamples(ind: RestIndividual) : List<String>{
         return ind.seeFullTreeGenes()
-            .filterIsInstance<EnumGene<*>>()
             .filter { it.name == RestActionBuilderV3.EXAMPLES_NAME }
             .filter { it.staticCheckIfImpactPhenotype() }
-            .map { it.getValueAsRawString() }
+            .map {
+                val name = if(it is NamedExamplesGene){
+                    "(${it.getValueName()?: "-"}) "
+                } else {
+                    ""
+                }
+
+                val param = it.getFirstParent { p -> p is Param }
+                val pName = when(param) {
+                    is QueryParam -> "QUERY: ${param.name}"
+                    is HeaderParam -> "HEADER: ${param.name}"
+                    is PathParam -> "PATH: ${param.name}"
+                    is BodyParam -> "BODY"
+                    else -> ""
+                }
+
+                val value = it.getValueAsRawString()
+
+                "$name$pName -> $value"
+            }
     }
 }

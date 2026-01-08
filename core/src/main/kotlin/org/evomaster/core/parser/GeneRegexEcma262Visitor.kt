@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.regex.*
 
+private const val EOF_TOKEN = "<EOF>"
 /**
  * Parser Visitor based on the RegexEcma262.g4 grammar file
  */
@@ -16,7 +17,8 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}$text")
+        // we remove the <EOF> token from end of the string to store as sourceRegex
+        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0,text.length - EOF_TOKEN.length)}")
 
         return VisitResult(gene)
     }
@@ -166,9 +168,36 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             return VisitResult(gene)
         }
 
-        if(ctx.AtomEscape() != null){
-            val char = ctx.AtomEscape().text[1].toString()
-            return VisitResult(CharacterClassEscapeRxGene(char))
+        if(ctx.AtomEscape() != null) {
+            val txt = ctx.AtomEscape().text
+            when {
+                txt[1]== 'c' -> {
+                    val controlLetterValue = txt[2].uppercaseChar().code.xor(0x40)
+                    return VisitResult(PatternCharacterBlockGene(txt, controlLetterValue.toChar().toString()))
+                }
+                txt[1] in "fnrtv" -> {
+                    val escape = when {
+                        txt[1] == 'n' -> "\u000A"
+                        txt[1] == 'v' -> "\u000B"
+                        txt[1] == 'f' -> "\u000C"
+                        txt[1] == 'r' -> "\u000D"
+                        else -> "\u0009"
+                    }
+                    return VisitResult(PatternCharacterBlockGene(txt, escape))
+                }
+                txt[1] == 'x' || txt[1] == 'u' -> {
+                    val hexValue =
+                        txt.substring(2).toInt(16)
+                    return VisitResult(
+                        PatternCharacterBlockGene(
+                            txt,
+                            hexValue.toChar().toString()
+                        )
+                    )
+                }
+
+                else -> return VisitResult(CharacterClassEscapeRxGene(txt[1].toString()))
+            }
         }
 
         if(ctx.disjunction() != null){

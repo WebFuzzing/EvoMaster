@@ -1,13 +1,12 @@
 package org.evomaster.core.problem.graphql.service
 
-import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.output.service.GraphQLTestCaseWriter
 import org.evomaster.core.output.service.TestCaseWriter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.enterprise.service.EnterpriseModule
+import org.evomaster.core.problem.enterprise.service.EnterpriseSampler
 import org.evomaster.core.problem.graphql.GraphQLIndividual
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
@@ -22,9 +21,12 @@ class GraphQLModule : EnterpriseModule() {
 
     override fun configure() {
 
+        bind(object : TypeLiteral<EnterpriseSampler<GraphQLIndividual>>() {})
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
         bind(object : TypeLiteral<Sampler<GraphQLIndividual>>() {})
-                .to(GraphQLSampler::class.java)
-                .asEagerSingleton()
+            .to(GraphQLSampler::class.java)
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(GraphQLSampler::class.java)

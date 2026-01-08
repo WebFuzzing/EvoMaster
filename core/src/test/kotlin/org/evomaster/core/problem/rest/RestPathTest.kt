@@ -1,18 +1,53 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.v3.oas.models.parameters.Parameter
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.builder.RestActionBuilderV3
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.collection.ArrayGene
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
+import org.glassfish.jersey.uri.internal.JerseyUriBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.net.URISyntaxException
+import org.junit.jupiter.api.assertThrows
+import org.mockserver.configuration.Configuration.configuration
 
 internal class RestPathTest{
+
+    @Test
+    fun testFamilieBaSakIssue(){
+
+        val x = "/api/satsendring/kjorsatsendring?EMextraParam123=42/Trigget satsendring for fagsakene []"
+
+        assertThrows<Exception>{JerseyUriBuilder.fromUri(x).build()}
+
+        val path = RestPath("/api/satsendring/kjorsatsendring")
+        val q = QueryParam("EMextraParam123", StringGene("EMextraParam123", "42/Trigget satsendring for fagsakene []"))
+
+        val uri = path.resolve(listOf(q))
+
+        assertNotEquals(x, uri)
+
+        JerseyUriBuilder.fromUri(uri).build()
+
+        // check escape
+        //TODO update once fixing AbstractRestFitness
+        val y = "/api/satsendring/kjorsatsendring/Trigget satsendring for fagsakene []"
+        JerseyUriBuilder.fromUri(y).build()
+
+        val e = GeneUtils.applyEscapes(y, GeneUtils.EscapeMode.URI, OutputFormat.JAVA_JUNIT_4)
+        //FIXME spaces are not escaped
+        //assertNotEquals(y,e)
+    }
 
 
     @Test
@@ -297,6 +332,18 @@ internal class RestPathTest{
         val uri = path.resolve(listOf(a))
 
         assertEquals("/x%20+%20y?a=k+%2B+w", uri)
+    }
+
+    @Test
+    fun testMatchEmptyElement(){
+
+        assertFalse(RestPath("/x/").matches("/x"))
+        assertFalse(RestPath("/x").matches("/x/"))
+
+        assertTrue(RestPath("/x").matches("/x"))
+        assertTrue(RestPath("/x/").matches("/x/"))
+
+        assertTrue(RestPath("/x/{id}").matches("/x/"))
     }
 
     @Test

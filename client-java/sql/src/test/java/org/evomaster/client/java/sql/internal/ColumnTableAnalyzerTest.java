@@ -1,8 +1,13 @@
 package org.evomaster.client.java.sql.internal;
 
-import org.evomaster.client.java.sql.internal.ColumnTableAnalyzer;
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -15,101 +20,111 @@ public class ColumnTableAnalyzerTest {
 
 
     @Test
-    public void testInsertWithQualifier(){
+    public void testInsertWithQualifier() {
 
         String sql = "insert into Bar.Foo (x) values (42)";
 
-        Map<String, Set<String>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
+        Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
 
-        assertEquals(1, data.size());
-        assertTrue(data.containsKey("Bar.Foo"));
+        assertEquals(new SqlTableId("Bar.Foo"), data.getKey());
     }
 
 
     @Test
-    public void testInsertInSimpleTable(){
+    public void testInsertInSimpleTable() {
 
         String sql = "insert into Foo (x) values (42)";
 
-        Map<String, Set<String>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
+        Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
 
-        assertEquals(1, data.size());
-        assertTrue(data.containsKey("Foo"));
-        //TODO check on actual fields when implemented
+        assertEquals(new SqlTableId("Foo"), data.getKey());
+
     }
 
     @Test
-    public void testUpdateInSimpleTable(){
+    public void testUpdateInSimpleTable() {
 
         String sql = "update Foo set x=42";
 
-        Map<String, Set<String>> data = ColumnTableAnalyzer.getUpdatedDataFields(sql);
+        Map.Entry<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getUpdatedDataFields(sql);
 
-        assertEquals(1, data.size());
-        assertTrue(data.containsKey("Foo"));
+        assertEquals(new SqlTableId("Foo"), data.getKey());
         //TODO check on actual fields when implemented
     }
 
 
     @Test
-    public void testDeleteSimpleTable(){
+    public void testDeleteSimpleTable() {
 
         String sql = "delete from Foo";
 
-        Set<String> tables = ColumnTableAnalyzer.getDeletedTables(sql);
+        DbInfoDto schema = new DbInfoDto();
+        TableDto fooTableDto = new TableDto();
+        fooTableDto.id = new TableIdDto();
+        fooTableDto.id.name = "Foo";
+        schema.tables.add(fooTableDto);
+        SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
 
-        assertEquals(1, tables.size());
-        assertTrue(tables.contains("Foo"));
+        assertNotNull(deletedTableId);
+        assertEquals(new SqlTableId("Foo"), deletedTableId);
     }
 
     @Test
-    public void testDeleteWithQualifier(){
+    public void testDeleteWithQualifier() {
 
         String sql = "delete from v1.Foo";
 
-        Set<String> tables = ColumnTableAnalyzer.getDeletedTables(sql);
+        DbInfoDto schema = new DbInfoDto();
+        TableDto tableDto = new TableDto();
+        tableDto.id = new TableIdDto();
+        tableDto.id.name = "v1.Foo";
+        schema.tables.add(tableDto);
 
-        assertEquals(1, tables.size());
-        assertTrue(tables.contains("v1.Foo"));
+        SqlTableId deletedTableId = ColumnTableAnalyzer.getDeletedTable(sql);
+
+        assertNotNull(deletedTableId);
+        assertEquals(new SqlTableId("v1.Foo"), deletedTableId);
     }
 
 
-
     @Test
-    public void testSelectReadAllFromSingleTable(){
+    public void testSelectReadAllFromSingleTable() {
 
-        String select = "select *  from Foo";
-
-        Map<String, Set<String>> data = ColumnTableAnalyzer.getSelectReadDataFields(select);
+        String select = "SELECT * FROM Foo";
+        Map<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getSelectReadDataFields(select);
 
         assertEquals(1, data.size());
-
-        Set<String> columns = data.get("Foo");
+        Set<SqlColumnId> columns = data.get(new SqlTableId("Foo"));
 
         assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
+        assertTrue(columns.contains(new SqlColumnId("*")));
     }
 
 
     @Test
-    public void testSelectReadFromJoinedTables(){
+    public void testSelectReadFromJoinedTables() {
 
         String select = "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate" +
                 " FROM Orders " +
                 " INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;";
 
-        Map<String, Set<String>> data = ColumnTableAnalyzer.getSelectReadDataFields(select);
+        Map<SqlTableId, Set<SqlColumnId>> data = ColumnTableAnalyzer.getSelectReadDataFields(select);
 
         assertEquals(2, data.size());
 
-        Set<String> columns = data.get("Orders");
-        //FIXME: once supporting actual fields instead of *
-        assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
+        final Set<SqlColumnId> ordersColumns = data.get(new SqlTableId("Orders"));
 
-        columns = data.get("Customers");
         //FIXME: once supporting actual fields instead of *
-        assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
+        assertEquals(1, ordersColumns.size());
+        assertTrue(ordersColumns.contains(new SqlColumnId("*")));
+
+        final Set<SqlColumnId> customersColumns = data.get(new SqlTableId("Customers"));
+
+        //FIXME: once supporting actual fields instead of *
+        assertEquals(1, customersColumns.size());
+        assertTrue(customersColumns.contains(new SqlColumnId(("*"))));
     }
+
+
+
 }

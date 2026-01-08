@@ -540,7 +540,7 @@ internal class EMConfigTest{
 
     @Test
     fun testLowestExternalServiceIP() {
-        val params = arrayOf("--externalServiceIP", "127.0.0.4")
+        val params = arrayOf("--externalServiceIP", "127.0.0.5")
         EMConfig.validateOptions(params)
     }
 
@@ -598,13 +598,13 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testNoNamingStrategyDefaultsToNumbered() {
+    fun testNoNamingStrategyDefaultsToAction() {
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         config.updateProperties(parser.parse())
 
-        assertEquals(NamingStrategy.NUMBERED, config.namingStrategy)
+        assertEquals(NamingStrategy.ACTION, config.namingStrategy)
     }
 
     @Test
@@ -632,13 +632,32 @@ internal class EMConfigTest{
     }
 
     @Test
-    fun testQueryParamsInTestCaseNamesIsOffByDefault() {
+    fun testQueryParamsInTestCaseNamesIsOnByDefault() {
         val parser = EMConfig.getOptionParser()
         val config = EMConfig()
 
         config.updateProperties(parser.parse())
 
-        assertFalse(config.nameWithQueryParameters)
+        assertTrue(config.nameWithQueryParameters)
+    }
+
+
+    @Test
+    fun testMaxCharsLengthCanBeChangedByParam() {
+        val parser = EMConfig.getOptionParser()
+        val config = EMConfig()
+
+        val default = config.maxTestCaseNameLength
+
+        config.updateProperties(parser.parse())
+        assertEquals(config.maxTestCaseNameLength, default)
+
+        val different = default * 2
+
+        val options = parser.parse("--maxTestCaseNameLength", "$different")
+        config.updateProperties(options)
+
+        assertEquals(config.maxTestCaseNameLength, different)
     }
 
 }

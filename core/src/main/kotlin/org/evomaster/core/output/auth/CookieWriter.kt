@@ -6,7 +6,7 @@ import org.evomaster.core.output.TestWriterUtils
 import org.evomaster.core.output.service.HttpWsTestCaseWriter
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
-import org.evomaster.core.problem.rest.ContentType
+import org.evomaster.core.problem.rest.data.ContentType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -50,10 +50,11 @@ object CookieWriter {
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = (")
+                format.isJavaScript() -> lines.add("const ${cookiesName(k)} = ")
             }
 
             if (!format.isPython()) {
+                // TODO: should we use DTO for cookie related requests?
                 testCaseWriter.startRequest(lines)
                 lines.indent()
             }
@@ -72,8 +73,13 @@ object CookieWriter {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".then().extract().cookies()")
-                format.isJavaScript() -> lines.add(").header['set-cookie'][0].split(';')[0]")
                 format.isPython() -> lines.append(".cookies")
+            }
+
+            if(format.isJavaScript()){
+                lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
+                lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+                lines.appendSemicolon()
             }
 
             if (format.isPython()) {
@@ -81,7 +87,10 @@ object CookieWriter {
             }
             //TODO check response status and cookie headers?
 
-            lines.appendSemicolon()
+            if(!format.isJavaScript()){
+                lines.appendSemicolon()
+            }
+
             lines.addEmpty()
 
             if (!format.isPython()) {
@@ -102,32 +111,55 @@ object CookieWriter {
     ) {
 
         if(format.isJavaScript()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-        when {
-            format.isJavaOrKotlin() -> lines.add(".contentType(\"${k.contentType.defaultValue}\")")
-            format.isJavaScript() -> lines.add(".set(\"content-type\", \"${k.contentType.defaultValue}\")")
-            format.isPython() -> {
-                lines.add("headers = {}")
-                lines.add("headers[\"content-type\"] = \"${k.contentType.defaultValue}\"")
-            }
+        if(format.isPython()) {
+            lines.add("headers = {}")
         }
 
-        when (k.contentType) {
-            ContentType.X_WWW_FORM_URLENCODED -> {
-                val send = testCaseWriter.sendBodyCommand()
-                when {
-                    format.isPython() -> lines.add("body = \"${k.payload}\"")
-                    else -> lines.add(".$send(\"${k.payload}\")")
+        val contentType = k.contentType
+        if(contentType != null) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
+                format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
+                format.isPython() -> {
+                    lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
                 }
             }
-            ContentType.JSON -> {
-                testCaseWriter.printSendJsonBody(k.payload, lines)
+
+            when (contentType) {
+                ContentType.X_WWW_FORM_URLENCODED -> {
+                    val send = testCaseWriter.sendBodyCommand()
+                    when {
+                        format.isPython() -> lines.add("body = \"${k.payload}\"")
+                        else -> lines.add(".$send(\"${k.payload}\")")
+                    }
+                }
+
+                ContentType.JSON -> {
+                    testCaseWriter.printSendJsonBody(k.payload!!, lines)
+                }
+
+                else -> {
+                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                }
             }
-            else -> {
-                throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+        }
+
+        for(header in k.headers) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
+                format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
+                format.isPython() -> {
+                    lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
+                }
             }
+        }
+
+        if (format.isJavaScript()){
+            // disable redirections
+            lines.add(".redirects(0)")
         }
 
         /*
@@ -135,30 +167,29 @@ object CookieWriter {
             needed in used libraries for Python and JS
          */
         if(format.isJavaOrKotlin()) {
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
-
-        //TODO should check specified verb
         if (format.isPython()) {
             lines.add("$targetVariable = requests \\")
             lines.indent(2)
-            callPost(lines, k, format, baseUrlOfSut)
+            callEndpoint(lines, k, format, baseUrlOfSut)
             lines.append(", ")
             lines.indented {
-                lines.add("headers=headers, data=body)")
+                lines.add("headers=headers, data=body, allow_redirects=False)")
             }
             lines.deindent(2)
         }
     }
 
-    private fun callPost(
+    private fun callEndpoint(
         lines: Lines,
         k: EndpointCallLogin,
         format: OutputFormat,
         baseUrlOfSut: String
     ) {
-        lines.add(".post(")
+        val verb = k.verb.name.lowercase()
+        lines.add(".$verb(")
         if (k.externalEndpointURL != null) {
             lines.append("\"${k.externalEndpointURL}\"")
         } else {

@@ -7,11 +7,12 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.sql.schema.Table
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.schema.TableId
 
 /**
  * this class is to record the identified resources in the sut, i.e., based on the 'paths' of 'OpenAPI'
@@ -29,13 +30,13 @@ class ResourceCluster {
      * key is table name
      * value is a list of existing data of PKs in DB
      */
-    private val dataInDB : MutableMap<String, MutableList<DataRowDto>> = mutableMapOf()
+    private val dataInDB : MutableMap<TableId, MutableList<DataRowDto>> = mutableMapOf()
 
     /**
      * key is table name
      * value is the table
      */
-    private val tables : MutableMap<String, Table> = mutableMapOf()
+    private val tables : MutableMap<TableId, Table> = mutableMapOf()
 
 
     /**
@@ -126,17 +127,17 @@ class ResourceCluster {
     /**
      * @return existing rows of the table based on the specified [tableName]
      */
-    fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
-        val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
-        if (found.isEmpty()) return null
-        Lazy.assert{found.size == 1}
-        return dataInDB.getValue(found.first())
+    fun getDataInDb(tableName: TableId) : MutableList<DataRowDto>?{
+//        val key = SqlActionUtils.getTableKey(dataInDB.keys, tableName)
+//            ?: return null
+        return dataInDB.entries.find { it.key.isEquivalentIgnoringCase(tableName) }?.value
     }
 
     /**
      * @return table class based on specified [name]
      */
-    fun getTableByName(name : String) = tables.keys.find { it.equals(name, ignoreCase = true) }?.run { tables[this] }
+    private fun getTableByName(name : String) =
+        SqlActionUtils.getTableKey(tables.keys, name)?.run { tables[this] }
 
 
     /**
@@ -154,7 +155,7 @@ class ResourceCluster {
      * if [doNotCreateDuplicatedAction], the returned list would be A and B
      * else the return list would be A, A and B. the additional A is created for B
      */
-    fun createSqlAction(tables: List<String>,
+    fun createSqlAction(tables: List<TableId>,
                         sqlInsertBuilder: SqlInsertBuilder,
                         previous: List<SqlAction>,
                         doNotCreateDuplicatedAction: Boolean,
@@ -164,15 +165,18 @@ class ResourceCluster {
                         useExtraSqlDbConstraints: Boolean = false,
                         enableSingleInsertionForTable : Boolean = false
     ) : MutableList<SqlAction>{
-        val sorted = SqlActionUtils.sortTable(tables.mapNotNull { getTableByName(it) }.run { if (doNotCreateDuplicatedAction) this.distinct() else this })
+        val sorted = SqlActionUtils.sortTable(
+            tables.mapNotNull { t -> this.tables.entries.find { it.key.isEquivalentIgnoringCase(t) }?.value }
+                .run { if (doNotCreateDuplicatedAction) this.distinct() else this }
+        )
         val added = mutableListOf<SqlAction>()
         val preTables = previous.filter { !isInsertion || !it.representExistingData }.map { it.table.name }.toMutableList()
 
 
-        if (!isInsertion && sorted.none { t-> (getDataInDb(t.name)?.size?: 0) > 0 }){
+        if (!isInsertion && sorted.none { t-> (getDataInDb(t.id)?.size?: 0) > 0 }){
             if (forceSynDataInDb)
                 syncDataInDb(sqlInsertBuilder)
-            if (sorted.none { t-> (getDataInDb(t.name)?.size?: 0) > 0 }){
+            if (sorted.none { t-> (getDataInDb(t.id)?.size?: 0) > 0 }){
                 return mutableListOf()
             }
         }
@@ -180,19 +184,19 @@ class ResourceCluster {
         sorted.forEach { t->
             if (!doNotCreateDuplicatedAction || preTables.none { p-> p.equals(t.name, ignoreCase = true) }){
                 val actions = if (!isInsertion){
-                    if ((getDataInDb(t.name)?.size ?: 0) == 0) {
+                    if ((getDataInDb(t.id)?.size ?: 0) == 0) {
                         null
                     } else {
-                        val candidates = getDataInDb(t.name)!!
+                        val candidates = getDataInDb(t.id)!!
                         val row = randomness.choose(candidates)
-                        val a = sqlInsertBuilder.extractExistingByCols(t.name, row, useExtraSqlDbConstraints)
+                        val a = sqlInsertBuilder.extractExistingByCols(t.id, row, useExtraSqlDbConstraints)
                         if(a != null)
                             listOf(a)
                         else
                             null
                     }
                 } else{
-                    sqlInsertBuilder.createSqlInsertionAction(t.name, useExtraSqlDbConstraints = useExtraSqlDbConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
+                    sqlInsertBuilder.createSqlInsertionAction(t.id, useExtraSqlDbConstraints = useExtraSqlDbConstraints, enableSingleInsertionForTable=enableSingleInsertionForTable)
                             .onEach { a -> a.doInitialize(randomness) }
                 }
 

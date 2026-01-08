@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.enterprise
 
 import com.webfuzzing.commons.faults.FaultCategory
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.action.ActionResult
 
 object DetectedFaultUtils {
 
@@ -35,6 +37,17 @@ object DetectedFaultUtils {
         return solution.individuals
             .flatMap { getDetectedFaultCategories(it) }
             .toSet()
+    }
+
+    fun verifyExcludedCategories(ei: EvaluatedIndividual<*>, config: EMConfig) : Boolean {
+
+        // if not an enterprise individual, then no need to check
+        if(ei.individual !is EnterpriseIndividual){
+            return true
+        }
+
+        val detected = getDetectedFaultCategories(ei)
+        return detected.all{config.isEnabledFaultCategory(it)}
     }
 
 }

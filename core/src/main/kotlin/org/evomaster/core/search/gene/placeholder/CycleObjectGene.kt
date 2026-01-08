@@ -39,17 +39,15 @@ class CycleObjectGene(name: String) : SimpleGene(name) {
         throw IllegalStateException("CycleObjectGene has no value")
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        // do nothing
-        return true
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         return other is CycleObjectGene
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return false
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        // do nothing
+        return other is CycleObjectGene
     }
 
 

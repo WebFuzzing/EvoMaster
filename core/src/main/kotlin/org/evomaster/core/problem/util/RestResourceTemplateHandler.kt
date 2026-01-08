@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.util
 
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.action.ActionFilter
@@ -17,7 +17,8 @@ class RestResourceTemplateHandler{
 
 
         private val arrayHttpVerbs : Array<HttpVerb> =
-                arrayOf(HttpVerb.POST,
+                arrayOf(
+                    HttpVerb.POST,
                         HttpVerb.GET,
                         HttpVerb.PUT,
                         HttpVerb.PATCH,
@@ -85,7 +86,7 @@ class RestResourceTemplateHandler{
             }else null
 
             if (createActionVerb != null){
-                val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
+                val chosen = space.filter { v-> v!= HttpVerb.HEAD && v!= HttpVerb.OPTIONS }.toTypedArray()
                 chosen.forEach {
                     val key = formatTemplate(arrayOf(createActionVerb, it))
                     maps.getOrPut(key){

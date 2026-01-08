@@ -38,15 +38,13 @@ class LimitObjectGene(name: String) : SimpleGene(name) {
         return false
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        return true
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         return other is LimitObjectGene
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return false
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        //do nothing
+        return containsSameValueAs(other)
     }
+
 }

@@ -4,8 +4,8 @@ import edu.stanford.nlp.ling.CoreAnnotations
 import edu.stanford.nlp.ling.CoreLabel
 import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern
 import edu.stanford.nlp.pipeline.StanfordCoreNLP
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
@@ -14,10 +14,10 @@ import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.resource.PathRToken
 import org.evomaster.core.problem.rest.resource.RToken
 import org.evomaster.core.problem.util.ParamUtil
-import org.evomaster.core.search.gene.optional.CustomMutationRateGene
+import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import java.util.*
 
 /**
@@ -59,7 +59,7 @@ object ParserUtil {
         return pattern_verb!!
     }
 
-    private fun formatKey(source : String) : String = source.toLowerCase()
+    private fun formatKey(source : String) : String = source.lowercase()
 
     fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>, withParser : Boolean){
         if (withParser)
@@ -173,7 +173,7 @@ object ParserUtil {
     }
 
     private fun findRToken(key : String, map: MutableMap<String, out RToken>) : RToken?{
-        map[key.toLowerCase()]?.let { return it }
+        map[key.lowercase()]?.let { return it }
         return map.values.find { it.isKey(key) }
 
     }

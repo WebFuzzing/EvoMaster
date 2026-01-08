@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene.sql.geometric
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -47,6 +46,7 @@ class SqlPolygonGene(
         val pointList = mutableListOf<SqlPointGene>()
         repeat(minLengthOfPolygonRing) {
             val newGene = points.template.copy() as SqlPointGene
+            newGene.doInitialize(randomness)
             pointList.add(newGene)
             do {
                 newGene.randomize(randomness, tryToForceNewValue)
@@ -54,7 +54,7 @@ class SqlPolygonGene(
         }
         points.randomize(randomness, tryToForceNewValue)
         points.killAllChildren()
-        pointList.map { points.addChild(it) }
+        pointList.forEach { points.addChild(it) }
         assert(isLocallyValid())
     }
 
@@ -176,11 +176,11 @@ class SqlPolygonGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlPolygonGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
-        return updateValueOnlyIfValid({this.points.copyValueFrom(other.points)}, false)
+        return this.points.unsafeCopyValueFrom(other.points)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -188,20 +188,6 @@ class SqlPolygonGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.points.containsSameValueAs(other.points)
-    }
-
-
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlPolygonGene -> {
-                points.bindValueBasedOn(gene.points)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind PathGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
     }
 
     override fun customShouldApplyShallowMutation(

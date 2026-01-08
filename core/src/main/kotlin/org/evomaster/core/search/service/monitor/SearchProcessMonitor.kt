@@ -9,7 +9,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.*
 import org.evomaster.core.search.gene.Gene
@@ -163,7 +163,7 @@ class SearchProcessMonitor: SearchListener {
 
     private fun setOverall(){
         val stp = config.stoppingCriterion.toString()+"_"+
-                (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
+                (if(config.stoppingCriterion.toString().lowercase().contains("time")) config.timeLimitInSeconds().toString() else config.maxEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
@@ -221,11 +221,12 @@ class SearchProcessMonitor: SearchListener {
             targetsDuringSeeding = listOf()
         )
         val content = writer.convertToCompilableTestCode(
-                solution = solution,
-                testSuiteFileName = testFile, controllerName = controllerName, controllerInput = null)
-        writeByChannel(
-                Paths.get(getStepAsPath(index)),
-                content)
+            solution = solution,
+            testSuiteFileName = testFile,
+            controllerName = controllerName,
+            controllerInput = null
+        ).code
+        writeByChannel(Paths.get(getStepAsPath(index)), content)
         if (doesIncludeTarget){
             val info = archive.exportCoveredTargetsAsPair(solution)
             writeByChannel(

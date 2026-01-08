@@ -8,8 +8,8 @@ import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.util.inference.model.ParamGeneBindMap
@@ -24,7 +24,7 @@ import org.evomaster.core.search.gene.numeric.DoubleGene
 import org.evomaster.core.search.gene.numeric.FloatGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
@@ -109,14 +109,14 @@ object BindingBuilder {
     }
 
     private fun bindValues(p: Pair<Gene,Gene>, doBuildBindingGene: Boolean){
-        val ok = p.first.bindValueBasedOn(p.second)
+        val ok = p.first.copyValueFrom(p.second)
         if (ok && doBuildBindingGene){
             p.first.addBindingGene(p.second)
             p.second.addBindingGene(p.first)
         }
 
-        val first = ParamUtil.getValueGene(p.first)
-        val second = ParamUtil.getValueGene(p.second)
+        val first = p.first.getLeafGene()
+        val second = p.second.getLeafGene()
         if(ok && !doBuildBindingGene && first is StringGene && TaintInputName.isTaintInput(first.value)){
             //do not use same tainted value in non-bound genes
             if(second is StringGene){
@@ -285,7 +285,7 @@ object BindingBuilder {
         return emptyList()
     }
 
-    private fun buildBindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean): List<Pair<Gene, Gene>>{
+    private fun buildBindBodyAndOther(body : BodyParam, bodyPath: RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean): List<Pair<Gene, Gene>>{
         val otherGene = ParamUtil.getValueGene(other.gene)
         if (!ParamUtil.isGeneralName(otherGene.name)){
             val f = ParamUtil.getValueGene(body.gene).run {

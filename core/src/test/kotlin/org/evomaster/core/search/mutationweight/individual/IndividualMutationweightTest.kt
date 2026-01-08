@@ -1,14 +1,13 @@
 package org.evomaster.core.search.mutationweight.individual
 
-import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.mutationweight.GeneWeightTestSchema
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

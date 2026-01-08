@@ -29,7 +29,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     override fun handleActionCalls(lines: Lines, baseUrlOfSut: String, ind: EvaluatedIndividual<*>, insertionVars: MutableList<Pair<String, String>>, testCaseName: String, testSuitePath: Path?){
         if (ind.individual is GraphQLIndividual) {
             ind.evaluatedMainActions().forEachIndexed { index,  a ->
-                handleSingleCall(a, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut)
+                handleSingleCall(a, index, ind.fitness, lines, testCaseName, testSuitePath, baseUrlOfSut, false)
             }
         }
     }
@@ -44,7 +44,7 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
         handleResponseAfterTheCall(call, result, responseVariableName, lines)
     }
 
-    override fun handleBody(call: HttpWsAction, lines: Lines) {
+    override fun handleBody(call: HttpWsAction, lines: Lines, dtoVar: String?) {
 
         /*
             TODO: when/if we are going to deal with GET, then we will need to update/refactor this code

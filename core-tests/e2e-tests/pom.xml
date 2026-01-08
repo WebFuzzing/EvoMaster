@@ -1,0 +1,75 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-core-tests</artifactId>
+        <version>4.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>evomaster-e2e-tests</artifactId>
+    <packaging>pom</packaging>
+
+
+    <modules>
+        <module>e2e-tests-utils</module>
+        <module>dropwizard-examples</module>
+        <module>micronaut-latest</module>
+        <module>spring</module>
+    </modules>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-e2e-tests-utils</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <!--
+                            Make sure each E2E is run on own JVM.
+                            This is due to possible issues with classloading, as classes are only loaded once...
+                            that is a problem when more than 1 test suite is using the same SUT.
+                            In general, this a performance bottleneck, which should be avoided for unit tests.
+                            However, for E2E that are already expensive to run, hopefully should not be a major problem.
+
+                            Unfortunately, it was a MAJOR problem, as execution time went up of at least double...
+                            on GA, there is a timeout of 6 hours, which was reached (so not 100% sure of total time...)
+                        -->
+<!--                        <reuseForks>false</reuseForks>-->
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>Configs for JDK >= 17</id>
+            <activation>
+                <jdk>[17,)</jdk>
+            </activation>
+           <!--
+           This module should be enabled after Spring2 dependencies
+           are pulled down to each e2e project
+           -->
+<!--            <modules>-->
+<!--                <module>spring-rest-jakarta</module>-->
+<!--            </modules>-->
+        </profile>
+    </profiles>
+
+</project>

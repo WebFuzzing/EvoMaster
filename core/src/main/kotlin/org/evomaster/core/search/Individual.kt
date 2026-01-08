@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.EMConfig
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
@@ -11,7 +12,7 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.TaintableGene
-import org.evomaster.core.search.gene.optional.OptionalGene
+import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.search.service.monitor.ProcessMonitorExcludeField
@@ -57,6 +58,9 @@ abstract class Individual(
 
     companion object{
         private val log = LoggerFactory.getLogger(Individual::class.java)
+
+        const val LOCAL_ID_PREFIX_ACTION = "ACTION_COMPONENT"
+        const val LOCAL_ID_PREFIX_GENE = "GENE"
     }
 
 
@@ -99,9 +103,16 @@ abstract class Individual(
     /**
      * get local id based on the given counter
      */
-    private fun getLocalId(obj: StructuralElement, counter: Int) : String
-    = "${if (obj is ActionComponent) "ACTION_COMPONENT" else if (obj is Gene) "GENE" else throw IllegalStateException("Only Generate local id for ActionComponent and Gene")}_$counter"
+    private fun getLocalId(obj: StructuralElement, counter: Int) : String {
 
+         val prefix  = when (obj) {
+             is ActionComponent -> LOCAL_ID_PREFIX_ACTION
+             is Gene -> LOCAL_ID_PREFIX_GENE
+             else -> throw IllegalStateException("Only Generate local id for ActionComponent and Gene")
+         }
+
+        return "${prefix}_$counter"
+    }
     /**
      * Make a deep copy of this individual
      */
@@ -143,8 +154,18 @@ abstract class Individual(
             .filter { time > it.searchPercentageActive }
             .forEach { it.forbidSelection() }
 
+        resolveAllTempData()
 
         computeTransitiveBindingGenes()
+    }
+
+    fun resolveAllTempData(){
+        seeAllActions().forEach {
+            val resolved = it.resolveTempData()
+            if(!resolved){
+                throw IllegalStateException("Failed to resolve temp data in ${it.getName()}")
+            }
+        }
     }
 
     fun isInitialized() : Boolean{
@@ -159,31 +180,47 @@ abstract class Individual(
      * All invariants should always be satisfied after any modification of the individual.
      * If not, this is a bug.
      */
-    fun verifyValidity(){
+    fun verifyValidity(checkForTaints: Boolean = false){
 
         groupsView()?.verifyGroups()
 
-        if(!SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())){
-            throw IllegalStateException("Initializing actions break SQL constraints")
-        }
+        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
+            if(!a.isGloballyValid()){
+                throw IllegalStateException("Action ${a.getName()} does not satisfy global validity constraints")
+            }
             a.seeTopGenes().forEach { g ->
                 if(!g.isGloballyValid()){
-                    throw IllegalStateException("Invalid gene ${g.name} in action ${a.getName()}")
+                    throw IllegalStateException("Global validity failure: invalid gene named '${g.name}' in action ${a.getName()}")
                 }
             }
         }
 
-        if(!areAllValidLocalIds()){
-            throw IllegalStateException("There are invalid local ids")
+        val localIdErrors = verifyAllLocalIds()
+        if(localIdErrors.isNotEmpty()){
+            throw IllegalStateException("There are invalid local ids:\n" + localIdErrors.joinToString("\n"))
         }
+
+        /*
+            We cannot really verify it all the time.
+            Duplicates might exist due to bounded genes.
+            But flattening (done at minimization, for example) removes the binding, leading
+            this check to fail.
+            further problem, many phases (eg security) are done _after_ minimization...
+         */
+        //TODO put back after fix
+//        if(checkForTaints) {
+//            val taintIdErrors = verifyTaintIds()
+//            if (taintIdErrors.isNotEmpty()) {
+//                throw IllegalStateException("There are invalid taint ids:\n" + taintIdErrors.joinToString("\n"))
+//            }
+//        }
     }
 
     override fun copyContent(): Individual {
         throw IllegalStateException("${this::class.java.simpleName}: copyContent() IS NOT IMPLEMENTED")
     }
-
 
     /**
      * Return a view of all the top Genes in this chromosome/individual.
@@ -476,15 +513,53 @@ abstract class Individual(
                 && flatView().run { this.map { it.getLocalId() }.toSet().size == this.size }
     }
 
-    fun areAllValidLocalIds() : Boolean{
+
+    fun verifyTaintIds(): List<String>{
+
+        val all = flatViewAllStructuralElements()
+
+        val taintableGenes = all.filterIsInstance<TaintableGene>()
+            .filter { TaintInputName.isTaintInput(it.getPossiblyTaintedValue()) }
+            .filter { !it.isDependentTaint() }
+
+        val duplicates = CollectionUtils.duplicates(taintableGenes.map { it.getPossiblyTaintedValue() })
+
+        if(duplicates.isEmpty()){
+            return listOf()
+        }
+
+        val errors = mutableListOf<String>()
+
+        duplicates.entries.forEach { d ->
+           val same = taintableGenes.filter { it.getPossiblyTaintedValue() == d.key }.map { it as Gene }
+           if(same.any{ x ->
+               same.any { y ->
+                      y !=x && !y.hasAnyBindingRelationship(x)
+               }
+           }){
+               errors.add("Taint id ${d.key} has duplicate genes that are not related")
+           }
+        }
+        return errors
+    }
+
+    /**
+     * Return error messages in case of problems.
+     * If all valid, returned list is empty
+     */
+    fun verifyAllLocalIds() : List<String>{
+        val errors = mutableListOf<String>()
         val all = flatViewAllStructuralElements()
         val ids = all.map { it.getLocalId() }
         if(ids.contains(NONE_LOCAL_ID)){
-            return false
+            errors.add("Containing NONE_LOCAL_ID")
         }
         val duplicates = CollectionUtils.duplicates(ids)
         //check for duplicates
-        return duplicates.isEmpty()
+        if(duplicates.isNotEmpty()){
+            duplicates.entries.forEach { errors.add("Id ${it.key} is repeated ${it.value} times") }
+        }
+        return errors
     }
 
 
@@ -493,7 +568,11 @@ abstract class Individual(
             if(it !is Action) {
                 listOf(it)
             } else {
-                it.seeTopGenes().flatMap {g ->  g.flatView() }
+                // there might be the case whereby the action does not have genes eg, schedule task
+                if (it.seeTopGenes().isEmpty())
+                    listOf(it)
+                else
+                    it.seeTopGenes().flatMap {g ->  g.flatView() }
             }
         }
     }
@@ -535,24 +614,33 @@ abstract class Individual(
 
 
     /**
-     * handle local ids of children (ie ActionComponent) to add
+     * handle local ids of children or descendant to add.
+     * These elements might not be mounted yet inside the individual when this method is called
      */
-    fun handleLocalIdsForAddition(children: Collection<StructuralElement>) {
-        children.forEach { child ->
-            if (child is ActionComponent) {
-                if (child is Action && !child.hasLocalId())
+    fun handleLocalIdsForAddition(elements: Collection<StructuralElement>) {
+        elements.forEach { child ->
+
+            if (child is Action) {
+                if (!child.hasLocalId()) {
                     setLocalIdsForChildren(listOf(child), true)
-
-                child.flatView().filterIsInstance<ActionTree>().forEach { tree ->
-                    if (!tree.hasLocalId()) {
-                        setLocalIdsForChildren(listOf(tree), false)
-
+                }
+            } else if (child is ActionTree){
+                child.flatView().forEach { a ->
+                    if (a is Action) {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), true)
+                        }
+                    } else {
+                        if (!a.hasLocalId()) {
+                            setLocalIdsForChildren(listOf(a), false)
+                        }
                         // local id can be assigned for flatten of the tree
                         // only if the tree itself and none of its flatten do not have local id
-                        if (tree.flatten().none { it.hasLocalId() })
-                            setLocalIdsForChildren(child.flatten(), true)
-                    } else if (!tree.flatten().all { it.hasLocalId() }) {
-                        throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        if (a.flatten().none { it.hasLocalId() }) {
+                            setLocalIdsForChildren(a.flatten(), true)
+                        } else if (!a.flatten().all { it.hasLocalId() }) {
+                            throw IllegalStateException("local ids of ActionTree are partially assigned")
+                        }
                     }
                 }
             } else if (child is Gene) {
@@ -562,8 +650,9 @@ abstract class Individual(
                     throw IllegalStateException("local ids of Gene to add are partially assigned")
             } else if (child is Param){
                 setLocalIdForStructuralElement(child.genes.flatMap { it.flatView() })
-            }else
+            } else {
                 throw IllegalStateException("children of an individual must be ActionComponent, but it is ${child::class.java.name}")
+            }
         }
     }
 

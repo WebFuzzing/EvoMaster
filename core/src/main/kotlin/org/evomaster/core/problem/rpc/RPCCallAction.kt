@@ -38,7 +38,7 @@ open class RPCCallAction(
 
     override var auth: RPCAuthenticationInfo = RPCNoAuth()
 
-) : ApiWsAction(auth, inputParameters)  {
+) : ApiWsAction(auth, false, inputParameters)  {
 
     override fun getName(): String {
         return id

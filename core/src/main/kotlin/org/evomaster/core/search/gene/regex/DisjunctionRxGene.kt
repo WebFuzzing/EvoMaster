@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.regex
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.root.CompositeFixedGene
@@ -137,26 +136,7 @@ class DisjunctionRxGene(
                 postfix
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DisjunctionRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        val current = this.copy()
-        return updateValueOnlyIfValid(
-            {
-                var ok = true
-                for (i in 0 until terms.size) {
-                    ok = ok && this.terms[i].copyValueFrom(other.terms[i])
-                }
-                if (ok){
-                    this.extraPrefix = other.extraPrefix
-                    this.extraPostfix = other.extraPostfix
-                }
-                ok
 
-            }, true
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
@@ -185,26 +165,21 @@ class DisjunctionRxGene(
         return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene is DisjunctionRxGene && terms.size == gene.terms.size){
-            var result = true
-            terms.indices.forEach { i->
-                val r = terms[i].bindValueBasedOn(gene.terms[i])
-                if (!r)
-                    LoggingUtil.uniqueWarn(log, "cannot bind the term (name: ${terms[i].name}) at index $i")
-                result = result && r
-            }
-
-            extraPostfix = gene.extraPrefix
-            extraPrefix = gene.extraPrefix
-
-            if (!result){
-                LoggingUtil.uniqueWarn(log, "not fully completely bind DisjunctionRxGene")
-            }
-            return result
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is DisjunctionRxGene
+            || other.terms.size != this.terms.size) {
+            return false
         }
 
-        LoggingUtil.uniqueWarn(log, "cannot bind DisjunctionRxGene with ${gene::class.java.simpleName}")
-        return false
+        var ok = true
+        for (i in 0 until terms.size) {
+            ok = ok && this.terms[i].unsafeCopyValueFrom(other.terms[i])
+        }
+        if (ok){
+            this.extraPrefix = other.extraPrefix
+            this.extraPostfix = other.extraPostfix
+        }
+        return ok
     }
+
 }

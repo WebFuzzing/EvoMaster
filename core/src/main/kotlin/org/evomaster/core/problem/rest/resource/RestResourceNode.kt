@@ -7,6 +7,11 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
+import org.evomaster.core.problem.rest.builder.CreateResourceUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
+import org.evomaster.core.problem.rest.data.RestPath
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.util.ParamUtil
@@ -19,6 +24,8 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlActionUtils
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -29,10 +36,10 @@ import org.slf4j.LoggerFactory
  * @property employNLP specified whether to employ natural language parser
  */
 open class RestResourceNode(
-        val path : RestPath,
-        val actions: MutableList<RestCallAction> = mutableListOf(),
-        val initMode : InitMode,
-        val employNLP : Boolean
+    val path : RestPath,
+    val actions: MutableList<RestCallAction> = mutableListOf(),
+    val initMode : InitMode,
+    val employNLP : Boolean
 ) {
 
     companion object {
@@ -165,7 +172,7 @@ open class RestResourceNode(
         }
 
         return dbactions.filterNot { it.representExistingData }.flatMap { db->
-            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.name)?.toList()?:listOf() }
+            val exclude = related.flatMap { r-> r?.getRelatedColumn(db.table.id)?.toList()?:listOf() }
             db.seeGenesForInsertion(exclude)
         }.filter{it.isMutable() && it !is SqlForeignKeyGene && it !is SqlPrimaryKeyGene}
     }
@@ -235,7 +242,7 @@ open class RestResourceNode(
     /**
      * @return related table for creating resource for [this] node with sql
      */
-    fun getSqlCreationPoints() : List<String>{
+    fun getSqlCreationPoints() : List<TableId>{
         if (resourceToTable.confirmedSet.isNotEmpty()) return resourceToTable.confirmedSet.keys.toList()
         return resourceToTable.derivedMap.keys.toList()
     }
@@ -302,7 +309,7 @@ open class RestResourceNode(
     }
 
 
-    private fun nextCreationPoints(path:RestPath, postCreationChain: PostCreationChain){
+    private fun nextCreationPoints(path: RestPath, postCreationChain: PostCreationChain){
         val posts = chooseAllClosestAncestor(path, RestCallAction.CONFIG_POTENTIAL_VERB_FOR_CREATION)?.map { it.copy() as RestCallAction }
         if(!posts.isNullOrEmpty()){
             val newPosts = posts.filter { !postCreationChain.hasAction(it) }
@@ -401,6 +408,7 @@ open class RestResourceNode(
         } else {
             copy.doInitialize(randomness)
         }
+        copy.forceNewTaints()
 
         val template = templates[copy.verb.toString()]
                 ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
@@ -463,12 +471,12 @@ open class RestResourceNode(
     }
 
 
-    private fun handleHeadLocation(actions: List<RestCallAction>) : RestCallAction{
+    private fun handleHeadLocation(actions: List<RestCallAction>) : RestCallAction {
 
         if (actions.size == 1) return actions.first()
 
         (1 until actions.size).forEach { i->
-            PostCreateResourceUtils.linkDynamicCreateResource(actions[i-1], actions[i])
+            CreateResourceUtils.linkDynamicCreateResource(actions[i-1], actions[i])
         }
 
         return actions.last()
@@ -486,7 +494,7 @@ open class RestResourceNode(
         val results = mutableListOf<RestCallAction>()
         var status = ResourceStatus.NOT_NEEDED
         val first = ats.first()
-        var lastPost:RestCallAction? = null
+        var lastPost: RestCallAction? = null
         if (first == HttpVerb.POST){
             val post = getPostChain()
             if (post == null)
@@ -508,7 +516,7 @@ open class RestResourceNode(
         if (ats.size == 2){
             val action = createActionByVerb(ats[1], randomness)
             if (lastPost != null)
-                PostCreateResourceUtils.linkDynamicCreateResource(lastPost, action)
+                CreateResourceUtils.linkDynamicCreateResource(lastPost, action)
             results.add(action)
         }else if (ats.size > 2){
             throw IllegalStateException("the size of action with $template should be less than 2, but it is ${ats.size}")
@@ -518,7 +526,7 @@ open class RestResourceNode(
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
             val second =  results.last().copy() as RestCallAction
             if (lastPost != null)
-                PostCreateResourceUtils.linkDynamicCreateResource(lastPost, second)
+                CreateResourceUtils.linkDynamicCreateResource(lastPost, second)
             results.add(second)
         }
 
@@ -542,7 +550,7 @@ open class RestResourceNode(
     }
 
 
-    private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction{
+    private fun createActionByVerb(verb : HttpVerb, randomness: Randomness) : RestCallAction {
         val action = (getActionByHttpVerb(verb)
                 ?:throw IllegalStateException("cannot get $verb action in the resource $path"))
                 .copy() as RestCallAction
@@ -551,6 +559,7 @@ open class RestResourceNode(
             action.randomize(randomness, false)
         else
             action.doInitialize(randomness)
+        action.forceNewTaints()
         return action
     }
 
@@ -558,7 +567,7 @@ open class RestResourceNode(
     private fun templateSelected(callsTemplate: CallsTemplate){
         templates.getValue(callsTemplate.template).times += 1
     }
-    
+
     private fun selectTemplate(predicate: (CallsTemplate) -> Boolean, randomness: Randomness, chosen : Map<String, CallsTemplate>?=null, chooseLessVisit : Boolean = false) : CallsTemplate?{
         val ts = if(chosen == null) templates.filter { predicate(it.value) } else chosen.filter { predicate(it.value) }
         if(ts.isEmpty())
@@ -665,7 +674,9 @@ open class RestResourceNode(
     /**
      * @return derived tables
      */
-    fun getDerivedTables() : Set<String> = resourceToTable.derivedMap.flatMap { it.value.map { m->m.targetMatched } }.toHashSet()
+    fun getDerivedTables(all: Set<TableId>) : Set<TableId> = resourceToTable.derivedMap
+        .flatMap { it.value.mapNotNull { m-> SqlActionUtils.getTableKey(all, m.targetMatched) } }
+        .toHashSet()
 
     /**
      * @return is any POST, GET, PATCH, DELETE, PUT action?
@@ -864,7 +875,7 @@ open class RestResourceNode(
                 return paramsInfo.values.filter { it.requiredReferToOthers() || randomness?.nextBoolean(it.probOfReferringToOther) == true }
             }
             HttpVerb.PATCH, HttpVerb.PUT->{
-                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.toLowerCase().contains("id"))}
+                return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) && (it.referParam is PathParam || it.name.lowercase().contains("id"))}
             }
             HttpVerb.GET, HttpVerb.DELETE->{
                 return paramsInfo.values.filter { it.involvedAction.contains(actions[0]) }

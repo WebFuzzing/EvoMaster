@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.string
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
@@ -38,13 +37,6 @@ class Base64StringGene(
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is Base64StringGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid({this.data.copyValueFrom(other.data)}, false)
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is Base64StringGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -52,13 +44,13 @@ class Base64StringGene(
         return this.data.containsSameValueAs(other.data)
     }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
+        val gene = other.getPhenotype()
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
         return when(gene){
-            is Base64StringGene -> data.bindValueBasedOn(gene.data)
-            is StringGene -> data.bindValueBasedOn(gene)
+            is Base64StringGene -> data.unsafeCopyValueFrom(gene.data)
+            is StringGene -> data.unsafeCopyValueFrom(gene)
             else->{
                 LoggingUtil.uniqueWarn(log, "cannot bind the Base64StringGene with ${gene::class.java.simpleName}")
                 false

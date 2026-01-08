@@ -1,6 +1,8 @@
 package org.evomaster.core.solver
 
+import net.sf.jsqlparser.schema.Table
 import net.sf.jsqlparser.statement.Statement
+import net.sf.jsqlparser.statement.select.FromItem
 import net.sf.jsqlparser.statement.select.PlainSelect
 import net.sf.jsqlparser.statement.select.Select
 import net.sf.jsqlparser.util.TablesNamesFinder
@@ -54,7 +56,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun appendTableDefinitions(smt: SMTLib) {
         for (table in schema.tables) {
-            val dataTypeName = "${StringUtils.capitalization(table.name)}Row"
+            val dataTypeName = "${StringUtils.capitalization(table.id.name)}Row"
 
             // Declare datatype for the table
             smt.addNode(
@@ -63,9 +65,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
             // Declare constants for each row
             for (i in 1..numberOfRows) {
-                smt.addNode(
-                    DeclareConstSMTNode("${table.name.lowercase(Locale.getDefault())}$i", dataTypeName)
-                )
+                smt.addNode(DeclareConstSMTNode("${table.id.name.lowercase()}$i", dataTypeName))
             }
         }
     }
@@ -89,7 +89,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which unique constraints are added.
      */
     private fun appendUniqueConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = table.name.lowercase(Locale.getDefault())
+        val tableName = table.id.name.lowercase()
         for (column in table.columns) {
             if (column.unique) {
                 val nodes = assertForDistinctField(column.name, tableName)
@@ -127,7 +127,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The corresponding SMT node.
      */
     private fun parseCheckExpression(table: TableDto, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(table.name.lowercase(Locale.getDefault()), emptyMap(), schema.tables, index)
+        val visitor = SMTConditionVisitor(table.id.name.lowercase(), emptyMap(), schema.tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -163,7 +163,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = table.name.lowercase(Locale.getDefault())
+            val tableName = table.id.name.lowercase()
             for (column in table.columns) {
                 if (column.type.equals("BOOLEAN", ignoreCase = true)) {
                     val columnName = column.name.uppercase()
@@ -190,7 +190,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = table.name.lowercase(Locale.getDefault())
+            val tableName = table.id.name.lowercase()
             for (column in table.columns) {
                 if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
                     val columnName = column.name.uppercase()
@@ -228,7 +228,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which primary key constraints are added.
      */
     private fun appendPrimaryKeyConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = table.name.lowercase(Locale.getDefault())
+        val tableName = table.id.name.lowercase()
         val primaryKeys = table.columns.filter { it.primaryKey }
 
         for (primaryKey in primaryKeys) {
@@ -252,8 +252,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     AssertSMTNode(
                         DistinctAssertion(
                             listOf(
-                                "(${pkSelector.uppercase(Locale.getDefault())} $tableName$i)",
-                                "(${pkSelector.uppercase(Locale.getDefault())} $tableName$j)"
+                                "(${pkSelector.uppercase()} $tableName$i)",
+                                "(${pkSelector.uppercase()} $tableName$j)"
                             )
                         )
                     )
@@ -270,11 +270,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which foreign key constraints are added.
      */
     private fun appendForeignKeyConstraints(smt: SMTLib, table: TableDto) {
-        val sourceTableName = table.name.lowercase(Locale.getDefault())
+        val sourceTableName = table.id.name.lowercase()
 
         for (foreignKey in table.foreignKeys) {
             val referencedTable = findReferencedTable(foreignKey)
-            val referencedTableName = referencedTable.name.lowercase(Locale.getDefault())
+            val referencedTableName = referencedTable.id.name.lowercase()
             val referencedColumnSelector = findReferencedPKSelector(referencedTable, foreignKey)
 
             for (sourceColumn in foreignKey.sourceColumns) {
@@ -306,8 +306,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val conditions = (1..numberOfRows).map { j ->
                 EqualsAssertion(
                     listOf(
-                        "(${sourceColumnSelector.uppercase(Locale.getDefault())} $sourceTableName$i)",
-                        "(${referencedColumnSelector.uppercase(Locale.getDefault())} $referencedTableName$j)"
+                        "(${sourceColumnSelector.uppercase()} $sourceTableName$i)",
+                        "(${referencedColumnSelector.uppercase()} $referencedTableName$j)"
                     )
                 )
             }
@@ -343,7 +343,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The referenced table.
      */
     private fun findReferencedTable(foreignKey: ForeignKeyDto): TableDto {
-        return schema.tables.firstOrNull { it.name.equals(foreignKey.targetTable, ignoreCase = true) }
+        return schema.tables.firstOrNull { it.id.name.equals(foreignKey.targetTable, ignoreCase = true) }
             ?: throw RuntimeException("Referenced table not found: ${foreignKey.targetTable}")
     }
 
@@ -425,21 +425,26 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         if (sqlQuery is Select) { // TODO: Handle other queries
             val plainSelect = sqlQuery.selectBody as PlainSelect
             val fromItem = plainSelect.fromItem
-            val tableName = (fromItem as net.sf.jsqlparser.schema.Table).name
-            val alias = fromItem.alias?.name ?: tableName
-            tableAliasMap[alias] = tableName
+            if (fromItem != null) {
+                val tableName = getTableName(fromItem)
+                val alias = fromItem.alias?.name ?: tableName
+                tableAliasMap[alias] = tableName
 
-            val joins = plainSelect.joins
-            if (joins != null) {
-                for (join in joins) {
-                    val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
-                    val joinName = (join.rightItem as net.sf.jsqlparser.schema.Table).name
-                    tableAliasMap[joinAlias] = joinName
+                val joins = plainSelect.joins
+                if (joins != null) {
+                    for (join in joins) {
+                        val joinAlias = join.rightItem.alias?.name ?: join.rightItem.toString()
+                        val joinName = getTableName(join.rightItem)
+                        tableAliasMap[joinAlias] = joinName
+                    }
                 }
             }
         }
         return tableAliasMap
     }
+
+    private fun getTableName(fromItem: FromItem?): String =
+        (fromItem as Table).getName()
 
     /**
      * Appends value checking constraints to the SMT-LIB only from the tables mentioned in the select
@@ -479,7 +484,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
         // Only add GetValueSMTNode for the mentioned tables
         for (table in schema.tables) {
-            val tableNameLower = table.name.lowercase(Locale.getDefault())
+            val tableNameLower = table.id.name.lowercase()
             if (tablesMentioned.contains(tableNameLower)) {
                 for (i in 1..numberOfRows) {
                     smt.addNode(GetValueSMTNode("$tableNameLower$i"))
@@ -496,8 +501,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun getConstructors(table: TableDto): List<DeclareConstSMTNode> {
         return table.columns.map { c ->
-            val smtType = TYPE_MAP[c.type.uppercase(Locale.getDefault())]
-            DeclareConstSMTNode(c.name, smtType!!)
+            val smtType = TYPE_MAP[c.type.uppercase()]
+                ?: throw RuntimeException("Unsupported column type: ${c.type}")
+            DeclareConstSMTNode(c.name, smtType)
         }
     }
 
@@ -509,8 +515,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "TIMESTAMP" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
+            "DECIMAL" to "Real",
+            "REAL" to "Real",
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
+            "VARCHAR" to "String",
             "CHARACTER LARGE OBJECT" to "String",
             "BOOLEAN" to "String", // TODO: Check this
         )

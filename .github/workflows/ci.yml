@@ -20,6 +20,7 @@ on:
       - '!.gitignore'
       - '!docs/**'
       - '!release_notes.md'
+      - '!outdated/**'
       - 'docs/options.md'
 ### Unfortunately, had to disable this. Originally added to be able to run CI from PRs from forks (eg from external people).
 ### But this leads to run CI 2 twice on each push on an open PR, regardless of fork.
@@ -30,19 +31,18 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 3.4.1
+  evomaster-version: 4.0.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
   # third-party libraries, which might do it only in special cases.
   # For some "hilarious" case, see:
-  # https://github.com/EMResearch/EvoMaster/issues/447
+  # https://github.com/WebFuzzing/EvoMaster/issues/447
   release-jdk: 21
-  latest-jdk: 21
-  build-jdk: 1.8
+  build-jdk: 17
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "H2ColumnTypesEMTest" # replace with test to debug
+  debugTestName: "org.evomaster.e2etests.spring.examples.sort.SortEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -83,7 +83,7 @@ jobs:
       - name: Debug Test Case
         env:
           CI_env: GithubAction
-        run: mvn test  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
+        run: mvn -B install  -Dtest=${{env.debugTestName}} -Dsurefire.failIfNoSpecifiedTests=false  -DredirectTestOutputToFile=false
 
   full-build-base:
     runs-on: ubuntu-latest
@@ -117,11 +117,11 @@ jobs:
       # Make test report accessible from GitHub Actions (as Maven logs are long)
       - name: Publish Test Report
         if: success() || failure()
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@v5
         env:
-          NODE_OPTIONS: "--max_old_space_size=6144"
+          NODE_OPTIONS: "--max_old_space_size=8000"
         with:
-          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results
       # As of 2024, looks like a rate limiter is breaking the build.
       # As such, now we only upload from master branch, hoping it is enough.
@@ -132,29 +132,7 @@ jobs:
       - if: github.ref != 'refs/heads/master'
         name: Uploading coverage to CodeCov is done only on 'master' branch builds
         run: echo Skipping upload to CodeCov
-      # Only once coverage is uploaded, we try to build with other versions of Java, as "mvn clean" would delete those reports
-      # However, the latest LTS is fully built (with tests) on a different job
-      # JDK 11
-      - name: Setup JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Compile with JDK 11
-        run: mvn clean verify -DskipTests
-      #JDK 17
-      - name: Setup JDK 17
-        uses: actions/setup-java@v1
-        with:
-          java-version: 17
-      - name: Compile with JDK 17
-        run: mvn clean verify -DskipTests
-      #JDK 21
-      - name: Setup JDK 21
-        uses: actions/setup-java@v1
-        with:
-          java-version: 21
-      - name: Compile with JDK 21
-        run: mvn clean verify -DskipTests
+
 
 
   base-build-mac:
@@ -163,10 +141,10 @@ jobs:
     if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.latest-jdk}}
+      - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.latest-jdk}}
+          java-version: ${{env.release-jdk}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -184,10 +162,10 @@ jobs:
     if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.latest-jdk}}
+      - name: Setup JDK ${{env.release-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.latest-jdk}}
+          java-version: ${{env.release-jdk}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -200,32 +178,33 @@ jobs:
           CI_env: GithubAction
 
 
-  full-build-LTS:
-    # run on a different OS from main build.
-    # It would had been good, but does not work due to Docker support :(  see:
-    # https://stackoverflow.com/questions/66077884/testcontainers-in-windows-environment-on-github-actions-could-not-find-a-valid
-    # TODO check this again in the future
-    # runs-on: windows-latest
-    runs-on: ubuntu-latest
-    needs: setup
-    if: needs.setup.outputs.debug == 'false'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.latest-jdk}}
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{env.latest-jdk}}
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-      - name: Build with Maven
-        run: mvn clean verify --fae
-        env:
-          CI_env: GithubAction
-          MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
+#  NOTES we know try to be on latest LTS
+#  full-build-LTS:
+#    # run on a different OS from main build.
+#    # It would had been good, but does not work due to Docker support :(  see:
+#    # https://stackoverflow.com/questions/66077884/testcontainers-in-windows-environment-on-github-actions-could-not-find-a-valid
+#    # TODO check this again in the future
+#    # runs-on: windows-latest
+#    runs-on: ubuntu-latest
+#    needs: setup
+#    if: needs.setup.outputs.debug == 'false'
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Setup JDK ${{env.latest-jdk}}
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: ${{env.latest-jdk}}
+#      - name: Cache Maven packages
+#        uses: actions/cache@v3
+#        with:
+#          path: ~/.m2
+#          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: ${{ runner.os }}-m2
+#      - name: Build with Maven
+#        run: mvn clean verify --fae
+#        env:
+#          CI_env: GithubAction
+#          MAVEN_OPTS: "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED"
 
 
 
@@ -354,10 +333,10 @@ jobs:
     if: needs.setup.outputs.debug == 'false'
     steps:
       - uses: actions/checkout@v4
-      - name: Setup JDK ${{env.latest-jdk}}
+      - name: Setup JDK ${{env.build-jdk}}
         uses: actions/setup-java@v1
         with:
-          java-version: ${{env.latest-jdk}}
+          java-version: ${{env.build-jdk}}
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -370,7 +349,7 @@ jobs:
           CI_env: GithubAction
       - name: Run BB E2E tests
         # important that what we run here does not use Docker
-        working-directory: e2e-tests/spring-rest-bb
+        working-directory: core-tests/e2e-tests/spring/spring-rest-bb
         run:  mvn clean verify --fae
         env:
           CI_env: GithubAction

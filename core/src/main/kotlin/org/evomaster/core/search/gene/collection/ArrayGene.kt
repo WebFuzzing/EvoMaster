@@ -10,6 +10,7 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.placeholder.LimitObjectGene
 import org.evomaster.core.search.gene.root.CompositeGene
+import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -132,32 +133,15 @@ class ArrayGene<T>(
         return copy
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is ArrayGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
 
-        if (this.template::class.simpleName != other.template::class.simpleName) return false
-
-        return updateValueOnlyIfValid(
-            {
-                killAllChildren()
-                // check maxSize
-                val elements = (if(maxSize!= null && other.elements.size > maxSize!!)
-                    other.elements.subList(0, maxSize!!) else other.elements).map { e -> e.copy() as T }.toMutableList()
-                // build parents for [element]
-                addChildren(elements)
-                true
-            },
-            false
-        )
-    }
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         if (this.template::class.simpleName != other.template::class.simpleName) return false
+
+        if(this.elements.size != other.elements.size) return false
 
         return this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
@@ -270,28 +254,79 @@ class ArrayGene<T>(
 
         TODO might bind based on value instead of replacing them
      */
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if(gene is ArrayGene<*> && gene.template::class.java.simpleName == template::class.java.simpleName){
+
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        if(other is ArrayGene<*> && other.template::class.java.simpleName == template::class.java.simpleName){
+
             killAllChildren()
-            val elements = gene.elements.mapNotNull { it.copy() as? T}.toMutableList()
+            val elements = other.elements.mapNotNull { it.copy() as? T}.toMutableList()
             elements.forEach { it.resetLocalIdRecursively() }
-            if (!uniqueElements || gene.uniqueElements || !isElementApplicableToUniqueCheck(ParamUtil.getValueGene(template)))
+
+            if (!uniqueElements
+                || other.uniqueElements
+                || !isElementApplicableToUniqueCheck(template.getLeafGene())) {
+
                 addChildren(elements)
-            else{
+
+            } else{
                 val unique = elements.filterIndexed { index, t ->
                     index == elements.indexOfLast { l-> ParamUtil.getValueGene(l).containsSameValueAs(ParamUtil.getValueGene(t)) }
                 }
-                Lazy.assert {
-                    unique.isNotEmpty()
-                }
+                Lazy.assert { unique.isNotEmpty() }
                 addChildren(unique)
             }
             return true
         }
-        LoggingUtil.uniqueWarn(
-            log,
-            "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${gene::class.java.simpleName}"
-        )
+        LoggingUtil.uniqueWarn(log, "cannot bind ArrayGene with the template (${template::class.java.simpleName}) with ${other::class.java.simpleName}")
+        return false
+    }
+
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    /**
+     * To set the Array children from a String.
+     * Use [template] to create child [Gene].
+     * Use comma (,) separated elements with a space in front of the values as String.
+     */
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        val elements = value
+            .trim()
+            .removePrefix(openingTag)
+            .removeSuffix(closingTag)
+            /*
+                the separator tag might have spaces for readability.
+                those should be ignored.
+                however, if the tag itself is just empty spaces, then cannot ignore them.
+             */
+            .split(if(separatorTag.isBlank()) separatorTag else separatorTag.trim())
+            .map { it.trim() }
+
+        if (elements.isNotEmpty()) {
+            killAllChildren()
+            when(template) {
+                is StringGene -> {
+                    addChildren(
+                        elements.map {
+                            StringGene(name, it)
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                is BooleanGene -> {
+                    addChildren(
+                        elements.map {
+                            BooleanGene(name, it.toBoolean())
+                                .apply { doInitialize(getSearchGlobalState()?.randomness)}
+                        }.toList()
+                    )
+                }
+                else -> {
+                    // TODO: Handle other types
+                    log.warn("${template::class.java.simpleName} type is not supported in ArrayGene yet.")
+                }
+            }
+            return true
+        }
         return false
     }
 

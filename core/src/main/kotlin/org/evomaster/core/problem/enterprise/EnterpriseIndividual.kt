@@ -7,12 +7,14 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
+import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.*
@@ -50,7 +52,7 @@ abstract class EnterpriseIndividual(
     /**
      * if no group definition is specified, then it is assumed that all action are for the MAIN group
      */
-    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0)
+    groups : GroupsOfChildren<StructuralElement> = getEnterpriseTopGroups(children,children.size,0, 0, 0, 0, 0),
 ) : Individual(
     trackOperator,
     index,
@@ -70,12 +72,14 @@ abstract class EnterpriseIndividual(
             sizeMain: Int,
             sizeSQL: Int,
             sizeMongo: Int,
-            sizeDNS: Int
+            sizeDNS: Int,
+            sizeScheduleTasks: Int,
+            sizeCleanUp: Int,
         ) : GroupsOfChildren<StructuralElement>{
 
-            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeMain){
+            if(children.size != sizeSQL +sizeMongo + sizeDNS + sizeScheduleTasks + sizeMain + sizeCleanUp){
                 throw IllegalArgumentException("Group size mismatch. Expected a total of ${children.size}, but" +
-                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS")
+                        " got main=$sizeMain,  sql=$sizeSQL, mongo=$sizeMongo, dns=$sizeDNS, scheduleTasks=$sizeScheduleTasks, sizeCleanUp=$sizeCleanUp")
             }
             if(sizeSQL < 0){
                 throw IllegalArgumentException("Negative size for sizeSQL: $sizeSQL")
@@ -86,8 +90,14 @@ abstract class EnterpriseIndividual(
             if(sizeDNS < 0){
                 throw IllegalArgumentException("Negative size for sizeDNS: $sizeMain")
             }
+            if(sizeScheduleTasks < 0){
+                throw IllegalArgumentException("Negative size for sizeScheduleTasks: $sizeMain")
+            }
             if(sizeMain < 0){
                 throw IllegalArgumentException("Negative size for sizeMain: $sizeMain")
+            }
+            if(sizeCleanUp < 0){
+                throw IllegalArgumentException("Negative size for sizeCleanUp: $sizeCleanUp")
             }
 
             /*
@@ -114,12 +124,23 @@ abstract class EnterpriseIndividual(
                 if(sizeDNS==0) -1 else startIndexDns , if(sizeDNS==0) -1 else endIndexDns
             )
 
-            val initSize = sizeSQL+sizeMongo+sizeDNS
+            val startIndexScheduleTasks = children.indexOfFirst { a -> a is ScheduleTaskAction }
+            val endIndexScheduleTasks = children.indexOfLast { a -> a is ScheduleTaskAction }
+            val schedule = ChildGroup<StructuralElement>(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK,{e -> e is ActionComponent && e.flatten().all { a -> a is ScheduleTaskAction }},
+                if(sizeScheduleTasks==0) -1 else startIndexScheduleTasks , if(sizeScheduleTasks==0) -1 else endIndexScheduleTasks
+            )
+
+            val initSize = sizeSQL+sizeMongo+sizeDNS+sizeScheduleTasks
+            val startIndexMain = initSize
+            val endIndexMain =  initSize + sizeMain - 1
 
             val main = ChildGroup<StructuralElement>(GroupsOfChildren.MAIN, {e -> e !is EnvironmentAction },
-                if(sizeMain == 0) -1 else initSize, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
+                if(sizeMain == 0) -1 else startIndexMain, if(sizeMain == 0) -1 else initSize + sizeMain - 1)
 
-            return GroupsOfChildren(children, listOf(db, mongodb, dns, main))
+            val cleanup = ChildGroup<StructuralElement>(GroupsOfChildren.CLEANUP, {e -> true},
+                if(sizeCleanUp == 0) -1 else endIndexMain+1, if(sizeCleanUp == 0) -1 else endIndexMain + sizeCleanUp)
+
+            return GroupsOfChildren(children, listOf(db, mongodb, dns, schedule, main, cleanup))
         }
     }
 
@@ -159,6 +180,9 @@ abstract class EnterpriseIndividual(
      */
     fun ensureFlattenedStructure() : Boolean{
 
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
+
         val before = seeAllActions().size
 
         val issues = doFlattenStructure()
@@ -167,6 +191,9 @@ abstract class EnterpriseIndividual(
         Lazy.assert { isFlattenedStructure() }
         //no base action should have been lost
         Lazy.assert { seeAllActions().size == before }
+
+        //TODO put back after fix
+        //Lazy.assert { verifyValidity(); true }
 
         return issues
     }
@@ -192,7 +219,8 @@ abstract class EnterpriseIndividual(
                 groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_SQL).flatMap { (it as ActionComponent).flatten() } + groupsView()!!
                     .getAllInGroup(GroupsOfChildren.INITIALIZATION_MONGO).flatMap { (it as ActionComponent).flatten()}+ groupsView()!!
-                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()} + groupsView()!!
+                    .getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
             // WARNING: this can still return DbAction, MongoDbAction and External ones...
             ActionFilter.NO_INIT -> groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).flatMap { (it as ActionComponent).flatten() }
             ActionFilter.ONLY_SQL -> seeAllActions().filterIsInstance<SqlAction>()
@@ -203,7 +231,13 @@ abstract class EnterpriseIndividual(
             ActionFilter.ONLY_EXTERNAL_SERVICE -> seeAllActions().filterIsInstance<ApiExternalServiceAction>()
             ActionFilter.NO_EXTERNAL_SERVICE -> seeAllActions().filter { it !is ApiExternalServiceAction }.filter { it !is HostnameResolutionAction }
             ActionFilter.ONLY_DNS -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_DNS).flatMap { (it as ActionComponent).flatten()}
+            ActionFilter.ONLY_SCHEDULE_TASK -> groupsView()!!.getAllInGroup(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK).flatMap { (it as ActionComponent).flatten() }
         }
+    }
+
+
+    fun seeCleanUpActions() : List<ActionComponent>{
+        return groupsView()!!.getAllInGroup(GroupsOfChildren.CLEANUP) as List<ActionComponent>
     }
 
     fun seeMainActionComponents() : List<ActionComponent>{
@@ -260,6 +294,10 @@ abstract class EnterpriseIndividual(
 
     fun seeMongoDbActions() : List<MongoDbAction> = seeActions(ActionFilter.ONLY_MONGO) as List<MongoDbAction>
 
+    fun seeScheduleTaskActions() : List<ScheduleTaskAction> = seeActions(ActionFilter.ONLY_SCHEDULE_TASK) as List<ScheduleTaskAction>
+
+    fun seeHostnameActions() : List<HostnameResolutionAction> = seeActions(ActionFilter.ONLY_DNS) as List<HostnameResolutionAction>
+
     /**
      * return a list of all external service actions in [this] individual
      * that include all the initializing actions among the main actions
@@ -294,7 +332,8 @@ abstract class EnterpriseIndividual(
             if (log.isTraceEnabled)
                 log.trace("invoke GeneUtils.repairBrokenDbActionsList")
             val previous = sqlInitialization.toMutableList()
-            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
+            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
             resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
         }
@@ -315,6 +354,9 @@ abstract class EnterpriseIndividual(
     private fun getLastIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
+    private fun getLastIndexOfScheduleTaskActionToAdd(): Int =
+        groupsView()!!.endIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
+
     private fun getFirstIndexOfDbActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SQL)
 
@@ -324,9 +366,18 @@ abstract class EnterpriseIndividual(
     private fun getFirstIndexOfHostnameResolutionActionToAdd(): Int =
         groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_DNS)
 
+    private fun getFirstIndexOfScheduleTaskActionToAdd(): Int =
+        groupsView()!!.startIndexForGroupInsertionInclusive(GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
 
 
-    fun addInitializingActions(actions: List<EnvironmentAction>){
+    /**
+     * Add all input initializing actions to the current ones in this individual.
+     *
+     * At time, some actions must be "unique".
+     * In those cases, we don't crash this function, but rather return the number of
+     * unneeded actions that are ignored
+     */
+    fun addInitializingActions(actions: List<EnvironmentAction>): Int {
 
         val invalid = actions.filter { it !is SqlAction && it !is MongoDbAction && it !is HostnameResolutionAction }
         if(invalid.isNotEmpty()){
@@ -336,7 +387,17 @@ abstract class EnterpriseIndividual(
 
         addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
-        addInitializingHostnameResolutionActions(actions = actions.filterIsInstance<HostnameResolutionAction>())
+        addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
+
+        //we don't need duplicates in hostname actions
+        val hostnameActions = actions
+            .filterIsInstance<HostnameResolutionAction>()
+        val uniqueHostnames = hostnameActions
+            .filter { dns -> this.seeHostnameActions().none { it.hostname == dns.hostname } }
+
+        addInitializingHostnameResolutionActions(actions = uniqueHostnames)
+
+        return  hostnameActions.size - uniqueHostnames.size
     }
 
 
@@ -345,10 +406,32 @@ abstract class EnterpriseIndividual(
      * if [relativePosition] = -1, append the [actions] at the end
      */
     fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
+        /*
+            SQL actions representing existing data must ALWAYS be at the beginning.
+            Recall those are only used for FKs.
+         */
+        val (existing, others) = actions.partition { it is SqlAction && it.representExistingData }
+
+        if(existing.isNotEmpty()){
+            addChildrenToGroup(getFirstIndexOfDbActionToAdd(), existing, GroupsOfChildren.INITIALIZATION_SQL)
+            //TODO shall we check for duplications???
+        }
+
+        if(others.isNotEmpty()) {
+            val pos = if (relativePosition < 0) {
+                getLastIndexOfDbActionToAdd()
+            } else {
+                getFirstIndexOfDbActionToAdd() + relativePosition
+            }
+            addChildrenToGroup(pos, others, GroupsOfChildren.INITIALIZATION_SQL)
+        }
+    }
+
+    fun addInitializingScheduleTaskActions(relativePosition: Int=-1, actions: List<Action>){
         if (relativePosition < 0)  {
-            addChildrenToGroup(getLastIndexOfDbActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SQL)
+            addChildrenToGroup(getLastIndexOfScheduleTaskActionToAdd(), actions, GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
         } else{
-            addChildrenToGroup(getFirstIndexOfDbActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SQL)
+            addChildrenToGroup(getFirstIndexOfScheduleTaskActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_SCHEDULE_TASK)
         }
     }
 
@@ -366,6 +449,10 @@ abstract class EnterpriseIndividual(
         } else {
             addChildrenToGroup(getFirstIndexOfHostnameResolutionActionToAdd()+relativePosition, actions, GroupsOfChildren.INITIALIZATION_DNS)
         }
+    }
+
+    fun addCleanUpAction(action: ActionComponent){
+        addChildToGroup(action, GroupsOfChildren.CLEANUP)
     }
 
     private fun resetInitializingActions(actions: List<SqlAction>){
@@ -391,11 +478,30 @@ abstract class EnterpriseIndividual(
     /**
      * @return a list table names which are used to insert data directly
      */
-    open fun getInsertTableNames(): List<String>{
-        return sqlInitialization.filterNot { it.representExistingData }.map { it.table.name }
+    open fun getInsertTableNames(): List<TableId>{
+        return sqlInitialization.filterNot { it.representExistingData }.map { it.table.id }
     }
 
     override fun seeTopGenes(filter: ActionFilter): List<Gene> {
         return seeActions(filter).flatMap { it.seeTopGenes() }
+    }
+
+
+    fun removeAllCleanUp(){
+        killAllInGroup(GroupsOfChildren.CLEANUP)
+    }
+
+    /**
+     * Initialize dynamically added cleanup actions.
+     * Recompute everything for whole individual might not be feasible,
+     * as usually this is needed in the middle of a fitness evaluation
+     */
+    fun initializeCleanUpActions(){
+
+        handleLocalIdsForAddition(seeCleanUpActions())
+
+        // TODO need to handle global initialization.
+        // this is just a temporary solution, would need to call full doGlobalInitialize(), but that
+        // needs refactoring to be applied to subset of actions.
     }
 }

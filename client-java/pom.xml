@@ -5,12 +5,13 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>3.4.1-SNAPSHOT</version>
+        <version>4.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
     <artifactId>evomaster-client-java</artifactId>
     <packaging>pom</packaging>
+    <name>${project.groupId}:${project.artifactId}</name>
 
     <modules>
         <module>controller</module>
@@ -24,8 +25,30 @@
         <module>sql-dto</module>
         <module>distance-heuristics</module>
         <module>test-utils-java</module>
+        <module>test-old-libraries</module>
     </modules>
 
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License (LGPL), version 3</name>
+            <url>http://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <properties>
+        <!--  THOSE ARE ONLY FOR TESTING -->
+        <springboot.version>2.5.4</springboot.version>
+    </properties>
+
+
+    <!--
+         "client-java" lives separately from "core".
+         where core tries to be on latest LTS, the client-java is stuck on old version to maximize its usability.
+         as such, to avoid dependency hell, versions of libraries should not be in root pom.xml file.
+         but rather in the top submodules.
+         TODO there is ongoing effort to do this refactoring, but it will take a while
+    -->
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -81,6 +104,19 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>8</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
 </project>

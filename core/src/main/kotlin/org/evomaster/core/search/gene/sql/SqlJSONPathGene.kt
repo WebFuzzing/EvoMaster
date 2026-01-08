@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -93,14 +92,6 @@ class SqlJSONPathGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlJSONPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.pathExpression.copyValueFrom(other.pathExpression)}, false
-        )
-    }
 
     /**
      * Genes might contain a value that is also stored
@@ -119,15 +110,11 @@ class SqlJSONPathGene(
         return pathExpression.mutationWeight()
     }
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when (gene) {
-            is SqlJSONPathGene -> pathExpression.bindValueBasedOn(gene.pathExpression)
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind SqlJSONGene with ${gene::class.java.simpleName}")
-                false
-            }
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlJSONPathGene) {
+            return false
         }
+        return this.pathExpression.unsafeCopyValueFrom(other.pathExpression)
     }
 
     override fun customShouldApplyShallowMutation(

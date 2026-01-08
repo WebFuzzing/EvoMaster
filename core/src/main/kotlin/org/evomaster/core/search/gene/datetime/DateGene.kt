@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.datetime
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -128,22 +127,7 @@ class DateGene(
         }
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is DateGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        if (this.onlyValidDates && !other.isValidDate()) {
-            throw IllegalArgumentException(
-                "Cannot copy invalid date %s to gene accepting only valid values".format(
-                    other.getValueAsRawString()
-                )
-            )
-        }
 
-        return updateValueOnlyIfValid(
-            {this.year.copyValueFrom(other.year) && this.month.copyValueFrom(other.month) && this.day.copyValueFrom(other.day)}, true
-        )
-    }
 
     /**
      * Checks if the current date is valid or not (e.g. max days in months, leap years)
@@ -168,17 +152,17 @@ class DateGene(
     }
 
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is DateGene -> {
-                day.bindValueBasedOn(gene.day) &&
-                        month.bindValueBasedOn(gene.month) &&
-                        year.bindValueBasedOn(gene.year)
+        val gene = other.getPhenotype()
+
+        return when (gene) {
+            is DateGene -> {
+                day.unsafeCopyValueFrom(gene.day)
+                        && month.unsafeCopyValueFrom(gene.month)
+                        && year.unsafeCopyValueFrom(gene.year)
             }
-            gene is DateTimeGene -> bindValueBasedOn(gene.date)
-            gene is StringGene && gene.getSpecializationGene() != null -> bindValueBasedOn(gene.getSpecializationGene()!!)
-            gene is SeededGene<*> -> this.bindValueBasedOn(gene.getPhenotype() as Gene)
+            is DateTimeGene -> unsafeCopyValueFrom(gene.date)
             // Man: convert to string based on the format?
             else -> {
                 LoggingUtil.uniqueWarn(log, "cannot bind DateGene with ${gene::class.java.simpleName}")

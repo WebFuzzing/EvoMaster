@@ -59,16 +59,7 @@ class PairGene<F,S>(
 
 
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is PairGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {
-                first.copyValueFrom(other.first) && second.copyValueFrom(other.second)
-            }, true
-        )
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is PairGene<*, *>) {
@@ -78,13 +69,14 @@ class PairGene<F,S>(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        if (gene !is PairGene<*, *>) {
-            throw IllegalArgumentException("Invalid gene type ${gene.javaClass}")
-        }
-        return first.bindValueBasedOn(gene.first) && second.bindValueBasedOn(gene.second)
-    }
 
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is PairGene<*, *>) {
+            return false
+        }
+
+        return first.unsafeCopyValueFrom(other.first) && second.unsafeCopyValueFrom(other.second)
+    }
 
     override fun copyContent(): Gene {
         return PairGene(name, first.copy(), second.copy(), allowedToMutateFirst)

@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
@@ -64,15 +63,6 @@ class SqlMultiRangeGene<T>(
         } } "
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is SqlMultiRangeGene<*>) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-        }
-        return updateValueOnlyIfValid(
-            {this.rangeGenes.copyValueFrom(other.rangeGenes)}, false
-        )
-    }
-
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlMultiRangeGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
@@ -80,19 +70,13 @@ class SqlMultiRangeGene<T>(
         return this.rangeGenes.containsSameValueAs(other.rangeGenes)
     }
 
-
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlMultiRangeGene<*> -> {
-                rangeGenes.bindValueBasedOn(gene.rangeGenes)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind ${this::class.java.simpleName} with ${gene::class.java.simpleName}")
-                false
-            }
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+        if (other !is SqlMultiRangeGene<*>) {
+            return false
         }
+        return this.rangeGenes.unsafeCopyValueFrom(other.rangeGenes)
     }
+
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return "\"{" +

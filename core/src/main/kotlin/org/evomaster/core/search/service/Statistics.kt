@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.utils.IncrementalAverage
@@ -30,6 +31,11 @@ class Statistics : SearchListener {
         const val GQL_NO_ERRORS = "gqlNoErrors"
         const val LAST_ACTION_IMPROVEMENT = "lastActionImprovement"
         const val EVALUATED_ACTIONS = "evaluatedActions"
+        const val TOTAL_LINES = "numberOfLines"
+        const val TOTAL_BRANCHES = "numberOfBranches"
+        const val COVERED_LINES = "coveredLines"
+        const val COVERED_BRANCHES = "coveredBranches"
+        const val ELAPSED_SECONDS = "elapsedSeconds"
     }
 
     @Inject
@@ -52,6 +58,9 @@ class Statistics : SearchListener {
 
     @Inject
     private lateinit var oracles: PartialOracles
+
+    @Inject(optional = true)
+    private lateinit var aiResponseClassifier: AIResponseClassifier
 
     /**
      * How often test executions did timeout
@@ -122,25 +131,24 @@ class Statistics : SearchListener {
             }
         }
 
-        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
+        // All headers, including AI-related ones
+        val headers = "interval," + snapshots.values.first().joinToString(",") { it.header }
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
-
         Files.createDirectories(path.parent)
 
-        if (!Files.exists(path) or !config.appendToStatisticsFile) {
+        if (!Files.exists(path) || !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
-
             path.toFile().appendText("$headers\n")
         }
 
         snapshots.entries.stream()
-                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
-                .forEach {
-                    val elements = it.value.map { it.element }.joinToString(",")
-                    path.toFile().appendText("${it.key},$elements\n")
-                }
+            .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+            .forEach { (key, pairs) ->
+                val elements = pairs.joinToString(",") { it.element }
+                path.toFile().appendText("$key,$elements\n")
+            }
     }
 
 
@@ -242,7 +250,7 @@ class Statistics : SearchListener {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
             add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
             add(Pair(EVALUATED_ACTIONS, "" + time.evaluatedActions))
-            add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
+            add(Pair(ELAPSED_SECONDS, "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + targetsInfo.total))
@@ -264,12 +272,13 @@ class Statistics : SearchListener {
              */
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
             add(Pair("potentialFaultCategories", "" + solution.distinctDetectedFaultTypes().toList().sorted().joinToString("|")))
+            add(Pair("potentialFaultsSummary", solution.detectedFaultsSummary()))
 
             // RPC statistics of sut and seeded tests
             add(Pair("numberOfRPCInterfaces", "${rpcInfo?.schemas?.size?:0}"))
             add(Pair("numberOfRPCFunctions", "${rpcInfo?.schemas?.sumOf { it.skippedEndpoints?.size ?: 0 }}"))
             add(Pair("numberOfRPCSeededTests", "${rpcInfo?.seededTestDtos?.size?:0}" ))
-            add(Pair("numberOfRPCSeededTestsHaveMock", "${rpcInfo?.seededTestDtos?.filter { s-> s.value?.isNotEmpty() == true &&  s.value?.any { a -> a.mockObjectNeeded() } == true}?.size?:0}" ))
+            add(Pair("numberOfRPCSeededTestsHaveMock", "${rpcInfo?.seededTestDtos?.filter { s-> s.value?.rpcFuctions?.isNotEmpty() == true &&  s.value?.rpcFuctions?.any { a -> a.mockObjectNeeded() } == true}?.size?:0}" ))
 
             // RPC
             add(Pair("rpcUnexpectedException", "" + solution.overall.rpcUnexpectedException(idMapper).size))
@@ -281,16 +290,16 @@ class Statistics : SearchListener {
             add(Pair("rpcHandledButError", "" + solution.overall.rpcHandledButError(idMapper).size))
             add(Pair("rpcSpecifiedServiceError", "" + solution.overall.rpcServiceError(idMapper).size))
 
-            add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
-            add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
+            add(Pair(TOTAL_BRANCHES, "" + (unitsInfo?.numberOfBranches ?: 0)))
+            add(Pair(TOTAL_LINES, "" + (unitsInfo?.numberOfLines ?: 0)))
             add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
             add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
             add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
             add(Pair("numberOfInstrumentedNumberComparisons", "" + (unitsInfo?.numberOfInstrumentedNumberComparisons ?: 0)))
             add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
-            add(Pair("coveredLines", "${linesInfo.total}"))
-            add(Pair("coveredBranches", "${branchesInfo.total}"))
+            add(Pair(COVERED_LINES, "${linesInfo.total}"))
+            add(Pair(COVERED_BRANCHES, "${branchesInfo.total}"))
 
             // statistic info during sut boot time
             add(Pair("bootTimeCoveredTargets", "${targetsInfo.bootTime}"))
@@ -334,8 +343,59 @@ class Statistics : SearchListener {
         }
         addConfig(list)
 
+        // Adding AI data
+        list.addAll(getAIData())
+
         return list
     }
+
+    // For building AI metric pairs
+    fun aiMetricsAsPairs(
+        enabled: Boolean,
+        type: String,
+        accuracy: Double,
+        precision: Double,
+        recall: Double,
+        f1: Double,
+        mcc: Double
+    ): List<Pair> = listOf(
+        Pair("ai_model_enabled", enabled.toString()),
+        Pair("ai_model_type", type),
+        Pair("ai_accuracy", "%.4f".format(accuracy)),
+        Pair("ai_precision400", "%.4f".format(precision)),
+        Pair("ai_recall400", "%.4f".format(recall)),
+        Pair("ai_f1Score400", "%.4f".format(f1)),
+        Pair("ai_mcc400", "%.4f".format(mcc))
+    )
+
+    fun getAIData(): List<Pair> {
+        // AI model is unable
+        if (!config.isEnabledAIModelForResponseClassification()) {
+            return aiMetricsAsPairs(
+                enabled = false,
+                type = "NONE",
+                accuracy = 0.0,
+                precision = 0.0,
+                recall = 0.0,
+                f1 = 0.0,
+                mcc = 0.0
+            )
+        }
+
+        // Compute metrics
+        val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
+
+        return aiMetricsAsPairs(
+            enabled = true,
+            type = config.aiModelForResponseClassification.name,
+            accuracy = metrics.accuracy,
+            precision = metrics.precision400,
+            recall = metrics.recall400,
+            f1 = metrics.f1Score400,
+            mcc = metrics.mcc
+        )
+    }
+
 
     private fun distinctActions() : Int {
         if(sampler == null){

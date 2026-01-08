@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.string
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -69,11 +68,7 @@ class NumericStringGene(
         return number.isMutable()
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
-        if (other !is NumericStringGene)
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
-       return updateValueOnlyIfValid({this.number.copyValueFrom(other.number)}, false)
-    }
+
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is NumericStringGene)
@@ -109,10 +104,13 @@ class NumericStringGene(
     }
 
 
-    override fun bindValueBasedOn(gene: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
+
+        val gene = other.getPhenotype()
+
         return when(gene){
-            is NumericStringGene -> number.bindValueBasedOn(gene.number)
-            else-> number.bindValueBasedOn(gene)
+            is NumericStringGene -> number.unsafeCopyValueFrom(gene.number)
+            else-> number.unsafeCopyValueFrom(gene)
         }
     }
 

@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene.sql.geometric
 
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
@@ -54,14 +53,12 @@ class SqlCircleGene(
         return "(${c.getValueAsRawString()}, ${r.getValueAsRawString()})"
     }
 
-    override fun copyValueFrom(other: Gene): Boolean {
+    override fun unsafeCopyValueFrom(other: Gene): Boolean {
         if (other !is SqlCircleGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
-        return updateValueOnlyIfValid(
-            {this.c.copyValueFrom(other.c) && this.r.copyValueFrom(other.r)}, true
-        )
+        return this.c.unsafeCopyValueFrom(other.c) && this.r.unsafeCopyValueFrom(other.r)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -72,19 +69,6 @@ class SqlCircleGene(
                 && this.r.containsSameValueAs(other.r)
     }
 
-
-    override fun bindValueBasedOn(gene: Gene): Boolean {
-        return when {
-            gene is SqlCircleGene -> {
-                c.bindValueBasedOn(gene.c) &&
-                        r.bindValueBasedOn(gene.r)
-            }
-            else -> {
-                LoggingUtil.uniqueWarn(log, "cannot bind CircleGene with ${gene::class.java.simpleName}")
-                false
-            }
-        }
-    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

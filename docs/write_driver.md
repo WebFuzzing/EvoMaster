@@ -3,7 +3,7 @@
 To generate tests for [white-box testing](whitebox.md), you need an _EvoMaster Driver_ up and running before
 executing `evomaster.jar`.
 These drivers have to be built manually for each system under test (SUT).
-See the [EMB repository](https://github.com/EMResearch/EMB) for a set of existing SUTs with drivers.
+See the [EMB repository](https://github.com/WebFuzzing/EMB) for a set of existing SUTs with drivers.
 
 To build a client driver in Java (or any JVM language), you need to import the
 _EvoMaster_ Java client library. For example, in Maven:
@@ -128,12 +128,12 @@ When writing an _EvoMaster_ driver, there are 2 TCP ports that you need to consi
 How to start/reset/stop the SUT depends on the chosen framework used to implement the SUT.
 To implement an _EvoMaster Driver_ class, you need check the JavaDocs of the extended super class,
 e.g., `EmbeddedSutController`, and the existing examples in
-[EMB](https://github.com/EMResearch/EMB).
+[EMB](https://github.com/WebFuzzing/EMB).
 
 
 As _SpringBoot_ is nowadays the most common way to implement enterprise systems on the JVM, here we provide
 some discussions / walk-through on how to write a driver for it that extends `EmbeddedSutController`,
-using as reference the [driver for the *features-service* SUT in EMB](https://github.com/EMResearch/EMB/blob/master/jdk_8_maven/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
+using as reference the [driver for the *features-service* SUT in EMB](https://github.com/WebFuzzing/EMB/blob/master/jdk_8_maven/em/embedded/rest/features-service/src/main/java/em/embedded/org/javiermf/features/EmbeddedEvoMasterController.java).
 
 
 To programmatically start a _SpringBoot_ application (needed to implement `startSut()`), you can use `SpringApplication.run`,
@@ -203,36 +203,6 @@ connection =  java.sql.DriverManager.getConnection(url,user,password);
 Note that, since version `1.5.0`, the methods `getConnection()` and  `getDatabaseDriverName()` have been removed.
 
 
-## Independent Tests
-
-Test cases must be __independent__ from each other.
-Otherwise, you could get different results based on their execution order.
-To enforce such independence, you must clean the state of the SUT in the `resetStateOfSUT()` method.
-In theory, RESTful APIs should be _stateless_.
-If indeed stateless, resetting the state would be just a matter of cleaning the database (if any).
-For this purpose, we provide the `DbCleaner` utility class
-(used to delete data without recreating the database schema).
-There might be some tables that you might not want to clean, like for example if you are using
-_FlyWay_ to handle schema migrations.
-These tables can be skipped, for example:
-
-```
-public void resetStateOfSUT() {
-   DbCleaner.clearDatabase_H2(connection, Arrays.asList("schema_version"));
-}
-```
-
-where the content of the table `schema_version` is left untouched.
-
-If your application uses some caches, those might be reset at each test execution.
-However, an easier approach could be to just start the SUT without the caches, for example using
-the option `--spring.cache.type=NONE`.
-
-__IMPORTANT__: since version `1.5.0` we automatically infer which SQL tables and databases to clean after each test execution.
-Setting up `resetStateOfSUT()` for SQL databases is no longer necessary.
-However, if for any reason this behavior needs to be changed (e.g., due to issues), it can be deactivated with `DbSpecification.withDisabledSmartClean()`.
-
-
 Whenever possible, it would be best to use an embedded database such as _H2_.
 However, if you need to rely on a specific database such as _Postgres_, we recommend starting
 it with _Docker_.  
@@ -263,8 +233,73 @@ A database running in _Docker_ will still write on your hard-drive, which is an 
 time-consuming overhead.
 The idea then is to mount the folder, in which the database writes, directly in RAM.
 
-For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/EMResearch/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt).
+For an example, you can look at the E2E tests in EvoMaster, like the class [com.foo.spring.rest.postgres.SpringRestPostgresController](https://github.com/WebFuzzing/EvoMaster/blob/master/e2e-tests/spring-rest-postgres/src/test/kotlin/com/foo/spring/rest/postgres/SpringRestPostgresController.kt).
 
+
+
+## Independent Tests
+
+Test cases must be __independent__ from each other.
+Otherwise, you could get different results based on their execution order.
+To enforce such independence, you must clean the state of the SUT in the `resetStateOfSUT()` method.
+In theory, RESTful APIs should be _stateless_.
+If indeed stateless, resetting the state would be just a matter of cleaning the database (if any).
+For this purpose, we provide the `DbCleaner` utility class
+(used to delete data without recreating the database schema).
+There might be some tables that you might not want to clean, like for example if you are using
+_FlyWay_ to handle schema migrations.
+These tables can be skipped, for example:
+
+```
+public void resetStateOfSUT() {
+   DbCleaner.clearDatabase_H2(connection, Arrays.asList("schema_version"));
+}
+```
+
+where the content of the table `schema_version` is left untouched.
+
+If your application uses some caches, those might be reset at each test execution.
+However, an easier approach could be to just start the SUT without the caches, for example using
+the option `--spring.cache.type=NONE`.
+
+> __IMPORTANT__: since version `1.5.0` we automatically infer which SQL tables and databases to clean after each test execution.
+Setting up `resetStateOfSUT()` for SQL databases is no longer necessary.
+However, if for any reason this behavior needs to be changed (e.g., due to issues), it can be deactivated with `DbSpecification.withDisabledSmartClean()`.
+
+
+## Initializing Data: User Authentication
+
+At times, there might be the need to provide some initializing data for testing purposes.
+EvoMaster can analyze the schema of the SQL databases, and all queries done by the tested application, to create the needed data automatically.
+So, in general, there is no need for a user to provide SQL data manually.
+
+However, there is data that EvoMaster cannot really create, e.g., hashed-passwords or encrypted fields. 
+For example, if you have an admin user, their info has to be added in the database, somehow.
+
+To simplify handling this, the `DbSpecification` has methods to register a SQL script, to use for initialization. 
+The point here is that, if during the fuzzing any of the involved table is modified, EvoMaster will automatically clean those tables and re-execute the initializing script, all automatically. 
+On the other hand, if those tables are not modified, then there is no need to re-execute the script.
+This process is automated, and can be set with for example:
+
+```
+new DbSpecification(DatabaseType.H2,sqlConnection)
+     .withInitSqlOnResourcePath(INIT_DB_SCRIPT_PATH)
+```
+
+where `INIT_DB_SCRIPT_PATH` point to a resource path having SQL `INSERT` operations.
+
+
+The assumption here is that all initializing data is present in such script. 
+If for any reason the application is adding some testing data on startup, it would be best to clean the database, and have the insertion of this data as part of this script. For example:
+
+```
+DbCleaner.clearDatabase_H2(sqlConnection, Arrays.asList("flyway_schema_history"));
+dbSpecification = Arrays.asList(new DbSpecification(DatabaseType.H2,sqlConnection)
+                                     .withInitSqlOnResourcePath(INIT_DB_SCRIPT_PATH));
+```
+
+This can be executed when the application is started. 
+By doing this, each test executed will have a consistent database state, making each test independent of each other. 
 
 ## MongoDB Database
 

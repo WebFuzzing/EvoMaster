@@ -1,0 +1,48 @@
+package org.evomaster.e2etests.spring.examples.resource.structuralelement;
+
+import com.google.inject.Injector;
+import org.evomaster.core.problem.rest.data.RestIndividual;
+import org.evomaster.core.problem.rest.service.mutator.ResourceRestMutator;
+import org.evomaster.core.problem.rest.service.sampler.ResourceSampler;
+import org.evomaster.core.problem.rest.service.fitness.ResourceRestFitness;
+import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.e2etests.spring.examples.resource.ResourceMIOHWTestBase;
+import org.junit.jupiter.api.Test;
+
+import java.util.HashSet;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+public class RestMutatorIndividualStructureTest extends ResourceMIOHWTestBase {
+
+    @Test
+    public void testResourceSamplerAndMutator() {
+
+        List<String> args = generalArgs(100, 42);
+        hypmutation(args, false);
+        adaptiveMutation(args, 0.0);
+        defaultResourceConfig(args, true);
+        args.add("--probOfApplySQLActionToCreateResources");
+        args.add("0.1");
+
+        Injector injector = init(args);
+
+        ResourceSampler sampler = injector.getInstance(ResourceSampler.class);
+        ResourceRestMutator mutator = injector.getInstance(ResourceRestMutator.class);
+        ResourceRestFitness ff= injector.getInstance(ResourceRestFitness.class);
+
+        for (int i = 0; i < 50; i++){
+
+            RestIndividual ind = sampler.sample(false);
+            EvaluatedIndividual<RestIndividual> eind = ff.calculateCoverage(ind, new HashSet<>(), null);
+            assertFalse(ind.getViewOfChildren().isEmpty());
+
+
+            RestIndividual mind = mutator.mutate(eind, new HashSet<>(), null);
+            assertFalse(mind.getViewOfChildren().isEmpty());
+        }
+
+    }
+
+}

@@ -6,7 +6,7 @@ import org.evomaster.client.java.sql.SqlScriptRunner
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.sql.SqlInsertBuilder
 import org.evomaster.core.search.gene.numeric.IntegerGene
-import org.evomaster.core.search.gene.optional.NullableGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.*
@@ -28,8 +28,8 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         assertEquals("postgres", schema.name.lowercase())
         assertEquals(DatabaseType.POSTGRES, schema.databaseType)
 
-        assertTrue(schema.tables.any { it.name.equals("people".lowercase()) })
-        val peopleTable = schema.tables.find { it.name.equals("people".lowercase()) }
+        assertTrue(schema.tables.any { it.id.name.equals("people".lowercase()) })
+        val peopleTable = schema.tables.find { it.id.name.equals("people".lowercase()) }
 
         val idColumn = peopleTable!!.columns[0]
         val nameColumn = peopleTable.columns[1]
@@ -99,8 +99,8 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         val oneQuoteStr = "'"
         val twoQuotesStr = "'hi'"
 
-        (genes[1] as StringGene).copyValueFrom(StringGene(genes[1].name, oneQuoteStr))
-        ((genes[2] as NullableGene).gene as StringGene).copyValueFrom(StringGene(genes[1].name, twoQuotesStr))
+        (genes[1] as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, oneQuoteStr))
+        ((genes[2] as NullableGene).gene as StringGene).unsafeCopyValueFrom(StringGene(genes[1].name, twoQuotesStr))
 
         val query = "Select * from people where id=%s".format(idValue)
 

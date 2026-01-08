@@ -15,7 +15,7 @@ In your local `~/.m2` Maven repository, you need to create a `settings.xml` file
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
 <servers>
 <server>
-      <id>ossrh</id>
+      <id>central</id>
       <username>???</username>
       <password>???</password>
     </server>
@@ -43,6 +43,11 @@ gpg --keyserver https://keys.openpgp.org --send-keys  ???
 where `???` needs to be replaced with the id of the generated public key.
 You can also read more details [here](https://central.sonatype.org/pages/working-with-pgp-signatures.html).
 
+
+## Release Notes
+
+Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version.
+
 ## Maven Central Release
 
 The Java client needs to be deployed on Maven Central. 
@@ -57,12 +62,7 @@ updated, manually...
 Given a current snapshot version `0.3.1-SNAPSHOT`, a new release could be `0.4.0`, i.e.,
 increase minor version `y` by 1, and reset patch version `z` to 0.
 
-To change the version on all `pom.xml` files at once, from project root folder run:
-```
-mvn versions:set -DnewVersion=x.y.z
-```
-
-where `x.y.z` should be substituted with the actual version number, e.g., `0.4.0`.
+To change the version on all `pom.xml` files at once, from project root folder run, could use the `mvn versions:set` command.
 However, there are other files besides the pom ones that need to be updated, like for example `makeExecutable.sh`.
 So, the update of versions should be done with the `version.py` script. E.g.,
 ```
@@ -83,9 +83,7 @@ However, it might take some hours before those are in sync with Maven Central,
 which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
-## Release Notes
 
-Update the release notes (i.e., the `release_notes.md` file), by replacing the SNAPSHOT version with the new release version. 
 
 ## GitHub Release
 
@@ -98,7 +96,7 @@ git tag v<x.y.z>
 git push origin v<x.y.z>   
 ```
 This will trigger a special build on GitHub Action (see `.github/workflows/release.yml`).
-If everything goes correctly, then after that action is completed the new release should be available on the [release page](https://github.com/EMResearch/EvoMaster/releases).
+If everything goes correctly, then after that action is completed the new release should be available on the [release page](https://github.com/WebFuzzing/EvoMaster/releases).
 
 In case of problems, will need to remove the created (locally and remotely), before trying again:
 
@@ -119,7 +117,7 @@ Make sure to use `package` and __NOT__ `install` (more on this later).
 Furthermore, compilation __MUST__ be done with the _lowest_ JDK version currently
 supported in _EvoMaster_.
 
-From the [release](https://github.com/EMResearch/EvoMaster/releases) page
+From the [release](https://github.com/WebFuzzing/EvoMaster/releases) page
 on GitHub, create a new release.
 It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
 On GitHub, upload the `core/target/evomaster.jar` executable as part of the release 
@@ -142,7 +140,7 @@ py version.py 0.4.1-SNAPSHOT
 ## EMB Release
 
 After completing the release of a new version of `EvoMaster`, you need to make a new
-release for [https://github.com/EMResearch/EMB](https://github.com/EMResearch/EMB) as well.
+release for [https://github.com/WebFuzzing/EMB](https://github.com/WebFuzzing/EMB) as well.
 The two repositories __MUST__ have their version numbers aligned.
 
 You need to update all `pom.xml` files with the same:
@@ -160,7 +158,7 @@ for those dependencies manually from your IDE).
 
 To simplify all these previous steps, you can simply run `./scripts/version.py`.
 
-Once those changes are pushed, create a new [release](https://github.com/EMResearch/EMB/releases) 
+Once those changes are pushed, create a new [release](https://github.com/WebFuzzing/EMB/releases) 
 on GitHub.
 Tag it with the same version as `EvoMaster`, but no need to attach/upload any file.
 
@@ -178,7 +176,7 @@ In other words, `master` branch should always point to last commit of latest rel
 
 ## Example Update
 
-Every time we make a new release, we should also update the examples in [https://github.com/EMResearch/rest-api-example](https://github.com/EMResearch/rest-api-example).
+Every time we make a new release, we should also update the examples in [https://github.com/WebFuzzing/rest-api-example](https://github.com/EMResearch/rest-api-example).
 This means:
 * increase the dependency version of EM in the pom file
 * remove/fix any deprecated function in the implemented driver

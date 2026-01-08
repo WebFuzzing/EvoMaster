@@ -1,0 +1,43 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OpenAPI definition",
+    "version": "v0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:10189",
+      "description": "Generated server url"
+    }
+  ],
+  "paths": {
+    "/api/externalsref": {
+      "get": {
+        "tags": [
+          "external-sref-application"
+        ],
+        "operationId": "get",
+        "parameters": [
+          {"$ref": "a.json#/components/parameters/a"},
+          {"$ref": "../b.json#/components/parameters/b"},
+          {"$ref": "./others/c.json#/components/parameters/c"},
+          {"$ref": "http://localhost:10189/sref/schema/others/d.json#/components/parameters/d"},
+          {"$ref": "//localhost:10189/sref/schema/others/e.json#/components/parameters/e"}
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {}
+}
