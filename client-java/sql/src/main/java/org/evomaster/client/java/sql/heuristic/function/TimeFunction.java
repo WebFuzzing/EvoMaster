@@ -13,7 +13,7 @@ public class TimeFunction extends SqlFunction {
     @Override
     public Object evaluate(Object... arguments) {
         if (arguments.length != 1) {
-            throw new IllegalArgumentException("TIME() function takes exactly one argument");
+            throw new IllegalArgumentException("TIME() function takes exactly one argument but got:" + arguments.length);
         }
         Object argument = arguments[0];
         if (argument instanceof Date) {
@@ -25,7 +25,7 @@ public class TimeFunction extends SqlFunction {
                 Date date = Timestamp.valueOf(s);
                 return timeOf(date);
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Invalid string format for TIME() function: " + s);
+                throw new IllegalArgumentException("Invalid string format for TIME() function: " + s + " due to " + e.getMessage());
             }
         }
         throw new UnsupportedOperationException("Implement this");

@@ -14,7 +14,7 @@ public class NowFunction extends SqlFunction {
     @Override
     public Object evaluate(Object... arguments) {
         if (arguments.length != 0) {
-            throw new IllegalArgumentException("NOW() function takes no argument");
+            throw new IllegalArgumentException("NOW() function takes no argument but got:" + arguments.length + " arguments.");
         }
         Timestamp nowValue = CANONICAL_NOW_VALUE;
         return nowValue;

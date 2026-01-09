@@ -31,7 +31,7 @@ public class DateFunction extends SqlFunction {
     @Override
     public Object evaluate(Object... arguments) {
         if (arguments.length != 1) {
-            throw new IllegalArgumentException("DATE() function takes exactly one argument");
+            throw new IllegalArgumentException("DATE() function takes exactly one argument but got: " + arguments.length);
         }
 
         Object arg = arguments[0];
