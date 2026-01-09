@@ -16,24 +16,38 @@ public class ReflectionBasedRedisClient {
     private final Object connection;       // io.lettuce.core.api.StatefulRedisConnection
     private final Object syncCommands;     // io.lettuce.core.api.sync.RedisCommands
 
+    private static final String CLOSE_METHOD = "close";
+    private static final String CONNECT_METHOD = "connect";
+    private static final String CREATE_METHOD = "create";
+    private static final String FLUSHALL_METHOD = "flushall";
+    private static final String GET_METHOD = "get";
+    private static final String HGETALL_METHOD = "hgetall";
+    private static final String HSET_METHOD = "hset";
+    private static final String KEYS_METHOD = "keys";
+    private static final String SET_METHOD = "set";
+    private static final String SHUTDOWN_METHOD = "shutdown";
+    private static final String SMEMBERS_METHOD = "smembers";
+    private static final String SYNC_METHOD = "sync";
+    private static final String TYPE_METHOD = "type";
+
     public ReflectionBasedRedisClient(String host, int port) {
         try {
             Class<?> redisClientClass = Class.forName("io.lettuce.core.RedisClient");
             Class<?> redisURIClass = Class.forName("io.lettuce.core.RedisURI");
 
-            Method createUri = redisURIClass.getMethod("create", String.class);
+            Method createUri = redisURIClass.getMethod(CREATE_METHOD, String.class);
             Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
 
             SimpleLogger.debug("Connecting to Redis with PORT: " + port);
 
-            Method createClient = redisClientClass.getMethod("create", redisURIClass);
+            Method createClient = redisClientClass.getMethod(CREATE_METHOD, redisURIClass);
             this.lettuceClient = createClient.invoke(null, uri);
 
-            Method connectMethod = redisClientClass.getMethod("connect");
+            Method connectMethod = redisClientClass.getMethod(CONNECT_METHOD);
             this.connection = connectMethod.invoke(lettuceClient);
 
             Class<?> statefulConnClass = Class.forName("io.lettuce.core.api.StatefulRedisConnection");
-            Method syncMethod = statefulConnClass.getMethod("sync");
+            Method syncMethod = statefulConnClass.getMethod(SYNC_METHOD);
             this.syncCommands = syncMethod.invoke(connection);
 
         } catch (Exception e) {
@@ -44,11 +58,11 @@ public class ReflectionBasedRedisClient {
     public void close() {
         try {
             if (connection != null) {
-                Method close = connection.getClass().getMethod("close");
+                Method close = connection.getClass().getMethod(CLOSE_METHOD);
                 close.invoke(connection);
             }
             if (lettuceClient != null) {
-                Method shutdown = lettuceClient.getClass().getMethod("shutdown");
+                Method shutdown = lettuceClient.getClass().getMethod(SHUTDOWN_METHOD);
                 shutdown.invoke(lettuceClient);
             }
         } catch (Exception ignored) {}
@@ -56,17 +70,17 @@ public class ReflectionBasedRedisClient {
 
     /** Equivalent to SET key value */
     public void setValue(String key, String value) {
-        invoke("set", key, value);
+        invoke(SET_METHOD, key, value);
     }
 
     /** Equivalent to GET key */
     public String getValue(String key) {
-        return (String) invoke("get", key);
+        return (String) invoke(GET_METHOD, key);
     }
 
     /** Equivalent to KEYS * */
     public Set<String> getAllKeys() {
-        Object result = invoke("keys", "*");
+        Object result = invoke(KEYS_METHOD, "*");
         if (result instanceof Collection)
             return new HashSet<>((Collection<String>) result);
         return Collections.emptySet();
@@ -74,18 +88,18 @@ public class ReflectionBasedRedisClient {
 
     /** Equivalent to TYPE key */
     public String getType(String key) {
-        Object result = invoke("type", key);
+        Object result = invoke(TYPE_METHOD, key);
         return result != null ? result.toString() : null;
     }
 
     /** HSET key field value */
     public void hashSet(String key, String field, String value) {
-        invoke("hset", key, field, value);
+        invoke(HSET_METHOD, key, field, value);
     }
 
     /** SMEMBERS key */
     public Set<String> getSetMembers(String key) {
-        Object result = invoke("smembers", key);
+        Object result = invoke(SMEMBERS_METHOD, key);
         if (result instanceof Collection)
             return new HashSet<>((Collection<String>) result);
         return Collections.emptySet();
@@ -123,11 +137,11 @@ public class ReflectionBasedRedisClient {
     }
 
     public void flushAll() {
-        invoke("flushall");
+        invoke(FLUSHALL_METHOD);
     }
 
     public Map<String, String> getHashFields(String key) {
-        Object result = invoke("hgetall", key);
+        Object result = invoke(HGETALL_METHOD, key);
         return (Map<String, String>) result;
     }
 }

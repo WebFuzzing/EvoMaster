@@ -195,10 +195,10 @@ public class RedisHeuristicsCalculator {
      */
     private double calculateDistanceForField(String targetField, Set<String> fields) {
         if (fields.isEmpty()) {
-            return Long.MAX_VALUE;
+            return Double.MAX_VALUE;
         }
 
-        double minDist = Long.MAX_VALUE;
+        double minDist = Double.MAX_VALUE;
 
         for (String field : fields) {
             try {
