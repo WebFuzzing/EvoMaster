@@ -78,9 +78,9 @@ mvn clean -Pdeployment -DskipTests  deploy
 ```
 
 If everything went well, you should be able to see the deployed files at
-[https://oss.sonatype.org/](https://oss.sonatype.org/). 
+[https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java-controller](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java-controller). 
 However, it might take some hours before those are in sync with Maven Central,
-which you can check at [https://search.maven.org/](https://search.maven.org/).
+which you can check at [https://central.sonatype.com/publishing/deployments](https://central.sonatype.com/publishing/deployments) (requires login).
 
 
 
