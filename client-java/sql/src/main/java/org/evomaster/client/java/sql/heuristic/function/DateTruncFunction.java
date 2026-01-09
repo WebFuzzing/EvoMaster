@@ -4,6 +4,7 @@ import org.evomaster.client.java.sql.internal.ColumnTypeParser;
 
 import java.time.*;
 import java.time.temporal.TemporalAccessor;
+import java.util.Objects;
 
 public class DateTruncFunction extends SqlFunction {
 
@@ -24,8 +25,8 @@ public class DateTruncFunction extends SqlFunction {
 
     @Override
     public Object evaluate(Object... arguments) {
-        if (arguments == null || arguments.length != 2) {
-            throw new IllegalArgumentException("DATE_TRUNC requires two arguments");
+        if (arguments.length != 2) {
+            throw new IllegalArgumentException("DATE_TRUNC requires two arguments but got: " + arguments.length);
         }
         final String unit = String.valueOf(arguments[0]).toLowerCase();
         final Object tsObj = arguments[1];

@@ -177,4 +177,17 @@ class DateTruncFunctionTest {
         assertEquals(expectedInstant, ((Date) res).toInstant());
     }
 
+    @Test
+    void testTruncateEmptyArguments() {
+        DateTruncFunction f = new DateTruncFunction();
+        assertThrows(IllegalArgumentException.class, () -> f.evaluate());
+    }
+
+    @Test
+    void testTruncateMoreArgumentsThanExpected() {
+        LocalTime t = LocalTime.of(3, 45, 12, 123_000_000);
+        DateTruncFunction f = new DateTruncFunction();
+        assertThrows(IllegalArgumentException.class, () -> f.evaluate("hour", t, "extraArgument"));
+    }
+
 }
