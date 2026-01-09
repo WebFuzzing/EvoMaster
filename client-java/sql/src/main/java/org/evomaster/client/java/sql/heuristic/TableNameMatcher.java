@@ -13,6 +13,8 @@ public class TableNameMatcher {
     }
 
     public boolean matches(String schemaName, String tableName) {
+        // TODO This method should also support catalog name.
+        // TODO Consider merging functionality with SqlDtoUtils.matchByName()
         return (schemaName == null || matchSchemaName(schemaName, tableIdDto.schema))
                 && matchTableName(tableName, tableIdDto.name);
     }
