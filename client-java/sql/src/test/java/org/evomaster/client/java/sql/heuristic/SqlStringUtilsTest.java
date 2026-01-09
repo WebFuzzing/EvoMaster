@@ -136,5 +136,37 @@ class SqlStringUtilsTest {
     void testOneEmptyOneNonEmpty() {
         assertFalse(SqlStringUtils.nullSafeEqualsIgnoreCase("", "nonempty"));
     }
+
+
+    @Test
+    void testNullAReturnsFalse() {
+        assertFalse(SqlStringUtils.nullSafeEndsWithIgnoreCase(null, "suffix"));
+    }
+
+    @Test
+    void testEndsWithIgnoreCaseReturnsTrue() {
+        assertTrue(SqlStringUtils.nullSafeEndsWithIgnoreCase("HelloWORLD", "world"));
+    }
+
+    @Test
+    void testDoesNotEndWithReturnsFalse() {
+        assertFalse(SqlStringUtils.nullSafeEndsWithIgnoreCase("hello", "WORLDs"));
+    }
+
+    @Test
+    void testEmptySuffixReturnsTrue() {
+        assertTrue(SqlStringUtils.nullSafeEndsWithIgnoreCase("anything", ""));
+    }
+
+    @Test
+    void testSuffixLongerThanInputReturnsFalse() {
+        assertFalse(SqlStringUtils.nullSafeEndsWithIgnoreCase("ab", "abc"));
+    }
+
+    @Test
+    void testBNullThrowsNullPointerException() {
+        assertFalse(SqlStringUtils.nullSafeEndsWithIgnoreCase("abc", null));
+    }
+
 }
 
