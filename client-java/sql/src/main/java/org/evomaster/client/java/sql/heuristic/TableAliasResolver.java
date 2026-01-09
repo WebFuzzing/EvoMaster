@@ -1,6 +1,5 @@
 package org.evomaster.client.java.sql.heuristic;
 
-import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
@@ -22,59 +21,6 @@ import java.util.*;
  * if a given table name is a physical table or a view.
  */
 class TableAliasResolver {
-
-    private static class TableAliasContext {
-        private final TreeMap<String, SqlTableName> tableNameAliases = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-        private final TreeMap<String, SqlDerivedTable> derivedTableAliases = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
-        private boolean containsAlias(Alias alias) {
-            Objects.requireNonNull(alias, "alias cannot be null");
-            return containsAlias(alias.getName());
-        }
-
-        public boolean containsAlias(String aliasName) {
-            Objects.requireNonNull(aliasName, "aliasName cannot be null");
-            String lowerCaseAliasName = aliasName.toLowerCase();
-            return tableNameAliases.containsKey(lowerCaseAliasName)
-                    || derivedTableAliases.containsKey(lowerCaseAliasName);
-        }
-
-        private SqlTableReference getTableReference(String aliasName) {
-            Objects.requireNonNull(aliasName, "aliasName cannot be null");
-            String lowerCaseAliasName = aliasName.toLowerCase();
-            if (tableNameAliases.containsKey(lowerCaseAliasName)) {
-                return tableNameAliases.get(lowerCaseAliasName);
-            } else if (derivedTableAliases.containsKey(lowerCaseAliasName)) {
-                return derivedTableAliases.get(lowerCaseAliasName);
-            } else {
-                throw new IllegalArgumentException("Alias not found in the current context: " + aliasName);
-            }
-        }
-
-        private String getAliasName(Alias alias) {
-            Objects.requireNonNull(alias, "alias cannot be null");
-
-            return alias.getName().toLowerCase();
-        }
-
-        public void addAliasToTableName(Alias alias, Table target) {
-            Objects.requireNonNull(alias, "alias cannot be null");
-            Objects.requireNonNull(target, "target cannot be null");
-            if (containsAlias(alias)) {
-                throw new IllegalArgumentException("Alias already declared in the current context: " + alias.getName());
-            }
-            String aliasName = getAliasName(alias);
-            tableNameAliases.put(aliasName, new SqlTableName(target));
-        }
-
-        public void addAliasToDerivedTable(Alias alias, Select subquery) {
-            if (containsAlias(alias)) {
-                throw new IllegalArgumentException("Alias already declared in the current context: " + alias.getName());
-            }
-            String aliasName = getAliasName(alias);
-            derivedTableAliases.put(aliasName, new SqlDerivedTable(subquery));
-        }
-    }
 
     private final Deque<TableAliasContext> stackOfTableAliases = new ArrayDeque<>();
 
