@@ -6,7 +6,7 @@
     <parent>
         <artifactId>evomaster-e2e-tests-spring</artifactId>
         <groupId>org.evomaster</groupId>
-        <version>5.0.0</version>
+        <version>5.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring-rest-opensearch</artifactId>
