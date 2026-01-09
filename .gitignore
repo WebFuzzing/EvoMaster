@@ -160,3 +160,6 @@ client-java/distance-heuristics/target
 client-java/test-old-libraries/target
 core-tests/e2e-tests/spring/spring-rest-mysql/target
 /core-tests/jdk-8/spring-rest-openapi-v2/target/
+/core-tests/jdk-8/spring-rest-openapi-v2-driver/target/
+/core-tests/jdk-8/spring-rest-openapi-v2-sut/target/
+/core-tests/jdk-8/spring-rest-openapi-v2-tests/target/
