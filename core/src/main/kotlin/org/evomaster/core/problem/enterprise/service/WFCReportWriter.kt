@@ -69,6 +69,18 @@ class WFCReportWriter {
             ?: throw IllegalArgumentException("Resource not found: $path")
     }
 
+    private fun getWFCVersion() : String{
+        val pomPropertiesPath = "META-INF/maven/com.webfuzzing/commons/pom.properties"
+        return WFCReportWriter::class.java.classLoader.getResourceAsStream(pomPropertiesPath)
+            ?.use { stream ->
+                Properties().apply { load(stream) }
+                    .getProperty("version")
+                    ?.let { return it }
+
+            }
+            ?: "not specified"
+    }
+
     fun writeReport(solution: Solution<*>, suites: List<TestSuiteCode>) {
 
         val data = statistics.getData(solution)
@@ -76,7 +88,7 @@ class WFCReportWriter {
         val report = Report()
         val toolName = "EvoMaster"
 
-        report.schemaVersion = Report::class.java.`package`.implementationVersion
+        report.schemaVersion = getWFCVersion()
         report.toolName = toolName
         report.toolVersion = this.javaClass.`package`?.implementationVersion ?: "snapshot"
         report.creationTime = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)

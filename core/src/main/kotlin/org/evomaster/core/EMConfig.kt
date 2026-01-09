@@ -590,16 +590,24 @@ class EMConfig {
                     "Their sum should be lower or equal to 1.")
         }
 
+        //FIXME flattening/recomputation should be separated from "minimize" phase
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
         if(!security && ssrf) {
-            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+            LoggingUtil.uniqueUserWarn("The use of 'ssrf' requires 'security'. SSRF analyses are hence disabled.")
+           //throw ConfigProblemException("The use of 'ssrf' requires 'security'")
         }
 
         if(!security && xss) {
-            throw ConfigProblemException("The use of 'xss' requires 'security'")
+            LoggingUtil.uniqueUserWarn("The use of 'xss' requires 'security'. XSS analyses are hence disabled.")
+            //throw ConfigProblemException("The use of 'xss' requires 'security'")
+        }
+
+        if(!security && sqli) {
+            LoggingUtil.uniqueUserWarn("The use of 'sqli' requires 'security'. SQLi analyses are hence disabled.")
+            //throw ConfigProblemException("The use of 'sqli' requires 'security'")
         }
 
         if (ssrf &&
@@ -1415,7 +1423,7 @@ class EMConfig {
     }
 
     @Experimental
-    @PercentageAsProbability
+    @PercentageAsProbability(false)
     @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
             " All classifications with probability equal or above such threshold value will be accepted.")
     var classificationRepairThreshold = 0.8
@@ -2819,7 +2827,7 @@ class EMConfig {
      * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
      */
     @Experimental
-    @PercentageAsProbability
+    @PercentageAsProbability(false)
     @Cfg("Breeder GA: fraction of top individuals to keep in parents pool (truncation).")
     var breederTruncationFraction: Double = 0.5
 
@@ -2976,12 +2984,16 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
-        if(category == DefinedFaultCategory.XSS && !xss){
-            return false;
+        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+            return false
         }
 
-        if(category == DefinedFaultCategory.SQL_INJECTION && !sqli){
-            return false;
+        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+            return false
+        }
+
+        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+            return false
         }
 
         return category !in getDisabledOracleCodesList()
