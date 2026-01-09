@@ -9,6 +9,7 @@ authTemplate:
     externalEndpointURL: "http://localhost:8080/api/externalauth/login1"
     contentType: application/json
     token:
-      extractFromField: /access_token
-      httpHeaderName: Authorization
-      headerPrefix: ""
+      extractFrom: body
+      extractSelector: /access_token
+      sendName: Authorization
+      sendIn: header

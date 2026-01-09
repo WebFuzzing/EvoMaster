@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class EnterpriseTestBase {
 
-    protected static InstrumentedSutStarter embeddedStarter;
+    protected static SutController sutController;
     protected static String baseUrlOfSut;
     protected static SutController controller;
     protected static RemoteController remoteController;
@@ -67,25 +67,36 @@ public abstract class EnterpriseTestBase {
      * Dirty hack, but could not find any clean way to do disable it for black-box test modules :(
      * unfortunately, as static, cannot be overridden
      */
-    public static boolean shouldApplyInstrumentation = true;
+    protected static boolean shouldApplyInstrumentation = true;
 
+    public static boolean skipInstrumentation() {
+        // if specified, it is in Maven surefire. done here because static variable approach seems to work in
+        // IDE, but not on Maven. But Maven approach would not work in IDE... so nice...
+        String skip = System.getenv("SKIP_INSTRUMENTATION");
+        if(Boolean.parseBoolean(skip)){
+            return true;
+        }
+        return !shouldApplyInstrumentation;
+    }
 
     @BeforeAll
     public static void initInstrumentation(){
-       if(shouldApplyInstrumentation) {
+
+       if(skipInstrumentation()) {
+           return;
+       }
         /*
             Make sure we init agent immediately... this is to avoid classes (eg kotlin library)
             being not instrumented when tests start (as controllers might load them)
          */
-           InstrumentedSutStarter.loadAgent();
+        InstrumentedSutStarter.loadAgent();
 
         /*
             avoid boot-time info across e2e tests
          */
-           ObjectiveRecorder.reset(true);
+        ObjectiveRecorder.reset(true);
 
-           UnitsInfoRecorder.reset();
-       }
+        UnitsInfoRecorder.reset();
     }
 
     @AfterAll
@@ -94,7 +105,7 @@ public abstract class EnterpriseTestBase {
         if(remoteController != null) {
             assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
                 boolean stopped = remoteController.stopSUT();
-                stopped = embeddedStarter.stop() && stopped;
+                stopped = sutController.stopTheControllerServer() && stopped;
 
                 assertTrue(stopped);
             });
@@ -501,10 +512,14 @@ public abstract class EnterpriseTestBase {
 
         EnterpriseTestBase.controller = controller;
 
-        embeddedStarter = new InstrumentedSutStarter(controller);
-        embeddedStarter.start();
+        if(!skipInstrumentation()) {
+            new InstrumentedSutStarter(controller);
+        }
 
-        controllerPort = embeddedStarter.getControllerServerPort();
+        sutController = controller;
+        sutController.startTheControllerServer();
+
+        controllerPort = sutController.getControllerServerPort();
 
         remoteController = new RemoteControllerImplementation("localhost", controllerPort, true, true, config);
         boolean started = remoteController.startSUT();

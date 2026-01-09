@@ -418,20 +418,7 @@ class Main {
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val securityRest = injector.getInstance(SecurityRest::class.java)
-                    val solution = securityRest.applySecurityPhase()
-
-                    if (config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
-                        LoggingUtil.getInfoLogger().info("Starting to apply SSRF detection.")
-
-                        val ssrfAnalyser = injector.getInstance(SSRFAnalyser::class.java)
-                        ssrfAnalyser.apply()
-                    } else {
-                        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
-                            LoggingUtil.uniqueUserInfo("Skipping security test for SSRF detection as disabled in configuration")
-                        }
-
-                        return solution
-                    }
+                    securityRest.applySecurityPhase()
                 }
 
                 else -> {
