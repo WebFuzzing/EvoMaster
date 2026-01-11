@@ -23,6 +23,7 @@ import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
@@ -71,7 +72,10 @@ class SecurityRest {
     private lateinit var builder: RestIndividualBuilder
 
     @Inject
-    protected lateinit var config: EMConfig
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -117,7 +121,12 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
-        //TODO possible other kinds of security tests here
+        //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
+        //SQLi, XSS, SSRF, etc.
+        addForInjections()
+
+        //eg leaked stack traces
+        addForInfoLeakage()
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -258,6 +267,41 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
+    private fun addForInjections() {
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            log.debug("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
+        }
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleSqlICheck()
+        }
+
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            ssrfAnalyser.apply()
+        }
+    }
+
+    private fun addForInfoLeakage() {
+
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+            log.debug("Skipping security test for existence leakage as disabled in configuration")
+        } else {
+            // getting 404 instead of 403
+            handleExistenceLeakage()
+        }
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
+        }
+    }
+
     private fun accessControlBasedOnRESTGuidelines() {
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
@@ -269,24 +313,11 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
-            log.debug("Skipping security test for existence leakage as disabled in configuration")
-        } else {
-            // getting 404 instead of 403
-            handleExistenceLeakage()
-        }
-
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
             log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
-        }
-
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
-            log.debug("Skipping security test for XSS as disabled in configuration")
-        } else {
-            handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
@@ -295,26 +326,12 @@ class SecurityRest {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
-        } else {
-            handleStackTraceCheck()
-        }
-
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
-            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
-        } else {
-            handleSqlICheck()
-        }
-
         if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             handleAnonymousWriteCheck()
         }
 
-        //TODO other rules. See FaultCategory
-        //etc.
     }
 
 

@@ -44,28 +44,42 @@ object AuthUtils {
             if(tl.expectsCookie()){
                 throw IllegalArgumentException("Token based login does not expect cookies")
             }
+            val data = tl.token ?: throw IllegalArgumentException("Token based login requires token definition")
 
             val response = makeCall(client, tl, baseUrl)
                 ?: continue
 
-            if(! response.hasEntity()){
-                log.warn("Login request failed, with no body response from which to extract the auth token")
-                continue
+            var token = when(data.extractFrom){
+                TokenHandling.ExtractFrom.BODY -> {
+                    if(! response.hasEntity()){
+                        log.warn("Login request failed, with no body response from which to extract the auth token")
+                        continue
+                    }
+
+                    val body = response.readEntity(String::class.java)
+                    response.close()
+
+                    val jackson = ObjectMapper()
+                    val tree = jackson.readTree(body)
+                    val token = tree.at(tl.token!!.extractSelector).asText()
+                    if(token == null || token.isEmpty()){
+                        log.warn("Failed login. Cannot extract token '${data.extractSelector}' from response: $body")
+                        continue
+                    }
+                    token
+                }
+                TokenHandling.ExtractFrom.HEADER -> {
+                    val header = response.getHeaderString(data.extractSelector)
+                    if(header == null || header.isEmpty()){
+                        log.warn("Failed login. No token to extract from header '${data.extractSelector}'")
+                        continue
+                    }
+                    header
+                }
             }
 
-            val body = response.readEntity(String::class.java)
-            response.close()
-
-            val jackson = ObjectMapper()
-            val tree = jackson.readTree(body)
-            var token = tree.at(tl.token!!.extractFromField).asText()
-            if(token == null || token.isEmpty()){
-                log.warn("Failed login. Cannot extract token '${tl.token!!.extractFromField}' from response: $body")
-                continue
-            }
-
-            if(tl.token!!.headerPrefix.isNotEmpty()){
-                token = tl.token!!.headerPrefix + token
+            if(data.sendTemplate.isNotEmpty()){
+                token = data.sendTemplate.replace("{token}",  token)
             }
 
             map[tl.name] = token
@@ -212,7 +226,7 @@ object AuthUtils {
                 if (token.isNullOrEmpty()) {
                     log.warn("No auth token for ${ecl.name}")
                 } else {
-                    builder.header(ecl.token!!.httpHeaderName, token)
+                    builder.header(ecl.token!!.sendName, token)
                 }
             }
         }

@@ -766,7 +766,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -1188,7 +1188,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 
@@ -1433,6 +1433,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         )
         fv.updateTarget(scenarioId, 1.0, index)
         injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.setVulnerableForSQLI(true)
     }
 
     /**

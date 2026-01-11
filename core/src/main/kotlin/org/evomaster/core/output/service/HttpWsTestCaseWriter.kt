@@ -240,7 +240,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         //headers from schema
         call.parameters.filterIsInstance<HeaderParam>()
             .filter { !prechosenAuthHeaders.contains(it.name) }
-            .filter { elc?.token == null || !(it.name.equals(elc.token.httpHeaderName, true)) }
+            .filter { elc?.token == null || !(it.name.equals(elc.token.sendName, true)) }
             .filter { it.isInUse() }
             .forEach {
                 val x = it.getRawValue()
@@ -256,11 +256,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if (elc != null) {
 
             if (!elc.expectsCookie()) {
-                val tokenHeader = elc.token!!.httpHeaderName
+                //TODO should check for sendIn
+                val tokenHeader = elc.token!!.sendName
                 if (format.isPython()) {
-                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.tokenName(elc)} # ${call.auth.name}")
+                    lines.add("headers[\"$tokenHeader\"] = ${TokenWriter.authPayloadName(elc)} # ${call.auth.name}")
                 } else {
-                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.tokenName(elc)}) // ${call.auth.name}")
+                    lines.add(".$set(\"$tokenHeader\", ${TokenWriter.authPayloadName(elc)}) // ${call.auth.name}")
                 }
             } else {
                 when {
@@ -330,7 +331,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         lines: Lines,
         testCaseName: String,
         testSuitePath: Path?,
-        baseUrlOfSut: String
+        baseUrlOfSut: String,
+        addTimeMeasurement: Boolean,
     ) {
 
         val exActions = mutableListOf<HttpExternalServiceAction>()
@@ -361,10 +363,22 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             handleSSRFFaultsPrologue(lines, call)
         }
 
+        var timeStartName = ""
+
+        if(addTimeMeasurement)
+        {
+            timeStartName = handleExecutionTimePrologue(lines);
+        }
+
         if (res.failedCall()) {
             addActionInTryCatch(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
         } else {
             addActionLines(call, index, testCaseName, lines, res, testSuitePath, baseUrlOfSut)
+        }
+
+        if(addTimeMeasurement)
+        {
+            handleExecutionTimeEpilogue(lines, timeStartName, res.getVulnerableForSQLI())
         }
 
         if (config.ssrf && res.getVulnerableForSSRF()) {
@@ -383,6 +397,64 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             lines.add("${TestWriterUtils.getWireMockVariableName(action.externalService)}.resetAll()")
                             lines.appendSemicolon()
                         }
+            }
+        }
+    }
+
+
+    private fun handleExecutionTimePrologue(lines: Lines):String {
+
+        var varName = createUniqueResponseVariableName() + "_ms"
+        lines.addEmpty(1)
+        lines.addSingleCommentLine("$varName stores the start time in milliseconds")
+
+        if(format.isJava()){
+            lines.addStatement("long $varName = System.currentTimeMillis()")
+        } else if (format.isKotlin()) {
+            lines.addStatement("val $varName = System.currentTimeMillis()")
+        } else if(format.isPython()) {
+            lines.addStatement("$varName = time.perf_counter() * 1000")
+        } else if(format.isJavaScript()) {
+            lines.addStatement("$varName = performance.now()")
+        }
+        lines.addEmpty(1)
+
+        return varName
+    }
+
+    private fun handleExecutionTimeEpilogue(lines: Lines, varName: String, isVulnerable: Boolean) {
+        var finalVarName = createUniqueResponseVariableName() + "_ms"
+        lines.addEmpty(1)
+
+        lines.addSingleCommentLine("$finalVarName stores the total execution time in milliseconds")
+        if(format.isJava()){
+            lines.addStatement("long $finalVarName = System.currentTimeMillis() - $varName")
+        } else if (format.isKotlin()) {
+            lines.addStatement("val $finalVarName = System.currentTimeMillis() - $varName")
+        } else if(format.isPython()) {
+            lines.addStatement("$finalVarName = (time.perf_counter() * 1000) - $varName")
+        } else if(format.isJavaScript()) {
+            lines.addStatement("$finalVarName = performance.now() - $varName")
+        }
+
+        lines.addEmpty(1)
+
+        if(isVulnerable)
+        {
+            lines.addSingleCommentLine("Note: SQL Injection vulnerability detected in this call. Expected response time (sqliInjectedSleepDurationMs) should be greater than ${config.sqliInjectedSleepDurationMs} ms.")
+            when{
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName > ${config.sqliInjectedSleepDurationMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs})")
+                format.isPython() -> lines.addStatement("assert $finalVarName > ${config.sqliInjectedSleepDurationMs}")
+                else -> {}
+            }
+        }else {
+            lines.addSingleCommentLine("Note: No SQL Injection vulnerability detected in this call. Expected response time (sqliBaselineMaxResponseTimeMs) should be less than ${config.sqliBaselineMaxResponseTimeMs} ms.")
+            when{
+                format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName < ${config.sqliBaselineMaxResponseTimeMs})")
+                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
+                format.isPython() -> lines.addStatement("assert $finalVarName < ${config.sqliBaselineMaxResponseTimeMs}")
+                else -> {}
             }
         }
     }
