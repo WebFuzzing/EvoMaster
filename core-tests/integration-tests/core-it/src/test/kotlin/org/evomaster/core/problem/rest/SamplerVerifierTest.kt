@@ -51,7 +51,9 @@ class SamplerVerifierTest {
 
     @TestFactory
     fun testSamplingFromAllSchemasUnderCoreResources(): Collection<DynamicTest>{
-        return sampleFromSchemasAndCheckInvariants("../../../core/src/test/resources/swagger", "swagger")
+        val tests = sampleFromSchemasAndCheckInvariants("../../../core/src/test/resources/swagger", "swagger")
+        assertTrue(tests.isNotEmpty())
+        return tests
     }
 
 
@@ -59,7 +61,9 @@ class SamplerVerifierTest {
     @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
-        return sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru")
+        val tests = sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru")
+        assertTrue(tests.isNotEmpty())
+        return tests
     }
 
 
