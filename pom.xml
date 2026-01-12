@@ -152,6 +152,7 @@
         <org.opensearch.testcontainers.version>1.0.0</org.opensearch.testcontainers.version>
         <org.springframework.data.version>2.6.6</org.springframework.data.version>
         <io.lettuce.core.version>6.1.4.RELEASE</io.lettuce.core.version>
+        <redis.clients.jedis.version>5.1.0</redis.clients.jedis.version>
     </properties>
 
 
@@ -582,6 +583,13 @@
                 <groupId>io.lettuce</groupId>
                 <artifactId>lettuce-core</artifactId>
                 <version>${io.lettuce.core.version}</version>
+            </dependency>
+
+            <!-- Redis/Jedis -->
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>${redis.clients.jedis.version}</version>
             </dependency>
 
             <!-- OpenSearch -->
