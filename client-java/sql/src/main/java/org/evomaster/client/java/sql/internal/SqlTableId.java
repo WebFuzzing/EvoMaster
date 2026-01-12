@@ -13,6 +13,10 @@ public class SqlTableId {
     private final String tableName;
 
     /**
+     * Creates a new table identifier.
+     * Catalog and schema names may be null.
+     * Catalog, schema and table names must not contain dots.
+     * Catalog and schema names are case-insensitive.
      *
      * @param catalogName
      * @param schemaName
