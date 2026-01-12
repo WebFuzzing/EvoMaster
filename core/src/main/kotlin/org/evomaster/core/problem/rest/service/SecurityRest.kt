@@ -227,8 +227,8 @@ class SecurityRest {
                          */
                         val repeat = lastCall.copy() as RestCallAction
                         repeat.forceNewTaints()
+                        repeat.resetLocalIdRecursively()
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                        copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
                     }
                     copy.seeMainExecutableActions().last().auth = otherAuth
