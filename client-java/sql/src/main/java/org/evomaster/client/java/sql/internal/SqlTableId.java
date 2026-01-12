@@ -20,6 +20,13 @@ public class SqlTableId {
      */
     public SqlTableId(String catalogName, String schemaName, String tableName) {
         Objects.requireNonNull(tableName);
+
+        if (catalogName!=null && catalogName.contains(".")) {
+            throw new IllegalArgumentException("Catalog name cannot contain dots: " + catalogName);
+        }
+        if (schemaName!=null && schemaName.contains(".")) {
+            throw new IllegalArgumentException("Schema name cannot contain dots: " + schemaName);
+        }
         if (tableName.contains(".")) {
             throw new IllegalArgumentException("Table name cannot contain dots: " + tableName);
         }
