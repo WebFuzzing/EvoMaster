@@ -697,7 +697,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isJavaOrKotlin() -> {
                     lines.add(".then()")
-                    lines.add(".statusCode($code)")
+                    if (res.getFlakyStatusCode() == null) {
+                        lines.add(".statusCode($code)")
+                    } else {
+                        lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                        lines.addSingleCommentLine(".statusCode($code)")
+                    }
                 }
 
                 else -> throw IllegalStateException("No assertion in calls for format: $format")
@@ -768,7 +773,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> "assert \"$bodyTypeSimplified\" in $responseVariableName.headers[\"content-type\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
-            lines.add(instruction)
+
+            // handle flaky body type
+            if (res.getFlakyBodyType() == null)
+                lines.add(instruction)
+            else
+                lines.addSingleCommentLine(instruction)
         }
 
         val type = res.getBodyType()
@@ -789,7 +799,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
             }
 
-            handleJsonStringAssertion(bodyString, lines, bodyVarName, res.getTooLargeBody())
+            handleJsonStringAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName, res.getTooLargeBody())
 
         } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 
