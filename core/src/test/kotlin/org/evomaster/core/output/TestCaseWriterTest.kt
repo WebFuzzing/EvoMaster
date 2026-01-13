@@ -1392,4 +1392,111 @@ public void test() throws Exception {
         assertEquals(expectedLines, lines.toString())
     }
 
+
+    @Test
+    fun testTestFlakyForRestCallResponses(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_5
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           {
+                "p1":{},
+                "p2":{
+                    "id":"foo",
+                    "properties":[
+                        {},
+                        {
+                          "name":"mapProperty1",
+                          "type":"string",
+                          "value":"one"
+                        },
+                        {
+                          "name":"mapProperty2",
+                          "type":"string",
+                          "value":"two"
+                        }],
+                    "empty":{}
+                }
+           }
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+
+        val barResult = RestCallResult(fooAction.getLocalId())
+        barResult.setTimedout(false)
+        barResult.setStatusCode(500)
+        barResult.setBody("""
+           {
+                "p1":{},
+                "p2":{
+                    "id":"foo",
+                    "properties":[
+                        {},
+                        {
+                          "name":"flaky1",
+                          "type":"string",
+                          "value":"flaky2"
+                        },
+                        {
+                          "name":"mapProperty2",
+                          "type":"string",
+                          "value":"two"
+                        },
+                        {
+                          "name":"flaky3",
+                          "type":"string",
+                          "value":"two"
+                        }],
+                    "empty":{
+                        "flakyField4": 42
+                    }
+                }
+           }
+        """.trimIndent())
+        barResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        fooResult.setFlakiness(barResult)
+
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    given().accept("*/*")
+            .get(baseUrlOfSut + "/foo")
+            .then()
+            .statusCode(200)
+            .assertThat()
+            .contentType("application/json")
+            .body("'p1'.isEmpty()", is(true))
+            .body("'p2'.'properties'.size()", equalTo(3))
+            .body("'p2'.'properties'[0].isEmpty()", is(true))
+            .body("'p2'.'properties'[1].'name'", containsString("mapProperty1"))
+            .body("'p2'.'properties'[1].'type'", containsString("string"))
+            .body("'p2'.'properties'[1].'value'", containsString("one"))
+            .body("'p2'.'properties'[2].'name'", containsString("mapProperty2"))
+            .body("'p2'.'properties'[2].'type'", containsString("string"))
+            .body("'p2'.'properties'[2].'value'", containsString("two"))
+            .body("'p2'.'empty'.isEmpty()", is(true));
+}
+
+""".trimIndent()
+        assertEquals(expectedLines, lines.toString())
+    }
 }
