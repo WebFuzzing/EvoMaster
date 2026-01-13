@@ -591,6 +591,20 @@ class RestPath(path: String) {
 
     fun isRoot() = levels() == 0
 
+    /**
+     * Checks if this path has an ancestor (parent path).
+     * Returns true if the path has more than one level AND ends with a parameter.
+     *
+     * Examples:
+     * - /{id}/child/{cid} returns true (has ancestor and ends with parameter)
+     * - /{id} returns false (single level, no ancestor)
+     * - /{id}/child returns false (does not end with parameter)
+     * - /{id}/child/ returns false (does not end with parameter)
+     * - /users/{id} returns true (has ancestor and ends with parameter)
+     * - /users returns false (single level, no ancestor)
+     */
+    fun hasAncestorAndLastElementParameter(): Boolean = levels() > 1 && isLastElementAParameter()
+
     fun parentPath() : RestPath {
         if(isRoot()){
             throw IllegalStateException("Root has no parent")

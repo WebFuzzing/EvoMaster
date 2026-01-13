@@ -26,7 +26,7 @@ class SecurityExistenceLeakageParentEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "SecurityExistenceLeakageParentEM",
-                100
+                1000
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")

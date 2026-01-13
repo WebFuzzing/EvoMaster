@@ -388,7 +388,7 @@ class SecurityRest {
                 var anySuccess = false
 
                 genes.forEach {
-                    gene ->
+                        gene ->
                     val leafGene = gene.getLeafGene()
                     if(leafGene !is StringGene) return@forEach
 
@@ -398,7 +398,7 @@ class SecurityRest {
                     // we need to do this way because we need to append our payload
                     var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
-                        // append the SQLi payload value
+                    // append the SQLi payload value
                     leafGene.getPhenotype().setFromStringValue(newPayload).also {
                         if(it) anySuccess = true
                     }
@@ -599,7 +599,7 @@ class SecurityRest {
                 action.path,
                 status = 401,
                 authenticated = true
-                )
+            )
             }.distinctBy { it.seeMainExecutableActions().last().auth.name }
 
             if(suspicious.isEmpty()){
@@ -687,7 +687,7 @@ class SecurityRest {
                 HttpVerb.GET,
                 get.path,
                 status = 403
-                )
+            )
             if(inds403.isEmpty()){
                 return@forEach
             }
@@ -704,7 +704,7 @@ class SecurityRest {
 
             //found the bug.
             val forbidden = inds403.minBy { it.individual.size() }
-            val notfound = inds404.maxBy { it.individual.size() }
+            val notfound = inds404.minBy { it.individual.size() }
 
             //needs slicing to minimize the newly generated test
             val index403 = RestIndividualSelectorUtils.getIndexOfAction(
@@ -725,7 +725,55 @@ class SecurityRest {
             // slice the individual in a way that delete all calls after the chosen verb request
             val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
 
-            val final = RestIndividualBuilder.merge(first, second)
+            var final = RestIndividualBuilder.merge(first, second)
+
+            // Check if the 404 path is a child resource and if user has access to immediate parent resource
+            // If user has access to parent (returns 200), then 404 on child is legitimate, not an existence leakage
+            val path404 = get.path
+            val action404 = final.seeMainExecutableActions().last() as RestCallAction
+            val lastAuth = action404.auth
+
+            // Find the immediate parent path from existing actions in the individual
+            // We need to find the parent action that appears BEFORE the 404 action and is closest to it
+            val allActions = final.seeMainExecutableActions()
+            val action404Index = allActions.indexOf(action404)
+            val immediateParentAction = allActions
+                .take(action404Index) // Only consider actions before the 404 action
+                .lastOrNull { it.path.isDirectOrPossibleAncestorOf(path404) && !it.path.isEquivalent(path404) }
+
+            if (immediateParentAction != null) {
+                val parentPath = immediateParentAction.path
+
+                // Try to find or create a GET action for parent path
+                val parentGetAction = actionDefinitions
+                    .firstOrNull { it.verb == HttpVerb.GET && it.path.isEquivalent(parentPath) }
+                    ?.copy() as RestCallAction?
+
+                if (parentGetAction != null) {
+                    parentGetAction.resetLocalIdRecursively()
+                    parentGetAction.auth = lastAuth
+
+                    // Bind to the same path params from the existing parent action to ensure same IDs
+                    parentGetAction.bindBasedOn(
+                        immediateParentAction.path,
+                        immediateParentAction.parameters.filterIsInstance<PathParam>(),
+                        null
+                    )
+
+                    final.addResourceCall(
+                        restCalls = RestResourceCalls(
+                            actions = mutableListOf(parentGetAction),
+                            sqlActions = listOf()
+                        )
+                    )
+                    final.seeMainExecutableActions()
+                        .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
+                            it.saveCreatedResourceLocation = true
+                        }
+                    final.fixResourceForwardLinks()
+                    final.ensureFlattenedStructure()
+                }
+            }
 
             final.modifySampleType(SampleType.SECURITY)
             final.ensureFlattenedStructure()
@@ -1060,8 +1108,8 @@ class SecurityRest {
                     )
                     finalIndividual.seeMainExecutableActions()
                         .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                        it.saveCreatedResourceLocation = true
-                    }
+                            it.saveCreatedResourceLocation = true
+                        }
                     finalIndividual.fixResourceForwardLinks()
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)

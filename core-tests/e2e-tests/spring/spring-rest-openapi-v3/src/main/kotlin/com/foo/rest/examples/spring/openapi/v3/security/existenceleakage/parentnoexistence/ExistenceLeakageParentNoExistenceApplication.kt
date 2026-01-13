@@ -58,7 +58,7 @@ open class ExistenceLeakageParentNoExistenceApplication {
         if (!checkAuth(auth)) return ResponseEntity.status(401).build()
 
         if (!parents.containsKey(pid)) {
-            return ResponseEntity.status(404).build()
+            return ResponseEntity.status(403).build()
         }
 
         if (parents[pid] != auth) {

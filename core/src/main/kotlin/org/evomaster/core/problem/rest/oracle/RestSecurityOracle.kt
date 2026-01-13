@@ -200,6 +200,11 @@ object RestSecurityOracle {
                         (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                     .getStatusCode() == 404
             }
+        val lastStatusCode = (actionResults.last() as RestCallResult).getStatusCode()
+
+        if(StatusGroup.G_2xx.isInGroup(lastStatusCode)){
+            return false
+        }
 
         return a403.isNotEmpty() && a404.isNotEmpty()
     }
