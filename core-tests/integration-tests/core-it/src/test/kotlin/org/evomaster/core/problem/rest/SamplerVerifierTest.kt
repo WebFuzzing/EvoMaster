@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import java.io.File
 import java.lang.reflect.InvocationTargetException
 import java.time.Duration
+import kotlin.io.path.Path
 import kotlin.sequences.filter
 
 
@@ -120,7 +121,7 @@ class SamplerVerifierTest {
                 .map {
 //                    val s = it.path.replace("\\", "/")
 //                            .replace(relativePath, resourceFolder)
-                    val s = it.absolutePath
+                    val s = Path(it.absolutePath).toAbsolutePath().normalize().toString()
                     s
                 }.toList()
     }

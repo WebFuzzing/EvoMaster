@@ -259,8 +259,17 @@ class ObjectGene(
 
         var ok = true
 
-        for (i in fixedFields.indices) {
-            ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
+//        for (i in fixedFields.indices) {
+//            ok = ok && this.fixedFields[i].unsafeCopyValueFrom(other.fixedFields[i])
+//        }
+        for(field in fixedFields){
+            val name = field.name
+            val toCopy = other.fixedFields.find { it.name == name }
+            ok = if(toCopy == null){
+                false
+            } else {
+                field.unsafeCopyValueFrom(toCopy)
+            }
         }
 
         if(!isFixed){
