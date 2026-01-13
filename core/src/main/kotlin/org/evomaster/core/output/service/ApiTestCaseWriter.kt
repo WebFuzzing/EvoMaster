@@ -77,13 +77,19 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
     /**
      * handle assertion with text plain
      */
-    fun handleTextPlainTextAssertion(bodyString: String?, lines: Lines, bodyVarName: String?) {
+    fun handleTextPlainTextAssertion(bodyString: String?, flakyBodyString: String?, lines: Lines, bodyVarName: String?) {
 
-        if (bodyString.isNullOrBlank()) {
-            lines.add(emptyBodyCheck(bodyVarName))
+        val assertion = if (bodyString.isNullOrBlank()) {
+            emptyBodyCheck(bodyVarName)
         } else {
             //TODO in the call above BODY was used... what's difference from TEXT?
-            lines.add(bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName))
+            bodyIsString(bodyString, GeneUtils.EscapeMode.TEXT, bodyVarName)
+        }
+        if (flakyBodyString == null || flakyBodyString == bodyString) {
+            lines.add(assertion)
+        }else{
+            lines.addSingleCommentLine(flakyInfo("response in plain text", bodyString?:"null", flakyBodyString))
+            lines.addSingleCommentLine(assertion)
         }
     }
 

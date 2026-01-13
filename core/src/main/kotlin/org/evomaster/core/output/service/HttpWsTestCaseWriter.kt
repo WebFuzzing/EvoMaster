@@ -807,7 +807,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
 
-            handleTextPlainTextAssertion(bodyString, lines, bodyVarName)
+            handleTextPlainTextAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName)
         } else {
             if (format.isCsharp()) {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
