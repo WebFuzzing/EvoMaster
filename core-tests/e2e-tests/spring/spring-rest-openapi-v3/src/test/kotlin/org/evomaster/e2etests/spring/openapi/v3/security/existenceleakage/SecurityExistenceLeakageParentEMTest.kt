@@ -26,7 +26,7 @@ class SecurityExistenceLeakageParentEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "SecurityExistenceLeakageParentEM",
-                1000
+                100
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
@@ -36,10 +36,11 @@ class SecurityExistenceLeakageParentEMTest : SpringTestBase(){
 
             assertTrue(solution.individuals.size >= 1)
 
-            assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/resources/{id}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/resources/{id}", null)
+            assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/parents/{pid}", null)
+            assertHasAtLeastOne(solution, HttpVerb.PUT, 201, "/api/parents/{pid}/children/{cid}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/parents/{pid}/children/{cid}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/parents/{pid}/children/{cid}", null)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 403, "/api/parents/{pid}", null)
 
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)

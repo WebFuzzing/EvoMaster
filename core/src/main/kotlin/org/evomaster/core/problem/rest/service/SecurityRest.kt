@@ -725,54 +725,44 @@ class SecurityRest {
             // slice the individual in a way that delete all calls after the chosen verb request
             val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
 
-            var final = RestIndividualBuilder.merge(first, second)
+            val final = RestIndividualBuilder.merge(first, second)
 
-            // Check if the 404 path is a child resource and if user has access to immediate parent resource
-            // If user has access to parent (returns 200), then 404 on child is legitimate, not an existence leakage
+            // Check if the 404 path is a child resource and add parent GET to check access
             val path404 = get.path
             val action404 = final.seeMainExecutableActions().last() as RestCallAction
             val lastAuth = action404.auth
 
-            // Find the immediate parent path from existing actions in the individual
-            // We need to find the parent action that appears BEFORE the 404 action and is closest to it
-            val allActions = final.seeMainExecutableActions()
-            val action404Index = allActions.indexOf(action404)
-            val immediateParentAction = allActions
-                .take(action404Index) // Only consider actions before the 404 action
-                .lastOrNull { it.path.isDirectOrPossibleAncestorOf(path404) && !it.path.isEquivalent(path404) }
+            // Find the parent path from getOperations (all GET operation definitions)
+            val parentGetOperation = getOperations
+                .filter { it.path.isDirectOrPossibleAncestorOf(path404) && !it.path.isEquivalent(path404) }
+                .maxByOrNull { it.path.toString().length } // Get the most specific parent (closest ancestor)
 
-            if (immediateParentAction != null) {
-                val parentPath = immediateParentAction.path
+            if (parentGetOperation != null) {
+                val parentGetAction = parentGetOperation.copy() as RestCallAction
+                parentGetAction.resetLocalIdRecursively()
+                parentGetAction.forceNewTaints()
+                parentGetAction.auth = lastAuth
 
-                // Try to find or create a GET action for parent path
-                val parentGetAction = actionDefinitions
-                    .firstOrNull { it.verb == HttpVerb.GET && it.path.isEquivalent(parentPath) }
-                    ?.copy() as RestCallAction?
+                // Bind to the same path params from the 404 action to ensure same IDs
+                parentGetAction.bindBasedOn(
+                    action404.path,
+                    action404.parameters.filterIsInstance<PathParam>(),
+                    null
+                )
 
-                if (parentGetAction != null) {
-                    parentGetAction.resetLocalIdRecursively()
-                    parentGetAction.auth = lastAuth
+                parentGetAction.doInitialize()
 
-                    // Bind to the same path params from the existing parent action to ensure same IDs
-                    parentGetAction.bindBasedOn(
-                        immediateParentAction.path,
-                        immediateParentAction.parameters.filterIsInstance<PathParam>(),
-                        null
+                final.addResourceCall(
+                    restCalls = RestResourceCalls(
+                        actions = mutableListOf(parentGetAction),
+                        sqlActions = listOf()
                     )
-
-                    final.addResourceCall(
-                        restCalls = RestResourceCalls(
-                            actions = mutableListOf(parentGetAction),
-                            sqlActions = listOf()
-                        )
-                    )
-                    final.seeMainExecutableActions()
-                        .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                            it.saveCreatedResourceLocation = true
-                        }
-                    final.fixResourceForwardLinks()
-                    final.ensureFlattenedStructure()
-                }
+                )
+                final.seeMainExecutableActions()
+                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
+                        it.saveCreatedResourceLocation = true
+                    }
+                final.fixResourceForwardLinks()
             }
 
             final.modifySampleType(SampleType.SECURITY)
@@ -784,31 +774,15 @@ class SecurityRest {
                 return@forEach
             }
 
-            //verify if newly constructed individual still find the bug
-            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            //fitness function should have detected the fault
-            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(check403 < 0 || check404 < 0 || faults.none { it.category == DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
-                //if this happens, it is a bug in the merge... or flakiness
-                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
-                return@forEach
+            if(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE in faultsCategories){
+                // add the evaluated individual to the archive
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                //if we arrive here, should always be added, because we are creating a new testing target
+                assert(added)
             }
 
-            val added = archive.addIfNeeded(evaluatedIndividual)
-            //if we arrive here, should always be added, because we are creating a new testing target
-            assert(added)
         }
     }
 

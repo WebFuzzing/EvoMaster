@@ -101,15 +101,31 @@ open class ExistenceLeakageParentApplication {
         @PathVariable cid: Int
     ): ResponseEntity<String> {
 
-        if (!checkAuth(auth)) return ResponseEntity.status(401).build()
+        // Authentication is required
+        if (!checkAuth(auth)) {
+            return ResponseEntity.status(401).build()
+        }
 
-        val key = Pair(pid, cid)
-
-        if (!children.containsKey(key)) {
-            // wrong, leaking non-existence. should return 403
+        // If the parent resource does not exist, returning 403 is correct for everyone
+        if (!parents.containsKey(pid)) {
             return ResponseEntity.status(404).build()
         }
 
+        // If the parent exists but is not owned by the caller,
+        // we must not leak whether the child exists or not
+        if (parents[pid] != auth) {
+            return ResponseEntity.status(403).build()
+        }
+
+        val key = Pair(pid, cid)
+
+        // At this point, the caller owns the parent.
+        // If the child does not exist, returning 404 is legitimate
+        if (!children.containsKey(key)) {
+            return ResponseEntity.status(404).build()
+        }
+
+        // Optional safety check: child ownership
         if (children[key] != auth) {
             return ResponseEntity.status(403).build()
         }

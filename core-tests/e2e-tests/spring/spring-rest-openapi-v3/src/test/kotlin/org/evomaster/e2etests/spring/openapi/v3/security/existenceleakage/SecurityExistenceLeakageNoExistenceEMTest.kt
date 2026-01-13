@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.openapi.v3.security.existenceleakage
 import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.ExistenceLeakageParentNoExistenceController
 import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
+import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -34,6 +35,8 @@ class SecurityExistenceLeakageNoExistenceEMTest : SpringTestBase(){
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
+
+            assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/api/parents/{pid}/children/{cid}", null)
 
             val faultCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
 
