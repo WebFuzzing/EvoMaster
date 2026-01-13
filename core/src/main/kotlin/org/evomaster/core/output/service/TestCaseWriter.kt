@@ -398,6 +398,6 @@ abstract class TestCaseWriter {
         // do nothing
     }
 
-    fun flakyInfo(category : String?, value : String, flaky : String) = "Flaky${if (category == null) "" else " about $category"}: $value vs. $flaky"
+    fun flakyInfo(category : String?, value : String, flaky : String) = "Flaky${if (category == null) "" else " $category"}: $value vs. $flaky"
 
 }

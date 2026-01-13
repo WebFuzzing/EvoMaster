@@ -1483,29 +1483,30 @@ public void test() throws Exception {
     given().accept("*/*")
             .get(baseUrlOfSut + "/foo")
             .then()
-            // Flaky about Status Code: 200 vs. 500
+            // Flaky Status Code: 200 vs. 500
             // .statusCode(200)
             .assertThat()
             .contentType("application/json")
-            // Flaky about size of 'p0': 2 vs. 3
+            // Flaky size of 'p0': 2 vs. 3
             // .body("'p0'.size()", equalTo(2))
             .body("'p0'[0]", numberMatches(1.0))
             .body("'p0'[1]", numberMatches(2.0))
             .body("'p1'.isEmpty()", is(true))
-            // Flaky about size of 'p2'.'properties': 3 vs. 4
+            // Flaky size of 'p2'.'properties': 3 vs. 4
             // .body("'p2'.'properties'.size()", equalTo(3))
             .body("'p2'.'properties'[0].isEmpty()", is(true))
-            // Flaky about value of field "'p2'.'properties'[1].'name'": mapProperty1 vs. flaky1
+            // Flaky value of field "'p2'.'properties'[1].'name'": mapProperty1 vs. flaky1
             // .body("'p2'.'properties'[1].'name'", containsString("mapProperty1"))
             .body("'p2'.'properties'[1].'type'", containsString("string"))
-            // Flaky about value of field "'p2'.'properties'[1].'value'": one vs. flaky2
+            // Flaky value of field "'p2'.'properties'[1].'value'": one vs. flaky2
             // .body("'p2'.'properties'[1].'value'", containsString("one"))
             .body("'p2'.'properties'[2].'name'", containsString("mapProperty2"))
             .body("'p2'.'properties'[2].'type'", containsString("string"))
             .body("'p2'.'properties'[2].'value'", containsString("two"))
-            // Flaky about mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
+            // Flaky mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
             // .body("'p2'.'empty'.isEmpty()", is(true));
 }
+
 
 """.trimIndent()
         assertEquals(expectedLines, lines.toString())
@@ -1556,13 +1557,13 @@ public void test() throws Exception {
     given().accept("*/*")
             .get(baseUrlOfSut + "/foo")
             .then()
-            // Flaky about Status Code: 200 vs. 500
+            // Flaky Status Code: 200 vs. 500
             // .statusCode(200)
             .assertThat()
             .contentType("application/json")
-            // Flaky about size of : 2 vs. 3
+            // Flaky size of : 2 vs. 3
             // .body("size()", equalTo(2))
-            // Flaky about Body: "foo", "bar" vs. "foo", "abc", "bar"
+            // Flaky Body: "foo", "bar" vs. "foo", "abc", "bar"
             // .body("", hasItems("foo", "bar"));
 }
 
