@@ -38,6 +38,9 @@ class Minimizer<T: Individual> {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject
+    private lateinit var flakinessDetector: FlakinessDetector<T>
+
     private var startTimer : Long = -1
 
 
@@ -234,6 +237,9 @@ class Minimizer<T: Individual> {
             } else if(!possibleIssues){
                 //don't check mismatch if possible issues, as then mismatches would be expected
                 checkResultMismatches(it, ei)
+            }
+            if (config.detectFlakiness && ei != null){
+                flakinessDetector.checkConsistency(it, ei)
             }
             ei
         }

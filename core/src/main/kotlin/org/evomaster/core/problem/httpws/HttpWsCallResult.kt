@@ -29,6 +29,12 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
         const val VULNERABLE_SQLI = "VULNERABLE_SQLI"
+
+
+        const val FLAKY_STATUS_CODE = "FLAKY_STATUS_CODE"
+        const val FLAKY_BODY = "FLAKY_BODY"
+        const val FLAKY_BODY_TYPE = "FLAKY_BODY_TYPE"
+        const val FLAKY_ERROR_MESSAGE = "FLAKY_ERROR_MESSAGE"
     }
 
     /**
@@ -134,4 +140,40 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     fun setResponseTimeMs(responseTime: Long) = addResultValue(RESPONSE_TIME_MS, responseTime.toString())
     fun getResponseTimeMs(): Long? = getResultValue(RESPONSE_TIME_MS)?.toLong()
+
+
+    fun setFlakyErrorMessage(msg: String)  = addResultValue(FLAKY_ERROR_MESSAGE, msg)
+    fun getFlakyErrorMessage() : String? = getResultValue(FLAKY_ERROR_MESSAGE)
+
+    fun setFlakyStatusCode(code: Int) = addResultValue(FLAKY_STATUS_CODE, code.toString())
+    fun getFlakyStatusCode() : Int? = getResultValue(FLAKY_STATUS_CODE)?.toInt()
+
+    fun setFlakyBody(body: String) = addResultValue(FLAKY_BODY, body)
+    fun getFlakyBody() : String? = getResultValue(FLAKY_BODY)
+
+    fun setFlakyBodyType(type: MediaType) = addResultValue(FLAKY_BODY_TYPE, type.toString())
+    fun getFlakyBodyType() : MediaType? = getResultValue(FLAKY_BODY_TYPE)?.let { MediaType.valueOf(it) }
+
+
+    fun setFlakiness(previous: HttpWsCallResult){
+        val pStatusCode = previous.getStatusCode()
+        if (pStatusCode != null && pStatusCode != getStatusCode()) {
+            setFlakyStatusCode(pStatusCode)
+        }
+
+        val pBody = previous.getBody()
+        if (pBody != null && pBody != getBody()) {
+            setFlakyBody(pBody)
+        }
+
+        val pBodyType = previous.getBodyType()
+        if (pBodyType != null && pBodyType != getBodyType()) {
+            setFlakyBodyType(pBodyType)
+        }
+
+        val pMessage = previous.getErrorMessage()
+        if (pMessage != null && pMessage != getErrorMessage()) {
+            setErrorMessage(pMessage)
+        }
+    }
 }
