@@ -173,7 +173,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
         val pMessage = previous.getErrorMessage()
         if (pMessage != null && pMessage != getErrorMessage()) {
-            setErrorMessage(pMessage)
+            setFlakyErrorMessage(pMessage)
         }
     }
 }
