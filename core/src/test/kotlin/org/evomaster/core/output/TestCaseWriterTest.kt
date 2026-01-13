@@ -1394,7 +1394,7 @@ public void test() throws Exception {
 
 
     @Test
-    fun testTestFlakyForRestCallResponses(){
+    fun testTestFlakyBodyForRestCallResponses(){
         val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
 
         val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
@@ -1410,6 +1410,7 @@ public void test() throws Exception {
         fooResult.setStatusCode(200)
         fooResult.setBody("""
            {
+                "p0":[1,2],
                 "p1":{},
                 "p2":{
                     "id":"foo",
@@ -1437,6 +1438,7 @@ public void test() throws Exception {
         barResult.setStatusCode(500)
         barResult.setBody("""
            {
+                "p0":[1,2,3],
                 "p1":{},
                 "p2":{
                     "id":"foo",
@@ -1485,6 +1487,10 @@ public void test() throws Exception {
             // .statusCode(200)
             .assertThat()
             .contentType("application/json")
+            // Flaky about size of 'p0': 2 vs. 3
+            // .body("'p0'.size()", equalTo(2))
+            .body("'p0'[0]", numberMatches(1.0))
+            .body("'p0'[1]", numberMatches(2.0))
             .body("'p1'.isEmpty()", is(true))
             // Flaky about size of 'p2'.'properties': 3 vs. 4
             // .body("'p2'.'properties'.size()", equalTo(3))
@@ -1499,6 +1505,65 @@ public void test() throws Exception {
             .body("'p2'.'properties'[2].'value'", containsString("two"))
             // Flaky about mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
             // .body("'p2'.'empty'.isEmpty()", is(true));
+}
+
+""".trimIndent()
+        assertEquals(expectedLines, lines.toString())
+    }
+
+    @Test
+    fun testTestFlakyListForRestCallResponses(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_5
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody("""
+           ["foo", "bar"]
+        """.trimIndent())
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+
+        val barResult = RestCallResult(fooAction.getLocalId())
+        barResult.setTimedout(false)
+        barResult.setStatusCode(500)
+        barResult.setBody("""
+           ["foo", "abc", "bar"]
+        """.trimIndent())
+        barResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        fooResult.setFlakiness(barResult)
+
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+
+        val expectedLines = """
+@Test
+public void test() throws Exception {
+    
+    given().accept("*/*")
+            .get(baseUrlOfSut + "/foo")
+            .then()
+            // Flaky about Status Code: 200 vs. 500
+            // .statusCode(200)
+            .assertThat()
+            .contentType("application/json")
+            // Flaky about size of : 2 vs. 3
+            // .body("size()", equalTo(2))
+            // Flaky about Body: "foo", "bar" vs. "foo", "abc", "bar"
+            // .body("", hasItems("foo", "bar"));
 }
 
 """.trimIndent()
