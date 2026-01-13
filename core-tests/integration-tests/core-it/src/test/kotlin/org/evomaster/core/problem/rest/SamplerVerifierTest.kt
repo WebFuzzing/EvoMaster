@@ -13,16 +13,20 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamCh
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
+import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertTrue
 import java.io.File
+import java.lang.reflect.InvocationTargetException
 import java.time.Duration
+import kotlin.sequences.filter
 
 
 class SamplerVerifierTest {
@@ -78,7 +82,10 @@ class SamplerVerifierTest {
     @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
-        val tests = sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru", false)
+        val tests = sampleFromSchemasAndCheckInvariants(
+            "./src/test/resources/APIs_guru",
+            "APIs_guru",
+            false)
         assertTrue(tests.isNotEmpty())
         return tests
     }
@@ -109,18 +116,18 @@ class SamplerVerifierTest {
 
         return target.walk()
                 .filter { it.isFile }
-                .filter { !it.name.endsWith("features_service_null.json") } //issue with parser
-                .filter { !it.name.endsWith("trace_v2.json") } // no actions are parsed
                 .filter { !skipSchema(it.path) }
                 .map {
-                    val s = it.path.replace("\\", "/")
-                            .replace(relativePath, resourceFolder)
+//                    val s = it.path.replace("\\", "/")
+//                            .replace(relativePath, resourceFolder)
+                    val s = it.absolutePath
                     s
                 }.toList()
     }
 
     private fun skipSchema(path: String) : Boolean {
-        return skipDueToMissingPath(path)
+        return skipDueToOldChecks(path) ||
+                skipDueToMissingPath(path)
                 || skipDueToHashTag(path)
                 || skipDueToQuestionMarkInPath(path)
                 || skipDueToMissingReference(path)
@@ -131,6 +138,11 @@ class SamplerVerifierTest {
                 || skipDueToInvalid(path)
                 || skipDueToOverflow(path)
                 || skipDueToInvalidGenes(path)
+    }
+
+    private fun skipDueToOldChecks(path: String) : Boolean {
+        return path.endsWith("features_service_null.json") //issue with parser
+                || path.endsWith("trace_v2.json")  // no actions are parsed
     }
 
     //TODO should look into theses
@@ -339,13 +351,32 @@ class SamplerVerifierTest {
     private fun runInvariantCheck(resourcePath: String, iterations: Int, blackBox: Boolean){
 
         val sutInfo = SutInfoDto()
+        sutInfo.baseUrlOfSUT = "http://localhost:8080"
         sutInfo.restProblem = RestProblemDto()
-        sutInfo.restProblem.openApiSchema = this::class.java.classLoader.getResource(resourcePath).readText()
+        //sutInfo.restProblem.openApiSchema = this::class.java.classLoader.getResource(resourcePath).readText()
+        //some schemas have relative paths, so cannot load in memory directly
+        sutInfo.restProblem.openApiUrl = resourcePath
         sutInfo.defaultOutputFormat = SutInfoDto.OutputFormat.JAVA_JUNIT_4
 
         val controllerInfo = ControllerInfoDto()
 
-        val injector = getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
+        val injector = try{
+            getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
+        } catch (e: Throwable){
+
+            val s = if(e.cause is InvocationTargetException) {
+                e.cause!!.cause
+            } else {
+                e.cause!!
+            }
+
+            if(s is SutProblemException && s.tag == RestSchema.TAG_NO_ACTIONS){
+                //expected to fail
+                //we have few schemas that only contains components
+                return
+            }
+            throw e
+        }
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
 
