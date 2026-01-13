@@ -10,6 +10,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 
@@ -52,6 +53,12 @@ class GraphQLBlackBoxModule(
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .asEagerSingleton()
 
 
         if(usingRemoteController) {

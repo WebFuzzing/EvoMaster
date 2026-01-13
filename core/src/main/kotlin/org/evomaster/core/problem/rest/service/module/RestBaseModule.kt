@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.SecurityRest
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.seeding.service.rest.PirToRest
 
@@ -40,6 +41,12 @@ open class RestBaseModule : EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Minimizer<*>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<RestIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<*>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
