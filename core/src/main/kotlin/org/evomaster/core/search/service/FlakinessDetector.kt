@@ -10,6 +10,10 @@ import org.evomaster.core.search.Individual
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * it is used to detect flaky tests by checking responses or return value
+ * currently, such a detection is performed during post-handling of fuzzing
+ */
 class FlakinessDetector<T: Individual> {
 
     companion object{
