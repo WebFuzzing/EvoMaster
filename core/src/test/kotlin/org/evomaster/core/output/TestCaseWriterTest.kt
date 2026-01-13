@@ -1481,19 +1481,24 @@ public void test() throws Exception {
     given().accept("*/*")
             .get(baseUrlOfSut + "/foo")
             .then()
-            .statusCode(200)
+            // Flaky about Status Code: 200 vs. 500
+            // .statusCode(200)
             .assertThat()
             .contentType("application/json")
             .body("'p1'.isEmpty()", is(true))
-            .body("'p2'.'properties'.size()", equalTo(3))
+            // Flaky about size of 'p2'.'properties': 3 vs. 4
+            // .body("'p2'.'properties'.size()", equalTo(3))
             .body("'p2'.'properties'[0].isEmpty()", is(true))
-            .body("'p2'.'properties'[1].'name'", containsString("mapProperty1"))
+            // Flaky about value of field "'p2'.'properties'[1].'name'": mapProperty1 vs. flaky1
+            // .body("'p2'.'properties'[1].'name'", containsString("mapProperty1"))
             .body("'p2'.'properties'[1].'type'", containsString("string"))
-            .body("'p2'.'properties'[1].'value'", containsString("one"))
+            // Flaky about value of field "'p2'.'properties'[1].'value'": one vs. flaky2
+            // .body("'p2'.'properties'[1].'value'", containsString("one"))
             .body("'p2'.'properties'[2].'name'", containsString("mapProperty2"))
             .body("'p2'.'properties'[2].'type'", containsString("string"))
             .body("'p2'.'properties'[2].'value'", containsString("two"))
-            .body("'p2'.'empty'.isEmpty()", is(true));
+            // Flaky about mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
+            // .body("'p2'.'empty'.isEmpty()", is(true));
 }
 
 """.trimIndent()
