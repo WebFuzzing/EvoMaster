@@ -13,6 +13,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamCh
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
+import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
 import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
 import org.evomaster.core.remote.service.RemoteController
@@ -39,7 +40,7 @@ class SamplerVerifierTest {
 
         val controllerInfo = ControllerInfoDto()
 
-        val injector = getInjector(sutInfo, controllerInfo)
+        val injector = getInjector(sutInfo, controllerInfo, false)
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
 
@@ -50,8 +51,24 @@ class SamplerVerifierTest {
    // @Execution(ExecutionMode.CONCURRENT) //issues with shared caches
 
     @TestFactory
-    fun testSamplingFromAllSchemasUnderCoreResources(): Collection<DynamicTest>{
-        val tests = sampleFromSchemasAndCheckInvariants("../../../core/src/test/resources/swagger", "swagger")
+    fun testSamplingFromAllSchemasUnderCoreResourcesWhiteBox(): Collection<DynamicTest>{
+        val tests = sampleFromSchemasAndCheckInvariants(
+            "../../../core/src/test/resources/swagger",
+            "swagger",
+            false
+        )
+        assertTrue(tests.isNotEmpty())
+        return tests
+    }
+
+    @Disabled("Performance issue")
+    @TestFactory
+    fun testSamplingFromAllSchemasUnderCoreResourcesBlackBox(): Collection<DynamicTest>{
+        val tests = sampleFromSchemasAndCheckInvariants(
+            "../../../core/src/test/resources/swagger",
+            "swagger",
+            true
+        )
         assertTrue(tests.isNotEmpty())
         return tests
     }
@@ -61,20 +78,24 @@ class SamplerVerifierTest {
     @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
-        val tests = sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru")
+        val tests = sampleFromSchemasAndCheckInvariants("./src/test/resources/APIs_guru", "APIs_guru", false)
         assertTrue(tests.isNotEmpty())
         return tests
     }
 
 
-    private fun sampleFromSchemasAndCheckInvariants(relativePath: String, resourceFolder: String): Collection<DynamicTest> {
+    private fun sampleFromSchemasAndCheckInvariants(
+        relativePath: String,
+        resourceFolder: String,
+        blackBox: Boolean
+    ): Collection<DynamicTest> {
 
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
                 System.gc()
                 assertTimeoutPreemptively(Duration.ofSeconds(30), it) {
-                    runInvariantCheck(it, 100)
+                    runInvariantCheck(it, 100, blackBox)
                 }
             }
         }.toList()
@@ -315,7 +336,7 @@ class SamplerVerifierTest {
     }
 
 
-    private fun runInvariantCheck(resourcePath: String, iterations: Int){
+    private fun runInvariantCheck(resourcePath: String, iterations: Int, blackBox: Boolean){
 
         val sutInfo = SutInfoDto()
         sutInfo.restProblem = RestProblemDto()
@@ -324,7 +345,7 @@ class SamplerVerifierTest {
 
         val controllerInfo = ControllerInfoDto()
 
-        val injector = getInjector(sutInfo, controllerInfo, listOf("--seed","42"))
+        val injector = getInjector(sutInfo, controllerInfo, blackBox, listOf("--seed","42"))
 
         val sampler = injector.getInstance(ResourceSampler::class.java)
 
@@ -362,10 +383,15 @@ class SamplerVerifierTest {
     private fun getInjector(
             sutInfoDto: SutInfoDto?,
             controllerInfoDto: ControllerInfoDto?,
+            blackBox: Boolean,
             args: List<String> = listOf()): Injector {
 
         val base = BaseModule(args.toTypedArray())
-        val problemModule = ResourceRestModule(false)
+        val problemModule = if(blackBox){
+            BlackBoxRestModule(false)
+        } else {
+            ResourceRestModule(false)
+        }
         val faker = FakeModule(sutInfoDto, controllerInfoDto)
 
         return LifecycleInjector.builder()
