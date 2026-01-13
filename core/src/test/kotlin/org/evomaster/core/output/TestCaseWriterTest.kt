@@ -1507,7 +1507,6 @@ public void test() throws Exception {
             // .body("'p2'.'empty'.isEmpty()", is(true));
 }
 
-
 """.trimIndent()
         assertEquals(expectedLines, lines.toString())
     }
