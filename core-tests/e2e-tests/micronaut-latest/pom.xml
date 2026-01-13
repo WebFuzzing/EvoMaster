@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>5.0.1-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -22,6 +22,14 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <!--   -->
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>1.33</version>
+            </dependency>
+
             <!-- Micronaut -->
             <dependency>
                 <groupId>io.micronaut</groupId>

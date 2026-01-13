@@ -25,8 +25,10 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
+        const val RESPONSE_TIME_MS = "RESPONSE_TIME_MS"
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
+        const val VULNERABLE_SQLI = "VULNERABLE_SQLI"
     }
 
     /**
@@ -126,4 +128,10 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
      */
     fun setVulnerableForSSRF(on: Boolean) = addResultValue(VULNERABLE_SSRF, on.toString())
     fun getVulnerableForSSRF() : Boolean = getResultValue(VULNERABLE_SSRF)?.toBoolean() ?: false
+
+    fun setVulnerableForSQLI(on: Boolean) = addResultValue(VULNERABLE_SQLI, on.toString())
+    fun getVulnerableForSQLI() : Boolean = getResultValue(VULNERABLE_SQLI)?.toBoolean() ?: false
+
+    fun setResponseTimeMs(responseTime: Long) = addResultValue(RESPONSE_TIME_MS, responseTime.toString())
+    fun getResponseTimeMs(): Long? = getResultValue(RESPONSE_TIME_MS)?.toLong()
 }

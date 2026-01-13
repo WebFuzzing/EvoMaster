@@ -5,6 +5,7 @@ import com.foo.rest.examples.bb.cleanup.BBCleanUpController
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
+import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -17,6 +18,10 @@ import org.junit.jupiter.params.provider.EnumSource
 class BBCleanUpEMTest : SpringTestBase() {
 
     companion object {
+        init {
+            EnterpriseTestBase.shouldApplyInstrumentation = false
+        }
+
         @BeforeAll
         @JvmStatic
         fun init() {

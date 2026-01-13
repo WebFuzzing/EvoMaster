@@ -31,7 +31,7 @@ on:
 #      - "**"
 
 env:
-  evomaster-version: 4.0.1
+  evomaster-version: 5.0.1
   # Unfortunately, to use JPackage we need JDK 17 or above :(
   # Which is really bad due to the madness of --add-opens.
   # Even if hunt down all cases of reflections in EM, there is still the problem of
@@ -42,7 +42,7 @@ env:
   build-jdk: 17
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "com.foo.base.BaseIT" # replace with test to debug
+  debugTestName: "org.evomaster.e2etests.spring.examples.sort.SortEMTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -117,9 +117,9 @@ jobs:
       # Make test report accessible from GitHub Actions (as Maven logs are long)
       - name: Publish Test Report
         if: success() || failure()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         env:
-          NODE_OPTIONS: "--max_old_space_size=8000"
+          NODE_OPTIONS: "--max_old_space_size=9000"
         with:
           report_paths: '**/target/*-reports/TEST-*.xml'
       # Upload coverage results

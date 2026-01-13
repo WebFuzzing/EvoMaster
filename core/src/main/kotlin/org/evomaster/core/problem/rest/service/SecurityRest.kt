@@ -6,7 +6,6 @@ import org.evomaster.core.EMConfig
 import javax.annotation.PostConstruct
 
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.api.param.Param
 import org.evomaster.core.problem.enterprise.DetectedFaultUtils
 import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
@@ -19,12 +18,12 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
@@ -73,7 +72,10 @@ class SecurityRest {
     private lateinit var builder: RestIndividualBuilder
 
     @Inject
-    protected lateinit var config: EMConfig
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -119,7 +121,12 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
-        //TODO possible other kinds of security tests here
+        //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
+        //SQLi, XSS, SSRF, etc.
+        addForInjections()
+
+        //eg leaked stack traces
+        addForInfoLeakage()
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -260,10 +267,45 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
+    private fun addForInjections() {
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            log.debug("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
+        }
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleSqlICheck()
+        }
+
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            ssrfAnalyser.apply()
+        }
+    }
+
+    private fun addForInfoLeakage() {
+
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+            log.debug("Skipping security test for existence leakage as disabled in configuration")
+        } else {
+            // getting 404 instead of 403
+            handleExistenceLeakage()
+        }
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
+        }
+    }
+
     private fun accessControlBasedOnRESTGuidelines() {
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for forbidden but ok others as disabled in configuration")
+            log.debug("Skipping security test for forbidden but ok others as disabled in configuration")
         } else {
             // quite a few rules here that can be defined
             handleForbiddenOperationButOKOthers(HttpVerb.DELETE)
@@ -271,42 +313,124 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for existence leakage as disabled in configuration")
-        } else {
-            // getting 404 instead of 403
-            handleExistenceLeakage()
-        }
-
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
-            LoggingUtil.uniqueUserInfo("Skipping security test for not recognized authenticated as disabled in configuration")
+            log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
         }
 
-        if (!config.xss || !config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
-            LoggingUtil.uniqueUserInfo("Skipping security test for XSS as disabled in configuration")
-        } else {
-            handleXSSCheck()
-        }
-
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for forgotten authentication as disabled in configuration")
+            log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            LoggingUtil.uniqueUserInfo("Skipping experimental security test for stack traces as disabled in configuration")
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+            log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
-            handleStackTraceCheck()
+            handleAnonymousWriteCheck()
         }
 
-        //TODO other rules. See FaultCategory
-        //etc.
     }
 
+
+    private fun handleSqlICheck(){
+
+        mainloop@ for(action in actionDefinitions){
+
+
+            // Find individuals with 2xx response for this endpoint
+            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(successfulIndividuals.isEmpty()){
+                continue
+            }
+
+            // Take the smallest successful individual
+            val target = successfulIndividuals.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Slice to keep only up to the target action
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            // Try each sqli payload (but only add one test per endpoint)
+            for(payload in SQLI_PAYLOADS){
+
+                // Create a copy of the individual
+                var copy = sliced.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+
+                val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
+                    .filter { it.staticCheckIfImpactPhenotype() }
+
+                if(genes.isEmpty()){
+                    continue
+                }
+                var anySuccess = false
+
+                genes.forEach {
+                    gene ->
+                    val leafGene = gene.getLeafGene()
+                    if(leafGene !is StringGene) return@forEach
+
+                    //TODO check if gene is linked with previous actions that create resources with IDs
+
+
+                    // we need to do this way because we need to append our payload
+                    var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
+
+                        // append the SQLi payload value
+                    leafGene.getPhenotype().setFromStringValue(newPayload).also {
+                        if(it) anySuccess = true
+                    }
+                }
+
+                if(!anySuccess){
+                    continue
+                }
+
+                val newInd = RestIndividualBuilder.merge(sliced, copy)
+
+                newInd.modifySampleType(SampleType.SECURITY)
+                newInd.ensureFlattenedStructure()
+
+                val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(newInd)
+
+                if (evaluatedIndividual == null) {
+                    log.warn("Failed to evaluate constructed individual in handleSqlICheck")
+                    continue@mainloop
+                }
+
+                val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+                if(DefinedFaultCategory.SQL_INJECTION in faultsCategories){
+                    val added = archive.addIfNeeded(evaluatedIndividual)
+                    assert(added)
+                    continue@mainloop
+                }
+
+            }
+        }
+    }
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.
      * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.
@@ -369,6 +493,87 @@ class SecurityRest {
         }
     }
 
+    /**
+     * Anonymous Write Check - Detects missing authentication on write operations.
+     *
+     * This check flags:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     */
+    private fun handleAnonymousWriteCheck(){
+        mainloop@ for(action in actionDefinitions){
+            if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.DELETE){
+                continue
+            }
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            // Take the smallest suspicious individual
+            val target = suspicious.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Check if this is a vulnerability
+            val actionResult = target.evaluatedMainActions()[actionIndex].result as? RestCallResult
+            if(actionResult == null){
+                continue
+            }
+
+            val statusCode = actionResult.getStatusCode()
+
+            // For PUT: only flag if it's NOT 201 (resource creation might be OK, update is not)
+            if(action.verb == HttpVerb.PUT && statusCode == 201){
+                continue
+            }
+
+            // This is a vulnerability: write operation without authentication
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            sliced.modifySampleType(SampleType.SECURITY)
+            sliced.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(sliced)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleAnonymousWriteCheck")
+                continue@mainloop
+            }
+
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                assert(added)
+                continue@mainloop
+            }
+        }
+    }
     /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
      * In theory, a bug. But, could be false positive if A is misconfigured.
@@ -958,7 +1163,7 @@ class SecurityRest {
                     val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(copy)
 
                     if (evaluatedIndividual == null) {
-                        log.warn("Failed to evaluate constructed individual in handleStackTraceCheck")
+                        log.warn("Failed to evaluate constructed individual in handleXSSCheck")
                         continue@mainloop
                     }
 
@@ -975,7 +1180,7 @@ class SecurityRest {
                     // XSS-like payloads are injected or when user input is not properly sanitized. The try-catch block ensures
                     // that these exceptions do not interrupt the main processing loop.
 
-                    log.warn("Failed to evaluate constructed individual in handleStackTraceCheck: ${e.message}")
+                    log.warn("Failed to evaluate constructed individual in handleXSSCheck: ${e.message}")
                 }
             }
         }

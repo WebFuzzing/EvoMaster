@@ -57,6 +57,9 @@ enum class ExperimentalFaultCategory(
     SECURITY_STACK_TRACE(981, "Stack Trace",
         "stackTrace",
         "TODO"),
+    ANONYMOUS_WRITE(982, "Anonymous Write",
+        "anonymousWrite",
+        "TODO"),
     ;
 
     override fun getCode(): Int {
