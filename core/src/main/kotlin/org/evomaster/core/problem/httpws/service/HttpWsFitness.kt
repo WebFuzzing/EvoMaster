@@ -1,19 +1,15 @@
 package org.evomaster.core.problem.httpws.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.StaticCounter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionTransformer
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.auth.CookieWriter
-import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.problem.api.service.ApiWsFitness
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.AuthUtils
-import org.evomaster.core.problem.httpws.auth.EndpointCallLogin
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.remote.HttpClientFactory
@@ -25,11 +21,8 @@ import java.net.MalformedURLException
 import java.net.URL
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
-import javax.ws.rs.client.Entity
 import javax.ws.rs.client.Invocation
-import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
-import javax.ws.rs.core.Response
 
 abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
@@ -161,7 +154,7 @@ abstract class HttpWsFitness<T>: ApiWsFitness<T>() where T : Individual {
 
         val prechosenAuthHeaders = a.auth.headers.map { it.name }
 
-        val tokenHeader = a.auth.endpointCallLogin?.token?.httpHeaderName ?: null
+        val tokenHeader = a.auth.endpointCallLogin?.token?.sendName ?: null
 
         /*
             TODO: optimization, avoid mutating header gene if anyway

@@ -78,9 +78,9 @@ mvn clean -Pdeployment -DskipTests  deploy
 ```
 
 If everything went well, you should be able to see the deployed files at
-[https://oss.sonatype.org/](https://oss.sonatype.org/). 
+[https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java-controller](https://central.sonatype.com/artifact/org.evomaster/evomaster-client-java-controller). 
 However, it might take some hours before those are in sync with Maven Central,
-which you can check at [https://search.maven.org/](https://search.maven.org/).
+which you can check at [https://central.sonatype.com/publishing/deployments](https://central.sonatype.com/publishing/deployments) (requires login).
 
 
 
@@ -104,6 +104,8 @@ In case of problems, will need to remove the created (locally and remotely), bef
 git tag  --delete v<x.y.z>
 git push --delete origin v<x.y.z>
 ```
+
+Once a release is completed, make sure to close all the [GitHub Issues](https://github.com/WebFuzzing/EvoMaster/issues) that were marked with '__FIXED in SNAPSHOT__'.
 
 ## GitHub Release (OLD MANUAL VERSION) 
 
@@ -137,42 +139,36 @@ py version.py 0.4.1-SNAPSHOT
 
 
 
-## EMB Release
+## WFD Release
 
-After completing the release of a new version of `EvoMaster`, you need to make a new
-release for [https://github.com/WebFuzzing/EMB](https://github.com/WebFuzzing/EMB) as well.
-The two repositories __MUST__ have their version numbers aligned.
+After completing the release of a new version of `EvoMaster`, you might, or might not, need to make a new
+release for [https://github.com/WebFuzzing/Dataset](https://github.com/WebFuzzing/Dataset) as well.
+Changes in EM only impact _white-box_ settings, and __NOT__ the _black-box_ ones.
+Ideally, should make a new WFD release, but, if not, still need to update snapshot EM version in the _develop_ branch:
 
-You need to update all `pom.xml` files with the same:
-```
-mvn versions:set -DnewVersion=x.y.z
-```  
+`python3 scripts/version.py  em <VERSION>` 
 
-However, there are some other places in which the version number needs to be updated as well:
+If you are making a new release for WFD, need to update its version as well:
 
-* in the `<evomaster-version>` variable in the root `pom.xml` project file.
-* in the `EVOMASTER_VERSION` variable in the `scripts/dist.py` script file.
-* in all the case study `pom.xml` files where the `evomaster-client-database-spy`
-dependency is used (until we automate this task with a script, you will need to search
-for those dependencies manually from your IDE).
+`python3 scripts/version.py  wfd <VERSION>`
 
-To simplify all these previous steps, you can simply run `./scripts/version.py`.
+Note: no longer WFD is aligned with EM. 
+Versions number will be usually different.
 
-Once those changes are pushed, create a new [release](https://github.com/WebFuzzing/EMB/releases) 
-on GitHub.
-Tag it with the same version as `EvoMaster`, but no need to attach/upload any file.
+On `develop` branch, versions should always be `-SNAPSHOT`.
+On `master` they will be release versions.
+The `master` branch should always point to last commit of latest release, and no SNAPSHOT.
 
-After this is done, update to a new SNAPSHOT version, by replacing __ALL__ the 
-occurrences of the release version in the project (e.g., all `pom.xml` and 
-`dist.py` files) by using `./scripts/version.py`.  
-However, before doing this, it can be good to test the non-SNAPSHOT version of _EvoMaster_.
-The reasoning is to force the downloading of all the dependencies from Maven Central,
-to check if anything is missing.
-And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
-Note: the change to the version number for new release needs to be done (and pushed) on the `develop` branch. Then, `master` has to pull from `develop`, and push it.
-Once the release (from `master` branch) is done on GitHub, switch back to `develop`, and push the new SNAPSHOT update.
-In other words, `master` branch should always point to last commit of latest release, and no SNAPSHOT. 
+
+To make a new release for WFD, you then need to do:
+1. in `develop` branch, use `version.py` to set new release versions for both `em` and `wfd`.
+2. push `develop`.
+3. switch `master`, pull from `develop`, and push.
+4. on GitHub, manually make new release, with tag matching release version of `wfd`.
+5. switch to `develop`, and use `version.py` to make new `-SNAPSHOT` versions, for `em` and `wfd`.
+6. push `develop`.
+
 
 ## Example Update
 

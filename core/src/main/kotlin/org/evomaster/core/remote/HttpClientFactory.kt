@@ -1,5 +1,6 @@
 package org.evomaster.core.remote
 
+import org.evomaster.core.Lazy
 import org.glassfish.jersey.apache.connector.ApacheClientProperties
 import org.glassfish.jersey.apache.connector.ApacheConnectorProvider
 import org.glassfish.jersey.client.ClientConfig
@@ -61,7 +62,7 @@ object HttpClientFactory {
             .register(org.glassfish.jersey.jackson.JacksonFeature::class.java)
             .property(ApacheClientProperties.DISABLE_COOKIES, true)
 
-        return ClientBuilder.newBuilder()
+        val client = ClientBuilder.newBuilder()
             .withConfig(config)
             .sslContext(sc)
             .hostnameVerifier(allHostsValid)
@@ -71,5 +72,17 @@ object HttpClientFactory {
             // see discussion about OpenAPI and RFC 9110 in RestActionBuilderV3
             .property(ClientProperties.SUPPRESS_HTTP_COMPLIANCE_VALIDATION,true)
             .build()
+
+        Lazy.assert {
+            //using Jersey is a shitshow... based on classpath misconfiguration, can pick up wrong provider
+            //regardless of what you specify here, doing it silently... WTF !?!
+            //(client.configuration as ClientConfig).connectorProvider.javaClass == ApacheConnectorProvider::class.java
+            //FUCK JERSEY !!! even if you shade it in a third-party library, still can be picked-up and fuck up the casting!!!
+            //check passes on IDE, but then fail in Maven when using shaded client in the E2E... and we cannot exclude it there
+            //with maven because it is shaded... arghhhh, I hate Jersey
+            true
+        }
+
+        return client
     }
 }

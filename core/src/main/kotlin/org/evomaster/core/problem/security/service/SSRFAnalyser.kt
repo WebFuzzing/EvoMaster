@@ -91,8 +91,11 @@ class SSRFAnalyser {
 //        }
 //    }
 
-    fun apply(): Solution<RestIndividual> {
-        LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
+    /**
+     * newly created individual will be in the archive
+     */
+    fun apply(){ //}: Solution<RestIndividual> {
+        //LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
 
         val individualsWith2XX = getIndividualsWithStatus2XX()
 
@@ -104,7 +107,8 @@ class SSRFAnalyser {
         individualsInSolution =  individualsWith2XX + individualsWith4XX
 
         if (individualsInSolution.isEmpty()) {
-            return archive.extractSolution()
+            //return archive.extractSolution()
+            return
         }
 
         log.debug("Total individuals before vulnerability analysis: {}", individualsInSolution.size)
@@ -124,7 +128,7 @@ class SSRFAnalyser {
         // evaluate
         evaluate()
 
-        return archive.extractSolution()
+        //return archive.extractSolution()
     }
 
     fun anyCallsMadeToHTTPVerifier(
