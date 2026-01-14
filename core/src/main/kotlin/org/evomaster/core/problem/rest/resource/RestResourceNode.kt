@@ -524,7 +524,7 @@ open class RestResourceNode(
 
         //append extra patch
         if (ats.last() == HttpVerb.PATCH && results.size +1 <= maxTestSize && randomness.nextBoolean(PROB_EXTRA_PATCH)){
-            val second =  results.last().copy() as RestCallAction
+            val second =  results.last().copyKeepingSameWeakRef()
             if (lastPost != null)
                 CreateResourceUtils.linkDynamicCreateResource(lastPost, second)
             results.add(second)

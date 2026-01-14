@@ -583,18 +583,18 @@ object GeneSamplerForTests {
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     )
             )
         }else{
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fixedFields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     ),
                     refType = null,
                     isFixed = isFixed,

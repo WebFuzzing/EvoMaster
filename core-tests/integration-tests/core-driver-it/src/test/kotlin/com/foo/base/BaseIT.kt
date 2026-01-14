@@ -75,7 +75,7 @@ class BaseIT {
         assertTrue(actionRegistered, "Failed to register action")
 
         val results = remote.getTestResults()
-        assertNotNull(results, "Failed to get results")
+        org.junit.jupiter.api.assertNotNull(results, "Failed to get results")
         assertEquals(0, results!!.targets.size)
     }
 
@@ -85,12 +85,12 @@ class BaseIT {
         //make sure it is started
         assertTrue(remote.startSUT(), "Failed to start SUT")
         var info = remote.getSutInfo()
-        assertNotNull(info, "Failed to get SUT info")
+        org.junit.jupiter.api.assertNotNull(info, "Failed to get SUT info")
 
         //stop it
         assertTrue(remote.stopSUT(), "Failed to stop SUT")
         info = remote.getSutInfo()
-        assertNull(info, "Failed to get SUT info after stop")
+        org.junit.jupiter.api.assertNull(info, "Failed to get SUT info after stop")
 
         val n = 3
         for(i in 0 until n){
