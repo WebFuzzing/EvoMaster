@@ -18,6 +18,8 @@ class RestSchema(
     companion object{
         private val log = org.slf4j.LoggerFactory.getLogger(RestSchema::class.java)
 
+        const val TAG_NO_ACTIONS = "No actions"
+
         fun fromLocation(location: String) = RestSchema(OpenApiAccess.getOpenAPIFromLocation(location))
 
         fun fromResource(path: String) = RestSchema(OpenApiAccess.getOpenAPIFromResource(path))
@@ -123,12 +125,12 @@ class RestSchema(
 
     fun validate(){
         if (main.schemaParsed.paths == null) {
-            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file")
+            throw SutProblemException("There is no endpoint definition in the retrieved OpenAPI file", TAG_NO_ACTIONS)
         }
         // give the error message if there is nothing to test
-        if (main.schemaParsed.paths.size == 0){
+        if (main.schemaParsed.paths.isEmpty()){
             throw SutProblemException("The OpenAPI file from ${main.sourceLocation} " +
-                    "is either invalid or it does not define endpoints")
+                    "is either invalid or it does not define endpoints", TAG_NO_ACTIONS)
         }
     }
 }

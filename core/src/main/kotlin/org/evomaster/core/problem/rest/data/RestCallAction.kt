@@ -138,7 +138,9 @@ class RestCallAction(
     override fun copyContent(): Action {
 
         if(weakReference != null) {
-            throw IllegalStateException("'weakReference' must handled before trying to make a copy")
+            throw IllegalStateException("'weakReference' must handled before trying to make a copy." +
+                    " If needed, should rather use copyKeepingSameWeakRef(), but that can only be done in" +
+                    " very special cases.")
         }
 
         val p = parameters.asSequence().map(Param::copy).toMutableList()
