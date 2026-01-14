@@ -20,31 +20,9 @@ public class SqlSelectBuilder {
                 .map(SqlColumnId::getColumnId)
                 .collect(Collectors.joining(", "));
 
-        return String.format("SELECT %s FROM %s", columnList, buildQualifiedTableName(databaseType, tableId));
+        final String fullyQualifiedTableName = tableId.buildQualifiedTableName(databaseType);
+        return String.format("SELECT %s FROM %s", columnList, fullyQualifiedTableName);
     }
 
-    private static String buildQualifiedTableName(DatabaseType databaseType, SqlTableId tableId) {
-        StringBuilder sb = new StringBuilder();
-
-        if (databaseType == DatabaseType.MYSQL) {
-            // MySQL: schema is ignored unless catalog is null
-            if (tableId.getCatalogName() != null) {
-                sb.append(tableId.getCatalogName()).append(".");
-            } else if (tableId.getSchemaName() != null) {
-                sb.append(tableId.getSchemaName()).append(".");
-            }
-        } else {
-            // Standard behavior: include both if present
-            if (tableId.getCatalogName() != null) {
-                sb.append(tableId.getCatalogName()).append(".");
-            }
-            if (tableId.getSchemaName() != null) {
-                sb.append(tableId.getSchemaName()).append(".");
-            }
-        }
-
-        sb.append(tableId.getTableName());
-        return sb.toString();
-    }
 
 }

@@ -513,7 +513,7 @@ public class SqlHandler {
                     }
                     return;
                 }
-                final SqlTableId tableId = SqlTableIdParser.parseFullyQualifiedTableName(fullyQualifiedTableName);
+                final SqlTableId tableId = SqlTableIdParser.parseFullyQualifiedTableName(fullyQualifiedTableName, schema.databaseType);
                 result.putIfAbsent(tableId, new HashSet<>());
                 Set<SqlColumnId> columnIds = result.get(tableId);
                 columnIds.add(new SqlColumnId(columnName));

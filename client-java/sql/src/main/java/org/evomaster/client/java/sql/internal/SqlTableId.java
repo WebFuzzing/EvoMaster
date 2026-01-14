@@ -1,5 +1,7 @@
 package org.evomaster.client.java.sql.internal;
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+
 import java.util.Objects;
 
 /**
@@ -71,5 +73,36 @@ public class SqlTableId {
         return String.valueOf(catalogName) + '.' +
                 String.valueOf(schemaName) + '.' + tableName;
     }
+
+    /**
+     * Returns the fully qualified table name, including catalog and schema if present.
+     *
+     * @param databaseType
+     * @return
+     */
+    public String buildQualifiedTableName(DatabaseType databaseType) {
+        StringBuilder sb = new StringBuilder();
+
+        if (databaseType == DatabaseType.MYSQL) {
+            // MySQL: schema is ignored unless catalog is null
+            if (getCatalogName() != null) {
+                sb.append(getCatalogName()).append(".");
+            } else if (getSchemaName() != null) {
+                sb.append(getSchemaName()).append(".");
+            }
+        } else {
+            // Standard behavior: include both if present
+            if (getCatalogName() != null) {
+                sb.append(getCatalogName()).append(".");
+            }
+            if (getSchemaName() != null) {
+                sb.append(getSchemaName()).append(".");
+            }
+        }
+
+        sb.append(getTableName());
+        return sb.toString();
+    }
+
 
 }
