@@ -4,10 +4,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -201,6 +198,7 @@ public class SqlHandlerTest {
         schema.tables.add(employeesTable);
         schema.tables.add(departmentsTable);
         schema.tables.add(locationsTable);
+        schema.databaseType = DatabaseType.POSTGRES;
 
         return schema;
     }
@@ -454,6 +452,7 @@ public class SqlHandlerTest {
 
         DbInfoDto schema = new DbInfoDto();
         schema.tables.add(usertTableDto);
+        schema.databaseType = DatabaseType.POSTGRES;
 
         String select = "SELECT user_id FROM public.users u WHERE u.income >1000;";
         Statement stmt = CCJSqlParserUtil.parse(select);
