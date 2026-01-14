@@ -11,7 +11,9 @@ object CollectionUtils {
      */
     fun <T> duplicates(list: List<T>) : Map<T, Int> {
 
-        return list.associateBy({ it },{ list.count { e -> it == e } })
+        return list.groupingBy { it }.eachCount()
+            //previous implementation was too inefficient
+                //list.associateBy({ it },{ list.count { e -> it == e } })
             .filter { it.value > 1 }
     }
 }
