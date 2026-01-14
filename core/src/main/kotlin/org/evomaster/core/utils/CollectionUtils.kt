@@ -13,7 +13,7 @@ object CollectionUtils {
 
         return list.groupingBy { it }.eachCount()
             //previous implementation was too inefficient
-                //list.associateBy({ it },{ list.count { e -> it == e } })
+//             return   list.associateBy({ it },{ list.count { e -> it == e } })
             .filter { it.value > 1 }
     }
 }
