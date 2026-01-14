@@ -34,6 +34,7 @@ class DisjunctionListRxGene(
     override fun copyContent(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
+        copy.name = this.name //in case name is changed from its default
         return copy
     }
 

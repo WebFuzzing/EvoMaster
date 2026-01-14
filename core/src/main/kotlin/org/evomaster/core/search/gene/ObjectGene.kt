@@ -22,6 +22,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.utils.CollectionUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URLEncoder
@@ -68,6 +69,11 @@ class ObjectGene(
             if (additionalFields != null)
                 throw IllegalArgumentException("cannot specify additional field when the ObjectGene is fixed")
         }
+        val duplicateNames = CollectionUtils.duplicates(fixedFields.map { it.name })
+        if(duplicateNames.isNotEmpty()){
+            throw IllegalArgumentException("In an Object, cannot have more than one field with same name." +
+                    " Duplicates: ${duplicateNames.keys.joinToString(",")}")
+        }
     }
 
     constructor(name: String, fields: List<out Gene>, refType: String? = null) : this(name, fields, refType, true, null, null)
@@ -100,7 +106,14 @@ class ObjectGene(
     override fun canBeChildless() = true
 
     override fun copyContent(): Gene {
-        return ObjectGene(name, fixedFields.map(Gene::copy), refType, isFixed, template, additionalFields?.map {it.copy() as PairGene<StringGene, Gene> }?.toMutableList())
+        return ObjectGene(
+            name,
+            fixedFields.map(Gene::copy),
+            refType,
+            isFixed,
+            template,
+            additionalFields?.map {it.copy() as PairGene<StringGene, Gene> }?.toMutableList()
+        )
     }
 
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
@@ -238,7 +251,10 @@ class ObjectGene(
 
         return this.fixedFields.size == other.fixedFields.size
                 && (isFixed || additionalFields!!.size == other.additionalFields!!.size)
-                && this.fixedFields.zip(other.fixedFields) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
+                && (this.fixedFields.sortedBy{it.name}
+                        .zip(other.fixedFields.sortedBy { it.name })
+                        { thisField, otherField -> thisField.containsSameValueAs(otherField) }
+                    .all { it })
                 && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
         )
     }
