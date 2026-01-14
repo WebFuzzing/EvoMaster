@@ -66,7 +66,6 @@ class SamplerVerifierTest {
         return tests
     }
 
-//    @Disabled("Performance issue")
     @TestFactory
     fun testSamplingFromAllSchemasUnderCoreResourcesBlackBox(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
