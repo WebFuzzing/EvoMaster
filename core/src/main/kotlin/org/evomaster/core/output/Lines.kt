@@ -75,6 +75,14 @@ class Lines(val format: OutputFormat) {
         buffer[buffer.lastIndex] = buffer.last().replace(regex, replacement)
     }
 
+    fun replaceFirstInCurrent(regex: Regex, replacement: String){
+        if(buffer.isEmpty()){
+            return
+        }
+
+        buffer[buffer.lastIndex] = buffer.last().replaceFirst(regex, replacement)
+    }
+
     /**
      * Is the current line just a comment // without any statement?
      */

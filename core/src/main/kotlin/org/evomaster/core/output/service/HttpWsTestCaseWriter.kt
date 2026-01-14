@@ -859,7 +859,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.replaceInCurrent(Regex("\\s*//"), "; //")
                 }
 
-            } else {
+            } else if (config.detectFlakiness && lines.isCurrentACommentLine()){
+                lines.replaceInCurrent(Regex("(?<=\\s)//"), "; //")
+            }else {
                 lines.appendSemicolon()
             }
         }

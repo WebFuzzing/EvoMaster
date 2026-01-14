@@ -1470,6 +1470,7 @@ public void test() throws Exception {
         fooResult.setFlakiness(barResult)
 
         val config = getConfig(format)
+        config.detectFlakiness = true
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1504,7 +1505,7 @@ public void test() throws Exception {
             .body("'p2'.'properties'[2].'type'", containsString("string"))
             .body("'p2'.'properties'[2].'value'", containsString("two"))
             // Flaky mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
-            // .body("'p2'.'empty'.isEmpty()", is(true));
+            ; // .body("'p2'.'empty'.isEmpty()", is(true))
 }
 
 """.trimIndent()
@@ -1543,6 +1544,7 @@ public void test() throws Exception {
         fooResult.setFlakiness(barResult)
 
         val config = getConfig(format)
+        config.detectFlakiness = true
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1563,7 +1565,7 @@ public void test() throws Exception {
             // Flaky size of : 2 vs. 3
             // .body("size()", equalTo(2))
             // Flaky Body: "foo", "bar" vs. "foo", "abc", "bar"
-            // .body("", hasItems("foo", "bar"));
+            ; // .body("", hasItems("foo", "bar"))
 }
 
 """.trimIndent()
