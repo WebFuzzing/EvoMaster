@@ -78,8 +78,6 @@ class SamplerVerifierTest {
     }
 
 
-    //FIXME need to put back, and investigate performance bug
-    @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
@@ -118,16 +116,15 @@ class SamplerVerifierTest {
                 .filter { it.isFile }
                 .filter { !skipSchema(it.path) }
                 .map {
-//                    val s = it.path.replace("\\", "/")
-//                            .replace(relativePath, resourceFolder)
                     val s = Path(it.absolutePath).toAbsolutePath().normalize().toString()
                     s
                 }.toList()
     }
 
     private fun skipSchema(path: String) : Boolean {
-        return skipDueToOldChecks(path) ||
-                skipDueToMissingPath(path)
+        return skipDueToOldChecks(path)
+                || skipDueToIssuesStillToInvestigate(path)
+                || skipDueToMissingPath(path)
                 || skipDueToHashTag(path)
                 || skipDueToQuestionMarkInPath(path)
                 || skipDueToMissingReference(path)
@@ -140,6 +137,29 @@ class SamplerVerifierTest {
                 || skipDueToInvalidGenes(path)
     }
 
+    private fun skipDueToIssuesStillToInvestigate(path: String) : Boolean {
+        val toSkip = listOf(
+                    "api.video/1/openapi.yaml",
+                    "atlassian.com/jira/1001.0.0-SNAPSHOT/openapi.yaml",
+                    "cloud-elements.com/ecwid/api-v2/swagger.yaml",
+                    "github.com/api.github.com/1.1.4/openapi.yaml",
+                    "googleapis.com/discovery/v1/openapi.yaml",
+                    "here.com/positioning/2.1.1/openapi.yaml",
+                    "maif.local/otoroshi/1.5.0-dev/openapi.yaml",
+                    "mashape.com/geodb/1.0.0/swagger.yaml",
+                    "microsoft.com/cognitiveservices-Training/1.2/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.0/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.1/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.2/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/3.0/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/3.1/openapi.yaml",
+                    "neutrinoapi.net/3.5.0/openapi.yaml",
+                    "openbankingproject.ch/1.3.8_2020-12-14 - Swiss edition 1.3.8.1-CH/openapi.yaml"
+        )
+
+        return  toSkip.any { path.contains(it) }
+    }
+    
     private fun skipDueToOldChecks(path: String) : Boolean {
         return path.endsWith("features_service_null.json") //issue with parser
                 || path.endsWith("trace_v2.json")  // no actions are parsed
