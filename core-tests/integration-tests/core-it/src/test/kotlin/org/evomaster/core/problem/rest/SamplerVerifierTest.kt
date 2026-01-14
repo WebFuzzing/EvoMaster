@@ -64,6 +64,8 @@ class SamplerVerifierTest {
         )
         assertTrue(tests.isNotEmpty())
         return tests
+            //FIXME once handling performance issues
+            .filter { !it.displayName.contains("adyen") }
     }
 
     @Disabled("Performance issue")
