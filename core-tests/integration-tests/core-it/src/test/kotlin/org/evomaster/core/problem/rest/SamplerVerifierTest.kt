@@ -16,7 +16,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
-import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
@@ -47,7 +47,7 @@ class SamplerVerifierTest {
 
         val injector = getInjector(sutInfo, controllerInfo, false)
 
-        val sampler = injector.getInstance(ResourceSampler::class.java)
+        val sampler = injector.getInstance(AbstractRestSampler::class.java)
 
         sampler.sample() //should not crash
     }
@@ -66,7 +66,7 @@ class SamplerVerifierTest {
         return tests
     }
 
-    @Disabled("Performance issue")
+//    @Disabled("Performance issue")
     @TestFactory
     fun testSamplingFromAllSchemasUnderCoreResourcesBlackBox(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
@@ -379,7 +379,7 @@ class SamplerVerifierTest {
             throw e
         }
 
-        val sampler = injector.getInstance(ResourceSampler::class.java)
+        val sampler = injector.getInstance(AbstractRestSampler::class.java)
 
         if(sampler.numberOfDistinctActions() == 0){
             throw IllegalStateException("No actions for schema")
