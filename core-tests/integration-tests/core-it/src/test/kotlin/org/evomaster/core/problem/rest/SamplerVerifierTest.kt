@@ -95,11 +95,22 @@ class SamplerVerifierTest {
         blackBox: Boolean
     ): Collection<DynamicTest> {
 
+        /*
+            In theory, we should not have such a high timeout for this kind of tests.
+            On local machine, all those analyses take at most 20s per test.
+            Maybe performance can be improved, but, considering some files are MBs, it is not
+            so unexpected. And it happens only for very large files.
+            Problem though is that CI is much SLOWER, and tests do timeout.
+            So that is why we have such high timeout, it is for CI.
+            Still, if it starts to fail there, then we really need to look into performance issues.
+         */
+        val timeout = 60L
+
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
                 System.gc()
-                assertTimeoutPreemptively(Duration.ofSeconds(60), it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
             }
