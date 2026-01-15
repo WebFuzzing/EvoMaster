@@ -2,6 +2,12 @@
 
 Under development in `master` branch.
 
+### Fixed Bugs
+
+- fixes issues when parsing OpenAPI schemas with PATCH methods and YAML size more than 3MB.
+
+# Version 5.0.0
+
 ### Breaking Changes
 
 - _core_ process is moved to JDK 17, while _driver_ is still on 8 (and it will be for the foreseeable future). If you run EM from its installers or Docker, you will see no difference. However, if you run it via its jar file with '_java -jar_', then you need to make sure to have JDK 17 (or 21, but not 25). 
