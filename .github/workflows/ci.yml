@@ -42,7 +42,7 @@ env:
   build-jdk: 17
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "org.evomaster.e2etests.spring.examples.sort.SortEMTest" # replace with test to debug
+  debugTestName: "org.evomaster.core.problem.rest.SamplerVerifierTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).

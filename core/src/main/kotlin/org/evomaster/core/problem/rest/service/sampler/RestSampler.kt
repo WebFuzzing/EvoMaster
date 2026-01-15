@@ -274,7 +274,7 @@ class RestSampler : AbstractRestSampler(){
         if (created && !get.path.isLastElementAParameter()) {
 
             val lastPost = test[test.size - 2]
-            Lazy.assert{lastPost.verb == HttpVerb.POST}
+            Lazy.assert{lastPost.verb == HttpVerb.POST || lastPost.verb == HttpVerb.PUT}
 
             val available = getMaxTestSizeDuringSampler() - test.size
 

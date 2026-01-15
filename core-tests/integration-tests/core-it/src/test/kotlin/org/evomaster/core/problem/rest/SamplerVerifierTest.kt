@@ -13,10 +13,11 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamCh
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
+import org.evomaster.core.Main
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
-import org.evomaster.core.problem.rest.service.sampler.ResourceSampler
+import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
@@ -28,9 +29,16 @@ import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 import kotlin.io.path.Path
 import kotlin.sequences.filter
+import kotlin.text.contains
 
 
 class SamplerVerifierTest {
+
+    companion object {
+        init {
+            Main.applyGlobalJVMSettings()
+        }
+    }
 
 
     @Test
@@ -47,7 +55,7 @@ class SamplerVerifierTest {
 
         val injector = getInjector(sutInfo, controllerInfo, false)
 
-        val sampler = injector.getInstance(ResourceSampler::class.java)
+        val sampler = injector.getInstance(AbstractRestSampler::class.java)
 
         sampler.sample() //should not crash
     }
@@ -64,11 +72,8 @@ class SamplerVerifierTest {
         )
         assertTrue(tests.isNotEmpty())
         return tests
-            //FIXME once handling performance issues
-            .filter { !it.displayName.contains("adyen") }
     }
 
-    @Disabled("Performance issue")
     @TestFactory
     fun testSamplingFromAllSchemasUnderCoreResourcesBlackBox(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
@@ -81,8 +86,6 @@ class SamplerVerifierTest {
     }
 
 
-    //FIXME need to put back, and investigate performance bug
-    @Disabled("Major issues with timeouts. Even before, took more than 1 hour. Need refactoring. Maven was not showing the failures (likely bug in Surefire)")
     @TestFactory
     fun testSamplingFromAPIsGuru(): Collection<DynamicTest>{
         val tests = sampleFromSchemasAndCheckInvariants(
@@ -100,11 +103,22 @@ class SamplerVerifierTest {
         blackBox: Boolean
     ): Collection<DynamicTest> {
 
+        /*
+            In theory, we should not have such a high timeout for this kind of tests.
+            On local machine, all those analyses take at most 20s per test.
+            Maybe performance can be improved, but, considering some files are MBs, it is not
+            so unexpected. And it happens only for very large files.
+            Problem though is that CI is much SLOWER, and tests do timeout.
+            So that is why we have such high timeout, it is for CI.
+            Still, if it starts to fail there, then we really need to look into performance issues.
+         */
+        val timeout = 60L
+
         return scanForSchemas(relativePath, resourceFolder)
             .sorted().map {
             DynamicTest.dynamicTest(it) {
                 System.gc()
-                assertTimeoutPreemptively(Duration.ofSeconds(30), it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(timeout), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
             }
@@ -121,16 +135,15 @@ class SamplerVerifierTest {
                 .filter { it.isFile }
                 .filter { !skipSchema(it.path) }
                 .map {
-//                    val s = it.path.replace("\\", "/")
-//                            .replace(relativePath, resourceFolder)
                     val s = Path(it.absolutePath).toAbsolutePath().normalize().toString()
                     s
                 }.toList()
     }
 
     private fun skipSchema(path: String) : Boolean {
-        return skipDueToOldChecks(path) ||
-                skipDueToMissingPath(path)
+        return skipDueToOldChecks(path)
+                || skipDueToIssuesStillToInvestigate(path)
+                || skipDueToMissingPath(path)
                 || skipDueToHashTag(path)
                 || skipDueToQuestionMarkInPath(path)
                 || skipDueToMissingReference(path)
@@ -143,6 +156,29 @@ class SamplerVerifierTest {
                 || skipDueToInvalidGenes(path)
     }
 
+    private fun skipDueToIssuesStillToInvestigate(path: String) : Boolean {
+        val toSkip = listOf(
+                    "api.video/1/openapi.yaml",
+                    "atlassian.com/jira/1001.0.0-SNAPSHOT/openapi.yaml",
+                    "cloud-elements.com/ecwid/api-v2/swagger.yaml",
+                    "github.com/api.github.com/1.1.4/openapi.yaml",
+                    "googleapis.com/discovery/v1/openapi.yaml",
+                    "here.com/positioning/2.1.1/openapi.yaml",
+                    "maif.local/otoroshi/1.5.0-dev/openapi.yaml",
+                    "mashape.com/geodb/1.0.0/swagger.yaml",
+                    "microsoft.com/cognitiveservices-Training/1.2/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.0/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.1/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/2.2/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/3.0/openapi.yaml",
+                    "microsoft.com/cognitiveservices-Training/3.1/openapi.yaml",
+                    "neutrinoapi.net/3.5.0/openapi.yaml",
+                    "openbankingproject.ch/1.3.8_2020-12-14 - Swiss edition 1.3.8.1-CH/openapi.yaml"
+        )
+
+        return  toSkip.any { path.contains(it) }
+    }
+    
     private fun skipDueToOldChecks(path: String) : Boolean {
         return path.endsWith("features_service_null.json") //issue with parser
                 || path.endsWith("trace_v2.json")  // no actions are parsed
@@ -244,7 +280,7 @@ class SamplerVerifierTest {
                     || (contains("visualstudio.com") && contains("v1"))
                     || (contains("youneedabudget.com") && contains("1.0.0"))
                     || (contains("zenoti.com") && contains("1.0.0")) //  No actions for schema
-                    || (contains("zoom.us") && contains("2.0.0")) // The incoming YAML document exceeds the limit: 3145728 code points.
+                 //   || (contains("zoom.us") && contains("2.0.0")) // The incoming YAML document exceeds the limit: 3145728 code points.
                     || (contains("zuora.com") && contains("2021-08-20")) //The incoming YAML document exceeds the limit: 3145728 code points.
         }
     }
@@ -381,7 +417,7 @@ class SamplerVerifierTest {
             throw e
         }
 
-        val sampler = injector.getInstance(ResourceSampler::class.java)
+        val sampler = injector.getInstance(AbstractRestSampler::class.java)
 
         if(sampler.numberOfDistinctActions() == 0){
             throw IllegalStateException("No actions for schema")
