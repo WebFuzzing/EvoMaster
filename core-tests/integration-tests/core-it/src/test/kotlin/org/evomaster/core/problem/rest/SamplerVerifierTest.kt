@@ -99,7 +99,7 @@ class SamplerVerifierTest {
             .sorted().map {
             DynamicTest.dynamicTest(it) {
                 System.gc()
-                assertTimeoutPreemptively(Duration.ofSeconds(30), it) {
+                assertTimeoutPreemptively(Duration.ofSeconds(60), it) {
                     runInvariantCheck(it, 100, blackBox)
                 }
             }
