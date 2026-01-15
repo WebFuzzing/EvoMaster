@@ -17,14 +17,6 @@
     <url>www.evomaster.org</url>
     <packaging>pom</packaging>
 
-<!--    <modules>-->
-<!--        <module>core-parent</module>-->
-<!--        <module>core</module>-->
-<!--        <module>core-extra</module>-->
-<!--        <module>core-tests</module>-->
-<!--        <module>client-java</module>-->
-<!--        <module>test-utils</module>-->
-<!--    </modules>-->
 
     <issueManagement>
         <system>Github</system>
@@ -57,13 +49,10 @@
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
-                   However, we also need this root pom.xml. So,
 
-                   On the root:
-                   mvn  -N -Pdeployment -DskipTests  deploy
-
-                   On "client-java":
                    mvn clean -Pdeployment -DskipTests  deploy
+
+                   see documentation on making release
               -->
             <id>deployment</id>
             <modules>
