@@ -13,6 +13,7 @@ import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamCh
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsDto
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult
 import org.evomaster.core.BaseModule
+import org.evomaster.core.Main
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.service.module.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.module.ResourceRestModule
@@ -28,9 +29,16 @@ import java.lang.reflect.InvocationTargetException
 import java.time.Duration
 import kotlin.io.path.Path
 import kotlin.sequences.filter
+import kotlin.text.contains
 
 
 class SamplerVerifierTest {
+
+    companion object {
+        init {
+            Main.applyGlobalJVMSettings()
+        }
+    }
 
 
     @Test
@@ -272,7 +280,7 @@ class SamplerVerifierTest {
                     || (contains("visualstudio.com") && contains("v1"))
                     || (contains("youneedabudget.com") && contains("1.0.0"))
                     || (contains("zenoti.com") && contains("1.0.0")) //  No actions for schema
-                    || (contains("zoom.us") && contains("2.0.0")) // The incoming YAML document exceeds the limit: 3145728 code points.
+                 //   || (contains("zoom.us") && contains("2.0.0")) // The incoming YAML document exceeds the limit: 3145728 code points.
                     || (contains("zuora.com") && contains("2021-08-20")) //The incoming YAML document exceeds the limit: 3145728 code points.
         }
     }

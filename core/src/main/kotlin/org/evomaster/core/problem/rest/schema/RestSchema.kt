@@ -3,7 +3,9 @@ package org.evomaster.core.problem.rest.schema
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactoryBuilder
 import org.evomaster.core.remote.SutProblemException
+import org.yaml.snakeyaml.LoaderOptions
 
 
 /**
@@ -62,7 +64,16 @@ class RestSchema(
 
         //https://swagger.io/docs/specification/v3_0/using-ref/
 
-        val mapper = ObjectMapper(YAMLFactory())
+        // snakeyaml has default limits on size, which are very low
+        val yaml = YAMLFactoryBuilder(YAMLFactory())
+            .loaderOptions(LoaderOptions().apply {
+                codePointLimit = 50 * 1024 * 1024 // 50MB
+                maxAliasesForCollections = 1000
+                nestingDepthLimit = 100
+            })
+            .build()
+
+        val mapper = ObjectMapper(yaml)
         val tree = mapper.readTree(schema.schemaRaw)
         val refs = findAllSRef(tree)
 
