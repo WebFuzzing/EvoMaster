@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version 5.0.2
+
 ### Fixed Bugs
 
 - fixes issues when parsing OpenAPI schemas with PATCH methods and YAML size more than 3MB.

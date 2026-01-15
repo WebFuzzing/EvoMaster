@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.2</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -17,14 +17,14 @@
     <url>www.evomaster.org</url>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>core-parent</module>
-        <module>core</module>
-        <module>core-extra</module>
-        <module>core-tests</module>
-        <module>client-java</module>
-        <module>test-utils</module>
-    </modules>
+<!--    <modules>-->
+<!--        <module>core-parent</module>-->
+<!--        <module>core</module>-->
+<!--        <module>core-extra</module>-->
+<!--        <module>core-tests</module>-->
+<!--        <module>client-java</module>-->
+<!--        <module>test-utils</module>-->
+<!--    </modules>-->
 
     <issueManagement>
         <system>Github</system>
@@ -40,6 +40,20 @@
 
     <profiles>
         <profile>
+            <id>default-build</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>core-parent</module>
+                <module>core</module>
+                <module>core-extra</module>
+                <module>core-tests</module>
+                <module>client-java</module>
+                <module>test-utils</module>
+            </modules>
+        </profile>
+        <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
@@ -52,6 +66,9 @@
                    mvn clean -Pdeployment -DskipTests  deploy
               -->
             <id>deployment</id>
+            <modules>
+                <module>client-java</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
