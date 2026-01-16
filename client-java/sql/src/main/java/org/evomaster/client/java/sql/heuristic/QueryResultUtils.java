@@ -4,10 +4,7 @@ import org.evomaster.client.java.sql.DataRow;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.VariableDescriptor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class QueryResultUtils {
@@ -78,5 +75,24 @@ public class QueryResultUtils {
                 .forEach(r -> newQueryResult.addRow(new DataRow(variableDescriptorsWithTableAlias, r.seeValues())));
 
         return newQueryResult;
+    }
+
+    /**
+     * Creates a new QueryResult containing only distinct rows from the given QueryResult.
+     *
+     * @param source
+     * @return
+     */
+    public static QueryResult createDistinctQueryResult(QueryResult source) {
+        QueryResult result = new QueryResult(source.seeVariableDescriptors());
+        for (DataRow row : source.seeRows()) {
+            List<Object> values = row.seeValues();
+            boolean alreadyExists = result.seeRows().stream()
+                    .anyMatch(r -> r.seeValues().equals(values));
+            if (!alreadyExists) {
+                result.addRow(row);
+            }
+        }
+        return result;
     }
 }
