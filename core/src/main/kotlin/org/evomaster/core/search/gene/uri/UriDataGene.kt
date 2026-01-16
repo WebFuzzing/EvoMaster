@@ -90,4 +90,29 @@ class UriDataGene(
         return false
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return try {
+            val uri = URI(value)
+
+            if (uri.scheme == "data") {
+                val uriParts = uri.schemeSpecificPart
+                val parts = uriParts.split(",", limit = 2)
+                val metadata = parts[0].split(";")
+                val t = metadata[0]
+                val b64 = metadata[2].equals("base64", ignoreCase = true)
+                val d = parts[1]
+
+                type.unsafeSetFromStringValue(t)
+                base64.unsafeSetFromStringValue(b64.toString())
+                data.unsafeSetFromStringValue(d)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
 }
