@@ -682,7 +682,7 @@ class SecurityRest {
 
         getOperations.forEach { get ->
 
-            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+            val inds403 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
@@ -692,7 +692,7 @@ class SecurityRest {
                 return@forEach
             }
 
-            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+            val inds404 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
@@ -703,29 +703,10 @@ class SecurityRest {
             }
 
             //found the bug.
-            val forbidden = inds403.minBy { it.individual.size() }
-            val notfound = inds404.minBy { it.individual.size() }
+            val forbidden = inds403.minBy { it.size() }
+            val notfound = inds404.minBy { it.size() }
 
-            //needs slicing to minimize the newly generated test
-            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
-                forbidden,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
-
-            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
-                notfound,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
-
-            val final = RestIndividualBuilder.merge(first, second)
+            val final = RestIndividualBuilder.merge(forbidden, notfound)
 
             // Check if the 404 path is a child resource and add parent GET to check access
             val path404 = get.path
@@ -734,24 +715,20 @@ class SecurityRest {
 
             // Find the parent path from getOperations (all GET operation definitions)
             val parentGetOperation = getOperations
-                .filter { it.path.isDirectOrPossibleAncestorOf(path404) && !it.path.isEquivalent(path404) }
-                .minByOrNull { it.path.toString().length } // Get the top parent
+                .filter { it.path.isStrictlyAncestorOf(path404)}
+                .filter { it.path.isLastElementAParameter() }
+                .minByOrNull { it.path.levels() }
 
             if (parentGetOperation != null) {
                 val parentGetAction = parentGetOperation.copy() as RestCallAction
                 parentGetAction.resetLocalIdRecursively()
                 parentGetAction.forceNewTaints()
-                parentGetAction.auth = lastAuth
-
-                //FIXME this would not work for dynamic parameters
-                // Bind to the same path params from the 404 action to ensure same IDs
-                parentGetAction.bindBasedOn(
-                    action404.path,
-                    action404.parameters.filterIsInstance<PathParam>(),
-                    null
-                )
 
                 parentGetAction.doInitialize()
+                parentGetAction.auth = lastAuth
+                // Bind to the same path params from the 404 action to ensure same IDs
+                //FIXME this would not work for dynamic parameters
+                parentGetAction.bindToSamePathResolution(action404)
 
                 final.addResourceCall(
                     restCalls = RestResourceCalls(
@@ -759,9 +736,10 @@ class SecurityRest {
                         sqlActions = listOf()
                     )
                 )
+
+                //FIXME unclear. should be refactored with dealing of dynamic params
                 final.seeMainExecutableActions()
                     .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                        //FIXME unclear. should be refactored with dealing of dynamic params
                         it.saveCreatedResourceLocation = true
                     }
                 final.fixResourceForwardLinks()
