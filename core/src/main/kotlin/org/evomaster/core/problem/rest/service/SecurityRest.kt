@@ -729,13 +729,13 @@ class SecurityRest {
 
             // Check if the 404 path is a child resource and add parent GET to check access
             val path404 = get.path
-            val action404 = final.seeMainExecutableActions().last() as RestCallAction
+            val action404 = final.seeMainExecutableActions().last()
             val lastAuth = action404.auth
 
             // Find the parent path from getOperations (all GET operation definitions)
             val parentGetOperation = getOperations
                 .filter { it.path.isDirectOrPossibleAncestorOf(path404) && !it.path.isEquivalent(path404) }
-                .maxByOrNull { it.path.toString().length } // Get the most specific parent (closest ancestor)
+                .minByOrNull { it.path.toString().length } // Get the top parent
 
             if (parentGetOperation != null) {
                 val parentGetAction = parentGetOperation.copy() as RestCallAction
@@ -743,6 +743,7 @@ class SecurityRest {
                 parentGetAction.forceNewTaints()
                 parentGetAction.auth = lastAuth
 
+                //FIXME this would not work for dynamic parameters
                 // Bind to the same path params from the 404 action to ensure same IDs
                 parentGetAction.bindBasedOn(
                     action404.path,
@@ -760,6 +761,7 @@ class SecurityRest {
                 )
                 final.seeMainExecutableActions()
                     .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
+                        //FIXME unclear. should be refactored with dealing of dynamic params
                         it.saveCreatedResourceLocation = true
                     }
                 final.fixResourceForwardLinks()

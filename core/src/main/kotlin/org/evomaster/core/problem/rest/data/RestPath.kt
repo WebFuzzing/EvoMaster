@@ -243,6 +243,14 @@ class RestPath(path: String) {
         return other.isSameOrAncestorOf(this)
     }
 
+    fun isStrictlyAncestorOf(other: RestPath): Boolean {
+        if(this.elements.size == other.elements.size && (this.endsWithSlash || !other.endsWithSlash)){
+            //if same size, then only possibility of being ancestor if other ends with slash, but not this
+            return false
+        }
+        return isSameOrAncestorOf(other)
+    }
+
 
     /**
      * Prefix or same as "other"

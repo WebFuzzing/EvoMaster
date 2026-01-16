@@ -171,7 +171,8 @@ object RestSecurityOracle {
     fun hasExistenceLeakage(
         path: RestPath,
         individual: RestIndividual,
-        actionResults: List<ActionResult>
+        actionResults: List<ActionResult>,
+        actionDefinitions: List<RestCallAction>
     ): Boolean{
 
         verifySampleType(individual)
@@ -200,13 +201,69 @@ object RestSecurityOracle {
                         (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
                     .getStatusCode() == 404
             }
-        val lastStatusCode = (actionResults.last() as RestCallResult).getStatusCode()
 
-        if(StatusGroup.G_2xx.isInGroup(lastStatusCode)){
+        if(a403.isEmpty() || a404.isEmpty()){
+            //no discrepancy of status on same path. so no leakage
             return false
         }
 
-        return a403.isNotEmpty() && a404.isNotEmpty()
+        /*
+            by itself, the fact that there is 404 does not imply a leakage, as the user
+            "might" own parent resources.
+            we need to check for that.
+         */
+
+        val topGet = findStrictTopGETResourceAncestor(path, actionDefinitions)
+            //if null, then for sure the user with 404 does not own a parent resource
+            ?: return true
+
+        val verifiers = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.GET && it.path == topGet.path }
+            .filter { actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null }
+
+        if(verifiers.isEmpty()){
+            //a top GET exists in schema, but was not called in the test.
+            //as such, we cannot be sure if bug is found, as, even if 403-404 on same path,
+            //it could well be that the 404 was legit
+            return false
+        }
+
+        for(notfound in a404){
+
+            //FIXME i don't think it is correct, as ignoring dynamic info?
+            //TODO need tests for it
+            val matching = verifiers.filter {
+                notfound.usingSameResolvedPath(it)
+                        && ! notfound.auth.isDifferentFrom(it.auth)
+            }
+
+            if(matching.isEmpty()){
+                continue
+            }
+
+            val codes = matching.map { (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult).getStatusCode() }
+
+            if(codes.any{ StatusGroup.G_2xx.isInGroup(it)}) {
+                //a 2xx can be done on parent resource
+                continue
+            }
+
+            if(codes.any{ it == 403 || it == 404 }) {
+                //there is at least one call on ancestor resource with same auth, but none was positive 2xx
+                return true // and there is at least one discrepancy 403-404 on same endpoint
+            }
+            //other codes like 400 or 500 are ignored here, eg, due to input validation
+        }
+
+        return false
+    }
+
+    private fun findStrictTopGETResourceAncestor(path: RestPath, actions: List<RestCallAction>) : RestCallAction?{
+        return actions
+            .filter { it.verb == HttpVerb.GET }
+            .filter { it.path.isStrictlyAncestorOf(path)}
+            .filter { it.path.isLastElementAParameter() }
+            .minByOrNull { it.path.levels() }
     }
 
     /**
