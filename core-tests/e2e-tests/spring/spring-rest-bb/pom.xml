@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-e2e-tests-spring</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>5.0.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests-spring-rest-bb</artifactId>
@@ -181,6 +181,9 @@
                 <configuration>
                     <!--  Otherwise tests using mvn will not work  -->
                     <redirectTestOutputToFile>false</redirectTestOutputToFile>
+                    <environmentVariables>
+                        <SKIP_INSTRUMENTATION>true</SKIP_INSTRUMENTATION>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>

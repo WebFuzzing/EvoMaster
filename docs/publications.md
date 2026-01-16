@@ -21,13 +21,15 @@ Also, some of these papers provides full replication packages, which are linked 
   *WFC/WFD: Web Fuzzing Commons, Dataset and Guidelines to Support Experimentation in REST API Fuzzing*. 
   [[arxiv](https://arxiv.org/abs/2509.01612)]
 
-* H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
-  *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
-  [[arxiv](https://arxiv.org/abs/2507.20848)]
 
 ## Peer-Reviewed Publications
 
 ### 2026
+
+* H. Ghianni, M. Zhang, J. P. Galeotti, A. Arcuri.
+  *Search-Based Fuzzing For RESTful APIs That Use MongoDB*.
+  ACM/IEEE International Conference on Automation of Software Test (AST).
+  (To appear)
 
 * S. Seran, G. Bhandari, A. Arcuri. 
   *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.

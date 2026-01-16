@@ -5,15 +5,16 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>4.0.1-SNAPSHOT</version>
+        <version>5.0.3-SNAPSHOT</version>
     </parent>
 
     <!--
         Need own module, to check old libraries, with version older than the ones speci
      -->
 
+    <name>${project.groupId}:${project.artifactId}</name>
     <artifactId>evomaster-test-old-libraries</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
@@ -36,6 +37,7 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -58,11 +60,12 @@
         <dependency>
             <groupId>javax.el</groupId>
             <artifactId>javax.el-api</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.glassfish.web</groupId>
             <artifactId>javax.el</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

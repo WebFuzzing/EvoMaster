@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>4.0.1-SNAPSHOT</version>
+    <version>5.0.3-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -17,14 +17,6 @@
     <url>www.evomaster.org</url>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>core-parent</module>
-        <module>core</module>
-        <module>core-extra</module>
-        <module>core-tests</module>
-        <module>client-java</module>
-        <module>test-utils</module>
-    </modules>
 
     <issueManagement>
         <system>Github</system>
@@ -40,39 +32,32 @@
 
     <profiles>
         <profile>
-            <id>Configs for JDK >= 17</id>
+            <id>default-build</id>
             <activation>
-                <jdk>[17,)</jdk>
+                <activeByDefault>true</activeByDefault>
             </activation>
-            <!--
-                Unfortunately, recent versions of Kotlin led to crashes due JDK 17 module access shenanigans :(
-                setting up .mvn/jvm.config is not a viable option, as it messes up build in JDK 8
-                so, need to use something like
-                MAVEN_OPTS="-Xmx4g - -add-opens=java.base/java.lang=ALL-UNNAMED - -add-opens=java.base/java.io=ALL-UNNAMED"  mvn
-                when running "mvn" on command line for JDK 17 :( what a mess...
-                (btw, note that XML above does not like 2 - - together... so command cannot be directly copy&pasted)
-                for CI, this is handled directly there
-
-                Check following in case Kotlin Plugin will avoid this issues in the future:
-                https://youtrack.jetbrains.com/issue/KT-56137#focus=Comments-27-6800445.0-0
-            -->
-            <properties>
-                <addOpens> --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
-            </properties>
+            <modules>
+                <module>core-parent</module>
+                <module>core</module>
+                <module>core-extra</module>
+                <module>core-tests</module>
+                <module>client-java</module>
+                <module>test-utils</module>
+            </modules>
         </profile>
         <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
-                   However, we also need this root pom.xml. So,
 
-                   On the root:
-                   mvn  -N -Pdeployment -DskipTests  deploy
-
-                   On "client-java":
                    mvn clean -Pdeployment -DskipTests  deploy
+
+                   see documentation on making release
               -->
             <id>deployment</id>
+            <modules>
+                <module>client-java</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -110,7 +95,7 @@
     </licenses>
 
     <properties>
-        <addOpens></addOpens> <!-- overridden in profile -->
+        <addOpens>  --add-opens java.base/sun.net.www.protocol.http=ALL-UNNAMED --add-opens java.base/sun.net.www.protocol.https=ALL-UNNAMED  --add-opens java.base/java.time=ALL-UNNAMED  --add-opens java.base/java.io=ALL-UNNAMED --add-opens java.logging/java.util.logging=ALL-UNNAMED --add-opens  java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens java.base/java.util=ALL-UNNAMED --add-opens java.base/java.util.regex=ALL-UNNAMED --add-opens java.base/java.net=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED</addOpens>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!--  Current version of Kotlin Maven Plugin does not support 25 yet    -->
@@ -118,9 +103,9 @@
         <java.version>17</java.version>
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <wfc.version>0.0.6</wfc.version>
-        <junit.jupiter.version>5.7.2</junit.jupiter.version>
-        <junit.platform.version>1.7.2</junit.platform.version>
+        <wfc.version>0.2.0</wfc.version>
+        <junit.jupiter.version>5.14.2</junit.jupiter.version>
+        <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
@@ -909,7 +894,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkCount>1</forkCount>

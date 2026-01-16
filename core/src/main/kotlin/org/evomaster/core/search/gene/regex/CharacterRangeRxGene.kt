@@ -106,6 +106,7 @@ class CharacterRangeRxGene(
     override fun copyContent(): Gene {
         val copy = CharacterRangeRxGene(negated, ranges)
         copy.value = this.value
+        copy.name = this.name //in case name is changed from its default
         return copy
     }
 

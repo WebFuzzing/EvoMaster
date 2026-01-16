@@ -57,7 +57,7 @@ def replaceInCI():
 def replaceInBBE2E():
     regex = re.compile(r'\s*<version>.*</version><!--MARKER-->\s*')
     replacement = '        <version>'+version+'</version><!--MARKER-->\n'
-    replace("e2e-tests/spring-rest-bb/maven/pom.xml", regex, replacement)
+    replace("core-tests/e2e-tests/spring/spring-rest-bb/maven/pom.xml", regex, replacement)
 
 ### JS and C# no longer supported
 # def replaceInJS():

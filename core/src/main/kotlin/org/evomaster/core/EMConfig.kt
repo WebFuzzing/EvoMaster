@@ -590,16 +590,24 @@ class EMConfig {
                     "Their sum should be lower or equal to 1.")
         }
 
+        //FIXME flattening/recomputation should be separated from "minimize" phase
         if(security && !minimize){
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
         if(!security && ssrf) {
-            throw ConfigProblemException("The use of 'ssrf' requires 'security'")
+            LoggingUtil.uniqueUserWarn("The use of 'ssrf' requires 'security'. SSRF analyses are hence disabled.")
+           //throw ConfigProblemException("The use of 'ssrf' requires 'security'")
         }
 
         if(!security && xss) {
-            throw ConfigProblemException("The use of 'xss' requires 'security'")
+            LoggingUtil.uniqueUserWarn("The use of 'xss' requires 'security'. XSS analyses are hence disabled.")
+            //throw ConfigProblemException("The use of 'xss' requires 'security'")
+        }
+
+        if(!security && sqli) {
+            LoggingUtil.uniqueUserWarn("The use of 'sqli' requires 'security'. SQLi analyses are hence disabled.")
+            //throw ConfigProblemException("The use of 'sqli' requires 'security'")
         }
 
         if (ssrf &&
@@ -1415,7 +1423,7 @@ class EMConfig {
     }
 
     @Experimental
-    @PercentageAsProbability
+    @PercentageAsProbability(false)
     @Cfg("If using THRESHOLD for AI Classification Repair, specify its value." +
             " All classifications with probability equal or above such threshold value will be accepted.")
     var classificationRepairThreshold = 0.8
@@ -1443,6 +1451,11 @@ class EMConfig {
     @Experimental
     @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
     var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+
+    @Experimental
+    @Cfg("Determines whether the AI response classifier skips model updates when the response " +
+            "indicates a server-side error with status code 500.")
+    var skipAIModelUpdateWhenResponseIs500 = false
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
@@ -2605,6 +2618,19 @@ class EMConfig {
     @Cfg("To apply XSS detection as part of security testing.")
     var xss = false
 
+    @Experimental
+    @Cfg("To apply SQLi detection as part of security testing.")
+    var sqli = false
+
+    @Experimental
+    @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
+    var sqliInjectedSleepDurationMs = 5500
+
+    @Experimental
+    @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    var sqliBaselineMaxResponseTimeMs = 2000
+
+
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
                 "By default, all oracles are enabled."
@@ -2791,7 +2817,7 @@ class EMConfig {
      * Breeder GA: truncation fraction to build parents pool P'. Range (0,1].
      */
     @Experimental
-    @PercentageAsProbability
+    @PercentageAsProbability(false)
     @Cfg("Breeder GA: fraction of top individuals to keep in parents pool (truncation).")
     var breederTruncationFraction: Double = 0.5
 
@@ -2947,6 +2973,18 @@ class EMConfig {
      * Some might be experimental, while others might be explicitly excluded by the user
      */
     fun isEnabledFaultCategory(category: FaultCategory) : Boolean{
+        if(category == DefinedFaultCategory.XSS && (!xss || !security)){
+            return false
+        }
+
+        if(category == DefinedFaultCategory.SQL_INJECTION && (!sqli || !security)){
+            return false
+        }
+
+        if(category == DefinedFaultCategory.SSRF && (!ssrf || !security)){
+            return false
+        }
+
         return category !in getDisabledOracleCodesList()
     }
 
