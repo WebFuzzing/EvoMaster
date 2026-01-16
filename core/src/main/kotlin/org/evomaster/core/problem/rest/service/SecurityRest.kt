@@ -727,7 +727,7 @@ class SecurityRest {
                 parentGetAction.doInitialize()
                 parentGetAction.auth = lastAuth
                 // Bind to the same path params from the 404 action to ensure same IDs
-                //FIXME this would not work for dynamic parameters
+                //FIXME this would currently not work for dynamic parameters
                 parentGetAction.bindToSamePathResolution(action404)
 
                 final.addResourceCall(
@@ -736,13 +736,6 @@ class SecurityRest {
                         sqlActions = listOf()
                     )
                 )
-
-                //FIXME unclear. should be refactored with dealing of dynamic params
-                final.seeMainExecutableActions()
-                    .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                        it.saveCreatedResourceLocation = true
-                    }
-                final.fixResourceForwardLinks()
             }
 
             final.modifySampleType(SampleType.SECURITY)
