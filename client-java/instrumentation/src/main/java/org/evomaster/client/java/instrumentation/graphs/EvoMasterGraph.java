@@ -808,8 +808,7 @@ public abstract class EvoMasterGraph<V, E extends DefaultEdge> {
                 SimpleLogger.info("exportet " + getName());
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            SimpleLogger.error("Failed to export graph " + getName() + " to DOT format", e);
         }
     }
 }
