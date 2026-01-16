@@ -53,10 +53,7 @@ public class BranchPool {
             pool.branchOrdinalCounters.clear();
             pool.branchCounter = 0;
         }
-    }
-    // fill the pool
-
-    
+    }    
 
     /**
      * Called by the BytecodeInstructionPool whenever it detects an instruction
