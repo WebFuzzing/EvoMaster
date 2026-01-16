@@ -27,7 +27,13 @@ public class FunctionFinder {
         super();
         this.addFunction(new TimeFunction());
         this.addFunction(new UpperFunction());
+        this.addFunction(new LowerFunction());
         this.addFunction(new StringDecodeFunction());
+        this.addFunction(new CoalesceFunction());
+        this.addFunction(new DateTruncFunction());
+        this.addFunction(new DateFunction());
+        this.addFunction(new NowFunction());
+
         // aggregation functions
         this.addFunction(new SqlCountFunction());
         this.addFunction(new SqlMaxFunction());
