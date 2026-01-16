@@ -233,7 +233,7 @@ object RestSecurityOracle {
             //FIXME i don't think it is correct, as ignoring dynamic info?
             //TODO need tests for it
             val matching = verifiers.filter {
-                notfound.usingSameResolvedPath(it)
+                it.isResolvedParentPath(notfound)
                         && ! notfound.auth.isDifferentFrom(it.auth)
             }
 
