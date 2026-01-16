@@ -326,10 +326,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void initMongoHandler() {
-        // This is needed because the replacement use to get this info occurs during the start of the SUT.
         Object connection = getMongoConnection();
         mongoHandler.setMongoClient(connection);
 
+        // Spring MongoDB repositories capture document type metadata during SUT startup.
+        // We must extract this schema info from MappingMongoEntityInformation instances
+        // created during initialization, as this mapping is not accessible from the
+        // standard MongoDB driver collections later on.
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
