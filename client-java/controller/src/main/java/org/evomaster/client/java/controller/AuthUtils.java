@@ -182,9 +182,11 @@ public class AuthUtils {
         le.setExpectCookies(false);
         le.setPayloadRaw(payload);
         le.setToken(new TokenHandling());
-        le.getToken().setExtractFromField(extractFromField);
-        le.getToken().setHeaderPrefix(headerPrefix);
-        le.getToken().setHttpHeaderName("Authorization");
+        le.getToken().setExtractFrom(TokenHandling.ExtractFrom.BODY);
+        le.getToken().setExtractSelector(extractFromField);
+        le.getToken().setSendIn(TokenHandling.SendIn.HEADER);
+        le.getToken().setSendName("Authorization");
+        le.getToken().setSendTemplate(headerPrefix+"{token}");
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
         dto.setLoginEndpointAuth(le);

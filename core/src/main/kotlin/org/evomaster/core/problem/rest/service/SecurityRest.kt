@@ -23,6 +23,7 @@ import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
@@ -71,7 +72,10 @@ class SecurityRest {
     private lateinit var builder: RestIndividualBuilder
 
     @Inject
-    protected lateinit var config: EMConfig
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -117,7 +121,12 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
-        //TODO possible other kinds of security tests here
+        //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
+        //SQLi, XSS, SSRF, etc.
+        addForInjections()
+
+        //eg leaked stack traces
+        addForInfoLeakage()
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -258,6 +267,41 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
+    private fun addForInjections() {
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            log.debug("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
+        }
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleSqlICheck()
+        }
+
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            ssrfAnalyser.apply()
+        }
+    }
+
+    private fun addForInfoLeakage() {
+
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+            log.debug("Skipping security test for existence leakage as disabled in configuration")
+        } else {
+            // getting 404 instead of 403
+            handleExistenceLeakage()
+        }
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
+        }
+    }
+
     private fun accessControlBasedOnRESTGuidelines() {
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
@@ -269,24 +313,11 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
-            log.debug("Skipping security test for existence leakage as disabled in configuration")
-        } else {
-            // getting 404 instead of 403
-            handleExistenceLeakage()
-        }
-
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
             log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
-        }
-
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
-            log.debug("Skipping security test for XSS as disabled in configuration")
-        } else {
-            handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
@@ -295,20 +326,12 @@ class SecurityRest {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+            log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
-            handleStackTraceCheck()
+            handleAnonymousWriteCheck()
         }
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
-            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
-        } else {
-            handleSqlICheck()
-        }
-
-        //TODO other rules. See FaultCategory
-        //etc.
     }
 
 
@@ -470,6 +493,87 @@ class SecurityRest {
         }
     }
 
+    /**
+     * Anonymous Write Check - Detects missing authentication on write operations.
+     *
+     * This check flags:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     */
+    private fun handleAnonymousWriteCheck(){
+        mainloop@ for(action in actionDefinitions){
+            if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.DELETE){
+                continue
+            }
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            // Take the smallest suspicious individual
+            val target = suspicious.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Check if this is a vulnerability
+            val actionResult = target.evaluatedMainActions()[actionIndex].result as? RestCallResult
+            if(actionResult == null){
+                continue
+            }
+
+            val statusCode = actionResult.getStatusCode()
+
+            // For PUT: only flag if it's NOT 201 (resource creation might be OK, update is not)
+            if(action.verb == HttpVerb.PUT && statusCode == 201){
+                continue
+            }
+
+            // This is a vulnerability: write operation without authentication
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            sliced.modifySampleType(SampleType.SECURITY)
+            sliced.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(sliced)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleAnonymousWriteCheck")
+                continue@mainloop
+            }
+
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                assert(added)
+                continue@mainloop
+            }
+        }
+    }
     /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
      * In theory, a bug. But, could be false positive if A is misconfigured.

@@ -43,6 +43,7 @@ class CharacterClassEscapeRxGene(
     override fun copyContent(): Gene {
         val copy = CharacterClassEscapeRxGene(type)
         copy.value = this.value
+        copy.name = this.name //in case name is changed from its default
         return copy
     }
 

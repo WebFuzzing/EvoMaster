@@ -766,7 +766,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -883,8 +883,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -940,14 +950,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -966,10 +976,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -980,21 +991,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
+        if(bodyEntity != null) {
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
+        }
+
         val invocation = when (a.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
             /*
                 As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
                 https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
              */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.GET -> builder.build("GET", bodyEntity)
             HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
@@ -1172,7 +1188,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 
@@ -1263,6 +1279,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleStackTraceCheck(individual, actionResults, fv)
         handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
+        handleAnonymousWriteCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1416,6 +1433,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         )
         fv.updateTarget(scenarioId, 1.0, index)
         injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.setVulnerableForSQLI(true)
     }
 
     /**
@@ -1517,6 +1535,50 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
                     break // Only add one fault per action
                 }
+            }
+        }
+    }
+
+    private fun handleAnonymousWriteCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)){
+            return
+        }
+
+        // Get all write operation paths (PUT, PATCH, DELETE)
+        val writePaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = writePaths.filter { RestSecurityOracle.hasAnonymousWrite(it, individual, actionResults) }
+
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
+                && faultyPaths.contains(a.path)
+                && a.auth is NoAuth
+                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+
+                // For PUT, check if it's 201 (resource creation - might be OK)
+                if(a.verb == HttpVerb.PUT && r.getStatusCode() == 201){
+                    continue
+                }
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName(), null))
             }
         }
     }

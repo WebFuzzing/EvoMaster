@@ -37,7 +37,7 @@ import javax.ws.rs.core.Response
 class RemoteControllerImplementation() : RemoteController{
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(RemoteController::class.java)
+        val log: Logger = LoggerFactory.getLogger(RemoteControllerImplementation::class.java)
     }
 
     lateinit var host: String

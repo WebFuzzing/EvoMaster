@@ -87,12 +87,12 @@ class AIResponseClassifier : AIModel {
         }
     }
 
-
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
-        // Skip empty action
-        if (input.parameters.isEmpty()) {
+
+        if (skipUpdate(input, output)) {
             return
         }
+
         if(enabledLearning) {
             delegate.updateModel(input, output)
         } else {
@@ -131,14 +131,21 @@ class AIResponseClassifier : AIModel {
         val metrics = estimateMetrics(call.endpoint)
 
         /**
-         * Skips repair if the classifier is still weak, as indicated by low accuracy and F1-score
-         * (see [ModelEvaluation]). A threshold of accuracy > 0.5 ensures that the classifier performs
-         * better than random guessing overall, while an F1-score > 0.2 ensures at least minimal skill
-         * in identifying 400 responses. If either threshold is not met, the classifier is not yet
-         * reliable for guiding repairs. In such cases, the call is executed as originally generated
-         * to allow the classifier to gather more informative data and improve over time.
+         * Skips repair when the classifier is still too weak to provide meaningful guidance.
+         * Reliability is assessed using accuracy, F1-score, and MCC (see [ModelEvaluation]).
+         *
+         * - Accuracy > 0.5 ensures the model performs better than random guessing.
+         * - F1-score > 0.0 indicates the minimal ability to recognize 400 responses.
+         * - MCC > 0.0 confirms that the classifier has at least weak but non-random
+         *   discriminative power, especially important under the class imbalance.
+         *
+         * If any of these thresholds are not met, the classifier is considered unreliable
+         * for steering repairs. In such cases, the call is executed without modification so the
+         * classifier can gather additional informative samples and improve over time.
          */
-        if(!(metrics.accuracy > 0.5 && metrics.f1Score400 > 0.2)){
+        if (!(metrics.accuracy > 0.5
+            && metrics.f1Score400 > 0.0
+            && metrics.mcc > 0.0)) {
             //do nothing
             return
         }
@@ -180,7 +187,6 @@ class AIResponseClassifier : AIModel {
         //TODO
     }
 
-
     private fun repairAction(
         call: RestCallAction,
         classification: AIResponseClassification
@@ -193,6 +199,22 @@ class AIResponseClassifier : AIModel {
             Anyway, AIResponseClassification would need to be extended to handle this extra info, when available.
          */
     }
+
+    /**
+     * Decide whether based on the observation, the model update should be skipped or not.
+     */
+    private fun skipUpdate(input: RestCallAction, output: RestCallResult): Boolean {
+
+        // skip if no input parameters
+        if (input.parameters.isEmpty()) return true
+
+        // Get the status code and skip if it is null
+        val trueStatusCode = output.getStatusCode() ?: return true
+
+        // optionally skip if server-side error (500)
+        return trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500
+    }
+
 
     /**
      * Only needed during testing to avoid modifying the model while evaluating manually crafted actions
