@@ -55,13 +55,25 @@ class Main {
     companion object {
 
         /**
+         * Anything that impact whole JVM, needs to be done here, and called as first step in the main.
+         * Note: this is done as a function because tests will usually not call Main, and might rely
+         * on those settings for their behavior
+         */
+        @JvmStatic
+        fun applyGlobalJVMSettings(){
+            Locale.setDefault(Locale.ENGLISH)
+            //otherwise parser will crash on large OpenAPI schemas
+            System.setProperty("maxYamlCodePoints", "" + (50 * 1024 * 1024))
+        }
+
+        /**
          * Main entry point of the EvoMaster application
          */
         @JvmStatic
         fun main(args: Array<String>) {
 
             try {
-                Locale.setDefault(Locale.ENGLISH)
+                applyGlobalJVMSettings()
 
                 printLogo()
                 printVersion()

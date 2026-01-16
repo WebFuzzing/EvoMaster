@@ -2,6 +2,7 @@ package org.evomaster.client.java.distance.heuristics;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.UUID;
 
 public class TruthnessUtils {
 
@@ -132,6 +133,7 @@ public class TruthnessUtils {
 
     /**
      * Returns a truthness value for comparing how close a length was to 0.
+     *
      * @param len a positive value for a length
      * @return a Truthness instance
      */
@@ -190,13 +192,13 @@ public class TruthnessUtils {
      * <p>
      * This method returns XOR(a,b) as (a AND NOT b) OR (NOT a AND b).
      *
-     * @param left the first Truthness instance
+     * @param left  the first Truthness instance
      * @param right the second Truthness instance
      * @return a new Truthness instance representing the XOR aggregation of the input Truthness instances
      */
     public static Truthness buildXorAggregationTruthness(Truthness left, Truthness right) {
-        Truthness leftAndNotRight = buildAndAggregationTruthness(left,right.invert());
-        Truthness notLeftAndRight = buildAndAggregationTruthness(left.invert(),right);
+        Truthness leftAndNotRight = buildAndAggregationTruthness(left, right.invert());
+        Truthness notLeftAndRight = buildAndAggregationTruthness(left.invert(), right);
         Truthness orAggregation = buildOrAggregationTruthness(leftAndNotRight, notLeftAndRight);
         return orAggregation;
     }
@@ -294,7 +296,7 @@ public class TruthnessUtils {
      * and creates a Truthness instance where the `ofTrue` field is the scaled value and
      * the `ofFalse` field is set to 1.0.
      *
-     * @param base the base value used for scaling
+     * @param base          the base value used for scaling
      * @param ofTrueToScale the value to be scaled
      * @return a new Truthness instance with the scaled `ofTrue` value and `ofFalse` set to 1.0
      */
@@ -305,5 +307,16 @@ public class TruthnessUtils {
     }
 
 
+    public static Truthness getEqualityTruthness(UUID left, UUID right) {
+        Objects.requireNonNull(left);
+        Objects.requireNonNull(right);
+
+        double distance = DistanceHelper.getDistance(left, right);
+        double normalizedDistance = normalizeValue(distance);
+        return new Truthness(
+                1d - normalizedDistance,
+                !left.equals(right) ? 1d : 0d
+        );
+    }
 
 }

@@ -4,10 +4,7 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.api.dto.database.schema.TableIdDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -201,6 +198,7 @@ public class SqlHandlerTest {
         schema.tables.add(employeesTable);
         schema.tables.add(departmentsTable);
         schema.tables.add(locationsTable);
+        schema.databaseType = DatabaseType.POSTGRES;
 
         return schema;
     }
@@ -423,5 +421,58 @@ public class SqlHandlerTest {
                 "FROM Employees e JOIN Departments d ON e.department_id = d.id WHERE e.income > 100", distances.get(0).sqlCommand);
         assertNotEquals(0, distances.get(0).sqlDistanceWithMetrics.sqlDistance);
     }
+
+    @Test
+    public void testExtractColumns() throws Exception {
+        String select = "SELECT id,name FROM Employees e WHERE e.income >1000;";
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        final SqlHandler sqlHandler = new SqlHandler(null);
+        final DbInfoDto schema = createSchema();
+        sqlHandler.setSchema(schema);
+        Map<SqlTableId, Set<SqlColumnId>> columnsInvolvedInWhere = sqlHandler.extractColumnsInvolvedInWhere(stmt);
+
+        assertEquals(1, columnsInvolvedInWhere.keySet().size());
+        final SqlTableId employeesTable = new SqlTableId(null,null,"employees");
+        assertTrue(columnsInvolvedInWhere.containsKey(employeesTable));
+
+        assertEquals(1, columnsInvolvedInWhere.get(employeesTable).size());
+        final SqlColumnId incomeColumn = new SqlColumnId("income");
+        assertTrue(columnsInvolvedInWhere.get(employeesTable).contains(incomeColumn));
+    }
+
+    @Test
+    public void testExtractColumnsWithSchema() throws Exception {
+        TableDto usertTableDto = new TableDto();
+        usertTableDto.id = new TableIdDto();
+        usertTableDto.id.schema = "public";
+        usertTableDto.id.name = "users";
+        usertTableDto.columns.add(createColumnDto("users", "user_id", "INTEGER"));
+        usertTableDto.columns.add(createColumnDto("users", "income", "INTEGER"));
+
+        DbInfoDto schema = new DbInfoDto();
+        schema.tables.add(usertTableDto);
+        schema.databaseType = DatabaseType.POSTGRES;
+
+        String select = "SELECT user_id FROM public.users u WHERE u.income >1000;";
+        Statement stmt = CCJSqlParserUtil.parse(select);
+
+        final SqlHandler sqlHandler = new SqlHandler(null);
+        sqlHandler.setSchema(schema);
+        Map<SqlTableId, Set<SqlColumnId>> columnsInvolvedInWhere = sqlHandler.extractColumnsInvolvedInWhere(stmt);
+
+        assertEquals(1, columnsInvolvedInWhere.keySet().size());
+        /**
+         * The extraction of columns implemented in extractColumnsInvolvedInWhere() is legacy.
+         * Therefore, it does not keep the schema name when the table name is extracted.
+         */
+        final SqlTableId usersTableId = new SqlTableId(null, null, "users");
+        assertTrue(columnsInvolvedInWhere.containsKey(usersTableId));
+
+        assertEquals(1, columnsInvolvedInWhere.get(usersTableId).size());
+        final SqlColumnId incomeColumn = new SqlColumnId("income");
+        assertTrue(columnsInvolvedInWhere.get(usersTableId).contains(incomeColumn));
+    }
+
 
 }
