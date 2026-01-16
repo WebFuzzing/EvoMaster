@@ -3,6 +3,7 @@ package org.evomaster.client.java.sql.heuristic;
 import org.evomaster.client.java.sql.SqlDataType;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import static org.evomaster.client.java.sql.SqlDataType.*;
 
@@ -179,6 +180,21 @@ public class SqlCastHelper {
             return castToDateTime(value);
         }
 
+        if (SqlDataType.isUUIDType(dataType)) {
+            return castoToUUID(value);
+        }
+
         throw new IllegalArgumentException("Must implement casting to " + dataType + ": " + value);
+    }
+
+    private static Object castoToUUID(Object value) {
+        if (value instanceof String) {
+            String s = (String) value;
+            return java.util.UUID.fromString(s);
+        } else if (value instanceof UUID){
+            return value;
+        } else {
+            throw new IllegalArgumentException("Cannot cast to UUID: " + value);
+        }
     }
 }

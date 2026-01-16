@@ -1,5 +1,6 @@
 package org.evomaster.client.java.sql;
 
+import net.sf.jsqlparser.statement.select.OrderByElement;
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto;
 
 import java.lang.reflect.Method;
@@ -195,4 +196,26 @@ public class QueryResult {
         }
         return variableDescriptors.get(0).getTableName();
     }
+
+    /**
+     * Creates a new QueryResult containing only the first 'limit' rows
+     * of the current QueryResult.
+     *
+     * @param limit the maximum number of rows to include in the new QueryResult
+     * @return a new QueryResult with at most 'limit' rows
+     */
+    public QueryResult limit(long limit) {
+        if (limit < 0) {
+            throw new IllegalArgumentException("Limit must be non-negative");
+        }
+        if (limit >= rows.size()) {
+            return this;
+        }
+        QueryResult limitedResult = new QueryResult(this.variableDescriptors);
+        for (int i = 0; i < limit; i++) {
+            limitedResult.addRow(this.rows.get(i));
+        }
+        return limitedResult;
+    }
+
 }
