@@ -2391,8 +2391,9 @@ class EMConfig {
      * Enable writing Control-Flow and related graphs (e.g., DOT/PNG) on the agent side.
      * This controls only the persistence of graphs to disk; graph creation is controlled separately.
      */
+    @Experimental
     @Cfg("Enable writing CFG/CDG graphs to disk on the agent side")
-    var writeCfg: Boolean = true
+    var writeCfg: Boolean = false
 
     @Cfg("Specify whether to employ smart database clean to clear data in the database if the SUT has." +
             "`null` represents to employ the setting specified on the EM driver side")
