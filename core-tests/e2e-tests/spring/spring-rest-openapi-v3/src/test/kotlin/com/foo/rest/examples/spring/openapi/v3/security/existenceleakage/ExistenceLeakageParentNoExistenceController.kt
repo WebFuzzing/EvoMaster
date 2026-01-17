@@ -1,11 +1,12 @@
 package com.foo.rest.examples.spring.openapi.v3.security.existenceleakage
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
-import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.base.ExistenceLeakageApplication
+import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.parentauth.ExistenceLeakageParentApplication
+import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.parentnoexistence.ExistenceLeakageParentNoExistenceApplication
 import org.evomaster.client.java.controller.AuthUtils
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 
-class ExistenceLeakageController : SpringController(ExistenceLeakageApplication::class.java) {
+class ExistenceLeakageParentNoExistenceController : SpringController(ExistenceLeakageParentNoExistenceApplication::class.java) {
 
     override fun getInfoForAuthentication(): List<AuthenticationDto> {
         return listOf(
@@ -15,7 +16,7 @@ class ExistenceLeakageController : SpringController(ExistenceLeakageApplication:
     }
 
     override fun resetStateOfSUT() {
-        ExistenceLeakageApplication.reset()
+        ExistenceLeakageParentNoExistenceApplication.reset()
     }
 
 }
