@@ -108,9 +108,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     private lateinit var schemaOracle: RestSchemaOracle
 
+    /**
+     * All actions that can be defined from the OpenAPI schema
+     */
+    private lateinit var actionDefinitions: List<RestCallAction>
+
     @PostConstruct
     fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
     }
 
 
@@ -1361,7 +1367,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             .map { it.path }
             .toSet()
 
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        val faultyPaths = getPaths.filter {
+            RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults, actionDefinitions)
+        }
         if(faultyPaths.isEmpty()){
             return
         }
