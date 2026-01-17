@@ -175,30 +175,27 @@ object AuthUtils {
         }
 
         if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
-            try {
-                /*
-                    if it is a 3xx, we need to look at Location header to determine
-                    if a success or failure.
-                    TODO: could explicitly ask for this info in the auth DTO.
-                    However, as 3xx makes little sense in a REST API, maybe not so
-                    important right now, although had this issue with some APIs using
-                    default settings in Spring Security
-                */
-                if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
-                    val location = response.getHeaderString("location")
-                    if (location != null && (location.contains("error", true) || location.contains("login", true))) {
-                        log.warn("Login request failed with ${response.status} redirection toward $location")
-                        return null
-                    }
+
+            /*
+                if it is a 3xx, we need to look at Location header to determine
+                if a success or failure.
+                TODO: could explicitly ask for this info in the auth DTO.
+                However, as 3xx makes little sense in a REST API, maybe not so
+                important right now, although had this issue with some APIs using
+                default settings in Spring Security
+            */
+            if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
+                val location = response.getHeaderString("location")
+                if (location != null && (location.contains("error", true) || location.contains("login", true))) {
+                    log.warn("Login request failed with ${response.status} redirection toward $location")
+                    response.close()
+                    return null
                 }
-                else {
-                    log.warn("Login request failed with status ${response.status}")
-                 }
-            }
-            finally {
+            } else {
+                log.warn("Login request failed with status ${response.status}")
                 response.close()
+                return null
             }
-            return null
         }
 
         return response
