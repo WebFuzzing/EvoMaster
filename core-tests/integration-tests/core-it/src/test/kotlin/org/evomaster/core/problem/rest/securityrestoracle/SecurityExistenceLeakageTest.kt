@@ -82,7 +82,7 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
         assertEquals(403, r1.getStatusCode())
         assertEquals(404, r2.getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasExistenceLeakage(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
+        val faultDetected = RestSecurityOracle.hasExistenceLeakage(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults(), listOf())
         assertTrue(faultDetected)
 
         //fault should be put on 404

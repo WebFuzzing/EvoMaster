@@ -67,8 +67,8 @@ public class QueryResultTransformerTest {
                 .dtos();
 
         Map<SqlTableId, Set<SqlColumnId>> columns = new HashMap<SqlTableId, Set<SqlColumnId>>() {{
-            put(new SqlTableId("FooTable"), new HashSet<>(Arrays.asList(new SqlColumnId("fooA"), new SqlColumnId("fooC"))));
-            put(new SqlTableId("BarTable"), new HashSet<>(Arrays.asList(new SqlColumnId("barB"), new SqlColumnId("barC"), new SqlColumnId("barD"), new SqlColumnId("barE"))));
+            put(new SqlTableId(null,null,"FooTable"), new HashSet<>(Arrays.asList(new SqlColumnId("fooA"), new SqlColumnId("fooC"))));
+            put(new SqlTableId(null,null,"BarTable"), new HashSet<>(Arrays.asList(new SqlColumnId("barB"), new SqlColumnId("barC"), new SqlColumnId("barD"), new SqlColumnId("barE"))));
         }};
 
 
@@ -255,13 +255,13 @@ public class QueryResultTransformerTest {
         DbInfoDto schema = createSchema();
 
         Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
-        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"employees"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("income"),
                 new SqlColumnId("department_id"))));
 
-        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"departments"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("location_id"))));
@@ -295,13 +295,13 @@ public class QueryResultTransformerTest {
         DbInfoDto schema = createSchema();
 
         Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
-        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"employees"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("income"),
                 new SqlColumnId("department_id"))));
 
-        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"departments"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("location_id"))));
@@ -337,13 +337,13 @@ public class QueryResultTransformerTest {
         DbInfoDto schema = createSchema();
 
         Map<SqlTableId,Set<SqlColumnId>> columns = new HashMap<>();
-        columns.put(new SqlTableId("employees"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"employees"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("income"),
                 new SqlColumnId("department_id"))));
 
-        columns.put(new SqlTableId("departments"), new HashSet<>(Arrays.asList(
+        columns.put(new SqlTableId(null,null,"departments"), new HashSet<>(Arrays.asList(
                 new SqlColumnId("id"),
                 new SqlColumnId("name"),
                 new SqlColumnId("location_id"))));

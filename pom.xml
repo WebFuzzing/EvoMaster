@@ -9,7 +9,7 @@
         To change version in all modules, use:
         mvn versions:set -DnewVersion=a.b.c
      -->
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.0.3-SNAPSHOT</version>
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
@@ -17,14 +17,6 @@
     <url>www.evomaster.org</url>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>core-parent</module>
-        <module>core</module>
-        <module>core-extra</module>
-        <module>core-tests</module>
-        <module>client-java</module>
-        <module>test-utils</module>
-    </modules>
 
     <issueManagement>
         <system>Github</system>
@@ -40,18 +32,32 @@
 
     <profiles>
         <profile>
+            <id>default-build</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>core-parent</module>
+                <module>core</module>
+                <module>core-extra</module>
+                <module>core-tests</module>
+                <module>client-java</module>
+                <module>test-utils</module>
+            </modules>
+        </profile>
+        <profile>
             <!--
                    This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
-                   However, we also need this root pom.xml. So,
 
-                   On the root:
-                   mvn  -N -Pdeployment -DskipTests  deploy
-
-                   On "client-java":
                    mvn clean -Pdeployment -DskipTests  deploy
+
+                   see documentation on making release
               -->
             <id>deployment</id>
+            <modules>
+                <module>client-java</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -98,8 +104,8 @@
         <kotlin.version>2.2.20</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
         <wfc.version>0.2.0</wfc.version>
-        <junit.jupiter.version>5.7.2</junit.jupiter.version>
-        <junit.platform.version>1.7.2</junit.platform.version>
+        <junit.jupiter.version>5.14.2</junit.jupiter.version>
+        <junit.platform.version>1.14.2</junit.platform.version>
         <springboot3.version>3.1.5</springboot3.version>
         <springfox.version>3.0.0</springfox.version>
         <jetty.version>9.4.29.v20200521</jetty.version>
@@ -896,7 +902,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>3.5.4</version>
                     <configuration>
                         <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
                         <forkCount>1</forkCount>

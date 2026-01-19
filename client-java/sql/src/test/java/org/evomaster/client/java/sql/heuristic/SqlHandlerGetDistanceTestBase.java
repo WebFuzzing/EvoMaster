@@ -1,5 +1,8 @@
 package org.evomaster.client.java.sql.heuristic;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.api.dto.database.execution.SqlExecutionLogDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto;
@@ -8,6 +11,7 @@ import org.evomaster.client.java.sql.DbInfoExtractor;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.internal.SqlCommandWithDistance;
 import org.evomaster.client.java.sql.internal.SqlHandler;
+import org.evomaster.client.java.sql.internal.TablesAndColumnsFinder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,8 +19,10 @@ import org.junit.jupiter.api.Test;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class SqlHandlerGetDistanceTestBase {
 
@@ -720,5 +726,38 @@ public abstract class SqlHandlerGetDistanceTestBase {
         // TODO Check expected distance
     }
 
+
+    @Test
+    public void testTableFinder() throws JSQLParserException {
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        String sql = "Select * From customers";
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(1, finder.getBaseTableReferences().size());
+        SqlTableReference sqlTableReference = finder.getBaseTableReferences().iterator().next();
+        assertTrue(sqlTableReference instanceof SqlBaseTableReference);
+        SqlBaseTableReference baseTableReference = (SqlBaseTableReference) sqlTableReference;
+        assertEquals("customers", baseTableReference.getTableId().getTableName());
+        assertEquals("public", baseTableReference.getTableId().getSchemaName().toLowerCase());
+
+        Set<SqlColumnReference> columnReferences = finder.getColumnReferences(baseTableReference);
+        assertEquals(3, columnReferences.size());
+
+        assertTrue(columnReferences.contains(new SqlColumnReference(baseTableReference, "name")));
+        assertTrue(columnReferences.contains(new SqlColumnReference(baseTableReference, "id")));
+        assertTrue(columnReferences.contains(new SqlColumnReference(baseTableReference, "age")));
+    }
+
+    @Test
+    public void testTableFinderWithAlias() throws JSQLParserException {
+        TablesAndColumnsFinder finder = new TablesAndColumnsFinder(schema);
+        String sql = "SELECT * FROM customers c WHERE name = 'joh' AND EXISTS (SELECT customer_id FROM orders WHERE customer_id = c.id)";
+        Statement statement = CCJSqlParserUtil.parse(sql);
+        statement.accept(finder);
+
+        assertEquals(2, finder.getBaseTableReferences().size());
+
+    }
 
 }

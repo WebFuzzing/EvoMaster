@@ -72,8 +72,6 @@ py version.py x.y.z
 
 From project root  folder, execute:
 ```
-mvn  -N -Pdeployment -DskipTests  deploy
-cd client-java
 mvn clean -Pdeployment -DskipTests  deploy
 ```
 
@@ -107,25 +105,6 @@ git push --delete origin v<x.y.z>
 
 Once a release is completed, make sure to close all the [GitHub Issues](https://github.com/WebFuzzing/EvoMaster/issues) that were marked with '__FIXED in SNAPSHOT__'.
 
-## GitHub Release (OLD MANUAL VERSION) 
-
-Push the version changes in the `pom.xml` files on Git.
-Build the whole `EvoMaster` from project root folder with:
-```
-mvn clean package -DskipTests
-``` 
-
-Make sure to use `package` and __NOT__ `install` (more on this later).
-Furthermore, compilation __MUST__ be done with the _lowest_ JDK version currently
-supported in _EvoMaster_.
-
-From the [release](https://github.com/WebFuzzing/EvoMaster/releases) page
-on GitHub, create a new release.
-It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
-On GitHub, upload the `core/target/evomaster.jar` executable as part of the release 
-(there should be an option for _attaching binaries_).
-
-Update: now we are building `.msi`/`.deb`/`.dmg` files as well, as part of GitHub Action CI. Download those from the release commit, and upload them here in the release page. 
 
 ## SNAPSHOT Update
 
