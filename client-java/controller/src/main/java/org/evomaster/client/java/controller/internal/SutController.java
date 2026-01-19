@@ -356,12 +356,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     public final void initRedisHandler() {
         ReflectionBasedRedisClient connection = getRedisConnection();
         redisHandler.setRedisClient(connection);
-
-        List<AdditionalInfo> list = getAdditionalInfoList();
-        if (!list.isEmpty()) {
-            AdditionalInfo last = list.get(list.size() - 1);
-            last.getRedisCommandData().forEach(redisHandler::handle);
-        }
     }
 
     /**
