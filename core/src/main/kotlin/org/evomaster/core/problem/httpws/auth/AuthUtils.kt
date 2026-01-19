@@ -70,6 +70,7 @@ object AuthUtils {
                 }
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = response.getHeaderString(data.extractSelector)
+                    response.close()
                     if(header == null || header.isEmpty()){
                         log.warn("Failed login. No token to extract from header '${data.extractSelector}'")
                         continue
