@@ -2,11 +2,16 @@
 
 Under development in `master` branch.
 
+### Fixed Bugs
+
+- fixed a connection leak when authentication fails
+
+
 # Version 5.0.2
 
 ### Fixed Bugs
 
-- fixes issues when parsing OpenAPI schemas with PATCH methods and YAML size more than 3MB.
+- fixed issues when parsing OpenAPI schemas with PATCH methods and YAML size more than 3MB.
 
 # Version 5.0.0
 
