@@ -2475,8 +2475,8 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Specify whether to detect flaky assertions during post handling of fuzzing.")
-    var detectFlakiness = false
+    @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing.")
+    var handleFlakiness = false
 
     @Experimental
     @Cfg("Specify a method to select the first external service spoof IP address.")

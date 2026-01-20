@@ -32,7 +32,7 @@ class FlakinessDetectEMTest : SpringTestBase() {
 
             args.add("--minimize")
             args.add("true")
-            args.add("--detectFlakiness")
+            args.add("--handleFlakiness")
             args.add("true")
 
 

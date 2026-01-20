@@ -1470,7 +1470,7 @@ public void test() throws Exception {
         fooResult.setFlakiness(barResult)
 
         val config = getConfig(format)
-        config.detectFlakiness = true
+        config.handleFlakiness = true
 
         val test = TestCase(test = ei, name = "test")
 
@@ -1544,7 +1544,7 @@ public void test() throws Exception {
         fooResult.setFlakiness(barResult)
 
         val config = getConfig(format)
-        config.detectFlakiness = true
+        config.handleFlakiness = true
 
         val test = TestCase(test = ei, name = "test")
 
