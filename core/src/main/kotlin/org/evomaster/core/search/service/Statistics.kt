@@ -357,7 +357,13 @@ class Statistics : SearchListener {
         precision: Double,
         recall: Double,
         f1: Double,
-        mcc: Double
+        mcc: Double,
+        updateTimeNs: Long,
+        updateCount: Long,
+        classifyTimeNs: Long,
+        classifyCount: Long,
+        repairTimeNs: Long,
+        repairCount: Long
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
         Pair("ai_model_type", type),
@@ -365,7 +371,15 @@ class Statistics : SearchListener {
         Pair("ai_precision400", "%.4f".format(precision)),
         Pair("ai_recall400", "%.4f".format(recall)),
         Pair("ai_f1Score400", "%.4f".format(f1)),
-        Pair("ai_mcc400", "%.4f".format(mcc))
+        Pair("ai_mcc400", "%.4f".format(mcc)),
+
+        // timing in milliseconds
+        Pair("ai_update_time_ms", "%.4f".format(updateTimeNs / 1_000_000.0)),
+        Pair("ai_update_count", updateCount.toString()),
+        Pair("ai_classify_time_ms", "%.4f".format(classifyTimeNs / 1_000_000.0)),
+        Pair("ai_classify_count", classifyCount.toString()),
+        Pair("ai_repair_time_ms", "%.4f".format(repairTimeNs / 1_000_000.0)),
+        Pair("ai_repair_count", repairCount.toString())
     )
 
     fun getAIData(): List<Pair> {
@@ -378,7 +392,13 @@ class Statistics : SearchListener {
                 precision = 0.0,
                 recall = 0.0,
                 f1 = 0.0,
-                mcc = 0.0
+                mcc = 0.0,
+                updateTimeNs = 0,
+                updateCount = 0,
+                classifyTimeNs = 0,
+                classifyCount = 0,
+                repairTimeNs = 0,
+                repairCount = 0
             )
         }
 
@@ -392,7 +412,13 @@ class Statistics : SearchListener {
             precision = metrics.precision400,
             recall = metrics.recall400,
             f1 = metrics.f1Score400,
-            mcc = metrics.mcc
+            mcc = metrics.mcc,
+            updateTimeNs = aiResponseClassifier.getUpdateTimeNs(),
+            updateCount = aiResponseClassifier.getUpdateCount(),
+            classifyTimeNs = aiResponseClassifier.getClassifyTimeNs(),
+            classifyCount = aiResponseClassifier.getClassifyCount(),
+            repairTimeNs = aiResponseClassifier.getRepairTimeNs(),
+            repairCount = aiResponseClassifier.getRepairCount()
         )
     }
 

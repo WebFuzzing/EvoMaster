@@ -18,7 +18,7 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-
+import kotlin.system.measureNanoTime
 
 
 class AIResponseClassifier : AIModel {
@@ -37,6 +37,22 @@ class AIResponseClassifier : AIModel {
 
     private var enabledLearning : Boolean = true
 
+    // For statistics
+    private var updateTimeNs: Long = 0
+    private var updateCount: Long = 0
+    private var classifyTimeNs: Long = 0
+    private var classifyCount: Long = 0
+    private var repairTimeNs: Long = 0
+    private var repairCount: Long = 0
+
+    fun getUpdateTimeNs(): Long = updateTimeNs
+    fun getUpdateCount(): Long = updateCount
+    fun getClassifyTimeNs(): Long = classifyTimeNs
+    fun getClassifyCount(): Long = classifyCount
+    fun getRepairTimeNs(): Long = repairTimeNs
+    fun getRepairCount(): Long = repairCount
+
+    
     @PostConstruct
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
@@ -94,7 +110,14 @@ class AIResponseClassifier : AIModel {
         }
 
         if(enabledLearning) {
+
+            val start = System.nanoTime()
             delegate.updateModel(input, output)
+            val t = System.nanoTime() - start
+
+            updateTimeNs += t
+            updateCount++
+
         } else {
             log.warn("Trying to update model, but learning is disabled. This should ONLY happen when running tests in EM")
         }
@@ -106,7 +129,15 @@ class AIResponseClassifier : AIModel {
         if (input.parameters.isEmpty()) {
             return AIResponseClassification()
         }
-        return delegate.classify(input)
+
+        val start = System.nanoTime()
+        val result = delegate.classify(input)
+        val t = System.nanoTime() - start
+
+        classifyTimeNs += t
+        classifyCount++
+
+        return result
     }
 
     override fun estimateMetrics(endpoint: Endpoint): ModelEvaluation {
@@ -179,7 +210,13 @@ class AIResponseClassifier : AIModel {
             }
 
             if(repair){
+                val start = System.nanoTime()
                 repairAction(call, classification)
+                val t = System.nanoTime() - start
+
+                repairTimeNs += t
+                repairCount++
+
             } else {
                 return
             }
