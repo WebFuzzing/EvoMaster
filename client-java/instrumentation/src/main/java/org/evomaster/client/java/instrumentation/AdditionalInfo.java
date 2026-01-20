@@ -106,7 +106,7 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoFindCommand> mongoFindCommandData = new CopyOnWriteArraySet<>();
 
-    private final Set<Neo4JRunCommand> Neo4JRunCommandData = new CopyOnWriteArraySet<>();
+    private final Set<Neo4JRunCommand> neo4JRunCommandData = new CopyOnWriteArraySet<>();
 
     private final Set<OpenSearchCommand> openSearchCommandData = new CopyOnWriteArraySet<>();
 
@@ -123,7 +123,7 @@ public class AdditionalInfo implements Serializable {
     }
 
     public Set<Neo4JRunCommand> getNeo4JInfoData(){
-        return Collections.unmodifiableSet(Neo4JRunCommandData);
+        return Collections.unmodifiableSet(neo4JRunCommandData);
     }
 
     public Set<OpenSearchCommand> getOpenSearchInfoData() {
@@ -147,7 +147,7 @@ public class AdditionalInfo implements Serializable {
     }
 
     public void addNeo4JInfo(Neo4JRunCommand info){
-        Neo4JRunCommandData.add(info);
+        neo4JRunCommandData.add(info);
     }
 
     public void addOpenSearchInfo(OpenSearchCommand info){
