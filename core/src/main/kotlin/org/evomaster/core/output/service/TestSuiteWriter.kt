@@ -439,6 +439,7 @@ class TestSuiteWriter {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
+                addImport("io.restassured.config.ObjectMapperConfig", lines)
             }
 
             addImport("java.util.List", lines)
@@ -812,6 +813,17 @@ class TestSuiteWriter {
                     lines.indented {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        if (config.dtoSupportedForPayload() && containsDtos) {
+                            lines.indented {
+                                lines.add(".objectMapperConfig(")
+                                lines.indented {
+                                    lines.add("ObjectMapperConfig.objectMapperConfig()")
+                                    val newQualifier = if (format.isJava()) "new" else ""
+                                    lines.add(".jackson2ObjectMapperFactory($newQualifier CustomControlCharMapperFactory())")
+                                }
+                                lines.add(")")
+                            }
+                        }
                     }
                     lines.appendSemicolon()
                 }

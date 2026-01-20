@@ -5,15 +5,24 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
 import java.nio.file.Path
 
-class KotlinDtoOutput: JvmDtoOutput() {
+class KotlinDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
 
-    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
         addImports(lines)
-        declareClass(lines, dtoFilename.getClassName(), dtoClass)
+        declareDtoClass(lines, dtoFilename.getClassName(), dtoClass)
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
+    }
+
+    override fun writeObjectMapperClass(testSuitePath: Path, testSuitePackage: String) {
+        val mapperFilename = TestSuiteFileName(appendDtoPackage(customControlCharMapperFactory))
+        val lines = Lines(outputFormat)
+        setPackage(lines, testSuitePackage)
+        addMapperImports(lines)
+        addMapperContentClass(lines)
+        saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, mapperFilename, outputFormat))
     }
 
     override fun getNewObjectStatement(dtoName: String, dtoVarName: String): String {
@@ -32,7 +41,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value)"
     }
 
-    private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
+    private fun declareDtoClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("class $dtoFilename(")
         addVariables(lines, dtoClass)
@@ -47,6 +56,51 @@ class KotlinDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
+    }
+
+    private fun addMapperContentClass(lines: Lines) {
+        lines.add("class $customControlCharMapperFactory : Jackson2ObjectMapperFactory {")
+        lines.addEmpty()
+        lines.indented {
+            lines.add("override fun create(cls: Type, charset: String): ObjectMapper {")
+            lines.indented {
+                lines.add("val mapper = ObjectMapper()")
+                lines.add("mapper.registerModule(Jdk8Module())")
+                lines.add("mapper.factory.setCharacterEscapes(NoEscapeControlChars())")
+                lines.add("return mapper")
+            }
+            lines.add("}")
+        }
+        lines.addEmpty()
+        lines.add("}")
+        lines.addEmpty()
+        lines.add("class NoEscapeControlChars : CharacterEscapes() {")
+        lines.addEmpty()
+        lines.indented {
+            lines.add("private val escapes: IntArray")
+            lines.addEmpty()
+            lines.add("init {")
+            lines.indented {
+                lines.add("val std = CharacterEscapes.standardAsciiEscapesForJSON()")
+                lines.add("escapes = std.copyOf(std.size)")
+                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE")
+            }
+            lines.add("}")
+            lines.addEmpty()
+            lines.add("override fun getEscapeCodesForAscii(): IntArray {")
+            lines.indented {
+                lines.add("return escapes")
+            }
+            lines.add("}")
+            lines.addEmpty()
+            lines.add("override fun getEscapeSequence(ch: Int): SerializableString? {")
+            lines.indented {
+                lines.add("return null")
+            }
+            lines.add("}")
+            lines.addEmpty()
+        }
+        lines.add("}")
     }
 
 }

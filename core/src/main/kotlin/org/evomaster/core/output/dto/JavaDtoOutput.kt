@@ -6,17 +6,26 @@ import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.utils.StringUtils
 import java.nio.file.Path
 
-class JavaDtoOutput: JvmDtoOutput() {
+class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
 
-    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
         addImports(lines)
-        initClass(lines, dtoFilename.getClassName())
+        initDtoClass(lines, dtoFilename.getClassName())
         addClassContent(lines, dtoClass)
         closeClass(lines)
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
+    }
+
+    override fun writeObjectMapperClass(testSuitePath: Path, testSuitePackage: String) {
+        val mapperFilename = TestSuiteFileName(appendDtoPackage(customControlCharMapperFactory))
+        val lines = Lines(outputFormat)
+        setPackage(lines, testSuitePackage)
+        addMapperImports(lines)
+        addMapperContentClass(lines)
+        saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, mapperFilename, outputFormat))
     }
 
     override fun getNewObjectStatement(dtoName: String, dtoVarName: String): String {
@@ -35,7 +44,7 @@ class JavaDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value);"
     }
 
-    private fun initClass(lines: Lines, dtoFilename: String) {
+    private fun initDtoClass(lines: Lines, dtoFilename: String) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("public class $dtoFilename {")
         lines.addEmpty()
@@ -80,5 +89,53 @@ class JavaDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
+    }
+
+    private fun addMapperContentClass(lines: Lines) {
+        lines.add("public class $customControlCharMapperFactory implements Jackson2ObjectMapperFactory {")
+        lines.addEmpty()
+        lines.indented {
+            lines.add("@Override")
+            lines.add("public ObjectMapper create(Type cls, String charset) {")
+            lines.indented {
+                lines.add("ObjectMapper mapper = new ObjectMapper();")
+                lines.add("mapper.registerModule(new Jdk8Module());")
+                lines.add("mapper.getFactory().setCharacterEscapes(new NoEscapeControlChars());")
+                lines.add("return mapper;")
+            }
+            lines.add("}")
+        }
+        lines.addEmpty()
+        lines.add("}")
+        lines.addEmpty()
+        lines.add("class NoEscapeControlChars extends CharacterEscapes {")
+        lines.addEmpty()
+        lines.indented {
+            lines.add("private final int[] escapes;")
+            lines.addEmpty()
+            lines.add("public NoEscapeControlChars() {")
+            lines.indented {
+                lines.add("int[] std = CharacterEscapes.standardAsciiEscapesForJSON();")
+                lines.add("escapes = java.util.Arrays.copyOf(std, std.length);")
+                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE;")
+            }
+            lines.add("}")
+            lines.addEmpty()
+            lines.add("@Override")
+            lines.add("public int[] getEscapeCodesForAscii() {")
+            lines.indented {
+                lines.add("return escapes;")
+            }
+            lines.add("}")
+            lines.addEmpty()
+            lines.add("@Override")
+            lines.add("public SerializableString getEscapeSequence(int ch) {")
+            lines.indented {
+                lines.add("return null;")
+            }
+            lines.add("}")
+            lines.addEmpty()
+        }
+        lines.add("}")
     }
 }
