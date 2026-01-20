@@ -12,6 +12,8 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.external.JarAgentLocator;
 import org.evomaster.client.java.instrumentation.external.ServerController;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceGraphConfigDto;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -448,6 +450,15 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public List<ControlDependenceGraphDto> getControlDependenceGraphs() {
+        if (!isInstrumentationActivated()){
+            return Collections.emptyList();
+        }
+        List<ControlDependenceGraphDto> graphs = serverController.getControlDependenceGraphs();
+        return graphs != null ? graphs : Collections.emptyList();
+    }
+
+    @Override
     public final void newActionSpecificHandler(ActionDto dto) {
         if (isInstrumentationActivated()) {
             serverController.setAction(new Action(
@@ -520,6 +531,28 @@ public abstract class ExternalSutController extends SutController {
         serverController.setExecutingInitMongo(executingInitMongo);
         // sync executingInitMongo on the local ExecutionTracer
         ExecutionTracer.setExecutingInitMongo(executingInitMongo);
+    }
+
+    /**
+     * Send CDG configuration to the Java Agent.
+     */
+    public final void setControlDependenceGraphsEnabled(boolean enableGraphs) {
+        checkInstrumentation();
+        ControlDependenceGraphConfigDto dto = new ControlDependenceGraphConfigDto();
+        dto.enableGraphs = enableGraphs;
+        dto.writeCfg = null;
+        serverController.setControlDependenceGraphConfig(dto);
+    }
+
+    /**
+     * Control whether the agent writes DOT/PNG graphs to disk.
+     */
+    public final void setWriteCfgEnabled(boolean writeCfg) {
+        checkInstrumentation();
+        ControlDependenceGraphConfigDto dto = new ControlDependenceGraphConfigDto();
+        dto.enableGraphs = null;
+        dto.writeCfg = writeCfg;
+        serverController.setControlDependenceGraphConfig(dto);
     }
 
     @Override
