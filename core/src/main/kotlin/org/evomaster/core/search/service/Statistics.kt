@@ -363,7 +363,10 @@ class Statistics : SearchListener {
         classifyTimeNs: Long,
         classifyCount: Long,
         repairTimeNs: Long,
-        repairCount: Long
+        repairCount: Long,
+        count200: Long,
+        count400: Long,
+        count500: Long,
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
         Pair("ai_model_type", type),
@@ -379,7 +382,10 @@ class Statistics : SearchListener {
         Pair("ai_classify_time_ms", "%.4f".format(classifyTimeNs / 1_000_000.0)),
         Pair("ai_classify_count", classifyCount.toString()),
         Pair("ai_repair_time_ms", "%.4f".format(repairTimeNs / 1_000_000.0)),
-        Pair("ai_repair_count", repairCount.toString())
+        Pair("ai_repair_count", repairCount.toString()),
+        Pair("count_200", count200.toString()),
+        Pair("count_400", count400.toString()),
+        Pair("count_400", count500.toString()),
     )
 
     fun getAIData(): List<Pair> {
@@ -398,7 +404,10 @@ class Statistics : SearchListener {
                 classifyTimeNs = 0,
                 classifyCount = 0,
                 repairTimeNs = 0,
-                repairCount = 0
+                repairCount = 0,
+                count200 = 0,
+                count400 = 0,
+                count500 = 0,
             )
         }
 
@@ -418,7 +427,10 @@ class Statistics : SearchListener {
             classifyTimeNs = aiResponseClassifier.getClassifyTimeNs(),
             classifyCount = aiResponseClassifier.getClassifyCount(),
             repairTimeNs = aiResponseClassifier.getRepairTimeNs(),
-            repairCount = aiResponseClassifier.getRepairCount()
+            repairCount = aiResponseClassifier.getRepairCount(),
+            count200 = aiResponseClassifier.getCount200(),
+            count400 = aiResponseClassifier.getCount400(),
+            count500 = aiResponseClassifier.getCount500(),
         )
     }
 

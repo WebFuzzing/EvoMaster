@@ -28,14 +28,6 @@ class NN400EndpointModel(
 ) : AbstractProbabilistic400EndpointModel(
     endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
-    init {
-        // Throw an exception if a non-NORMAL encoder is provided
-        if (encoderType != EMConfig.EncoderType.NORMAL) {
-            throw IllegalArgumentException(
-                "NN400EndpointModel supports only NORMAL encoder, but got: $encoderType"
-            )
-        }
-    }
 
     // Initialize weights with default values to prevent null
     private val hiddenSize: Int = 16 // size of the hidden layer

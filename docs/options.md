@@ -244,6 +244,7 @@ There are 3 types of options:
 |Options|Description|
 |---|---|
 |`aIClassificationMetrics`| __Enum__. Determines which metric-tracking strategy is used by the AI response classifier. *Valid values*: `TIME_WINDOW, FULL_HISTORY`. *Default value*: `TIME_WINDOW`.|
+|`aIResponseClassifierWeaknessThreshold`| __Double__. Minimum confidence threshold required for the AI response classifier to decidewhether to send a request as-is or attempt a repair. *Default value*: `0.1`.|
 |`abstractInitializationGeneToMutate`| __Boolean__. During mutation, whether to abstract genes for repeated SQL actions. *Default value*: `false`.|
 |`aiClassifierRepairActivation`| __Enum__. Specify how the classification of actions's response will be used to execute a possible repair on the action. *Valid values*: `PROBABILITY, THRESHOLD`. *Default value*: `THRESHOLD`.|
 |`aiEncoderType`| __Enum__. The encoding strategy applied to transform raw data to the encoded version. *Valid values*: `RAW, NORMAL, UNIT_NORMAL`. *Default value*: `RAW`.|
@@ -310,6 +311,7 @@ There are 3 types of options:
 |`seedTestCasesFormat`| __Enum__. Format of the test cases seeded to EvoMaster. *Valid values*: `POSTMAN`. *Default value*: `POSTMAN`.|
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs500`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 500. *Default value*: `false`.|
+|`skipAIModelUpdateWhenResponseIsNot200Or400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 200 or 400. *Default value*: `false`.|
 |`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Default value*: `false`.|
 |`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Default value*: `2000`.|
 |`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Default value*: `5500`.|

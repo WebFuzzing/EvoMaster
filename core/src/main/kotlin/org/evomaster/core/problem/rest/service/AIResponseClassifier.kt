@@ -44,6 +44,9 @@ class AIResponseClassifier : AIModel {
     private var classifyCount: Long = 0
     private var repairTimeNs: Long = 0
     private var repairCount: Long = 0
+    private var count200: Long = 0
+    private var count400: Long = 0
+    private var count500: Long = 0
 
     fun getUpdateTimeNs(): Long = updateTimeNs
     fun getUpdateCount(): Long = updateCount
@@ -51,6 +54,9 @@ class AIResponseClassifier : AIModel {
     fun getClassifyCount(): Long = classifyCount
     fun getRepairTimeNs(): Long = repairTimeNs
     fun getRepairCount(): Long = repairCount
+    fun getCount200(): Long = count200
+    fun getCount400(): Long = count400
+    fun getCount500(): Long = count500
 
     
     @PostConstruct
@@ -163,20 +169,17 @@ class AIResponseClassifier : AIModel {
 
         /**
          * Skips repair when the classifier is still too weak to provide meaningful guidance.
-         * Reliability is assessed using accuracy, F1-score, and MCC (see [ModelEvaluation]).
-         *
-         * - Accuracy > 0.5 ensures the model performs better than random guessing.
-         * - F1-score > 0.0 indicates the minimal ability to recognize 400 responses.
-         * - MCC > 0.0 confirms that the classifier has at least weak but non-random
-         *   discriminative power, especially important under the class imbalance.
-         *
-         * If any of these thresholds are not met, the classifier is considered unreliable
+         * Reliability is assessed using precision, recall, and MCC (see [ModelEvaluation]) to
+         * ensure the model performs better than random guessing, especially important under the class imbalance.
+         * If any of the criteria are not met, the classifier is considered unreliable
          * for steering repairs. In such cases, the call is executed without modification so the
          * classifier can gather additional informative samples and improve over time.
          */
-        if (!(metrics.accuracy > 0.5
-            && metrics.f1Score400 > 0.0
-            && metrics.mcc > 0.0)) {
+        val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
+        if (metrics.mcc <= weaknessThreshold
+            || metrics.precision400 <= weaknessThreshold
+            || metrics.recall400 <= weaknessThreshold) {
+
             //do nothing
             return
         }
@@ -248,8 +251,23 @@ class AIResponseClassifier : AIModel {
         // Get the status code and skip if it is null
         val trueStatusCode = output.getStatusCode() ?: return true
 
-        // optionally skip if server-side error (500)
-        return trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500
+        // update counters
+        when (trueStatusCode) {
+            200 -> count200++
+            400 -> count400++
+            500 -> count500++
+        }
+        // skip conditions
+        val skip500 =
+            trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500
+
+        val skipNot200Or400 =
+            trueStatusCode != 200
+                && trueStatusCode != 400
+                    && config.skipAIModelUpdateWhenResponseIsNot200Or400
+
+        return skip500 || skipNot200Or400
+
     }
 
 
