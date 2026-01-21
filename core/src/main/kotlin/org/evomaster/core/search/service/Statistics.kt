@@ -364,9 +364,9 @@ class Statistics : SearchListener {
         classifyCount: Long,
         repairTimeNs: Long,
         repairCount: Long,
-        count200: Long,
-        count400: Long,
-        count500: Long,
+        observed200ByAIModel: Long,
+        observed400ByAIModel: Long,
+        observed500ByAIModel: Long,
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
         Pair("ai_model_type", type),
@@ -383,9 +383,9 @@ class Statistics : SearchListener {
         Pair("ai_classify_count", classifyCount.toString()),
         Pair("ai_repair_time_ms", "%.4f".format(repairTimeNs / 1_000_000.0)),
         Pair("ai_repair_count", repairCount.toString()),
-        Pair("count_200", count200.toString()),
-        Pair("count_400", count400.toString()),
-        Pair("count_400", count500.toString()),
+        Pair("observed_200_by_ai_model", observed200ByAIModel.toString()),
+        Pair("observed_400_by_ai_model", observed400ByAIModel.toString()),
+        Pair("observed_500_by_ai_model", observed500ByAIModel.toString())
     )
 
     fun getAIData(): List<Pair> {
@@ -405,9 +405,9 @@ class Statistics : SearchListener {
                 classifyCount = 0,
                 repairTimeNs = 0,
                 repairCount = 0,
-                count200 = 0,
-                count400 = 0,
-                count500 = 0,
+                observed200ByAIModel = 0,
+                observed400ByAIModel = 0,
+                observed500ByAIModel = 0,
             )
         }
 
@@ -428,9 +428,9 @@ class Statistics : SearchListener {
             classifyCount = aiResponseClassifier.getClassifyCount(),
             repairTimeNs = aiResponseClassifier.getRepairTimeNs(),
             repairCount = aiResponseClassifier.getRepairCount(),
-            count200 = aiResponseClassifier.getCount200(),
-            count400 = aiResponseClassifier.getCount400(),
-            count500 = aiResponseClassifier.getCount500(),
+            observed200ByAIModel = aiResponseClassifier.getObserved200Count(),
+            observed400ByAIModel = aiResponseClassifier.getObserved400Count(),
+            observed500ByAIModel = aiResponseClassifier.getObserved500Count(),
         )
     }
 

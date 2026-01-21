@@ -18,7 +18,6 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
-import kotlin.system.measureNanoTime
 
 
 class AIResponseClassifier : AIModel {
@@ -44,9 +43,9 @@ class AIResponseClassifier : AIModel {
     private var classifyCount: Long = 0
     private var repairTimeNs: Long = 0
     private var repairCount: Long = 0
-    private var count200: Long = 0
-    private var count400: Long = 0
-    private var count500: Long = 0
+    private var observed200Count: Long = 0
+    private var observed400Count: Long = 0
+    private var observed500Count: Long = 0
 
     fun getUpdateTimeNs(): Long = updateTimeNs
     fun getUpdateCount(): Long = updateCount
@@ -54,9 +53,9 @@ class AIResponseClassifier : AIModel {
     fun getClassifyCount(): Long = classifyCount
     fun getRepairTimeNs(): Long = repairTimeNs
     fun getRepairCount(): Long = repairCount
-    fun getCount200(): Long = count200
-    fun getCount400(): Long = count400
-    fun getCount500(): Long = count500
+    fun getObserved200Count(): Long = observed200Count
+    fun getObserved400Count(): Long = observed400Count
+    fun getObserved500Count(): Long = observed500Count
 
     
     @PostConstruct
@@ -253,9 +252,9 @@ class AIResponseClassifier : AIModel {
 
         // update counters
         when (trueStatusCode) {
-            200 -> count200++
-            400 -> count400++
-            500 -> count500++
+            200 -> observed200Count++
+            400 -> observed400Count++
+            500 -> observed500Count++
         }
         // skip conditions
         val skip500 =
