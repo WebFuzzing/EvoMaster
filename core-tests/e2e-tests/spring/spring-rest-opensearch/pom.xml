@@ -95,6 +95,10 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <reuseForks>false</reuseForks>
+                    <environmentVariables>
+                        <DOCKER_HOST>unix:///Users/miguerodrigu/.colima/default/docker.sock</DOCKER_HOST>
+                        <TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>/var/run/docker.sock</TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE>
+                    </environmentVariables>
                 </configuration>
             </plugin>
         </plugins>
