@@ -9,7 +9,7 @@ class KDE400Classifier(
     warmup: Int,
     encoderType: EMConfig.EncoderType,
     metricType: EMConfig.AIClassificationMetrics,
-    private val maxStoredSamples: Int = 10_000,
+    private val maxStoredSamples: Int = 1000, // Values more than 1000 make the classification very time-consuming
     randomness: Randomness
 ) : AbstractProbabilistic400Classifier<KDE400EndpointModel>(
     warmup, encoderType, metricType, randomness) {
