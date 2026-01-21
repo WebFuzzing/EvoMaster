@@ -83,7 +83,15 @@ class KotlinDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
             lines.indented {
                 lines.add("val std = CharacterEscapes.standardAsciiEscapesForJSON()")
                 lines.add("escapes = std.copyOf(std.size)")
-                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE")
+                lines.add("for (i in 0..0x1f) {")
+                lines.indented {
+                    lines.add("escapes[i] = CharacterEscapes.ESCAPE_NONE")
+                }
+                lines.add("}")
+//                for (i in 0..0x1f) {
+//                    lines.add("escapes[$i] = CharacterEscapes.ESCAPE_NONE")
+////                    escapes[i] = CharacterEscapes.ESCAPE_NONE
+//                }
             }
             lines.add("}")
             lines.addEmpty()

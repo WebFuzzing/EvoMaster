@@ -117,7 +117,12 @@ class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
             lines.indented {
                 lines.add("int[] std = CharacterEscapes.standardAsciiEscapesForJSON();")
                 lines.add("escapes = java.util.Arrays.copyOf(std, std.length);")
-                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE;")
+                lines.add("for (int i = 0; i < 0x20; i++) {")
+                    lines.indented {
+                        lines.add("escapes[i] = CharacterEscapes.ESCAPE_NONE;")
+                    }
+                lines.add("}")
+//                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE;")
             }
             lines.add("}")
             lines.addEmpty()
