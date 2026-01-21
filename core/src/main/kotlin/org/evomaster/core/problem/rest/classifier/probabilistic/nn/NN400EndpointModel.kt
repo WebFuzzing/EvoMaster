@@ -19,10 +19,10 @@ import kotlin.math.exp
  */
 class NN400EndpointModel(
     endpoint: Endpoint,
-    warmup: Int = 10,
+    warmup: Int,
     dimension: Int? = null,
-    encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     private val learningRate: Double = 0.01,
     randomness: Randomness
 ) : AbstractProbabilistic400EndpointModel(

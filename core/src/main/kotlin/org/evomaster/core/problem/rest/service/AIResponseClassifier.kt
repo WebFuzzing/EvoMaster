@@ -20,6 +20,29 @@ import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
 
+data class AIResponseClassifierStats(
+    var updateTimeNs: Long = 0,
+    var updateCount: Long = 0,
+    var classifyTimeNs: Long = 0,
+    var classifyCount: Long = 0,
+    var repairTimeNs: Long = 0,
+    var repairCount: Long = 0,
+    var observed200Count: Long = 0,
+    var observed400Count: Long = 0,
+    var observed500Count: Long = 0,
+
+    /**
+     * Maximum metric values observed across all endpoint classifiers.
+     * Used for reporting and analysis to determine whether at least one
+     * endpoint classifier achieves robust performance.
+     */
+    var maxAccuracy: Double = 0.0,
+    var maxPrecision: Double = 0.0,
+    var maxRecall: Double = 0.0,
+    var maxMcc: Double = 0.0
+)
+
+
 class AIResponseClassifier : AIModel {
 
     companion object {
@@ -36,28 +59,13 @@ class AIResponseClassifier : AIModel {
 
     private var enabledLearning : Boolean = true
 
-    // For statistics
-    private var updateTimeNs: Long = 0
-    private var updateCount: Long = 0
-    private var classifyTimeNs: Long = 0
-    private var classifyCount: Long = 0
-    private var repairTimeNs: Long = 0
-    private var repairCount: Long = 0
-    private var observed200Count: Long = 0
-    private var observed400Count: Long = 0
-    private var observed500Count: Long = 0
 
-    fun getUpdateTimeNs(): Long = updateTimeNs
-    fun getUpdateCount(): Long = updateCount
-    fun getClassifyTimeNs(): Long = classifyTimeNs
-    fun getClassifyCount(): Long = classifyCount
-    fun getRepairTimeNs(): Long = repairTimeNs
-    fun getRepairCount(): Long = repairCount
-    fun getObserved200Count(): Long = observed200Count
-    fun getObserved400Count(): Long = observed400Count
-    fun getObserved500Count(): Long = observed500Count
+    /** Internal mutable statistics */
+    private val stats = AIResponseClassifierStats()
 
-    
+    /** Read-only snapshot for reporting */
+    fun getStats(): AIResponseClassifierStats = stats.copy()
+
     @PostConstruct
     fun initModel() {
         delegate = when (config.aiModelForResponseClassification) {
@@ -116,12 +124,20 @@ class AIResponseClassifier : AIModel {
 
         if(enabledLearning) {
 
+            // update counters
+            val trueStatusCode = output.getStatusCode()
+            when (trueStatusCode) {
+                200 -> stats.observed200Count++
+                400 -> stats.observed400Count++
+                500 -> stats.observed500Count++
+            }
+
             val start = System.nanoTime()
             delegate.updateModel(input, output)
             val t = System.nanoTime() - start
 
-            updateTimeNs += t
-            updateCount++
+            stats.updateTimeNs += t
+            stats.updateCount++
 
         } else {
             log.warn("Trying to update model, but learning is disabled. This should ONLY happen when running tests in EM")
@@ -139,8 +155,8 @@ class AIResponseClassifier : AIModel {
         val result = delegate.classify(input)
         val t = System.nanoTime() - start
 
-        classifyTimeNs += t
-        classifyCount++
+        stats.classifyTimeNs += t
+        stats.classifyCount++
 
         return result
     }
@@ -165,6 +181,12 @@ class AIResponseClassifier : AIModel {
     fun attemptRepair(call: RestCallAction){
 
         val metrics = estimateMetrics(call.endpoint)
+
+        // update the max metrics
+        stats.maxAccuracy = maxOf(stats.maxAccuracy, metrics.accuracy)
+        stats.maxMcc = maxOf(stats.maxMcc, metrics.mcc)
+        stats.maxPrecision = maxOf(stats.maxPrecision, metrics.precision400)
+        stats.maxRecall = maxOf(stats.maxRecall, metrics.recall400)
 
         /**
          * Skips repair when the classifier is still too weak to provide meaningful guidance.
@@ -216,8 +238,8 @@ class AIResponseClassifier : AIModel {
                 repairAction(call, classification)
                 val t = System.nanoTime() - start
 
-                repairTimeNs += t
-                repairCount++
+                stats.repairTimeNs += t
+                stats.repairCount++
 
             } else {
                 return
@@ -250,12 +272,6 @@ class AIResponseClassifier : AIModel {
         // Get the status code and skip if it is null
         val trueStatusCode = output.getStatusCode() ?: return true
 
-        // update counters
-        when (trueStatusCode) {
-            200 -> observed200Count++
-            400 -> observed400Count++
-            500 -> observed500Count++
-        }
         // skip conditions
         val skip500 =
             trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500

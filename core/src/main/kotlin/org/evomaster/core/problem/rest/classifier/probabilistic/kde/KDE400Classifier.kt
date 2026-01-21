@@ -6,9 +6,9 @@ import org.evomaster.core.problem.rest.data.Endpoint
 import org.evomaster.core.search.service.Randomness
 
 class KDE400Classifier(
-    warmup: Int = 10,
-    encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    warmup: Int,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     private val maxStoredSamples: Int = 10_000,
     randomness: Randomness
 ) : AbstractProbabilistic400Classifier<KDE400EndpointModel>(

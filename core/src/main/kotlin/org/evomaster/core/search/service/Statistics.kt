@@ -367,6 +367,10 @@ class Statistics : SearchListener {
         observed200ByAIModel: Long,
         observed400ByAIModel: Long,
         observed500ByAIModel: Long,
+        maxAccuracy : Double,
+        maxPrecision : Double,
+        maxRecall : Double,
+        maxMcc : Double,
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
         Pair("ai_model_type", type),
@@ -375,7 +379,11 @@ class Statistics : SearchListener {
         Pair("ai_recall400", "%.4f".format(recall)),
         Pair("ai_f1Score400", "%.4f".format(f1)),
         Pair("ai_mcc400", "%.4f".format(mcc)),
-
+        // Max metrics among all endpoints
+        Pair("max_Accuracy", "%.4f".format(maxAccuracy)),
+        Pair("max_Precision", "%.4f".format(maxPrecision)),
+        Pair("max_Recall", "%.4f".format(maxRecall)),
+        Pair("max_Mcc", "%.4f".format(maxMcc)),
         // timing in milliseconds
         Pair("ai_update_time_ms", "%.4f".format(updateTimeNs / 1_000_000.0)),
         Pair("ai_update_count", updateCount.toString()),
@@ -385,7 +393,7 @@ class Statistics : SearchListener {
         Pair("ai_repair_count", repairCount.toString()),
         Pair("observed_200_by_ai_model", observed200ByAIModel.toString()),
         Pair("observed_400_by_ai_model", observed400ByAIModel.toString()),
-        Pair("observed_500_by_ai_model", observed500ByAIModel.toString())
+        Pair("observed_500_by_ai_model", observed500ByAIModel.toString()),
     )
 
     fun getAIData(): List<Pair> {
@@ -408,11 +416,16 @@ class Statistics : SearchListener {
                 observed200ByAIModel = 0,
                 observed400ByAIModel = 0,
                 observed500ByAIModel = 0,
+                maxAccuracy = 0.0,
+                maxPrecision = 0.0,
+                maxRecall = 0.0,
+                maxMcc = 0.0,
             )
         }
 
         // Compute metrics
         val metrics = aiResponseClassifier.viewInnerModel().estimateOverallMetrics()
+        val aiStats = aiResponseClassifier.getStats()
 
         return aiMetricsAsPairs(
             enabled = true,
@@ -422,15 +435,20 @@ class Statistics : SearchListener {
             recall = metrics.recall400,
             f1 = metrics.f1Score400,
             mcc = metrics.mcc,
-            updateTimeNs = aiResponseClassifier.getUpdateTimeNs(),
-            updateCount = aiResponseClassifier.getUpdateCount(),
-            classifyTimeNs = aiResponseClassifier.getClassifyTimeNs(),
-            classifyCount = aiResponseClassifier.getClassifyCount(),
-            repairTimeNs = aiResponseClassifier.getRepairTimeNs(),
-            repairCount = aiResponseClassifier.getRepairCount(),
-            observed200ByAIModel = aiResponseClassifier.getObserved200Count(),
-            observed400ByAIModel = aiResponseClassifier.getObserved400Count(),
-            observed500ByAIModel = aiResponseClassifier.getObserved500Count(),
+            updateTimeNs = aiStats.updateTimeNs,
+            updateCount = aiStats.updateCount,
+            classifyTimeNs = aiStats.classifyTimeNs,
+            classifyCount = aiStats.classifyCount,
+            repairTimeNs = aiStats.repairTimeNs,
+            repairCount = aiStats.repairCount,
+            observed200ByAIModel = aiStats.observed200Count,
+            observed400ByAIModel = aiStats.observed400Count,
+            observed500ByAIModel = aiStats.observed500Count,
+            maxAccuracy = aiStats.maxAccuracy,
+            maxPrecision = aiStats.maxPrecision,
+            maxRecall = aiStats.maxRecall,
+            maxMcc = aiStats.maxMcc,
+
         )
     }
 
