@@ -114,7 +114,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
             minimizer.simplifyActions()
             val seconds = minimizer.passedTimeInSecond()
             LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
-        } else if (config.detectFlakiness){
+        } else if (config.handleFlakiness){
             flakinessDetector.reexecuteToDetectFlakiness()
         }
 

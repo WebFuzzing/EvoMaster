@@ -31,6 +31,15 @@ class FlakinessDetectRest {
         return ResponseEntity.ok(FlakinessDetectData(getPartialDate(n), randomInt(n)))
     }
 
+    @GetMapping(path = ["/multiplelines/{num}"])
+    open fun getMultipleLines( @PathVariable("num") num: Int) : ResponseEntity<FlakinessDetectData> {
+
+        val num = min(20, max(2, randomInt(num)))
+
+        val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it" }
+        return ResponseEntity.ok(FlakinessDetectData(msg, num))
+    }
+
 
     private fun getPartialDate(n: Int) : String {
         val now = LocalDateTime.now().format(formatter)
