@@ -150,7 +150,7 @@ class TestSuiteWriter {
         //catch any sorting problems (see NPE is SortingHelper on Trello)
         val tests = try {
             // TODO skip to sort RPC for the moment
-                testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
+            testSuiteOrganizer.sortTests(solution, namingStrategy, config.testCaseSortingStrategy)
         } catch (ex: Exception) {
             log.warn(
                 "A failure has occurred with the test sorting. Reverting to default settings. \n"
@@ -259,10 +259,10 @@ class TestSuiteWriter {
         }
 
         val input = if(all.isEmpty()) ""
-            else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
-                .map{it.getFullQualifyingTableName()}
-                .sorted()
-                .joinToString(",") { "\"$it\"" }
+        else all.filter { x -> tableNamesInSchema.any{y -> y == x} }
+            .map{it.getFullQualifyingTableName()}
+            .sorted()
+            .joinToString(",") { "\"$it\"" }
 
         return when {
             config.outputFormat.isJava() -> "Arrays.asList($input)"
@@ -439,6 +439,7 @@ class TestSuiteWriter {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
+                addImport("io.restassured.config.ObjectMapperConfig", lines)
             }
 
             addImport("java.util.List", lines)
@@ -812,6 +813,17 @@ class TestSuiteWriter {
                     lines.indented {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
+                        if (config.dtoSupportedForPayload() && containsDtos) {
+                            lines.indented {
+                                lines.add(".objectMapperConfig(")
+                                lines.indented {
+                                    lines.add("ObjectMapperConfig.objectMapperConfig()")
+                                    val newQualifier = if (format.isJava()) "new" else ""
+                                    lines.add(".jackson2ObjectMapperFactory($newQualifier CustomControlCharMapperFactory())")
+                                }
+                                lines.add(")")
+                            }
+                        }
                     }
                     lines.appendSemicolon()
                 }
@@ -922,7 +934,7 @@ class TestSuiteWriter {
                         ) {
                             if(solution.needWireMockServers()) {
                                 getActiveWireMockServers().forEach { action ->
-                                        addStatement("${getWireMockVariableName(action)}.stop()", lines)
+                                    addStatement("${getWireMockVariableName(action)}.stop()", lines)
                                 }
                             }
                             if(solution.needsHostnameReplacement()) {
@@ -1142,7 +1154,7 @@ class TestSuiteWriter {
                     .filterIsInstance<HttpExternalServiceAction>()
                     .filter { it.active }
                     .map { it.externalService }
-                    //.plus( it.fitness.getViewEmployedDefaultWM())
+                //.plus( it.fitness.getViewEmployedDefaultWM())
             }
             .distinctBy { it.getSignature() }.toList()
     }
