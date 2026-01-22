@@ -19,6 +19,7 @@ import org.evomaster.client.java.sql.internal.SqlParserUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Timestamp;
 import java.util.*;
 
 import static org.evomaster.client.java.sql.heuristic.SqlHeuristicsCalculator.TRUE_TRUTHNESS;
@@ -567,6 +568,7 @@ public class SqlHeuristicsCalculatorTest {
         TableDto projectsTable = createTableDto("Projects");
         projectsTable.columns.add(createColumnDto("project_id"));
         projectsTable.columns.add(createColumnDto("project_name"));
+        projectsTable.columns.add(createColumnDto("project_start_time"));
 
 
         TableDto tableA = createTableDto("TableA");
@@ -773,10 +775,10 @@ public class SqlHeuristicsCalculatorTest {
         tableColumnResolver.enterStatementeContext(select);
 
         SqlColumnReference nameSqlColumnReference = tableColumnResolver.resolve(nameColumn);
-        assertTrue(nameSqlColumnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertTrue(nameSqlColumnReference.getTableReference() instanceof SqlDerivedTable);
 
         SqlColumnReference incomeSqlColumnReference = tableColumnResolver.resolve(incomeColumn);
-        assertTrue(incomeSqlColumnReference.getTableReference() instanceof SqlDerivedTableReference);
+        assertTrue(incomeSqlColumnReference.getTableReference() instanceof SqlDerivedTable);
 
         assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName(nameSqlColumnReference.getColumnName()));
         assertEquals(10000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName(incomeSqlColumnReference.getColumnName()));
@@ -848,7 +850,6 @@ public class SqlHeuristicsCalculatorTest {
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
         assertTrue(heuristicResult.getTruthness().isTrue());
-
         assertEquals(2, heuristicResult.getQueryResult().seeVariableDescriptors().size());
         assertEquals(new VariableDescriptor("name", "name", null), heuristicResult.getQueryResult().seeVariableDescriptors().get(0));
         assertEquals(new VariableDescriptor("department_name", "department_name", null), heuristicResult.getQueryResult().seeVariableDescriptors().get(1));
@@ -1003,69 +1004,51 @@ public class SqlHeuristicsCalculatorTest {
     }
 
     @Test
-    public void testSelectFromTableWithRowsNoWhere() {
+    public void testSelectWithLimit() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT name FROM Person";
+        String sqlCommand = "SELECT name FROM Person LIMIT 2";
 
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
 
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
-
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("name", "name", "person"), heuristicResult.getQueryResult().seeVariableDescriptors().get(0));
-
-
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
-        assertEquals("John", row.getValueByName("name"));
-    }
-
-
-    @Test
-    public void testSelectFromTableWithRowsNoWhereUsingAlias() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT name AS person_name FROM Person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
         assertEquals(1, queryResult.seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("name", "person_name", "person"),
-                queryResult.seeVariableDescriptors().iterator().next());
+        assertEquals(new VariableDescriptor("name", "name", "person"), queryResult.seeVariableDescriptors().get(0));
 
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
-        assertEquals("John", row.getValueByName("person_name"));
+        assertEquals(2, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
     }
 
     @Test
-    public void testSelectAllFromTable() {
+    public void testUnionWithLimit() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT * FROM Person";
+        String sqlCommand = "(SELECT name FROM Employees) UNION (SELECT department_name AS name FROM Departments) LIMIT 2";
 
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
+        QueryResult employees = new QueryResult(Collections.singletonList("name"), "Employees");
+        employees.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList("John"));
+        employees.addRow(Collections.singletonList("name"), "Employees", Collections.singletonList("Jane"));
 
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
+
+        QueryResult departments = new QueryResult(Collections.singletonList("department_name"), "Departments");
+        departments.addRow(Collections.singletonList("department_name"), "Departments", Collections.singletonList("Sales"));
+        departments.addRow(Collections.singletonList("department_name"), "Departments", Collections.singletonList("Marketing"));
+
+
+        QueryResultSet queryResultSet = QueryResultSet.build(employees, departments);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
@@ -1073,71 +1056,60 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
-        assertEquals(3, queryResult.seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("name", "name", "person"),
-                queryResult.seeVariableDescriptors().get(0));
-        assertEquals(new VariableDescriptor("age", "age", "person"),
-                queryResult.seeVariableDescriptors().get(1));
-        assertEquals(new VariableDescriptor("salary", "salary", "person"),
-                queryResult.seeVariableDescriptors().get(2));
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", null), queryResult.seeVariableDescriptors().get(0));
 
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
-        assertEquals("John", row.getValueByName("name"));
-        assertEquals(30, row.getValueByName("age"));
-        assertEquals(50_000, row.getValueByName("salary"));
+        assertEquals(2, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
     }
 
     @Test
-    public void testSelectAllFromSubquery() {
+    public void testParenthesizedSelectWithLimit() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT * FROM (SELECT salary, age FROM (SELECT * FROM person))";
+        String sqlCommand = "(SELECT name FROM Person) LIMIT 2";
 
-        QueryResult personQueryResult = new QueryResult(Arrays.asList("name", "age", "salary"), "person");
-        personQueryResult.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50_000)));
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
 
-        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
-        assertEquals(2, queryResult.seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("salary", "salary", null),
-                queryResult.seeVariableDescriptors().get(0));
-        assertEquals(new VariableDescriptor("age", "age", null),
-                queryResult.seeVariableDescriptors().get(1));
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", "person"), queryResult.seeVariableDescriptors().get(0));
 
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        DataRow row = heuristicResult.getQueryResult().seeRows().get(0);
-        assertEquals(30, row.getValueByName("age"));
-        assertEquals(50_000, row.getValueByName("salary"));
+        assertEquals(2, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
     }
 
-
     @Test
-    public void testSelfJoin() {
+    public void testGroupByWithLimit() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT\n" +
-                "  child.name AS category,\n" +
-                "  parent.name AS parent_category\n" +
-                "FROM categories child\n" +
-                "LEFT JOIN categories parent ON child.parent_id = parent.id;\n";
+        String sqlCommand = "SELECT department_id, COUNT(*) FROM Employees GROUP BY department_id LIMIT 1";
 
-        QueryResult categoriesResultSet = new QueryResult(Arrays.asList("id", "name", "parent_id"), "categories");
-        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(1, "Electronics", null)));
-        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(2, "Computers", 1)));
-        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(3, "Laptops", 2)));
-        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(4, "Phones", 1)));
-        categoriesResultSet.addRow(new DataRow("categories", Arrays.asList("id", "name", "parent_id"), Arrays.asList(5, "Accessories", 2)));
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "Employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("John", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Jane", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Joe", 2));
 
-        QueryResultSet queryResultSet = QueryResultSet.build(categoriesResultSet);
+
+        QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
@@ -1145,739 +1117,357 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
-        assertEquals(2, queryResult.seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("name", "category", "categories"),
-                queryResult.seeVariableDescriptors().get(0));
-        assertEquals(new VariableDescriptor("name", "parent_category", "categories"),
-                queryResult.seeVariableDescriptors().get(1));
-
-        final List<DataRow> dataRows = heuristicResult.getQueryResult().seeRows();
-        assertEquals(5, dataRows.size());
-        assertEquals("Electronics", dataRows.get(0).getValueByName("category"));
-        assertEquals(null, dataRows.get(0).getValueByName("parent_category"));
-
-        assertEquals("Computers", dataRows.get(1).getValueByName("category"));
-        assertEquals("Electronics", dataRows.get(1).getValueByName("parent_category"));
-
-        assertEquals("Laptops", dataRows.get(2).getValueByName("category"));
-        assertEquals("Computers", dataRows.get(2).getValueByName("parent_category"));
-
-        assertEquals("Phones", dataRows.get(3).getValueByName("category"));
-        assertEquals("Electronics", dataRows.get(3).getValueByName("parent_category"));
-
-        assertEquals("Accessories", dataRows.get(4).getValueByName("category"));
-        assertEquals("Computers", dataRows.get(4).getValueByName("parent_category"));
-
+        assertEquals(1, queryResult.size());
     }
 
     @Test
-    public void testLeftJoinWithTable() {
+    public void testSelectWithLimitZero() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT\n" +
-                "  e.*\n" +
-                "FROM employees e\n" +
-                "LEFT JOIN projects p ON e.project_id = p.project_id;\n";
+        String sqlCommand = "SELECT * FROM Person LIMIT 0";
 
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        employees.addRow(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees", Arrays.asList("John Doe", "John", null, 1, 50_000));
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age"), Arrays.asList("John", 30)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age"), Arrays.asList("Jane", 25)));
 
-        QueryResult projects = new QueryResult(Arrays.asList("project_id", "project_name"), "projects");
-        projects.addRow(Arrays.asList("project_id", "project_name"), "projects", Arrays.asList(1, "ProjectX"));
-
-
-        QueryResultSet queryResultSet = QueryResultSet.build(employees, projects);
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isFalse());
 
         QueryResult queryResult = heuristicResult.getQueryResult();
-        assertEquals(5, queryResult.seeVariableDescriptors().size());
-        assertEquals(new VariableDescriptor("name", "name", "employees", "e"),
-                queryResult.seeVariableDescriptors().get(0));
-        assertEquals(new VariableDescriptor("first_name", "first_name", "employees", "e"),
-                queryResult.seeVariableDescriptors().get(1));
-        assertEquals(new VariableDescriptor("department_id", "department_id", "employees", "e"),
-                queryResult.seeVariableDescriptors().get(2));
-        assertEquals(new VariableDescriptor("project_id", "project_id", "employees", "e"),
-                queryResult.seeVariableDescriptors().get(3));
-        assertEquals(new VariableDescriptor("salary", "salary", "employees", "e"),
-                queryResult.seeVariableDescriptors().get(4));
-
-        final List<DataRow> dataRows = heuristicResult.getQueryResult().seeRows();
-        assertEquals(1, dataRows.size());
-        assertEquals("John Doe", dataRows.get(0).getValueByName("name"));
-        assertEquals("John", dataRows.get(0).getValueByName("first_name"));
-        assertEquals(null, dataRows.get(0).getValueByName("department_id"));
-        assertEquals(1, dataRows.get(0).getValueByName("project_id"));
-        assertEquals(50_000, dataRows.get(0).getValueByName("salary"));
-
+        assertEquals(0, queryResult.size());
     }
 
-
     @Test
-    public void testNull() {
+    public void testSelectWithOrderByDesc() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT NULL AS null_value";
+        String sqlCommand = "SELECT name FROM Person ORDER BY name DESC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", "name", "person"), queryResult.seeVariableDescriptors().get(0));
+
+        assertEquals(3, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(2).getValueByName("name"));
     }
 
     @Test
-    public void testNullInSubquery() {
+    public void testSelectWithOrderByAndLimit() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT * FROM (SELECT NULL UNION ALL SELECT name FROM employees)";
+        String sqlCommand = "SELECT name FROM Person ORDER BY name DESC LIMIT 1";
 
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithOrderByAscending() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person ORDER BY name ASC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+        assertEquals("Jane", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("John", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithOrderByAlias() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person p ORDER BY p.name ASC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+        assertEquals("Jane", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("John", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithOrderByFunction() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT name FROM Person ORDER BY UPPER(name) ASC";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "john", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "adam", "Person"));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+        assertEquals("adam", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("john", queryResult.seeRows().get(2).getValueByName("name"));
+    }
+
+    @Test
+    public void testWithClauseAndDerivedTable() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "WITH PersonCTE AS (SELECT * FROM Person) SELECT name FROM PersonCTE";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 25, 60000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", null, null), queryResult.seeVariableDescriptors().get(0));
+
+        assertEquals(2, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Jane", queryResult.seeRows().get(1).getValueByName("name"));
+    }
+
+
+    @Test
+    public void testWithClauseAndDerivedTableWithAlias() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "WITH PersonCTE AS (SELECT * FROM Person) SELECT name FROM PersonCTE pCTE WHERE pCTE.name='John'";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 25, 60000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.seeVariableDescriptors().size());
+        assertEquals(new VariableDescriptor("name", null, null), queryResult.seeVariableDescriptors().get(0));
+
+        assertEquals(1, queryResult.seeRows().size());
+        assertEquals("John", queryResult.seeRows().get(0).getValueByName("name"));
+    }
+
+    @Test
+    public void testSelectWithParenthesisSelectItem() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT (p.name) FROM Person p";
+
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isFalse());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(0, queryResult.size());
+
+    }
+
+    /**
+     * SELECT DISTINCT ON (name)
+     * *
+     * FROM person
+     * ORDER BY name, updated_at DESC;
+     */
+
+    @Test
+    public void testSelectDistinctOn() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT ON (p.name) p.* FROM Person p ORDER BY p.name";
+
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 30, 50_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 35, 55_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 28, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 40, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Charly", 22, 30_000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+
+        assertEquals("Alice", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals(30, queryResult.seeRows().get(0).getValueByName("age"));
+        assertEquals(50_000, queryResult.seeRows().get(0).getValueByName("salary"));
+
+        assertEquals("Bob", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals(28, queryResult.seeRows().get(1).getValueByName("age"));
+        assertEquals(45_000, queryResult.seeRows().get(1).getValueByName("salary"));
+
+        assertEquals("Charly", queryResult.seeRows().get(2).getValueByName("name"));
+        assertEquals(22, queryResult.seeRows().get(2).getValueByName("age"));
+        assertEquals(30_000, queryResult.seeRows().get(2).getValueByName("salary"));
+
+    }
+
+    @Test
+    public void testSelectDistinctWithOrderBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT name FROM Person p ORDER BY p.name ASC";
+
+        // Input data for the query: notice duplicate names to test DISTINCT
+        QueryResult contents = new QueryResult(Collections.singletonList("name"), "Person");
+        contents.addRow(new DataRow("name", "John", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));
+        contents.addRow(new DataRow("name", "John", "Person"));  // duplicate
+        contents.addRow(new DataRow("name", "Joe", "Person"));
+        contents.addRow(new DataRow("name", "Jane", "Person"));  // duplicate
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder =
+                new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+
+        SqlHeuristicsCalculator calculator = builder
                 .withSourceQueryResultSet(queryResultSet)
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
-    }
-
-
-    @Test
-    public void testCaseWhen() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT \n" +
-                "    CASE \n" +
-                "      WHEN age < 18 THEN 'Minor'\n" +
-                "      ELSE 'Adult'\n" +
-                "    END AS age_group\n" +
-                "    FROM person;\n";
-
-        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
-        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(17)));
-        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .withSourceQueryResultSet(queryResultSet)
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("Minor", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
-    }
-
-    @Test
-    public void testCaseWhenElse() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT \n" +
-                "    CASE \n" +
-                "      WHEN age < 18 THEN 'Minor'\n" +
-                "      ELSE 'Adult'\n" +
-                "    END AS age_group\n" +
-                "    FROM person;\n";
-
-        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
-        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
-        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .withSourceQueryResultSet(queryResultSet)
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("Adult", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
-    }
-
-    @Test
-    public void testCaseSwitch() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT \n" +
-                "    CASE age \n" +
-                "      WHEN 1 THEN 'one year'\n" +
-                "      WHEN 2 THEN 'two years'\n" +
-                "      WHEN 3 THEN 'three years'\n" +
-                "      ELSE 'more than 3 years'\n" +
-                "    END AS age_group\n" +
-                "    FROM person;\n";
-
-        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
-        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(2)));
-        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .withSourceQueryResultSet(queryResultSet)
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("two years", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
-    }
-
-    @Test
-    public void testCaseSwitchElse() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT \n" +
-                "    CASE age \n" +
-                "      WHEN 1 THEN 'one year'\n" +
-                "      WHEN 2 THEN 'two years'\n" +
-                "      WHEN 3 THEN 'three years'\n" +
-                "      ELSE 'more than 3 years'\n" +
-                "    END AS age_group\n" +
-                "    FROM person;\n";
-
-        QueryResult personQueryResult = new QueryResult(Arrays.asList("age"), "person");
-        personQueryResult.addRow(new DataRow("Person", Arrays.asList("age"), Arrays.asList(21)));
-        QueryResultSet queryResultSet = QueryResultSet.build(personQueryResult);
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .withSourceQueryResultSet(queryResultSet)
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeVariableDescriptors().size());
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("more than 3 years", heuristicResult.getQueryResult().seeRows().get(0).getValue(0));
-    }
-
-    @Test
-    public void testCountAllColumnsWhenNonEmpty() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT COUNT(*) AS number_of_persons FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
 
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(2L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("number_of_persons"));
+        SqlHeuristicResult heuristicResult =
+                calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
 
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+
+        // We expect 3 DISTINCT values: Jane, Joe, John
+        assertEquals(3, queryResult.size());
+
+        // Sorted alphabetically because of ORDER BY
+        assertEquals("Jane", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals("Joe", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals("John", queryResult.seeRows().get(2).getValueByName("name"));
     }
 
     @Test
-    public void testCountAllColumnsWhenEmpty() {
+    public void testGroupByOrderBy() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT COUNT(*) AS number_of_persons FROM person";
+        String sqlCommand = "SELECT department_id, COUNT(*) AS department_count FROM Employees GROUP BY department_id ORDER BY department_id";
 
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "Employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("John", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Jane", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Joe", 2));
 
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
 
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("number_of_persons"));
-
-    }
-
-    @Test
-    public void testCountAllColumnsWhenNullAndNonNulls() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT COUNT(*) AS number_of_persons FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList(null, null, null)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(3L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("number_of_persons"));
-    }
-
-    @Test
-    public void testMaxNonNull() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT MAX(age) AS max_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(30, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_age"));
-
-    }
-
-    @Test
-    public void testMaxOnlyNullValues() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT MAX(age) AS max_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", null, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", null, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_age"));
-
-    }
-
-    @Test
-    public void testMaxNonNullAndNullValues() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT MAX(age) AS max_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", null, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(21, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_age"));
-
-    }
-
-    @Test
-    public void testMaxEmptyReturnsNull() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT MAX(age) AS max_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_age"));
-
-    }
-
-
-    @Test
-    public void testMinNonNull() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT MIN(age) AS min_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(21, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("min_age"));
-
-    }
-
-    @Test
-    public void testSumOfRealNumbers() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT SUM(salary) AS sum_salary FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 1000.50d)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 500.50d)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertNotNull(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary"));
-        assertTrue(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary") instanceof Double);
-
-        double actual = (Double) heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary");
-        assertEquals(Double.valueOf(1000.50d + 500.50d), actual);
-    }
-
-    @Test
-    public void testSumOfIntegerNumbers() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT SUM(salary) AS sum_salary FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertNotNull(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary"));
-        assertTrue(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary") instanceof Long);
-
-        long actual = (Long) heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary");
-        assertEquals(Long.valueOf(70000), actual);
-    }
-
-    @Test
-    public void testCountColumnWhenNonEmpty() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT COUNT(age) AS number_of_persons FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(2L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("number_of_persons"));
-
-    }
-
-    @Test
-    public void testCountColumnNullAndNonNull() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT COUNT(age) AS number_of_persons FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", null, 20000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(2L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("number_of_persons"));
-
-    }
-
-    @Test
-    public void testSumOfNullAndNonNullValues() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT SUM(salary) AS sum_salary FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, 50000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, 20000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 21, null)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertNotNull(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary"));
-        assertTrue(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary") instanceof Long);
-
-        long actual = (Long) heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary");
-        assertEquals(Long.valueOf(70000), actual);
-    }
-
-    @Test
-    public void testSumOfAllNullValues() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT SUM(salary) AS sum_salary FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, null)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, null)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 21, null)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertNull(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary"));
-    }
-
-    @Test
-    public void testSumOfEmptyTable() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT SUM(salary) AS sum_salary FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertNull(heuristicResult.getQueryResult().seeRows().get(0).getValueByName("sum_salary"));
-    }
-
-    @Test
-    public void testAvgOfAllNullValues() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT AVG(age) AS avg_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 30, null)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 21, null)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 21, null)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals((30L + 21L + 21L) / 3, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("avg_age"));
-    }
-
-    @Test
-    public void testAvgEmptyTable() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT AVG(age) AS avg_age FROM person";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("avg_age"));
-    }
-
-    @Test
-    public void testMaxInWhere() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT name, salary FROM person WHERE salary=(SELECT MAX(salary) FROM person)";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 21, 50_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 23, 20_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 31, 50_000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(2, heuristicResult.getQueryResult().seeRows().size());
-        assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
-        assertEquals(50_000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("salary"));
-
-        assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals(50_000, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("salary"));
-
-    }
-
-    @Test
-    public void testMaxInSelectItem() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT (SELECT MAX(salary) FROM person) AS max_salary, name FROM Person;";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 21, 50_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 23, 20_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 31, 40_000)));
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(3, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
-        assertEquals(50_000, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_salary"));
-
-        assertEquals("Jack", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals(50_000, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("max_salary"));
-
-        assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(2).getValueByName("name"));
-        assertEquals(50_000, heuristicResult.getQueryResult().seeRows().get(2).getValueByName("max_salary"));
-
-    }
-
-    @Test
-    public void testMaxInSelectItemWithEmptyTable() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT (SELECT MAX(salary) FROM employees) AS max_salary, name FROM Person;";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 21, 50_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 23, 20_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 31, 40_000)));
-
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person, employees);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(3, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("max_salary"));
-
-        assertEquals("Jack", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("max_salary"));
-
-        assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(2).getValueByName("name"));
-        assertEquals(null, heuristicResult.getQueryResult().seeRows().get(2).getValueByName("max_salary"));
-    }
-
-    @Test
-    public void testCountInSelectItemWithEmptyTable() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT (SELECT COUNT(*) FROM employees) AS count_employees, name FROM Person;";
-
-        QueryResult person = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("John", 21, 50_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jack", 23, 20_000)));
-        person.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Jane", 31, 40_000)));
-
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-
-        QueryResultSet queryResultSet = QueryResultSet.build(person, employees);
-
-        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
-        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
-                .withTableColumnResolver(new TableColumnResolver(schema))
-                .build();
-
-        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(3, heuristicResult.getQueryResult().seeRows().size());
-
-        assertEquals("John", heuristicResult.getQueryResult().seeRows().get(0).getValueByName("name"));
-        assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("count_employees"));
-
-        assertEquals("Jack", heuristicResult.getQueryResult().seeRows().get(1).getValueByName("name"));
-        assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("count_employees"));
-
-        assertEquals("Jane", heuristicResult.getQueryResult().seeRows().get(2).getValueByName("name"));
-        assertEquals(0L, heuristicResult.getQueryResult().seeRows().get(2).getValueByName("count_employees"));
-
-    }
-
-
-    @Test
-    public void testGroupBy() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT department_id, COUNT(*) As num_employees FROM employees GROUP BY department_id;";
-
-
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jane Doe", "Jane", 1, 1, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
@@ -1886,32 +1476,30 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(2, heuristicResult.getQueryResult().seeRows().size());
 
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("department_id"));
-        assertEquals(3L, heuristicResult.getQueryResult().seeRows().get(0).getValueByName("num_employees"));
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
-        assertEquals(2, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("department_id"));
-        assertEquals(1L, heuristicResult.getQueryResult().seeRows().get(1).getValueByName("num_employees"));
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(2, queryResult.size());
+        assertEquals(1, ((Number) queryResult.seeRows().get(0).getValueByName("department_id")).intValue());
+        assertEquals(2, ((Number) queryResult.seeRows().get(0).getValueByName("department_count")).intValue());
 
+        assertEquals(2, ((Number) queryResult.seeRows().get(1).getValueByName("department_id")).intValue());
+        assertEquals(1, ((Number) queryResult.seeRows().get(1).getValueByName("department_count")).intValue());
     }
 
-    @Test
-    public void testGroupByMoreThanOneField() {
-        DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project " +
-                "FROM employees " +
-                "GROUP BY department_id, project_id;";
 
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
+    @Test
+    public void tesDistinctGroupByOrderBy() {
+        DbInfoDto schema = buildSchema();
+        String sqlCommand = "SELECT DISTINCT department_id, COUNT(*) AS department_count FROM Employees GROUP BY department_id ORDER BY department_id";
+
+        QueryResult employees = new QueryResult(Arrays.asList("name", "department_id"), "Employees");
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("John", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Jane", 1));
+        employees.addRow(Arrays.asList("name", "department_id"), "Employees", Arrays.asList("Joe", 2));
+
+
         QueryResultSet queryResultSet = QueryResultSet.build(employees);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
@@ -1920,103 +1508,106 @@ public class SqlHeuristicsCalculatorTest {
                 .build();
 
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(3, heuristicResult.getQueryResult().seeRows().size());
 
-        assertEquals(1,
-                heuristicResult.getQueryResult().seeRows().stream()
-                        .filter(row -> row.getValueByName("department_id").equals(1))
-                        .filter(row -> row.getValueByName("project_id").equals(2))
-                        .filter(row -> row.getValueByName("employees_per_project").equals(1L))
-                        .count());
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
-        assertEquals(1,
-                heuristicResult.getQueryResult().seeRows().stream()
-                        .filter(row -> row.getValueByName("department_id").equals(1))
-                        .filter(row -> row.getValueByName("project_id").equals(3))
-                        .filter(row -> row.getValueByName("employees_per_project").equals(2L))
-                        .count());
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(2, queryResult.size());
+        assertEquals(1, ((Number) queryResult.seeRows().get(0).getValueByName("department_id")).intValue());
+        assertEquals(2, ((Number) queryResult.seeRows().get(0).getValueByName("department_count")).intValue());
 
-        assertEquals(1,
-                heuristicResult.getQueryResult().seeRows().stream()
-                        .filter(row -> row.getValueByName("department_id").equals(2))
-                        .filter(row -> row.getValueByName("project_id").equals(1))
-                        .filter(row -> row.getValueByName("employees_per_project").equals(1L))
-                        .count());
-
+        assertEquals(2, ((Number) queryResult.seeRows().get(1).getValueByName("department_id")).intValue());
+        assertEquals(1, ((Number) queryResult.seeRows().get(1).getValueByName("department_count")).intValue());
     }
 
     @Test
-    public void testGroupByWithHaving() {
+    public void testSelectGroupBy() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT department_id, project_id, COUNT(*) As employees_per_project " +
-                "FROM employees " +
-                "GROUP BY department_id, project_id " +
-                "HAVING COUNT(*) > 1;";
+        String sqlCommand = "SELECT  name, age FROM Person p GROUP BY p.name ORDER BY p.name ASC";
 
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
-        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+        QueryResult contents = new QueryResult(Arrays.asList("name", "age", "salary"), "Person");
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 30, 50_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Alice", 35, 55_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 28, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Bob", 40, 45_000)));
+        contents.addRow(new DataRow("Person", Arrays.asList("name", "age", "salary"), Arrays.asList("Charly", 22, 30_000)));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(1, heuristicResult.getQueryResult().seeRows().size());
 
+        assertTrue(heuristicResult.getTruthness().isTrue());
 
-        assertEquals(1,
-                heuristicResult.getQueryResult().seeRows().stream()
-                        .filter(row -> row.getValueByName("department_id").equals(1))
-                        .filter(row -> row.getValueByName("project_id").equals(3))
-                        .filter(row -> row.getValueByName("employees_per_project").equals(2L))
-                        .count());
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(3, queryResult.size());
+
+        assertEquals("Alice", queryResult.seeRows().get(0).getValueByName("name"));
+        assertEquals(30, queryResult.seeRows().get(0).getValueByName("age"));
+
+        assertEquals("Bob", queryResult.seeRows().get(1).getValueByName("name"));
+        assertEquals(28, queryResult.seeRows().get(1).getValueByName("age"));
+
+        assertEquals("Charly", queryResult.seeRows().get(2).getValueByName("name"));
+        assertEquals(22, queryResult.seeRows().get(2).getValueByName("age"));
+
     }
 
 
     @Test
-    public void testGroupByWithHavingNotSatisfied() {
+    public void testDate() {
         DbInfoDto schema = buildSchema();
-        String sqlCommand = "SELECT department_id, COUNT(*) As employees_per_department " +
-                "FROM employees " +
-                "GROUP BY department_id " +
-                "HAVING COUNT(*) = 2;";
 
-        QueryResult employees = new QueryResult(Arrays.asList("name", "first_name", "department_id", "project_id", "salary"), "employees");
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("John Doe", "John", 1, 2, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jack Doe", "Jack", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Jane Doe", "Jane", 1, 3, 10_000)));
-        employees.addRow(new DataRow("employees", Arrays.asList("name", "first_name", "department_id", "project_id", "salary"),
-                Arrays.asList("Janet Doe", "Janet", 2, 1, 10_000)));
-        QueryResultSet queryResultSet = QueryResultSet.build(employees);
+        String sqlCommand = "SELECT project_name FROM projects WHERE DATE(project_start_time)>'2023-08-22 00:00:00.000000'";
+
+
+        QueryResult contents = new QueryResult(Arrays.asList("project_id", "project_name", "project_start_time"), "projects");
+        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(1, "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00")));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
 
         SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
         SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
                 .withTableColumnResolver(new TableColumnResolver(schema))
                 .build();
-
         SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
-        assertEquals(0, heuristicResult.getQueryResult().seeRows().size());
-        Truthness expectedTruthness =
-                TruthnessUtils.buildAndAggregationTruthness(new Truthness(1.0, 0.2), TruthnessUtils.buildOrAggregationTruthness(
-                        new Truthness(0.575, 1.0),
-                        new Truthness(0.575, 1.0)
-                ));
-        assertEquals(expectedTruthness.getOfTrue(), heuristicResult.getTruthness().getOfTrue());
-        assertEquals(expectedTruthness.getOfFalse(), heuristicResult.getTruthness().getOfFalse());
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
     }
 
+    @Test
+    public void testUUID() {
+        DbInfoDto schema = buildSchema();
+
+        String sqlCommand = "SELECT project_id, project_name FROM projects WHERE project_id = '00000000-0000-015f-0000-00000000014e'::uuid";
+
+        QueryResult contents = new QueryResult(Arrays.asList("project_id", "project_name", "project_start_time"), "projects");
+        contents.addRow(Arrays.asList("project_id", "project_name", "project_start_time"), "projects", Arrays.asList(UUID.fromString("00000000-0000-015f-0000-00000000014e"), "ProjectX", Timestamp.valueOf("2023-09-15 12:00:00")));
+
+        QueryResultSet queryResultSet = new QueryResultSet();
+        queryResultSet.addQueryResult(contents);
+
+        SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder builder = new SqlHeuristicsCalculator.SqlHeuristicsCalculatorBuilder();
+        SqlHeuristicsCalculator calculator = builder.withSourceQueryResultSet(queryResultSet)
+                .withTableColumnResolver(new TableColumnResolver(schema))
+                .build();
+        SqlHeuristicResult heuristicResult = calculator.computeHeuristic((Select) SqlParserUtils.parseSqlCommand(sqlCommand));
+
+        assertTrue(heuristicResult.getTruthness().isTrue());
+
+        QueryResult queryResult = heuristicResult.getQueryResult();
+        assertEquals(1, queryResult.size());
+        UUID expectedUUID = UUID.fromString("00000000-0000-015f-0000-00000000014e");
+        assertEquals(expectedUUID, queryResult.seeRows().get(0).getValueByName("project_id"));
+        assertEquals("ProjectX", queryResult.seeRows().get(0).getValueByName("project_name"));
+    }
 
 }
-

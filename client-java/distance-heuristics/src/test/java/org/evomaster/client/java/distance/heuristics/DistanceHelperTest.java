@@ -2,6 +2,8 @@ package org.evomaster.client.java.distance.heuristics;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
+
 import static org.evomaster.client.java.distance.heuristics.DistanceHelper.*;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -68,9 +70,33 @@ public class DistanceHelperTest {
 
     @Test
     public void testDoubleMaxDistance() {
-        double upperBound = Double.MAX_VALUE  /2;
+        double upperBound = Double.MAX_VALUE / 2;
         double lowerBound = -upperBound;
         double distance = getDistanceToEquality(lowerBound, upperBound);
         assertEquals(Double.MAX_VALUE, distance);
+    }
+
+    @Test
+    public void testDistanceUUIDEquals() {
+        UUID left = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        UUID right = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        double distance = getDistance(left, right);
+        assertEquals(0, distance);
+    }
+
+    @Test
+    public void testDistanceUUIDNotEquals() {
+        UUID left = UUID.fromString("123e4567-e89b-12d3-a456-426614174001");
+        UUID right = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        double distance = getDistance(left, right);
+        assertEquals(1, distance);
+    }
+
+    @Test
+    public void testDistanceUUIDNotEqualsThree() {
+        UUID left = UUID.fromString("123e4567-e89b-12d3-a456-426614174003");
+        UUID right = UUID.fromString("123e4567-e89b-12d3-a456-426614174000");
+        double distance = getDistance(left, right);
+        assertEquals(2, distance);
     }
 }

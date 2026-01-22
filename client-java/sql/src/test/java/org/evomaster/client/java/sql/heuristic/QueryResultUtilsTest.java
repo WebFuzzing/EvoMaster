@@ -74,4 +74,17 @@ class QueryResultUtilsTest {
         assertNull(nullDataRow.seeValues().get(1));
     }
 
+    @Test
+    public void testCreateDistinctQueryResult() {
+        QueryResult queryResult = new QueryResult(Arrays.asList(new VariableDescriptor("column1", null, null)));
+        queryResult.addRow(Arrays.asList("column1"), null, Arrays.asList("value1"));
+        queryResult.addRow(Arrays.asList("column1"), null, Arrays.asList("value1"));
+        queryResult.addRow(Arrays.asList("column1"), null, Arrays.asList("value1"));
+        queryResult.addRow(Arrays.asList("column1"), null, Arrays.asList("value1"));
+        queryResult.addRow(Arrays.asList("column1"), null, Arrays.asList("value2"));
+
+        QueryResult distinctResult = QueryResultUtils.createDistinctQueryResult(queryResult);
+
+        assertEquals(2, distinctResult.seeRows().size());
+    }
 }

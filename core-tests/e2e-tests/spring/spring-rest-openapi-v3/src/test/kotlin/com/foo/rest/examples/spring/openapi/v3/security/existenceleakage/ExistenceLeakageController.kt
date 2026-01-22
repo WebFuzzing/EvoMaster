@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring.openapi.v3.security.existenceleakage
 
 import com.foo.rest.examples.spring.openapi.v3.SpringController
+import com.foo.rest.examples.spring.openapi.v3.security.existenceleakage.base.ExistenceLeakageApplication
 import org.evomaster.client.java.controller.AuthUtils
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 

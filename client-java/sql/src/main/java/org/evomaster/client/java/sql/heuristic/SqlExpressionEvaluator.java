@@ -305,6 +305,8 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof OffsetTime || concreteRightValue instanceof OffsetTime) {
                 truthnessOfExpression = calculateTruthnessForInstantComparison(convertToInstant(concreteLeftValue), convertToInstant(concreteLeftValue), comparisonOperatorType);
+            } else if (concreteLeftValue instanceof UUID || concreteRightValue instanceof UUID) {
+                truthnessOfExpression = calculateTruthnessForUUIDComparison(convertToUUID(concreteLeftValue), convertToUUID(concreteRightValue), comparisonOperatorType);
             } else if (concreteLeftValue instanceof Object[] && concreteRightValue instanceof Object[]) {
                 truthnessOfExpression = calculateTruthnessForArrayComparison((Object[]) concreteLeftValue, (Object[]) concreteRightValue, comparisonOperatorType);
             } else {
@@ -317,6 +319,20 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             }
         }
         return truthness;
+    }
+
+    private static Truthness calculateTruthnessForUUIDComparison(UUID left, UUID right, ComparisonOperatorType comparisonOperatorType) {
+        Objects.requireNonNull(left);
+        Objects.requireNonNull(right);
+
+        switch (comparisonOperatorType) {
+            case EQUALS_TO:
+                return TruthnessUtils.getEqualityTruthness(left, right);
+            case NOT_EQUALS_TO:
+                return TruthnessUtils.getEqualityTruthness(left, right).invert();
+            default:
+                throw new IllegalArgumentException("Unsupported UUID binary operator: " + comparisonOperatorType);
+        }
     }
 
     private static Truthness calculateTruthnessForInstantComparison(Instant leftInstant, Instant rightInstant, ComparisonOperatorType comparisonOperatorType) {
@@ -381,6 +397,9 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     }
 
     public static Truthness getEqualityTruthness(String a, String b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+
         if (a.equals(b)) {
             return TRUE_TRUTHNESS;
         } else {
@@ -484,6 +503,37 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
         evaluationStack.push(null);
     }
 
+    private Object visitAggregationFunction(SqlAggregateFunction sqlAggregateFunction, Expression parameterExpression) {
+        final Object functionResult;
+        List<Object> values = new ArrayList<>();
+        if (parameterExpression instanceof Column) {
+            for (DataRow dataRow : this.getCurrentQueryResult().seeRows()) {
+                SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
+                        .withTaintHandler(this.taintHandler)
+                        .withTableColumnResolver(this.tableColumnResolver)
+                        .withQueryResultSet(this.queryResultSet)
+                        .withCurrentQueryResult(this.getCurrentQueryResult())
+                        .withDataRowStack(this.dataRowStack)
+                        .withCurrentDataRow(dataRow)
+                        .withParentStatementEvaluator(this.parentStatementEvaluator)
+                        .build();
+                parameterExpression.accept(expressionEvaluator);
+                final Object value = expressionEvaluator.popAsSingleValue();
+                values.add(value);
+            }
+        } else if (parameterExpression instanceof AllColumns) {
+            for (DataRow dataRow : getCurrentQueryResult().seeRows()) {
+                values.add(dataRow);
+            }
+        } else {
+            parameterExpression.accept(this);
+            Object value = this.popAsSingleValue();
+            values.add(value);
+        }
+        functionResult = sqlAggregateFunction.evaluate(values);
+        return functionResult;
+    }
+
     @Override
     public void visit(Function function) {
         String functionName = function.getName();
@@ -492,42 +542,33 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
             throw new UnsupportedOperationException("Function " + functionName + " needs to be implemented");
         }
         final Object functionResult;
-        List<Object> values = new ArrayList<>();
         if (sqlFunction instanceof SqlAggregateFunction) {
-            Expression parameterExpression = function.getParameters().get(0);
-
-            if (parameterExpression instanceof Column) {
-                for (DataRow dataRow : this.getCurrentQueryResult().seeRows()) {
-                    SqlExpressionEvaluator expressionEvaluator = new SqlExpressionEvaluator.SqlExpressionEvaluatorBuilder()
-                            .withTaintHandler(this.taintHandler)
-                            .withTableColumnResolver(this.tableColumnResolver)
-                            .withQueryResultSet(this.queryResultSet)
-                            .withCurrentQueryResult(this.getCurrentQueryResult())
-                            .withDataRowStack(this.dataRowStack)
-                            .withCurrentDataRow(dataRow)
-                            .withParentStatementEvaluator(this.parentStatementEvaluator)
-                            .build();
-                    parameterExpression.accept(expressionEvaluator);
-                    final Object value = expressionEvaluator.popAsSingleValue();
-                    values.add(value);
-                }
-            } else if (parameterExpression instanceof AllColumns) {
-                for (DataRow dataRow : getCurrentQueryResult().seeRows()) {
-                    values.add(dataRow);
-                }
-            } else {
-                parameterExpression.accept(this);
-                Object value = this.popAsSingleValue();
-                values.add(value);
+            if (function.getParameters().size() != 1) {
+                throw new UnsupportedOperationException(
+                        String.format("Unsupported aggregate function %s with %s parameters",
+                                functionName,
+                                function.getParameters().size()));
             }
-            functionResult = sqlFunction.evaluate(values);
+            Expression parameterExpression = function.getParameters().get(0);
+            functionResult = visitAggregationFunction(
+                    (SqlAggregateFunction) sqlFunction,
+                    parameterExpression);
         } else {
             super.visit(function);
-            for (int i = 0; i < function.getParameters().size(); i++) {
-                Object concreteParameter = popAsSingleValue();
-                values.add(concreteParameter);
+            final List<Object> values;
+            if (function.getParameters() != null && !function.getParameters().isEmpty()) {
+                List<Object> concreteParameters = popAsListOfValues();
+                if (function.getParameters().size() != concreteParameters.size()) {
+                    throw new IllegalStateException(
+                            String.format("Mismatch in number of parameters for function %s: %s expected but %s found",
+                                    functionName,
+                                    function.getParameters().size(),
+                                    concreteParameters.size()));
+                }
+                values = concreteParameters;
+            } else {
+                values = new ArrayList<>();
             }
-            Collections.reverse(values);
             functionResult = sqlFunction.evaluate(values.toArray(new Object[]{}));
         }
         this.evaluationStack.push(functionResult);
@@ -1248,9 +1289,29 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
 
     @Override
     public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-        String dateTimeAsString = dateTimeLiteralExpression.getValue();
-        String dateTimeWithoutEnclosingQuotes = SqlStringUtils.removeEnclosingQuotes(dateTimeAsString);
-        evaluationStack.push(dateTimeWithoutEnclosingQuotes);
+        final String dateTimeAsString = SqlStringUtils.removeEnclosingQuotes(dateTimeLiteralExpression.getValue());
+        final DateTimeLiteralExpression.DateTime dateTimeType = dateTimeLiteralExpression.getType();
+        Object dateTimeValue;
+        switch (dateTimeType) {
+            case DATE:
+                dateTimeValue = java.sql.Date.valueOf(dateTimeAsString);
+                break;
+            case TIME:
+                dateTimeValue = java.sql.Time.valueOf(dateTimeAsString);
+                break;
+            case TIMESTAMP:
+                dateTimeValue = java.sql.Timestamp.valueOf(dateTimeAsString);
+                break;
+            case TIMESTAMPTZ:
+                // Example literal: 2025-01-22 15:30:45+02:00
+                // Convert spaces to 'T' to comply with ISO-8601
+                String isoString = dateTimeAsString.replace(' ', 'T');
+                dateTimeValue = java.time.OffsetDateTime.parse(isoString);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported DateTimeLiteralExpression type: " + dateTimeType);
+        }
+        evaluationStack.push(dateTimeValue);
     }
 
     @Override
@@ -1388,7 +1449,7 @@ public class SqlExpressionEvaluator extends ExpressionVisitorAdapter {
     public void visit(AllColumns allColumns) {
         List<Object> values = new ArrayList<>(getCurrentDataRow().seeValues());
         evaluationStack.push(values);
-   }
+    }
 
     @Override
     public void visit(AllTableColumns allTableColumns) {
