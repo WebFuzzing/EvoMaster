@@ -75,6 +75,9 @@ class Lines(val format: OutputFormat) {
         buffer[buffer.lastIndex] = buffer.last().replace(regex, replacement)
     }
 
+    /**
+     * Replaces the first match of [regex] with [replacement].
+     */
     fun replaceFirstInCurrent(regex: Regex, replacement: String){
         if(buffer.isEmpty()){
             return

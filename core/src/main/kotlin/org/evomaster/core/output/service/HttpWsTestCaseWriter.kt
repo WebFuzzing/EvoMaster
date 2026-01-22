@@ -860,7 +860,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
 
             } else if (config.detectFlakiness && lines.isCurrentACommentLine()){
-                lines.replaceInCurrent(Regex("(?<=\\s)//"), "; //")
+                /*
+                    regex:
+                    Matches '//' only when it is immediately preceded by a whitespace character.
+                 */
+                lines.replaceFirstInCurrent(Regex("(?<=\\s)//"), "; //")
             }else {
                 lines.appendSemicolon()
             }
