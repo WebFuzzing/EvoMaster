@@ -193,9 +193,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 val value = bodyIsString(s,GeneUtils.EscapeMode.BODY, responseVariableName)
 
                 val fs = flakyBodyString?.trim()
-                if (fs == null || fs == s)
+                if (fs == null || fs == s) {
                     lines.add(value)
-                else{
+                }else{
                     lines.addSingleCommentLine(flakyInfo("Body", s, fs))
                     lines.addSingleCommentLine(value)
                 }
@@ -257,9 +257,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
 
-            if (flakyMap.isNullOrEmpty())
+            if (flakyMap.isNullOrEmpty()) {
                 lines.add(instruction)
-            else{
+            }else{
                 lines.addSingleCommentLine(instruction)
             }
         }
@@ -442,8 +442,9 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             if (i == limit) {
                 break
             }
-            if (flakyList != null && flakyList.size < i)
+            if (flakyList != null && flakyList.size < i){
                 break
+            }
             val flakyItem = if (flakyList != null) flakyList[i] else null
 
             handleAssertionsOnField(list[i], flakyItem, lines, "$fieldPath[$i]", responseVariableName)
