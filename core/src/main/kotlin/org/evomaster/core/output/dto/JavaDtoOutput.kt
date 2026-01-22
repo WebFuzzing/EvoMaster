@@ -122,7 +122,6 @@ class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
                         lines.add("escapes[i] = CharacterEscapes.ESCAPE_NONE;")
                     }
                 lines.add("}")
-//                lines.add("escapes[0x1F] = CharacterEscapes.ESCAPE_NONE;")
             }
             lines.add("}")
             lines.addEmpty()
