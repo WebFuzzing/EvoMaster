@@ -1,20 +1,25 @@
 package org.evomaster.core.output.service
 
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import org.evomaster.core.sql.SqlAction
-import org.evomaster.core.sql.SqlActionResult
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
-import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.sql.SqlAction
+import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
+
+    companion object{
+        private val mapper = ObjectMapper()
+    }
 
     protected fun createUniqueResponseVariableName(): String {
         val name = "res_$counter"
@@ -102,21 +107,34 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             '[' -> {
                 try{
                 // This would be run if the JSON contains an array of objects.
-                val list = Gson().fromJson(bodyString, List::class.java)
-                val flakyList = flakyBodyString?.let { Gson().fromJson(it, List::class.java) }
+                val list = mapper.readValue(
+                    bodyString,
+                    object : TypeReference<List<*>>() {}
+                )
+                val flakyList = flakyBodyString?.let {  mapper.readValue(
+                    it,
+                    object : TypeReference<List<*>>() {}
+                )}
 
                 handleAssertionsOnList(list, flakyList, lines, "", bodyVarName)
-                } catch (e: JsonSyntaxException) {
+                } catch (e: JsonProcessingException) {
                     lines.addSingleCommentLine("Failed to parse JSON response")
                 }
             }
             '{' -> {
                 // JSON contains an object
                 try {
-                    val resContents = Gson().fromJson(bodyString, Map::class.java)
-                    val flakyMap = flakyBodyString?.let { Gson().fromJson(it, Map::class.java) as Map<String, *> }
+                    val resContents: Map<String, *> = mapper.readValue(
+                        bodyString,
+                        object : TypeReference<Map<String, *>>() {}
+                    )
+
+                    val flakyMap: Map<String, *>? = flakyBodyString?.let {
+                        mapper.readValue(it, object : TypeReference<Map<String, *>>() {})
+                    }
+
                     handleAssertionsOnObject(resContents as Map<String, *>, flakyMap, lines, "", bodyVarName)
-                } catch (e: JsonSyntaxException) {
+                } catch (e: JsonProcessingException) {
                     lines.addSingleCommentLine("Failed to parse JSON response")
                 }
             }
