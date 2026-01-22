@@ -342,7 +342,7 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
         List<AdditionalInfo> list = getAdditionalInfoList();
         if (!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
-            last.getOpenSearchInfoData().forEach(openSearchHandler::handle);
+            last.getOpenSearchIndexSchemaData().forEach(openSearchHandler::handle);
         }
     }
 
