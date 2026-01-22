@@ -114,6 +114,10 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
+    private final Set<Neo4jNodeSchema> neo4jNodeSchemaData = new CopyOnWriteArraySet<>();
+
+    private final Set<Neo4jRelationshipSchema> neo4jRelationshipSchemaData = new CopyOnWriteArraySet<>();
+
     public Set<ExecutedSqlCommand> getSqlInfoData(){
         return Collections.unmodifiableSet(executedSqlCommandData);
     }
@@ -138,6 +142,14 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
+    public Set<Neo4jNodeSchema> getNeo4jNodeSchemaData(){
+        return Collections.unmodifiableSet(neo4jNodeSchemaData);
+    }
+
+    public Set<Neo4jRelationshipSchema> getNeo4jRelationshipSchemaData(){
+        return Collections.unmodifiableSet(neo4jRelationshipSchemaData);
+    }
+
     public void addSqlInfo(ExecutedSqlCommand info){
         executedSqlCommandData.add(info);
     }
@@ -160,6 +172,14 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         mongoCollectionSchemaData.add(mongoCollectionSchema);
+    }
+
+    public void addNeo4jNodeSchema(Neo4jNodeSchema neo4jNodeSchema){
+        neo4jNodeSchemaData.add(neo4jNodeSchema);
+    }
+
+    public void addNeo4jRelationshipSchema(Neo4jRelationshipSchema neo4jRelationshipSchema){
+        neo4jRelationshipSchemaData.add(neo4jRelationshipSchema);
     }
 
     public Set<String> getParsedDtoNamesView(){

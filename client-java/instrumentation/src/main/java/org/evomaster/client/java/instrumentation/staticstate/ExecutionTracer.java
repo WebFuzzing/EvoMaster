@@ -455,6 +455,18 @@ public class ExecutionTracer {
         }
     }
 
+    public static void addNeo4jNodeSchema(Neo4jNodeSchema neo4jNodeSchema){
+        if (!executingInitNeo4J) {
+            getCurrentAdditionalInfo().addNeo4jNodeSchema(neo4jNodeSchema);
+        }
+    }
+
+    public static void addNeo4jRelationshipSchema(Neo4jRelationshipSchema neo4jRelationshipSchema){
+        if (!executingInitNeo4J) {
+            getCurrentAdditionalInfo().addNeo4jRelationshipSchema(neo4jRelationshipSchema);
+        }
+    }
+
     public static void markLastExecutedStatement(String lastLine, String lastMethod) {
         getCurrentAdditionalInfo().pushLastExecutedStatement(lastLine, lastMethod);
     }
