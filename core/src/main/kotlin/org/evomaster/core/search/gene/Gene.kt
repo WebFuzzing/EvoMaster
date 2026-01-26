@@ -880,6 +880,10 @@ abstract class Gene(
      * If the type of [other] is different, this method might throw an [IllegalArgumentException]
      *
      * TODO refactor, in which type-check is done here
+     *
+     * FIXME do we really need to throw an exception???
+     * issue is that even if [other] is of right type, it's internal genes might not match,
+     * eg, look at ChoiceGene
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 

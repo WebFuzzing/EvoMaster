@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>5.0.1-SNAPSHOT</version>
+        <version>5.0.3-SNAPSHOT</version>
     </parent>
 
     <!--
@@ -14,7 +14,7 @@
 
     <name>${project.groupId}:${project.artifactId}</name>
     <artifactId>evomaster-test-old-libraries</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
@@ -37,6 +37,7 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-instrumentation</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -67,5 +68,4 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 </project>

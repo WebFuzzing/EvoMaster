@@ -227,8 +227,8 @@ class SecurityRest {
                          */
                         val repeat = lastCall.copy() as RestCallAction
                         repeat.forceNewTaints()
+                        repeat.resetLocalIdRecursively()
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                        copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
                     }
                     copy.seeMainExecutableActions().last().auth = otherAuth
@@ -388,7 +388,7 @@ class SecurityRest {
                 var anySuccess = false
 
                 genes.forEach {
-                    gene ->
+                        gene ->
                     val leafGene = gene.getLeafGene()
                     if(leafGene !is StringGene) return@forEach
 
@@ -398,7 +398,7 @@ class SecurityRest {
                     // we need to do this way because we need to append our payload
                     var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
-                        // append the SQLi payload value
+                    // append the SQLi payload value
                     leafGene.getPhenotype().setFromStringValue(newPayload).also {
                         if(it) anySuccess = true
                     }
@@ -599,7 +599,7 @@ class SecurityRest {
                 action.path,
                 status = 401,
                 authenticated = true
-                )
+            )
             }.distinctBy { it.seeMainExecutableActions().last().auth.name }
 
             if(suspicious.isEmpty()){
@@ -682,17 +682,17 @@ class SecurityRest {
 
         getOperations.forEach { get ->
 
-            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+            val inds403 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
                 status = 403
-                )
+            )
             if(inds403.isEmpty()){
                 return@forEach
             }
 
-            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+            val inds404 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
@@ -703,29 +703,40 @@ class SecurityRest {
             }
 
             //found the bug.
-            val forbidden = inds403.minBy { it.individual.size() }
-            val notfound = inds404.maxBy { it.individual.size() }
+            val forbidden = inds403.minBy { it.size() }
+            val notfound = inds404.minBy { it.size() }
 
-            //needs slicing to minimize the newly generated test
-            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
-                forbidden,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
+            val final = RestIndividualBuilder.merge(forbidden, notfound)
 
-            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
-                notfound,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
+            // Check if the 404 path is a child resource and add parent GET to check access
+            val path404 = get.path
+            val action404 = final.seeMainExecutableActions().last()
+            val lastAuth = action404.auth
 
-            val final = RestIndividualBuilder.merge(first, second)
+            // Find the parent path from getOperations (all GET operation definitions)
+            val parentGetOperation = getOperations
+                .filter { it.path.isStrictlyAncestorOf(path404)}
+                .filter { it.path.isLastElementAParameter() }
+                .minByOrNull { it.path.levels() }
+
+            if (parentGetOperation != null) {
+                val parentGetAction = parentGetOperation.copy() as RestCallAction
+                parentGetAction.resetLocalIdRecursively()
+                parentGetAction.forceNewTaints()
+
+                parentGetAction.doInitialize()
+                parentGetAction.auth = lastAuth
+                // Bind to the same path params from the 404 action to ensure same IDs
+                //FIXME this would currently not work for dynamic parameters
+                parentGetAction.bindToSamePathResolution(action404)
+
+                final.addResourceCall(
+                    restCalls = RestResourceCalls(
+                        actions = mutableListOf(parentGetAction),
+                        sqlActions = listOf()
+                    )
+                )
+            }
 
             final.modifySampleType(SampleType.SECURITY)
             final.ensureFlattenedStructure()
@@ -736,31 +747,15 @@ class SecurityRest {
                 return@forEach
             }
 
-            //verify if newly constructed individual still find the bug
-            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            //fitness function should have detected the fault
-            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(check403 < 0 || check404 < 0 || faults.none { it.category == DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
-                //if this happens, it is a bug in the merge... or flakiness
-                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
-                return@forEach
+            if(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE in faultsCategories){
+                // add the evaluated individual to the archive
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                //if we arrive here, should always be added, because we are creating a new testing target
+                assert(added)
             }
 
-            val added = archive.addIfNeeded(evaluatedIndividual)
-            //if we arrive here, should always be added, because we are creating a new testing target
-            assert(added)
         }
     }
 
@@ -1060,8 +1055,8 @@ class SecurityRest {
                     )
                     finalIndividual.seeMainExecutableActions()
                         .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                        it.saveCreatedResourceLocation = true
-                    }
+                            it.saveCreatedResourceLocation = true
+                        }
                     finalIndividual.fixResourceForwardLinks()
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)

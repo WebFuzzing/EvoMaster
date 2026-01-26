@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
-[![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5052036.svg)](https://doi.org/10.5281/zenodo.5052036)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Github All Releases](https://img.shields.io/github/downloads/WebFuzzing/evomaster/total.svg)](https://github.com/WebFuzzing/EvoMaster/releases)
 

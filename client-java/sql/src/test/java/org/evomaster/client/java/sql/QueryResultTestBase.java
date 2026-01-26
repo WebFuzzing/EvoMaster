@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -311,5 +312,32 @@ public abstract class QueryResultTestBase {
         assertEquals(true, queryResult.seeRows().isEmpty());
     }
 
+
+    @Test
+    public void testUUIDColumn() throws Exception {
+        /**
+         * Column type UUID is not supported in MySQL
+         */
+        Assumptions.assumeFalse(getDbType() == DatabaseType.MYSQL);
+
+
+        // set up the database
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE example_table (\n" +
+                "    uuid_column UUID NOT NULL\n" +
+                ");");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO example_table (uuid_column) \n" +
+                "VALUES ('00000000-0000-015f-0000-00000000014e');\n");
+
+        // create the queryResult
+        QueryResult queryResult = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM example_table");
+
+        // check the results
+        assertEquals(1, queryResult.seeRows().size());
+        DataRow row = queryResult.seeRows().get(0);
+        Object actual = row.getValueByName("uuid_column", "example_table");
+        assertTrue(actual instanceof UUID);
+        UUID expected = UUID.fromString("00000000-0000-015f-0000-00000000014e");
+        assertEquals(expected, actual);
+    }
 
 }
