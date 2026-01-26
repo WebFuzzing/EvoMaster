@@ -1411,7 +1411,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
             ?: return
-        val injectedTime = injectedResult.getResponseTimeMs() ?: return
+        val injectedTime = injectedResult.getResponseTimeMs()
+        
 
         val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
         val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
@@ -1420,7 +1421,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val baselineIsFast = baselineTime < K
 
         // Response after injection must be slow enough (response > N)
-        val responseIsSlowEnough = injectedTime > N
+        var responseIsSlowEnough: Boolean
+
+        if (injectedTime != null) {
+            responseIsSlowEnough = injectedTime > N
+        } else if (injectedResult.getTimedout()){
+            // if the injected request timed out, we can consider it vulnerable
+            responseIsSlowEnough = true
+        } else {
+            return
+        }
 
         // If baseline is fast AND the response after payload is slow enough,
         // then we consider this a potential time-based SQL injection vulnerability.
