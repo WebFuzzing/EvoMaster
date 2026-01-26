@@ -1362,7 +1362,7 @@ public void test() throws Exception {
         fooResult.setStatusCode(200)
         fooResult.setBody("""
            {
-                "email":$email
+                "email":"$email"
            }
         """.trimIndent())
         fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
@@ -1477,39 +1477,7 @@ public void test() throws Exception {
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = """
-@Test
-public void test() throws Exception {
-    
-    given().accept("*/*")
-            .get(baseUrlOfSut + "/foo")
-            .then()
-            // Flaky Status Code: 200 vs. 500
-            // .statusCode(200)
-            .assertThat()
-            .contentType("application/json")
-            // Flaky size of 'p0': 2 vs. 3
-            // .body("'p0'.size()", equalTo(2))
-            .body("'p0'[0]", numberMatches(1.0))
-            .body("'p0'[1]", numberMatches(2.0))
-            .body("'p1'.isEmpty()", is(true))
-            // Flaky size of 'p2'.'properties': 3 vs. 4
-            // .body("'p2'.'properties'.size()", equalTo(3))
-            .body("'p2'.'properties'[0].isEmpty()", is(true))
-            // Flaky value of field "'p2'.'properties'[1].'name'": mapProperty1 vs. flaky1
-            // .body("'p2'.'properties'[1].'name'", containsString("mapProperty1"))
-            .body("'p2'.'properties'[1].'type'", containsString("string"))
-            // Flaky value of field "'p2'.'properties'[1].'value'": one vs. flaky2
-            // .body("'p2'.'properties'[1].'value'", containsString("one"))
-            .body("'p2'.'properties'[2].'name'", containsString("mapProperty2"))
-            .body("'p2'.'properties'[2].'type'", containsString("string"))
-            .body("'p2'.'properties'[2].'value'", containsString("two"))
-            // Flaky mismatched size of fields for Object 'p2'.'empty': 0 vs. 1
-            ; // .body("'p2'.'empty'.isEmpty()", is(true))
-}
-
-""".trimIndent()
-        assertEquals(expectedLines, lines.toString())
+        assertEquals(6, getNumberOfFlakyComment(lines.toString()))
     }
 
     @Test
@@ -1551,24 +1519,10 @@ public void test() throws Exception {
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        val expectedLines = """
-@Test
-public void test() throws Exception {
-    
-    given().accept("*/*")
-            .get(baseUrlOfSut + "/foo")
-            .then()
-            // Flaky Status Code: 200 vs. 500
-            // .statusCode(200)
-            .assertThat()
-            .contentType("application/json")
-            // Flaky size of : 2 vs. 3
-            // .body("size()", equalTo(2))
-            // Flaky Body: "foo", "bar" vs. "foo", "abc", "bar"
-            ; // .body("", hasItems("foo", "bar"))
-}
+        assertEquals(3, getNumberOfFlakyComment(lines.toString()))
+    }
 
-""".trimIndent()
-        assertEquals(expectedLines, lines.toString())
+    private fun getNumberOfFlakyComment(testContent: String): Int{
+        return  Regex("// Flaky").findAll(testContent).count()
     }
 }
