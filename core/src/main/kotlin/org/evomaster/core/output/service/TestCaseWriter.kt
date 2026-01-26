@@ -398,5 +398,9 @@ abstract class TestCaseWriter {
         // do nothing
     }
 
+    /**
+     * provide flaky info in a single-line comment
+     */
+    fun flakyInfo(category : String?, value : String, flaky : String) = "Flaky${if (category == null) "" else " $category"}: ${value.replace("\n", "")} vs. ${flaky.replace("\n","")}"
 
 }
