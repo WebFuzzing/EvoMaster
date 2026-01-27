@@ -1505,7 +1505,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+                //this can happen if an action timeout, or is stopped
+                ?: continue
 
             if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
                 val scenarioId = idMapper.handleLocalTarget(
