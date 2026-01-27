@@ -364,12 +364,15 @@ class Statistics : SearchListener {
         classifyCount: Long,
         repairTimeNs: Long,
         repairCount: Long,
-        observed200ByAIModel: Long,
+        observed2xxByAIModel: Long,
+        observed4xxByAIModel: Long,
+        observed3xxByAIModel: Long,
+        observed5xxByAIModel: Long,
         observed400ByAIModel: Long,
-        observed500ByAIModel: Long,
         maxAccuracy : Double,
         maxPrecision : Double,
         maxRecall : Double,
+        maxF1Score : Double,
         maxMcc : Double,
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
@@ -380,10 +383,11 @@ class Statistics : SearchListener {
         Pair("ai_f1Score400", "%.4f".format(f1)),
         Pair("ai_mcc400", "%.4f".format(mcc)),
         // Max metrics among all endpoints
-        Pair("max_Accuracy", "%.4f".format(maxAccuracy)),
-        Pair("max_Precision", "%.4f".format(maxPrecision)),
-        Pair("max_Recall", "%.4f".format(maxRecall)),
-        Pair("max_Mcc", "%.4f".format(maxMcc)),
+        Pair("ai_max_Accuracy", "%.4f".format(maxAccuracy)),
+        Pair("ai_max_Precision", "%.4f".format(maxPrecision)),
+        Pair("ai_max_Recall", "%.4f".format(maxRecall)),
+        Pair("ai_max_F1Score", "%.4f".format(maxF1Score)),
+        Pair("ai_max_Mcc", "%.4f".format(maxMcc)),
         // timing in milliseconds
         Pair("ai_update_time_ms", "%.4f".format(updateTimeNs / 1_000_000.0)),
         Pair("ai_update_count", updateCount.toString()),
@@ -391,10 +395,12 @@ class Statistics : SearchListener {
         Pair("ai_classify_count", classifyCount.toString()),
         Pair("ai_repair_time_ms", "%.4f".format(repairTimeNs / 1_000_000.0)),
         Pair("ai_repair_count", repairCount.toString()),
-        Pair("observed_200_by_ai_model", observed200ByAIModel.toString()),
+        Pair("observed_2xx_by_ai_model", observed2xxByAIModel.toString()),
+        Pair("observed_3xx_by_ai_model", observed3xxByAIModel.toString()),
+        Pair("observed_4xx_by_ai_model", observed4xxByAIModel.toString()),
+        Pair("observed_5xx_by_ai_model", observed5xxByAIModel.toString()),
         Pair("observed_400_by_ai_model", observed400ByAIModel.toString()),
-        Pair("observed_500_by_ai_model", observed500ByAIModel.toString()),
-    )
+        )
 
     fun getAIData(): List<Pair> {
         // AI model is unable
@@ -413,12 +419,15 @@ class Statistics : SearchListener {
                 classifyCount = 0,
                 repairTimeNs = 0,
                 repairCount = 0,
-                observed200ByAIModel = 0,
+                observed2xxByAIModel = 0,
+                observed3xxByAIModel = 0,
+                observed4xxByAIModel = 0,
+                observed5xxByAIModel = 0,
                 observed400ByAIModel = 0,
-                observed500ByAIModel = 0,
                 maxAccuracy = 0.0,
                 maxPrecision = 0.0,
                 maxRecall = 0.0,
+                maxF1Score = 0.0,
                 maxMcc = 0.0,
             )
         }
@@ -441,14 +450,16 @@ class Statistics : SearchListener {
             classifyCount = aiStats.classifyCount,
             repairTimeNs = aiStats.repairTimeNs,
             repairCount = aiStats.repairCount,
-            observed200ByAIModel = aiStats.observed200Count,
+            observed2xxByAIModel = aiStats.observed2xxCount,
+            observed3xxByAIModel = aiStats.observed3xxCount,
+            observed4xxByAIModel = aiStats.observed4xxCount,
+            observed5xxByAIModel = aiStats.observed5xxCount,
             observed400ByAIModel = aiStats.observed400Count,
-            observed500ByAIModel = aiStats.observed500Count,
             maxAccuracy = aiStats.maxAccuracy,
             maxPrecision = aiStats.maxPrecision,
             maxRecall = aiStats.maxRecall,
+            maxF1Score = aiStats.maxF1Score,
             maxMcc = aiStats.maxMcc,
-
         )
     }
 

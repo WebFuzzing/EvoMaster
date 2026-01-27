@@ -19,7 +19,28 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 
-
+/**
+ * A data class representing statistics for an AI response classifier. This class is designed
+ * to capture various performance metrics and observed response code counts, useful for analysis
+ * and optimization of the response classification process.
+ *
+ * @property updateTimeNs The total time spent updating the classifier, measured in nanoseconds.
+ * @property updateCount The number of times the classifier has been updated.
+ * @property classifyTimeNs The total time spent classifying responses, measured in nanoseconds.
+ * @property classifyCount The number of classification operations performed.
+ * @property repairTimeNs The total time spent repairing classification errors, measured in nanoseconds.
+ * @property repairCount The number of repair operations performed by the classifier.
+ * @property observed2xxCount The total count of observed 2xx HTTP responses.
+ * @property observed3xxCount The total count of observed 3xx HTTP responses.
+ * @property observed4xxCount The total count of observed 4xx HTTP responses.
+ * @property observed5xxCount The total count of observed 5xx HTTP responses.
+ * @property observed400Count The total count of observed HTTP 400 responses, tracked separately due to its significance.
+ * @property maxAccuracy The maximum accuracy value recorded across all endpoint classifiers.
+ * @property maxPrecision The maximum precision value recorded across all endpoint classifiers.
+ * @property maxRecall The maximum recall value recorded across all endpoint classifiers.
+ * @property maxF1Score The maximum F1 score recorded across all endpoint classifiers.
+ * @property maxMcc The maximum Matthews Correlation Coefficient (MCC) recorded across all endpoint classifiers.
+ */
 data class AIResponseClassifierStats(
     var updateTimeNs: Long = 0,
     var updateCount: Long = 0,
@@ -27,10 +48,12 @@ data class AIResponseClassifierStats(
     var classifyCount: Long = 0,
     var repairTimeNs: Long = 0,
     var repairCount: Long = 0,
-    var observed200Count: Long = 0,
+    var observed2xxCount: Long = 0,
+    var observed3xxCount: Long = 0,
+    var observed4xxCount: Long = 0,
+    var observed5xxCount: Long = 0,
+    // Count 400 separately, as it is of particular interest for the classifier.
     var observed400Count: Long = 0,
-    var observed500Count: Long = 0,
-
     /**
      * Maximum metric values observed across all endpoint classifiers.
      * Used for reporting and analysis to determine whether at least one
@@ -39,6 +62,7 @@ data class AIResponseClassifierStats(
     var maxAccuracy: Double = 0.0,
     var maxPrecision: Double = 0.0,
     var maxRecall: Double = 0.0,
+    var maxF1Score: Double = 0.0,
     var maxMcc: Double = 0.0
 )
 
@@ -118,24 +142,40 @@ class AIResponseClassifier : AIModel {
 
     override fun updateModel(input: RestCallAction, output: RestCallResult) {
 
+        /** Skip the model update when the preset criteria are not satisfied. */
         if (skipUpdate(input, output)) {
             return
         }
 
         if(enabledLearning) {
 
-            // update counters
+            // update the observation counters
             val trueStatusCode = output.getStatusCode()
             when (trueStatusCode) {
-                200 -> stats.observed200Count++
+                in 200..299 -> stats.observed2xxCount++
+                in 300..399 -> stats.observed3xxCount++
+                in 400..499 -> stats.observed4xxCount++
                 400 -> stats.observed400Count++
-                500 -> stats.observed500Count++
+                in 500..599 -> stats.observed5xxCount++
             }
+            /**
+             * Updates the maximum metrics when the current endpoint classifier
+             * outperforms all other endpoint classifiers.
+             * This is important for the analysis to determine whether the model is robust on at least one endpoint.
+             */
+            val metrics = estimateMetrics(input.endpoint)
+            stats.maxAccuracy = maxOf(stats.maxAccuracy, metrics.accuracy)
+            stats.maxPrecision = maxOf(stats.maxPrecision, metrics.precision400)
+            stats.maxRecall = maxOf(stats.maxRecall, metrics.recall400)
+            stats.maxF1Score = maxOf(stats.maxF1Score, metrics.f1Score400)
+            stats.maxMcc = maxOf(stats.maxMcc, metrics.mcc)
 
+            // Measuring the time of update
             val start = System.nanoTime()
             delegate.updateModel(input, output)
             val t = System.nanoTime() - start
 
+            // updating time stats
             stats.updateTimeNs += t
             stats.updateCount++
 
@@ -180,13 +220,6 @@ class AIResponseClassifier : AIModel {
      */
     fun attemptRepair(call: RestCallAction){
 
-        val metrics = estimateMetrics(call.endpoint)
-
-        // update the max metrics
-        stats.maxAccuracy = maxOf(stats.maxAccuracy, metrics.accuracy)
-        stats.maxMcc = maxOf(stats.maxMcc, metrics.mcc)
-        stats.maxPrecision = maxOf(stats.maxPrecision, metrics.precision400)
-        stats.maxRecall = maxOf(stats.maxRecall, metrics.recall400)
 
         /**
          * Skips repair when the classifier is still too weak to provide meaningful guidance.
@@ -196,6 +229,7 @@ class AIResponseClassifier : AIModel {
          * for steering repairs. In such cases, the call is executed without modification so the
          * classifier can gather additional informative samples and improve over time.
          */
+        val metrics = estimateMetrics(call.endpoint)
         val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
         if (metrics.mcc <= weaknessThreshold
             || metrics.precision400 <= weaknessThreshold
@@ -273,15 +307,15 @@ class AIResponseClassifier : AIModel {
         val trueStatusCode = output.getStatusCode() ?: return true
 
         // skip conditions
-        val skip500 =
-            trueStatusCode == 500 && config.skipAIModelUpdateWhenResponseIs500
+        val skip5xx =
+            trueStatusCode !in 500..599 && config.skipAIModelUpdateWhenResponseIs5xx
 
-        val skipNot200Or400 =
-            trueStatusCode != 200
+        val skipNot2xxOr400 =
+            trueStatusCode !in 200..299
                 && trueStatusCode != 400
-                    && config.skipAIModelUpdateWhenResponseIsNot200Or400
+                    && config.skipAIModelUpdateWhenResponseIsNot2xxOr400
 
-        return skip500 || skipNot200Or400
+        return skip5xx || skipNot2xxOr400
 
     }
 

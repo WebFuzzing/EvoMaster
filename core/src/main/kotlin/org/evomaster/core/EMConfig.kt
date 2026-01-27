@@ -1454,13 +1454,13 @@ class EMConfig {
 
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates when the response " +
-            "indicates a server-side error with status code 500.")
-    var skipAIModelUpdateWhenResponseIs500 = false
+            "indicates a server-side error with status code 5xx.")
+    var skipAIModelUpdateWhenResponseIs5xx = false
 
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates " +
-            "when the response is not 200 or 400.")
-    var skipAIModelUpdateWhenResponseIsNot200Or400 = false
+            "when the response is not 2xx or 400.")
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
 
     @Experimental
     @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
