@@ -150,14 +150,18 @@ class AIResponseClassifier : AIModel {
         if(enabledLearning) {
 
             // update the observation counters
-            val trueStatusCode = output.getStatusCode()
-            when (trueStatusCode) {
+            when (val trueStatusCode = output.getStatusCode()) {
                 in 200..299 -> stats.observed2xxCount++
                 in 300..399 -> stats.observed3xxCount++
-                in 400..499 -> stats.observed4xxCount++
-                400 -> stats.observed400Count++
+                in 400..499 -> {
+                    stats.observed4xxCount++
+                    if (trueStatusCode == 400) {
+                        stats.observed400Count++
+                    }
+                }
                 in 500..599 -> stats.observed5xxCount++
             }
+
             /**
              * Updates the maximum metrics when the current endpoint classifier
              * outperforms all other endpoint classifiers.
