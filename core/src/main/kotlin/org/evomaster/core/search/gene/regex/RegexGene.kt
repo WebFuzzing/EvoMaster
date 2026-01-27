@@ -37,6 +37,12 @@ class RegexGene(
         disjunctions.randomize(randomness, tryToForceNewValue)
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+
+        TODO
+    }
+
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,

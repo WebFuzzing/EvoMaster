@@ -390,13 +390,14 @@ class SecurityRest {
                 genes.forEach {
                         gene ->
                     val leafGene = gene.getLeafGene()
-                    if(leafGene !is StringGene) return@forEach
-
+                    if(leafGene !is StringGene){
+                        return@forEach
+                    }
                     //TODO check if gene is linked with previous actions that create resources with IDs
 
-
                     // we need to do this way because we need to append our payload
-                    var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
+                    val newPayload = leafGene.getPhenotype().getValueAsRawString() +
+                            String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
                     // append the SQLi payload value
                     leafGene.getPhenotype().setFromStringValue(newPayload).also {
