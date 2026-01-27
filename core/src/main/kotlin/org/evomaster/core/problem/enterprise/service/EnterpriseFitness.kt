@@ -16,7 +16,6 @@ import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.TargetInfo
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -330,6 +329,10 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
             }
             fv.aggregateMongoDatabaseData()
         }
+
+        if (configuration.heuristicsForRedis) {
+            handleRedisHeuristics(dto, fv)
+        }
     }
 
     private fun handleSqlHeuristics(
@@ -400,6 +403,39 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
                             statistics.reportMongoHeuristicEvaluationFailure()
                         } else {
                             statistics.reportMongoHeuristicEvaluationSuccess()
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun handleRedisHeuristics(dto: TestResultsDto, fv: FitnessValue) {
+        for (i in 0 until dto.extraHeuristics.size) {
+
+            val extra = dto.extraHeuristics[i]
+
+            extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+            val toMinimize = extra.heuristics
+                .filter {
+                    it != null
+                            && it.objective == ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                            && it.type == ExtraHeuristicEntryDto.Type.REDIS
+                }.map { it.value }
+                .toList()
+
+            if (toMinimize.isNotEmpty()) {
+                fv.setExtraToMinimize(i, toMinimize)
+            }
+
+            extra.heuristics
+                .filterNotNull().forEach {
+                    if (it.type == ExtraHeuristicEntryDto.Type.REDIS) {
+                        statistics.reportNumberOfEvaluatedDocumentsForRedisHeuristic(it.numberOfEvaluatedRecords)
+                        if (it.extraHeuristicEvaluationFailure) {
+                            statistics.reportRedisHeuristicEvaluationFailure()
+                        } else {
+                            statistics.reportRedisHeuristicEvaluationSuccess()
                         }
                     }
                 }

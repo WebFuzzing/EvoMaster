@@ -24,11 +24,11 @@ import kotlin.math.sqrt
  */
 class KDE400EndpointModel (
     endpoint: Endpoint,
-    warmup: Int = 10,
+    warmup: Int,
     dimension: Int? = null,
-    encoderType: EMConfig.EncoderType= EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
-    private val maxStoredSamples: Int = 10_000,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
+    private val maxStoredSamples: Int = 1000, // Values more than 1000 make the classification very time-consuming
     randomness: Randomness
 ): AbstractProbabilistic400EndpointModel(
     endpoint, warmup, dimension, encoderType, metricType, randomness) {
