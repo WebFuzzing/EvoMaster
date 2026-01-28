@@ -44,9 +44,6 @@ class UriDataGene(
         getViewOfChildren().forEach { it.randomize(randomness, tryToForceNewValue) }
     }
 
-
-
-
     override fun getValueAsPrintableString(
         previousGenes: List<Gene>,
         mode: GeneUtils.EscapeMode?,
@@ -115,5 +112,4 @@ class UriDataGene(
             false
         }
     }
-
 }

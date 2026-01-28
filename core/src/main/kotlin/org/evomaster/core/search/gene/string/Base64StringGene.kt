@@ -31,8 +31,6 @@ class Base64StringGene(
         data.randomize(randomness, tryToForceNewValue)
     }
 
-
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
@@ -84,5 +82,4 @@ class Base64StringGene(
     ): Boolean {
         return false
     }
-
 }
