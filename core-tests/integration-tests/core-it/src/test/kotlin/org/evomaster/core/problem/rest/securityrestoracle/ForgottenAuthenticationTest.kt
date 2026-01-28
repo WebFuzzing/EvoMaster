@@ -67,7 +67,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
         assertEquals(200, (forgottenAuth.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
 
-        val ind = RestIndividualBuilder.merge(authenticated.individual, forgottenAuth.individual)
+        val ind = getBuilder().merge(authenticated.individual, forgottenAuth.individual)
         assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[2].verb)
@@ -115,7 +115,7 @@ class ForgottenAuthenticationTest: IntegrationTestRestBase()  {
         val authenticated = createIndividual(listOf(put42), SampleType.SECURITY)
         val forgottenAuth = createIndividual(listOf(get42NotAuth), SampleType.SECURITY)
 
-        val ind = RestIndividualBuilder.merge(authenticated.individual, forgottenAuth.individual)
+        val ind = getBuilder().merge(authenticated.individual, forgottenAuth.individual)
         assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
 
