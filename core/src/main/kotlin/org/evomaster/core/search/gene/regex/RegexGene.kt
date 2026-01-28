@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.root.CompositeFixedGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
@@ -14,23 +15,19 @@ import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutation
  * A gene representing a regular expression (regex).
  */
 class RegexGene(
-        name: String,
-        val disjunctions: DisjunctionListRxGene,
-        val sourceRegex : String
+    name: String,
+    val disjunctions: DisjunctionListRxGene,
+    val sourceRegex : String,
+    val regexType: RegexType
 ) : CompositeFixedGene(name, disjunctions) {
 
-    companion object{
-        const val JAVA_REGEX_PREFIX = "Java:"
-        const val DATABASE_REGEX_PREFIX = "Database:"
-        const val DATABASE_REGEX_SEPARATOR = "||"
-    }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         return true
     }
 
     override fun copyContent(): Gene {
-        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex = sourceRegex)
+        return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene, sourceRegex, regexType)
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
@@ -40,7 +37,7 @@ class RegexGene(
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
 
-        TODO
+       return false
     }
 
     override fun customShouldApplyShallowMutation(
