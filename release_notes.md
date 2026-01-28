@@ -5,7 +5,7 @@ Under development in `master` branch.
 ### Fixed Bugs
 
 - fixed a connection leak when authentication fails
-
+- fixed few edge cases that led to crashes related to handling of MongoDB objects
 
 # Version 5.0.2
 
