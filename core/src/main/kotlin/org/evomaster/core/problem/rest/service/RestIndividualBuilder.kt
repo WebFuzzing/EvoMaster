@@ -30,6 +30,14 @@ class RestIndividualBuilder {
 
     companion object{
 
+        /**
+         * WARNING: to be used only for tests
+         */
+        fun createIndependentBuilderForTests() : RestIndividualBuilder {
+            //no sampler is instantiated here... so, calls needing it, will fail
+            return RestIndividualBuilder().apply { randomness = Randomness() }
+        }
+
         fun sliceAllCallsInIndividualAfterAction(
             evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
             verb: HttpVerb? = null,
