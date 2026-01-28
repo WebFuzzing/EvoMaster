@@ -92,6 +92,9 @@ class UriDataGene(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
+        // TODO: Charset value is not handled in UriDataGene.
+        //  If the encoded string uses a different Charset test will fail,
+        //  since the Base64StringGene.unsafeSetFromStringValue() use UTF_8 to decode the value.
         return try {
             val uri = URI(value)
 
@@ -110,7 +113,7 @@ class UriDataGene(
             } else {
                 false
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

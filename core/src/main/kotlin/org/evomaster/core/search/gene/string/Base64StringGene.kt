@@ -58,6 +58,22 @@ class Base64StringGene(
         }
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return try {
+            // Charset is set to UTF_8 to ensure decoding works properly
+            val value = Base64
+                .getDecoder()
+                .decode(value)
+                .toString(Charsets.UTF_8)
+
+            data.setFromStringValue(value)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,
