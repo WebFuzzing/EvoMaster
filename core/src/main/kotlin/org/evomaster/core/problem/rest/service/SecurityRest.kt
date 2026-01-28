@@ -409,7 +409,7 @@ class SecurityRest {
                     continue
                 }
 
-                val newInd = RestIndividualBuilder.merge(sliced, copy)
+                val newInd = builder.merge(sliced, copy)
 
                 newInd.modifySampleType(SampleType.SECURITY)
                 newInd.ensureFlattenedStructure()
@@ -654,7 +654,7 @@ class SecurityRest {
                     // if reach here, we got a bug
                     val auth = with401or403.minBy { it.size() }
 
-                    val final = RestIndividualBuilder.merge(auth,success,target)
+                    val final = builder.merge(auth,success,target)
                     final.modifySampleType(SampleType.SECURITY)
                     final.ensureFlattenedStructure()
 
@@ -707,7 +707,7 @@ class SecurityRest {
             val forbidden = inds403.minBy { it.size() }
             val notfound = inds404.minBy { it.size() }
 
-            val final = RestIndividualBuilder.merge(forbidden, notfound)
+            val final = builder.merge(forbidden, notfound)
 
             // Check if the 404 path is a child resource and add parent GET to check access
             val path404 = get.path
@@ -984,7 +984,7 @@ class SecurityRest {
                     it is HostnameResolutionAction
                 } as List<HostnameResolutionAction>)
 
-                val finalIndividual = RestIndividualBuilder.merge(
+                val finalIndividual = builder.merge(
                     firstSliced,
                     secondSliced
                 )
@@ -1223,7 +1223,7 @@ class SecurityRest {
 
         if (!anySuccess) return null
 
-        return RestIndividualBuilder.merge(ind, second)
+        return builder.merge(ind, second)
 
     }
 

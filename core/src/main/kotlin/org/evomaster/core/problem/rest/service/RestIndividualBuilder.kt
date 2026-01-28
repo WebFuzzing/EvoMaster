@@ -75,58 +75,60 @@ class RestIndividualBuilder {
 
             return ind
         }
+    }
 
 
-        fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
-            return merge(merge(first, second), third)
-        }
+    fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
+        return merge(merge(first, second), third)
+    }
 
-        /**
-         * Create a new individual, based on [first] followed by [second].
-         * Initialization actions are properly taken care of.
+    /**
+     * Create a new individual, based on [first] followed by [second].
+     * Initialization actions are properly taken care of,
+     * and repaired if needed (eg, for unique constraints).
+     */
+    fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+        val before = first.seeAllActions().size + second.seeAllActions().size
+
+        val base = first.copy() as RestIndividual
+        base.ensureFlattenedStructure()
+        val other = second.copy() as RestIndividual
+        other.ensureFlattenedStructure()
+
+        /*
+            we need to reset local ids in other, to avoid clashes with ids in base.
+            however, need to make sure no chain is broken
          */
-        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+        other.seeAllActions().filterIsInstance<RestCallAction>()
+            .forEach { it.revertToWeakReference() }
+        other.resetLocalIdRecursively()
 
-            val before = first.seeAllActions().size + second.seeAllActions().size
+        //avoid possible taint id conflicts
+        base.seeAllActions().forEach { it.forceNewTaints() }
+        other.seeAllActions().forEach { it.forceNewTaints() }
 
-            val base = first.copy() as RestIndividual
-            base.ensureFlattenedStructure()
-            val other = second.copy() as RestIndividual
-            other.ensureFlattenedStructure()
+        val duplicates = base.addInitializingActions(other.seeInitializingActions())
 
-            /*
-                we need to reset local ids in other, to avoid clashes with ids in base.
-                however, need to make sure no chain is broken
-             */
-            other.seeAllActions().filterIsInstance<RestCallAction>()
-                .forEach { it.revertToWeakReference() }
-            other.resetLocalIdRecursively()
-
-            //avoid possible taint id conflicts
-            base.seeAllActions().forEach { it.forceNewTaints() }
-            other.seeAllActions().forEach { it.forceNewTaints() }
-
-            val duplicates = base.addInitializingActions(other.seeInitializingActions())
-
-            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
-                base.addMainEnterpriseActionGroup(group)
-            }
-
-            base.resolveAllTempData()
-
-            /*
-                TODO are links properly handled in such a merge???
-                would need assertions here, as well as test cases
-             */
-
-            val after = base.seeAllActions().size
-            //merge shouldn't lose any actions
-            assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
-
-            base.verifyValidity(true)
-
-            return base
+        other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+            base.addMainEnterpriseActionGroup(group)
         }
+
+        base.resolveAllTempData()
+        base.repairInitializationActions(randomness)
+
+        /*
+            TODO are links properly handled in such a merge???
+            would need assertions here, as well as test cases
+         */
+
+        val after = base.seeAllActions().size
+        //merge shouldn't lose any actions
+        assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
+
+        base.verifyValidity(true)
+
+        return base
     }
 
 
