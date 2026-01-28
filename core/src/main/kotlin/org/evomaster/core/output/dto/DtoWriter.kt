@@ -50,14 +50,14 @@ class DtoWriter(
     fun write(testSuitePath: Path, testSuitePackage: String, solution: Solution<*>) {
         calculateDtos(solution)
         val dtoOutput = when {
-            outputFormat.isJava() -> JavaDtoOutput(outputFormat)
-            outputFormat.isKotlin() -> KotlinDtoOutput(outputFormat)
+            outputFormat.isJava() -> JavaDtoOutput()
+            outputFormat.isKotlin() -> KotlinDtoOutput()
             else -> throw IllegalStateException("$outputFormat output format does not support DTOs as request payloads.")
         }
         dtoCollector.forEach {
-            dtoOutput.writeClass(testSuitePath, testSuitePackage, it.value)
+            dtoOutput.writeClass(outputFormat, testSuitePath, testSuitePackage, it.value)
         }
-        dtoOutput.writeObjectMapperClass(testSuitePath, testSuitePackage)
+        dtoOutput.writeObjectMapperClass(outputFormat, testSuitePath, testSuitePackage)
     }
 
     fun containsDtos(): Boolean {

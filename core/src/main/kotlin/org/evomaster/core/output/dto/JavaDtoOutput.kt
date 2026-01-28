@@ -6,9 +6,12 @@ import org.evomaster.core.output.TestSuiteFileName
 import org.evomaster.core.utils.StringUtils
 import java.nio.file.Path
 
-class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
+class JavaDtoOutput: JvmDtoOutput() {
 
-    override fun writeClass(testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
+    override fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
+        if (!outputFormat.isJava()) {
+
+        }
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
@@ -19,7 +22,7 @@ class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
-    override fun writeObjectMapperClass(testSuitePath: Path, testSuitePackage: String) {
+    override fun writeObjectMapperClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String) {
         val mapperFilename = TestSuiteFileName(appendDtoPackage(customControlCharMapperFactory))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
@@ -99,6 +102,12 @@ class JavaDtoOutput(val outputFormat: OutputFormat): JvmDtoOutput() {
             lines.add("public ObjectMapper create(Type cls, String charset) {")
             lines.indented {
                 lines.add("ObjectMapper mapper = new ObjectMapper();")
+                /*
+                 * Our DTO handling uses Optional to determine if a field should be included, is null or has an actual
+                 * value. When using a custom ObjectMapper, Jackson no longer handles the serialization of Optional as
+                 * expected ({"s0": "myVal"}). It will instead render outputs as: {"s0": { "empty": false, "present": true }}
+                 * Registering the Jdk8Module allows for Optional to be serialized correctly.
+                 */
                 lines.add("mapper.registerModule(new Jdk8Module());")
                 lines.add("mapper.getFactory().setCharacterEscapes(new NoEscapeControlChars());")
                 lines.add("return mapper;")

@@ -1,5 +1,6 @@
 package org.evomaster.core.output.dto
 
+import org.evomaster.core.output.OutputFormat
 import java.nio.file.Path
 
 /**
@@ -12,11 +13,12 @@ interface DtoOutput {
     /**
      * Writes a DTO class in the corresponding [org.evomaster.core.output.OutputFormat].
      *
+     * @param outputFormat under which the java class must be written
      * @param testSuitePath under which the java class must be written
      * @param testSuitePackage under which the java class must be written
      * @param dtoClass to be written to filesystem
      */
-    fun writeClass(testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass)
+    fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass)
 
     /**
      * Writes an ObjectMapper class in the corresponding [org.evomaster.core.output.OutputFormat] for
@@ -25,7 +27,7 @@ interface DtoOutput {
      * @param testSuitePath under which the class must be written
      * @param testSuitePackage under which the class must be written
      */
-    fun writeObjectMapperClass(testSuitePath: Path, testSuitePackage: String)
+    fun writeObjectMapperClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String)
 
     /**
      * @param dtoName that will be instantiated for payload
