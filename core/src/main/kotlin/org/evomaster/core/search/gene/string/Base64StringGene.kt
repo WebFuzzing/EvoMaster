@@ -70,11 +70,9 @@ class Base64StringGene(
                 .decode(value)
                 .toString(Charsets.UTF_8)
 
-            data.setFromStringValue(value)
-            true
+            data.unsafeSetFromStringValue(value)
         } catch (_: Exception) {
-            data.setFromStringValue(value)
-            true
+            false
         }
     }
 
