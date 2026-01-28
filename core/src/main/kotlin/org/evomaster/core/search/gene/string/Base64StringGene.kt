@@ -60,6 +60,9 @@ class Base64StringGene(
 
     @Deprecated("Do not call directly outside this package. Call setFromStringValue")
     override fun unsafeSetFromStringValue(value: String): Boolean {
+        // Since getValueAsPrintableString() uses encodeToString(), if the given
+        // string is base64 encoded, value will be decoded to original string.
+        // Otherwise, given value will be set.
         return try {
             // Charset is set to UTF_8 to ensure decoding works properly
             val value = Base64
@@ -70,7 +73,8 @@ class Base64StringGene(
             data.setFromStringValue(value)
             true
         } catch (_: Exception) {
-            false
+            data.setFromStringValue(value)
+            true
         }
     }
 
