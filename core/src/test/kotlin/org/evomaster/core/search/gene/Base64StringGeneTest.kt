@@ -26,7 +26,7 @@ internal class Base64StringGeneTest{
 
         assertEquals("a290bGlu", gene.getValueAsPrintableString(targetFormat = null))
 
-        assertTrue(gene.unsafeSetFromStringValue("kotlin 123"))
+        assertTrue(gene.unsafeSetFromStringValue("a290bGluIDEyMw=="))
 
         assertEquals("a290bGluIDEyMw==", gene.getValueAsPrintableString(targetFormat = null))
     }

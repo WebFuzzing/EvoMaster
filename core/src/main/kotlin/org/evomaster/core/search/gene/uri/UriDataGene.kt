@@ -102,14 +102,12 @@ class UriDataGene(
                 val uriParts = uri.schemeSpecificPart
                 val parts = uriParts.split(",", limit = 2)
                 val metadata = parts[0].split(";")
-                val t = metadata[0]
-                val b64 = metadata[2].equals("base64", ignoreCase = true)
-                val d = parts[1]
+                val b64Value = metadata[2].equals("base64", ignoreCase = true)
 
-                type.unsafeSetFromStringValue(t)
-                base64.unsafeSetFromStringValue(b64.toString())
-                data.unsafeSetFromStringValue(d)
-                true
+                val t = type.unsafeSetFromStringValue(metadata[0])
+                val b64 = base64.unsafeSetFromStringValue(b64Value.toString())
+                val data = data.unsafeSetFromStringValue(parts[1])
+                t && b64 && data
             } else {
                 false
             }
