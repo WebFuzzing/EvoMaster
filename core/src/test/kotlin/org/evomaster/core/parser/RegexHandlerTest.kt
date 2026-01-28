@@ -24,6 +24,24 @@ internal class RegexHandlerTest{
 
 
     @Test
+    fun testFixedValue(){
+
+        val regex = "[a-z]"
+        val gene = RegexHandler.createGeneForJVM(regex)
+
+        val foo = "foo"
+
+        val modified = gene.setFromStringValue(foo)
+        assertTrue(modified)
+        assertEquals(foo, gene.getValueAsRawString())
+
+        val invalidChange = gene.setFromStringValue("42")
+        assertFalse(invalidChange)
+        assertEquals(foo, gene.getValueAsRawString())
+    }
+
+
+    @Test
     fun testCwaIssue(){
         //should not throw exception
         val s = "^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{10}$"
