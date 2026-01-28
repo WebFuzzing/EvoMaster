@@ -58,8 +58,8 @@ data class ModelEvaluation(
         val DEFAULT_NO_DATA =
             ModelEvaluation(
                 accuracy = 0.5,
-                precision400 = 0.5,
-                recall400 = 0.5,
+                precision400 = 0.0,
+                recall400 = 0.0,
                 mcc = 0.0
             )
     }

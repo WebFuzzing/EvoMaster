@@ -93,8 +93,8 @@ class RedisHeuristicsCalculatorTest {
         );
 
         List<RedisInfo> redisInfoList = new ArrayList<>();
-        redisInfoList.add(new RedisInfo("profile", true));
-        redisInfoList.add(new RedisInfo("users", false));
+        redisInfoList.add(new RedisInfo("profile", Collections.singletonMap("name", "John")));
+        redisInfoList.add(new RedisInfo("users", Collections.emptyMap()));
 
         RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
 
@@ -113,12 +113,46 @@ class RedisHeuristicsCalculatorTest {
         );
 
         List<RedisInfo> redisInfoList = new ArrayList<>();
-        redisInfoList.add(new RedisInfo("profile", false));
+        redisInfoList.add(new RedisInfo("profile", Collections.emptyMap()));
 
         RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
 
         assertTrue(result.getDistance() > 0.0, "Missing field should yield positive distance");
         assertTrue(result.getNumberOfEvaluatedKeys() >= 1);
+    }
+
+    @Test
+    void testHGetFieldDistance() {
+        RedisCommand lowerDistanceCmd = new RedisCommand(
+                RedisCommand.RedisCommandType.HGET,
+                new String[]{"key<profile>", "key<weight>"},
+                true,
+                3
+        );
+        RedisCommand cmd = new RedisCommand(
+                RedisCommand.RedisCommandType.HGET,
+                new String[]{"key<profile>", "key<age>"},
+                true,
+                3
+        );
+        RedisCommand greaterDistanceCmd = new RedisCommand(
+                RedisCommand.RedisCommandType.HGET,
+                new String[]{"key<user>", "key<direction>"},
+                true,
+                3
+        );
+
+        List<RedisInfo> redisInfoList = new ArrayList<>();
+        redisInfoList.add(new RedisInfo("profile", Collections.singletonMap("height", "175")));
+
+        RedisDistanceWithMetrics resultLower = calculator.computeDistance(lowerDistanceCmd, redisInfoList);
+        RedisDistanceWithMetrics result = calculator.computeDistance(cmd, redisInfoList);
+        RedisDistanceWithMetrics resultGreater = calculator.computeDistance(greaterDistanceCmd, redisInfoList);
+
+        assertTrue(resultLower.getDistance() < result.getDistance(),
+                "Closer target field should yield lower distance");
+        assertTrue(result.getDistance() < resultGreater.getDistance(),
+                "Closer target key and field should yield lower distance");
     }
 
     /**
