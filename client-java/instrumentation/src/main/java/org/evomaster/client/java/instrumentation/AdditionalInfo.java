@@ -158,6 +158,10 @@ public class AdditionalInfo implements Serializable {
         mongoCollectionSchemaData.add(mongoCollectionSchema);
     }
 
+    public void addOpenSearchIndexSchema(OpenSearchIndexSchema openSearchIndexSchema){
+        openSearchIndexSchemaData.add(openSearchIndexSchema);
+    }
+
     public Set<String> getParsedDtoNamesView(){
         return Collections.unmodifiableSet(parsedDtoNames);
     }
