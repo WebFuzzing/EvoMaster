@@ -1389,7 +1389,7 @@ class EMConfig {
     @Cfg("Number of training iterations required to update classifier parameters. " +
                 "For example, in the Gaussian model this affects mean and variance updates. " +
                 "For neural network (NN) models, the warm-up should typically be larger than 1000.")
-    var aiResponseClassifierWarmup : Int = 10
+    var aiResponseClassifierWarmup : Int = 100
 
 
     enum class EncoderType {
@@ -1450,12 +1450,22 @@ class EMConfig {
 
     @Experimental
     @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
-    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+    var aIClassificationMetrics = AIClassificationMetrics.FULL_HISTORY
 
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates when the response " +
-            "indicates a server-side error with status code 500.")
-    var skipAIModelUpdateWhenResponseIs500 = false
+            "indicates a server-side error with status code 5xx.")
+    var skipAIModelUpdateWhenResponseIs5xx = false
+
+    @Experimental
+    @Cfg("Determines whether the AI response classifier skips model updates " +
+            "when the response is not 2xx or 400.")
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+
+    @Experimental
+    @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
+            "whether to send a request as-is or attempt a repair.")
+    var aIResponseClassifierWeaknessThreshold = 0.4
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
