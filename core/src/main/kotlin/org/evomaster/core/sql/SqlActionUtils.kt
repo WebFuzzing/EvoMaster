@@ -372,11 +372,17 @@ object SqlActionUtils {
          */
 
         val pkGenes = action.seeTopGenes()
-                .filterIsInstance<SqlPrimaryKeyGene>()
+                .mapNotNull { it.getWrappedGene(SqlPrimaryKeyGene::class.java) }
+                //.filterIsInstance<SqlPrimaryKeyGene>()
+
+        if(pkGenes.isEmpty()){
+            return null
+        }
 
         val pk = pkGenes.sortedBy { it.name }
-                .map { it.name + "=" + getStringValue(it, all) }
-                .joinToString("__")
+                        .joinToString("__") {
+                            it.name + "=" + getStringValue(it, all)
+                        }
 
         val existing = pksValues.getOrPut(tableName) { mutableSetOf() }
 
