@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -40,6 +41,38 @@ class FlakinessDetectRest {
         return ResponseEntity.ok(FlakinessDetectData(msg, num))
     }
 
+    @GetMapping("/price/estimate")
+    fun estimatePrice(@RequestParam base: Int): Map<String, Int> {
+        val randomJitter = randomInt(10)
+
+        val total = base + randomJitter
+
+        return mapOf(
+            "base" to base,
+            "jitter" to randomJitter,
+            "total" to total
+        )
+    }
+
+    @GetMapping("/calculate/timeago")
+    fun getTimeAgo(
+        @RequestParam(defaultValue = "0") day: Long,
+        @RequestParam(defaultValue = "0") hour: Long,
+        @RequestParam(defaultValue = "0") min: Long,
+        @RequestParam(defaultValue = "0") sec: Long
+    ): ResponseEntity<TimeAgoData> {
+
+        val msg = listOf(day to "day", hour to "hour", min to "minute", sec to "second")
+            .filter { it.first > 0 }
+            .joinToString(", ") { (v, u) -> "$v $u${if (v > 1) "s" else ""}" }.takeIf { it.isNotEmpty() }
+            ?.let { "$it ago" }
+            ?: "just now"
+
+        val pastDate = LocalDateTime.now()
+            .minusDays(day).minusHours(hour).minusMinutes(min).minusSeconds(sec)
+
+        return ResponseEntity.ok(TimeAgoData(msg, pastDate.toString()))
+    }
 
     private fun getPartialDate(n: Int) : String {
         val now = LocalDateTime.now().format(formatter)
@@ -49,4 +82,10 @@ class FlakinessDetectRest {
     }
 }
 
-data class FlakinessDetectData(val first : String, val next : Int)
+data class FlakinessDetectData(
+    val first : String, val next : Int)
+
+data class TimeAgoData(
+    val message: String,
+    val calculatedPastTime: String
+)

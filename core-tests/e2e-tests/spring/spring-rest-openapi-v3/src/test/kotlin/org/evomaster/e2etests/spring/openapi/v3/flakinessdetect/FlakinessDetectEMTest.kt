@@ -25,7 +25,7 @@ class FlakinessDetectEMTest : SpringTestBase() {
         runTestHandlingFlakyAndCompilation(
             "FlakinessDetectEM",
             "org.foo.FlakinessDetectEM",
-            5
+            100
         ) { args: MutableList<String> ->
 
             val executedMainActionToFile = "target/em-tests/FlakinessDetectEM/org/foo/FlakinessDetectEM.kt"
