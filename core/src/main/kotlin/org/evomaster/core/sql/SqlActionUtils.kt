@@ -93,6 +93,9 @@ object SqlActionUtils {
      *
      * Returns true if the action list was fixed without removing any action.
      * Returns false if actions needed to be removed
+     *
+     * WARNING: if there are side-effects on the list, ie, actions are removed, then might need to call
+     *          resetInitializingActions() to make such changes be applied to the original individual,
      */
     fun repairBrokenDbActionsList(actions: MutableList<SqlAction>,
                                   randomness: Randomness,
