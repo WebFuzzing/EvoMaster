@@ -265,6 +265,7 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, solution)
             solution = phaseSecurity(injector, config, epc, solution)
+            solution = phaseFlaky(injector, config, solution)
 
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)

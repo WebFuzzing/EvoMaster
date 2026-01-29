@@ -155,25 +155,4 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     fun getFlakyBodyType() : MediaType? = getResultValue(FLAKY_BODY_TYPE)?.let { MediaType.valueOf(it) }
 
 
-    fun setFlakiness(previous: HttpWsCallResult){
-        val pStatusCode = previous.getStatusCode()
-        if (pStatusCode != null && pStatusCode != getStatusCode()) {
-            setFlakyStatusCode(pStatusCode)
-        }
-
-        val pBody = previous.getBody()
-        if (pBody != null && pBody != getBody()) {
-            setFlakyBody(pBody)
-        }
-
-        val pBodyType = previous.getBodyType()
-        if (pBodyType != null && pBodyType != getBodyType()) {
-            setFlakyBodyType(pBodyType)
-        }
-
-        val pMessage = previous.getErrorMessage()
-        if (pMessage != null && pMessage != getErrorMessage()) {
-            setFlakyErrorMessage(pMessage)
-        }
-    }
 }

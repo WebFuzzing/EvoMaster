@@ -775,10 +775,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
 
             // handle flaky body type
-            if (res.getFlakyBodyType() == null)
+            if (res.getFlakyBodyType() == null){
                 lines.add(instruction)
-            else
+            } else{
                 lines.addSingleCommentLine(instruction)
+            }
+
         }
 
         val type = res.getBodyType()

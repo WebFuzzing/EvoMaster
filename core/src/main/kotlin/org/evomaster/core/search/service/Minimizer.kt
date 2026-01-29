@@ -238,9 +238,6 @@ class Minimizer<T: Individual> {
                 //don't check mismatch if possible issues, as then mismatches would be expected
                 checkResultMismatches(it, ei)
             }
-            if (config.handleFlakiness && ei != null){
-                flakinessDetector.checkAndMarkConsistency(it, ei)
-            }
             ei
         }
 

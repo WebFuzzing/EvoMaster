@@ -8,6 +8,8 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.utils.FlakinessDeriveUtil
+import org.evomaster.core.utils.FlakinessDeriveUtil.derive
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -73,10 +75,63 @@ class FlakinessDetector<T: Individual> {
             val action = it.action
             if(action is HttpWsAction){
                 if (it.result is HttpWsCallResult){
-                    it.result.setFlakiness(previousActions[index].result as HttpWsCallResult)
+                    handleFlakinessInActionResult(it.result, previousActions[index].result as HttpWsCallResult)
                 }
 
             }
         }
     }
+
+    private fun handleFlakinessInActionResult(
+        resultToUpdate: HttpWsCallResult,
+        other: HttpWsCallResult
+    ) {
+
+        // handle status code
+        val rStatus = resultToUpdate.getStatusCode()
+        val oStatus = other.getStatusCode()
+
+        if (oStatus != null && rStatus != oStatus) {
+            resultToUpdate.setFlakyStatusCode(oStatus)
+        }
+
+        // handle body
+        val rBody = resultToUpdate.getBody()
+        val oBody = other.getBody()
+
+        if (oBody != null) {
+            if (rBody != oBody) {
+                resultToUpdate.setFlakyBody(oBody)
+            } else {
+                val normO = derive(oBody)
+                if (rBody != normO) {
+                    resultToUpdate.setFlakyBody(oBody)
+                }
+            }
+        }
+
+        // handle body type
+        val rType = resultToUpdate.getBodyType()
+        val oType = other.getBodyType()
+
+        if (oType != null && rType != oType) {
+            resultToUpdate.setFlakyBodyType(oType)
+        }
+
+        // handle error message
+        val rMsg = resultToUpdate.getErrorMessage()
+        val oMsg = other.getErrorMessage()
+
+        if (oMsg != null) {
+            if (rMsg != oMsg) {
+                resultToUpdate.setFlakyErrorMessage(oMsg)
+            } else {
+                val normO = derive(oMsg)
+                if (rMsg != normO) {
+                    resultToUpdate.setFlakyErrorMessage(oMsg)
+                }
+            }
+        }
+    }
+
 }
