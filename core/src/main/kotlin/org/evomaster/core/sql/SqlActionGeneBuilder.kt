@@ -10,6 +10,7 @@ import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresLike
 import org.evomaster.core.parser.RegexHandler.createGeneForPostgresSimilarTo
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.datetime.DateGene
@@ -731,8 +732,9 @@ class SqlActionGeneBuilder {
 
     private fun buildJavaRegexGene(name: String, javaRegExPattern: String): RegexGene {
         val fullMatchRegex = RegexSharedUtils.forceFullMatch(javaRegExPattern)
-        val disjunctionRxGenes = RegexHandler.createGeneForJVM(fullMatchRegex).disjunctions
-        return RegexGene(name, disjunctions = disjunctionRxGenes, "${RegexGene.JAVA_REGEX_PREFIX}${fullMatchRegex}")
+        val gene = RegexHandler.createGeneForJVM(fullMatchRegex)
+        gene.name = name
+        return gene
     }
 
     /**
@@ -758,8 +760,9 @@ class SqlActionGeneBuilder {
     }
 
     private fun buildPostgresMySQLLikeRegexGene(geneName: String, likePattern: String): RegexGene {
-        val disjunctionRxGenes = createGeneForPostgresLike(likePattern).disjunctions
-        return RegexGene(geneName, disjunctions = disjunctionRxGenes, "${RegexGene.DATABASE_REGEX_PREFIX}${likePattern}")
+        val gene = createGeneForPostgresLike(likePattern)
+        gene.name = geneName
+        return gene
     }
 
 
@@ -786,7 +789,8 @@ class SqlActionGeneBuilder {
 
     private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPattern: String): RegexGene {
         val regexGene = createGeneForPostgresSimilarTo(similarToPattern)
-        return RegexGene(geneName, disjunctions = regexGene.disjunctions, "${RegexGene.DATABASE_REGEX_PREFIX}${similarToPattern}")
+        regexGene.name = geneName
+        return regexGene
     }
 
     private fun buildSqlTimeWithTimeZoneGene(column: Column): TimeGene {

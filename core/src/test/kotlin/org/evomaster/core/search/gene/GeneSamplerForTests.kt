@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -400,7 +401,13 @@ object GeneSamplerForTests {
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
-        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand), "None")
+        return RegexGene(
+            name = "rand RegexGene",
+            disjunctions = sampleDisjunctionListRxGene(rand),
+            ".*", //TODO tricky, we want to sample different structures,
+                                // but still validation should not fail
+            RegexType.JVM
+        )
     }
 
     fun sampleQuantifierRxGene(rand: Randomness): QuantifierRxGene {

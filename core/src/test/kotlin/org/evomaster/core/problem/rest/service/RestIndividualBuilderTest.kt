@@ -31,7 +31,8 @@ class RestIndividualBuilderTest {
         val second = RestIndividual(actions = mutableListOf(callB), sampleType = SampleType.RANDOM)
 
         // merge
-        val merged = RestIndividualBuilder.merge(first, second)
+        val builder = RestIndividualBuilder.createIndependentBuilderForTests()
+        val merged = builder.merge(first, second)
 
         // main executable actions should contain both actions in order
         val mains = merged.seeMainExecutableActions()
@@ -71,7 +72,8 @@ class RestIndividualBuilderTest {
         second.addInitializingDbActions(0, listOf(sql2))
 
         // merge
-        val merged = RestIndividualBuilder.merge(first, second)
+        val builder = RestIndividualBuilder.createIndependentBuilderForTests()
+        val merged = builder.merge(first, second)
 
         // main executable actions should contain both actions in order
         val mains = merged.seeMainExecutableActions()
@@ -159,7 +161,8 @@ class RestIndividualBuilderTest {
         second.addInitializingDbActions(0, listOf(sql3, sql4))
 
         // merge
-        val merged = RestIndividualBuilder.merge(first, second)
+        val builder = RestIndividualBuilder.createIndependentBuilderForTests()
+        val merged = builder.merge(first, second)
 
         // main executable actions should contain both actions in order
         val mains = merged.seeMainExecutableActions()
