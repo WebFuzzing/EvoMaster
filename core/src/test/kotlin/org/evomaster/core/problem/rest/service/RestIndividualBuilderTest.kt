@@ -128,7 +128,7 @@ class RestIndividualBuilderTest {
         val sql2 = SqlAction(
             table1,
             setOf(col),
-            1L,
+            2L,
             computedGenes = listOf(IntegerGene("ID", 2)),
             representExistingData = false
         )
@@ -136,7 +136,7 @@ class RestIndividualBuilderTest {
         val sql3 = SqlAction(
             table2,
             setOf(col),
-            1L,
+            3L,
             computedGenes = listOf(
                 SqlPrimaryKeyGene(
                     "ID", TableId("T2"),
@@ -149,7 +149,7 @@ class RestIndividualBuilderTest {
         val sql4 = SqlAction(
             table2,
             setOf(col),
-            1L,
+            4L,
             computedGenes = listOf(IntegerGene("ID", 4)),
             representExistingData = false
         )
