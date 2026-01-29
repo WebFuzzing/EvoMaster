@@ -336,11 +336,16 @@ abstract class EnterpriseIndividual(
             val relatedActionInMain = seeFixedMainActions()
                 .flatMap { it.flatten() }
                 .filterIsInstance<SqlAction>()
+
+            //first try to repair considering all actions... but side effects on removal will be ignored
             SqlActionUtils.repairBrokenDbActionsList(
                 previous.plus(relatedActionInMain).toMutableList(),
                 randomness
             )
+            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            //needed if actions were removed in the list "previous"
             resetInitializingActions(previous)
+
             Lazy.assert{verifyInitializationActions()}
         }
     }
