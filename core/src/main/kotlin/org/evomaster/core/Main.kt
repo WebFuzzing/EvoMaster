@@ -1,5 +1,6 @@
 package org.evomaster.core
 
+import com.google.inject.Inject
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
@@ -411,6 +412,33 @@ class Main {
                 }
             }
         }
+
+        private fun phaseFlaky(
+            injector: Injector,
+            config: EMConfig,
+            solution: Solution<*>
+        ): Solution<*> {
+            if (!config.handleFlakiness){
+                return solution
+            }
+            //apply security testing phase
+            LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
+
+            return when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
+                    return flakinessDetector.reexecuteToDetectFlakiness()
+                } else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Security phase currently not handled for problem type: ${config.problemType}")
+                    solution
+                }
+            }
+
+
+
+        }
+
 
         private fun phaseSecurity(
             injector: Injector,

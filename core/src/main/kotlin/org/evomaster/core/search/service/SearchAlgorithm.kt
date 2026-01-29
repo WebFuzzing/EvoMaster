@@ -39,9 +39,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private lateinit var minimizer: Minimizer<T>
 
     @Inject
-    private lateinit var flakinessDetector: FlakinessDetector<T>
-
-    @Inject
     private lateinit var ssu: SearchStatusUpdater
 
     @Inject
@@ -114,8 +111,6 @@ abstract class SearchAlgorithm<T> where T : Individual {
             minimizer.simplifyActions()
             val seconds = minimizer.passedTimeInSecond()
             LoggingUtil.getInfoLogger().info("Minimization phase took $seconds seconds")
-        } else if (config.handleFlakiness){
-            flakinessDetector.reexecuteToDetectFlakiness()
         }
 
         if(config.addPreDefinedTests) {

@@ -239,7 +239,7 @@ class Minimizer<T: Individual> {
                 checkResultMismatches(it, ei)
             }
             if (config.handleFlakiness && ei != null){
-                flakinessDetector.checkConsistency(it, ei)
+                flakinessDetector.checkAndMarkConsistency(it, ei)
             }
             ei
         }

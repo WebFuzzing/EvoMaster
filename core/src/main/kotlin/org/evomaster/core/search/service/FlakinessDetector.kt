@@ -7,6 +7,7 @@ import org.evomaster.core.problem.httpws.HttpWsAction
 import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -32,29 +33,33 @@ class FlakinessDetector<T: Individual> {
     /**
      * re-execute individuals in archive for identifying flakiness
      */
-    fun reexecuteToDetectFlakiness() {
-
+    fun reexecuteToDetectFlakiness() : Solution<T>{
+        /*
+            here we rely on extractSolution returning actual references of individuals in the archive, and not copies
+         */
         val currentIndividuals = archive.extractSolution().individuals
 
         LoggingUtil.getInfoLogger().info("Reexecuting all individual ${currentIndividuals.size} for identifying flakiness.")
 
-        currentIndividuals.mapNotNull {
+        currentIndividuals.forEach {
 
             val ei = fitness.computeWholeAchievedCoverageForPostProcessing(it.individual)
             if(ei == null){
                 log.warn("Failed to re-evaluate individual during flakiness analysis.")
-            }else
-                checkConsistency(ei, it)
-
+            }else{
+                checkAndMarkConsistency(ei, it)
+            }
         }
 
+        return archive.extractSolution()
     }
 
     /**
+     * This might have side-effects will be applied in the archive
      * compare [inArchive] with [other] to check if the action results are same, the inconsistent info will be saved in [inArchive] evaluated individual
      * @param inArchive the evaluated individual which saves info of flakiness
      */
-    fun checkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>){
+    fun checkAndMarkConsistency(other: EvaluatedIndividual<T>, inArchive: EvaluatedIndividual<T>){
         val previousActions = other.evaluatedMainActions()
         val currentActions = inArchive.evaluatedMainActions()
 
