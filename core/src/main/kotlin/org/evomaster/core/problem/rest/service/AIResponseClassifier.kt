@@ -235,8 +235,7 @@ class AIResponseClassifier : AIModel {
          */
         val metrics = estimateMetrics(call.endpoint)
         val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
-        if (metrics.mcc <= weaknessThreshold
-            || metrics.precision400 <= weaknessThreshold
+        if (metrics.precision400 <= weaknessThreshold
             || metrics.recall400 <= weaknessThreshold) {
 
             //do nothing
