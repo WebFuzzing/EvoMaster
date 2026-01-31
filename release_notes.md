@@ -4,8 +4,9 @@ Under development in `master` branch.
 
 ### Fixed Bugs
 
-- fixed a connection leak when authentication fails
-- fixed few edge cases that led to crashes related to handling of MongoDB objects
+- fixed a connection leak when authentication fails.
+- fixed few edge cases that led to crashes related to handling of MongoDB objects.
+- fixed bug in handling of SQL databases, where commands leading to inconsistent state (eg, duplicated keys) were not properly removed. 
 
 # Version 5.0.2
 
