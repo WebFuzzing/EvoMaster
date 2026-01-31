@@ -112,6 +112,8 @@ public class AdditionalInfo implements Serializable {
 
     private final Set<MongoCollectionSchema> mongoCollectionSchemaData = new CopyOnWriteArraySet<>();
 
+    private final Set<OpenSearchIndexSchema> openSearchIndexSchemaData = new CopyOnWriteArraySet<>();
+
     public Set<ExecutedSqlCommand> getSqlInfoData(){
         return Collections.unmodifiableSet(executedSqlCommandData);
     }
@@ -132,6 +134,10 @@ public class AdditionalInfo implements Serializable {
         return Collections.unmodifiableSet(mongoCollectionSchemaData);
     }
 
+    public Set<OpenSearchIndexSchema> getOpenSearchIndexSchemaData(){
+        return Collections.unmodifiableSet(openSearchIndexSchemaData);
+    }
+
     public void addSqlInfo(ExecutedSqlCommand info){
         executedSqlCommandData.add(info);
     }
@@ -150,6 +156,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addMongoCollectionType(MongoCollectionSchema mongoCollectionSchema){
         mongoCollectionSchemaData.add(mongoCollectionSchema);
+    }
+
+    public void addOpenSearchIndexSchema(OpenSearchIndexSchema openSearchIndexSchema){
+        openSearchIndexSchemaData.add(openSearchIndexSchema);
     }
 
     public Set<String> getParsedDtoNamesView(){

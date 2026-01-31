@@ -6,10 +6,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
+import org.evomaster.client.java.instrumentation.OpenSearchIndexSchema;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyCast;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
+import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -35,11 +37,13 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
 
     @Replacement(type = ReplacementType.TRACKER, id = GET_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.GetResponse")
     public static <T> Object get(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.GetRequest") Object request, Class<T> documentClass) {
+        addOpenSearchIndexSchema(documentClass, getIndex(request));
         return handleMethod(openSearchClient, GET_METHOD, Arrays.asList(request, documentClass), request);
     }
 
     @Replacement(type = ReplacementType.TRACKER, id = SEARCH_METHOD, usageFilter = UsageFilter.ANY, category = ReplacementCategory.OPENSEARCH, castTo = "org.opensearch.client.opensearch.core.SearchResponse")
     public static <T> Object search(Object openSearchClient, @ThirdPartyCast(actualType = "org.opensearch.client.opensearch.core.SearchRequest") Object request, Class<T> documentClass) {
+        addOpenSearchIndexSchema(documentClass, getIndex(request));
         return handleMethod(openSearchClient, SEARCH_METHOD, Arrays.asList(request, documentClass), request);
     }
 
@@ -104,6 +108,28 @@ public class OpenSearchClientClassReplacement extends ThirdPartyMethodReplacemen
             }
         } catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             return null;
+        }
+    }
+
+    /**
+     * Captures the schema of the document class for a given OpenSearch index.
+     */
+    private static <T> void addOpenSearchIndexSchema(Class<T> documentClass, List<String> indices) {
+        if (indices == null || indices.isEmpty()) {
+            SimpleLogger.debug("[OpenSearch] No index names available for schema capture");
+            return;
+        }
+
+        try {
+            String schema = ClassToSchema.getOrDeriveSchemaWithItsRef(documentClass, true, Collections.emptyList());
+
+            for (String indexName : indices) {
+                if (indexName != null && !indexName.isEmpty()) {
+                    ExecutionTracer.addOpenSearchIndexSchema(new OpenSearchIndexSchema(indexName, schema));
+                }
+            }
+        } catch (Exception e) {
+            SimpleLogger.warn("[OpenSearch] Failed to derive schema for class: " + documentClass.getName() + ", error: " + e.getMessage());
         }
     }
 }
