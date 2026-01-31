@@ -37,9 +37,12 @@ import javax.annotation.PostConstruct
  * @property observed400Count The total count of observed HTTP 400 responses, tracked separately due to its significance.
  * @property maxAccuracy The maximum accuracy value recorded across all endpoint classifiers.
  * @property maxPrecision The maximum precision value recorded across all endpoint classifiers.
- * @property maxRecall The maximum recall value recorded across all endpoint classifiers.
+ * @property maxSensitivity The maximum sensitivity value recorded across all endpoint classifiers.
+ * @property maxNpv The maximum NPV value recorded across all endpoint classifiers.
+ * @property maxSpecificity The maximum Specificity value recorded across all endpoint classifiers.
  * @property maxF1Score The maximum F1 score recorded across all endpoint classifiers.
  * @property maxMcc The maximum Matthews Correlation Coefficient (MCC) recorded across all endpoint classifiers.
+ *
  */
 data class AIResponseClassifierStats(
     var updateTimeNs: Long = 0,
@@ -48,12 +51,15 @@ data class AIResponseClassifierStats(
     var classifyCount: Long = 0,
     var repairTimeNs: Long = 0,
     var repairCount: Long = 0,
+
     var observed2xxCount: Long = 0,
     var observed3xxCount: Long = 0,
     var observed4xxCount: Long = 0,
     var observed5xxCount: Long = 0,
+
     // Count 400 separately, as it is of particular interest for the classifier.
     var observed400Count: Long = 0,
+
     /**
      * Maximum metric values observed across all endpoint classifiers.
      * Used for reporting and analysis to determine whether at least one
@@ -61,10 +67,13 @@ data class AIResponseClassifierStats(
      */
     var maxAccuracy: Double = 0.0,
     var maxPrecision: Double = 0.0,
-    var maxRecall: Double = 0.0,
+    var maxSensitivity: Double = 0.0,
+    var maxSpecificity: Double = 0.0,
+    var maxNpv: Double = 0.0,
     var maxF1Score: Double = 0.0,
     var maxMcc: Double = 0.0
 )
+
 
 
 class AIResponseClassifier : AIModel {
@@ -170,7 +179,9 @@ class AIResponseClassifier : AIModel {
             val metrics = estimateMetrics(input.endpoint)
             stats.maxAccuracy = maxOf(stats.maxAccuracy, metrics.accuracy)
             stats.maxPrecision = maxOf(stats.maxPrecision, metrics.precision400)
-            stats.maxRecall = maxOf(stats.maxRecall, metrics.recall400)
+            stats.maxSensitivity = maxOf(stats.maxSensitivity, metrics.sensitivity400)
+            stats.maxSpecificity = maxOf(stats.maxSpecificity, metrics.specificity)
+            stats.maxNpv = maxOf(stats.maxNpv, metrics.npv)
             stats.maxF1Score = maxOf(stats.maxF1Score, metrics.f1Score400)
             stats.maxMcc = maxOf(stats.maxMcc, metrics.mcc)
 
@@ -236,7 +247,9 @@ class AIResponseClassifier : AIModel {
         val metrics = estimateMetrics(call.endpoint)
         val weaknessThreshold = config.aIResponseClassifierWeaknessThreshold
         if (metrics.precision400 <= weaknessThreshold
-            || metrics.recall400 <= weaknessThreshold) {
+            || metrics.sensitivity400 <= weaknessThreshold
+            || metrics.specificity <= weaknessThreshold
+            || metrics.npv <= weaknessThreshold) {
 
             //do nothing
             return
