@@ -61,7 +61,7 @@ object ExtraTools {
         Window Total      : ${metrics.windowTotal}
         Accuracy            : ${"%.4f".format(metrics.estimateMetrics().accuracy)}
         Precision400        : ${"%.4f".format(metrics.estimateMetrics().precision400)}
-        Recall400           : ${"%.4f".format(metrics.estimateMetrics().recall400)}
+        Recall400           : ${"%.4f".format(metrics.estimateMetrics().sensitivity400)}
         F1Score400          : ${"%.4f".format(metrics.estimateMetrics().f1Score400)}
         MCC400              : ${"%.4f".format(metrics.estimateMetrics().mcc)}
         """.trimIndent()
@@ -110,7 +110,7 @@ object ExtraTools {
                 sb.appendLine("Window Total        : ${it.windowTotal}")
                 sb.appendLine("Accuracy            : ${"%.4f".format(it.estimateMetrics().accuracy)}")
                 sb.appendLine("Precision400        : ${"%.4f".format(it.estimateMetrics().precision400)}")
-                sb.appendLine("Recall400           : ${"%.4f".format(it.estimateMetrics().recall400)}")
+                sb.appendLine("Recall400           : ${"%.4f".format(it.estimateMetrics().sensitivity400)}")
                 sb.appendLine("F1Score400          : ${"%.4f".format(it.estimateMetrics().f1Score400)}")
                 sb.appendLine("MCC400              : ${"%.4f".format(it.estimateMetrics().mcc)}")
                 sb.appendLine()
