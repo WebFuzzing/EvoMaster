@@ -1042,7 +1042,9 @@ class StringGene(
             this.specializations.addAll(other.specializations)
 
             killAllChildren()
-            addChildren(other.specializationGenes.map { it.copy() })
+            val adopted = other.specializationGenes.map { it.copy() }
+            adopted.forEach { it.resetLocalIdRecursively()}
+            addChildren(adopted)
 
             this.tainted = other.tainted
             //TODO NOT sure if should handle this???
