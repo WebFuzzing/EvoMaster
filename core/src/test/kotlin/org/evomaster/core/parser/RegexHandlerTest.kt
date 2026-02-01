@@ -24,6 +24,24 @@ internal class RegexHandlerTest{
 
 
     @Test
+    fun testFixedValue(){
+
+        val regex = "[a-z]"
+        val gene = RegexHandler.createGeneForJVM(regex)
+
+        val foo = "foo"
+
+        val modified = gene.setFromStringValue(foo)
+        assertTrue(modified)
+        assertEquals(foo, gene.getValueAsRawString())
+
+        val invalidChange = gene.setFromStringValue("42")
+        assertFalse(invalidChange)
+        assertEquals(foo, gene.getValueAsRawString())
+    }
+
+
+    @Test
     fun testCwaIssue(){
         //should not throw exception
         val s = "^[23456789ABCDEFGHJKMNPQRSTUVWXYZ]{10}$"
@@ -41,7 +59,7 @@ internal class RegexHandlerTest{
     fun testInd1Issue(){
         val s = "^1[3-9]\\d{9}"
         val regex = RegexHandler.createGeneForJVM(s)
-        assertEquals("${RegexGene.JAVA_REGEX_PREFIX}$s", regex.sourceRegex)
+        assertEquals(s, regex.sourceRegex)
         assertThrows<ParseCancellationException>{RegexHandler.createGeneForJVM(RegexSharedUtils.handlePartialMatch(s))}
         RegexHandler.createGeneForJVM(RegexSharedUtils.forceFullMatch(s))
 

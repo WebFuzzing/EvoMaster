@@ -329,11 +329,17 @@ abstract class EnterpriseIndividual(
          * afterwards (eg in resource-based handling).
          */
         if (!verifyInitializationActions()) {
-            if (log.isTraceEnabled)
-                log.trace("invoke GeneUtils.repairBrokenDbActionsList")
+            if (log.isTraceEnabled){
+                log.trace("invoke SqlActionUtils.repairBrokenDbActionsList")
+            }
             val previous = sqlInitialization.toMutableList()
-            val relatedActionInMain = seeFixedMainActions().flatMap { it.flatten() }.filterIsInstance<SqlAction>()
-            SqlActionUtils.repairBrokenDbActionsList(previous.plus(relatedActionInMain).toMutableList(), randomness)
+            val relatedActionInMain = seeFixedMainActions()
+                .flatMap { it.flatten() }
+                .filterIsInstance<SqlAction>()
+            SqlActionUtils.repairBrokenDbActionsList(
+                previous.plus(relatedActionInMain).toMutableList(),
+                randomness
+            )
             resetInitializingActions(previous)
             Lazy.assert{verifyInitializationActions()}
         }
