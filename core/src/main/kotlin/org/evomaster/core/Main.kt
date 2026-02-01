@@ -262,9 +262,10 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
-            solution = phaseHttpOracle(injector, config, solution)
+            solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseSecurity(injector, config, epc, solution)
 
+            epc.startWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
@@ -444,11 +445,13 @@ class Main {
         private fun phaseHttpOracle(
             injector: Injector,
             config: EMConfig,
+            epc: ExecutionPhaseController,
             solution: Solution<*>
         ): Solution<*> {
 
             return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
                 LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+                epc.startHttpOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
