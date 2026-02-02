@@ -62,6 +62,9 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private lateinit var aiResponseClassifier: AIResponseClassifier
 
+    @Inject
+    private lateinit var epc : ExecutionPhaseController
+
     /**
      * How often test executions did timeout
      */
@@ -361,6 +364,9 @@ class Statistics : SearchListener {
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
+            for(phase in ExecutionPhaseController.Phase.entries){
+                add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
+            }
         }
         addConfig(list)
 
