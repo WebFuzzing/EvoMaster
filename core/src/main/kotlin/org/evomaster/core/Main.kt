@@ -270,6 +270,7 @@ class Main {
             writeWFCReport(injector, solution, suites)
 
             writeCoveredTargets(injector, solution)
+            //NOTE: the WRITE_OUTPUT phase here would be not computed, as it is not finished yet...
             writeStatistics(injector, solution)
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
