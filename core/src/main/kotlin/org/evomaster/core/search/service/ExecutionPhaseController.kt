@@ -1,6 +1,8 @@
 package org.evomaster.core.search.service
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.logging.LoggingUtil
+import javax.inject.Inject
 
 class ExecutionPhaseController {
 
@@ -14,6 +16,9 @@ class ExecutionPhaseController {
         WRITE_OUTPUT,
         FINISHED
     }
+
+    @Inject
+    private lateinit var config: EMConfig
 
     private var phase: Phase = Phase.NOT_STARTED
 
@@ -78,8 +83,11 @@ class ExecutionPhaseController {
             val elapsed = System.currentTimeMillis() - lastPhaseStartMs
             val seconds = elapsed / 1000
             durationInSeconds[phase] = seconds
-            val time = SearchTimeController.getElapsedTime(seconds)
-            LoggingUtil.getInfoLogger().info("Phase $phase lasted: $time")
+
+            if(!config.avoidNonDeterministicLogs) {
+                val time = SearchTimeController.getElapsedTime(seconds)
+                LoggingUtil.getInfoLogger().info("Phase $phase lasted: $time")
+            }
         }
 
         phase = newPhase
