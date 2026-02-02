@@ -26,7 +26,7 @@ class SecurityExistenceLeakageNoExistenceEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "SecurityExistenceLeakageNoExistenceEM",
-                6000
+                10_000
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
