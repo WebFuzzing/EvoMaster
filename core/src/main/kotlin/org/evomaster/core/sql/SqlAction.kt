@@ -108,8 +108,13 @@ class SqlAction(
         return genes
     }
 
+
     fun seeGenesForInsertion(excludeColumn: List<String>) : List<out Gene>{
-        if (representExistingData) throw IllegalStateException("This action is representExistingData, and seeGenesForInsertion is not applicable")
+
+        if (representExistingData){
+            throw IllegalStateException("This action is representExistingData, and seeGenesForInsertion is not applicable")
+        }
+
         return selectedColumns.mapIndexed { index, column ->
             if (excludeColumn.any { c-> c.equals(column.name, ignoreCase = true) }) -1
             else index

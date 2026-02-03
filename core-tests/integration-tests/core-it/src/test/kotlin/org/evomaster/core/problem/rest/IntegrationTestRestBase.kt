@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.problem.rest.service.SecurityRest
@@ -53,6 +54,8 @@ abstract class IntegrationTestRestBase : RestTestBase() {
     fun getSecurityRest() = injector.getInstance(SecurityRest::class.java) as SecurityRest
 
     fun getEMConfig() = injector.getInstance(EMConfig::class.java)
+
+    fun getBuilder() = injector.getInstance(RestIndividualBuilder::class.java)
 
     /**
      * Create and evaluate an individual
