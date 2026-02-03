@@ -12,17 +12,6 @@ import org.junit.jupiter.api.Test
 
 /**
  * White-box E2E test for XML handling with attributes.
- *
- * This test verifies that EvoMaster can properly:
- * 1. Handle REST APIs that accept both JSON and XML payloads on the same endpoint
- * 2. Parse XML attributes (@XmlAttribute) correctly, not just elements (@XmlElement)
- * 3. Generate test cases that cover different branches based on attribute values
- *
- * Key scenarios tested:
- * - /product: Dual JSON/XML endpoint with @XmlAttribute for 'sku' field
- * - /order: XML-only endpoint with nested objects containing @XmlAttribute
- * - /author: JSON-only endpoint (for comparison)
- * - /create-product: Endpoint that returns XML with attributes
  */
 class XMLEMTest : SpringTestBase() {
 

@@ -150,11 +150,6 @@ class SqlRangeGene<T>(
             return false
         }
 
-        // Verify templates are of the same type before copying
-        if (this.template.javaClass != other.template.javaClass) {
-            return false
-        }
-
         return isLeftClosed.unsafeCopyValueFrom(other.isLeftClosed) &&
                     left.unsafeCopyValueFrom(other.left as Gene) &&
                     right.unsafeCopyValueFrom(other.right as Gene) &&
