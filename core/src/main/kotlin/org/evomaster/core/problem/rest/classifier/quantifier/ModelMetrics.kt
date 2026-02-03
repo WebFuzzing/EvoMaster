@@ -9,7 +9,7 @@ import kotlin.math.sqrt
  * Implementations are expected to maintain internal counters for the confusion matrix:
  * - TP (True Positives): predicted 400 and actual 400
  * - TN (True Negatives): predicted not-400 and actual not-400
- * - FP (False Positives): predicted 400 but actual not-400
+ * - FP (False Positives): predicted 400 but actually not-400
  * - FN (False Negatives): predicted not-400 but actual 400
  *
  * @property truePositive400 TP
@@ -17,13 +17,14 @@ import kotlin.math.sqrt
  * @property falseNegative400 FN
  * @property trueNegative400 TN
  *
- *
  * From these values, various metrics can be derived, such as:
  * - Accuracy
  * - Precision (for 400s)
  * - Recall (for 400s)
  * - F1 score (for 400s)
- * - MCC (Matthews Correlation Coefficient, for 400 vs. not-400 classification)
+ * - Negative Predictive Value (NPV)
+ * - Specificity (True Negative Rate)
+ * - MCC (Matthews Correlation Coefficient)
  */
 interface ModelMetrics {
 
@@ -59,11 +60,12 @@ interface ModelMetrics {
      *
      * See: [Wikipedia: Accuracy and precision](https://en.wikipedia.org/wiki/Accuracy_and_precision)
      */
-    fun estimateAccuracy(): Double {
-        return if (windowTotal > 0) {
+    fun estimateAccuracy(): Double =
+        if (windowTotal > 0) {
             (truePositive400 + trueNegative400).toDouble() / windowTotal
-        } else 0.0
-    }
+        } else {
+            0.0
+        }
 
     /**
      * Estimate the precision of the model when predicting HTTP 400 responses.
@@ -76,36 +78,76 @@ interface ModelMetrics {
      */
     fun estimatePrecision400(): Double {
         val denominator = truePositive400 + falsePositive400
-        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
+        return if (denominator > 0) {
+            truePositive400.toDouble() / denominator
+        } else {
+            0.0
+        }
     }
 
     /**
-     * Estimate the recall of the model when predicting HTTP 400 responses.
+     * Estimate the Sensitivity (or recall) of the model when predicting HTTP 400 responses.
      *
      * Recall(400) = TP / (TP + FN)
      *
      * Of all the requests that were actually 400,
      * how many the model correctly predicted as 400.
      *
-     * See: [Wikipedia: Precision and recall](https://en.wikipedia.org/wiki/Precision_and_recall)
+     * See: [Wikipedia: Sensitivity](https://en.wikipedia.org/wiki/Sensitivity_and_specificity)
      */
-    fun estimateRecall400(): Double {
+    fun estimateSensitivity400(): Double {
         val denominator = truePositive400 + falseNegative400
-        return if (denominator > 0) truePositive400.toDouble() / denominator else 0.0
+        return if (denominator > 0) {
+            truePositive400.toDouble() / denominator
+        } else {
+            0.0
+        }
     }
 
     /**
-     * Estimate the Matthews Correlation Coefficient (MCC) for prediction 400.
+     * Estimate the Specificity (True Negative Rate).
      *
-     * MCC(400) = (TP * TN - FP * FN) / ((TP+FP)(TP+FN)(TN+FP)(TN+FN))^0.5
+     * Specificity = TN / (TN + FP)
+     *
+     * Of all the requests that were actually not-400, how many the model correctly predicted as not-400.
+     * See: [Wikipedia: Specificity](https://en.wikipedia.org/wiki/Sensitivity_and_specificity)
+     */
+    fun estimateSpecificity(): Double {
+        val denominator = trueNegative400 + falsePositive400
+        return if (denominator > 0) {
+            trueNegative400.toDouble() / denominator
+        } else {
+            0.0
+        }
+    }
+
+    /**
+     * Estimate the Negative Predictive Value (NPV).
+     *
+     * NPV = TN / (TN + FN)
+     *
+     * Of all the requests predicted as not-400, how many were truly not-400.
+     * See: [Wikipedia: Negative predictive value](https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values)
+     */
+    fun estimateNPV(): Double {
+        val denominator = trueNegative400 + falseNegative400
+        return if (denominator > 0) {
+            trueNegative400.toDouble() / denominator
+        } else {
+            0.0
+        }
+    }
+
+    /**
+     * Estimate the Matthews Correlation Coefficient (MCC) for predicting 400.
+     *
+     * MCC = (TP * TN - FP * FN) /
+     *       sqrt((TP + FP)(TP + FN)(TN + FP)(TN + FN))
      *
      * MCC ranges from -1 to 1:
      * - +1 → perfect prediction
      * -  0 → no better than random
      * - -1 → total disagreement
-     *
-     * Considered one of the best single-value metrics
-     * for binary classification, especially with imbalanced data.
      *
      * See: [Wikipedia: Matthews correlation coefficient](https://en.wikipedia.org/wiki/Matthews_correlation_coefficient)
      */
@@ -116,7 +158,11 @@ interface ModelMetrics {
         val fn = falseNegative400.toDouble()
 
         val denominator = sqrt((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn))
-        return if (denominator > 0) (tp * tn - fp * fn) / denominator else 0.0
+        return if (denominator > 0) {
+            (tp * tn - fp * fn) / denominator
+        } else {
+            0.0
+        }
     }
 
     /**
@@ -129,10 +175,11 @@ interface ModelMetrics {
         ModelEvaluation(
             accuracy = estimateAccuracy(),
             precision400 = estimatePrecision400(),
-            recall400 = estimateRecall400(),
+            sensitivity400 = estimateSensitivity400(),
+            npv = estimateNPV(),
+            specificity = estimateSpecificity(),
             mcc = estimateMCC400()
         )
-
 
     /**
      * Update the internal performance counters after a new prediction.
@@ -141,7 +188,7 @@ interface ModelMetrics {
      * @param actualStatusCode    the true status code obtained after executing the request
      *
      * Notes:
-     * - Accuracy, precision, recall, etc. can only be updated if the actual status code is known.
+     * - Metrics can only be updated if the actual status code is known.
      * - If a prediction leads to rejecting an input without execution,
      *   no update can be made since the correctness of the prediction is unknown.
      */
