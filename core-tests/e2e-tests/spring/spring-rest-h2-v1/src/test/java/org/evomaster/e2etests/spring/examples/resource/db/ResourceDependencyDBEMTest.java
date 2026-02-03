@@ -29,7 +29,7 @@ public class ResourceDependencyDBEMTest extends ResourceTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ResourceEM",
                 "org.db.resource.ResourceEM" + (heuristicsForSQLAdvanced ? "Complete" : "Partial"),
-                1_000,
+                2_000,
                 true,
                 (args) -> {
                     // disable taint analysis

@@ -336,11 +336,16 @@ abstract class EnterpriseIndividual(
             val relatedActionInMain = seeFixedMainActions()
                 .flatMap { it.flatten() }
                 .filterIsInstance<SqlAction>()
+
+            //first try to repair considering all actions... but side effects on removal will be ignored
             SqlActionUtils.repairBrokenDbActionsList(
                 previous.plus(relatedActionInMain).toMutableList(),
                 randomness
             )
+            SqlActionUtils.repairBrokenDbActionsList(previous, randomness)
+            //needed if actions were removed in the list "previous"
             resetInitializingActions(previous)
+
             Lazy.assert{verifyInitializationActions()}
         }
     }
@@ -391,7 +396,9 @@ abstract class EnterpriseIndividual(
                     " ${invalid.map { it::class.java.simpleName }.toSet().joinToString(", ")}")
         }
 
-        addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
+        var skipped = 0
+
+        skipped += addInitializingDbActions(actions = actions.filterIsInstance<SqlAction>())
         addInitializingMongoDbActions(actions = actions.filterIsInstance<MongoDbAction>())
         addInitializingScheduleTaskActions(actions = actions.filterIsInstance<ScheduleTaskAction>())
 
@@ -403,7 +410,9 @@ abstract class EnterpriseIndividual(
 
         addInitializingHostnameResolutionActions(actions = uniqueHostnames)
 
-        return  hostnameActions.size - uniqueHostnames.size
+        skipped += hostnameActions.size - uniqueHostnames.size
+
+        return skipped
     }
 
 
@@ -411,16 +420,30 @@ abstract class EnterpriseIndividual(
      * add [actions] at [relativePosition]
      * if [relativePosition] = -1, append the [actions] at the end
      */
-    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>){
+    fun addInitializingDbActions(relativePosition: Int=-1, actions: List<Action>) : Int{
+
+        var skipped = 0
+
         /*
             SQL actions representing existing data must ALWAYS be at the beginning.
             Recall those are only used for FKs.
          */
-        val (existing, others) = actions.partition { it is SqlAction && it.representExistingData }
+        val (existing, others) = actions.filterIsInstance<SqlAction>()
+                                        .partition { it.representExistingData }
 
         if(existing.isNotEmpty()){
-            addChildrenToGroup(getFirstIndexOfDbActionToAdd(), existing, GroupsOfChildren.INITIALIZATION_SQL)
-            //TODO shall we check for duplications???
+
+            val already = this.sqlInitialization.filter { it.representExistingData }
+
+            val (toAdd, duplicates) = existing.partition {x ->
+                already.none { it.geInsertionId() == x.geInsertionId() }
+            }
+
+            if(toAdd.isNotEmpty()) {
+                addChildrenToGroup(getFirstIndexOfDbActionToAdd(), toAdd, GroupsOfChildren.INITIALIZATION_SQL)
+            }
+
+            skipped += duplicates.size
         }
 
         if(others.isNotEmpty()) {
@@ -431,6 +454,8 @@ abstract class EnterpriseIndividual(
             }
             addChildrenToGroup(pos, others, GroupsOfChildren.INITIALIZATION_SQL)
         }
+
+        return skipped
     }
 
     fun addInitializingScheduleTaskActions(relativePosition: Int=-1, actions: List<Action>){
