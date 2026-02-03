@@ -407,7 +407,7 @@ class HarvestActualHttpWsResponseHandler {
 
             log.debug(
                 "There has been an issue in accessing external service with url (${httpRequest.getDescription()}): {}",
-                e
+                e.message
             )
 
             when {
@@ -419,9 +419,16 @@ class HarvestActualHttpWsResponseHandler {
                     return null
                 }
 
+                TcpUtils.isNoHttpResponse(e) -> {
+                    //this could happen for stale connections
+                    httpWsClient.close() //make sure to release any resource
+                    clients.replace(clientId, initClient())
+                    return null
+                }
+
                 TcpUtils.isOutOfEphemeralPorts(e) -> {
                     httpWsClient.close() //make sure to release any resource
-                    clients.replace(clientId, ClientBuilder.newClient())
+                    clients.replace(clientId, initClient())
 
                     TcpUtils.handleEphemeralPortIssue()
 

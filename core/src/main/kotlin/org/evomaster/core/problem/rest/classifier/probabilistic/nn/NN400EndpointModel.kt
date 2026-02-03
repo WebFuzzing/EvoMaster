@@ -19,23 +19,15 @@ import kotlin.math.exp
  */
 class NN400EndpointModel(
     endpoint: Endpoint,
-    warmup: Int = 10,
+    warmup: Int,
     dimension: Int? = null,
-    encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     private val learningRate: Double = 0.01,
     randomness: Randomness
 ) : AbstractProbabilistic400EndpointModel(
     endpoint, warmup, dimension, encoderType, metricType, randomness) {
 
-    init {
-        // Throw an exception if a non-NORMAL encoder is provided
-        if (encoderType != EMConfig.EncoderType.NORMAL) {
-            throw IllegalArgumentException(
-                "NN400EndpointModel supports only NORMAL encoder, but got: $encoderType"
-            )
-        }
-    }
 
     // Initialize weights with default values to prevent null
     private val hiddenSize: Int = 16 // size of the hidden layer

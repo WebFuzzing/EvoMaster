@@ -41,7 +41,7 @@ class LikeConditionEMTest : RestTestBase() {
                 .apply {
                     assertTrue(isNotEmpty())
                     forEach {
-                        assertEquals("${RegexGene.DATABASE_REGEX_PREFIX}foo%", it.sourceRegex)
+                        assertEquals("foo%", it.sourceRegex)
                     }
                 }
 

@@ -31,8 +31,6 @@ class Base64StringGene(
         data.randomize(randomness, tryToForceNewValue)
     }
 
-
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
@@ -58,6 +56,24 @@ class Base64StringGene(
         }
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        // Since getValueAsPrintableString() uses encodeToString(), if the given
+        // string is base64 encoded, value will be decoded to original string.
+        // Otherwise, given value will be set.
+        return try {
+            // Charset is set to UTF_8 to ensure decoding works properly
+            val value = Base64
+                .getDecoder()
+                .decode(value)
+                .toString(Charsets.UTF_8)
+
+            data.unsafeSetFromStringValue(value)
+        } catch (_: Exception) {
+            false
+        }
+    }
+
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,
         selectionStrategy: SubsetGeneMutationSelectionStrategy,
@@ -66,5 +82,4 @@ class Base64StringGene(
     ): Boolean {
         return false
     }
-
 }

@@ -667,7 +667,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
                     /*
                         This should not really happen... but it does :( at least on Windows...
                      */
@@ -1322,22 +1322,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
+        if(actionResults.any { it.stopping }){
+            return
+        }
+
         val notRecognized = individual.seeMainExecutableActions()
             .filter {
-                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+                val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?
                 if(ar == null){
-                    // this can be happened in the POST/DELETE template
-                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
-                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
-                    }
-                    if (prematureStoppedAction.isNotEmpty()){
-                        log.debug("Premature stopping of HTTP call sequence")
-                        return
-                    }
-                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
+                    log.warn("Missing action result with id: ${it.getLocalId()}}")
+                    false
+                } else {
+                    it.auth !is NoAuth && ar.getStatusCode() == 401
                 }
-                it.auth !is NoAuth && ar.getStatusCode() == 401
-            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+            }
+            .filter {
+                RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults)
+            }
 
         if(notRecognized.isEmpty()){
             return
@@ -1411,7 +1412,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
             ?: return
-        val injectedTime = injectedResult.getResponseTimeMs() ?: return
+        val injectedTime = injectedResult.getResponseTimeMs()
+
 
         val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
         val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
@@ -1420,7 +1422,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val baselineIsFast = baselineTime < K
 
         // Response after injection must be slow enough (response > N)
-        val responseIsSlowEnough = injectedTime > N
+        var responseIsSlowEnough: Boolean
+
+        if (injectedTime != null) {
+            responseIsSlowEnough = injectedTime > N
+        } else if (injectedResult.getTimedout()){
+            // if the injected request timed out, we can consider it vulnerable
+            responseIsSlowEnough = true
+        } else {
+            return
+        }
 
         // If baseline is fast AND the response after payload is slow enough,
         // then we consider this a potential time-based SQL injection vulnerability.
@@ -1495,7 +1506,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+                //this can happen if an action timeout, or is stopped
+                ?: continue
 
             if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
                 val scenarioId = idMapper.handleLocalTarget(

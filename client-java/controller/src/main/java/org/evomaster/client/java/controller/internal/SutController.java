@@ -29,6 +29,8 @@ import org.evomaster.client.java.controller.api.dto.problem.RPCProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.*;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.RPCTestDto;
 import org.evomaster.client.java.controller.internal.db.OpenSearchHandler;
+import org.evomaster.client.java.controller.internal.db.redis.RedisHandler;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.DbCleaner;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.sql.SqlScriptRunnerCached;
@@ -89,6 +91,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     private final MongoHandler mongoHandler = new MongoHandler();
 
     private final OpenSearchHandler openSearchHandler = new OpenSearchHandler();
+
+    private final RedisHandler redisHandler = new RedisHandler();
 
     private Server controllerServer;
 
@@ -322,10 +326,13 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
     }
 
     public final void initMongoHandler() {
-        // This is needed because the replacement use to get this info occurs during the start of the SUT.
         Object connection = getMongoConnection();
         mongoHandler.setMongoClient(connection);
 
+        // Spring MongoDB repositories capture document type metadata during SUT startup.
+        // We must extract this schema info from MappingMongoEntityInformation instances
+        // created during initialization, as this mapping is not accessible from the
+        // standard MongoDB driver collections later on.
         List<AdditionalInfo> list = getAdditionalInfoList();
         if(!list.isEmpty()) {
             AdditionalInfo last = list.get(list.size() - 1);
@@ -344,6 +351,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             AdditionalInfo last = list.get(list.size() - 1);
             last.getOpenSearchInfoData().forEach(openSearchHandler::handle);
         }
+    }
+
+    public final void initRedisHandler() {
+        ReflectionBasedRedisClient connection = getRedisConnection();
+        redisHandler.setRedisClient(connection);
     }
 
     /**
@@ -388,7 +400,8 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
-        if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed() || isOpenSearchHeuristicsComputationAllowed()) {
+        if (isSQLHeuristicsComputationAllowed() || isMongoHeuristicsComputationAllowed()
+                || isOpenSearchHeuristicsComputationAllowed() || isRedisHeuristicsComputationAllowed()) {
             List<AdditionalInfo> additionalInfoList = getAdditionalInfoList();
 
             if (isSQLHeuristicsComputationAllowed()) {
@@ -397,9 +410,11 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
             if (isMongoHeuristicsComputationAllowed()) {
                 computeMongoHeuristics(dto, additionalInfoList);
             }
-
             if (isOpenSearchHeuristicsComputationAllowed()) {
                 computeOpenSearchHeuristics(dto, additionalInfoList);
+            }
+            if (isRedisHeuristicsComputationAllowed()) {
+                computeRedisHeuristics(dto, additionalInfoList);
             }
         }
         return dto;
@@ -415,6 +430,10 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
 
     private boolean isOpenSearchHeuristicsComputationAllowed() {
         return openSearchHandler.isCalculateHeuristics();
+    }
+
+    private boolean isRedisHeuristicsComputationAllowed() {
+        return redisHandler.isCalculateHeuristics();
     }
 
     private void computeSQLHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList, boolean queryFromDatabase) {
@@ -526,6 +545,34 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 .forEach(h -> dto.heuristics.add(h));
         }
 
+    }
+
+    public final void computeRedisHeuristics(ExtraHeuristicsDto dto, List<AdditionalInfo> additionalInfoList){
+        if(redisHandler.isCalculateHeuristics()){
+            if(!additionalInfoList.isEmpty()) {
+                AdditionalInfo last = additionalInfoList.get(additionalInfoList.size() - 1);
+                last.getRedisCommandData().forEach(it -> {
+                    try {
+                        redisHandler.handle(it);
+                    } catch (Exception e){
+                        SimpleLogger.error("FAILED TO HANDLE REDIS COMMAND", e);
+                        assert false;
+                    }
+                });
+            }
+
+            redisHandler.getEvaluatedRedisCommands().stream()
+                    .map(p ->
+                         new ExtraHeuristicEntryDto(
+                                    ExtraHeuristicEntryDto.Type.REDIS,
+                                    ExtraHeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.getRedisCommand().toString(),
+                                    p.getRedisDistanceWithMetrics().getDistance(),
+                                    p.getRedisDistanceWithMetrics().getNumberOfEvaluatedKeys(),
+                                    false
+                         ))
+                    .forEach(h -> dto.heuristics.add(h));
+        }
     }
 
     /**

@@ -7,11 +7,11 @@ import org.evomaster.core.problem.rest.classifier.probabilistic.AbstractProbabil
 
 
 class KNN400Classifier(
-    warmup: Int = 10,
-    encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    warmup: Int,
+    encoderType: EMConfig.EncoderType,
+    metricType: EMConfig.AIClassificationMetrics,
     private val k: Int = 3,
-    private val maxStoredSamples: Int = 10000,
+    private val maxStoredSamples: Int = 1000, // Values more than 1000 make the classification very time-consuming
     randomness: Randomness
 ) : AbstractProbabilistic400Classifier<KNN400EndpointModel>(
     warmup, encoderType, metricType, randomness) {

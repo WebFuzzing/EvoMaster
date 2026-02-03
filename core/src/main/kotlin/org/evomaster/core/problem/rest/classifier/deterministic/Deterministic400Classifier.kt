@@ -50,7 +50,9 @@ class Deterministic400Classifier(
         return ModelEvaluation(
             accuracy = total.sumOf { it.accuracy } / n,
             precision400 = total.sumOf { it.precision400 } / n,
-            recall400 = total.sumOf { it.recall400 } / n,
+            sensitivity400 = total.sumOf { it.sensitivity400 } / n,
+            specificity = total.sumOf { it.specificity } / n,
+            npv = total.sumOf { it.npv } / n,
             mcc = total.sumOf { it.mcc } / n
         )
     }
