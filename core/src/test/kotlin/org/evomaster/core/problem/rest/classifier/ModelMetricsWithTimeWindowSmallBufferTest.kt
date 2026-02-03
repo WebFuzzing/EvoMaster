@@ -4,7 +4,7 @@ import org.evomaster.core.problem.rest.classifier.quantifier.ModelMetricsWithTim
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class ModelMetricsWithTimeWindowTest4SmallBuffer {
+class ModelMetricsWithTimeWindowSmallBufferTest {
 
 
     @Test
