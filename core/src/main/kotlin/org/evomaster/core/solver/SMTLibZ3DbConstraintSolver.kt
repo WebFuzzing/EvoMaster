@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -102,9 +103,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun parseStatement(sqlQuery: String): Statement {
         return try {
             CCJSqlParserUtil.parse(sqlQuery)
-        } catch (e: JSQLParserException) {
-            throw RuntimeException(e)
+        } catch (_: JSQLParserException) {
+            val sanitizedQuery = removeNotSupportedKeywords(sqlQuery)
+            return try {
+                CCJSqlParserUtil.parse(sanitizedQuery)
+            } catch (e: JSQLParserException) {
+                LoggingUtil.getInfoLogger().error("Failed to parse SQL query '$sqlQuery' as SQL Statement")
+                throw RuntimeException(e)
+            }
         }
+    }
+
+    private fun removeNotSupportedKeywords(sqlQuery: String): String {
+        return sqlQuery.replace("local temporary", "")
     }
 
     /**

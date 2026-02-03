@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
@@ -459,7 +460,17 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         val tablesFinder = TablesNamesFinder()
 
         // Add tables from the FROM clause
-        for (tableName in tablesFinder.getTables(sqlQuery)){
+        val tables = try {
+            tablesFinder.getTables(sqlQuery)
+        } catch (e: Exception) {
+            // This is because the jsqlParser does not support visit(Execute execute) {
+            //        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); }
+            // https://github.com/JSQLParser/JSqlParser/blob/484eaa1c0f623cc67f8bf324e4367f8474eb77f1/src/main/java/net/sf/jsqlparser/util/TablesNamesFinder.java#L1180
+            LoggingUtil.getInfoLogger().error("Failed to find tables: ${e.message}")
+            emptySet<String>()
+        }
+
+        for (tableName in tables){
             tablesMentioned.add(tableName.lowercase())
         }
 
