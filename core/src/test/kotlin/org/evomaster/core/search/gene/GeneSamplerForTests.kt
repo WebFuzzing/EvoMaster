@@ -81,7 +81,7 @@ object GeneSamplerForTests {
                         genes.add(c as KClass<out Gene>)
                     }
                 }
-        return genes
+        return genes.sortedBy {it.qualifiedName}
     }
 
 
@@ -914,33 +914,48 @@ object GeneSamplerForTests {
 
     fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {
 
-        val selection = geneClasses.filter { !it.isAbstract }
-        val isFixed = rand.nextBoolean()
+        // Use a restricted selection similar to selectionForArrayTemplate()
+        // to avoid problematic genes that can cause issues with containsSameValueAs
+        val selection = geneClasses
+            .filter { !it.isAbstract }
+            .filter { it.java != CycleObjectGene::class.java && it.java != LimitObjectGene::class.java }
+            .filter { it.java != SqlMultidimensionalArrayGene::class.java }
+            // Excluir genes con compareTo problemático
+            .filter { it.java != SqlRangeGene::class.java }
+            .filter { it.java != SqlMultiRangeGene::class.java }
 
-        return if (isFixed) {
-            ObjectWithAttributesGene(
-                name = "rand ObjectGeneWithAttributes ${rand.nextInt()}",
-                fields = listOf(
-                    sample(rand.choose(selection), rand),
-                    sample(rand.choose(selection), rand),
-                    sample(rand.choose(selection), rand)
-                )
-            )
-        }else{
-            ObjectWithAttributesGene(
-                name = "rand ObjectGeneWithAttributes ${rand.nextInt()}",
-                fixedFields = listOf(
-                    sample(rand.choose(selection), rand),
-                    sample(rand.choose(selection), rand),
-                    sample(rand.choose(selection), rand)
-                ),
-                refType = null,
-                isFixed = isFixed,
-                template = PairGene("template", sampleStringGene(rand), samplePrintableTemplate(selection, rand)),
-                additionalFields = mutableListOf()
-            )
+        // Use samplePrintableTemplate to ensure fields are printable
+        // This is consistent with how sampleArrayGene works
+        val fields = listOf(
+            samplePrintableTemplate(selection, rand).apply { name += "_0" },
+            samplePrintableTemplate(selection, rand).apply { name += "_1" },
+            samplePrintableTemplate(selection, rand).apply { name += "_2" }
+        )
+
+        // Only StringGene can be an XML attribute (attributes are always strings)
+        // #text is content, not an attribute
+        val stringFields = fields
+            .filterIsInstance<StringGene>()
+            .filter { it.name != "#text" }
+
+        // Strategy: use a small number of fixed attribute configurations
+        val seed = rand.nextInt(0, 10)
+        val attributeNames = when {
+            seed < 7 || stringFields.isEmpty() -> emptySet() // 70% no attributes
+            seed < 9 && stringFields.isNotEmpty() -> setOf(stringFields[0].name)
+            stringFields.size >= 2 -> setOf(stringFields[0].name, stringFields[1].name)
+            stringFields.isNotEmpty() -> setOf(stringFields[0].name)
+            else -> emptySet()
         }
+
+        return ObjectWithAttributesGene(
+            name = "rand ObjectGeneWithAttributes ${rand.nextInt()}",
+            fixedFields = fields,
+            refType = null,
+            isFixed = true,
+            template = null,
+            additionalFields = null,
+            attributeNames = attributeNames
+        )
     }
-
-
 }

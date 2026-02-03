@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.collection.EnumGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -123,4 +124,89 @@ class ArrayGeneTest {
         assertEquals("baz", gene.getViewOfChildren()[0].getValueAsRawString())
     }
 
+    @Test
+    fun testJsonSerializationWithBrackets(){
+        val intArray = ArrayGene(
+            "numbers",
+            template = IntegerGene("num"),
+            elements = mutableListOf(
+                IntegerGene("num1", 10),
+                IntegerGene("num2", 20),
+                IntegerGene("num3", 30)
+            )
+        )
+
+        val jsonOutput = intArray.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON)
+
+        assertEquals("[10, 20, 30]", jsonOutput)
+
+        assertTrue(jsonOutput.startsWith("["), "JSON debe empezar con corchete de apertura")
+        assertTrue(jsonOutput.endsWith("]"), "JSON debe terminar con corchete de cierre")
+        assertTrue(jsonOutput.contains(", "), "JSON debe contener comas separadoras")
+    }
+
+    @Test
+    fun testXmlSerializationEmptyArray(){
+        // Test para verificar que un array vacío en XML no genera corchetes
+        val emptyArray = ArrayGene(
+            "items",
+            template = StringGene("item"),
+            elements = mutableListOf()
+        )
+
+        val xmlOutput = emptyArray.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+
+        // Un array vacío en XML debe producir una cadena vacía (sin corchetes)
+        assertEquals("", xmlOutput)
+    }
+
+    @Test
+    fun testXmlSerializationWithObjects(){
+        val objectArray = ArrayGene(
+            "people",
+            template = ObjectGene("person", listOf(
+                StringGene("name", ""),
+                IntegerGene("age", 0)
+            )),
+            elements = mutableListOf(
+                ObjectGene("person", listOf(
+                    StringGene("name", "Alice"),
+                    IntegerGene("age", 30)
+                )),
+                ObjectGene("person", listOf(
+                    StringGene("name", "Bob"),
+                    IntegerGene("age", 25)
+                ))
+            )
+        )
+
+        val xmlOutput = objectArray.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+
+        val expected = "<person><name>Alice</name><age>30</age></person><person><name>Bob</name><age>25</age></person>"
+        assertEquals(expected, xmlOutput)
+
+        assertTrue(!xmlOutput.contains("["), "XML con objetos no debe contener corchetes")
+        assertTrue(!xmlOutput.contains("]"), "XML con objetos no debe contener corchetes")
+    }
+
+    @Test
+    fun testXmlArrayInsideObjectGene(){
+        val arrayOfStrings = ArrayGene(
+            "items",
+            template = StringGene("item"),
+            elements = mutableListOf(
+                StringGene("item1", "value1"),
+                StringGene("item2", "value2")
+            )
+        )
+
+        val root = ObjectGene("root", listOf(arrayOfStrings))
+        val xmlOutput = root.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+
+        assertEquals("<root><items><item1>value1</item1><item2>value2</item2></items></root>", xmlOutput)
+
+        assertTrue(!xmlOutput.contains("["), "XML no debe contener corchetes")
+        assertTrue(!xmlOutput.contains("]"), "XML no debe contener corchetes")
+        assertTrue(!xmlOutput.contains(", "), "XML no debe contener comas con espacios")
+    }
 }

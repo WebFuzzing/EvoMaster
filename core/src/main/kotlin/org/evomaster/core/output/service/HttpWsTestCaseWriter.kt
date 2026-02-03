@@ -604,16 +604,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else if (bodyParam.isXml()) {
 
                 val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+                // Escape quotes for string literal in generated code
+                val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
 
                 when {
-
-                    format.isCsharp() -> {
-                        lines.append("new StringContent($xml, Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                    }
                     format.isPython() -> {
-                        lines.add("body = $xml")
+                        lines.add("body = \"$escapedXml\"")
                     }
-                    else -> lines.add(".$send($xml)")
+                    else -> lines.add(".$send(\"$escapedXml\")")
                 }
             } else {
                 LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())

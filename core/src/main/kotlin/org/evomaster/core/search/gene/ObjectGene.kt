@@ -43,27 +43,27 @@ import java.net.URLEncoder
  *              - type: integer
  */
 open class ObjectGene(
-        name: String,
-        val fixedFields: List<out Gene>,
-        val refType: String? = null,
-        /**
-         * represent whether the Object is fixed
-         * which determinate whether it allows to have additional fields
-         */
-        isFixed : Boolean,
-        /**
-         * a template for additionalFields
-         */
-        val template : PairGene<StringGene, Gene>?,
-        /**
-         * additional fields, and its field name is mutable
-         *
-         * note that [additionalFields] is not null only if [isFixed] is true
-         */
-        additionalFields:  MutableList<PairGene<StringGene, Gene>>?
+    name: String,
+    val fixedFields: List<out Gene>,
+    val refType: String? = null,
+    /**
+     * represent whether the Object is fixed
+     * which determinate whether it allows to have additional fields
+     */
+    isFixed : Boolean,
+    /**
+     * a template for additionalFields
+     */
+    val template : PairGene<StringGene, Gene>?,
+    /**
+     * additional fields, and its field name is mutable
+     *
+     * note that [additionalFields] is not null only if [isFixed] is true
+     */
+    additionalFields:  MutableList<PairGene<StringGene, Gene>>?
 ): CompositeConditionalFixedGene(
-        name, isFixed,
-        mutableListOf<Gene>().apply { addAll(fixedFields); if (additionalFields!=null) addAll(additionalFields) })
+    name, isFixed,
+    mutableListOf<Gene>().apply { addAll(fixedFields); if (additionalFields!=null) addAll(additionalFields) })
 {
 
     init {
@@ -127,7 +127,7 @@ open class ObjectGene(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
         fixedFields.filter { it.isMutable() }
-                .forEach { it.randomize(randomness, tryToForceNewValue) }
+            .forEach { it.randomize(randomness, tryToForceNewValue) }
 
         if (!isFixed){
             Lazy.assert { template != null && additionalFields != null }
@@ -261,7 +261,7 @@ open class ObjectGene(
                         { thisField, otherField -> thisField.containsSameValueAs(otherField) }
                     .all { it })
                 && (isFixed || this.additionalFields!!.zip(other.additionalFields!!) { thisField, otherField -> thisField.containsSameValueAs(otherField) }.all { it }
-        )
+                )
     }
 
     override fun unsafeCopyValueFrom(other: Gene): Boolean {
@@ -311,7 +311,7 @@ open class ObjectGene(
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
 
         if (additionalGeneMutationInfo.impact != null
-                && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
+            && additionalGeneMutationInfo.impact is ObjectGeneImpact) {
             val impacts = internalGenes.map {
                 /*
                   TODO here we need to consider genes which belongs to fixedFiled or not
@@ -319,7 +319,7 @@ open class ObjectGene(
                 additionalGeneMutationInfo.impact.fixedFields.getValue(it.name)
             }
             val selected = mwc.selectSubGene(
-                    internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
+                internalGenes, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
             val map = selected.map { internalGenes.indexOf(it) }
             return map.map { internalGenes[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact, gene = internalGenes[it]) }
@@ -336,48 +336,6 @@ open class ObjectGene(
         return mode == null || mode == GeneUtils.EscapeMode.JSON || mode == GeneUtils.EscapeMode.TEXT
     }
 
-    private fun escapeXmlSafe(s: String): String =
-        s.replace(Regex("(?<!&)&(?![a-zA-Z]+;)"), "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&apos;")
-
-    private fun singularize(n: String): String =
-        when {
-            n.endsWith("s") && n.length > 1 -> n.removeSuffix("s")
-            else -> n
-        }.replaceFirstChar { it.uppercase() }
-
-    private fun unwrap(v: Any?): Any? =
-        when (v) {
-            is OptionalGene -> v.gene
-            else -> v
-        }
-
-    public fun cleanXmlValueString(v: String): String =
-        v.removeSurrounding("\"").let(::escapeXmlSafe)
-
-    private fun getPrintedValue(
-        previousGenes: List<Gene>,
-        v: Gene,
-        targetFormat: OutputFormat?
-    ): String =
-        cleanXmlValueString(
-            v.getValueAsPrintableString(
-                previousGenes,
-                GeneUtils.EscapeMode.XML,
-                targetFormat
-            )
-        )
-
-    private fun isPrimitiveGene(value: Any?): Boolean =
-        when (unwrap(value)) {
-            is StringGene, is BooleanGene, is IntegerGene, is DoubleGene, is FloatGene,
-            is String, is Number, is Boolean -> true
-            else -> false
-        }
-
     private fun serializeXml(
         previousGenes: List<Gene>,
         name: String,
@@ -385,15 +343,14 @@ open class ObjectGene(
         targetFormat: OutputFormat?
     ): String {
 
+        val g = value as? Gene
+        val leaf = g?.getLeafGene()
+
         if (name == contentXMLTag) {
-            return when (val v = unwrap(value)) {
-                is Gene -> getPrintedValue(previousGenes, v, targetFormat)
-                null -> ""
-                else -> escapeXmlSafe(v.toString())
-            }
+            return leaf?.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat) ?: "<$name></$name>"
         }
 
-        val v = unwrap(value) ?: return "<$name></$name>"
+        val v = leaf ?: return "<$name></$name>"
 
         return when (v) {
 
@@ -403,14 +360,20 @@ open class ObjectGene(
 
             is ObjectGene -> {
                 val inner = v.fields.joinToString("") { f ->
-                    serializeXml(previousGenes, f.name, unwrap(f), targetFormat)
+                    val g = f as? Gene
+                    val leaf = g?.getLeafGene()
+                    serializeXml(previousGenes, f.name, leaf, targetFormat)
                 }
                 "<$name>$inner</$name>"
             }
 
-            is Collection<*> -> v.joinToString("", "<$name>", "</$name>") {
-                val itemName = singularize(name)
-                serializeXml(previousGenes, itemName, it, targetFormat)
+            is Collection<*> -> {
+                val elements = v.joinToString("") {
+                    val leaf = (it as? Gene)?.getLeafGene()
+                    val itemName = (leaf as? Gene)?.name ?: name
+                    serializeXml(previousGenes, itemName, leaf, targetFormat)
+                }
+                "<$name>$elements</$name>"
             }
 
             is Map<*, *> -> v.entries.joinToString("", "<$name>", "</$name>") {
@@ -418,15 +381,15 @@ open class ObjectGene(
             }
 
             is ArrayGene<*> -> {
-                val itemName = singularize(name)
-                v.getViewOfElements().joinToString("", "<$name>", "</$name>") {
-                    serializeXml(previousGenes, itemName, it, targetFormat)
+                v.getViewOfElements().joinToString("", "<$name>", "</$name>") { elem ->
+                    val leaf = (elem as? Gene)?.getLeafGene()
+                    val itemName = (leaf as? Gene)?.name ?: name
+                    serializeXml(previousGenes, itemName, leaf, targetFormat)
                 }
             }
 
-            is Gene -> "<$name>${getPrintedValue(previousGenes, v, targetFormat)}</$name>"
-
-            else -> "<$name>${cleanXmlValueString(v.toString())}</$name>"
+            //Gene
+            else -> "<$name>${v.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML, targetFormat)}</$name>"
         }
     }
 
@@ -465,14 +428,16 @@ open class ObjectGene(
         } else if (mode == GeneUtils.EscapeMode.XML) {
 
             val inner = includedFields.joinToString("") { f ->
-                serializeXml(previousGenes, f.name, unwrap(f), targetFormat)
+                serializeXml(previousGenes, f.name, f.getLeafGene(), targetFormat)
             }
 
             val singleField = includedFields.singleOrNull()
-            val inlinePrimitive = singleField?.let { isPrimitiveGene(unwrap(it)) } == true
+            val leafGene = singleField?.getLeafGene()
+
+            val inlinePrimitive = leafGene != null && leafGene.getViewOfChildren().isEmpty()
 
             val xmlPayload = if (inlinePrimitive) {
-                val childValue = getPrintedValue(previousGenes, unwrap(singleField) as Gene, targetFormat)
+                val childValue = singleField.getLeafGene().getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
                 "<$name>$childValue</$name>"
             } else {
                 "<$name>$inner</$name>"
