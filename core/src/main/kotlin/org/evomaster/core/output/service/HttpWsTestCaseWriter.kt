@@ -158,9 +158,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val mapper = ObjectMapper()
         return try {
             mapper.readTree(json)
-            false
-        } catch (e: JsonProcessingException) {
             true
+        } catch (e: JsonProcessingException) {
+            false
         }
     }
 
