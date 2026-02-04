@@ -12,7 +12,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
         addImports(lines)
-        declareDtoClass(lines, dtoFilename.getClassName(), dtoClass)
+        declareClass(lines, dtoFilename.getClassName(), dtoClass)
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
@@ -32,7 +32,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value)"
     }
 
-    private fun declareDtoClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
+    private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("class $dtoFilename(")
         addVariables(lines, dtoClass)

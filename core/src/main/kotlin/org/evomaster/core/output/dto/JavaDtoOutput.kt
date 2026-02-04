@@ -13,7 +13,7 @@ class JavaDtoOutput: JvmDtoOutput() {
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
         addImports(lines)
-        initDtoClass(lines, dtoFilename.getClassName())
+        initClass(lines, dtoFilename.getClassName())
         addClassContent(lines, dtoClass)
         closeClass(lines)
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
@@ -35,7 +35,7 @@ class JavaDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value);"
     }
 
-    private fun initDtoClass(lines: Lines, dtoFilename: String) {
+    private fun initClass(lines: Lines, dtoFilename: String) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("public class $dtoFilename {")
         lines.addEmpty()
