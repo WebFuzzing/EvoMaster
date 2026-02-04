@@ -21,15 +21,6 @@ interface DtoOutput {
     fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass)
 
     /**
-     * Writes an ObjectMapper class in the corresponding [org.evomaster.core.output.OutputFormat] for
-     * Jackson/RestAssured to use when serializing DTOs.
-     *
-     * @param testSuitePath under which the class must be written
-     * @param testSuitePackage under which the class must be written
-     */
-    fun writeObjectMapperClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String)
-
-    /**
      * @param dtoName that will be instantiated for payload
      * @param dtoVarName variable name under which the DTO Object will be instantiated
      *

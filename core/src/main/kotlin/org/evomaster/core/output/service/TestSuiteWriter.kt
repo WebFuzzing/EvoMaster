@@ -439,7 +439,6 @@ class TestSuiteWriter {
                 val pkgPrefix = if (name.getPackage().isNotEmpty()) "${name.getPackage()}." else ""
                 addImport("${pkgPrefix}dto.*", lines)
                 addImport("java.util.ArrayList", lines)
-                addImport("io.restassured.config.ObjectMapperConfig", lines)
             }
 
             addImport("java.util.List", lines)
@@ -813,26 +812,6 @@ class TestSuiteWriter {
                     lines.indented {
                         lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
                         lines.add(".redirect(redirectConfig().followRedirects(false))")
-                        /*
-                         * EvoMaster supports the usage of ASCII control characters as part of the payload. These characters
-                         * will generate an invalid payload which should cause the API to return an error response.
-                         * When working with DTOs, the default behaviour was that ASCII control characters were being escaped
-                         * by Jackson when mapped to a JSON, therefore we were losing the ability to test invalid payloads with
-                         * DTOs. This ObjectMapper config allows us to keep that functionality, the feature is enabled
-                         * only if the ProblemType is REST, the DTO feature is enabled, output format is either Java or Kotlin
-                         * and if DTOs have been collected when parsing the schema.
-                         */
-                        if (config.dtoSupportedForPayload() && containsDtos) {
-                            lines.indented {
-                                lines.add(".objectMapperConfig(")
-                                lines.indented {
-                                    lines.add("ObjectMapperConfig.objectMapperConfig()")
-                                    val newQualifier = if (format.isJava()) "new" else ""
-                                    lines.add(".jackson2ObjectMapperFactory($newQualifier CustomControlCharMapperFactory())")
-                                }
-                                lines.add(")")
-                            }
-                        }
                     }
                     lines.appendSemicolon()
                 }

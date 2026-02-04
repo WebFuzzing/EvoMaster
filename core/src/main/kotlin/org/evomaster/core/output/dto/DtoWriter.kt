@@ -57,7 +57,6 @@ class DtoWriter(
         dtoCollector.forEach {
             dtoOutput.writeClass(outputFormat, testSuitePath, testSuitePackage, it.value)
         }
-        dtoOutput.writeObjectMapperClass(outputFormat, testSuitePath, testSuitePackage)
     }
 
     fun containsDtos(): Boolean {

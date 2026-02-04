@@ -16,15 +16,6 @@ class KotlinDtoOutput: JvmDtoOutput() {
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
-    override fun writeObjectMapperClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String) {
-        val mapperFilename = TestSuiteFileName(appendDtoPackage(customControlCharMapperFactory))
-        val lines = Lines(outputFormat)
-        setPackage(lines, testSuitePackage)
-        addMapperImports(lines)
-        addMapperContentClass(lines)
-        saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, mapperFilename, outputFormat))
-    }
-
     override fun getNewObjectStatement(dtoName: String, dtoVarName: String): String {
         return "val $dtoVarName = $dtoName()"
     }
@@ -56,61 +47,6 @@ class KotlinDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
-    }
-
-    private fun addMapperContentClass(lines: Lines) {
-        lines.add("class $customControlCharMapperFactory : Jackson2ObjectMapperFactory {")
-        lines.addEmpty()
-        lines.indented {
-            lines.add("override fun create(cls: Type, charset: String): ObjectMapper {")
-            lines.indented {
-                lines.add("val mapper = ObjectMapper()")
-                /*
-                 * Our DTO handling uses Optional to determine if a field should be included, is null or has an actual
-                 * value. When using a custom ObjectMapper, Jackson no longer handles the serialization of Optional as
-                 * expected ({"s0": "myVal"}). It will instead render outputs as: {"s0": { "empty": false, "present": true }}
-                 * Registering the Jdk8Module allows for Optional to be serialized correctly.
-                 */
-                lines.add("mapper.registerModule(Jdk8Module())")
-                lines.add("mapper.factory.setCharacterEscapes(NoEscapeControlChars())")
-                lines.add("return mapper")
-            }
-            lines.add("}")
-        }
-        lines.addEmpty()
-        lines.add("}")
-        lines.addEmpty()
-        lines.add("class NoEscapeControlChars : CharacterEscapes() {")
-        lines.addEmpty()
-        lines.indented {
-            lines.add("private val escapes: IntArray")
-            lines.addEmpty()
-            lines.add("init {")
-            lines.indented {
-                lines.add("val std = CharacterEscapes.standardAsciiEscapesForJSON()")
-                lines.add("escapes = std.copyOf(std.size)")
-                lines.add("for (i in 0..0x1f) {")
-                lines.indented {
-                    lines.add("escapes[i] = CharacterEscapes.ESCAPE_NONE")
-                }
-                lines.add("}")
-            }
-            lines.add("}")
-            lines.addEmpty()
-            lines.add("override fun getEscapeCodesForAscii(): IntArray {")
-            lines.indented {
-                lines.add("return escapes")
-            }
-            lines.add("}")
-            lines.addEmpty()
-            lines.add("override fun getEscapeSequence(ch: Int): SerializableString? {")
-            lines.indented {
-                lines.add("return null")
-            }
-            lines.add("}")
-            lines.addEmpty()
-        }
-        lines.add("}")
     }
 
 }

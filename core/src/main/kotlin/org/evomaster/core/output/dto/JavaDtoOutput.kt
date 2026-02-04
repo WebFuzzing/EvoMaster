@@ -22,15 +22,6 @@ class JavaDtoOutput: JvmDtoOutput() {
         saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, dtoFilename, outputFormat))
     }
 
-    override fun writeObjectMapperClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String) {
-        val mapperFilename = TestSuiteFileName(appendDtoPackage(customControlCharMapperFactory))
-        val lines = Lines(outputFormat)
-        setPackage(lines, testSuitePackage)
-        addMapperImports(lines)
-        addMapperContentClass(lines)
-        saveToDisk(lines.toString(), getTestSuitePath(testSuitePath, mapperFilename, outputFormat))
-    }
-
     override fun getNewObjectStatement(dtoName: String, dtoVarName: String): String {
         return "$dtoName $dtoVarName = new $dtoName();"
     }
@@ -94,61 +85,4 @@ class JavaDtoOutput: JvmDtoOutput() {
         }
     }
 
-    private fun addMapperContentClass(lines: Lines) {
-        lines.add("public class $customControlCharMapperFactory implements Jackson2ObjectMapperFactory {")
-        lines.addEmpty()
-        lines.indented {
-            lines.add("@Override")
-            lines.add("public ObjectMapper create(Type cls, String charset) {")
-            lines.indented {
-                lines.add("ObjectMapper mapper = new ObjectMapper();")
-                /*
-                 * Our DTO handling uses Optional to determine if a field should be included, is null or has an actual
-                 * value. When using a custom ObjectMapper, Jackson no longer handles the serialization of Optional as
-                 * expected ({"s0": "myVal"}). It will instead render outputs as: {"s0": { "empty": false, "present": true }}
-                 * Registering the Jdk8Module allows for Optional to be serialized correctly.
-                 */
-                lines.add("mapper.registerModule(new Jdk8Module());")
-                lines.add("mapper.getFactory().setCharacterEscapes(new NoEscapeControlChars());")
-                lines.add("return mapper;")
-            }
-            lines.add("}")
-        }
-        lines.addEmpty()
-        lines.add("}")
-        lines.addEmpty()
-        lines.add("class NoEscapeControlChars extends CharacterEscapes {")
-        lines.addEmpty()
-        lines.indented {
-            lines.add("private final int[] escapes;")
-            lines.addEmpty()
-            lines.add("public NoEscapeControlChars() {")
-            lines.indented {
-                lines.add("int[] std = CharacterEscapes.standardAsciiEscapesForJSON();")
-                lines.add("escapes = java.util.Arrays.copyOf(std, std.length);")
-                lines.add("for (int i = 0; i < 0x20; i++) {")
-                    lines.indented {
-                        lines.add("escapes[i] = CharacterEscapes.ESCAPE_NONE;")
-                    }
-                lines.add("}")
-            }
-            lines.add("}")
-            lines.addEmpty()
-            lines.add("@Override")
-            lines.add("public int[] getEscapeCodesForAscii() {")
-            lines.indented {
-                lines.add("return escapes;")
-            }
-            lines.add("}")
-            lines.addEmpty()
-            lines.add("@Override")
-            lines.add("public SerializableString getEscapeSequence(int ch) {")
-            lines.indented {
-                lines.add("return null;")
-            }
-            lines.add("}")
-            lines.addEmpty()
-        }
-        lines.add("}")
-    }
 }

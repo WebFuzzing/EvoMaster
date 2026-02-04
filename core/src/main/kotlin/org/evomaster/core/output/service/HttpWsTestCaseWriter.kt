@@ -149,14 +149,18 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         return ""
     }
 
+    /*
+     * Control characters break JSON and transform it into an invalid payload. If there's any invalid character
+     * then we'll avoid using DTOs and have the payload in the test case be represented by the raw JSON string.
+     */
     private fun payloadIsValidJson(bodyParam: BodyParam): Boolean {
         val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
         val mapper = ObjectMapper()
         return try {
             mapper.readTree(json)
-            false // valid JSON
+            false
         } catch (e: JsonProcessingException) {
-            true  // invalid JSON (often due to control chars)
+            true
         }
     }
 
