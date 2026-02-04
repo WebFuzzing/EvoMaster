@@ -1,5 +1,7 @@
 package org.evomaster.core.output.service
 
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
@@ -123,7 +125,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-        if (bodyParam != null && bodyParam.isJson()) {
+        if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
 
             val primaryGene = bodyParam.primaryGene()
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
@@ -145,6 +147,17 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         }
         return ""
+    }
+
+    private fun payloadIsValidJson(bodyParam: BodyParam): Boolean {
+        val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+        val mapper = ObjectMapper()
+        return try {
+            mapper.readTree(json)
+            false // valid JSON
+        } catch (e: JsonProcessingException) {
+            true  // invalid JSON (often due to control chars)
+        }
     }
 
     private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
