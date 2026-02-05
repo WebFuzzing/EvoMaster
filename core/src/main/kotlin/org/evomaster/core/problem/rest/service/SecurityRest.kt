@@ -12,6 +12,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
@@ -341,8 +342,9 @@ class SecurityRest {
 
     private fun handleSqlICheck(){
 
-        mainloop@ for(action in actionDefinitions){
+        val K = config.sqliBaselineMaxResponseTimeMs
 
+        mainloop@ for(action in actionDefinitions){
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -356,41 +358,49 @@ class SecurityRest {
                 continue
             }
 
-            // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val candidates = successfulIndividuals.mapNotNull { ei ->
+                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    ei,
+                    action.verb,
+                    action.path,
+                    statusGroup = StatusGroup.G_2xx
+                )
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
+                if(actionIndex < 0){
+                    null
+                } else {
+                    val action = ei.individual.seeMainExecutableActions()[actionIndex]
+                    val result = ei.seeResult(action.getLocalId()) as HttpWsCallResult
+                    val time = result.getResponseTimeMs()
+                    if(time == null || time >= K ){
+                        //make sure the call didn't take too long
+                        null
+                    } else {
+                        // Slice to keep only up to the target action
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ei.individual, actionIndex)
+                    }
+                }
             }
 
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
+            // Take the smallest successful individual
+            val target = candidates.minBy { it.size() }
 
             // Try each sqli payload (but only add one test per endpoint)
             for(payload in SQLI_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
+                val copy = target.copy() as RestIndividual
                 val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
                 var anySuccess = false
 
+                //here we try to modify ALL potential genes
                 genes.forEach {
                         gene ->
                     val leafGene = gene.getLeafGene().getPhenotype()
@@ -413,7 +423,7 @@ class SecurityRest {
                     continue
                 }
 
-                val newInd = builder.merge(sliced, copy)
+                val newInd = builder.merge(target, copy)
 
                 newInd.modifySampleType(SampleType.SECURITY)
                 newInd.ensureFlattenedStructure()
@@ -432,7 +442,6 @@ class SecurityRest {
                     assert(added)
                     continue@mainloop
                 }
-
             }
         }
     }

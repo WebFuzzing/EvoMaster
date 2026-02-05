@@ -2650,10 +2650,9 @@ class EMConfig {
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
     var sqliBaselineMaxResponseTimeMs = 2000
 
-
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
-                "By default, all oracles are enabled."
+                "By default, all oracles are enabled. Codes are based on WFC (Web Fuzzing Commons)."
     )
     var disabledOracleCodes = ""
 
