@@ -52,6 +52,7 @@ class WebModule: EnterpriseModule() {
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .to(object : TypeLiteral<FlakinessDetector<WebIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<WebIndividual>>() {})

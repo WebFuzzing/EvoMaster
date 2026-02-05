@@ -58,6 +58,7 @@ class GraphQLBlackBoxModule(
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .to(object : TypeLiteral<FlakinessDetector<GraphQLIndividual>>(){})
             .asEagerSingleton()
 
 

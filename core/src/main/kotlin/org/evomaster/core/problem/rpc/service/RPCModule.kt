@@ -55,6 +55,7 @@ class RPCModule : EnterpriseModule(){
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .to(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
             .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
