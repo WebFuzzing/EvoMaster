@@ -302,7 +302,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
 
             format.isPython() -> {
-                lines.add("assert $responseVariableName.status_code == $code")
+                val statusAssert = "assert $responseVariableName.status_code == $code"
+                if (res.getFlakyStatusCode() == null){
+                    lines.add(statusAssert)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                    lines.addSingleCommentLine(statusAssert)
+                }
             }
 
             else -> {
