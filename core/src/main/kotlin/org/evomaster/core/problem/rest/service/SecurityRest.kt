@@ -295,7 +295,7 @@ class SecurityRest {
             handleExistenceLeakage()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
             log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             handleStackTraceCheck()
@@ -320,13 +320,13 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
             log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             handleAnonymousWriteCheck()
@@ -568,7 +568,7 @@ class SecurityRest {
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+            if(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories){
                 val added = archive.addIfNeeded(evaluatedIndividual)
                 assert(added)
                 continue@mainloop

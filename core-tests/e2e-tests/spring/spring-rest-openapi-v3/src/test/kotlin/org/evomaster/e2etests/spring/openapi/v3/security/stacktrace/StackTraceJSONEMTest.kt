@@ -41,15 +41,15 @@ class StackTraceJSONEMTest : SpringTestBase(){
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
             val faults = DetectedFaultUtils.getDetectedFaults(solution)
 
-            assertTrue(ExperimentalFaultCategory.SECURITY_STACK_TRACE in faultsCategories)
+            assertTrue(ExperimentalFaultCategory.LEAKED_STACK_TRACES in faultsCategories)
 
             assertTrue(faults.any {
-                it.category == ExperimentalFaultCategory.SECURITY_STACK_TRACE
+                it.category == ExperimentalFaultCategory.LEAKED_STACK_TRACES
                         && it.operationId == "GET:/api/resources/null-pointer-json"
             })
 
             assertTrue(faults.any {
-                it.category == ExperimentalFaultCategory.SECURITY_STACK_TRACE
+                it.category == ExperimentalFaultCategory.LEAKED_STACK_TRACES
                         && it.operationId == "GET:/api/resources/null-pointer-json-not-list"
             })
 

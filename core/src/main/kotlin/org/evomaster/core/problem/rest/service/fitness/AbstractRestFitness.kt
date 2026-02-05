@@ -1500,7 +1500,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
             return
         }
 
@@ -1512,10 +1512,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName())
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
+                r.addFault(DetectedFault(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName(), null))
             }
         }
     }
@@ -1565,7 +1565,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)){
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)){
             return
         }
 
@@ -1596,10 +1596,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 }
 
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName())
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName(), null))
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName(), null))
             }
         }
     }
@@ -1610,7 +1610,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         fv: FitnessValue
     ) {
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
             return
         }
 
@@ -1630,10 +1630,10 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
             if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
                 val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName())
                 )
                 fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName(), null))
+                r.addFault(DetectedFault(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName(), null))
             }
         }
     }
