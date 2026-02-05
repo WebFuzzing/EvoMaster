@@ -1477,7 +1477,7 @@ public void test() throws Exception {
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        assertEquals(6, getNumberOfFlakyComment(lines.toString()))
+        assertEquals(6, getNumberOfFlakyComment(config,lines.toString()))
     }
 
     @Test
@@ -1519,10 +1519,6 @@ public void test() throws Exception {
         val writer = RestTestCaseWriter(config, PartialOracles())
         val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
 
-        assertEquals(3, getNumberOfFlakyComment(lines.toString()))
-    }
-
-    private fun getNumberOfFlakyComment(testContent: String): Int{
-        return  Regex("// Flaky").findAll(testContent).count()
+        assertEquals(3, getNumberOfFlakyComment(config,lines.toString()))
     }
 }
