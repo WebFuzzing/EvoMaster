@@ -2495,7 +2495,8 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing.")
+    @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. " +
+            "Note that flakiness is now supported only for JVM (i.e., Java and Kotlin) and Python output formats.")
     var handleFlakiness = false
 
     @Experimental
