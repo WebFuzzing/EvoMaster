@@ -324,7 +324,12 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
                 else -> throw IllegalStateException("Format not supported yet: $format")
             }
-            lines.add(instruction)
+            if (flakyValue != null){
+                lines.addSingleCommentLine(flakyInfo("value of field $fieldPath","null", flakyValue!!.toString()))
+                lines.addSingleCommentLine(instruction)
+            }else{
+                lines.add(instruction)
+            }
             return
         }
 
@@ -360,19 +365,19 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         if (format.isJavaScript() || format.isCsharp() || format.isPython()) {
-            val toPrint = if (value is String) {
-                "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
-            } else if(value is Boolean && format.isPython()) {
-                StringUtils.capitalization(value.toString())
-            } else {
-                value.toString()
-            }
+            val toPrint = valueToPrint(value, format)
 
             if (isSuitableToPrint(toPrint)) {
                 if (format.isJavaScript()) {
                     lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
                 } else if (format.isPython()){
-                    lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                    if (flakyValue == null || flakyValue == value){
+                        lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                    }else{
+                        val flakyToPrint = valueToPrint(flakyValue, format)
+                        lines.addSingleCommentLine(flakyInfo("value of field $fieldPath", toPrint, flakyToPrint))
+                        lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                    }
                 } else {
                     assert(format.isCsharp())
                     if (fieldPath != ".traceId" || !lines.toString().contains("status == 400"))
@@ -385,6 +390,17 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         throw IllegalStateException("Not supported format $format")
     }
 
+    private fun valueToPrint(value: Any?, format: OutputFormat) : String{
+        assert(format.isJavaScript() || format.isCsharp() || format.isPython())
+        val toPrint = if (value is String) {
+            "\"" + GeneUtils.applyEscapes(value, mode = GeneUtils.EscapeMode.ASSERTION, format = format) + "\""
+        } else if(value is Boolean && format.isPython()) {
+            StringUtils.capitalization(value.toString())
+        } else {
+            value.toString()
+        }
+        return toPrint
+    }
 
     protected fun handleAssertionsOnList(list: List<*>, flakyList: List<*>?, lines: Lines, fieldPath: String, responseVariableName: String?) {
 
