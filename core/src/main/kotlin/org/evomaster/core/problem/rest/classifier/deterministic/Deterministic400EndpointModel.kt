@@ -17,7 +17,7 @@ import org.evomaster.core.problem.rest.data.RestCallResult
 class Deterministic400EndpointModel(
     val endpoint: Endpoint,
     private val thresholdForClassification : Double = 0.8,
-    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW
+    val metricType: EMConfig.AIClassificationMetrics
     ) : AIModel {
 
     private var initialized = false

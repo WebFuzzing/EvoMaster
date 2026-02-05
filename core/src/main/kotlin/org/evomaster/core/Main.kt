@@ -263,14 +263,16 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
-            solution = phaseHttpOracle(injector, config, solution)
+            solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseSecurity(injector, config, epc, solution)
             solution = phaseFlaky(injector, config, solution)
 
+            epc.startWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
             writeWFCReport(injector, solution, suites)
 
             writeCoveredTargets(injector, solution)
+            //NOTE: the WRITE_OUTPUT phase here would be not computed, as it is not finished yet...
             writeStatistics(injector, solution)
             //FIXME if other phases after search, might get skewed data on 100% snapshots...
 
@@ -473,11 +475,13 @@ class Main {
         private fun phaseHttpOracle(
             injector: Injector,
             config: EMConfig,
+            epc: ExecutionPhaseController,
             solution: Solution<*>
         ): Solution<*> {
 
             return if (config.httpOracles && config.problemType == EMConfig.ProblemType.REST) {
                 LoggingUtil.getInfoLogger().info("Starting to apply HTTP")
+                epc.startHttpOracles()
 
                 val httpSemanticsService = injector.getInstance(HttpSemanticsService::class.java)
                 httpSemanticsService.applyHttpSemanticsPhase()
