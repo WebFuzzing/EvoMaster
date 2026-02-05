@@ -62,6 +62,9 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private lateinit var aiResponseClassifier: AIResponseClassifier
 
+    @Inject
+    private lateinit var epc : ExecutionPhaseController
+
     /**
      * How often test executions did timeout
      */
@@ -361,6 +364,9 @@ class Statistics : SearchListener {
             add(Pair("sqlHeuristicsEvaluationFailures","$sqlHeuristicEvaluationFailureCount" ))
             add(Pair("sqlHeuristicsEvaluationCount","${getSqlHeuristicsEvaluationCount()}"))
 
+            for(phase in ExecutionPhaseController.Phase.entries){
+                add(Pair("phase_${phase.name}", "${epc.getPhaseDurationInSeconds(phase)}"))
+            }
         }
         addConfig(list)
 
@@ -376,7 +382,9 @@ class Statistics : SearchListener {
         type: String,
         accuracy: Double,
         precision: Double,
-        recall: Double,
+        sensitivity: Double,
+        specificity: Double,
+        npv: Double,
         f1: Double,
         mcc: Double,
         updateTimeNs: Long,
@@ -392,21 +400,27 @@ class Statistics : SearchListener {
         observed400ByAIModel: Long,
         maxAccuracy : Double,
         maxPrecision : Double,
-        maxRecall : Double,
+        maxSensitivity : Double,
+        maxSpecificity : Double,
+        maxNpv : Double,
         maxF1Score : Double,
         maxMcc : Double,
     ): List<Pair> = listOf(
         Pair("ai_model_enabled", enabled.toString()),
         Pair("ai_model_type", type),
         Pair("ai_accuracy", "%.4f".format(accuracy)),
-        Pair("ai_precision400", "%.4f".format(precision)),
-        Pair("ai_recall400", "%.4f".format(recall)),
+        Pair("ai_precision", "%.4f".format(precision)),
+        Pair("ai_sensitivity", "%.4f".format(sensitivity)),
+        Pair("ai_specificity", "%.4f".format(specificity)),
+        Pair("ai_npv", "%.4f".format(npv)),
         Pair("ai_f1Score400", "%.4f".format(f1)),
         Pair("ai_mcc400", "%.4f".format(mcc)),
         // Max metrics among all endpoints
         Pair("ai_max_Accuracy", "%.4f".format(maxAccuracy)),
         Pair("ai_max_Precision", "%.4f".format(maxPrecision)),
-        Pair("ai_max_Recall", "%.4f".format(maxRecall)),
+        Pair("ai_max_Sensitivity", "%.4f".format(maxSensitivity)),
+        Pair("ai_max_Specificity", "%.4f".format(maxSpecificity)),
+        Pair("ai_max_Npv", "%.4f".format(maxNpv)),
         Pair("ai_max_F1Score", "%.4f".format(maxF1Score)),
         Pair("ai_max_Mcc", "%.4f".format(maxMcc)),
         // timing in milliseconds
@@ -431,7 +445,9 @@ class Statistics : SearchListener {
                 type = "NONE",
                 accuracy = 0.0,
                 precision = 0.0,
-                recall = 0.0,
+                sensitivity = 0.0,
+                specificity = 0.0,
+                npv = 0.0,
                 f1 = 0.0,
                 mcc = 0.0,
                 updateTimeNs = 0,
@@ -447,7 +463,9 @@ class Statistics : SearchListener {
                 observed400ByAIModel = 0,
                 maxAccuracy = 0.0,
                 maxPrecision = 0.0,
-                maxRecall = 0.0,
+                maxSensitivity = 0.0,
+                maxSpecificity = 0.0,
+                maxNpv = 0.0,
                 maxF1Score = 0.0,
                 maxMcc = 0.0,
             )
@@ -462,7 +480,9 @@ class Statistics : SearchListener {
             type = config.aiModelForResponseClassification.name,
             accuracy = metrics.accuracy,
             precision = metrics.precision400,
-            recall = metrics.recall400,
+            sensitivity = metrics.sensitivity400,
+            specificity = metrics.specificity,
+            npv = metrics.npv,
             f1 = metrics.f1Score400,
             mcc = metrics.mcc,
             updateTimeNs = aiStats.updateTimeNs,
@@ -478,7 +498,9 @@ class Statistics : SearchListener {
             observed400ByAIModel = aiStats.observed400Count,
             maxAccuracy = aiStats.maxAccuracy,
             maxPrecision = aiStats.maxPrecision,
-            maxRecall = aiStats.maxRecall,
+            maxSensitivity = aiStats.maxSensitivity,
+            maxSpecificity = aiStats.maxSpecificity,
+            maxNpv = aiStats.maxNpv,
             maxF1Score = aiStats.maxF1Score,
             maxMcc = aiStats.maxMcc,
         )
