@@ -278,7 +278,11 @@ class SecurityRest {
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
-            handleSqlICheck()
+            if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
+                // in white-box testing, if no that the SUT is not using any SQL database, then no point
+                // in trying any kind of SQLi attack
+                handleSqlICheck()
+            }
         }
 
         if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {

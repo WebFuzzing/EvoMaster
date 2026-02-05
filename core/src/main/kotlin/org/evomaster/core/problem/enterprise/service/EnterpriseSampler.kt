@@ -36,6 +36,10 @@ abstract class EnterpriseSampler<T> : Sampler<T>() where T : Individual {
         protected set
 
 
+    fun isSUTUsingASQLDatabase() : Boolean{
+        return sqlInsertBuilder != null
+    }
+
     override fun applyDerivedParamModifications(ind: T) {
 
         val levels = derivedParamHandler.getOrderLevels()
