@@ -30,10 +30,8 @@ class FlakinessDetectEMTest : SpringTestBase() {
 
             val executedMainActionToFile = "target/em-tests/FlakinessDetectEM/org/foo/FlakinessDetectEM.kt"
 
-            args.add("--minimize")
-            args.add("true")
-            args.add("--handleFlakiness")
-            args.add("true")
+            setOption(args, "minimize", "true")
+            setOption(args, "handleFlakiness", "true")
 
 
             val solution = initAndRun(args)
