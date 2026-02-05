@@ -376,7 +376,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     }else{
                         val flakyToPrint = valueToPrint(flakyValue, format)
                         lines.addSingleCommentLine(flakyInfo("value of field $fieldPath", toPrint, flakyToPrint))
-                        lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                        lines.addSingleCommentLine("assert $responseVariableName.json()$fieldPath == $toPrint")
                     }
                 } else {
                     assert(format.isCsharp())
