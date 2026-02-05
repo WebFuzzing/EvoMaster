@@ -1,7 +1,5 @@
 package org.evomaster.core.output.service
 
-import com.fasterxml.jackson.core.JsonProcessingException
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.inject.Inject
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.JsonUtils
@@ -13,6 +11,7 @@ import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
+import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -126,7 +125,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
         if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
-
             val primaryGene = bodyParam.primaryGene()
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
@@ -155,13 +153,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
      */
     private fun payloadIsValidJson(bodyParam: BodyParam): Boolean {
         val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
-        val mapper = ObjectMapper()
-        return try {
-            mapper.readTree(json)
-            true
-        } catch (e: JsonProcessingException) {
-            false
-        }
+        return OutputFormatter.JSON_FORMATTER.isValid(json)
     }
 
     private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
