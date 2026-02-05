@@ -294,7 +294,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaScript() -> {
-                lines.add("expect($responseVariableName.status).toBe($code);")
+                val statusAssert = "expect($responseVariableName.status).toBe($code);"
+                if (res.getFlakyStatusCode() == null){
+                    lines.add(statusAssert)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                    lines.addSingleCommentLine(statusAssert)
+                }
             }
 
             format.isCsharp() -> {

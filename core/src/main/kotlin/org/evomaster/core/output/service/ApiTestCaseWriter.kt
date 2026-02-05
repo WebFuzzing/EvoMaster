@@ -368,15 +368,19 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             val toPrint = valueToPrint(value, format)
 
             if (isSuitableToPrint(toPrint)) {
-                if (format.isJavaScript()) {
-                    lines.add("expect($responseVariableName.body$fieldPath).toBe($toPrint);")
-                } else if (format.isPython()){
+                if (format.isJavaScript() || format.isPython()) {
+                    val assertionContent = if (format.isPython()) {
+                        "assert $responseVariableName.json()$fieldPath == $toPrint"
+                    }else { // javascript
+                        "expect($responseVariableName.body$fieldPath).toBe($toPrint);"
+                    }
+
                     if (flakyValue == null || flakyValue == value){
-                        lines.add("assert $responseVariableName.json()$fieldPath == $toPrint")
+                        lines.add(assertionContent)
                     }else{
                         val flakyToPrint = valueToPrint(flakyValue, format)
                         lines.addSingleCommentLine(flakyInfo("value of field $fieldPath", toPrint, flakyToPrint))
-                        lines.addSingleCommentLine("assert $responseVariableName.json()$fieldPath == $toPrint")
+                        lines.addSingleCommentLine(assertionContent)
                     }
                 } else {
                     assert(format.isCsharp())
