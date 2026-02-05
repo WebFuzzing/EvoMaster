@@ -1100,9 +1100,8 @@ class SecurityRest {
 
         mainloop@ for(action in actionDefinitions){
 
-
             // Find individuals with 2xx response for this endpoint
-            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            val successfulIndividuals = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 action.verb,
                 action.path,
@@ -1114,37 +1113,21 @@ class SecurityRest {
             }
 
             // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val target = successfulIndividuals.minBy { it.size() }
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
-            }
-
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
 
             // Try each XSS payload (but only add one test per endpoint)
             for(payload in XSS_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
-                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+                var copy = target.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last()
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
 
                 val anySuccess = genes.map { gene ->
