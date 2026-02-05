@@ -8,8 +8,7 @@ import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.utils.FlakinessDeriveUtil
-import org.evomaster.core.utils.FlakinessDeriveUtil.derive
+import org.evomaster.core.utils.FlakinessInferenceUtil.derive
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -126,6 +125,11 @@ class FlakinessDetector<T: Individual> {
             if (rMsg != oMsg) {
                 resultToUpdate.setFlakyErrorMessage(oMsg)
             } else {
+                /*
+                     there may be chance that the flakiness is not identified with the near execution.
+                     However, we use predefined regex to infer potential flaky value for known flaky source,
+                     such as UUID, time.
+                 */
                 val normO = derive(oMsg)
                 if (rMsg != normO) {
                     resultToUpdate.setFlakyErrorMessage(oMsg)
