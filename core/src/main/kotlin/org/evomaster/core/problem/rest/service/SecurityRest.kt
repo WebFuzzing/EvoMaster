@@ -1140,6 +1140,7 @@ class SecurityRest {
 
                 // Try to add a linked GET operation for stored XSS detection
                 //TODO to properly handle POST, we need first to finish the work on CallGraphService
+                //FIXME ie we need to guarantee it is working on same resource
                 if(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT || action.verb == HttpVerb.PATCH){
                     copy = tryAttachLinkedGetForStoredXSS(
                         ind = copy,
