@@ -43,7 +43,7 @@ class FlakinessDetectRest {
 
     @GetMapping("/price/estimate")
     fun estimatePrice(@RequestParam base: Int): Map<String, Int> {
-        val randomJitter = randomInt(10)
+        val randomJitter = randomInt(1000)
 
         val total = base + randomJitter
 
