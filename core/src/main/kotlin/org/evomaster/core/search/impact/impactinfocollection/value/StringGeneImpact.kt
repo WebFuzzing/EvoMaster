@@ -38,9 +38,15 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         specificImpactInfo = SpecificImpactInfo())
 
     /*
-        disable constructor with specialization gene
-        we may resume it
-     */
+         The number of specializations in the string gene can be modified (e.g., added or removed).
+         Additionally, the CONSTANT specialization that uses EnumGene can also be updated by removing or adding items.
+
+         As the structure of specialization genes and their sub-genes changes frequently,
+         impact collection is currently disabled for specialization genes.
+
+         This may be re-enabled in the future.
+         TODO Man
+      */
 //    constructor(id: String, gene : StringGene)
 //            : this(
 //            sharedImpactInfo = SharedImpactInfo(id),
@@ -133,10 +139,7 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         return map
     }
 
-    /*
-        For now, disable impact collection for specialization gene
-        TODO Man
-     */
+
 //    override fun syncImpact(previous: Gene?, current: Gene) {
 //        check(previous, current)
 //        if (hierarchySpecializationImpactInfo == null){
