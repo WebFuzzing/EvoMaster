@@ -55,6 +55,7 @@ There are 3 types of options:
 |`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
 |`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
 |`overrideOpenAPIUrl`| __String__. If specified, override the OpenAPI URL location given by the EvoMaster Driver. This option is only needed for white-box testing. *Constraints*: `URL`. *Default value*: `""`.|
+|`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. If the number of total generated tests is above this threshold, then more than one test suite file will be generated, each one having a different index value in their name, to distinguish them. Note that a negative number here means that no limit per test suite is applied, and only a single test suite file per type is generated. *Default value*: `200`.|
 
 ## Internal Command-Line Options
 
@@ -295,7 +296,6 @@ There are 3 types of options:
 |`maxSizeOfHandlingResource`| __Int__. Specify a maximum number of handling (remove/add) resource size at once, e.g., add 3 resource at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxSizeOfMutatingInitAction`| __Int__. Specify a maximum number of handling (remove/add) init actions at once, e.g., add 3 init actions at most. *Constraints*: `min=0.0`. *Default value*: `0`.|
 |`maxTestSizeStrategy`| __Enum__. Specify a strategy to handle a max size of a test. *Valid values*: `SPECIFIED, DPC_INCREASING, DPC_DECREASING`. *Default value*: `SPECIFIED`.|
-|`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. Note that a negative number presents no limit per test suite. *Default value*: `-1`.|
 |`mutationTargetsSelectionStrategy`| __Enum__. Specify a strategy to select targets for evaluating mutation. *Valid values*: `FIRST_NOT_COVERED_TARGET, EXPANDED_UPDATED_NOT_COVERED_TARGET, UPDATED_NOT_COVERED_TARGET`. *Default value*: `FIRST_NOT_COVERED_TARGET`.|
 |`onePlusLambdaLambdaOffspringSize`| __Int__. 1+(λ,λ) GA: number of offspring (λ) per generation. *Constraints*: `min=1.0`. *Default value*: `4`.|
 |`prematureStopStrategy`| __Enum__. Specify how 'improvement' is defined: either any kind of improvement even if partial (ANY), or at least one new target is fully covered (NEW). *Valid values*: `ANY, NEW`. *Default value*: `NEW`.|
