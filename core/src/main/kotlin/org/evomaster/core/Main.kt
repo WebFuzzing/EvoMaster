@@ -11,6 +11,8 @@ import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
+import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
+import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
@@ -118,7 +120,7 @@ class Main {
                                         " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
                                         " check the documentation at:"
                             ) +
-                                    " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}"
+                                    " ${inBlue(EM_DOCKER_LINK)}"
                         )
                     } else {
                         LoggingUtil.getInfoLogger().warn(
@@ -178,7 +180,7 @@ class Main {
                                         "EvoMaster process terminated abruptly." +
                                                 " This is likely a bug in EvoMaster." +
                                                 " Please copy&paste the following stacktrace, and create a new issue on" +
-                                                " " + inBlue("https://github.com/WebFuzzing/EvoMaster/issues")
+                                                " " + inBlue(EM_ISSUES_LINK)
                                     ), e
                         )
                 }
