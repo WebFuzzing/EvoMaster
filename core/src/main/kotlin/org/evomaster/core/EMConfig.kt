@@ -1145,6 +1145,15 @@ class EMConfig {
         " This option is only needed for white-box testing.")
     var overrideOpenAPIUrl = ""
 
+    @Important(8.0)
+    @Cfg("Specify the maximum number of tests to be generated in one test suite." +
+            " If the number of total generated tests is above this threshold, then more than one test suite file will be generated," +
+            " each one having a different index value in their name, to distinguish them." +
+            " Note that a negative number here means that no limit per test suite is applied, and only a single test suite" +
+            " file per type is generated.")
+    var maxTestsPerTestSuite = 200
+
+
     //-------- other options -------------
 
     @Cfg("Inform EvoMaster process that it is running inside Docker." +
@@ -1220,10 +1229,6 @@ class EMConfig {
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
     var testSuiteSplitType = TestSuiteSplitType.FAULTS
 
-    @Experimental
-    @Cfg("Specify the maximum number of tests to be generated in one test suite. " +
-            "Note that a negative number presents no limit per test suite")
-    var maxTestsPerTestSuite = -1
 
     @Experimental
     @Deprecated("Temporarily removed, due to oracle refactoring. It might come back in future in a different form")
