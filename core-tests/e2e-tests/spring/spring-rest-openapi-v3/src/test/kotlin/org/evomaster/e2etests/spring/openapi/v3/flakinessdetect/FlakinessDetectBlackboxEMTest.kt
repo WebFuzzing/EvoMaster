@@ -22,7 +22,7 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
-        defaultSeed = 43
+        defaultSeed = 123
 
         runTestHandlingFlakyAndCompilation(
             "FlakinessDetectBlackboxEM",
