@@ -24,7 +24,7 @@ class DbTreeEMTest : SpringTestBase() {
     @ValueSource(booleans = [false, true])
     fun testEM(heuristicsForSQLAdvanced: Boolean){
 
-        defaultSeed = 1
+        defaultSeed = 5
 
         runTestHandlingFlakyAndCompilation(
             "GQL_DbTreeEM",
