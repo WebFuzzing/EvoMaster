@@ -1,6 +1,5 @@
 package org.evomaster.core.output.dto
 
-import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import java.nio.file.Path
 
@@ -12,12 +11,14 @@ import java.nio.file.Path
 interface DtoOutput {
 
     /**
+     * Writes a DTO class in the corresponding [org.evomaster.core.output.OutputFormat].
+     *
+     * @param outputFormat under which the java class must be written
      * @param testSuitePath under which the java class must be written
      * @param testSuitePackage under which the java class must be written
-     * @param outputFormat forwarded to the [Lines] helper class and for setting the .java extension in the generated file
      * @param dtoClass to be written to filesystem
      */
-    fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass)
+    fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass)
 
     /**
      * @param dtoName that will be instantiated for payload
