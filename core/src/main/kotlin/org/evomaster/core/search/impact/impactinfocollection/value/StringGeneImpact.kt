@@ -34,11 +34,20 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
 
     constructor(id: String, gene : StringGene)
             : this(
-            sharedImpactInfo = SharedImpactInfo(id),
-            specificImpactInfo = SpecificImpactInfo(),
-            hierarchySpecializationImpactInfo =
-                if (gene.specializationGenes.isEmpty()) null
-                else HierarchySpecializationImpactInfo(null, gene.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList()))
+        sharedImpactInfo = SharedImpactInfo(id),
+        specificImpactInfo = SpecificImpactInfo())
+
+    /*
+        disable constructor with specialization gene
+        we may resume it
+     */
+//    constructor(id: String, gene : StringGene)
+//            : this(
+//            sharedImpactInfo = SharedImpactInfo(id),
+//            specificImpactInfo = SpecificImpactInfo(),
+//            hierarchySpecializationImpactInfo =
+//                if (gene.specializationGenes.isEmpty()) null
+//                else HierarchySpecializationImpactInfo(null, gene.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList()))
 
     fun getSpecializationImpacts() = hierarchySpecializationImpactInfo?.flattenImpacts()?: listOf<Impact>()
 
@@ -75,14 +84,13 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
-        val allImpacts = hierarchySpecializationImpactInfo?.flattenImpacts()
-
         val currentSelect = gc.current.selectedSpecialization
         employSpecialization.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = gc.numOfMutatedGene)
         val taintImpact = if (currentSelect == NEVER_EMPLOY_SPECIALIZATION){ employSpecialization.falseValue }else employSpecialization.trueValue
         taintImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation, num = 1)
 
-        if (currentSelect != NEVER_EMPLOY_SPECIALIZATION && allImpacts?.size == gc.current.specializationGenes.size){
+        val allImpacts = hierarchySpecializationImpactInfo?.flattenImpacts()
+        if (hierarchySpecializationImpactInfo != null && currentSelect != NEVER_EMPLOY_SPECIALIZATION && allImpacts?.size == gc.current.specializationGenes.size){
 
             val sImpact = allImpacts[gc.current.selectedSpecialization]
             val previousSelect = (gc.previous as? StringGene)?.selectedSpecialization
@@ -125,29 +133,33 @@ class StringGeneImpact (sharedImpactInfo: SharedImpactInfo,
         return map
     }
 
-    override fun syncImpact(previous: Gene?, current: Gene) {
-        check(previous, current)
-        if (hierarchySpecializationImpactInfo == null){
-            if ((current as StringGene).specializationGenes.isNotEmpty()){
-                hierarchySpecializationImpactInfo = HierarchySpecializationImpactInfo(null, current.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
-                if (current.specializationGenes.size != getSpecializationImpacts().size){
-                    log.warn("invalid initialization of specializationGenes of string gene")
-                }
-            }
-        }else{
-            val currentImpact = hierarchySpecializationImpactInfo!!.flattenImpacts().size
-            if ((current as StringGene).specializationGenes.size > currentImpact){
-                val added = current.specializationGenes.subList(currentImpact, current.specializationGenes.size)
-                hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
-            }else if (previous != null && current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
-                log.info("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
-            }else if(previous == null){
-                log.info("the previous gene is null")
-                if (current.specializationGenes.size != getSpecializationImpacts().size){
-                    log.warn("invalid initialization of specializationGenes of string gene")
-                }
-            }
-        }
-    }
+    /*
+        For now, disable impact collection for specialization gene
+        TODO Man
+     */
+//    override fun syncImpact(previous: Gene?, current: Gene) {
+//        check(previous, current)
+//        if (hierarchySpecializationImpactInfo == null){
+//            if ((current as StringGene).specializationGenes.isNotEmpty()){
+//                hierarchySpecializationImpactInfo = HierarchySpecializationImpactInfo(null, current.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
+//                if (current.specializationGenes.size != getSpecializationImpacts().size){
+//                    log.warn("invalid initialization of specializationGenes of string gene")
+//                }
+//            }
+//        }else{
+//            val currentImpact = hierarchySpecializationImpactInfo!!.flattenImpacts().size
+//            if ((current as StringGene).specializationGenes.size > currentImpact){
+//                val added = current.specializationGenes.subList(currentImpact, current.specializationGenes.size)
+//                hierarchySpecializationImpactInfo = hierarchySpecializationImpactInfo!!.next(added.toMutableList())
+//            }else if (previous != null && current.specializationGenes.size < (previous as StringGene).specializationGenes.size){
+//                log.info("some specializations of StringGene are removed {},{}", current.specializationGenes.size, previous.specializationGenes.size)
+//            }else if(previous == null){
+//                log.info("the previous gene is null")
+//                if (current.specializationGenes.size != getSpecializationImpacts().size){
+//                    log.warn("invalid initialization of specializationGenes of string gene")
+//                }
+//            }
+//        }
+//    }
 
 }
