@@ -1,12 +1,8 @@
 package com.foo.spring.rest.mysql.sqli
 
 import com.foo.spring.rest.mysql.SpringRestMySqlController
+import com.foo.spring.rest.mysql.SpringRestMySqlSqliController
 import com.foo.spring.rest.mysql.sqli.path.PathSQLiApplication
 import org.evomaster.client.java.sql.DbSpecification
 
-class SQLiMySQLPathController : SpringRestMySqlController(PathSQLiApplication::class.java){
-    override fun pathToFlywayFiles() = "classpath:/schema/sqli"
-    override fun resetStateOfSUT(){
-        PathSQLiApplication.reset()
-    }
-}
+class SQLiMySQLPathController : SpringRestMySqlSqliController(PathSQLiApplication::class.java)

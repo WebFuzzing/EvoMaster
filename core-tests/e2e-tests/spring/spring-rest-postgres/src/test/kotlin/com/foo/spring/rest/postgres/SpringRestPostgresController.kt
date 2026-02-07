@@ -24,12 +24,12 @@ abstract class SpringRestPostgresController(
 
     private val POSTGRES_VERSION:String = "14";
 
-    private val postgres : GenericContainer<*> = GenericContainer<Nothing>("postgres:$POSTGRES_VERSION" )
+    val postgres : GenericContainer<*> = GenericContainer<Nothing>("postgres:$POSTGRES_VERSION" )
             .apply{withExposedPorts(5432)}
             .apply{withEnv("POSTGRES_HOST_AUTH_METHOD","trust")}
 
 
-    private var sqlConnection: Connection? = null
+    var sqlConnection: Connection? = null
 
 
     init {
