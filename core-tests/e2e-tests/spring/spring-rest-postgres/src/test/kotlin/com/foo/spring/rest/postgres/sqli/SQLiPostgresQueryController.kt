@@ -6,7 +6,7 @@ import org.evomaster.client.java.sql.DbSpecification
 
 class SQLiPostgresQueryController : SpringRestPostgresController(QuerySQLiApplication::class.java){
     override fun pathToFlywayFiles() = "classpath:/schema/sqli"
-    override fun resetStateOfSUT() {
-        QuerySQLiApplication.reset()
+    override fun getDbSpecifications(): MutableList<DbSpecification>? {
+        return null
     }
 }
