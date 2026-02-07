@@ -30,23 +30,26 @@ open class PathSQLiApplication: SwaggerConfiguration() {
     private var connection: Connection? = null
 
     companion object {
+        @Autowired
+        private lateinit var userRepository: UserRepository
+
         @JvmStatic
         fun main(args: Array<String>) {
             SpringApplication.run(PathSQLiApplication::class.java, *args)
+        }
+
+        fun reset() {
+            userRepository.deleteAll()
+            userRepository.save(UserEntity(null, "admin", "admin123"))
+            userRepository.save(UserEntity(null, "user1", "password1"))
         }
     }
 
     @PostConstruct
     fun init() {
         connection = dataSource.connection
-        initializeTestData()
-    }
-
-    private fun initializeTestData() {
-        if (userRepository.count() == 0L) {
-            userRepository.save(UserEntity(null, "admin", "admin123"))
-            userRepository.save(UserEntity(null, "user1", "password1"))
-        }
+        Companion.userRepository = this.userRepository
+        reset()
     }
 
     /**

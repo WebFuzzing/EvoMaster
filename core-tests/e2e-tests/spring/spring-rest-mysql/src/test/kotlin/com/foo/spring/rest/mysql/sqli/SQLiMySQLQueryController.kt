@@ -6,7 +6,8 @@ import org.evomaster.client.java.sql.DbSpecification
 
 class SQLiMySQLQueryController : SpringRestMySqlController(QuerySQLiApplication::class.java){
     override fun pathToFlywayFiles() = "classpath:/schema/sqli"
-    override fun getDbSpecifications(): MutableList<DbSpecification>? {
-        return null
+
+    override fun resetStateOfSUT(){
+        QuerySQLiApplication.reset()
     }
 }
