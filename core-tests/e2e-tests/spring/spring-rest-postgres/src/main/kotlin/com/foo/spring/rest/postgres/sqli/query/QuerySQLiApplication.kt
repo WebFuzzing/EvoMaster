@@ -37,14 +37,6 @@ open class QuerySQLiApplication: SwaggerConfiguration() {
     @PostConstruct
     fun init() {
         connection = dataSource.connection
-        initializeTestData()
-    }
-
-    private fun initializeTestData() {
-        if (userRepository.count() == 0L) {
-            userRepository.save(UserEntity(null, "admin", "admin123"))
-            userRepository.save(UserEntity(null, "user1", "password1"))
-        }
     }
 
     /**
@@ -67,6 +59,7 @@ open class QuerySQLiApplication: SwaggerConfiguration() {
             val stmt = connection?.createStatement()
             val rs = stmt?.executeQuery("SELECT COUNT(*) as cnt FROM users WHERE username = '$username'")
             val count = if (rs?.next() == true) rs.getInt("cnt") else 0
+
             ResponseEntity.ok("COUNT: $count")
         } catch (e: Exception) {
             ResponseEntity.status(500).body("ERROR: ${e.message}")

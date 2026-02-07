@@ -17,17 +17,17 @@ import java.sql.DriverManager
 import kotlin.collections.HashMap
 
 abstract class SpringRestMySqlController (
-    private val applicationClass: Class<*>
+    val applicationClass: Class<*>
 ) : EmbeddedSutController() {
 
     private val MYSQL_DB_NAME = "test"
     private val MYSQL_PORT = 3306
 
-    private var ctx: ConfigurableApplicationContext? = null
+    var ctx: ConfigurableApplicationContext? = null
 
     private val MYSQL_VERSION =  "8.0.27"
 
-    private val mysql: GenericContainer<*> = GenericContainer<Nothing>("mysql:$MYSQL_VERSION")
+    val mysql: GenericContainer<*> = GenericContainer<Nothing>("mysql:$MYSQL_VERSION")
         .apply { withEnv(object : HashMap<String?, String?>() {
             init {
                 put("MYSQL_ROOT_PASSWORD", "root")
