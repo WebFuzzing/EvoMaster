@@ -10,7 +10,7 @@ import java.sql.DriverManager
 import java.util.Arrays
 
 open class SpringRestMySqlSqliController(applicationClass: Class<*>): SpringRestMySqlController(applicationClass) {
-    override fun pathToFlywayFiles() = "classpath:/schema/sqli/data.sql"
+    override fun pathToFlywayFiles() = "/schema/sqli/data.sql"
 
     private val MYSQL_DB_NAME = "test"
     private val MYSQL_PORT = 3306
