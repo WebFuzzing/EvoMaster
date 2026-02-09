@@ -99,7 +99,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         val openApiSchema = problem.openApiSchema
 
         // set up authentications moved up since we are going to get authentication info from HttpWsSampler
-        setupAuthentication(infoDto)
+        setupAuthenticationForWhiteBox(infoDto)
 
         val swagger = if(!config.overrideOpenAPIUrl.isNullOrBlank()){
             OpenApiAccess.getOpenAPIFromLocation(config.overrideOpenAPIUrl,authentications)
@@ -284,8 +284,7 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
     private fun initForBlackBox() {
 
-        // adding authentication from config should be moved here.
-        addAuthFromConfig()
+        setupAuthenticationForBlackBox()
 
         // retrieve the swagger
         val swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
