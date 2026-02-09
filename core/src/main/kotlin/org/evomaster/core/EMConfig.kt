@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
+import org.evomaster.core.EMConfig.Companion.getConfigurationProperties
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
@@ -316,7 +317,56 @@ class EMConfig {
 
         val modifiedOptions = modifiedOptions(options, cff)
 
+        checkForExperimentalSettings(modifiedOptions)
+        checkForInternalSettings(modifiedOptions)
+
         //TODO
+    }
+
+    private fun nameOfImportantSettings() : Set<String>{
+        return  getConfigurationProperties()
+            .filter { it.annotations.find { it is Important } != null }
+            .map { it.name }
+            .toSet()
+    }
+
+    private fun checkForInternalSettings(modifiedOptions: Set<String>){
+
+        val used = getConfigurationProperties()
+            .filter { it.annotations.find { it is Experimental || it is Important} == null }
+            .map { it.name }
+            .filter { it in modifiedOptions }
+
+        if(used.isNotEmpty()){
+            val msg = AnsiColor.inYellow("You are modifying the value of some internal settings." +
+                    " This is not recommended, especially if it is first time you use EvoMaster," +
+                    " unless you are an expert user." +
+                    " Involved features: [" + used.joinToString(", ") + "]." +
+                    " Especially for beginners, you should only modify the 'important' settings:") +
+                    AnsiColor.inBlue(" [" + nameOfImportantSettings().joinToString(", ") + "].") +
+                    AnsiColor.inYellow(" For more information, see the documentation at:") +
+                    AnsiColor.inBlue(" ${DocumentationLinks.EM_CLI_LINK}")
+
+            LoggingUtil.uniqueUserWarn(msg)
+        }
+    }
+
+
+    private fun checkForExperimentalSettings(modifiedOptions: Set<String>){
+
+        val used = getConfigurationProperties()
+            .filter { it.annotations.find { it is Experimental } != null }
+            .map { it.name }
+            .filter { it in modifiedOptions }
+
+        if(used.isNotEmpty()){
+            val msg = AnsiColor.inYellow("You are modifying the value of some experimental settings." +
+                    " This is not recommended, as those settings might be just for work in progress features, not fully completed." +
+                    " Involved features: [" + used.joinToString(", ")+"].") +
+                    AnsiColor.inYellow(" For more information, see the documentation at:") +
+                    AnsiColor.inBlue(" ${DocumentationLinks.EM_CLI_LINK}")
+            LoggingUtil.uniqueUserWarn(msg)
+        }
     }
 
     private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Set<String>{
