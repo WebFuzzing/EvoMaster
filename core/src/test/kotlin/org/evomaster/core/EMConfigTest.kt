@@ -19,6 +19,7 @@ internal class EMConfigTest{
     private val endpointPrefix = "endpointPrefix"
     private val sqli = "sqli"
     private val blackBox = "blackBox"
+    private val generateMongoData = "generateMongoData"
 
     @Test
     fun testDependsOnTrue(){
@@ -51,7 +52,7 @@ internal class EMConfigTest{
         val parser = EMConfig.getOptionParser()
         parser.recognizedOptions()[blackBox]
             ?: throw Exception("Cannot find option")
-        parser.recognizedOptions()[sutControllerPort]
+        parser.recognizedOptions()[generateMongoData]
             ?: throw Exception("Cannot find option")
 
         val config = EMConfig()
@@ -63,18 +64,16 @@ internal class EMConfigTest{
         //should not fail, as we are not touching 'sutControllerPort'
         config.updateProperties(noChanges)
 
-        val port = 1234
-
-        val optionsFail = parser.parse("--$sutControllerPort", "$port")
+        val optionsFail = parser.parse("--$generateMongoData", "true")
         assertThrows<ConfigProblemException> { config.updateProperties(optionsFail) }
 
         //issue is that DEFAULT are resolved on first update, and those do have constraints
         val clean = EMConfig()
 
-        val optionsOk = parser.parse("--$sutControllerPort", "$port", "--$blackBox","false")
+        val optionsOk = parser.parse("--$generateMongoData", "true", "--$blackBox","false")
         clean.updateProperties(optionsOk) // should be OK
         assertFalse(clean.blackBox)
-        assertEquals(port, clean.sutControllerPort)
+        assertTrue(clean.generateMongoData)
     }
 
 

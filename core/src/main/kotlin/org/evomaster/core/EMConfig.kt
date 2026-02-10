@@ -1248,7 +1248,6 @@ class EMConfig {
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
-    @DependsOnFalseFor("blackBox")
     var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
 
@@ -1257,7 +1256,6 @@ class EMConfig {
             " This option is only needed for white-box testing.")
     @Min(0.0)
     @Max(maxTcpPort)
-    @DependsOnFalseFor("blackBox")
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
 
@@ -1763,41 +1761,52 @@ class EMConfig {
     var enableOptimizedTestSize = true
 
     @Cfg("Tracking of SQL commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForSQL = true
 
     @Experimental
     @Cfg("If using SQL heuristics, enable more advanced version")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForSQLAdvanced = false
 
     @Cfg("Tracking of Mongo commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForMongo = true
 
     @Experimental
     @Cfg("Tracking of Redis commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForRedis = false
 
     @Cfg("Enable extracting SQL execution info")
+    @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
 
     @Cfg("Enable extracting Mongo execution info")
+    @DependsOnFalseFor("blackBox")
     var extractMongoExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
+    @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
+    @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true
 
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
     var generateMongoData = true
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
+    @DependsOnFalseFor("blackBox")
     var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
+    @DependsOnFalseFor("blackBox")
     var forceSqlAllColumnInsertion = true
 
 

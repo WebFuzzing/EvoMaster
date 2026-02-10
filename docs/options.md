@@ -52,8 +52,8 @@ There are 3 types of options:
 |`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
 |`endpointExclude`| __String__. Comma-separated list of endpoints for excluding endpoints. This is useful for excluding endpoints that are not relevant for testing,  such as those used for health checks or metrics. If no such endpoint is specified,  then no endpoints are excluded from the search. *Default value*: `null`.|
 |`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
-|`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Depends on*: `blackBox=false`. *Default value*: `localhost`.|
-|`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Depends on*: `blackBox=false`. *Default value*: `40100`.|
+|`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
+|`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
 |`overrideOpenAPIUrl`| __String__. If specified, override the OpenAPI URL location given by the EvoMaster Driver. This option is only needed for white-box testing. *Constraints*: `URL`. *Default value*: `""`.|
 |`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. If the number of total generated tests is above this threshold, then more than one test suite file will be generated, each one having a different index value in their name, to distinguish them. Note that a negative number here means that no limit per test suite is applied, and only a single test suite file per type is generated. *Default value*: `200`.|
 
@@ -122,18 +122,18 @@ There are 3 types of options:
 |`extraHeader`| __Boolean__. Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers that were not specified in the schema. *Default value*: `true`.|
 |`extraHeuristicsFile`| __String__. Where the extra heuristics file (if any) is going to be written (in CSV format). *Default value*: `extra_heuristics.csv`.|
 |`extraQueryParam`| __Boolean__. Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params that were not specified in the schema. *Default value*: `true`.|
-|`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `true`.|
-|`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Default value*: `true`.|
+|`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`feedbackDirectedSampling`| __Enum__. Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement. *Valid values*: `NONE, LAST, FOCUSED_QUICKEST`. *Default value*: `FOCUSED_QUICKEST`.|
 |`fixedRateMutation`| __Double__. Define the probability of happening mutation in the genetic algorithms. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.04`.|
 |`focusedSearchActivationTime`| __Double__. The percentage of passed search before starting a more focused, less exploratory one. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
-|`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Default value*: `true`.|
+|`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`geneMutationStrategy`| __Enum__. Strategy used to define the mutation probability. *Valid values*: `ONE_OVER_N, ONE_OVER_N_BIASED_SQL`. *Default value*: `ONE_OVER_N_BIASED_SQL`.|
 |`geneWeightBasedOnImpactsBy`| __Enum__. Specify a strategy to calculate a weight of a gene based on impacts. *Valid values*: `SORT_COUNTER, SORT_RATIO, COUNTER, RATIO`. *Default value*: `RATIO`.|
-|`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Default value*: `true`.|
-|`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Default value*: `true`.|
-|`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `true`.|
-|`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Default value*: `true`.|
+|`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *DEBUG option*. *Default value*: `impact.csv`.|
 |`instrumentMR_BASE`| __Boolean__. Execute instrumentation for method replace with category BASE. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
@@ -158,7 +158,7 @@ There are 3 types of options:
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
 |`maxResponseByteSize`| __Int__. Maximum size (in bytes) that EM handles response payloads in the HTTP responses. If larger than that, a response will not be stored internally in EM during the test generation. This is needed to avoid running out of memory. *Default value*: `1000000`.|
 |`maxSearchSuiteSize`| __Int__. Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS. *Constraints*: `min=1.0`. *Default value*: `50`.|
-|`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Default value*: `1`.|
+|`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Depends on*: `blackBox=false`. *Default value*: `1`.|
 |`maxTestCaseNameLength`| __Int__. Specify the hard limit for test case name length. *Default value*: `120`.|
 |`maxTestSize`| __Int__. Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test. *Constraints*: `min=1.0`. *Default value*: `10`.|
 |`maxTimeInSeconds`| __Int__. Maximum number of seconds allowed for the search. The more time is allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. If this value is 0, the setting 'maxTime' will be used instead. *Constraints*: `min=0.0`. *Default value*: `0`.|
@@ -277,9 +277,9 @@ There are 3 types of options:
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
-|`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
-|`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Default value*: `false`.|
-|`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
+|`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
