@@ -37,9 +37,7 @@ class Minimizer<T: Individual> {
 
     @Inject
     private lateinit var idMapper: IdMapper
-
-    @Inject
-    private lateinit var flakinessDetector: FlakinessDetector<T>
+    
 
     private var startTimer : Long = -1
 

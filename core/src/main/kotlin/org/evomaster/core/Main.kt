@@ -424,16 +424,16 @@ class Main {
             if (!config.handleFlakiness){
                 return solution
             }
-            //apply security testing phase
+            //apply flaky detection
             LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
 
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
-                    return flakinessDetector.reexecuteToDetectFlakiness()
+                    flakinessDetector.reexecuteToDetectFlakiness()
                 } else -> {
                     LoggingUtil.getInfoLogger()
-                        .warn("Security phase currently not handled for problem type: ${config.problemType}")
+                        .warn("Flakiness handling phase currently not handled for problem type: ${config.problemType}")
                     solution
                 }
             }
