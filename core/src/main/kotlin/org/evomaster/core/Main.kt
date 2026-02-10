@@ -265,7 +265,7 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseSecurity(injector, config, epc, solution)
-            solution = phaseFlaky(injector, config, solution)
+            solution = phaseFlaky(injector, config, epc, solution)
 
             epc.startWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
@@ -419,21 +419,23 @@ class Main {
         private fun phaseFlaky(
             injector: Injector,
             config: EMConfig,
+            epc: ExecutionPhaseController,
             solution: Solution<*>
         ): Solution<*> {
             if (!config.handleFlakiness){
                 return solution
             }
-            //apply flaky detection
-            LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
 
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
+                    LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
+                    epc.startFlakiness()
+
                     val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
                     flakinessDetector.reexecuteToDetectFlakiness()
                 } else -> {
                     LoggingUtil.getInfoLogger()
-                        .warn("Flakiness handling phase currently not handled for problem type: ${config.problemType}")
+                        .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
                     solution
                 }
             }

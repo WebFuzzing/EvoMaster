@@ -12,7 +12,7 @@ class ExecutionPhaseController {
         MINIMIZATION,
         SECURITY,
         HTTP_ORACLES,
-        //FLAKINESS, //TODO
+        FLAKINESS, //TODO
         WRITE_OUTPUT,
         FINISHED
     }
@@ -56,6 +56,13 @@ class ExecutionPhaseController {
             throw IllegalStateException("Illegal state to start security: $phase")
         }
         startPhase(Phase.SECURITY)
+    }
+
+    fun startFlakiness() {
+        if (!isRunning()) {
+            throw IllegalStateException("Illegal state to start flakiness detection: $phase")
+        }
+        startPhase(Phase.FLAKINESS)
     }
 
     fun startHttpOracles(){
