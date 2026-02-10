@@ -2,12 +2,10 @@ package org.evomaster.e2etests.spring.openapi.v3.flakinessdetect
 
 import com.foo.rest.examples.spring.openapi.v3.flakinessdetect.FlakinessDetectController
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.util.function.Predicate
 
 class FlakinessDetectBlackboxEMTest : SpringTestBase() {
 
@@ -24,15 +22,21 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
     fun testRunEM() {
         defaultSeed = 123
 
+        val outputFolder = "FlakinessDetectBlackboxEM"
+        val outputClass = "org.foo.FlakinessDetectBlackboxEM"
+        val flakyMark = "Flaky"
+
         runTestHandlingFlakyAndCompilation(
-            "FlakinessDetectBlackboxEM",
-            "org.foo.FlakinessDetectBlackboxEM",
+            outputFolder,
+            outputClass,
             100
         ) { args: MutableList<String> ->
 
-            val executedMainActionToFile = "target/em-tests/FlakinessDetectBlackboxEM/org/foo/FlakinessDetectBlackboxEM.kt"
+
 
             setOption(args, "handleFlakiness", "true")
+
+            // we may still need to specify info in non bb-e2etest
             setOption(args, "blackBox", "true")
             setOption(args, "bbTargetUrl", baseUrlOfSut)
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
@@ -40,8 +44,11 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("Flaky") && it.isNotBlank() }
-            assertTrue(size >= 3)
+            assertTrue(solution.individuals.isNotEmpty())
+            assertTextInTests(outputFolder,outputClass,flakyMark)
+            assertCountTextInTests(outputFolder,outputClass,
+                Predicate { it: String? -> it != null && it.contains(flakyMark) }, 3)
+
         }
     }
 }
