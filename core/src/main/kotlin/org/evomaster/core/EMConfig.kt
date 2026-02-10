@@ -161,7 +161,8 @@ class EMConfig {
                 val enumExperimentalValues: String,
                 val enumValidValues: String,
                 val experimental: Boolean,
-                val debug: Boolean
+                val debug: Boolean,
+                val dependsOn: String
         ) {
             override fun toString(): String {
 
@@ -178,6 +179,9 @@ class EMConfig {
                 }
                 if (enumExperimentalValues.isNotBlank()) {
                     description += " [Experimental Values: $enumExperimentalValues]."
+                }
+                if(dependsOn.isNotBlank()){
+                    description += " [Depends On: $dependsOn]."
                 }
 
                 if (experimental) {
@@ -247,13 +251,18 @@ class EMConfig {
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
             val debug = (m.annotations.find { it is Debug } as? Debug)
 
+            val dependsOn = m.annotations.filterIsInstance<DependsOnTrueFor>().map { "${it.otherFieldName}=true" }
+                .plus(m.annotations.filterIsInstance<DependsOnFalseFor>().map { "${it.otherFieldName}=false" })
+                .joinToString(",")
+
             return ConfigDescription(
                     text,
                     constraints,
                     experimentalValues,
                     validValues,
                     experimental != null,
-                    debug != null
+                    debug != null,
+                    dependsOn
             )
         }
 

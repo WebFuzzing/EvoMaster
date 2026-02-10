@@ -52,8 +52,8 @@ There are 3 types of options:
 |`endpointPrefix`| __String__. Concentrate search on a set of REST endpoints defined by a common prefix. *Default value*: `null`.|
 |`endpointExclude`| __String__. Comma-separated list of endpoints for excluding endpoints. This is useful for excluding endpoints that are not relevant for testing,  such as those used for health checks or metrics. If no such endpoint is specified,  then no endpoints are excluded from the search. *Default value*: `null`.|
 |`endpointTagFilter`| __String__. Comma-separated list of OpenAPI/Swagger 'tags' definitions. Only the REST endpoints having at least one of such tags will be fuzzed. If no tag is specified here, then such filter is not applied. *Default value*: `null`.|
-|`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Default value*: `localhost`.|
-|`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
+|`sutControllerHost`| __String__. Host name or IP address of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Depends on*: `blackBox=false`. *Default value*: `localhost`.|
+|`sutControllerPort`| __Int__. TCP port of where the SUT EvoMaster Controller Driver is listening on. This option is only needed for white-box testing. *Constraints*: `min=0.0, max=65535.0`. *Depends on*: `blackBox=false`. *Default value*: `40100`.|
 |`overrideOpenAPIUrl`| __String__. If specified, override the OpenAPI URL location given by the EvoMaster Driver. This option is only needed for white-box testing. *Constraints*: `URL`. *Default value*: `""`.|
 |`maxTestsPerTestSuite`| __Int__. Specify the maximum number of tests to be generated in one test suite. If the number of total generated tests is above this threshold, then more than one test suite file will be generated, each one having a different index value in their name, to distinguish them. Note that a negative number here means that no limit per test suite is applied, and only a single test suite file per type is generated. *Default value*: `200`.|
 
@@ -236,7 +236,7 @@ There are 3 types of options:
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `true`.|
 |`writeExtraHeuristicsFile`| __Boolean__. Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
 |`writeStatistics`| __Boolean__. Whether or not writing statistics of the search process. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
-|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Default value*: `true`.|
+|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Depends on*: `createTests=true`. *Default value*: `true`.|
 |`writeWFCReportExcludeWebApp`| __Boolean__. If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only the JSON report file will be created. *Default value*: `false`.|
 |`xoverProbability`| __Double__. Probability of applying crossover operation (if any is used in the search algorithm). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.7`.|
 
@@ -314,10 +314,10 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs5xx`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 5xx. *Default value*: `false`.|
 |`skipAIModelUpdateWhenResponseIsNot2xxOr400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 2xx or 400. *Default value*: `false`.|
-|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Default value*: `false`.|
-|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Default value*: `2000`.|
-|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Default value*: `5500`.|
-|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Default value*: `false`.|
+|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
+|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Depends on*: `sqli=true`. *Default value*: `2000`.|
+|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Depends on*: `sqli=true`. *Default value*: `5500`.|
+|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
@@ -331,4 +331,4 @@ There are 3 types of options:
 |`vulnerableInputClassificationStrategy`| __Enum__. Strategy to classify inputs for potential vulnerability classes related to an REST endpoint. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
-|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Default value*: `false`.|
+|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
