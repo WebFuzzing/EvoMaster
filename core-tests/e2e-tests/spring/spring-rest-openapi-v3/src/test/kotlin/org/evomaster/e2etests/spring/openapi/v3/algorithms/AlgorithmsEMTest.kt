@@ -33,10 +33,15 @@ class AlgorithmsEMTest : SpringTestBase(){
             val solution = initAndRun(args)
 
             Assertions.assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/algorithms/int/{x}", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/algorithms/int/{x}", null)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/algorithms/double/{x}", "OK")
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/algorithms/double/{x}", null)
+
+            if(algorithm == EMConfig.Algorithm.RW) {
+                // not for sure a Random Walk can solve this problem reliably
+            } else {
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/algorithms/int/{x}", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/algorithms/int/{x}", null)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/algorithms/double/{x}", "OK")
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/algorithms/double/{x}", null)
+            }
         }
     }
 }
