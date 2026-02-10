@@ -86,7 +86,7 @@ class GeneRandomizedTest : AbstractGeneTest(){
             //this should not crash, ie throw any exception
             try{
                 x.copyValueFrom(other)
-            }catch(e: Exception){
+            }catch(e: Throwable){
                 throw AssertionError("Failed copy value for ${x.javaClass} (${x.getValueAsRawString()})" +
                         " from ${other.javaClass} (${other.getValueAsRawString()})",e)
             }
