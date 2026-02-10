@@ -7,22 +7,83 @@ import org.evomaster.core.output.naming.NamingStrategy
 import org.evomaster.core.search.service.IdMapper
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
 import java.net.InetAddress
 
 internal class EMConfigTest{
 
-    private val controllerPortOption = "sutControllerPort"
+    private val sutControllerPort = "sutControllerPort"
     private val endpointFocus = "endpointFocus"
     private val endpointPrefix = "endpointPrefix"
+    private val sqli = "sqli"
+    private val blackBox = "blackBox"
+
+    @Test
+    fun testDependsOnTrue(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()[sqli]
+            ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        //here we simulate a different default
+        config.security = false
+        config.sqli = true // this depends on 'security'
+
+        val noChanges = parser.parse()
+        //should not fail, as we are not touching sqli
+        config.updateProperties(noChanges)
+
+        val optionsFail = parser.parse("--$sqli", "true")
+        assertThrows<ConfigProblemException> { config.updateProperties(optionsFail) }
+
+        val optionsOk = parser.parse("--$sqli", "true", "--security","true")
+        config.updateProperties(optionsOk) // should be OK
+        assertTrue(config.security)
+        assertTrue(config.sqli)
+    }
+
+    @Test
+    fun testDependsOnFalse(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()[blackBox]
+            ?: throw Exception("Cannot find option")
+        parser.recognizedOptions()[sutControllerPort]
+            ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        //here we simulate a different default
+        config.blackBox = true
+        config.bbSwaggerUrl = "http://localhost:8080"
+
+        val noChanges = parser.parse()
+        //should not fail, as we are not touching 'sutControllerPort'
+        config.updateProperties(noChanges)
+
+        val port = 1234
+
+        val optionsFail = parser.parse("--$sutControllerPort", "$port")
+        assertThrows<ConfigProblemException> { config.updateProperties(optionsFail) }
+
+        //issue is that DEFAULT are resolved on first update, and those do have constraints
+        val clean = EMConfig()
+
+        val optionsOk = parser.parse("--$sutControllerPort", "$port", "--$blackBox","false")
+        clean.updateProperties(optionsOk) // should be OK
+        assertFalse(clean.blackBox)
+        assertEquals(port, clean.sutControllerPort)
+    }
+
 
     @Test
     fun testGetOptionParserBase(){
 
         val options = EMConfig.getOptionParser()
 
-        assertTrue(options.recognizedOptions().containsKey(controllerPortOption))
+        assertTrue(options.recognizedOptions().containsKey(sutControllerPort))
     }
 
 
@@ -31,7 +92,7 @@ internal class EMConfigTest{
 
         val parser = EMConfig.getOptionParser()
 
-        val portOpt = parser.recognizedOptions()[controllerPortOption] ?:
+        val portOpt = parser.recognizedOptions()[sutControllerPort] ?:
                 throw Exception("Cannot find option")
 
         val options = parser.parse()
@@ -44,11 +105,11 @@ internal class EMConfigTest{
 
         val parser = EMConfig.getOptionParser()
 
-        val opt = parser.recognizedOptions()[controllerPortOption] ?:
+        val opt = parser.recognizedOptions()[sutControllerPort] ?:
                 throw Exception("Cannot find option")
 
         val x = "42"
-        val options = parser.parse("--$controllerPortOption", x)
+        val options = parser.parse("--$sutControllerPort", x)
 
         assertEquals(x, opt.value(options))
 

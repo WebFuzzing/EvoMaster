@@ -8,7 +8,6 @@ import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.instrumentation.shared.ExternalServiceSharedUtils
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.ReplacementCategory
-import org.evomaster.core.EMConfig.Companion.getConfigurationProperties
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.config.ConfigUtil
 import org.evomaster.core.config.ConfigsFromFile
@@ -39,25 +38,17 @@ typealias PercentageAsProbability = EMConfig.Probability
  */
 class EMConfig {
 
-    /*
-        Code here does use the JOptSimple library
-
-        https://pholser.github.io/jopt-simple/
-     */
-
     companion object {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
-
         private const val headerRegex = "(.+:.+)|(^$)"
         private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
         private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
-
         private const val maxTcpPort = 65535.0
 
         /**
@@ -320,7 +311,57 @@ class EMConfig {
         checkForExperimentalSettings(modifiedOptions)
         checkForInternalSettings(modifiedOptions)
 
-        //TODO
+        checkDependsOn(modifiedOptions)
+    }
+
+    /**
+     * Can only be called on BOOLEAN options.
+     * Calling on something else would be a bug in EM.
+     */
+    private fun isOptionTrue(fieldName: String) : Boolean{
+
+        val field = getConfigurationProperties().find { it.name == fieldName }
+            ?: throw IllegalArgumentException("The property called '$fieldName' does not exist")
+
+        val b = field.call(this).toString()
+        return try{
+            parseBooleanStrict(b)
+        } catch (e: Exception){
+            throw IllegalArgumentException("The property called '$fieldName' does not contain a boolean value.", e)
+        }
+    }
+
+    private fun checkDependsOn(modifiedOptions: Set<String>) {
+
+        val properties = getConfigurationProperties()
+        val allNames = properties.map { it.name }
+
+        properties.forEach { p ->
+            p.annotations.filterIsInstance<DependsOnTrueFor>().forEach { a ->
+                val target = a.otherFieldName
+                if(!allNames.contains(target)){
+                    throw IllegalStateException("Invalid @DependsOnTrueFor definition for ${p.name}." +
+                            " The target '$target' does not exist.")
+                }
+                //has this option been modified manually by the user? if not, there is nothing to check
+                if(modifiedOptions.contains(p.name) && !isOptionTrue(target)){
+                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                            " which depends on '$target' being 'true', which is not currently.")
+                }
+            }
+            p.annotations.filterIsInstance<DependsOnFalseFor>().forEach { a ->
+                val target = a.otherFieldName
+                if(!allNames.contains(target)){
+                    throw IllegalStateException("Invalid @DependsOnFalseFor definition for ${p.name}." +
+                            " The target '$target' does not exist.")
+                }
+                //has this option been modified manually by the user? if not, there is nothing to check
+                if(modifiedOptions.contains(p.name) && isOptionTrue(target)){
+                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                            " which depends on '$target' being 'false', which is not currently.")
+                }
+            }
+        }
     }
 
     private fun nameOfImportantSettings() : Set<String>{
@@ -339,8 +380,8 @@ class EMConfig {
 
         if(used.isNotEmpty()){
             val msg = AnsiColor.inYellow("You are modifying the value of some internal settings." +
-                    " This is not recommended, especially if it is first time you use EvoMaster," +
-                    " unless you are an expert user." +
+                    " In general, this is not recommended, especially if it is first time you use EvoMaster," +
+                    " unless you are an experienced user." +
                     " Involved features: [" + used.joinToString(", ") + "]." +
                     " Especially for beginners, you should only modify the 'important' settings:") +
                     AnsiColor.inBlue(" [" + nameOfImportantSettings().joinToString(", ") + "].") +
@@ -727,21 +768,6 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
-        if(!security && ssrf) {
-            LoggingUtil.uniqueUserWarn("The use of 'ssrf' requires 'security'. SSRF analyses are hence disabled.")
-           //throw ConfigProblemException("The use of 'ssrf' requires 'security'")
-        }
-
-        if(!security && xss) {
-            LoggingUtil.uniqueUserWarn("The use of 'xss' requires 'security'. XSS analyses are hence disabled.")
-            //throw ConfigProblemException("The use of 'xss' requires 'security'")
-        }
-
-        if(!security && sqli) {
-            LoggingUtil.uniqueUserWarn("The use of 'sqli' requires 'security'. SQLi analyses are hence disabled.")
-            //throw ConfigProblemException("The use of 'sqli' requires 'security'")
-        }
-
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
             !languageModelConnector) {
@@ -772,16 +798,6 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        /*
-            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
-            like writeWFCReport.
-            TODO however, we should issue some WARN message.
-            ie. we should have a distinction between @Requires (which should crash) and something like
-            @DependOn that does not lead to a crash, but just a warning
-         */
-//        if(writeWFCReport && !createTests){
-//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-//        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -940,6 +956,28 @@ class EMConfig {
     @MustBeDocumented
     annotation class Cfg(val description: String)
 
+    /**
+     * If this property is set (eg, 'true' for boolean, non-null value or non-empty string),
+     * then the [otherFieldName] should be 'true'.
+     * If it is not, then this property will have no impact.
+     * Deactivating [otherFieldName] should not lead to a configuration failure, especially
+     * if the default of this property is a boolean 'true'.
+     * However, if user explicitly set this property, and the rely-on relation does not hold,
+     * then it is a configuration failure.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class DependsOnTrueFor(val otherFieldName: String)
+
+    /**
+     * Same as for [DependsOnTrueFor], but in this case the [otherFieldName] is supposed to a have 'false' value.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class DependsOnFalseFor(val otherFieldName: String)
+
+
+
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Min(val min: Double)
@@ -1014,6 +1052,7 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class FilePath(val canBeBlank: Boolean = false)
+
 
 //------------------------------------------------------------------------
 
@@ -1200,6 +1239,7 @@ class EMConfig {
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
+    @DependsOnFalseFor("blackBox")
     var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
 
@@ -1208,6 +1248,7 @@ class EMConfig {
             " This option is only needed for white-box testing.")
     @Min(0.0)
     @Max(maxTcpPort)
+    @DependsOnFalseFor("blackBox")
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
 
@@ -1546,6 +1587,7 @@ class EMConfig {
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
+    @DependsOnTrueFor("createTests")
     var writeWFCReport = true
 
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
@@ -2707,24 +2749,30 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = true
 
+
     @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var ssrf = false
 
     @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var xss = false
 
     @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var sqli = false
 
     @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
+    @DependsOnTrueFor("sqli")
     var sqliInjectedSleepDurationMs = 5500
 
     @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
 
 
