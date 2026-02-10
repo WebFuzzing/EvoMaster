@@ -21,14 +21,30 @@ class AlgorithmsEMTest : SpringTestBase(){
 
     @ParameterizedTest
     @EnumSource
-    fun testRunEM_Algorithms_WB(algorithm: EMConfig.Algorithm) {
+    fun testRunEM_Algorithms_WhiteBox(algorithm: EMConfig.Algorithm) {
+        testRunEM_Algorithms(algorithm, false)
+    }
+
+    @ParameterizedTest
+    @EnumSource
+    fun testRunEM_Algorithms_BlackBox(algorithm: EMConfig.Algorithm) {
+        testRunEM_Algorithms(algorithm, true)
+    }
+
+    private fun testRunEM_Algorithms(algorithm: EMConfig.Algorithm, blackBox: Boolean) {
 
         runTestHandlingFlakyAndCompilation(
-                "AlgorithmsEM_$algorithm",
+                "AlgorithmsEM_${blackBox}_$algorithm",
                 200
         ) { args: MutableList<String> ->
 
             setOption(args, "algorithm", algorithm.name)
+            setOption(args, "blackBox", blackBox.toString())
+
+            if(blackBox){
+                setOption(args, "bbTargetUrl", baseUrlOfSut)
+                setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
+            }
 
             val solution = initAndRun(args)
 
