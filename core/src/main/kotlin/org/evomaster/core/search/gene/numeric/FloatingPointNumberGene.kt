@@ -78,6 +78,10 @@ abstract class FloatingPointNumberGene<T:Number>(
         val plainValue = if(value is BigDecimal){
             (value as BigDecimal).toPlainString()
         } else {
+            //this can happen when we try to copy from a large double into a float
+            if(value.toString().contains("Infinity")){
+                return false
+            }
             try{
                 BigDecimal(value.toString()).toPlainString()
             } catch (e: NumberFormatException) {

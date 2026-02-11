@@ -75,7 +75,18 @@ class SqlXMLGene(name: String,
      */
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlXMLGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
+        }
+        /*
+         * Edge case: when displayed as XML, the "name" is part of the output.
+         * so we should check it. but this is currently passed as parameter to
+         * the display function.
+         * This is done because, for same body payload, can have same ObjectGene
+         * to represent different types (eg JSON and XML)
+         * TODO: would need to find a more robust solution to handle this
+         */
+        if(this.name != other.name) {
+            return false
         }
         return this.objectGene.containsSameValueAs(other.objectGene)
     }
