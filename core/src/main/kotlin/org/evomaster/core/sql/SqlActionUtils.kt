@@ -10,6 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.utils.CollectionUtils
 
 object SqlActionUtils {
 
@@ -176,6 +177,7 @@ object SqlActionUtils {
         return verifyUniqueColumns(actions)
                 && verifyForeignKeys(actions)
                 && verifyExistingDataFirst(actions)
+                && verifyUniqueInsertionId(actions)
     }
 
     fun checkActions(actions: List<SqlAction>){
@@ -190,8 +192,17 @@ object SqlActionUtils {
             if(!verifyExistingDataFirst(actions)){
                 throw IllegalStateException("Unsatisfied existing data constraints")
             }
+            if(!verifyUniqueInsertionId((actions))){
+                throw IllegalArgumentException("There are duplicate insertion ids")
+            }
             throw IllegalStateException("Bug in EvoMaster, unhandled verification case in SQL properties")
         }
+    }
+
+    fun verifyUniqueInsertionId(actions: List<SqlAction>) : Boolean{
+        val ids = actions.map { it.geInsertionId() }
+        val duplicates = CollectionUtils.duplicates(ids)
+        return duplicates.isEmpty()
     }
 
     fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{

@@ -198,6 +198,13 @@ abstract class EnterpriseIndividual(
         return issues
     }
 
+    override fun verifyValidity(checkForTaints: Boolean){
+
+        super.verifyValidity(checkForTaints)
+
+        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
+    }
+
     protected open fun doFlattenStructure() : Boolean{
         //for most types, there is nothing to do.
         //can be overridden if needed
