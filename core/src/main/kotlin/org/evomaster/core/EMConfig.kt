@@ -807,6 +807,15 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
+
+        if(useEnvVarsForPathInTests){
+            if (jdkEnvVarName.isNotEmpty())
+                throw ConfigProblemException("'jdkEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutDistEnvVarName.isNotEmpty())
+                throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutJarEnvVarName.isNotEmpty())
+                throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -2635,6 +2644,24 @@ class EMConfig {
     @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. " +
             "Note that flakiness is now supported only for fuzzing REST APIs")
     var handleFlakiness = false
+
+    @Experimental
+    @Cfg("Use environment variables to define the paths required by External Drivers. " +
+            "This is necessary when the generated tests are executed on the same machine. " +
+            "Note that this setting only affects the generated test cases.")
+    var useEnvVarsForPathInTests = false
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the JDK path.")
+    var jdkEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the SUT dist.")
+    var sutDistEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the SUT JAR path.")
+    var sutJarEnvVarName = ""
 
     @Experimental
     @Cfg("Specify a method to select the first external service spoof IP address.")
