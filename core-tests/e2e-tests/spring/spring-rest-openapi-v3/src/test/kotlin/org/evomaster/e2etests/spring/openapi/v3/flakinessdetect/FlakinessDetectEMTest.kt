@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.function.Predicate
 
 class FlakinessDetectEMTest : SpringTestBase() {
 
@@ -22,13 +23,16 @@ class FlakinessDetectEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
+
+        val outputFolder = "FlakinessDetectEM"
+        val outputClass = "org.foo.FlakinessDetectEM"
+        val flakyMark = "Flaky"
+
         runTestHandlingFlakyAndCompilation(
-            "FlakinessDetectEM",
-            "org.foo.FlakinessDetectEM",
+            outputFolder,
+            outputClass,
             100
         ) { args: MutableList<String> ->
-
-            val executedMainActionToFile = "target/em-tests/FlakinessDetectEM/org/foo/FlakinessDetectEM.kt"
 
             setOption(args, "minimize", "true")
             setOption(args, "handleFlakiness", "true")
@@ -36,8 +40,10 @@ class FlakinessDetectEMTest : SpringTestBase() {
 
             val solution = initAndRun(args)
 
-            val size = Files.readAllLines(Paths.get(executedMainActionToFile)).count { !it.contains("Flaky") && it.isNotBlank() }
-            assertTrue(size >= 3)
+            assertTrue(solution.individuals.isNotEmpty())
+            assertTextInTests(outputFolder,outputClass,flakyMark)
+            assertCountTextInTests(outputFolder,outputClass,
+                Predicate { it: String? -> it != null && it.contains(flakyMark) }, 3)
         }
     }
 }
