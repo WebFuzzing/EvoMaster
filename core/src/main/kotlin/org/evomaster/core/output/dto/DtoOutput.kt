@@ -52,4 +52,6 @@ interface DtoOutput {
      */
     fun getAddElementToListStatement(listVarName: String, value: String): String
 
+    fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String
+
 }

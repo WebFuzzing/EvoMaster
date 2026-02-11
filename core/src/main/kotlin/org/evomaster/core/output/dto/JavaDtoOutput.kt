@@ -24,7 +24,8 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
-        return "$dtoVarName.set${StringUtils.capitalization(attributeName)}($value);"
+//        return "$dtoVarName.set${StringUtils.capitalization(attributeName)}($value);"
+        return "$dtoVarName.set${capitalizeFirstChar(attributeName)}($value);"
     }
 
     override fun getNewListStatement(listType: String, listVarName: String): String {
@@ -33,6 +34,10 @@ class JavaDtoOutput: JvmDtoOutput() {
 
     override fun getAddElementToListStatement(listVarName: String, value: String): String {
         return "$listVarName.add($value);"
+    }
+
+    override fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String {
+        return "$additionalPropertiesVarName.addAdditionalProperty($key, $value);"
     }
 
     private fun initClass(lines: Lines, dtoFilename: String) {
@@ -62,7 +67,7 @@ class JavaDtoOutput: JvmDtoOutput() {
         if (dtoClass.hasAdditionalProperties) {
             lines.indented {
                 lines.add("@JsonIgnore")
-                lines.add("private Map<String, ${dtoClass.name}_ap> additionalProperties = new HashMap<>();")
+                lines.add("private Map<String, ${dtoClass.additionalPropertiesDtoName}> additionalProperties = new HashMap<>();")
             }
             lines.addEmpty()
         }

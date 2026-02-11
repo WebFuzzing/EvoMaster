@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
 import org.evomaster.core.search.gene.datetime.TimeGene
@@ -18,9 +19,12 @@ import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.utils.GeneUtils.isInactiveOptionalGene
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.utils.StringUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Provides a mapping between a Gene and its DTO representation at use. Takes in the [OutputFormat] to delegate
@@ -29,6 +33,8 @@ import org.evomaster.core.utils.StringUtils
 class GeneToDto(
     val outputFormat: OutputFormat
 ) {
+
+    private val log: Logger = LoggerFactory.getLogger(GeneToDto::class.java)
 
     private var dtoOutput: DtoOutput = if (outputFormat.isJava()) {
         JavaDtoOutput()
@@ -54,7 +60,7 @@ class GeneToDto(
                     TestWriterUtils.safeVariableName(template.refType?:fallback)
                 } else {
                     // TODO handle arrays of basic data types
-                    return getListType(fallback, template, capitalize)
+                    getListType(fallback, template, capitalize)
                 }
             }
             is ChoiceGene<*> -> TestWriterUtils.safeVariableName(fallback)
@@ -113,6 +119,63 @@ class GeneToDto(
                         result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(otherChoice)}"))
                     } else {
                         result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
+                    }
+                }
+            }
+        }
+
+        if (!gene.isFixed) {
+            val additionalFields = gene.additionalFields!!.filter {
+                it.isPrintable() && !isInactiveOptionalGene(it)
+            }
+            if (additionalFields.isNotEmpty()) {
+                var additionalPropertiesCounter = 1
+                additionalFields.forEach { field ->
+                    try {
+                        val childCounter = mutableListOf<Int>()
+                        childCounter.addAll(counters)
+                        childCounter.add(additionalPropertiesCounter++)
+                        val key = (field as PairGene<StringGene, Gene>).first.getLeafGene().getValueAsPrintableString(targetFormat = outputFormat)
+                        val leafGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
+                        val additionalPropertiesVarName = when (leafGene) {
+                            is ObjectGene -> {
+                                val attributeName = leafGene.refType?:"${dtoName}_ap"
+                                val childDtoCall = getDtoCall(leafGene, getDtoName(leafGene, attributeName, true), childCounter, true)
+                                result.addAll(childDtoCall.objectCalls)
+                                childDtoCall.varName
+                            }
+                            is ArrayGene<*> -> {
+                                val attributeName = if (leafGene.template is ObjectGene) {
+                                    leafGene.template.refType?:"${dtoName}_ap"
+                                } else {
+                                    getListType("", leafGene.template, true)
+                                }
+                                val childDtoCall = getArrayDtoCall(leafGene, getDtoName(leafGene, attributeName, true), childCounter, attributeName, true)
+
+                                result.addAll(childDtoCall.objectCalls)
+                                childDtoCall.varName
+                            }
+                            else -> throw IllegalStateException("Additional properties should only be Map related genes")
+//                            else -> {
+//                                val parent = leafGene.parent
+//                                if (leafGene is EnumGene<*> && parent is ChoiceGene<*>) {
+//                                    val children = parent.getViewOfChildren()
+//                                    val otherChoice = children.find { child -> child != leafGene }
+////                                    result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(otherChoice)}"))
+//                                } else {
+////                                    result.add(dtoOutput.getSetterStatement(dtoVarName, attributeName, "${leafGene.getValueAsPrintableString(targetFormat = outputFormat)}${getValueSuffix(leafGene)}"))
+//                                }
+//                                ""
+//                            }
+                        }
+                        result.add(dtoOutput.getAddElementToAdditionalPropertiesStatement(dtoVarName, key, additionalPropertiesVarName))
+                    } catch (ex: Exception) {
+                        log.warn(
+                            "A failure has occurred when writing DTOs. \n"
+                                    + "Exception: ${ex.localizedMessage} \n"
+                                    + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                        )
+                        assert(false)
                     }
                 }
             }

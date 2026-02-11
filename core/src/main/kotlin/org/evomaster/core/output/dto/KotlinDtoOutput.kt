@@ -32,6 +32,10 @@ class KotlinDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value)"
     }
 
+    override fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String {
+        return "$additionalPropertiesVarName.addAdditionalProperty($key, $value)"
+    }
+
     private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("class $dtoFilename {")
