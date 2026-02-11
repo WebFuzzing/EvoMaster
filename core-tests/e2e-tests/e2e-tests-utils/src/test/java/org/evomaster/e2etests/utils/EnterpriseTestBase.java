@@ -344,7 +344,7 @@ public abstract class EnterpriseTestBase {
 
         compile(outputFolderName);
         klass = loadClass(className);
-        assertNotNull(klass);
+        assertNotNull(klass, "Failed to load generated test suite class after compilation: " + className);
 
         StringWriter writer = new StringWriter();
         PrintWriter pw = new PrintWriter(writer);
@@ -452,7 +452,11 @@ public abstract class EnterpriseTestBase {
                 "--expectationsActive", "TRUE",
                 "--executiveSummary", summary,
                 "--createConfigPathIfMissing", "false",
-                "--dtoForRequestPayload", ""+active
+                "--dtoForRequestPayload", ""+active,
+                //we disable this, because it impacts the number and NAME of generated test suites files, and we need
+                //that info when making assertions, eg, loading test classes after compilation
+                //still, we have some specific tests to verify this functionality
+                "--maxTestsPerTestSuite","-1"
         ));
     }
 

@@ -5,13 +5,14 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
+import org.evomaster.core.DocumentationLinks.EM_DOCKER_LINK
+import org.evomaster.core.DocumentationLinks.EM_ISSUES_LINK
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteCode
@@ -32,7 +33,6 @@ import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
-import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -119,7 +119,7 @@ class Main {
                                         " If this is the first time you run EvoMaster in Docker, you are strongly recommended to first" +
                                         " check the documentation at:"
                             ) +
-                                    " ${inBlue("https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md")}"
+                                    " ${inBlue(EM_DOCKER_LINK)}"
                         )
                     } else {
                         LoggingUtil.getInfoLogger().warn(
@@ -179,7 +179,7 @@ class Main {
                                         "EvoMaster process terminated abruptly." +
                                                 " This is likely a bug in EvoMaster." +
                                                 " Please copy&paste the following stacktrace, and create a new issue on" +
-                                                " " + inBlue("https://github.com/WebFuzzing/EvoMaster/issues")
+                                                " " + inBlue(EM_ISSUES_LINK)
                                     ), e
                         )
                 }
@@ -244,7 +244,7 @@ class Main {
 
         private fun runAndPostProcess(injector: Injector): Solution<*> {
 
-            checkExperimentalSettings(injector)
+            checkActivatedExperimentalSettings(injector)
 
             val controllerInfo = checkState(injector)
 
@@ -870,11 +870,11 @@ class Main {
         /**
          * Log a warning if any experimental setting is used
          */
-        private fun checkExperimentalSettings(injector: Injector) {
+        private fun checkActivatedExperimentalSettings(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            val experimental = config.experimentalFeatures()
+            val experimental = config.activatedExperimentalFeatures()
 
             if (experimental.isEmpty()) {
                 return
@@ -883,10 +883,10 @@ class Main {
             val options = "[" + experimental.joinToString(", ") + "]"
 
             logWarn(
-                "Using experimental settings." +
+                "Some experimental settings have been activated." +
                         " Those might not work as expected, or simply straight out crash." +
                         " Furthermore, they might simply be incomplete features still under development." +
-                        " Used experimental settings: $options"
+                        " Activated experimental settings: $options"
             )
         }
 

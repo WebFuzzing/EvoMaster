@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.impact.impactinfocollection.value.StringGeneImpact
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 
 /**
  * created by manzh on 2020-07-10
@@ -46,7 +47,12 @@ class StringSpecializationImpactTest : GeneImpactTest() {
         return MutatedGeneWithContext(current = geneToMutate, previous = original,)
     }
 
+    /*
+        impact collection for specialization genes are disabled,
+        then disable the corresponding test
+     */
     @Test
+    @Disabled
     fun testSpecialization(){
         val g0 = getGene()
         val impactG0 = initImpact(g0) as StringGeneImpact

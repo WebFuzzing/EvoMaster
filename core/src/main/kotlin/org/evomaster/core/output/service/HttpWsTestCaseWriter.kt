@@ -11,6 +11,7 @@ import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
+import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -123,8 +124,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-        if (bodyParam != null && bodyParam.isJson()) {
-
+        if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
             val primaryGene = bodyParam.primaryGene()
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
@@ -145,6 +145,15 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         }
         return ""
+    }
+
+    /*
+     * Control characters break JSON and transform it into an invalid payload. If there's any invalid character
+     * then we'll avoid using DTOs and have the payload in the test case be represented by the raw JSON string.
+     */
+    private fun payloadIsValidJson(bodyParam: BodyParam): Boolean {
+        val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+        return OutputFormatter.JSON_FORMATTER.isValid(json)
     }
 
     private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {

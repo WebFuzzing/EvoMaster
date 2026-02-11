@@ -6,13 +6,11 @@ import org.evomaster.core.problem.rest.data.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-@Disabled // started crashing due to .countImpactWithMutatedGeneWithContext
 public class CrossFkEMTest extends SpringTestBase {
 
     @BeforeAll
