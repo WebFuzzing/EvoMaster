@@ -809,11 +809,11 @@ class EMConfig {
         }
 
         if(useEnvVarsForPathInTests){
-            if (jdkEnvVarName.isNotEmpty())
+            if (jdkEnvVarName.isEmpty())
                 throw ConfigProblemException("'jdkEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
-            if (sutDistEnvVarName.isNotEmpty())
+            if (sutDistEnvVarName.isEmpty())
                 throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
-            if (sutJarEnvVarName.isNotEmpty())
+            if (sutJarEnvVarName.isEmpty())
                 throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
         }
     }
