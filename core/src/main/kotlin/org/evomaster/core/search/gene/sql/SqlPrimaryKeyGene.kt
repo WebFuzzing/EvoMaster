@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -133,5 +134,19 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun getLeafGene(): Gene{
         return gene.getLeafGene()
+    }
+
+    override fun checkForGloballyValid(): Boolean {
+
+        val action = getFirstParent { it is SqlAction } as SqlAction?
+        //this would mean is not mounted
+            ?: return false
+
+        if (action.insertionId != uniqueId) {
+            //the two must always be the same
+            return false
+        }
+
+        return true
     }
 }
