@@ -8,7 +8,7 @@ import java.nio.file.Path
 
 class JavaDtoOutput: JvmDtoOutput() {
 
-    override fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass) {
+    override fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass) {
         val dtoFilename = TestSuiteFileName(appendDtoPackage(dtoClass.name))
         val lines = Lines(outputFormat)
         setPackage(lines, testSuitePackage)
@@ -81,4 +81,5 @@ class JavaDtoOutput: JvmDtoOutput() {
             lines.addEmpty()
         }
     }
+
 }

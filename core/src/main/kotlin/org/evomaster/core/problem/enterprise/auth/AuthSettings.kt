@@ -9,6 +9,7 @@ import org.evomaster.core.search.service.Randomness
 class AuthSettings(authInfos: List<AuthenticationInfo> = listOf()) {
 
     private val auths = mutableListOf<AuthenticationInfo>()
+
     init {
         val n  = authInfos.size
         val unique = authInfos.map { it.name }.toSet()

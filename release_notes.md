@@ -2,6 +2,14 @@
 
 Under development in `master` branch.
 
+### New Features
+
+- Introduced _--maxTestsPerTestSuite_, with default value of 200. 
+  This is to avoid generating single output test files with thousands of tests.
+  Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
+   A negative value means no constraint is applied (i.e., old behavior).  
+- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info. 
+
 ### Fixed Bugs
 
 - fixed a connection leak when authentication fails.

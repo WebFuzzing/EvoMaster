@@ -8,8 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-//FIXME failing due EnumGeneImpact.countImpactWithMutatedGeneWithContext
-@Disabled
 public class HLEMTest extends HLTestBase {
 
 
