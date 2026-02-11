@@ -200,7 +200,7 @@ object SqlActionUtils {
     }
 
     fun verifyUniqueInsertionId(actions: List<SqlAction>) : Boolean{
-        val ids = actions.map { it.geInsertionId() }
+        val ids = actions.map { it.insertionId }
         val duplicates = CollectionUtils.duplicates(ids)
         return duplicates.isEmpty()
     }

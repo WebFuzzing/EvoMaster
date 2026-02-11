@@ -443,7 +443,7 @@ abstract class EnterpriseIndividual(
             val already = this.sqlInitialization.filter { it.representExistingData }
 
             val (toAdd, duplicates) = existing.partition {x ->
-                already.none { it.geInsertionId() == x.geInsertionId() }
+                already.none { it.insertionId == x.insertionId }
             }
 
             if(toAdd.isNotEmpty()) {

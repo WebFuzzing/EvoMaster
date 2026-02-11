@@ -33,9 +33,16 @@ class SqlAction(
         val selectedColumns: Set<Column>,
 
         /**
-         * TODO need explanation
+         * Unique id to represent an insertion in the SQL database.
+         * Those ids will be used to set up unique ids for genes related to PK and FK.
+         * These ids are actually going to be used as output in the generated test files.
+         * The reason is that some PK might be dynamically generated, so FK genes would not
+         * know those values at compilation time.
+         * They need to be extracted dynamically.
+         * And this is done by referring to the insertion action that led to generation of
+         * the data using the dynamic PK.
          */
-        private val insertionId: Long,
+        insertionId: Long,
 
         computedGenes: List<Gene>? = null,
         /**
@@ -65,6 +72,8 @@ class SqlAction(
         }
     }
 
+    var insertionId = insertionId
+        private set
 
     private val genes: List<Gene> = (computedGenes
         ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(insertionId, table, it) }
@@ -125,9 +134,6 @@ class SqlAction(
         return SqlAction(table, selectedColumns, insertionId, genes.map(Gene::copy), representExistingData)
     }
 
-    fun geInsertionId(): Long {
-        return this.insertionId
-    }
 
     //just for debugging
     fun getResolvedName() : String{
