@@ -225,7 +225,14 @@ class ArrayGene<T>(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
-        return openingTag +
+
+        val(open,close,sep) = if (mode == GeneUtils.EscapeMode.XML){
+            Triple("","","")
+        }else{
+            Triple(openingTag,closingTag, separatorTag)
+        }
+
+        return open +
                 elements.map { g ->
                     if (GeneUtils.isGraphQLModes(mode)) {
                         if ((g.getWrappedGene(EnumGene::class.java)!=null))
@@ -236,8 +243,8 @@ class ArrayGene<T>(
                     } else {
                         g.getValueAsPrintableString(previousGenes, mode, targetFormat)
                     }
-                }.joinToString(separatorTag) +
-                closingTag
+                }.joinToString(sep) +
+                close
     }
 
 
