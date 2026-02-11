@@ -76,6 +76,17 @@ class Lines(val format: OutputFormat) {
     }
 
     /**
+     * Replaces the first match of [regex] with [replacement].
+     */
+    fun replaceFirstInCurrent(regex: Regex, replacement: String){
+        if(buffer.isEmpty()){
+            return
+        }
+
+        buffer[buffer.lastIndex] = buffer.last().replaceFirst(regex, replacement)
+    }
+
+    /**
      * Is the current line just a comment // without any statement?
      */
     fun isCurrentACommentLine() : Boolean{

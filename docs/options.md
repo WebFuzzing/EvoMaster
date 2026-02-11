@@ -278,6 +278,7 @@ There are 3 types of options:
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|
 |`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
