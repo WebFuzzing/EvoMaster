@@ -74,7 +74,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(IntegerGene("integerElement", value = 0))))
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
@@ -105,7 +105,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(BooleanGene("booleanElement", value = false))))
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
@@ -136,7 +136,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "Hello World"))))
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
@@ -167,7 +167,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val action = actions[0]
 
         val newGene = SqlXMLGene("xmldata", ObjectGene("anElement", listOf(StringGene("stringElement", value = "<xml>This should be escaped</xml>"))))
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 
@@ -203,7 +203,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val newGene = SqlXMLGene("xmldata", parentElement)
         val expectedXML = newGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
 
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(newGene))
 
         val query = "Select * from x"
 

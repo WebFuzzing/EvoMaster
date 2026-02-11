@@ -82,7 +82,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(IntegerGene("integerValue", value = 0), StringGene("stringValue", value = "Hello World"), BooleanGene("booleanValue", value = false)))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
@@ -126,7 +126,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(DoubleGene("doubleValue", value = Math.PI)))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
@@ -172,7 +172,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(arrayGene))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 
@@ -216,7 +216,7 @@ class SQLJSONColumnTest : ExtractTestBaseMySQL() {
         val objectGene = ObjectGene("jsondata", fields = listOf(innerObjectGene))
         val newGene = SqlJSONGene("jsondata", objectGene)
 
-        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+        val newInsertAction = SqlAction(table = action.table, selectedColumns = action.selectedColumns, insertionId = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
 
         val query = "Select * from people where id=%s".format(idValue)
 

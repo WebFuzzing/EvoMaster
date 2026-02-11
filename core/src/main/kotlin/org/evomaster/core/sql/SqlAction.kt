@@ -35,7 +35,7 @@ class SqlAction(
         /**
          * TODO need explanation
          */
-        private val id: Long,
+        private val insertionId: Long,
 
         computedGenes: List<Gene>? = null,
         /**
@@ -45,7 +45,7 @@ class SqlAction(
          */
         val representExistingData: Boolean = false,
 
-) : EnvironmentAction(listOf()) {
+    ) : EnvironmentAction(listOf()) {
 
     init {
         /*
@@ -67,7 +67,7 @@ class SqlAction(
 
 
     private val genes: List<Gene> = (computedGenes
-        ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(id, table, it) }
+        ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(insertionId, table, it) }
             ).also {
         // init children for DbAction
         addChildren(it)
@@ -122,11 +122,11 @@ class SqlAction(
     }
 
     override fun copyContent(): Action {
-        return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
+        return SqlAction(table, selectedColumns, insertionId, genes.map(Gene::copy), representExistingData)
     }
 
     fun geInsertionId(): Long {
-        return this.id
+        return this.insertionId
     }
 
     //just for debugging
