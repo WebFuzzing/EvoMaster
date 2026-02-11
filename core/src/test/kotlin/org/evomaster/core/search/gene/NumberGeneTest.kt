@@ -23,7 +23,11 @@ class NumberGeneTest {
         gene.randomize(random, false)
         assertTrue(gene.value in -99.99..99.99)
 
-        assertEquals(2, gene.value.toString().split(".")[1].length)
+        /*
+            as it is double, it shows at least one decimal place but removes extra zeros beyond that.
+            thus, with scale is 2, the fractional digit part should be in 1..2
+         */
+        assertTrue(gene.value.toString().split(".")[1].length in 1..2)
     }
 
     @Test

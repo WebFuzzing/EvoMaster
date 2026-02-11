@@ -16,6 +16,10 @@ Under development in `master` branch.
 - fixed few edge cases that led to crashes related to handling of MongoDB objects.
 - fixed bug in handling of SQL databases, where commands leading to inconsistent state (eg, duplicated keys) were not properly removed. 
 
+### Addressed GitHub Issues
+
+- #1442: UninitializedPropertyAccessException: lateinit property mutator not initialized in MioAlgorithm when using --sqli true 
+
 # Version 5.0.2
 
 ### Fixed Bugs
