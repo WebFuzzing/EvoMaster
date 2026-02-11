@@ -12,7 +12,7 @@ class ExecutionPhaseController {
         MINIMIZATION,
         SECURITY,
         HTTP_ORACLES,
-        FLAKINESS, //TODO
+        FLAKINESS,
         WRITE_OUTPUT,
         FINISHED
     }
