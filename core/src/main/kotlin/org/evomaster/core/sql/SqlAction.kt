@@ -6,6 +6,7 @@ import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
@@ -80,6 +81,25 @@ class SqlAction(
             ).also {
         // init children for DbAction
         addChildren(it)
+    }
+
+
+    fun shiftIdBy(delta: Long){
+        if(representExistingData) {
+            throw IllegalStateException("Ids for existing data should never be shifted")
+        }
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+        insertionId += delta
+
+        seeAllGenes().forEach { g ->
+            if(g is SqlPrimaryKeyGene) {
+                g.shiftIdBy(delta)
+            } else if(g is SqlForeignKeyGene) {
+                g.shiftIdBy(delta)
+            }
+        }
     }
 
 

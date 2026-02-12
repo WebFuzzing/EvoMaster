@@ -25,7 +25,7 @@ import org.evomaster.core.sql.schema.TableId
  */
 class SqlForeignKeyGene(
         sourceColumn: String,
-        val uniqueId: Long,
+        uniqueId: Long,
         /**
          * The id of the table this FK points to
          */
@@ -49,6 +49,21 @@ class SqlForeignKeyGene(
             throw IllegalArgumentException("Negative unique id")
         }
     }
+
+    var uniqueId: Long = uniqueId
+        private set
+
+    fun shiftIdBy(delta: Long){
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+        uniqueId += delta
+        if(isBound()){
+            need to check
+            uniqueIdOfPrimaryKey += delta
+        }
+    }
+
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
         //FIXME: update once this gene is refactored

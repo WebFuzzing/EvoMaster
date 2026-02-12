@@ -27,12 +27,18 @@ class SqlPrimaryKeyGene(name: String,
                          * Important for the Foreign Keys referencing it.
                          * Cannot be negative
                          */
-                        val uniqueId: Long
+                        uniqueId: Long
 ) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     @Deprecated("Rather use the one forcing TableId")
     constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
+    }
+
+    var uniqueId: Long = uniqueId
+        private set
 
     init {
         if (uniqueId < 0) {
@@ -40,8 +46,11 @@ class SqlPrimaryKeyGene(name: String,
         }
     }
 
-    companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
+    fun shiftIdBy(delta: Long){
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+        uniqueId += delta
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
