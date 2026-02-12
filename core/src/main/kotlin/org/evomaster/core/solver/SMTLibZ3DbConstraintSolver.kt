@@ -183,12 +183,12 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     }
 
     private fun isBoolean(schemaDto: DbInfoDto, table: Table, columnName: String?): Boolean {
-        val col = schemaDto.tables.first { it.id.name == table.name }.columns.first { it.name == columnName }
-        return col.type == "BOOLEAN"
+        val col = schemaDto.tables.first { table.id.name.equals(it.id.name, ignoreCase = true) }.columns.first { columnName.equals(it.name, ignoreCase = true) }
+        return "BOOLEAN".equals(col.type, ignoreCase = true)
     }
 
     private fun isTimestamp(table: Table, columnName: String?): Boolean {
-        val col = table.columns.first { it.name == columnName }
+        val col = table.columns.first { columnName.equals(it.name, ignoreCase = true) }
         return col.type == ColumnDataType.TIMESTAMP
     }
 
