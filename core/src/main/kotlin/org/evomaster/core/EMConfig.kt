@@ -2652,15 +2652,16 @@ class EMConfig {
     var useEnvVarsForPathInTests = false
 
     @Experimental
-    @Cfg("Specify name of the environment variable that provides the JDK path.")
+    @Cfg("Specify name of the environment variable that provides the JDK installation path. " +
+            "Note that the executable path will be resolved by appending 'bin/java'.")
     var jdkEnvVarName = ""
 
     @Experimental
-    @Cfg("Specify name of the environment variable that provides the SUT dist.")
+    @Cfg("Specify name of the environment variable that provides the the base distribution directory of the SUT.")
     var sutDistEnvVarName = ""
 
     @Experimental
-    @Cfg("Specify name of the environment variable that provides the SUT JAR path.")
+    @Cfg("Specifies the name of the SUT JAR file that will be used together with `sutDistEnvVarName` to resolve the full SUT JAR path.")
     var sutJarEnvVarName = ""
 
     @Experimental
