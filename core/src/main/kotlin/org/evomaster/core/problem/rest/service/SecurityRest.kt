@@ -23,6 +23,7 @@ import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
+import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.gene.string.StringGene
 
 import org.evomaster.core.search.*
@@ -71,7 +72,10 @@ class SecurityRest {
     private lateinit var builder: RestIndividualBuilder
 
     @Inject
-    protected lateinit var config: EMConfig
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -117,7 +121,12 @@ class SecurityRest {
         // newly generated tests will be added back to archive
         addForAccessControl()
 
-        //TODO possible other kinds of security tests here
+        //TODO this could be applied to GraphQL and RPC, isn't it? if so, should refactor
+        //SQLi, XSS, SSRF, etc.
+        addForInjections()
+
+        //eg leaked stack traces
+        addForInfoLeakage()
 
         // just return the archive for solutions including the security tests.
         return archive.extractSolution()
@@ -218,8 +227,8 @@ class SecurityRest {
                          */
                         val repeat = lastCall.copy() as RestCallAction
                         repeat.forceNewTaints()
+                        repeat.resetLocalIdRecursively()
                         copy.addMainActionInEmptyEnterpriseGroup(action = repeat)
-                        copy.resetLocalIdRecursively() //TODO what about links?
                         copy.doInitializeLocalId()
                     }
                     copy.seeMainExecutableActions().last().auth = otherAuth
@@ -258,6 +267,41 @@ class SecurityRest {
         TODO("Not yet implemented")
     }
 
+    private fun addForInjections() {
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
+            log.debug("Skipping security test for XSS as disabled in configuration")
+        } else {
+            handleXSSCheck()
+        }
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
+        } else {
+            handleSqlICheck()
+        }
+
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            ssrfAnalyser.apply()
+        }
+    }
+
+    private fun addForInfoLeakage() {
+
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
+            log.debug("Skipping security test for existence leakage as disabled in configuration")
+        } else {
+            // getting 404 instead of 403
+            handleExistenceLeakage()
+        }
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        } else {
+            handleStackTraceCheck()
+        }
+    }
+
     private fun accessControlBasedOnRESTGuidelines() {
 
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)){
@@ -269,24 +313,11 @@ class SecurityRest {
             handleForbiddenOperationButOKOthers(HttpVerb.PATCH)
         }
 
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)){
-            log.debug("Skipping security test for existence leakage as disabled in configuration")
-        } else {
-            // getting 404 instead of 403
-            handleExistenceLeakage()
-        }
-
         if(!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)){
             log.debug("Skipping security test for not recognized authenticated as disabled in configuration")
         } else {
             //authenticated, but wrongly getting 401 (eg instead of 403)
             handleNotRecognizedAuthenticated()
-        }
-
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)) {
-            log.debug("Skipping security test for XSS as disabled in configuration")
-        } else {
-            handleXSSCheck()
         }
 
         if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
@@ -295,20 +326,12 @@ class SecurityRest {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            log.debug("Skipping experimental security test for stack traces as disabled in configuration")
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+            log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
-            handleStackTraceCheck()
+            handleAnonymousWriteCheck()
         }
 
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
-            log.debug("Skipping experimental security test for sql injection as disabled in configuration")
-        } else {
-            handleSqlICheck()
-        }
-
-        //TODO other rules. See FaultCategory
-        //etc.
     }
 
 
@@ -365,18 +388,19 @@ class SecurityRest {
                 var anySuccess = false
 
                 genes.forEach {
-                    gene ->
-                    val leafGene = gene.getLeafGene()
-                    if(leafGene !is StringGene) return@forEach
-
+                        gene ->
+                    val leafGene = gene.getLeafGene().getPhenotype()
+                    if(leafGene !is StringGene){
+                        return@forEach
+                    }
                     //TODO check if gene is linked with previous actions that create resources with IDs
 
-
                     // we need to do this way because we need to append our payload
-                    var newPayload = leafGene.getPhenotype().getValueAsRawString() + String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
+                    val newPayload = leafGene.getValueAsRawString() +
+                            String.format(payload, config.sqliInjectedSleepDurationMs/1000.0)
 
-                        // append the SQLi payload value
-                    leafGene.getPhenotype().setFromStringValue(newPayload).also {
+                    // append the SQLi payload value
+                    leafGene.setFromStringValue(newPayload).also {
                         if(it) anySuccess = true
                     }
                 }
@@ -385,7 +409,7 @@ class SecurityRest {
                     continue
                 }
 
-                val newInd = RestIndividualBuilder.merge(sliced, copy)
+                val newInd = builder.merge(sliced, copy)
 
                 newInd.modifySampleType(SampleType.SECURITY)
                 newInd.ensureFlattenedStructure()
@@ -471,6 +495,87 @@ class SecurityRest {
     }
 
     /**
+     * Anonymous Write Check - Detects missing authentication on write operations.
+     *
+     * This check flags:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     */
+    private fun handleAnonymousWriteCheck(){
+        mainloop@ for(action in actionDefinitions){
+            if(action.verb != HttpVerb.PUT && action.verb != HttpVerb.PATCH && action.verb != HttpVerb.DELETE){
+                continue
+            }
+
+            val suspicious = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(suspicious.isEmpty()){
+                continue
+            }
+
+            // Take the smallest suspicious individual
+            val target = suspicious.minBy { it.individual.size() }
+
+            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                target,
+                action.verb,
+                action.path,
+                statusGroup = StatusGroup.G_2xx,
+                authenticated = false
+            )
+
+            if(actionIndex < 0){
+                continue
+            }
+
+            // Check if this is a vulnerability
+            val actionResult = target.evaluatedMainActions()[actionIndex].result as? RestCallResult
+            if(actionResult == null){
+                continue
+            }
+
+            val statusCode = actionResult.getStatusCode()
+
+            // For PUT: only flag if it's NOT 201 (resource creation might be OK, update is not)
+            if(action.verb == HttpVerb.PUT && statusCode == 201){
+                continue
+            }
+
+            // This is a vulnerability: write operation without authentication
+            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                target.individual,
+                actionIndex
+            )
+
+            sliced.modifySampleType(SampleType.SECURITY)
+            sliced.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(sliced)
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate constructed individual in handleAnonymousWriteCheck")
+                continue@mainloop
+            }
+
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
+
+            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                assert(added)
+                continue@mainloop
+            }
+        }
+    }
+    /**
      * Authenticated user A accesses endpoint X, but get 401 (instead of 403).
      * In theory, a bug. But, could be false positive if A is misconfigured.
      * How to check it?
@@ -495,7 +600,7 @@ class SecurityRest {
                 action.path,
                 status = 401,
                 authenticated = true
-                )
+            )
             }.distinctBy { it.seeMainExecutableActions().last().auth.name }
 
             if(suspicious.isEmpty()){
@@ -549,7 +654,7 @@ class SecurityRest {
                     // if reach here, we got a bug
                     val auth = with401or403.minBy { it.size() }
 
-                    val final = RestIndividualBuilder.merge(auth,success,target)
+                    val final = builder.merge(auth,success,target)
                     final.modifySampleType(SampleType.SECURITY)
                     final.ensureFlattenedStructure()
 
@@ -578,17 +683,17 @@ class SecurityRest {
 
         getOperations.forEach { get ->
 
-            val inds403 = RestIndividualSelectorUtils.findIndividuals(
+            val inds403 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
                 status = 403
-                )
+            )
             if(inds403.isEmpty()){
                 return@forEach
             }
 
-            val inds404 = RestIndividualSelectorUtils.findIndividuals(
+            val inds404 = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 HttpVerb.GET,
                 get.path,
@@ -599,29 +704,40 @@ class SecurityRest {
             }
 
             //found the bug.
-            val forbidden = inds403.minBy { it.individual.size() }
-            val notfound = inds404.maxBy { it.individual.size() }
+            val forbidden = inds403.minBy { it.size() }
+            val notfound = inds404.minBy { it.size() }
 
-            //needs slicing to minimize the newly generated test
-            val index403 = RestIndividualSelectorUtils.getIndexOfAction(
-                forbidden,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val first = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(forbidden.individual, index403)
+            val final = builder.merge(forbidden, notfound)
 
-            val index404 = RestIndividualSelectorUtils.getIndexOfAction(
-                notfound,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            // slice the individual in a way that delete all calls after the chosen verb request
-            val second = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(notfound.individual, index404)
+            // Check if the 404 path is a child resource and add parent GET to check access
+            val path404 = get.path
+            val action404 = final.seeMainExecutableActions().last()
+            val lastAuth = action404.auth
 
-            val final = RestIndividualBuilder.merge(first, second)
+            // Find the parent path from getOperations (all GET operation definitions)
+            val parentGetOperation = getOperations
+                .filter { it.path.isStrictlyAncestorOf(path404)}
+                .filter { it.path.isLastElementAParameter() }
+                .minByOrNull { it.path.levels() }
+
+            if (parentGetOperation != null) {
+                val parentGetAction = parentGetOperation.copy() as RestCallAction
+                parentGetAction.resetLocalIdRecursively()
+                parentGetAction.forceNewTaints()
+
+                parentGetAction.doInitialize()
+                parentGetAction.auth = lastAuth
+                // Bind to the same path params from the 404 action to ensure same IDs
+                //FIXME this would currently not work for dynamic parameters
+                parentGetAction.bindToSamePathResolution(action404)
+
+                final.addResourceCall(
+                    restCalls = RestResourceCalls(
+                        actions = mutableListOf(parentGetAction),
+                        sqlActions = listOf()
+                    )
+                )
+            }
 
             final.modifySampleType(SampleType.SECURITY)
             final.ensureFlattenedStructure()
@@ -632,31 +748,15 @@ class SecurityRest {
                 return@forEach
             }
 
-            //verify if newly constructed individual still find the bug
-            val check403 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                403
-            )
-            val check404 = RestIndividualSelectorUtils.getIndexOfAction(
-                evaluatedIndividual,
-                HttpVerb.GET,
-                get.path,
-                404
-            )
-            //fitness function should have detected the fault
-            val faults = (evaluatedIndividual.evaluatedMainActions().last().result as RestCallResult).getFaults()
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(check403 < 0 || check404 < 0 || faults.none { it.category == DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE }){
-                //if this happens, it is a bug in the merge... or flakiness
-                log.warn("Failed to construct new test showing the 403 vs 404 security leakage issue")
-                return@forEach
+            if(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE in faultsCategories){
+                // add the evaluated individual to the archive
+                val added = archive.addIfNeeded(evaluatedIndividual)
+                //if we arrive here, should always be added, because we are creating a new testing target
+                assert(added)
             }
 
-            val added = archive.addIfNeeded(evaluatedIndividual)
-            //if we arrive here, should always be added, because we are creating a new testing target
-            assert(added)
         }
     }
 
@@ -884,7 +984,7 @@ class SecurityRest {
                     it is HostnameResolutionAction
                 } as List<HostnameResolutionAction>)
 
-                val finalIndividual = RestIndividualBuilder.merge(
+                val finalIndividual = builder.merge(
                     firstSliced,
                     secondSliced
                 )
@@ -956,8 +1056,8 @@ class SecurityRest {
                     )
                     finalIndividual.seeMainExecutableActions()
                         .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.POST }.forEach {
-                        it.saveCreatedResourceLocation = true
-                    }
+                            it.saveCreatedResourceLocation = true
+                        }
                     finalIndividual.fixResourceForwardLinks()
 
                     finalIndividual.modifySampleType(SampleType.SECURITY)
@@ -1123,7 +1223,7 @@ class SecurityRest {
 
         if (!anySuccess) return null
 
-        return RestIndividualBuilder.merge(ind, second)
+        return builder.merge(ind, second)
 
     }
 

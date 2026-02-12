@@ -66,7 +66,7 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
         val notFound = createIndividual(listOf(get123), SampleType.SECURITY)
         assertEquals(404, (notFound.evaluatedMainActions()[0].result as RestCallResult).getStatusCode())
 
-        val ind = RestIndividualBuilder.merge(forbidden.individual, notFound.individual)
+        val ind = getBuilder().merge(forbidden.individual, notFound.individual)
         assertEquals(HttpVerb.PUT,  ind.seeMainExecutableActions()[0].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[1].verb)
         assertEquals(HttpVerb.GET,  ind.seeMainExecutableActions()[2].verb)
@@ -82,7 +82,7 @@ class SecurityExistenceLeakageTest: IntegrationTestRestBase()  {
         assertEquals(403, r1.getStatusCode())
         assertEquals(404, r2.getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasExistenceLeakage(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults())
+        val faultDetected = RestSecurityOracle.hasExistenceLeakage(RestPath("/api/resources/{id}"),ei.individual, ei.seeResults(), listOf())
         assertTrue(faultDetected)
 
         //fault should be put on 404

@@ -880,6 +880,10 @@ abstract class Gene(
      * If the type of [other] is different, this method might throw an [IllegalArgumentException]
      *
      * TODO refactor, in which type-check is done here
+     *
+     * FIXME do we really need to throw an exception???
+     * issue is that even if [other] is of right type, it's internal genes might not match,
+     * eg, look at ChoiceGene
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
@@ -1186,7 +1190,7 @@ abstract class Gene(
     internal open fun unsafeSetFromStringValue(value: String): Boolean {
         //TODO in future this should be abstract, to force each gene to handle it.
         //few implementations can be based on AbstractParser class for Postman
-        throw IllegalStateException("setValueBasedOn() is not implemented for gene ${this::class.simpleName}")
+        throw IllegalStateException("unsafeSetFromStringValue() is not implemented for gene ${this::class.simpleName}")
     }
 
 

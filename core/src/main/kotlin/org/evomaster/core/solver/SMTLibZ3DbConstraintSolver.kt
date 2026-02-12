@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.DoubleGene
@@ -32,6 +33,7 @@ import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
+import kotlin.text.equals
 
 /**
  * An SMT solver implementation using Z3 in a Docker container.
@@ -102,9 +104,19 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
     private fun parseStatement(sqlQuery: String): Statement {
         return try {
             CCJSqlParserUtil.parse(sqlQuery)
-        } catch (e: JSQLParserException) {
-            throw RuntimeException(e)
+        } catch (_: JSQLParserException) {
+            val sanitizedQuery = removeNotSupportedKeywords(sqlQuery)
+            return try {
+                CCJSqlParserUtil.parse(sanitizedQuery)
+            } catch (e: JSQLParserException) {
+                LoggingUtil.getInfoLogger().error("Failed to parse SQL query '$sqlQuery' as SQL Statement")
+                throw RuntimeException(e)
+            }
         }
+    }
+
+    private fun removeNotSupportedKeywords(sqlQuery: String): String {
+        return sqlQuery.replace("local temporary", "")
     }
 
     /**
@@ -133,14 +145,14 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 var gene: Gene = IntegerGene(columnName, 0)
                 when (val columnValue = columns.getField(columnName)) {
                     is StringValue -> {
-                        gene = if (isBoolean(schemaDto, table, columnName)) {
+                        gene = if (hasColumnType(schemaDto, table, columnName, "BOOLEAN")) {
                             BooleanGene(columnName, toBoolean(columnValue.value))
                         } else {
                             StringGene(columnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (isTimestamp(table, columnName)) {
+                        gene = if (hasColumnType(schemaDto, table, columnName, "TIMESTAMP")) {
                             LongGene(columnName, columnValue.value.toLong())
                         } else {
                             IntegerGene(columnName, columnValue.value.toInt())
@@ -150,7 +162,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                         gene = DoubleGene(columnName, columnValue.value)
                     }
                 }
-                val currentColumn = table.columns.firstOrNull(){ it.name == columnName}
+                val currentColumn = table.columns.firstOrNull(){ it.name.equals(columnName, ignoreCase = true) }
                 if (currentColumn != null &&  currentColumn.primaryKey) {
                     gene = SqlPrimaryKeyGene(columnName, table.id, gene, idCounter)
                     idCounter++
@@ -171,14 +183,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         return value.equals("True", ignoreCase = true)
     }
 
-    private fun isBoolean(schemaDto: DbInfoDto, table: Table, columnName: String?): Boolean {
-        val col = schemaDto.tables.first { it.id.name == table.name }.columns.first { it.name == columnName }
-        return col.type == "BOOLEAN"
-    }
+    private fun hasColumnType(
+        schemaDto: DbInfoDto,
+        table: Table,
+        columnName: String?,
+        expectedType: String
+    ): Boolean {
 
-    private fun isTimestamp(table: Table, columnName: String?): Boolean {
-        val col = table.columns.first { it.name == columnName }
-        return col.type == ColumnDataType.TIMESTAMP
+        if (columnName == null) return false
+
+        val tableDto = schemaDto.tables.firstOrNull {
+            it.id.name.equals(table.id.name, ignoreCase = true)
+        } ?: return false
+
+        val col = tableDto.columns.firstOrNull {
+            it.name.equals(columnName, ignoreCase = true)
+        } ?: return false
+
+        return col.type.equals(expectedType, ignoreCase = true)
     }
 
     /**

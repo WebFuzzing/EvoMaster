@@ -1034,20 +1034,23 @@ class StringGene(
             }
         }
 
-        //TODO would need updating...
-//        if(other is StringGene) {
-//            this.selectedSpecialization = other.selectedSpecialization
-//
-//            this.specializations.clear()
-//            this.specializations.addAll(other.specializations)
-//
-//            killAllChildren()
-//            addChildren(other.specializationGenes.map { it.copy() })
-//
-//            this.tainted = other.tainted
+        if(other is StringGene) {
+            this.value = other.value
+            this.selectedSpecialization = other.selectedSpecialization
+
+            this.specializations.clear()
+            this.specializations.addAll(other.specializations)
+
+            killAllChildren()
+            val adopted = other.specializationGenes.map { it.copy() }
+            adopted.forEach { it.resetLocalIdRecursively()}
+            addChildren(adopted)
+
+            this.tainted = other.tainted
+            //TODO NOT sure if should handle this???
 //            this.bindingIds.clear()
 //            this.bindingIds.addAll(other.bindingIds)
-//        }
+        }
 
         return true
     }

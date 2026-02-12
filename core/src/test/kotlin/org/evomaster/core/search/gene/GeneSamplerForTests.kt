@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -400,7 +401,13 @@ object GeneSamplerForTests {
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
-        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand), "None")
+        return RegexGene(
+            name = "rand RegexGene",
+            disjunctions = sampleDisjunctionListRxGene(rand),
+            ".*", //TODO tricky, we want to sample different structures,
+                                // but still validation should not fail
+            RegexType.JVM
+        )
     }
 
     fun sampleQuantifierRxGene(rand: Randomness): QuantifierRxGene {
@@ -582,18 +589,18 @@ object GeneSamplerForTests {
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     )
             )
         }else{
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fixedFields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     ),
                     refType = null,
                     isFixed = isFixed,

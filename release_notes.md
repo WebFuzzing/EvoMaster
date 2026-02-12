@@ -2,9 +2,39 @@
 
 Under development in `master` branch.
 
-### Changes
+### New Features
+
+- Introduced _--maxTestsPerTestSuite_, with default value of 200. 
+  This is to avoid generating single output test files with thousands of tests.
+  Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
+   A negative value means no constraint is applied (i.e., old behavior).  
+- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info. 
+
+### Fixed Bugs
+
+- fixed a connection leak when authentication fails.
+- fixed few edge cases that led to crashes related to handling of MongoDB objects.
+- fixed bug in handling of SQL databases, where commands leading to inconsistent state (eg, duplicated keys) were not properly removed. 
+
+### Addressed GitHub Issues
+
+- #1442: UninitializedPropertyAccessException: lateinit property mutator not initialized in MioAlgorithm when using --sqli true 
+
+# Version 5.0.2
+
+### Fixed Bugs
+
+- fixed issues when parsing OpenAPI schemas with PATCH methods and YAML size more than 3MB.
+
+# Version 5.0.0
+
+### Breaking Changes
 
 - _core_ process is moved to JDK 17, while _driver_ is still on 8 (and it will be for the foreseeable future). If you run EM from its installers or Docker, you will see no difference. However, if you run it via its jar file with '_java -jar_', then you need to make sure to have JDK 17 (or 21, but not 25). 
+
+- _auth_ declarations have been updated to latest _WFC_ version __0.2.0__. 
+  Those have breaking changes in the name of fields in the settings of _TokenHandler_. 
+  See WFC for updated documentation.
 
 ### New Features
 
@@ -18,6 +48,7 @@ Under development in `master` branch.
 ### Addressed GitHub Issues
 
 - #1263: Unable to insert data into MySQL 
+- #1299: A feature request to extract authentication token from a response header
 - #1400: EvoMaster crashes with "invalid start or end" error during Dolibarr API testing
 
 # Version 4.0.0

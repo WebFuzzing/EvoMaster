@@ -34,9 +34,12 @@ public abstract class SpringWithDbController extends SpringController {
 
         int rand = Random.Default.nextInt();
 
+        // Avoid invalid database names such as "testdb_-1047301442"
+        String databaseName = "testdb_"+Math.abs(rand);
+
         ctx = SpringApplication.run(applicationClass, new String[]{
                 "--server.port=0",
-                "--spring.datasource.url=jdbc:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
+                "--spring.datasource.url=jdbc:h2:mem:"+databaseName+";DB_CLOSE_DELAY=-1;",
                 "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
                 "--spring.datasource.username=sa",
                 "--spring.datasource.password",

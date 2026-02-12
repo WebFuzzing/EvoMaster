@@ -7,7 +7,7 @@
 [![javadoc](https://javadoc.io/badge2/org.evomaster/evomaster-client-java-controller/javadoc.svg)](https://javadoc.io/doc/org.evomaster/evomaster-client-java-controller)
 ![CI](https://github.com/WebFuzzing/EvoMaster/workflows/CI/badge.svg)
 [![codecov](https://codecov.io/gh/WebFuzzing/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/WebFuzzing/EvoMaster)
-[![DOI](https://zenodo.org/badge/92385933.svg)](https://zenodo.org/badge/latestdoi/92385933)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5052036.svg)](https://doi.org/10.5281/zenodo.5052036)
 [![License: LGPL v3](https://img.shields.io/badge/License-LGPL_v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 [![Github All Releases](https://img.shields.io/github/downloads/WebFuzzing/evomaster/total.svg)](https://github.com/WebFuzzing/EvoMaster/releases)
 
@@ -227,10 +227,11 @@ Existing open-source tools for REST API fuzzing, with at least 100 stars on GitH
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
 [Restler](https://github.com/microsoft/restler-fuzzer),
+[Schemathesis](https://github.com/schemathesis/schemathesis)
 and
-[Schemathesis](https://github.com/schemathesis/schemathesis).
+[WuppieFuzz](https://github.com/TNO-S3/WuppieFuzz).
 
-All these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
+Apart from WuppieFuzz, all these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
 As we are the authors of EvoMaster, we are too biased to compare it properly with those other black-box tools.
 However, different independent studies (e.g., in [2022](https://arxiv.org/abs/2204.08348) and [2024](https://arxiv.org/abs/2410.12547)) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 

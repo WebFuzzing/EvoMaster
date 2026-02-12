@@ -102,10 +102,77 @@ object RestSecurityOracle {
         return (a403.isNotEmpty() || a401.isNotEmpty()) && a2xxWithoutAuth.isNotEmpty()
     }
 
-    fun hasExistenceLeakage(
+    /**
+     * Check for anonymous write vulnerability - write operations without authentication.
+     *
+     * Flags as vulnerability:
+     * - PUT returning 2xx (except 201) without authentication - updating existing resources
+     * - PATCH returning 2xx without authentication - partial updates
+     * - DELETE returning 2xx without authentication - deleting resources
+     *
+     * Note: PUT returning 201 (creating new resource) might be acceptable for public endpoints
+     * like adding entries to a public forum.
+     *
+     * @param path the REST path to check
+     * @param individual the test individual (must be of SampleType.SECURITY)
+     * @param actionResults the results of executing the actions
+     * @return true if anonymous write vulnerability is detected
+     */
+    fun hasAnonymousWrite(
         path: RestPath,
         individual: RestIndividual,
         actionResults: List<ActionResult>
+    ): Boolean{
+
+        verifySampleType(individual)
+
+        // Get all write operations (PUT, PATCH, DELETE) on the given path
+        val actions = individual.seeMainExecutableActions().filter {
+            (it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE)
+            && it.path.isEquivalent(path)
+        }
+
+        val actionsWithResults = actions.filter {
+            //can be null if sequence was stopped
+            actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null
+        }
+
+        if(actions.size != actionsWithResults.size){
+            assert(actionResults.any { it.stopping }) {
+                "Not all actions have results, but sequence was not stopped"
+            }
+        }
+
+        // Check for write operations without authentication that return 2xx
+        val anonymousWriteActions = actionsWithResults.filter {
+            it.auth is NoAuth &&
+            StatusGroup.G_2xx.isInGroup((actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult)
+                .getStatusCode())
+        }
+
+        if(anonymousWriteActions.isEmpty()){
+            return false
+        }
+
+        // For PUT, check if it's 201 (resource creation - might be OK) or other 2xx (update - vulnerability)
+        // For PATCH/DELETE: any 2xx is a vulnerability
+        return anonymousWriteActions.any { action ->
+            val statusCode = (actionResults.find { r -> r.sourceLocalId == action.getLocalId() } as RestCallResult)
+                .getStatusCode()
+
+            when(action.verb){
+                HttpVerb.PUT -> statusCode != 201  // Only flag if NOT creating new resource
+                HttpVerb.PATCH, HttpVerb.DELETE -> true  // Any 2xx is a vulnerability
+                else -> false
+            }
+        }
+    }
+
+    fun hasExistenceLeakage(
+        path: RestPath,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        actionDefinitions: List<RestCallAction>
     ): Boolean{
 
         verifySampleType(individual)
@@ -135,7 +202,68 @@ object RestSecurityOracle {
                     .getStatusCode() == 404
             }
 
-        return a403.isNotEmpty() && a404.isNotEmpty()
+        if(a403.isEmpty() || a404.isEmpty()){
+            //no discrepancy of status on same path. so no leakage
+            return false
+        }
+
+        /*
+            by itself, the fact that there is 404 does not imply a leakage, as the user
+            "might" own parent resources.
+            we need to check for that.
+         */
+
+        val topGet = findStrictTopGETResourceAncestor(path, actionDefinitions)
+            //if null, then for sure the user with 404 does not own a parent resource
+            ?: return true
+
+        val verifiers = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.GET && it.path == topGet.path }
+            .filter { actionResults.find { r -> r.sourceLocalId == it.getLocalId() } != null }
+
+        if(verifiers.isEmpty()){
+            //a top GET exists in schema, but was not called in the test.
+            //as such, we cannot be sure if bug is found, as, even if 403-404 on same path,
+            //it could well be that the 404 was legit
+            return false
+        }
+
+        for(notfound in a404){
+
+            //FIXME i don't think it is correct, as ignoring dynamic info?
+            //TODO need tests for it
+            val matching = verifiers.filter {
+                it.isResolvedParentPath(notfound)
+                        && ! notfound.auth.isDifferentFrom(it.auth)
+            }
+
+            if(matching.isEmpty()){
+                continue
+            }
+
+            val codes = matching.map { (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult).getStatusCode() }
+
+            if(codes.any{ StatusGroup.G_2xx.isInGroup(it)}) {
+                //a 2xx can be done on parent resource
+                continue
+            }
+
+            if(codes.any{ it == 403 || it == 404 }) {
+                //there is at least one call on ancestor resource with same auth, but none was positive 2xx
+                return true // and there is at least one discrepancy 403-404 on same endpoint
+            }
+            //other codes like 400 or 500 are ignored here, eg, due to input validation
+        }
+
+        return false
+    }
+
+    private fun findStrictTopGETResourceAncestor(path: RestPath, actions: List<RestCallAction>) : RestCallAction?{
+        return actions
+            .filter { it.verb == HttpVerb.GET }
+            .filter { it.path.isStrictlyAncestorOf(path)}
+            .filter { it.path.isLastElementAParameter() }
+            .minByOrNull { it.path.levels() }
     }
 
     /**

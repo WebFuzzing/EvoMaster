@@ -151,5 +151,19 @@ class OutputFormatterTest {
         assertFalse(isValid)
     }
 
+    @Test
+    fun testInvalidJsonWithAsciiControlCharacter() {
+        val json = " {\"s0\":\"This is a long string\", \"s1\":\"This isa long string\", \"s2\":\"_EM_3149_XYZ_\"} "
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertFalse(isValid)
+    }
+
+    @Test
+    fun testValidJsonWithEscapedAsciiControlCharacter() {
+        val json = " {\"s0\":\"This is a long string\", \"s1\":\"This is\\u001Fa long string\", \"s2\":\"_EM_3149_XYZ_\"} "
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertTrue(isValid)
+    }
+
 
 }

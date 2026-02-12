@@ -256,8 +256,16 @@ class ChoiceGene<T>(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        return this.activeGene().javaClass == other.activeGene().javaClass
-                && this.activeGene().containsSameValueAs(other.activeGene())
+        if(this.activeGene().javaClass != other.activeGene().javaClass){
+            return false
+        }
+
+        //TODO 'try' would not be needed if we refactor semantic of this method
+        return try{
+            this.activeGene().containsSameValueAs(other.activeGene())
+        } catch (e: IllegalArgumentException){
+            return false
+        }
     }
 
     /**

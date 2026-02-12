@@ -1173,7 +1173,8 @@ object RestActionBuilderV3 {
                     else -> null
                 }
             }.flatten()
-            return assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)
+            val fields = allFields.plus(fields).distinctBy { it.name }
+            return assembleObjectGene(name, options, schema, fields, additionalFieldTemplate, referenceTypeName, examples, messages)
         }
 
         if (!oneOf.isNullOrEmpty()){
@@ -1195,7 +1196,19 @@ object RestActionBuilderV3 {
             /*
                 currently, we handle anyOf as oneOf plus all combined one
              */
-            return ChoiceGene(name, if (anyOf.size > 1) anyOf.plus(assembleObjectGene(name, options, schema, allFields.plus(fields), additionalFieldTemplate, referenceTypeName, examples, messages)) else anyOf)
+
+            val choices = if (anyOf.size > 1) {
+                anyOf.plus(
+                    assembleObjectGene(
+                        name, options, schema, allFields.plus(fields).distinctBy { it.name },
+                        additionalFieldTemplate, referenceTypeName, examples, messages
+                    )
+                )
+            } else {
+                anyOf
+            }
+
+            return ChoiceGene(name, choices)
 //            /*
 //                handle all combinations of anyOf
 //                comment it out for the moment
@@ -1734,7 +1747,9 @@ object RestActionBuilderV3 {
         }
 
         if (isRoot && refCache.containsKey(reference)) {
-            return refCache[reference]!!.copy()
+            val copy = refCache[reference]!!.copy()
+            copy.name = name
+            return copy
         }
 
         /*

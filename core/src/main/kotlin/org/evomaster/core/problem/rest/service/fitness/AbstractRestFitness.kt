@@ -108,9 +108,15 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
     private lateinit var schemaOracle: RestSchemaOracle
 
+    /**
+     * All actions that can be defined from the OpenAPI schema
+     */
+    private lateinit var actionDefinitions: List<RestCallAction>
+
     @PostConstruct
     fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
     }
 
 
@@ -661,7 +667,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
                     /*
                         This should not really happen... but it does :( at least on Windows...
                      */
@@ -766,7 +772,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -883,8 +889,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -940,14 +956,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -966,10 +982,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -980,12 +997,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
         if(bodyEntity != null) {
-            builder.header("Content-Type", bodyEntity.mediaType)
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
         }
 
         val invocation = when (a.verb) {
@@ -1171,7 +1194,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             analyzeSecurityProperties(individual,actionResults,fv)
         }
 
-        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             handleSsrfFaults(individual, actionResults, fv)
         }
 
@@ -1262,6 +1285,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleStackTraceCheck(individual, actionResults, fv)
         handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
+        handleAnonymousWriteCheck(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1298,22 +1322,23 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             return
         }
 
+        if(actionResults.any { it.stopping }){
+            return
+        }
+
         val notRecognized = individual.seeMainExecutableActions()
             .filter {
-                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+                val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?
                 if(ar == null){
-                    // this can be happened in the POST/DELETE template
-                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
-                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
-                    }
-                    if (prematureStoppedAction.isNotEmpty()){
-                        log.debug("Premature stopping of HTTP call sequence")
-                        return
-                    }
-                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
+                    log.warn("Missing action result with id: ${it.getLocalId()}}")
+                    false
+                } else {
+                    it.auth !is NoAuth && ar.getStatusCode() == 401
                 }
-                it.auth !is NoAuth && ar.getStatusCode() == 401
-            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
+            }
+            .filter {
+                RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults)
+            }
 
         if(notRecognized.isEmpty()){
             return
@@ -1343,7 +1368,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             .map { it.path }
             .toSet()
 
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
+        val faultyPaths = getPaths.filter {
+            RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults, actionDefinitions)
+        }
         if(faultyPaths.isEmpty()){
             return
         }
@@ -1385,7 +1412,8 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
             ?: return
-        val injectedTime = injectedResult.getResponseTimeMs() ?: return
+        val injectedTime = injectedResult.getResponseTimeMs()
+
 
         val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
         val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
@@ -1394,7 +1422,16 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val baselineIsFast = baselineTime < K
 
         // Response after injection must be slow enough (response > N)
-        val responseIsSlowEnough = injectedTime > N
+        var responseIsSlowEnough: Boolean
+
+        if (injectedTime != null) {
+            responseIsSlowEnough = injectedTime > N
+        } else if (injectedResult.getTimedout()){
+            // if the injected request timed out, we can consider it vulnerable
+            responseIsSlowEnough = true
+        } else {
+            return
+        }
 
         // If baseline is fast AND the response after payload is slow enough,
         // then we consider this a potential time-based SQL injection vulnerability.
@@ -1415,6 +1452,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         )
         fv.updateTarget(scenarioId, 1.0, index)
         injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.setVulnerableForSQLI(true)
     }
 
     /**
@@ -1468,7 +1506,9 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         for(index in individual.seeMainExecutableActions().indices){
             val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+                //this can happen if an action timeout, or is stopped
+                ?: continue
 
             if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
                 val scenarioId = idMapper.handleLocalTarget(
@@ -1516,6 +1556,50 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
                     break // Only add one fault per action
                 }
+            }
+        }
+    }
+
+    private fun handleAnonymousWriteCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)){
+            return
+        }
+
+        // Get all write operation paths (PUT, PATCH, DELETE)
+        val writePaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = writePaths.filter { RestSecurityOracle.hasAnonymousWrite(it, individual, actionResults) }
+
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
+                && faultyPaths.contains(a.path)
+                && a.auth is NoAuth
+                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+
+                // For PUT, check if it's 201 (resource creation - might be OK)
+                if(a.verb == HttpVerb.PUT && r.getStatusCode() == 201){
+                    continue
+                }
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_WRITE, a.getName(), null))
             }
         }
     }

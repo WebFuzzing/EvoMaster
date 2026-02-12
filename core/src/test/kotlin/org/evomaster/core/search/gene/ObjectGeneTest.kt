@@ -64,11 +64,11 @@ internal class ObjectGeneTest {
 
     @Test
     fun testManyFields() {
-        val child0 = ObjectGene("child", listOf())
-        val child1 = ObjectGene("child", listOf())
+        val child0 = ObjectGene("child0", listOf())
+        val child1 = ObjectGene("child1", listOf())
         val gene = ObjectGene("parent", listOf(child0, child1))
         val actual = gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        assertEquals("<parent><child></child><child></child></parent>", actual)
+        assertEquals("<parent><child0></child0><child1></child1></parent>", actual)
     }
 
 

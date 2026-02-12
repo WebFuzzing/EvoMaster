@@ -12,13 +12,17 @@ public class SqlBaseTableReference extends SqlTableReference {
 
     private final SqlTableId tableId;
 
-    public SqlBaseTableReference(String name) {
-        Objects.requireNonNull(name);
-        this.tableId = new SqlTableId(name);
+    public SqlBaseTableReference(String catalog, String schema, String baseTableName) {
+        Objects.requireNonNull(baseTableName);
+        this.tableId = new SqlTableId(catalog, schema, baseTableName);
+    }
+
+    public SqlBaseTableReference(String baseTableName) {
+        this(null, null, baseTableName);
     }
 
     public String getName() {
-        return tableId.getTableId();
+        return tableId.getTableName();
     }
 
     public SqlTableId getTableId() {
