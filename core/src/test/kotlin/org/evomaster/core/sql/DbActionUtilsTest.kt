@@ -507,20 +507,20 @@ class DbActionUtilsTest {
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
         //PK on table0
-        val insertId0 = 1001L
+        val insertId0 = 1000L
         val autoIncrementGene0 = SqlAutoIncrementGene("Id")
         val pkGene0 = SqlPrimaryKeyGene("Id", "Table0", autoIncrementGene0, insertId0)
         val action0 = SqlAction(table0, setOf(idColumn), insertId0, listOf(pkGene0))
 
         //another PK on table0
-        val insertId1 = 1002L
+        val insertId1 = 1001L
         val autoIncrementGene1 = SqlAutoIncrementGene("Id")
         val pkGene1 = SqlPrimaryKeyGene("Id", "Table0", autoIncrementGene1, insertId1)
         val action1 = SqlAction(table0, setOf(idColumn), insertId1, listOf(pkGene1))
 
 
         //PK on table1, with FK to table0 first PK
-        val insertId2 = 1003L
+        val insertId2 = 1002L
         val fkGene0 = SqlForeignKeyGene("Id", insertId2, TableId("Table0"), false, insertId0)
         val pkGene2 = SqlPrimaryKeyGene("Id", "Table1", fkGene0, insertId2)
         val action2 = SqlAction(table1, setOf(fkColumn), insertId2, listOf(pkGene2))
