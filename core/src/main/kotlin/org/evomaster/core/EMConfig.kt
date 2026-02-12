@@ -809,6 +809,9 @@ class EMConfig {
         }
 
         if(useEnvVarsForPathInTests){
+            if(problemType != ProblemType.DEFAULT && problemType != ProblemType.REST)
+                throw ConfigProblemException("'useEnvVarsForPathInTests' can be applied only for REST problem.")
+
             if (jdkEnvVarName.isEmpty())
                 throw ConfigProblemException("'jdkEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
             if (sutDistEnvVarName.isEmpty())

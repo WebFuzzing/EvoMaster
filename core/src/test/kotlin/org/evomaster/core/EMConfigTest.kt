@@ -734,6 +734,10 @@ internal class EMConfigTest{
         assertThrows(Exception::class.java, {config.updateProperties(optionOneMissing)})
 
         val optionAllSpecified = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME", "--sutJarEnvVarName", "sut-jar.jar")
-        assertDoesNotThrow({config.updateProperties(optionAllSpecified)})
+        assertDoesNotThrow ({config.updateProperties(optionAllSpecified)})
+
+        val optionAllSpecifiedNotRest = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME", "--sutJarEnvVarName", "sut-jar.jar", "--problemType", "RPC")
+        assertThrows (Exception::class.java,{config.updateProperties(optionAllSpecifiedNotRest)})
+
     }
 }
