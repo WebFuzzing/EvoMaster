@@ -2660,7 +2660,8 @@ class EMConfig {
     var jdkEnvVarName = ""
 
     @Experimental
-    @Cfg("Specify name of the environment variable that provides the the base distribution directory of the SUT.")
+    @Cfg("Specify name of the environment variable that provides the the base distribution directory of the " +
+            "SUT, e.g., 'dist' directory of WFD.")
     var sutDistEnvVarName = ""
 
     @Experimental

@@ -1955,68 +1955,6 @@ public abstract class SutController implements SutHandler, CustomizationHandler 
                 .lines().collect(Collectors.joining(System.lineSeparator()));
     }
 
-    /**
-     * Resolves the absolute path to the Java executable using the given
-     * JDK environment variable name.
-     *
-     * <p>This method expects the environment variable (e.g. {@code JAVA_HOME})
-     * to point to a JDK installation directory. It appends {@code "bin"} and
-     * {@code "java"} to construct the full path to the Java executable.</p>
-     *
-     *
-     * @param jdkEnvVarName the name of the JDK environment variable
-     *                      (e.g. {@code "JAVA_HOME"})
-     * @return the absolute path to the Java executable as a String
-     * @throws RuntimeException if the environment variable is not defined or empty
-     */
-    public final String extractJDKPathWithEnvVarName(String jdkEnvVarName){
-        return extractPathWithEnvVar(jdkEnvVarName, "bin", "java").toString();
-    }
-
-    /**
-     * Resolves the absolute path to a System-Under-Test (SUT) JAR file
-     * using environment variables.
-     *
-     *
-     * @param sutDistEnvVarName the environment variable that contains the base
-     *                          directory of the SUT distribution
-     * @param sutJarEnvVarName the name of the JAR file (or relative path inside the distribution)
-     * @return the absolute path to the SUT JAR file as a String
-     * @throws RuntimeException if the distribution environment variable is not defined or empty
-     */
-    public final String extractSutJarNameWithEnvVarName(String sutDistEnvVarName, String sutJarEnvVarName){
-        return extractPathWithEnvVar(sutDistEnvVarName, sutJarEnvVarName).toString();
-    }
-
-    /**
-     * Resolves an absolute {@link Path} using the value of a given environment variable
-     * as the base directory and appending additional path segments.
-     *
-     * <p>For example, if {@code envVarName} is {@code "JAVA_HOME"} and
-     * {@code others} contains {@code "bin", "java"}, this method will return:</p>
-     *
-     * <pre>
-     * $JAVA_HOME/bin/java   (Linux/macOS)
-     * %JAVA_HOME%\bin\java  (Windows)
-     * </pre>
-     *
-     * <p>The resulting path is converted to an absolute path.</p>
-     *
-     * @param envVarName the name of the environment variable (e.g. {@code "JAVA_HOME"})
-     * @param others additional path segments to append to the environment variable path
-     * @return the resolved absolute {@link Path}
-     * @throws RuntimeException if the environment variable is not defined or empty
-     */
-    private Path extractPathWithEnvVar(String envVarName, String... others){
-        String javaHome = System.getenv(envVarName);
-
-        if (javaHome == null || javaHome.isEmpty()) {
-            throw new RuntimeException("Cannot find "+envVarName);
-        }
-
-        Path javaExecutable = Paths.get(javaHome, others);
-        return javaExecutable.toAbsolutePath();
-    }
 
     @Override
     public Map<Class, Integer> getExceptionImportanceLevels() {
