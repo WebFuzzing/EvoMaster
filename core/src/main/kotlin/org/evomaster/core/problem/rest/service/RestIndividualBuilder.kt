@@ -132,6 +132,7 @@ class RestIndividualBuilder {
             //need to increase by a delta
             val delta = (thresholdId - minId) + 1
             envOther.filterIsInstance<SqlAction>()
+                .filter { !it.representExistingData }
                 .forEach { it.shiftIdBy(delta) }
         }
 

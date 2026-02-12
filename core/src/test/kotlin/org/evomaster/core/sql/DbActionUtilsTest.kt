@@ -152,7 +152,7 @@ class DbActionUtilsTest {
         val action0 = SqlAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = StringGene(uniqueColumn.name, "stringValue1", 0, 10)
-        val action1 = SqlAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene1))
+        val action1 = SqlAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
         val actions = mutableListOf(action0, action1)
 
@@ -176,7 +176,7 @@ class DbActionUtilsTest {
         val action0 = SqlAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene0))
 
         val gene1 = StringGene(uniqueColumn.name, "stringValue0", 0, 10)
-        val action1 = SqlAction(aTable, setOf(uniqueColumn), 0L, mutableListOf(gene1))
+        val action1 = SqlAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
         val actions = mutableListOf(action0, action1)
 
@@ -506,23 +506,27 @@ class DbActionUtilsTest {
 
         val table1 = Table("Table1", setOf(fkColumn), setOf(foreignKey))
 
-
+        //PK on table0
         val insertId0 = 1001L
         val autoIncrementGene0 = SqlAutoIncrementGene("Id")
         val pkGene0 = SqlPrimaryKeyGene("Id", "Table0", autoIncrementGene0, insertId0)
         val action0 = SqlAction(table0, setOf(idColumn), insertId0, listOf(pkGene0))
 
+        //another PK on table0
         val insertId1 = 1002L
         val autoIncrementGene1 = SqlAutoIncrementGene("Id")
         val pkGene1 = SqlPrimaryKeyGene("Id", "Table0", autoIncrementGene1, insertId1)
-        val action1 = SqlAction(table0, setOf(idColumn), insertId0, listOf(pkGene1))
+        val action1 = SqlAction(table0, setOf(idColumn), insertId1, listOf(pkGene1))
 
 
+        //PK on table1, with FK to table0 first PK
         val insertId2 = 1003L
         val fkGene0 = SqlForeignKeyGene("Id", insertId2, TableId("Table0"), false, insertId0)
         val pkGene2 = SqlPrimaryKeyGene("Id", "Table1", fkGene0, insertId2)
         val action2 = SqlAction(table1, setOf(fkColumn), insertId2, listOf(pkGene2))
 
+        //another PK on table1, with FK to same first PK in table0
+        //but this is technically invalid, as same column for FK is used as PK, so we have a duplicated PK in table1
         val insertId3 = 1003L
         val fkGene1 = SqlForeignKeyGene("Id", insertId3, TableId("Table0"), false, insertId0)
         val pkGene3 = SqlPrimaryKeyGene("Id", "Table1", fkGene1, insertId3)
