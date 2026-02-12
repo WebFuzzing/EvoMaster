@@ -27,6 +27,7 @@ import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
@@ -138,7 +139,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
             } else {
                 val leafGene = primaryGene.getLeafGene()
-                if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
+                if (leafGene is ObjectGene || leafGene is ArrayGene<*> || leafGene is FixedMapGene<*,*>) {
                     return generateDtoCall(leafGene, actionName, lines).varName
                 }
             }

@@ -64,9 +64,9 @@ class DtoReflectiveAssertRest {
         return ResponseEntity.ok("OK")
     }
 
-//    @PostMapping(path = ["/additional-properties-no-root"], consumes = [MediaType.APPLICATION_JSON_VALUE])
-//    open fun additionalPropertiesNoRoot(@RequestBody body: AdditionalPropsNoRootDto) : ResponseEntity<String>{
-//        return ResponseEntity.ok("OK")
-//    }
+    @PostMapping(path = ["/additional-properties-no-root"], consumes = [MediaType.APPLICATION_JSON_VALUE])
+    open fun additionalPropertiesNoRoot(@RequestBody body: AdditionalPropsNoRootDto) : ResponseEntity<String>{
+        return ResponseEntity.ok("OK")
+    }
 
 }

@@ -12,6 +12,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.datetime.DateGene
 import org.evomaster.core.search.gene.datetime.DateTimeGene
@@ -115,40 +116,7 @@ class DtoWriter(
                     }
                 }
             }
-            dtoCollector.put(dtoName, dtoClass)
-//            if (dtoCollector.contains(dtoName)) {
-//                val dtoClass = dtoCollector[dtoName]!!
-//                val children = gene.getViewOfChildren()
-//                // merge options into a single DTO
-//                children.forEach { childGene ->
-//                    when (childGene) {
-//                        is ObjectGene -> populateDtoClass(dtoClass, childGene)
-//                        is ArrayGene<*> -> {
-//                            val template = childGene.template
-//                            if (template is ObjectGene) {
-//                                populateDtoClass(dtoClass, template)
-//                            }
-//                        }
-//                    }
-//                }
-//                dtoCollector.put(dtoName, dtoClass)
-//            } else {
-//                val dtoClass = DtoClass(dtoName)
-//                val children = gene.getViewOfChildren()
-//                // merge options into a single DTO
-//                children.forEach { childGene ->
-//                    when (childGene) {
-//                        is ObjectGene -> populateDtoClass(dtoClass, childGene)
-//                        is ArrayGene<*> -> {
-//                            val template = childGene.template
-//                            if (template is ObjectGene) {
-//                                populateDtoClass(dtoClass, template)
-//                            }
-//                        }
-//                    }
-//                }
-//                dtoCollector.put(dtoName, dtoClass)
-//            }
+            dtoCollector[dtoName] = dtoClass
         }
     }
 
@@ -160,11 +128,22 @@ class DtoWriter(
         when {
             gene is ObjectGene -> calculateDtoFromObject(gene, actionName)
             gene is ArrayGene<*> -> calculateDtoFromArray(gene, actionName)
+            gene is FixedMapGene<*, *> -> calculateDtoFromFixedMapGene(gene, actionName)
             isPrimitiveGene(gene) -> return
             else -> {
                 throw IllegalStateException("Gene $gene is not supported for DTO payloads for action: $actionName")
             }
         }
+    }
+
+    private fun calculateDtoFromFixedMapGene(gene: FixedMapGene<*, *>, actionName: String) {
+        val dtoName = TestWriterUtils.safeVariableName(actionName)
+        val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(dtoName) }
+        val additionalProperties = gene.getViewOfChildren()!!.filter {
+            it.isPrintable() && !isInactiveOptionalGene(it)
+        } as List<PairGene<Gene, Gene>>
+        addAdditionalProperties(dtoClass, additionalProperties)
+        dtoCollector[dtoName] = dtoClass
     }
 
     private fun isPrimitiveGene(gene: Gene): Boolean {
@@ -178,11 +157,8 @@ class DtoWriter(
         // TODO: Determine strategy for objects that are not defined as a component and do not have a name
         val dtoName = TestWriterUtils.safeVariableName(gene.refType?:actionName)
         val dtoClass = dtoCollector.computeIfAbsent(dtoName) { DtoClass(dtoName) }
-//        if (!dtoCollector.contains(dtoName)) {
-//            val dtoClass = DtoClass(dtoName)
-            populateDtoClass(dtoClass, gene)
-            dtoCollector.put(dtoName, dtoClass)
-//        }
+        populateDtoClass(dtoClass, gene)
+        dtoCollector[dtoName] = dtoClass
     }
 
     private fun calculateDtoFromArray(gene: ArrayGene<*>, actionName: String) {
@@ -205,9 +181,7 @@ class DtoWriter(
             try {
                 val wrappedGene = field.getLeafGene()
                 val dtoField = getDtoField(field.name, wrappedGene)
-//                dtoClass.addField(dtoField)
                 dtoClass.addMapField(field.name, dtoField)
-//                if (wrappedGene is ObjectGene && !dtoCollector.contains(dtoField.type)) {
                 if (wrappedGene is ObjectGene) {
                     calculateDtoFromObject(wrappedGene, dtoField.type)
                 }
@@ -225,37 +199,34 @@ class DtoWriter(
         if (!gene.isFixed) {
             val additionalFields = gene.additionalFields!!.filter {
                 it.isPrintable() && !isInactiveOptionalGene(it)
-            }
-            if (additionalFields.isNotEmpty()) {
-//                val apType =
-//                    if (outputFormat.isJava()) "Map<String,$additionalPropertiesDtoName>" else "MutableMap<String,$additionalPropertiesDtoName>"
-//                val dtoField = DtoField("additionalProperties", apType)
-//                dtoClass.additionalProperties = dtoField
-                dtoClass.hasAdditionalProperties = true
-                additionalFields.forEach { field ->
-                    try {
-                        val wrappedGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
-//                        val dtoField = getDtoField(field.first.value, wrappedGene)
-//                        dtoClass.addField(dtoField)
-//                        if (wrappedGene is ObjectGene && !dtoCollector.contains(additionalPropertiesDtoName)) {
-                        if (wrappedGene is ObjectGene) {
-                            val additionalPropertiesDtoName = wrappedGene.refType?:"${dtoClass.name}_ap"
-                            dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
-                            calculateDtoFromObject(wrappedGene, additionalPropertiesDtoName)
-                        }
-                        if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
-                            val additionalPropertiesDtoName = wrappedGene.template.refType?:"${dtoClass.name}_ap"
-                            dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
-                            calculateDtoFromObject(wrappedGene.template, additionalPropertiesDtoName)
-                        }
-                    } catch (ex: Exception) {
-                        log.warn(
-                            "A failure has occurred when collecting DTOs. \n"
-                                    + "Exception: ${ex.localizedMessage} \n"
-                                    + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-                        )
-                        assert(false)
+            } as List<PairGene<Gene, Gene>>
+            addAdditionalProperties(dtoClass, additionalFields)
+        }
+    }
+
+    private fun addAdditionalProperties(dtoClass: DtoClass, additionalProperties: List<PairGene<Gene, Gene>>) {
+        if (additionalProperties.isNotEmpty()) {
+            dtoClass.hasAdditionalProperties = true
+            additionalProperties.forEach { field ->
+                try {
+                    val wrappedGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
+                    if (wrappedGene is ObjectGene) {
+                        val additionalPropertiesDtoName = wrappedGene.refType?:"${dtoClass.name}_ap"
+                        dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                        calculateDtoFromObject(wrappedGene, additionalPropertiesDtoName)
                     }
+                    if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
+                        val additionalPropertiesDtoName = wrappedGene.template.refType?:"${dtoClass.name}_ap"
+                        dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                        calculateDtoFromObject(wrappedGene.template, additionalPropertiesDtoName)
+                    }
+                } catch (ex: Exception) {
+                    log.warn(
+                        "A failure has occurred when collecting DTO additional properties. \n"
+                                + "Exception: ${ex.localizedMessage} \n"
+                                + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                    )
+                    assert(false)
                 }
             }
         }

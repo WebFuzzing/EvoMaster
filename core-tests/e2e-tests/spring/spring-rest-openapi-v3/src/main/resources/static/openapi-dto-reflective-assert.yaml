@@ -235,27 +235,28 @@ paths:
       responses:
         '204':
           description: Attributes updated
-#  /additional-properties-no-root:
-#    post:
-#      summary: Update ref additionalProperties
-#      requestBody:
-#        required: true
-#        content:
-#          application/json:
-#            schema:
-#              type: object
-#              additionalProperties:
-#                type: object
-#                required:
-#                  - value
-#                properties:
-#                  value:
-#                    type: string
-#                  source:
-#                    type: string
-#      responses:
-#        '204':
-#          description: Attributes updated
+  /additional-properties-no-root:
+    post:
+      summary: Update ref additionalProperties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+                required:
+                  - value
+                  - source
+                properties:
+                  value:
+                    type: string
+                  source:
+                    type: string
+      responses:
+        '204':
+          description: Attributes updated
 
 components:
   schemas:

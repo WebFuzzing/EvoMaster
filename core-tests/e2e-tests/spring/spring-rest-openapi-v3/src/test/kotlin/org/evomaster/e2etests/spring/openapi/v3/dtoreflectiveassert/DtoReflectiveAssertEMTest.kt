@@ -49,6 +49,7 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/enum-examples", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-inline", "OK")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-ref", "OK")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/additional-properties-no-root", "OK")
         }
 
         assertPrimitiveTypeDtoCreated()
@@ -61,6 +62,7 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertEnumExampleDtoCreated()
         assertAdditionalPropertiesInlineDtoCreated()
         assertAdditionalPropertiesRefDtoCreated()
+        assertAdditionalPropertiesNoRootDtoCreated()
     }
 
     private fun assertPrimitiveTypeDtoCreated() {
@@ -148,6 +150,14 @@ class DtoReflectiveAssertEMTest: SpringTestBase() {
         assertProperty(childKlass, childInstance, "name", "Philip")
         assertProperty(childKlass, childInstance, "age", 31)
         assertAdditionalPropertiesFunction(parentKlass, parentInstance, "anotherRandomKey", childInstance)
+    }
+
+    private fun assertAdditionalPropertiesNoRootDtoCreated() {
+        val (parentKlass, parentInstance) = initDtoClass("POST__additional_properties_no_root")
+        val (childKlass, childInstance) = initDtoClass("POST__additional_properties_no_root_ap")
+        assertProperty(childKlass, childInstance, "value", "WebFuzzing")
+        assertProperty(childKlass, childInstance, "source", "Dataset")
+        assertAdditionalPropertiesFunction(parentKlass, parentInstance, "no_root_key", childInstance)
     }
 
     private fun initDtoClass(name: String): Pair<KClass<out Any>, Any> {
