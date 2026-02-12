@@ -44,7 +44,6 @@ class KotlinDtoOutput: JvmDtoOutput() {
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-//        dtoClass.fields.forEach {
         dtoClass.fieldsMap.forEach {
             lines.indented {
                 lines.add("@JsonProperty(\"${it.key}\")")
@@ -55,7 +54,6 @@ class KotlinDtoOutput: JvmDtoOutput() {
         if (dtoClass.hasAdditionalProperties) {
             lines.indented {
                 lines.add("@JsonIgnore")
-//                lines.add("val additionalProperties: MutableMap<String, ${dtoClass.name}_ap> = mutableMapOf<String, ${dtoClass.name}_ap>()")
                 lines.add("private val additionalProperties: MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> = mutableMapOf()")
                 lines.addEmpty()
                 lines.add("@JsonAnyGetter")

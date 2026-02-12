@@ -181,7 +181,7 @@ class DtoWriter(
             try {
                 val wrappedGene = field.getLeafGene()
                 val dtoField = getDtoField(field.name, wrappedGene)
-                dtoClass.addMapField(field.name, dtoField)
+                dtoClass.addField(field.name, dtoField)
                 if (wrappedGene is ObjectGene) {
                     calculateDtoFromObject(wrappedGene, dtoField.type)
                 }

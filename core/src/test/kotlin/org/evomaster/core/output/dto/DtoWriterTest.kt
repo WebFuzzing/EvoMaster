@@ -108,7 +108,6 @@ class DtoWriterTest {
             assertEquals(collectedDtos.size, 1)
             val oneOfDto = collectedDtos[collectedDtos.keys.first()]
             assertNotNull(oneOfDto)
-//            val dtoFields = oneOfDto?.fields?:emptyList()
             val dtoFields = oneOfDto?.fieldsMap?:emptyMap()
             assertEquals(dtoFields.size, 2)
             assertDtoFieldIn(dtoFields, "dog", STRING)
@@ -127,7 +126,6 @@ class DtoWriterTest {
         assertEquals(collectedDtos.size, 1)
         val anyOfDto = collectedDtos[collectedDtos.keys.first()]
         assertNotNull(anyOfDto)
-//        val dtoFields = anyOfDto?.fields?:emptyList()
         val dtoFields = anyOfDto?.fieldsMap?:emptyMap()
         assertEquals(dtoFields.size, 2)
         assertDtoFieldIn(dtoFields, "email", STRING)
@@ -145,7 +143,4 @@ class DtoWriterTest {
         assertThat(dtoFields[targetName], `is`(DtoField(targetName, targetType)))
     }
 
-    private fun assertDtoFieldIn(dtoFields: List<DtoField>, targetName: String, targetType: String) {
-        assertThat(dtoFields, hasItem(DtoField(targetName, targetType)))
-    }
 }

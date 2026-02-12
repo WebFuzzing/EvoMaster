@@ -3,7 +3,6 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
-import org.evomaster.core.utils.StringUtils
 import java.nio.file.Path
 
 class JavaDtoOutput: JvmDtoOutput() {
@@ -24,7 +23,6 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
-//        return "$dtoVarName.set${StringUtils.capitalization(attributeName)}($value);"
         return "$dtoVarName.set${capitalizeFirstChar(attributeName)}($value);"
     }
 
@@ -56,7 +54,6 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-//        dtoClass.fields.forEach {
         dtoClass.fieldsMap.forEach {
             lines.indented {
                 lines.add("@JsonProperty(\"${it.key}\")")
@@ -74,11 +71,9 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
-//        dtoClass.fields.forEach {
         dtoClass.fieldsMap.forEach {
             val varName = it.key
             val varType = it.value.type
-//            val capitalizedVarName = StringUtils.capitalization(varName)
             val capitalizedVarName = capitalizeFirstChar(varName)
             lines.indented {
                 lines.add("public Optional<${varType}> get${capitalizedVarName}() {")

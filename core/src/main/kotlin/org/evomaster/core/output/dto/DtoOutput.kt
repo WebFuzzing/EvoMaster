@@ -52,6 +52,13 @@ interface DtoOutput {
      */
     fun getAddElementToListStatement(listVarName: String, value: String): String
 
+    /**
+     * @param additionalPropertiesVarName variable in which the additionalProperties will be added
+     * @param key for the additional property to be added to the DTO
+     * @param value variable name representing the additional properties
+     *
+     * @return the add additional properties statement
+     */
     fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String
 
 }

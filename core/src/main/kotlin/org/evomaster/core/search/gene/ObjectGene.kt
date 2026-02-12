@@ -333,7 +333,6 @@ class ObjectGene(
                     if (it.isNotEmpty() && includedFields.isNotEmpty())
                         buffer.append(", ")
                 }.joinTo(buffer, ", ") {
-//                    val sec = it.second
                     "\"${it.first.value}\":${it.second.getValueAsPrintableString(previousGenes, mode, targetFormat)}"
                 }
             }
