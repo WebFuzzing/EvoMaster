@@ -634,7 +634,7 @@ class TestSuiteWriter {
         val wireMockServers = getActiveWireMockServers()
 
         val executable = if (config.useEnvVarsForPathInTests){
-            "$EXTRACT_SUT_PATH_ENV_VAR_METHOD(${config.sutDistEnvVarName}, ${config.sutJarEnvVarName})"
+            "$EXTRACT_SUT_PATH_ENV_VAR_METHOD(\"${config.sutDistEnvVarName}\", \"${config.sutJarEnvVarName}\")"
         }else{
             if (controllerInput.isNullOrBlank()) ""
             else "\"$controllerInput\"".replace("\\", "\\\\")
