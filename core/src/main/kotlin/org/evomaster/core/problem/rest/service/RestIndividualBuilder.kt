@@ -135,7 +135,7 @@ class RestIndividualBuilder {
                 .forEach { it.shiftIdBy(delta) }
         }
 
-        val duplicates = base.addInitializingActions(env)
+        val duplicates = base.addInitializingActions(envOther)
 
         other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
             base.addMainEnterpriseActionGroup(group)

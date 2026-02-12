@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.root.SimpleGene
@@ -59,8 +60,14 @@ class SqlForeignKeyGene(
         }
         uniqueId += delta
         if(isBound()){
-            need to check
-            uniqueIdOfPrimaryKey += delta
+            val ind = getRoot() as EnterpriseIndividual
+            val action = ind.seeSqlDbActions().find{it.insertionId == uniqueIdOfPrimaryKey}
+                ?: throw IllegalStateException("FK in $uniqueId is bound to PK $uniqueIdOfPrimaryKey," +
+                        " but there is no action found for it")
+            if(!action.representExistingData) {
+                // as the ids of existing data is never modified, we shall not change the links to them
+                uniqueIdOfPrimaryKey += delta
+            }
         }
     }
 
