@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.*;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceSnapshot;
+import org.evomaster.client.java.controller.api.dto.ControlDependenceGraphDto;
 import org.evomaster.client.java.instrumentation.object.ClassToSchema;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -30,6 +32,8 @@ import java.util.stream.Collectors;
  * </p>
  */
 public abstract class EmbeddedSutController extends SutController {
+
+    private int controlDependenceGraphIndex = 0;
 
     @Override
     public final void setupForGeneratedTest(){
@@ -137,5 +141,22 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final void bootingSut(boolean bootingSut) {
         ObjectiveRecorder.setBooting(bootingSut);
+    }
+
+    @Override
+    public List<ControlDependenceGraphDto> getControlDependenceGraphs() {
+        ControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(controlDependenceGraphIndex);
+        controlDependenceGraphIndex = snapshot.getNextIndex();
+        return snapshot.getGraphs();
+    }
+
+    @Override
+    public void setControlDependenceGraphsEnabled(boolean enableGraphs) {
+        InstrumentationController.setControlDependenceGraphsEnabled(enableGraphs);
+    }
+
+    @Override
+    public void setWriteCfgEnabled(boolean writeCfg) {
+        InstrumentationController.setWriteCfgEnabled(writeCfg);
     }
 }
