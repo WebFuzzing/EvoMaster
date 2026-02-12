@@ -12,4 +12,12 @@ abstract class WriterTestBase {
         config.addTestComments = false
         return config
     }
+
+    fun getNumberOfFlakyComment(config : EMConfig, testContent: String): Int{
+        val commentFlag = if (config.outputFormat.isJavaOrKotlin())
+            "//"
+        else if (config.outputFormat.isPython()) "#"
+        else throw IllegalStateException("Not supported yet")
+        return  Regex("$commentFlag Flaky").findAll(testContent).count()
+    }
 }

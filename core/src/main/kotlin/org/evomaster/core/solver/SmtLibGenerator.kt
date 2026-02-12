@@ -10,6 +10,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.controller.api.dto.database.schema.ForeignKeyDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
@@ -386,8 +387,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
-                    val onExpression = join.onExpression
-                    if (onExpression != null) {
+                    val onExpressions = join.onExpressions
+                    if (onExpressions.isNotEmpty()) {
+                        val onExpression = onExpressions.elementAt(0)
                         val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
                         val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
                         for (i in 1..numberOfRows) {
@@ -459,7 +461,17 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         val tablesFinder = TablesNamesFinder()
 
         // Add tables from the FROM clause
-        for (tableName in tablesFinder.getTables(sqlQuery)){
+        val tables = try {
+            tablesFinder.getTables(sqlQuery)
+        } catch (e: Exception) {
+            // This is because the jsqlParser does not support visit(Execute execute) {
+            //        throw new UnsupportedOperationException(NOT_SUPPORTED_YET); }
+            // https://github.com/JSQLParser/JSqlParser/blob/484eaa1c0f623cc67f8bf324e4367f8474eb77f1/src/main/java/net/sf/jsqlparser/util/TablesNamesFinder.java#L1180
+            LoggingUtil.getInfoLogger().error("Failed to find tables: ${e.message}")
+            emptySet<String>()
+        }
+
+        for (tableName in tables){
             tablesMentioned.add(tableName.lowercase())
         }
 
@@ -512,7 +524,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "INTEGER" to "Int",
+            "TINYINT" to "Int",
             "TIMESTAMP" to "Int",
+            "DATE" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
             "DECIMAL" to "Real",

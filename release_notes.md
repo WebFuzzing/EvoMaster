@@ -2,11 +2,23 @@
 
 Under development in `master` branch.
 
+### New Features
+
+- Introduced _--maxTestsPerTestSuite_, with default value of 200. 
+  This is to avoid generating single output test files with thousands of tests.
+  Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
+   A negative value means no constraint is applied (i.e., old behavior).  
+- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info. 
+
 ### Fixed Bugs
 
 - fixed a connection leak when authentication fails.
 - fixed few edge cases that led to crashes related to handling of MongoDB objects.
 - fixed bug in handling of SQL databases, where commands leading to inconsistent state (eg, duplicated keys) were not properly removed. 
+
+### Addressed GitHub Issues
+
+- #1442: UninitializedPropertyAccessException: lateinit property mutator not initialized in MioAlgorithm when using --sqli true 
 
 # Version 5.0.2
 
