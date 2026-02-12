@@ -196,7 +196,7 @@ public class EMTestUtils {
         String javaHome = System.getenv(envVarName);
 
         if (javaHome == null || javaHome.isEmpty()) {
-            throw new RuntimeException("Cannot find "+envVarName);
+            throw new IllegalArgumentException("Environment variable does not seem to be defined: " + envVarName);
         }
 
         Path javaExecutable = Paths.get(javaHome, others);
