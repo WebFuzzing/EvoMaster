@@ -63,6 +63,10 @@ class TestSuiteWriter {
         private const val fixture = "_fixture"
         private const val browser = "browser"
         private var containsDtos = false
+
+        private const val EXTRACT_JDK_PATH_ENV_VAR_METHOD = "extractJDKPathWithEnvVarName"
+        private const val EXTRACT_SUT_PATH_ENV_VAR_METHOD = "extractSutJarNameWithEnvVarName"
+
     }
 
     @Inject
@@ -609,6 +613,10 @@ class TestSuiteWriter {
     }
 
     private fun getJavaCommand(): String {
+        if (config.useEnvVarsForPathInTests){
+            return ".setJavaCommand($EXTRACT_JDK_PATH_ENV_VAR_METHOD(\"${config.jdkEnvVarName}\"))"
+        }
+
         if (config.javaCommand != "java") {
             val java = config.javaCommand.replace("\\", "\\\\")
             return ".setJavaCommand(\"$java\")"
@@ -625,8 +633,12 @@ class TestSuiteWriter {
 
         val wireMockServers = getActiveWireMockServers()
 
-        val executable = if (controllerInput.isNullOrBlank()) ""
-        else "\"$controllerInput\"".replace("\\", "\\\\")
+        val executable = if (config.useEnvVarsForPathInTests){
+            "$EXTRACT_SUT_PATH_ENV_VAR_METHOD(${config.sutDistEnvVarName}, ${config.sutJarEnvVarName})"
+        }else{
+            if (controllerInput.isNullOrBlank()) ""
+            else "\"$controllerInput\"".replace("\\", "\\\\")
+        }
 
         if (config.outputFormat.isJava()) {
             if (!config.blackBox || config.bbExperiments) {
