@@ -2650,7 +2650,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Use environment variables to define the paths required by External Drivers. " +
-            "This is necessary when the generated tests are executed on the same machine. " +
+            "This is necessary when the generated tests are executed on the different machine. " +
             "Note that this setting only affects the generated test cases.")
     var useEnvVarsForPathInTests = false
 
