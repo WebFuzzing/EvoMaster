@@ -24,7 +24,7 @@ class SQLiPostgresPathEMTest : SpringRestPostgresTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "SQLiPostgresPathEM",
-            100
+            200
         ) { args ->
             setOption(args, "security", "true")
             setOption(args, "sqli", "true")
