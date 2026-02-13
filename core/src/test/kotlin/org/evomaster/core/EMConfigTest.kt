@@ -719,4 +719,25 @@ internal class EMConfigTest{
         assertEquals(config.maxTestCaseNameLength, different)
     }
 
+
+    @Test
+    fun testUseEnvVarsForPathInTests(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["useEnvVarsForPathInTests"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val optionAllEmpty = parser.parse("--useEnvVarsForPathInTests", "true")
+        assertThrows(Exception::class.java, {config.updateProperties(optionAllEmpty)})
+
+        val optionOneMissing = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME")
+        assertThrows(Exception::class.java, {config.updateProperties(optionOneMissing)})
+
+        val optionAllSpecified = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME", "--sutJarEnvVarName", "sut-jar.jar")
+        assertDoesNotThrow ({config.updateProperties(optionAllSpecified)})
+
+        val optionAllSpecifiedNotRest = parser.parse("--useEnvVarsForPathInTests", "true", "--jdkEnvVarName", "JDK_HOME", "--sutDistEnvVarName", "WFC_HOME", "--sutJarEnvVarName", "sut-jar.jar", "--problemType", "RPC")
+        assertThrows (Exception::class.java,{config.updateProperties(optionAllSpecifiedNotRest)})
+
+    }
 }
