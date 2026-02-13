@@ -75,11 +75,10 @@ class SqlLogSeqNumberGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlLogSeqNumberGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return leftPart.containsSameValueAs(other.leftPart)
                 && rightPart.containsSameValueAs(other.rightPart)
-
     }
 
 
