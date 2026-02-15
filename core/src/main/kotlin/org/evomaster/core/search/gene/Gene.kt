@@ -414,7 +414,7 @@ abstract class Gene(
      *  This is necessary when constraints involved more than 1 gene, possibly
      *  in different actions.
      */
-    open fun isGloballyValid(): Boolean {
+    fun isGloballyValid(): Boolean {
         if (!isLocallyValid()) {
             return false
         }

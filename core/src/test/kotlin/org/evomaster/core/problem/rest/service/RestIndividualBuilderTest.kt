@@ -141,7 +141,7 @@ class RestIndividualBuilderTest {
                 SqlPrimaryKeyGene(
                     "ID", TableId("T2"),
                     ImmutableDataHolderGene("ID", "3", inQuotes = false),
-                    uniqueId = 2L
+                    uniqueId = 3L
                 )
             ),
             representExistingData = true
@@ -240,7 +240,7 @@ class RestIndividualBuilderTest {
                 SqlPrimaryKeyGene(
                     "ID", TableId("T2"),
                     ImmutableDataHolderGene("ID", "3", inQuotes = false),
-                    uniqueId = 2L
+                    uniqueId = 3L
                 )
             ),
             representExistingData = true
@@ -260,7 +260,7 @@ class RestIndividualBuilderTest {
                 SqlPrimaryKeyGene(
                     "ID", TableId("T2"),
                     ImmutableDataHolderGene("ID", "5", inQuotes = false),
-                    uniqueId = 2L
+                    uniqueId = 5L
                 )
             ),
             representExistingData = true

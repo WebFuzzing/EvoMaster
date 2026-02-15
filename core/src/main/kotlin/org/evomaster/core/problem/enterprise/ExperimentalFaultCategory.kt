@@ -11,18 +11,34 @@ enum class ExperimentalFaultCategory(
 
     //9xx for experimental, work-in-progress oracles
 
-    HTTP_INVALID_PAYLOAD_SYNTAX(901, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
+    //security
+    //Likely this one is not really viable
+    //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
+    //  "TODO")
+    IGNORE_ANONYMOUS(900, "A Protected Resource Is Accessible Without Providing Any Authentication",
+        "ignoreAnonymous",
         "TODO"),
-    HTTP_INVALID_LOCATION(902, "Invalid Location HTTP Header", "returnsInvalidLocationHeader",
+    ANONYMOUS_MODIFICATIONS(901, "Anonymous Modifications",
+        "anonymousModifications",
         "TODO"),
-    HTTP_NONWORKING_DELETE(903,"DELETE Method Does Not Work", "deleteDoesNotWork",
+    LEAKED_STACK_TRACES(902, "Leaked Stack Trace",
+        "leakedStackTrace",
         "TODO"),
-    HTTP_REPEATED_CREATE_PUT(904, "Repeated PUT Creates Resource With 201", "repeatedCreatePut",
+
+
+
+    HTTP_INVALID_PAYLOAD_SYNTAX(911, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",
+        "TODO"),
+    HTTP_INVALID_LOCATION(912, "Invalid Location HTTP Header", "returnsInvalidLocationHeader",
+        "TODO"),
+    HTTP_NONWORKING_DELETE(913,"DELETE Method Does Not Work", "deleteDoesNotWork",
+        "TODO"),
+    HTTP_REPEATED_CREATE_PUT(914, "Repeated PUT Creates Resource With 201", "repeatedCreatePut",
         "TODO"),
 
 
     //3xx: GraphQL
-    GQL_ERROR_FIELD(910, "Error Field", "returnedErrors",
+    GQL_ERROR_FIELD(920, "Error Field", "returnedErrors",
         "TODO"),
 
     //4xx: RPC
@@ -47,19 +63,6 @@ enum class ExperimentalFaultCategory(
         "TODO"),
     //6xx: mobile
 
-    //security
-    //Likely this one is not really viable
-    //SECURITY_ALLOW_MODIFICATION_BY_ALL(985, "Resource Created By An User Can Be Modified By All Other Users", "createdResourceCanBeModifiedByEveryone",
-      //  "TODO")
-    SECURITY_FORGOTTEN_AUTHENTICATION(980, "A Protected Resource Is Accessible Without Providing Any Authentication",
-        "forgottenAuthentication",
-        "TODO"),
-    SECURITY_STACK_TRACE(981, "Stack Trace",
-        "stackTrace",
-        "TODO"),
-    ANONYMOUS_WRITE(982, "Anonymous Write",
-        "anonymousWrite",
-        "TODO"),
     ;
 
     override fun getCode(): Int {

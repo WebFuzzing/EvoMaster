@@ -12,6 +12,7 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
@@ -278,7 +279,11 @@ class SecurityRest {
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
-            handleSqlICheck()
+            if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
+                // in white-box testing, if no that the SUT is not using any SQL database, then no point
+                // in trying any kind of SQLi attack
+                handleSqlICheck()
+            }
         }
 
         if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
@@ -295,7 +300,7 @@ class SecurityRest {
             handleExistenceLeakage()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
             log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             handleStackTraceCheck()
@@ -320,13 +325,13 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
             log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             handleAnonymousWriteCheck()
@@ -337,8 +342,9 @@ class SecurityRest {
 
     private fun handleSqlICheck(){
 
-        mainloop@ for(action in actionDefinitions){
+        val K = config.sqliBaselineMaxResponseTimeMs
 
+        mainloop@ for(action in actionDefinitions){
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -352,41 +358,49 @@ class SecurityRest {
                 continue
             }
 
-            // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val candidates = successfulIndividuals.mapNotNull { ei ->
+                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    ei,
+                    action.verb,
+                    action.path,
+                    statusGroup = StatusGroup.G_2xx
+                )
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
+                if(actionIndex < 0){
+                    null
+                } else {
+                    val action = ei.individual.seeMainExecutableActions()[actionIndex]
+                    val result = ei.seeResult(action.getLocalId()) as HttpWsCallResult
+                    val time = result.getResponseTimeMs()
+                    if(time == null || time >= K ){
+                        //make sure the call didn't take too long
+                        null
+                    } else {
+                        // Slice to keep only up to the target action
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ei.individual, actionIndex)
+                    }
+                }
             }
 
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
+            // Take the smallest successful individual
+            val target = candidates.minBy { it.size() }
 
             // Try each sqli payload (but only add one test per endpoint)
             for(payload in SQLI_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
+                val copy = target.copy() as RestIndividual
                 val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
                 var anySuccess = false
 
+                //here we try to modify ALL potential genes
                 genes.forEach {
                         gene ->
                     val leafGene = gene.getLeafGene().getPhenotype()
@@ -409,7 +423,7 @@ class SecurityRest {
                     continue
                 }
 
-                val newInd = builder.merge(sliced, copy)
+                val newInd = builder.merge(target, copy)
 
                 newInd.modifySampleType(SampleType.SECURITY)
                 newInd.ensureFlattenedStructure()
@@ -428,7 +442,6 @@ class SecurityRest {
                     assert(added)
                     continue@mainloop
                 }
-
             }
         }
     }
@@ -568,7 +581,7 @@ class SecurityRest {
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+            if(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories){
                 val added = archive.addIfNeeded(evaluatedIndividual)
                 assert(added)
                 continue@mainloop
@@ -1087,9 +1100,8 @@ class SecurityRest {
 
         mainloop@ for(action in actionDefinitions){
 
-
             // Find individuals with 2xx response for this endpoint
-            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            val successfulIndividuals = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 action.verb,
                 action.path,
@@ -1101,37 +1113,21 @@ class SecurityRest {
             }
 
             // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val target = successfulIndividuals.minBy { it.size() }
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
-            }
-
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
 
             // Try each XSS payload (but only add one test per endpoint)
             for(payload in XSS_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
-                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+                var copy = target.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last()
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
 
                 val anySuccess = genes.map { gene ->
@@ -1144,6 +1140,7 @@ class SecurityRest {
 
                 // Try to add a linked GET operation for stored XSS detection
                 //TODO to properly handle POST, we need first to finish the work on CallGraphService
+                //FIXME ie we need to guarantee it is working on same resource
                 if(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT || action.verb == HttpVerb.PATCH){
                     copy = tryAttachLinkedGetForStoredXSS(
                         ind = copy,

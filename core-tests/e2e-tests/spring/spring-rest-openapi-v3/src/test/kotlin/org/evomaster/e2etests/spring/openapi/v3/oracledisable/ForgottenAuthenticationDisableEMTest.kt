@@ -31,14 +31,14 @@ class ForgottenAuthenticationDisableEMTest : SpringTestBase(){
             setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
             setOption(args, "useExperimentalOracles", "true")
-            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION.code.toString())
+            setOption(args, "disabledOracleCodes", ExperimentalFaultCategory.IGNORE_ANONYMOUS.code.toString())
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
 
             val faults = DetectedFaultUtils.getDetectedFaultCategories(solution)
-            assertFalse(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION in faults)
+            assertFalse(ExperimentalFaultCategory.IGNORE_ANONYMOUS in faults)
 
         }
     }
