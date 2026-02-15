@@ -339,7 +339,7 @@ abstract class Individual(
      * Returns true if the initialization actions
      * are correct (i.e. all constraints are satisfied)
      */
-    abstract fun verifyInitializationActions(): Boolean
+    abstract fun isValidInitializationActions(): Boolean
 
     /**
      * Attempts to repair the initialization actions.

@@ -29,7 +29,7 @@ class ConstantIndividual(val action: ConstantAction) : Individual(children= muta
     }
 
 
-    override fun verifyInitializationActions(): Boolean {
+    override fun isValidInitializationActions(): Boolean {
         return true
     }
 

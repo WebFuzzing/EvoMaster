@@ -18,7 +18,7 @@ object SqlActionUtils {
 
     private val log: Logger = LoggerFactory.getLogger(SqlActionUtils::class.java)
 
-    fun verifyForeignKeys(actions: List<SqlAction>): Boolean {
+    fun isValidForeignKeys(actions: List<SqlAction>): Boolean {
 
         for (i in 0 until actions.size) {
 
@@ -75,7 +75,7 @@ object SqlActionUtils {
             it.randomize(randomness, false)
         }
 
-        Lazy.assert { verifyForeignKeys(actions) }
+        Lazy.assert { isValidForeignKeys(actions) }
     }
 
     private const val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
@@ -170,42 +170,48 @@ object SqlActionUtils {
     }
 
     /**
-     * Returns true iff all action are valid wrt the schema.
-     * For example
+     * Returns true iff all actions are valid, and break no constraint
      */
-    fun verifyActions(actions: List<SqlAction>): Boolean {
-        return verifyUniqueColumns(actions)
-                && verifyForeignKeys(actions)
-                && verifyExistingDataFirst(actions)
-                && verifyUniqueInsertionId(actions)
+    fun isValidActions(actions: List<SqlAction>, flattenedIndividual: Boolean = true): Boolean {
+        return isValidUniqueColumns(actions)
+                && isValidForeignKeys(actions)
+                && isValidExistingDataFirst(actions, flattenedIndividual)
+                && isValidUniqueInsertionId(actions)
     }
 
-    fun checkActions(actions: List<SqlAction>){
+    /**
+     * Throw an [IllegalStateException] if any constraint is violated
+     */
+    fun verifyActions(actions: List<SqlAction>, flattenedIndividual: Boolean){
 
-        if(!verifyActions(actions)){
-            if(!verifyUniqueColumns(actions)){
+        if(!isValidActions(actions)){
+            if(!isValidUniqueColumns(actions)){
                 throw IllegalStateException("Unsatisfied unique column constraints")
             }
-            if(!verifyForeignKeys(actions)){
+            if(!isValidForeignKeys(actions)){
                 throw IllegalStateException("Unsatisfied foreign key constraints")
             }
-            if(!verifyExistingDataFirst(actions)){
+            if(!isValidExistingDataFirst(actions, flattenedIndividual)){
                 throw IllegalStateException("Unsatisfied existing data constraints")
             }
-            if(!verifyUniqueInsertionId((actions))){
+            if(!isValidUniqueInsertionId((actions))){
                 throw IllegalArgumentException("There are duplicate insertion ids")
             }
             throw IllegalStateException("Bug in EvoMaster, unhandled verification case in SQL properties")
         }
     }
 
-    fun verifyUniqueInsertionId(actions: List<SqlAction>) : Boolean{
+    fun isValidUniqueInsertionId(actions: List<SqlAction>) : Boolean{
         val ids = actions.map { it.insertionId }
         val duplicates = CollectionUtils.duplicates(ids)
         return duplicates.isEmpty()
     }
 
-    fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{
+    fun isValidExistingDataFirst(actions: List<SqlAction>, flattenedIndividual: Boolean) : Boolean{
+        if(!flattenedIndividual){
+            //in those cases, resource nodes in main action might use existing data, so they would not be at beginning
+            return true
+        }
         val startingIndex = actions.indexOfLast { it.representExistingData } + 1
         return actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }.isEmpty()
     }
@@ -214,7 +220,7 @@ object SqlActionUtils {
      * Returns false if a insertion tries to insert a repeated value
      * in a unique column
      */
-    fun verifyUniqueColumns(actions: List<SqlAction>): Boolean {
+    fun isValidUniqueColumns(actions: List<SqlAction>): Boolean {
         val offendingGene = findFirstOffendingGeneWithIndex(actions)
         return (offendingGene.first == null)
     }
@@ -532,7 +538,7 @@ object SqlActionUtils {
                 fk.uniqueIdOfPrimaryKey = found.uniqueId
             }
         }
-        if (!verifyForeignKeys(sqlActions))
+        if (!isValidForeignKeys(sqlActions))
             throw IllegalStateException("FK repair fails")
     }
 

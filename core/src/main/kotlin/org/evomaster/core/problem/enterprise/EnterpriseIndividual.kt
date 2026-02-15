@@ -17,7 +17,6 @@ import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 
 /**
@@ -202,7 +201,11 @@ abstract class EnterpriseIndividual(
 
         super.verifyValidity(checkForTaints)
 
-        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
+        SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>(), isFlattenedStructure())
+    }
+
+    override fun isValidInitializationActions(): Boolean {
+        return SqlActionUtils.isValidActions(seeInitializingActions().filterIsInstance<SqlAction>(), isFlattenedStructure())
     }
 
     protected open fun doFlattenStructure() : Boolean{
@@ -211,7 +214,7 @@ abstract class EnterpriseIndividual(
         return false
     }
 
-    private fun isFlattenedStructure() : Boolean{
+    protected fun isFlattenedStructure() : Boolean{
         return groupsView()!!.getAllInGroup(GroupsOfChildren.MAIN).all { it is EnterpriseActionGroup<*> }
     }
 
@@ -311,9 +314,7 @@ abstract class EnterpriseIndividual(
      */
     fun seeExternalServiceActions() : List<ApiExternalServiceAction> = seeActions(ActionFilter.ONLY_EXTERNAL_SERVICE) as List<ApiExternalServiceAction>
 
-    override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
-    }
+
 
     override fun repairInitializationActions(randomness: Randomness) {
 
@@ -335,7 +336,7 @@ abstract class EnterpriseIndividual(
          * Note: this is only for DB Actions in the initialization phase, and NOT if there is any
          * afterwards (eg in resource-based handling).
          */
-        if (!verifyInitializationActions()) {
+        if (!isValidInitializationActions()) {
             if (log.isTraceEnabled){
                 log.trace("invoke SqlActionUtils.repairBrokenDbActionsList")
             }
@@ -353,7 +354,7 @@ abstract class EnterpriseIndividual(
             //needed if actions were removed in the list "previous"
             resetInitializingActions(previous)
 
-            Lazy.assert{verifyInitializationActions()}
+            Lazy.assert{isValidInitializationActions()}
         }
     }
 

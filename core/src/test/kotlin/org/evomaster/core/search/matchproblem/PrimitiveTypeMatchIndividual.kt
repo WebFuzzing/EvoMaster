@@ -46,7 +46,7 @@ open class PrimitiveTypeMatchIndividual (action: PrimitiveTypeMatchAction) :  In
 
     val gene : Gene = (children[0] as PrimitiveTypeMatchAction).seeTopGenes()[0]
 
-    override fun verifyInitializationActions(): Boolean {
+    override fun isValidInitializationActions(): Boolean {
         //do nothing
         return true
     }
