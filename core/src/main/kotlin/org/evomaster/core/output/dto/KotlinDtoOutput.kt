@@ -32,20 +32,54 @@ class KotlinDtoOutput: JvmDtoOutput() {
         return "$listVarName.add($value)"
     }
 
+    override fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String {
+        return "$additionalPropertiesVarName.addAdditionalProperty($key, $value)"
+    }
+
     private fun declareClass(lines: Lines, dtoFilename: String, dtoClass: DtoClass) {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
-        lines.add("class $dtoFilename(")
+        lines.add("class $dtoFilename {")
         addVariables(lines, dtoClass)
-        lines.add(")")
+        lines.add("}")
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${it.name}\")")
-                lines.add("var ${it.name}: ${it.type}? = null,")
+                lines.add("@JsonProperty(\"${it.key}\")")
+                lines.add("var ${it.key}: ${it.value.type}? = null")
             }
             lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties()) {
+            lines.indented {
+                /*
+                 * We ignore additionalProperties map since otherwise Jackson will attempt to serialize it as
+                 * { ..., "additionalProperties": { ... } }
+                 * Where actually what we need is the inner object with the different key-values.
+                 */
+                lines.add("@JsonIgnore")
+                lines.add("private val additionalProperties: MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> = mutableMapOf()")
+                lines.addEmpty()
+
+                // Ensures that entries stored in additionalProperties are flattened into the JSON object serialization.
+                lines.add("@JsonAnyGetter")
+                lines.add("fun getAdditionalProperties(): MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> {")
+                lines.indented {
+                    lines.add("return additionalProperties")
+                }
+                lines.add("}")
+                lines.addEmpty()
+
+                // Allows the DTO to accept JSON properties that are not declared as explicit fields.
+                lines.add("@JsonAnySetter")
+                lines.add("fun addAdditionalProperty(name: String, value: ${dtoClass.additionalPropertiesDtoName}) {")
+                lines.indented {
+                    lines.add("additionalProperties[name] = value")
+                }
+                lines.add("}")
+                lines.addEmpty()
+            }
         }
     }
 

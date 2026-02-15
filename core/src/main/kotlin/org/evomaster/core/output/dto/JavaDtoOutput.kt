@@ -3,7 +3,7 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
-import org.evomaster.core.utils.StringUtils
+import org.evomaster.core.utils.StringUtils.capitalizeFirstChar
 import java.nio.file.Path
 
 class JavaDtoOutput: JvmDtoOutput() {
@@ -24,7 +24,7 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
-        return "$dtoVarName.set${StringUtils.capitalization(attributeName)}($value);"
+        return "$dtoVarName.set${capitalizeFirstChar(attributeName)}($value);"
     }
 
     override fun getNewListStatement(listType: String, listVarName: String): String {
@@ -33,6 +33,10 @@ class JavaDtoOutput: JvmDtoOutput() {
 
     override fun getAddElementToListStatement(listVarName: String, value: String): String {
         return "$listVarName.add($value);"
+    }
+
+    override fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String {
+        return "$additionalPropertiesVarName.addAdditionalProperty($key, $value);"
     }
 
     private fun initClass(lines: Lines, dtoFilename: String) {
@@ -51,20 +55,32 @@ class JavaDtoOutput: JvmDtoOutput() {
     }
 
     private fun addVariables(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
+        dtoClass.fieldsMap.forEach {
             lines.indented {
-                lines.add("@JsonProperty(\"${it.name}\")")
-                lines.add("private Optional<${it.type}> ${it.name};")
+                lines.add("@JsonProperty(\"${it.key}\")")
+                lines.add("private Optional<${it.value.type}> ${it.key};")
+            }
+            lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties()) {
+            lines.indented {
+                /*
+                 * We ignore additionalProperties map since otherwise Jackson will attempt to serialize it as
+                 * { ..., "additionalProperties": { ... } }
+                 * Where actually what we need is the inner object with the different key-values.
+                 */
+                lines.add("@JsonIgnore")
+                lines.add("private Map<String, ${dtoClass.additionalPropertiesDtoName}> additionalProperties = new HashMap<>();")
             }
             lines.addEmpty()
         }
     }
 
     private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
-        dtoClass.fields.forEach {
-            val varName = it.name
-            val varType = it.type
-            val capitalizedVarName = StringUtils.capitalization(varName)
+        dtoClass.fieldsMap.forEach {
+            val varName = it.key
+            val varType = it.value.type
+            val capitalizedVarName = capitalizeFirstChar(varName)
             lines.indented {
                 lines.add("public Optional<${varType}> get${capitalizedVarName}() {")
                 lines.indented {
@@ -75,6 +91,26 @@ class JavaDtoOutput: JvmDtoOutput() {
                 lines.add("public void set${capitalizedVarName}(${varType} ${varName}) {")
                 lines.indented {
                     lines.add("this.${varName} = Optional.ofNullable(${varName});")
+                }
+                lines.add("}")
+            }
+            lines.addEmpty()
+        }
+        if (dtoClass.hasAdditionalProperties()) {
+            lines.indented {
+                // Ensures that entries stored in additionalProperties are flattened into the JSON object serialization.
+                lines.add("@JsonAnyGetter")
+                lines.add("public Map<String, ${dtoClass.additionalPropertiesDtoName}> getAdditionalProperties() {")
+                lines.indented {
+                    lines.add("return additionalProperties;")
+                }
+                lines.add("}")
+                lines.addEmpty()
+                // Allows the DTO to accept JSON properties that are not declared as explicit fields.
+                lines.add("@JsonAnySetter")
+                lines.add("public void addAdditionalProperty(String name, ${dtoClass.additionalPropertiesDtoName} value) {")
+                lines.indented {
+                    lines.add("this.additionalProperties.put(name, value);")
                 }
                 lines.add("}")
             }
