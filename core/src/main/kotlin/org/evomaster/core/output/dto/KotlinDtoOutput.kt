@@ -51,11 +51,18 @@ class KotlinDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
-        if (dtoClass.hasAdditionalProperties) {
+        if (dtoClass.hasAdditionalProperties()) {
             lines.indented {
+                /*
+                 * We ignore additionalProperties map since otherwise Jackson will attempt to serialize it as
+                 * { ..., "additionalProperties": { ... } }
+                 * Where actually what we need is the inner object with the different key-values.
+                 */
                 lines.add("@JsonIgnore")
                 lines.add("private val additionalProperties: MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> = mutableMapOf()")
                 lines.addEmpty()
+
+                // Ensures that entries stored in additionalProperties are flattened into the JSON object serialization.
                 lines.add("@JsonAnyGetter")
                 lines.add("fun getAdditionalProperties(): MutableMap<String, ${dtoClass.additionalPropertiesDtoName}> {")
                 lines.indented {
@@ -63,6 +70,8 @@ class KotlinDtoOutput: JvmDtoOutput() {
                 }
                 lines.add("}")
                 lines.addEmpty()
+
+                // Allows the DTO to accept JSON properties that are not declared as explicit fields.
                 lines.add("@JsonAnySetter")
                 lines.add("fun addAdditionalProperty(name: String, value: ${dtoClass.additionalPropertiesDtoName}) {")
                 lines.indented {

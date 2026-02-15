@@ -44,13 +44,4 @@ abstract class JvmDtoOutput: DtoOutput {
         path.toFile().appendText(testFileContent)
     }
 
-    fun capitalizeFirstChar(word: String) : String {
-        if(word.isEmpty()){
-            return word
-        }
-
-        return word.substring(0, 1).uppercase() +
-                word.substring(1)
-    }
-
 }

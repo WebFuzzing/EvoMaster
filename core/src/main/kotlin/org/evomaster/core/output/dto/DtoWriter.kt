@@ -194,29 +194,29 @@ class DtoWriter(
     }
 
     private fun addAdditionalProperties(dtoClass: DtoClass, additionalProperties: List<PairGene<Gene, Gene>>) {
-        if (additionalProperties.isNotEmpty()) {
-            dtoClass.hasAdditionalProperties = true
-            additionalProperties.forEach { field ->
-                try {
-                    val wrappedGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
-                    if (wrappedGene is ObjectGene) {
-                        val additionalPropertiesDtoName = wrappedGene.refType?:"${dtoClass.name}_ap"
-                        dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
-                        calculateDtoFromObject(wrappedGene, additionalPropertiesDtoName)
-                    }
-                    if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
-                        val additionalPropertiesDtoName = wrappedGene.template.refType?:"${dtoClass.name}_ap"
-                        dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
-                        calculateDtoFromObject(wrappedGene.template, additionalPropertiesDtoName)
-                    }
-                } catch (ex: Exception) {
-                    log.warn(
-                        "A failure has occurred when collecting DTO additional properties. \n"
-                                + "Exception: ${ex.localizedMessage} \n"
-                                + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-                    )
-                    assert(false)
+        if (additionalProperties.isEmpty()) {
+            return
+        }
+        additionalProperties.forEach { field ->
+            try {
+                val wrappedGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
+                if (wrappedGene is ObjectGene) {
+                    val additionalPropertiesDtoName = wrappedGene.refType?:"${dtoClass.name}_ap"
+                    dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                    calculateDtoFromObject(wrappedGene, additionalPropertiesDtoName)
                 }
+                if (wrappedGene is ArrayGene<*> && wrappedGene.template is ObjectGene) {
+                    val additionalPropertiesDtoName = wrappedGene.template.refType?:"${dtoClass.name}_ap"
+                    dtoClass.additionalPropertiesDtoName = additionalPropertiesDtoName
+                    calculateDtoFromObject(wrappedGene.template, additionalPropertiesDtoName)
+                }
+            } catch (ex: Exception) {
+                log.warn(
+                    "A failure has occurred when collecting DTO additional properties. \n"
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                )
+                assert(false)
             }
         }
     }

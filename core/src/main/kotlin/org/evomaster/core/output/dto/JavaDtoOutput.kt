@@ -3,6 +3,7 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
+import org.evomaster.core.utils.StringUtils.capitalizeFirstChar
 import java.nio.file.Path
 
 class JavaDtoOutput: JvmDtoOutput() {
@@ -61,8 +62,13 @@ class JavaDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
-        if (dtoClass.hasAdditionalProperties) {
+        if (dtoClass.hasAdditionalProperties()) {
             lines.indented {
+                /*
+                 * We ignore additionalProperties map since otherwise Jackson will attempt to serialize it as
+                 * { ..., "additionalProperties": { ... } }
+                 * Where actually what we need is the inner object with the different key-values.
+                 */
                 lines.add("@JsonIgnore")
                 lines.add("private Map<String, ${dtoClass.additionalPropertiesDtoName}> additionalProperties = new HashMap<>();")
             }
@@ -90,8 +96,9 @@ class JavaDtoOutput: JvmDtoOutput() {
             }
             lines.addEmpty()
         }
-        if (dtoClass.hasAdditionalProperties) {
+        if (dtoClass.hasAdditionalProperties()) {
             lines.indented {
+                // Ensures that entries stored in additionalProperties are flattened into the JSON object serialization.
                 lines.add("@JsonAnyGetter")
                 lines.add("public Map<String, ${dtoClass.additionalPropertiesDtoName}> getAdditionalProperties() {")
                 lines.indented {
@@ -99,6 +106,7 @@ class JavaDtoOutput: JvmDtoOutput() {
                 }
                 lines.add("}")
                 lines.addEmpty()
+                // Allows the DTO to accept JSON properties that are not declared as explicit fields.
                 lines.add("@JsonAnySetter")
                 lines.add("public void addAdditionalProperty(String name, ${dtoClass.additionalPropertiesDtoName} value) {")
                 lines.indented {

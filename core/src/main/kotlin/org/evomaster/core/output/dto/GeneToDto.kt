@@ -149,60 +149,61 @@ class GeneToDto(
     }
 
     private fun setAdditionalProperties(dtoName: String, dtoVarName: String, result: MutableList<String>, counters: MutableList<Int>, additionalProperties: List<PairGene<Gene, Gene>>) {
-        if (additionalProperties.isNotEmpty()) {
-            var additionalPropertiesCounter = 1
-            additionalProperties.forEach { field ->
-                try {
-                    val childCounter = mutableListOf<Int>()
-                    childCounter.addAll(counters)
-                    childCounter.add(additionalPropertiesCounter++)
-                    val key = (field as PairGene<StringGene, Gene>).first.getLeafGene()
-                        .getValueAsPrintableString(targetFormat = outputFormat)
-                    val leafGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
-                    val additionalPropertiesVarName = when (leafGene) {
-                        is ObjectGene -> {
-                            val attributeName = leafGene.refType ?: "${dtoName}_ap"
-                            val childDtoCall =
-                                getDtoCall(leafGene, getDtoName(leafGene, attributeName, true), childCounter, true)
-                            result.addAll(childDtoCall.objectCalls)
-                            childDtoCall.varName
-                        }
-
-                        is ArrayGene<*> -> {
-                            val attributeName = if (leafGene.template is ObjectGene) {
-                                leafGene.template.refType ?: "${dtoName}_ap"
-                            } else {
-                                getListType("", leafGene.template, true)
-                            }
-                            val childDtoCall = getArrayDtoCall(
-                                leafGene,
-                                getDtoName(leafGene, attributeName, true),
-                                childCounter,
-                                attributeName,
-                                true
-                            )
-
-                            result.addAll(childDtoCall.objectCalls)
-                            childDtoCall.varName
-                        }
-
-                        else -> throw IllegalStateException("Additional properties should only be Map related genes")
+        if (additionalProperties.isEmpty()) {
+            return
+        }
+        var additionalPropertiesCounter = 1
+        additionalProperties.forEach { field ->
+            try {
+                val childCounter = mutableListOf<Int>()
+                childCounter.addAll(counters)
+                childCounter.add(additionalPropertiesCounter++)
+                val key = (field as PairGene<StringGene, Gene>).first.getLeafGene()
+                    .getValueAsPrintableString(targetFormat = outputFormat)
+                val leafGene = (field as PairGene<StringGene, Gene>).second.getLeafGene()
+                val additionalPropertiesVarName = when (leafGene) {
+                    is ObjectGene -> {
+                        val attributeName = leafGene.refType ?: "${dtoName}_ap"
+                        val childDtoCall =
+                            getDtoCall(leafGene, getDtoName(leafGene, attributeName, true), childCounter, true)
+                        result.addAll(childDtoCall.objectCalls)
+                        childDtoCall.varName
                     }
-                    result.add(
-                        dtoOutput.getAddElementToAdditionalPropertiesStatement(
-                            dtoVarName,
-                            key,
-                            additionalPropertiesVarName
+
+                    is ArrayGene<*> -> {
+                        val attributeName = if (leafGene.template is ObjectGene) {
+                            leafGene.template.refType ?: "${dtoName}_ap"
+                        } else {
+                            getListType("", leafGene.template, true)
+                        }
+                        val childDtoCall = getArrayDtoCall(
+                            leafGene,
+                            getDtoName(leafGene, attributeName, true),
+                            childCounter,
+                            attributeName,
+                            true
                         )
-                    )
-                } catch (ex: Exception) {
-                    log.warn(
-                        "A failure has occurred when writing DTOs. \n"
-                                + "Exception: ${ex.localizedMessage} \n"
-                                + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
-                    )
-                    assert(false)
+
+                        result.addAll(childDtoCall.objectCalls)
+                        childDtoCall.varName
+                    }
+
+                    else -> throw IllegalStateException("Additional properties should only be Map related genes")
                 }
+                result.add(
+                    dtoOutput.getAddElementToAdditionalPropertiesStatement(
+                        dtoVarName,
+                        key,
+                        additionalPropertiesVarName
+                    )
+                )
+            } catch (ex: Exception) {
+                log.warn(
+                    "A failure has occurred when writing DTOs. \n"
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "
+                )
+                assert(false)
             }
         }
     }
