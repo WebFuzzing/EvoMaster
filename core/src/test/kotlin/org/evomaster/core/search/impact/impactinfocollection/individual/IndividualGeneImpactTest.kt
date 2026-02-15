@@ -333,7 +333,7 @@ class IndividualGeneImpactTest {
         override fun size(): Int = seeAllActions().size
 
 
-        override fun isValidInitializationActions(): Boolean {
+        override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
             return true
         }
 

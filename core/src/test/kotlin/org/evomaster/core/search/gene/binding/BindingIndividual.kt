@@ -23,5 +23,5 @@ class BindingIndividual(val genes : MutableList<Gene>) : Individual(children = m
     override fun repairInitializationActions(randomness: Randomness) {
     }
 
-    override fun isValidInitializationActions(): Boolean = true
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean = true
 }

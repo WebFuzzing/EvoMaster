@@ -201,11 +201,19 @@ abstract class EnterpriseIndividual(
 
         super.verifyValidity(checkForTaints)
 
-        SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>(), isFlattenedStructure())
+        val errors = mutableListOf<String>()
+        val ok = isValidInitializationActions(errors)
+        if(!ok){
+            throw IllegalStateException("Invalid initialization actions:\n${errors.joinToString("\n")}")
+        }
     }
 
-    override fun isValidInitializationActions(): Boolean {
-        return SqlActionUtils.isValidActions(seeInitializingActions().filterIsInstance<SqlAction>(), isFlattenedStructure())
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
+        return SqlActionUtils.isValidActions(
+            seeInitializingActions().filterIsInstance<SqlAction>(),
+            isFlattenedStructure(),
+            errors
+        )
     }
 
     protected open fun doFlattenStructure() : Boolean{

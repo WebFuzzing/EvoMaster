@@ -52,7 +52,7 @@ class DbActionUtilsTest {
         val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
         val action0 = SqlAction(table, setOf(x, y), 0L, listOf(gx0, gy0))
 
-        assertTrue(SqlActionUtils.isValidUniqueColumns(listOf(action0)))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(listOf(action0)))
 
         //second action with exact same PK
         val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
@@ -60,7 +60,7 @@ class DbActionUtilsTest {
         val action1 = SqlAction(table, setOf(x, y), 1L, listOf(gx1, gy1))
 
         //validation should fail
-        assertFalse(SqlActionUtils.isValidUniqueColumns(listOf(action0, action1)))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(listOf(action0, action1)))
 
 
         //third action with inverted values
@@ -69,7 +69,7 @@ class DbActionUtilsTest {
         val action2 = SqlAction(table, setOf(x, y), 2L, listOf(gx2, gy2))
 
         //should be fine
-        assertTrue(SqlActionUtils.isValidUniqueColumns(listOf(action0, action2)))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(listOf(action0, action2)))
 
 
         //fourth action with one column as same value
@@ -78,7 +78,7 @@ class DbActionUtilsTest {
         val action3 = SqlAction(table, setOf(x, y), 3L, listOf(gx3, gy3))
 
         //should still be fine, as PK is composed of 2 columns
-        assertTrue(SqlActionUtils.isValidUniqueColumns(listOf(action0, action3)))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(listOf(action0, action3)))
     }
 
     @Test
@@ -110,7 +110,7 @@ class DbActionUtilsTest {
         val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
         val action0 = SqlAction(table, setOf(x, y), 0L, listOf(gx0, gy0))
 
-        assertTrue(SqlActionUtils.isValidUniqueColumns(listOf(action0)))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(listOf(action0)))
 
         //second action with exact same PK
         val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
@@ -118,7 +118,7 @@ class DbActionUtilsTest {
         val action1 = SqlAction(table, setOf(x, y), 1L, listOf(gx1, gy1))
 
         //validation should fail
-        assertFalse(SqlActionUtils.isValidUniqueColumns(listOf(action0, action1)))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(listOf(action0, action1)))
 
 
         //third action with different y
@@ -127,7 +127,7 @@ class DbActionUtilsTest {
         val action2 = SqlAction(table, setOf(x, y), 2L, listOf(gx2, gy2))
 
         //should still fail, due to unique x
-        assertFalse(SqlActionUtils.isValidUniqueColumns(listOf(action0, action2)))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(listOf(action0, action2)))
 
 
         //fourth action with same y, and different x
@@ -136,7 +136,7 @@ class DbActionUtilsTest {
         val action3 = SqlAction(table, setOf(x, y), 3L, listOf(gx3, gy3))
 
         //should be fine, as PK is composed of 2 columns, and y does not need to be unique
-        assertTrue(SqlActionUtils.isValidUniqueColumns(listOf(action0, action3)))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(listOf(action0, action3)))
     }
 
 
@@ -158,7 +158,7 @@ class DbActionUtilsTest {
 
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertTrue(SqlActionUtils.isValidActions(actions))
 
@@ -182,7 +182,7 @@ class DbActionUtilsTest {
 
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertTrue(SqlActionUtils.isValidActions(actions))
 
@@ -206,7 +206,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 
@@ -234,7 +234,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 
@@ -261,7 +261,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 
@@ -288,7 +288,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 
@@ -329,7 +329,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1, action2)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
         assertFalse(SqlActionUtils.isValidActions(actions))
 
         val listWasNotTruncated = SqlActionUtils.repairBrokenDbActionsList(actions, randomness)
@@ -337,7 +337,7 @@ class DbActionUtilsTest {
         assertEquals(false, listWasNotTruncated)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
         assertTrue(SqlActionUtils.isValidActions(actions))
 
         assertEquals(2, actions.size)
@@ -365,7 +365,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 
@@ -394,7 +394,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertTrue(SqlActionUtils.isValidActions(actions))
 
@@ -437,7 +437,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertTrue(SqlActionUtils.isValidActions(actions))
 
@@ -480,7 +480,7 @@ class DbActionUtilsTest {
         val actions = mutableListOf(action0, action1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertTrue(SqlActionUtils.isValidUniqueColumns(actions))
+        assertTrue(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertTrue(SqlActionUtils.isValidActions(actions))
 
@@ -538,7 +538,7 @@ class DbActionUtilsTest {
         val ind = RestIndividual(mutableListOf(), SampleType.RANDOM,null,actions,null,-1)
 
         assertTrue(SqlActionUtils.isValidForeignKeys(actions))
-        assertFalse(SqlActionUtils.isValidUniqueColumns(actions))
+        assertFalse(SqlActionUtils.isValidColumnConstraints(actions))
 
         assertFalse(SqlActionUtils.isValidActions(actions))
 

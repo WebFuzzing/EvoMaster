@@ -338,8 +338,9 @@ abstract class Individual(
     /**
      * Returns true if the initialization actions
      * are correct (i.e. all constraints are satisfied)
+     * If [errors] is provided, then error messages will be added to it (if any)
      */
-    abstract fun isValidInitializationActions(): Boolean
+    abstract fun isValidInitializationActions(errors: MutableList<String>? = null): Boolean
 
     /**
      * Attempts to repair the initialization actions.

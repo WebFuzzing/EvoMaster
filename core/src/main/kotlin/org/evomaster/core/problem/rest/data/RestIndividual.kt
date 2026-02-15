@@ -227,10 +227,11 @@ class RestIndividual(
     }
 
     //FIXME refactor
-    override fun isValidInitializationActions(): Boolean {
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
         return SqlActionUtils.isValidActions(
             seeInitializingActionsPlusRelatedActions().filterIsInstance<SqlAction>(),
-            isFlattenedStructure()
+            isFlattenedStructure(),
+            errors
         )
     }
 

@@ -29,7 +29,7 @@ class ConstantIndividual(val action: ConstantAction) : Individual(children= muta
     }
 
 
-    override fun isValidInitializationActions(): Boolean {
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
         return true
     }
 
