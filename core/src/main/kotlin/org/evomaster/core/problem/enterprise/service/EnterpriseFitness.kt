@@ -96,7 +96,7 @@ abstract class EnterpriseFitness<T> : FitnessFunction<T>() where T : Individual 
         }
 
         val startingIndex = allSqlActions.indexOfLast { it.representExistingData } + 1
-        if(!SqlActionUtils.verifyExistingDataFirst(allSqlActions)){
+        if(!SqlActionUtils.isValidExistingDataFirst(allSqlActions, true)){
             throw IllegalArgumentException("SQLAction representing existing data are not in order")
         }
 

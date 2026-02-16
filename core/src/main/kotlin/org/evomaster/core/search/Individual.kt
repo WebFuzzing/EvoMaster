@@ -180,11 +180,9 @@ abstract class Individual(
      * All invariants should always be satisfied after any modification of the individual.
      * If not, this is a bug.
      */
-    fun verifyValidity(checkForTaints: Boolean = false){
+    open fun verifyValidity(checkForTaints: Boolean = false){
 
         groupsView()?.verifyGroups()
-
-        SqlActionUtils.checkActions(seeInitializingActions().filterIsInstance<SqlAction>())
 
         seeAllActions().forEach { a ->
             if(!a.isGloballyValid()){
@@ -340,8 +338,9 @@ abstract class Individual(
     /**
      * Returns true if the initialization actions
      * are correct (i.e. all constraints are satisfied)
+     * If [errors] is provided, then error messages will be added to it (if any)
      */
-    abstract fun verifyInitializationActions(): Boolean
+    abstract fun isValidInitializationActions(errors: MutableList<String>? = null): Boolean
 
     /**
      * Attempts to repair the initialization actions.

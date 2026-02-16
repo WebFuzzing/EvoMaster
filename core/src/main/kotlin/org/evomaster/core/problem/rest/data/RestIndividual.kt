@@ -16,7 +16,6 @@ import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.*
 import org.evomaster.core.search.action.ActionFilter.*
 import org.evomaster.core.search.action.EnvironmentAction
-import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.tracer.Traceable
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
@@ -228,8 +227,12 @@ class RestIndividual(
     }
 
     //FIXME refactor
-    override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActionsPlusRelatedActions().filterIsInstance<SqlAction>())
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
+        return SqlActionUtils.isValidActions(
+            seeInitializingActionsPlusRelatedActions().filterIsInstance<SqlAction>(),
+            isFlattenedStructure(),
+            errors
+        )
     }
 
     /**

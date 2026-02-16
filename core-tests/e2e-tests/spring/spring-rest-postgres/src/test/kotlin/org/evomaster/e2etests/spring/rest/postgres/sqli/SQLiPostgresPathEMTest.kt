@@ -24,10 +24,12 @@ class SQLiPostgresPathEMTest : SpringRestPostgresTestBase() {
 
         runTestHandlingFlakyAndCompilation(
             "SQLiPostgresPathEM",
-            100
+            200
         ) { args ->
             setOption(args, "security", "true")
             setOption(args, "sqli", "true")
+            //this is done to force a check on a specific invariant regarding existing data positioning
+            setOption(args, "probOfSelectFromDatabase", "0.9")
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.isNotEmpty())
