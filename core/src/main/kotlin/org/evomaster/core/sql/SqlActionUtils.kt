@@ -10,6 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.sql.schema.Table
 import org.evomaster.core.sql.schema.TableId
+import org.evomaster.core.utils.CollectionUtils
 
 object SqlActionUtils {
 
@@ -17,47 +18,7 @@ object SqlActionUtils {
 
     private val log: Logger = LoggerFactory.getLogger(SqlActionUtils::class.java)
 
-    fun verifyForeignKeys(actions: List<SqlAction>): Boolean {
 
-        for (i in 0 until actions.size) {
-
-            val fks = actions[i].seeTopGenes()
-                    .flatMap { it.flatView() }
-                    .filterIsInstance<SqlForeignKeyGene>()
-
-            if (fks.any { !it.nullable && !it.isBound() }) {
-                return false
-            }
-
-            if (i == 0) {
-                if(fks.isEmpty())
-                    continue
-                else
-                    return false
-            }
-
-            /*
-                note: a row could have FK to itself... weird, but possible.
-                but not sure if we should allow it
-             */
-            val previous = actions.subList(0, i)
-
-            fks.filter { it.isBound() }
-                    .map { it.uniqueIdOfPrimaryKey }
-                    .forEach { id ->
-                        val match = previous.asSequence()
-                                .flatMap { it.seeTopGenes().asSequence() }
-                                .filterIsInstance<SqlPrimaryKeyGene>()
-                                .any { it.uniqueId == id }
-
-                        if (!match) {
-                            return false
-                        }
-                    }
-        }
-
-        return true
-    }
 
     fun randomizeDbActionGenes(actions: List<SqlAction>, randomness: Randomness) {
         /*
@@ -74,7 +35,7 @@ object SqlActionUtils {
             it.randomize(randomness, false)
         }
 
-        Lazy.assert { verifyForeignKeys(actions) }
+        Lazy.assert { isValidForeignKeys(actions) }
     }
 
     private const val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
@@ -169,43 +130,96 @@ object SqlActionUtils {
     }
 
     /**
-     * Returns true iff all action are valid wrt the schema.
-     * For example
+     * Returns true iff all actions are valid, and break no constraint
      */
-    fun verifyActions(actions: List<SqlAction>): Boolean {
-        return verifyUniqueColumns(actions)
-                && verifyForeignKeys(actions)
-                && verifyExistingDataFirst(actions)
+    fun isValidActions(actions: List<SqlAction>, flattenedIndividual: Boolean = true, errors: MutableList<String>? = null): Boolean {
+        return isValidColumnConstraints(actions, errors)
+                && isValidForeignKeys(actions, errors)
+                && isValidExistingDataFirst(actions, flattenedIndividual, errors)
+                && isValidUniqueInsertionId(actions, errors)
     }
 
-    fun checkActions(actions: List<SqlAction>){
 
-        if(!verifyActions(actions)){
-            if(!verifyUniqueColumns(actions)){
-                throw IllegalStateException("Unsatisfied unique column constraints")
+    fun isValidForeignKeys(actions: List<SqlAction>, errors: MutableList<String>? = null): Boolean {
+
+        for (i in 0 until actions.size) {
+
+            val fks = actions[i].seeTopGenes()
+                .flatMap { it.flatView() }
+                .filterIsInstance<SqlForeignKeyGene>()
+
+            fks.find { !it.nullable && !it.isBound() }
+                ?.let {
+                    errors?.add("FK ${it.name} is not nullable and not bound: this is invalid")
+                    return false
+                }
+
+            if (i == 0) {
+                if(fks.isEmpty()) {
+                    continue
+                }
+                else {
+                    errors?.add("First SQL action has FKs")
+                    return false
+                }
             }
-            if(!verifyForeignKeys(actions)){
-                throw IllegalStateException("Unsatisfied foreign key constraints")
-            }
-            if(!verifyExistingDataFirst(actions)){
-                throw IllegalStateException("Unsatisfied existing data constraints")
-            }
-            throw IllegalStateException("Bug in EvoMaster, unhandled verification case in SQL properties")
+
+            /*
+                note: a row could have FK to itself... weird, but possible.
+                but not sure if we should allow it
+             */
+            val previous = actions.subList(0, i)
+
+            fks.filter { it.isBound() }
+                .map { it.uniqueIdOfPrimaryKey }
+                .forEach { id ->
+                    val match = previous.asSequence()
+                        .flatMap { it.seeTopGenes().asSequence() }
+                        .filterIsInstance<SqlPrimaryKeyGene>()
+                        .any { it.uniqueId == id }
+
+                    if (!match) {
+                        errors?.add("FK is pointing to $id, but such action could not be found in previous insertions.")
+                        return false
+                    }
+                }
         }
+
+        return true
     }
 
-    fun verifyExistingDataFirst(actions: List<SqlAction>) : Boolean{
+    fun isValidUniqueInsertionId(actions: List<SqlAction>, errors: MutableList<String>? = null) : Boolean{
+        val ids = actions.map { it.insertionId }
+        val duplicates = CollectionUtils.duplicates(ids)
+        if(duplicates.isNotEmpty()) {
+            errors?.add("Duplicate Insertion IDs: $duplicates")
+        }
+        return duplicates.isEmpty()
+    }
+
+    fun isValidExistingDataFirst(actions: List<SqlAction>, flattenedIndividual: Boolean, errors: MutableList<String>? = null) : Boolean{
+        if(!flattenedIndividual){
+            //in those cases, resource nodes in main action might use existing data, so they would not be at beginning
+            return true
+        }
         val startingIndex = actions.indexOfLast { it.representExistingData } + 1
-        return actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }.isEmpty()
+        val invalid = actions.filterIndexed { i,a-> i<startingIndex && !a.representExistingData }
+        if(invalid.isNotEmpty()){
+            errors?.add("In flattened individual, existing data is not at beginning of sequence. Invalid indices: $invalid")
+        }
+        return invalid.isEmpty()
     }
 
     /**
      * Returns false if a insertion tries to insert a repeated value
      * in a unique column
      */
-    fun verifyUniqueColumns(actions: List<SqlAction>): Boolean {
+    fun isValidColumnConstraints(actions: List<SqlAction>, errors: MutableList<String>? = null): Boolean {
         val offendingGene = findFirstOffendingGeneWithIndex(actions)
-        return (offendingGene.first == null)
+        if(offendingGene.first != null) {
+            errors?.add("Invalid column constraints for action at index ${offendingGene.second}")
+        }
+        return offendingGene.first == null
     }
 
 
@@ -214,7 +228,7 @@ object SqlActionUtils {
      * table that the action is inserting to.
      * It also returns one of the genes involved in the constraint that is not being
      * satisfied.
-     * If no such gene is found, the function returns the tuple (-1,null).
+     * If no such gene is found, the function returns the tuple (null,-1).
      * If randomness is provided, the returning gene is randomly selected from all the genes in the constraint
      */
     private fun checkIfTableConstraintsAreSatisfied(
@@ -521,7 +535,7 @@ object SqlActionUtils {
                 fk.uniqueIdOfPrimaryKey = found.uniqueId
             }
         }
-        if (!verifyForeignKeys(sqlActions))
+        if (!isValidForeignKeys(sqlActions))
             throw IllegalStateException("FK repair fails")
     }
 
