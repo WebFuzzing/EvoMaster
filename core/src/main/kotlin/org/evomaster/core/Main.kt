@@ -1,10 +1,10 @@
 package org.evomaster.core
 
+import com.google.inject.Inject
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import com.webfuzzing.commons.faults.DefinedFaultCategory
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
@@ -33,7 +33,6 @@ import org.evomaster.core.problem.rest.service.module.RestModule
 import org.evomaster.core.problem.rpc.RPCIndividual
 import org.evomaster.core.problem.rpc.service.RPCModule
 import org.evomaster.core.problem.security.service.HttpCallbackVerifier
-import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.problem.webfrontend.WebIndividual
 import org.evomaster.core.problem.webfrontend.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -245,7 +244,7 @@ class Main {
 
         private fun runAndPostProcess(injector: Injector): Solution<*> {
 
-            checkExperimentalSettings(injector)
+            checkActivatedExperimentalSettings(injector)
 
             val controllerInfo = checkState(injector)
 
@@ -266,6 +265,7 @@ class Main {
             //apply new phases
             solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseSecurity(injector, config, epc, solution)
+            solution = phaseFlaky(injector, config, epc, solution)
 
             epc.startWriteOutput()
             val suites = writeTests(injector, solution, controllerInfo)
@@ -415,6 +415,35 @@ class Main {
                 }
             }
         }
+
+        private fun phaseFlaky(
+            injector: Injector,
+            config: EMConfig,
+            epc: ExecutionPhaseController,
+            solution: Solution<*>
+        ): Solution<*> {
+            if (!config.handleFlakiness){
+                return solution
+            }
+
+            return when (config.problemType) {
+                EMConfig.ProblemType.REST -> {
+                    LoggingUtil.getInfoLogger().info("Starting to apply flaky detection")
+                    epc.startFlakiness()
+
+                    val flakinessDetector = injector.getInstance(Key.get(object : TypeLiteral<FlakinessDetector<RestIndividual>>() {}))
+                    flakinessDetector.reexecuteToDetectFlakiness()
+                } else -> {
+                    LoggingUtil.getInfoLogger()
+                        .warn("Flakiness detection phase currently not handled for problem type: ${config.problemType}")
+                    solution
+                }
+            }
+
+
+
+        }
+
 
         private fun phaseSecurity(
             injector: Injector,
@@ -841,11 +870,11 @@ class Main {
         /**
          * Log a warning if any experimental setting is used
          */
-        private fun checkExperimentalSettings(injector: Injector) {
+        private fun checkActivatedExperimentalSettings(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            val experimental = config.experimentalFeatures()
+            val experimental = config.activatedExperimentalFeatures()
 
             if (experimental.isEmpty()) {
                 return
@@ -854,10 +883,10 @@ class Main {
             val options = "[" + experimental.joinToString(", ") + "]"
 
             logWarn(
-                "Using experimental settings." +
+                "Some experimental settings have been activated." +
                         " Those might not work as expected, or simply straight out crash." +
                         " Furthermore, they might simply be incomplete features still under development." +
-                        " Used experimental settings: $options"
+                        " Activated experimental settings: $options"
             )
         }
 

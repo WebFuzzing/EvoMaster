@@ -10,4 +10,5 @@ object DocumentationLinks {
     const val EM_AUTH_LINK = "https://github.com/WebFuzzing/EvoMaster/blob/master/docs/auth.md"
     const val EM_DOCKER_LINK = "https://github.com/WebFuzzing/EvoMaster/blob/master/docs/docker.md"
     const val EM_ISSUES_LINK = "https://github.com/WebFuzzing/EvoMaster/issues"
+    const val EM_CLI_LINK = "https://github.com/WebFuzzing/EvoMaster/blob/master/docs/options.md"
 }

@@ -2,10 +2,18 @@ package org.evomaster.core.output.dto
 
 class DtoClass(
     val name: String,
-    val fields: MutableList<DtoField> = mutableListOf()) {
+    val fieldsMap: MutableMap<String, DtoField> = mutableMapOf(),
+    var additionalPropertiesDtoName: String? = null
+) {
 
-    fun addField(field: DtoField) {
-        if (field !in fields) fields.add(field)
+    fun addField(fieldName: String, field: DtoField) {
+        if (!fieldsMap.containsKey(fieldName)) {
+            fieldsMap[fieldName] = field
+        }
+    }
+
+    fun hasAdditionalProperties(): Boolean {
+        return !additionalPropertiesDtoName.isNullOrEmpty()
     }
 
 }

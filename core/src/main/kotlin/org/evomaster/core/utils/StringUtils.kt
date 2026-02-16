@@ -4,6 +4,13 @@ import java.util.*
 
 object StringUtils {
 
+    /**
+     * Capitalizes a word, lowercasing the rest of the word. For example, stringProperty would be modified into
+     * Stringproperty.
+     *
+     * @param word to be capitalized
+     * @return the capitalized word
+     */
     fun capitalization(word: String) : String{
         if(word.isEmpty()){
             return word
@@ -11,6 +18,23 @@ object StringUtils {
 
         return word.substring(0, 1).uppercase() +
                 word.substring(1).lowercase()
+    }
+
+    /**
+     * Capitalizes the first char of a word, without modifying the rest. For example, stringProperty would be
+     * modified into StringProperty. This is useful for writing setter methods in output, where the name matches
+     * the property being serialized.
+     *
+     * @param word to be capitalized
+     * @return the capitalized word
+     */
+    fun capitalizeFirstChar(word: String) : String {
+        if(word.isEmpty()){
+            return word
+        }
+
+        return word.substring(0, 1).uppercase() +
+                word.substring(1)
     }
 
     /**
