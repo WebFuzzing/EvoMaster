@@ -140,14 +140,14 @@ class ArrayGeneTest {
 
         assertEquals("[10, 20, 30]", jsonOutput)
 
-        assertTrue(jsonOutput.startsWith("["), "JSON debe empezar con corchete de apertura")
-        assertTrue(jsonOutput.endsWith("]"), "JSON debe terminar con corchete de cierre")
-        assertTrue(jsonOutput.contains(", "), "JSON debe contener comas separadoras")
+        assertTrue(jsonOutput.startsWith("["), "JSON must begin with an opening bracket")
+        assertTrue(jsonOutput.endsWith("]"), "JSON must end with a closing bracket")
+        assertTrue(jsonOutput.contains(", "), "JSON must contain comma separators")
     }
 
     @Test
     fun testXmlSerializationEmptyArray(){
-        // Test para verificar que un array vacío en XML no genera corchetes
+        // Test to verify that an empty array in XML does not generate square brackets
         val emptyArray = ArrayGene(
             "items",
             template = StringGene("item"),
@@ -155,8 +155,6 @@ class ArrayGeneTest {
         )
 
         val xmlOutput = emptyArray.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-
-        // Un array vacío en XML debe producir una cadena vacía (sin corchetes)
         assertEquals("", xmlOutput)
     }
 
@@ -185,8 +183,8 @@ class ArrayGeneTest {
         val expected = "<person><name>Alice</name><age>30</age></person><person><name>Bob</name><age>25</age></person>"
         assertEquals(expected, xmlOutput)
 
-        assertTrue(!xmlOutput.contains("["), "XML con objetos no debe contener corchetes")
-        assertTrue(!xmlOutput.contains("]"), "XML con objetos no debe contener corchetes")
+        assertTrue(!xmlOutput.contains("["), "XML with objects should not contain square brackets")
+        assertTrue(!xmlOutput.contains("]"), "XML with objects should not contain square brackets")
     }
 
     @Test
@@ -205,8 +203,8 @@ class ArrayGeneTest {
 
         assertEquals("<root><items><item1>value1</item1><item2>value2</item2></items></root>", xmlOutput)
 
-        assertTrue(!xmlOutput.contains("["), "XML no debe contener corchetes")
-        assertTrue(!xmlOutput.contains("]"), "XML no debe contener corchetes")
-        assertTrue(!xmlOutput.contains(", "), "XML no debe contener comas con espacios")
+        assertTrue(!xmlOutput.contains("["), "XML should not contain square brackets")
+        assertTrue(!xmlOutput.contains("]"), "XML should not contain square brackets")
+        assertTrue(!xmlOutput.contains(", "), "XML must not contain commas with spaces")
     }
 }

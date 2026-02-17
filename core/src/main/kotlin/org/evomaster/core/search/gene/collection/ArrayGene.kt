@@ -227,7 +227,7 @@ class ArrayGene<T>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?, extraCheck: Boolean): String {
 
         val(open,close,sep) = if (mode == GeneUtils.EscapeMode.XML){
-            Triple("","","")
+            Triple("","","") //In XML mode we avoid printing brackets, since XML objects must be represented only through tags.
         }else{
             Triple(openingTag,closingTag, separatorTag)
         }

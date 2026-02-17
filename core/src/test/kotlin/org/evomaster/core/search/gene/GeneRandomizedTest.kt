@@ -48,13 +48,12 @@ class GeneRandomizedTest : AbstractGeneTest(){
             }
         }
 
-        verifyCopyValueFrom(mutable, rand,seed)
+        verifyCopyValueFrom(mutable, rand)
     }
 
     private fun verifyCopyValueFrom(
         mutable: List<Gene>,
-        rand: Randomness,
-        seed: Long
+        rand: Randomness
     ) {
         val printable = mutable.filter { it.isGloballyValid() && it.isPrintable() }
 
@@ -75,39 +74,7 @@ class GeneRandomizedTest : AbstractGeneTest(){
                 //assertTrue(x.containsSameValueAs(y))
             } else {
                 //they must be different. the same genotype must not lead to different phenotypes
-                val containsSame = x.containsSameValueAs(y)
-                if (containsSame) {
-                    // Debug info: find which child gene has the inconsistency
-                    val debugInfo = buildString {
-                        appendLine("=== DEBUG: containsSameValueAs returned TRUE but phenotypes differ ===")
-                        appendLine("Seed: $seed")
-                        appendLine("Gene class: ${root.javaClass.name}")
-                        appendLine("Gene name: ${root.name}")
-                        appendLine("sx (x phenotype): $sx")
-                        appendLine("sy (y phenotype): $sy")
-                        appendLine("x children: ${x.flatView().map { it.javaClass.simpleName + ":" + it.name }.joinToString(", ")}")
-
-                        // Check each child for inconsistency
-                        if (x is ObjectGene && y is ObjectGene) {
-                            for (i in x.fixedFields.indices) {
-                                val xf = x.fixedFields[i]
-                                val yf = y.fixedFields[i]
-                                val xfv = try { xf.getValueAsRawString() } catch (e: Exception) { "ERROR: ${e.message}" }
-                                val yfv = try { yf.getValueAsRawString() } catch (e: Exception) { "ERROR: ${e.message}" }
-                                val same = try { xf.containsSameValueAs(yf) } catch (e: Exception) { false }
-                                if (xfv != yfv && same) {
-                                    appendLine("  INCONSISTENT FIELD[$i]: ${xf.javaClass.simpleName}:${xf.name}")
-                                    appendLine("    xfv: $xfv")
-                                    appendLine("    yfv: $yfv")
-                                    appendLine("    containsSameValueAs: $same")
-                                }
-                            }
-                        }
-                        appendLine("=== END DEBUG ===")
-                    }
-                    System.err.println(debugInfo)
-                }
-                assertFalse(containsSame, "containsSameValueAs should be false when phenotypes differ. Gene: ${root.javaClass.simpleName}")
+                assertFalse(x.containsSameValueAs(y))
 
                 //with same type and constraints, even "unsafe" should always work
                 val wasCopied = x.unsafeCopyValueFrom(y)
@@ -143,8 +110,8 @@ class GeneRandomizedTest : AbstractGeneTest(){
         assertTrue(gene.isLocallyValid(), msg)
         //all tree must be valid, regardless of impact on phenotype
         assertTrue(gene.flatView().all {
-            it.isLocallyValid()
-        }
+                it.isLocallyValid()
+            }
         )
 
         if(gene !is WrapperGene){
