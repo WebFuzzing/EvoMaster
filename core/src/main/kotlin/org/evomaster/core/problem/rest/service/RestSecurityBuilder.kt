@@ -42,13 +42,13 @@ import org.slf4j.LoggerFactory
  * Service class used to do security testing after the search phase.
  *
  * This class can add new test cases to the archive that, by construction, do reveal a security fault.
- * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * But, the actual check if a test indeed finds a fault is in [org.evomaster.core.problem.rest.oracle.RestSecurityOracle]
  * called in the fitness function, and not directly here.
  */
-class SecurityRest {
+class RestSecurityBuilder {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(SecurityRest::class.java)
+        private val log: Logger = LoggerFactory.getLogger(RestSecurityBuilder::class.java)
     }
 
     /**

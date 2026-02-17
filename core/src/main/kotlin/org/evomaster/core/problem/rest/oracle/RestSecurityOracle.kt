@@ -22,6 +22,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.inject.Inject
 
+
+/**
+ * Class in which different oracles to detect security vulnerabilities are implemented.
+ * The function here verify if an individual contains security vulnerabilities.
+ * The actual building of individual that might reveal security vulnerabilities
+ * is done in [org.evomaster.core.problem.rest.service.RestSecurityBuilder]
+ */
 class RestSecurityOracle {
 
     companion object{

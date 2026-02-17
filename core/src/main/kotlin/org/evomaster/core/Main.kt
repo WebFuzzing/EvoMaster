@@ -1,6 +1,5 @@
 package org.evomaster.core
 
-import com.google.inject.Inject
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
@@ -462,7 +461,7 @@ class Main {
 
             return when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
-                    val securityRest = injector.getInstance(SecurityRest::class.java)
+                    val securityRest = injector.getInstance(RestSecurityBuilder::class.java)
                     securityRest.applySecurityPhase()
                 }
 

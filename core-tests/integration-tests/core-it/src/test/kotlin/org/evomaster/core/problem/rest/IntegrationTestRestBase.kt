@@ -8,7 +8,7 @@ import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
 import org.evomaster.core.problem.rest.service.fitness.AbstractRestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
-import org.evomaster.core.problem.rest.service.SecurityRest
+import org.evomaster.core.problem.rest.service.RestSecurityBuilder
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.seeding.service.rest.PirToRest
@@ -51,7 +51,7 @@ abstract class IntegrationTestRestBase : RestTestBase() {
 
     fun getArchive() = injector.getInstance(Archive::class.java) as Archive<RestIndividual>
 
-    fun getSecurityRest() = injector.getInstance(SecurityRest::class.java) as SecurityRest
+    fun getSecurityRest() = injector.getInstance(RestSecurityBuilder::class.java) as RestSecurityBuilder
 
     fun getEMConfig() = injector.getInstance(EMConfig::class.java)
 

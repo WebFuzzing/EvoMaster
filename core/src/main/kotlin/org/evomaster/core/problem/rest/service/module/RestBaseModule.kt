@@ -11,7 +11,7 @@ import org.evomaster.core.problem.rest.service.AIResponseClassifier
 import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.problem.rest.service.HttpSemanticsService
 import org.evomaster.core.problem.rest.service.RestIndividualBuilder
-import org.evomaster.core.problem.rest.service.SecurityRest
+import org.evomaster.core.problem.rest.service.RestSecurityBuilder
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
@@ -71,7 +71,7 @@ open class RestBaseModule : EnterpriseModule() {
         bind(RestSecurityOracle::class.java)
             .asEagerSingleton()
 
-        bind(SecurityRest::class.java)
+        bind(RestSecurityBuilder::class.java)
             .asEagerSingleton()
     }
 }
