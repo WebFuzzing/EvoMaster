@@ -310,7 +310,7 @@ class RestSecurityBuilder {
         }
 
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
-            handleHiddenAccessibleEndpoint()
+            //handleHiddenAccessibleEndpoint()
         }
     }
 
