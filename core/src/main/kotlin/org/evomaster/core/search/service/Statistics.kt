@@ -67,7 +67,7 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var epc : ExecutionPhaseController
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var callGraphService: CallGraphService
 
     /**
