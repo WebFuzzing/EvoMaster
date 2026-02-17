@@ -451,4 +451,12 @@ object RestSecurityOracle {
         return false
     }
 
+
+    fun hasHiddenAccessible(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        return false //TODO
+    }
 }

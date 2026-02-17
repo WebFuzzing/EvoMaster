@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.rest.data.HttpVerb
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
@@ -74,6 +75,24 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getAllow(): String? = getResultValue(ALLOW)
+
+    /**
+     * Return verbs based on "allow" header.
+     * It can return null to indicate there was no allow header.
+     */
+    fun getAllowedVerbs() : Set<HttpVerb>?{
+        val allow = getAllow() ?: return null
+        val fromAllow = allow.split(",")
+            .mapNotNull {
+                try{
+                    HttpVerb.valueOf(it.trim())
+                } catch (e: IllegalArgumentException){
+                    //a bug, but we do not check this here
+                    null
+                }
+            }
+        return fromAllow.toSet()
+    }
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 

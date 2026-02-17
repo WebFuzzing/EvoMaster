@@ -1275,8 +1275,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ){
-        //TODO the other cases
-
         handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
         handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
@@ -1287,6 +1285,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         handleSQLiCheck(individual, actionResults, fv)
         handleXSSCheck(individual, actionResults, fv)
         handleAnonymousWriteCheck(individual, actionResults, fv)
+        handleHiddenAccessible(individual, actionResults, fv)
     }
 
     private fun handleSsrfFaults(
@@ -1520,6 +1519,53 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             }
         }
     }
+
+    private fun handleHiddenAccessible(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ){
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+            return
+        }
+
+        for(index in 0 until individual.seeMainExecutableActions().lastIndex) {
+            val a = individual.seeMainExecutableActions()[index]
+            if(a.verb != HttpVerb.OPTIONS){
+                continue
+            }
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+            //this can happen if an action timeout, or is stopped
+                ?: break
+            val allowedVerbs = r.getAllowedVerbs()
+                ?: continue
+
+            val path = a.path
+            val hidden = allowedVerbs.filter { it != HttpVerb.OPTIONS && !callGraphService.isDeclared(it, path) }
+
+            val target = individual.seeMainExecutableActions()[index+1]
+            if(target.path != path || !hidden.contains(target.verb)){
+                continue
+            }
+
+            val data = actionResults.find { it.sourceLocalId == target.getLocalId() } as RestCallResult?
+                ?: break
+
+            val status = data.getStatusCode()
+                ?: continue
+
+            if(status !in setOf(405,501,403)){
+                // we also consider 403, in case API just give it by default for security reasons
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index+1)
+                data.addFault(DetectedFault(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName(), null))
+            }
+        }
+    }
+
 
     private fun handleXSSCheck(
         individual: RestIndividual,

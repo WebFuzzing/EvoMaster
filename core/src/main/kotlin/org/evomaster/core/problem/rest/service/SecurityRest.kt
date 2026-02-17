@@ -508,23 +508,13 @@ class SecurityRest {
             }
 
             val response = em.first().result as RestCallResult
-            val allow = response.getAllow()
-            if(allow.isNullOrBlank()){
+            val fromAllow = response.getAllowedVerbs()
+            if(fromAllow == null || fromAllow.isEmpty()){
                 continue@mainloop
             }
 
             //is there any difference from what declared in the schema?
-            val declaredInSchema = callGraph.endpointsForPath(path).map { it.verb }
-            val fromAllow = allow.split(",")
-                .mapNotNull {
-                    try{
-                        HttpVerb.valueOf(it.trim())
-                    } catch (e: IllegalArgumentException){
-                        //a bug, but we do not check this under security
-                        null
-                    }
-                }
-            val hidden = fromAllow.filter { it != HttpVerb.OPTIONS && !declaredInSchema.contains(it) }
+            val hidden = fromAllow.filter { it != HttpVerb.OPTIONS && !callGraph.isDeclared(it, path) }
 
             hidden@for(h in hidden){
                 //try to make such calls, after the OPTIONS
