@@ -61,6 +61,9 @@ class SecurityRest {
     private lateinit var sampler: AbstractRestSampler
 
     @Inject
+    private lateinit var callGraph: CallGraphService
+
+    @Inject
     private lateinit var randomness: Randomness
 
     @Inject
@@ -305,7 +308,13 @@ class SecurityRest {
         } else {
             handleStackTraceCheck()
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+            handleHiddenAccessibleEndpoint()
+        }
     }
+
+
 
     private fun accessControlBasedOnRESTGuidelines() {
 
@@ -445,6 +454,96 @@ class SecurityRest {
             }
         }
     }
+
+    /**
+     *   If we send request on endpoint path with wrong verb, we get 405/501.
+     *   When sending OPTIONS, the response should have `Allow` telling what is there.
+     *   That info might be different from what specified in the schema.
+     *   Should check if mismatches with OpenAPI schemas, eg if an extra verbs.
+     *   Let's make a call to those, with valid path, but no query parameters nor any body payloads.
+     *   If we get anything but 405/501 then we discovered a hidden accessible endpoint
+     */
+    private fun handleHiddenAccessibleEndpoint() {
+
+        val actions = actionDefinitions.distinctBy { it.path }
+
+        mainloop@for (a in actions){
+
+            /*
+                first build an action to make a OPTION call on each different path
+             */
+            val pathVariables = a.parameters
+                .filterIsInstance<PathParam>()
+                .map { it.copy() }
+                .toMutableList()
+
+            val verb = HttpVerb.OPTIONS
+            val path = a.path.copy()
+            val actionId = "$verb$path"
+            val authOptions = authSettings.getOfType(HttpWsAuthenticationInfo::class.java)
+            val auth = if(authOptions.isNotEmpty()){
+                authOptions.first()
+            } else {
+                HttpWsNoAuth()
+            }
+
+            val options = RestCallAction(actionId,verb, path, pathVariables, auth)
+            options.doInitialize(randomness)
+
+            //create individual to make the OPTIONS call
+            val ind = RestIndividual(mutableListOf(options), SampleType.SECURITY)
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
+
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate OPTION call")
+                continue@mainloop
+            }
+            archive.addIfNeeded(evaluatedIndividual)
+
+            //now time to check the HTTP response from the OPTIONS call
+            val em = evaluatedIndividual.evaluatedMainActions()
+            if(em.isEmpty()){
+                log.warn("Failed in evaluation of OPTION call")
+                continue@mainloop
+            }
+
+            val response = em.first().result as RestCallResult
+            val allow = response.getAllow()
+            if(allow.isNullOrBlank()){
+                continue@mainloop
+            }
+
+            //is there any difference from what declared in the schema?
+            val declaredInSchema = callGraph.endpointsForPath(path).map { it.verb }
+            val fromAllow = allow.split(",")
+                .mapNotNull {
+                    try{
+                        HttpVerb.valueOf(it.trim())
+                    } catch (e: IllegalArgumentException){
+                        //a bug, but we do not check this under security
+                        null
+                    }
+                }
+            val hidden = fromAllow.filter { it != HttpVerb.OPTIONS && !declaredInSchema.contains(it) }
+
+            hidden@for(h in hidden){
+                //try to make such calls, after the OPTIONS
+                val target = RestCallAction("$h:$path",h, path, pathVariables.map { it.copy() }.toMutableList(), auth)
+
+                val x = RestIndividual(mutableListOf(options.copy(), target), SampleType.SECURITY)
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(x)
+
+                if (ei == null) {
+                    log.warn("Failed to evaluate OPTIONS+TARGET call")
+                    continue@hidden
+                }
+                //whether it is going to be added depends on the response status of the "target" call
+                archive.addIfNeeded(evaluatedIndividual)
+            }
+        }
+    }
+
+
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.
      * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.

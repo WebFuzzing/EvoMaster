@@ -25,6 +25,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
+        const val ALLOW = "ALLOW"
         const val RESPONSE_TIME_MS = "RESPONSE_TIME_MS"
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
@@ -49,7 +50,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
 
     fun setStatusCode(code: Int) {
-        if (code < 100 || code >= 600) {
+        if (code !in 100..<600) {
             throw IllegalArgumentException("Invalid HTTP code $code")
         }
 
@@ -65,6 +66,14 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getLocation(): String? = getResultValue(LOCATION)
+
+    fun setAllow(allow: String?){
+        if(allow != null) {
+            addResultValue(ALLOW, allow)
+        }
+    }
+
+    fun getAllow(): String? = getResultValue(ALLOW)
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 

@@ -62,6 +62,14 @@ class CallGraphService {
         }
     }
 
+    fun endpointsForPath(path: RestPath): List<Endpoint> {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.path == path }
+            .map { Endpoint(it.verb, it.path) }
+    }
+
+
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
      */
