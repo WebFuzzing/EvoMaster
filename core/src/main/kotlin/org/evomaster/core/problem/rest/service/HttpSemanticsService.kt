@@ -90,6 +90,8 @@ class HttpSemanticsService {
 
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
+
+        sideEffectsOfFailedModification()
     }
 
     /**
@@ -197,5 +199,82 @@ class HttpSemanticsService {
             prepareEvaluateAndSave(okDelete)
         }
     }
+
+    /**
+     * Checking bugs like:
+     * GET     /X 2xx  (before state)
+     * PUT|PATCH /X 4xx  (failed modification)
+     * GET     /X 2xx  (after state - should be same as before)
+     *
+     * If a PUT/PATCH fails with 4xx, it should have no side-effects.
+     * A GET before and after should return the same resource state.
+     */
+    private fun sideEffectsOfFailedModification() {
+
+        val verbs = listOf(HttpVerb.PUT, HttpVerb.PATCH)
+
+        for (verb in verbs) {
+
+            val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
+
+            modifyOperations.forEach { modOp ->
+
+                // check that a GET definition exists for this same path
+                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
+                    ?: return@forEach
+
+                // check that a 2xx GET exists in the solution for this path
+                val successGet = RestIndividualSelectorUtils.findAction(
+                    individualsInSolution,
+                    HttpVerb.GET,
+                    modOp.path,
+                    statusGroup = StatusGroup.G_2xx
+                ) ?: return@forEach
+
+                // find individuals where this PUT/PATCH returned 4xx
+                val failedModifications = RestIndividualSelectorUtils.findAndSlice(
+                    individualsInSolution,
+                    verb,
+                    modOp.path,
+                    statusGroup = StatusGroup.G_4xx
+                )
+                if (failedModifications.isEmpty()) {
+                    return@forEach
+                }
+
+                val ind = failedModifications.minBy { it.size() }
+                val actions = ind.seeMainExecutableActions()
+                val last = actions[actions.size - 1] // the failed PUT/PATCH
+
+                // check if there is already a 2xx GET right before the failed PUT/PATCH
+                val hasPreviousGet = ind.size() > 1
+                        && actions[actions.size - 2].let {
+                    it.verb == HttpVerb.GET && it.path == modOp.path
+                            && it.usingSameResolvedPath(last)
+                            && !it.auth.isDifferentFrom(last.auth)
+                }
+
+                val previous = if (!hasPreviousGet) {
+                    val getOp = getDef.copy() as RestCallAction
+                    getOp.doInitialize(randomness)
+                    getOp.forceNewTaints()
+                    getOp.bindToSamePathResolution(last)
+                    getOp.auth = last.auth
+                    ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getOp)
+                    getOp
+                } else {
+                    actions[actions.size - 2]
+                }
+
+                // add GET after the failed PUT/PATCH to verify no side-effects
+                val after = previous.copy() as RestCallAction
+                after.resetLocalIdRecursively()
+                ind.addMainActionInEmptyEnterpriseGroup(-1, after)
+
+                prepareEvaluateAndSave(ind)
+            }
+        }
+    }
+
 
 }
