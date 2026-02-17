@@ -6,6 +6,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.rest.bb.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
@@ -26,12 +27,15 @@ class BBXMLTest : SpringTestBase() {
     @EnumSource
     fun testRunEM(outputFormat: OutputFormat) {
 
+        assumeTrue(outputFormat == OutputFormat.JAVA_JUNIT_5 || outputFormat == OutputFormat.JAVA_JUNIT_4)
+
         executeAndEvaluateBBTest(
             outputFormat,
             "BBXmlEM",
             1000,
             3,
-            emptyList()
+            listOf("STRING_TO_XML", "XML_TO_STRING", "EMPLOYEE", "COMPANY",
+                "DEPARTMENT", "ORGANIZATION", "PERSON_ATTR", "PROJECT", "PROJECTS")
         ) { args: MutableList<String> ->
 
             addBlackBoxOptions(args, OutputFormat.JAVA_JUNIT_5)

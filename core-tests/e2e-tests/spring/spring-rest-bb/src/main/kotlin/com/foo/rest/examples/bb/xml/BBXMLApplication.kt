@@ -1,5 +1,8 @@
 package com.foo.rest.examples.bb.xml
 
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import org.evomaster.e2etests.utils.CoveredTargets
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.boot.SpringApplication
@@ -23,6 +26,10 @@ open class BBXMLApplication {
     /* ===================== ENDPOINTS ===================== */
 
     // 1. String -> XML
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "XML representation of the input string"),
+        ApiResponse(responseCode = "400", description = "Body is blank")
+    ])
     @PostMapping(
         "/receive-string-respond-xml",
         consumes = ["text/plain"],
@@ -32,11 +39,16 @@ open class BBXMLApplication {
         if (body.isBlank())
             return ResponseEntity.status(400).build()
 
+        CoveredTargets.cover("STRING_TO_XML")
         return ResponseEntity.status(200)
             .body(Person(name = body, age = body.length))
     }
 
     // 2. XML -> String
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "String representation of the XML person"),
+        ApiResponse(responseCode = "400", description = "Person name is blank or age is negative")
+    ])
     @PostMapping(
         "/receive-xml-respond-string",
         consumes = ["application/xml"],
@@ -45,12 +57,17 @@ open class BBXMLApplication {
     fun xmlToString(@RequestBody person: Person): ResponseEntity<String> {
         if (!isValid(person))
             return ResponseEntity
-                .status(400).contentType(MediaType.TEXT_PLAIN).body("")
+                .status(400).contentType(MediaType.TEXT_PLAIN).body("invalid person")
 
+        CoveredTargets.cover("XML_TO_STRING")
         return ResponseEntity.status(200).body("not ok")
     }
 
     // 3. Employee (2-level nesting)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Employee processed successfully"),
+        ApiResponse(responseCode = "400", description = "Employee person name is blank or age is negative")
+    ])
     @PostMapping(
         "/employee",
         consumes = ["application/xml"],
@@ -62,6 +79,7 @@ open class BBXMLApplication {
                 .contentType(MediaType.TEXT_PLAIN)
                 .body("invalid input")
 
+        CoveredTargets.cover("EMPLOYEE")
         return ResponseEntity.status(200)
             .body(
                 if (employee.role == Role.ADMIN && employee.person.age > 30)
@@ -72,6 +90,10 @@ open class BBXMLApplication {
     }
 
     // 4. Company (3-level nesting)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Company processed successfully"),
+        ApiResponse(responseCode = "400", description = "Company name is blank")
+    ])
     @PostMapping(
         "/company",
         consumes = ["application/xml"],
@@ -79,13 +101,18 @@ open class BBXMLApplication {
     )
     fun company(@RequestBody company: Company): ResponseEntity<String> {
         if (!isValid(company))
-            return ResponseEntity.status(400).body("")
+            return ResponseEntity.status(400).contentType(MediaType.TEXT_PLAIN).body("invalid company")
 
+        CoveredTargets.cover("COMPANY")
         return ResponseEntity.status(200)
             .body(if (company.employees.isEmpty()) "small company" else "big company")
     }
 
     // 5. Department (recursive)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Department processed successfully"),
+        ApiResponse(responseCode = "400", description = "Department name is blank")
+    ])
     @PostMapping(
         "/department",
         consumes = ["application/xml"],
@@ -97,11 +124,16 @@ open class BBXMLApplication {
                 .contentType(MediaType.TEXT_PLAIN)
                 .body("invalid input")
 
+        CoveredTargets.cover("DEPARTMENT")
         return ResponseEntity.status(200)
             .body("department with ${department.employees.size + 1} employees")
     }
 
     // 6. Organization (3 lists)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Organization processed successfully"),
+        ApiResponse(responseCode = "400", description = "Organization name is blank")
+    ])
     @PostMapping(
         "/organization",
         consumes = ["application/xml"],
@@ -113,11 +145,16 @@ open class BBXMLApplication {
                 .contentType(MediaType.TEXT_PLAIN)
                 .body("invalid input")
 
+        CoveredTargets.cover("ORGANIZATION")
         return ResponseEntity.status(200)
             .body("organization with ${organization.people.size} people")
     }
 
     // 7. Project (attributes)
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Project processed successfully"),
+        ApiResponse(responseCode = "400", description = "Project code is blank")
+    ])
     @PostMapping(
         "/project",
         consumes = ["application/xml"],
@@ -125,7 +162,7 @@ open class BBXMLApplication {
     )
     fun project(@RequestBody project: Project): ResponseEntity<String> {
         if (!isValid(project))
-            return ResponseEntity.status(400).body("")
+            return ResponseEntity.status(400).contentType(MediaType.TEXT_PLAIN).body("invalid project")
 
         var adults = 0
         for (m in project.members) {
@@ -133,6 +170,7 @@ open class BBXMLApplication {
                 adults++
         }
 
+        CoveredTargets.cover("PROJECT")
         return ResponseEntity.status(200).body(
             if (adults > 0)
                 "project ${project.code} has $adults adult members"
@@ -163,6 +201,7 @@ open class BBXMLApplication {
             }
         }
 
+        CoveredTargets.cover("PROJECTS")
         return ResponseEntity.status(200)
             .body(
                 if (hasCode && members > 0)
@@ -173,6 +212,10 @@ open class BBXMLApplication {
     }
 
     // 9. Person with attributes
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Person with attributes is valid"),
+        ApiResponse(responseCode = "400", description = "Person id or name is blank, or age is negative")
+    ])
     @PostMapping(
         "/person-with-attr",
         consumes = ["application/xml"],
@@ -183,6 +226,7 @@ open class BBXMLApplication {
         if (!isValid(person))
             return ResponseEntity.status(400).body("invalid person")
 
+        CoveredTargets.cover("PERSON_ATTR")
         return ResponseEntity.status(200)
             .body("person ${person.id} is valid")
     }
@@ -288,4 +332,3 @@ open class ProjectList(
     @field:XmlElement(name = "Project", namespace = "")
     var projects: MutableList<Project> = mutableListOf()
 )
-
