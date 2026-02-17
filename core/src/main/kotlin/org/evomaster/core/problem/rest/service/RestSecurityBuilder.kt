@@ -540,7 +540,7 @@ class RestSecurityBuilder {
                     continue@hidden
                 }
                 //whether it is going to be added depends on the response status of the "target" call
-                archive.addIfNeeded(evaluatedIndividual)
+                archive.addIfNeeded(ei)
             }
         }
     }
