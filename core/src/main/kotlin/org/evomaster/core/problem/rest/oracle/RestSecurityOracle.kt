@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.data.*
 import org.evomaster.core.problem.rest.service.CallGraphService
+import org.evomaster.core.problem.rest.service.RestSecurityBuilder
 import org.evomaster.core.problem.security.service.SSRFAnalyser
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
@@ -85,7 +86,10 @@ class RestSecurityOracle {
     private lateinit var ssrfAnalyser: SSRFAnalyser
 
     @Inject
-    protected lateinit var callGraphService: CallGraphService
+    private lateinit var callGraphService: CallGraphService
+
+    @Inject
+    private lateinit var restSecurityBuilder: RestSecurityBuilder
 
     /**
      * Evaluate all the different security oracles, based on what enabled in configurations,
@@ -364,7 +368,7 @@ class RestSecurityOracle {
                 ?: continue
 
             val path = a.path
-            val hidden = allowedVerbs.filter { it != HttpVerb.OPTIONS && !callGraphService.isDeclared(it, path) }
+            val hidden = restSecurityBuilder.filterHiddenVerbs(path,allowedVerbs)
 
             val target = individual.seeMainExecutableActions()[index+1]
             if(target.path != path || !hidden.contains(target.verb)){

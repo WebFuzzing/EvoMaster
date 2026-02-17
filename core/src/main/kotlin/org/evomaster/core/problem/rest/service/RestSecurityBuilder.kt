@@ -33,6 +33,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -80,6 +81,9 @@ class RestSecurityBuilder {
 
     @Inject
     private lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
+    protected lateinit var searchGlobalState: SearchGlobalState
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -310,7 +314,7 @@ class RestSecurityBuilder {
         }
 
         if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
-            //handleHiddenAccessibleEndpoint()
+            handleHiddenAccessibleEndpoint()
         }
     }
 
@@ -492,6 +496,9 @@ class RestSecurityBuilder {
 
             //create individual to make the OPTIONS call
             val ind = RestIndividual(mutableListOf(options), SampleType.SECURITY)
+            ind.doGlobalInitialize(searchGlobalState)
+            ind.ensureFlattenedStructure()
+
             val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
 
             if (evaluatedIndividual == null) {
@@ -514,13 +521,18 @@ class RestSecurityBuilder {
             }
 
             //is there any difference from what declared in the schema?
-            val hidden = fromAllow.filter { it != HttpVerb.OPTIONS && !callGraph.isDeclared(it, path) }
+            val hidden = filterHiddenVerbs(path, fromAllow)
 
             hidden@for(h in hidden){
                 //try to make such calls, after the OPTIONS
                 val target = RestCallAction("$h:$path",h, path, pathVariables.map { it.copy() }.toMutableList(), auth)
+                target.resetLocalIdRecursively()
+                //target.doInitialize(randomness) // we are copying params directly
 
                 val x = RestIndividual(mutableListOf(options.copy(), target), SampleType.SECURITY)
+                x.doGlobalInitialize(searchGlobalState)
+                x.ensureFlattenedStructure()
+
                 val ei = fitness.computeWholeAchievedCoverageForPostProcessing(x)
 
                 if (ei == null) {
@@ -533,6 +545,12 @@ class RestSecurityBuilder {
         }
     }
 
+    fun filterHiddenVerbs(path: RestPath, allowed: Set<HttpVerb>) : Set<HttpVerb>{
+        return allowed.filter { it != HttpVerb.OPTIONS
+                    && it != HttpVerb.HEAD
+                    && !callGraph.isDeclared(it, path)
+        }.toSet()
+    }
 
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.

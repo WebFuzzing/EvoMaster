@@ -328,15 +328,7 @@ class Main {
             when (config.problemType) {
                 EMConfig.ProblemType.REST -> {
                     val k = data.find { it.header == Statistics.COVERED_2XX }!!.element.toInt()
-                    val t = if (sampler.getPreDefinedIndividuals().isNotEmpty()) {
-                        /*
-                            FIXME this is a temporary hack...
-                            right now we might have 1 call to Schema that messes up this statistics
-                         */
-                        n + 1
-                    } else {
-                        n
-                    }
+                    val t = n
                     assert(k <= t)
                     val p = String.format("%.0f", (k.toDouble() / t) * 100)
                     LoggingUtil.getInfoLogger()
