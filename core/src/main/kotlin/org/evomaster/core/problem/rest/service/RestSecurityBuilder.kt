@@ -19,8 +19,8 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.SQLI_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -33,6 +33,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -42,13 +43,13 @@ import org.slf4j.LoggerFactory
  * Service class used to do security testing after the search phase.
  *
  * This class can add new test cases to the archive that, by construction, do reveal a security fault.
- * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * But, the actual check if a test indeed finds a fault is in [org.evomaster.core.problem.rest.oracle.RestSecurityOracle]
  * called in the fitness function, and not directly here.
  */
-class SecurityRest {
+class RestSecurityBuilder {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(SecurityRest::class.java)
+        private val log: Logger = LoggerFactory.getLogger(RestSecurityBuilder::class.java)
     }
 
     /**
@@ -59,6 +60,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var sampler: AbstractRestSampler
+
+    @Inject
+    private lateinit var callGraph: CallGraphService
 
     @Inject
     private lateinit var randomness: Randomness
@@ -77,6 +81,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
+    protected lateinit var searchGlobalState: SearchGlobalState
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -305,7 +312,13 @@ class SecurityRest {
         } else {
             handleStackTraceCheck()
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+            handleHiddenAccessibleEndpoint()
+        }
     }
+
+
 
     private fun accessControlBasedOnRESTGuidelines() {
 
@@ -445,6 +458,100 @@ class SecurityRest {
             }
         }
     }
+
+    /**
+     *   If we send request on endpoint path with wrong verb, we get 405/501.
+     *   When sending OPTIONS, the response should have `Allow` telling what is there.
+     *   That info might be different from what specified in the schema.
+     *   Should check if mismatches with OpenAPI schemas, eg if an extra verbs.
+     *   Let's make a call to those, with valid path, but no query parameters nor any body payloads.
+     *   If we get anything but 405/501 then we discovered a hidden accessible endpoint
+     */
+    private fun handleHiddenAccessibleEndpoint() {
+
+        val actions = actionDefinitions.distinctBy { it.path }
+
+        mainloop@for (a in actions){
+
+            /*
+                first build an action to make a OPTION call on each different path
+             */
+            val pathVariables = a.parameters
+                .filterIsInstance<PathParam>()
+                .map { it.copy() }
+                .toMutableList()
+
+            val verb = HttpVerb.OPTIONS
+            val path = a.path.copy()
+            val actionId = "$verb$path"
+            val authOptions = authSettings.getOfType(HttpWsAuthenticationInfo::class.java)
+            val auth = if(authOptions.isNotEmpty()){
+                authOptions.first()
+            } else {
+                HttpWsNoAuth()
+            }
+
+            val options = RestCallAction(actionId,verb, path, pathVariables, auth)
+            options.doInitialize(randomness)
+
+            //create individual to make the OPTIONS call
+            val ind = RestIndividual(mutableListOf(options), SampleType.SECURITY)
+            ind.doGlobalInitialize(searchGlobalState)
+            ind.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
+
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate OPTION call")
+                continue@mainloop
+            }
+            archive.addIfNeeded(evaluatedIndividual)
+
+            //now time to check the HTTP response from the OPTIONS call
+            val em = evaluatedIndividual.evaluatedMainActions()
+            if(em.isEmpty()){
+                log.warn("Failed in evaluation of OPTION call")
+                continue@mainloop
+            }
+
+            val response = em.first().result as RestCallResult
+            val fromAllow = response.getAllowedVerbs()
+            if(fromAllow == null || fromAllow.isEmpty()){
+                continue@mainloop
+            }
+
+            //is there any difference from what declared in the schema?
+            val hidden = filterHiddenVerbs(path, fromAllow)
+
+            hidden@for(h in hidden){
+                //try to make such calls, after the OPTIONS
+                val target = RestCallAction("$h:$path",h, path, pathVariables.map { it.copy() }.toMutableList(), auth)
+                target.resetLocalIdRecursively()
+                //target.doInitialize(randomness) // we are copying params directly
+
+                val x = RestIndividual(mutableListOf(options.copy(), target), SampleType.SECURITY)
+                x.doGlobalInitialize(searchGlobalState)
+                x.ensureFlattenedStructure()
+
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(x)
+
+                if (ei == null) {
+                    log.warn("Failed to evaluate OPTIONS+TARGET call")
+                    continue@hidden
+                }
+                //whether it is going to be added depends on the response status of the "target" call
+                archive.addIfNeeded(ei)
+            }
+        }
+    }
+
+    fun filterHiddenVerbs(path: RestPath, allowed: Set<HttpVerb>) : Set<HttpVerb>{
+        return allowed.filter { it != HttpVerb.OPTIONS
+                    && it != HttpVerb.HEAD
+                    && !callGraph.isDeclared(it, path)
+        }.toSet()
+    }
+
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.
      * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.

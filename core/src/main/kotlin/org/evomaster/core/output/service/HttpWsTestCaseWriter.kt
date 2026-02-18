@@ -735,14 +735,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
                 handleResponseAssertions(lines, res, null)
             }
-
         }
-
-//        else if (partialOracles.generatesExpectation(call, res)
-//                && format.isJavaOrKotlin()){
-//            //FIXME what is this for???
-//            lines.add(".then()")
-//        }
     }
 
     //----------------------------------------------------------------------------------------
@@ -764,6 +757,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (isInCall) {
             lines.add(".assertThat()")
+        }
+
+        val allow = res.getAllow()
+        if(!allow.isNullOrBlank()){
+            val instruction = when {
+                format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
+                format.isJavaScript() ->
+                    "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
+                format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
+                else -> throw IllegalStateException("Unsupported format $format")
+            }
+            //lines.add(instruction)
+            //TODO: verb order in Allow header is flaky
+            lines.addSingleCommentLine(instruction)
         }
 
         if (res.getTooLargeBody()) {
@@ -802,7 +809,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else{
                 lines.addSingleCommentLine(instruction)
             }
-
         }
 
         val type = res.getBodyType()
