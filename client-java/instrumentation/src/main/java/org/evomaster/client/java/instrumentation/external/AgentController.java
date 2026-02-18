@@ -4,12 +4,15 @@ import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.graphs.ControlDependenceGraphConfig;
+import org.evomaster.client.java.instrumentation.external.ControlDependenceSnapshot;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -65,6 +68,10 @@ public class AgentController {
                         InstrumentationController.resetForNewSearch();
                         sendCommand(Command.ACK);
                         break;
+                    case SET_CDG_CONFIG:
+                        handleControlDependenceGraphConfig();
+                        sendCommand(Command.ACK);
+                        break;
                     case NEW_TEST:
                         InstrumentationController.resetForNewTest();
                         sendCommand(Command.ACK);
@@ -108,6 +115,9 @@ public class AgentController {
                     case EXTRACT_JVM_DTO:
                         handleExtractingSpecifiedDto();
                         break;
+                    case CDG_SNAPSHOT:
+                        handleControlDependenceSnapshot();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -119,6 +129,21 @@ public class AgentController {
         });
 
         thread.start();
+    }
+
+    private static void handleControlDependenceGraphConfig() {
+        try {
+            Object msg = in.readObject();
+            ControlDependenceGraphConfigDto dto = (ControlDependenceGraphConfigDto) msg;
+            if (dto.enableGraphs != null) {
+                ControlDependenceGraphConfig.setEnableGraphs(dto.enableGraphs);
+            }
+            if (dto.writeCfg != null) {
+                ControlDependenceGraphConfig.setWriteCfgEnabled(dto.writeCfg);
+            }
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling CDG config: "+e.getMessage());
+        }
     }
 
 
@@ -223,6 +248,24 @@ public class AgentController {
             InstrumentationController.extractSpecifiedDto(dtoNames);
         } catch (Exception e){
             SimpleLogger.error("Failure in handling extracting specified dto: "+e.getMessage());
+        }
+    }
+
+    private static void handleControlDependenceSnapshot(){
+        try {
+            Object msg = in.readObject();
+            int fromIndex = 0;
+            if (msg instanceof Integer) {
+                fromIndex = (Integer) msg;
+            }
+            ControlDependenceSnapshot snapshot = InstrumentationController.getControlDependenceSnapshot(fromIndex);
+            sendObject(snapshot);
+        } catch (Exception e){
+            SimpleLogger.error("Failure in handling CDG snapshot: "+e.getMessage());
+            try {
+                sendObject(new ControlDependenceSnapshot(Collections.emptyList(), 0));
+            } catch (IOException ignored) {
+            }
         }
     }
 
