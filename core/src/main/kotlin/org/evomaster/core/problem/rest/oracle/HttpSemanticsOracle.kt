@@ -1,10 +1,14 @@
 package org.evomaster.core.problem.rest.oracle
 
+import com.google.gson.JsonParser
 import org.evomaster.core.problem.rest.data.HttpVerb
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.gene.ObjectGene
 
 object HttpSemanticsOracle {
 
@@ -102,5 +106,142 @@ object HttpSemanticsOracle {
                 && !res2.getBody().isNullOrEmpty()
 
         return NonWorkingDeleteResult(checkingDelete, nonWorking, delete.getName(), actions.size - 2)
+    }
+
+    fun hasSideEffectFailedModification(individual: RestIndividual,
+                             actionResults: List<ActionResult>
+    ): Boolean{
+
+        if(individual.size() < 3){
+            return false
+        }
+
+        val actions = individual.seeMainExecutableActions()
+
+        val before  = actions[actions.size - 3]  // GET (before state)
+        val modify  = actions[actions.size - 2]  // PUT or PATCH (failed modification)
+        val after   = actions[actions.size - 1]  // GET (after state)
+
+        // check verbs: GET, PUT|PATCH, GET
+        if(before.verb != HttpVerb.GET) {
+            return false
+        }
+        if(modify.verb != HttpVerb.PUT && modify.verb != HttpVerb.PATCH) {
+            return false
+        }
+        if(after.verb != HttpVerb.GET) {
+            return false
+        }
+
+        // all three must be on the same resolved path
+        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) {
+            return false
+        }
+
+        // auth should be consistent
+        if(before.auth.isDifferentFrom(modify.auth) || after.auth.isDifferentFrom(modify.auth)) {
+            return false
+        }
+
+        val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult?
+            ?: return false
+        val resModify = actionResults.find { it.sourceLocalId == modify.getLocalId() } as RestCallResult?
+            ?: return false
+        val resAfter = actionResults.find { it.sourceLocalId == after.getLocalId() } as RestCallResult?
+            ?: return false
+
+        // before GET must be 2xx
+        if(!StatusGroup.G_2xx.isInGroup(resBefore.getStatusCode())) {
+            return false
+        }
+
+        // PUT/PATCH must have failed with 4xx
+        if(!StatusGroup.G_4xx.isInGroup(resModify.getStatusCode())) {
+            return false
+        }
+
+        // after GET must be 2xx
+        if(!StatusGroup.G_2xx.isInGroup(resAfter.getStatusCode())) {
+            return false
+        }
+
+        val bodyBefore = resBefore.getBody()
+        val bodyAfter = resAfter.getBody()
+
+        // if both are null/empty, no side-effect detected
+        if(bodyBefore.isNullOrEmpty() && bodyAfter.isNullOrEmpty()) {
+            return false
+        }
+
+        // extract the field names sent in the PUT/PATCH request body
+        val modifiedFieldNames = extractModifiedFieldNames(modify)
+
+        // if we can identify specific fields, compare only those to avoid false positives from timestamps etc.
+        if(modifiedFieldNames.isNotEmpty()
+            && !bodyBefore.isNullOrEmpty()
+            && !bodyAfter.isNullOrEmpty()) {
+            return hasChangedModifiedFields(bodyBefore, bodyAfter, modifiedFieldNames)
+        }
+
+        // otherwise compare entire bodies
+        return bodyBefore != bodyAfter
+    }
+
+    /**
+     * Extract field names from the PUT/PATCH request body.
+     * These are the fields that the client attempted to modify.
+     */
+    private fun extractModifiedFieldNames(modify: RestCallAction): Set<String> {
+
+        val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
+            ?: return emptySet()
+
+        val gene = bodyParam.primaryGene()
+        val objectGene = gene.getWrappedGene(ObjectGene::class.java) as ObjectGene?
+            ?: if (gene is ObjectGene) gene else null
+
+        if(objectGene == null){
+            return emptySet()
+        }
+
+        return objectGene.fields.map { it.name }.toSet()
+    }
+
+    /**
+     * Compare only the fields that were sent in the PUT/PATCH request.
+     * Returns true if any of those fields changed between before and after GET responses.
+     */
+    private fun hasChangedModifiedFields(
+        bodyBefore: String,
+        bodyAfter: String,
+        fieldNames: Set<String>
+    ): Boolean {
+
+        try {
+            val jsonBefore = JsonParser.parseString(bodyBefore)
+            val jsonAfter = JsonParser.parseString(bodyAfter)
+
+            if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject){
+                // not JSON objects, fallback to full comparison
+                return bodyBefore != bodyAfter
+            }
+
+            val objBefore = jsonBefore.asJsonObject
+            val objAfter = jsonAfter.asJsonObject
+
+            for(field in fieldNames){
+                val valueBefore = objBefore.get(field)
+                val valueAfter = objAfter.get(field)
+
+                if(valueBefore != valueAfter){
+                    return true
+                }
+            }
+
+            return false
+        } catch (e: Exception) {
+            // JSON parsing failed, fallback to full comparison
+            return bodyBefore != bodyAfter
+        }
     }
 }
