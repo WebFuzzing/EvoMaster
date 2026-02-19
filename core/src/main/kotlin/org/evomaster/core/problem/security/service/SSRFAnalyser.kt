@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.languagemodel.service.LanguageModelConnector
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.param.Param
+import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.RestCallAction
@@ -94,8 +95,7 @@ class SSRFAnalyser {
     /**
      * newly created individual will be in the archive
      */
-    fun apply(){ //}: Solution<RestIndividual> {
-        //LoggingUtil.getInfoLogger().info("Applying {}", SSRFAnalyser::class.simpleName)
+    fun apply(){
 
         val individualsWith2XX = getIndividualsWithStatus2XX()
 
@@ -107,7 +107,6 @@ class SSRFAnalyser {
         individualsInSolution =  individualsWith2XX + individualsWith4XX
 
         if (individualsInSolution.isEmpty()) {
-            //return archive.extractSolution()
             return
         }
 
@@ -127,8 +126,6 @@ class SSRFAnalyser {
 
         // evaluate
         evaluate()
-
-        //return archive.extractSolution()
     }
 
     fun anyCallsMadeToHTTPVerifier(
@@ -269,21 +266,23 @@ class SSRFAnalyser {
      * Run the determined vulnerability class (from the classification) analysers.
      */
     private fun evaluate() {
-        if (config.problemType == EMConfig.ProblemType.REST) {
+        if (config.problemType != EMConfig.ProblemType.REST) {
 
-            individualsInSolution.forEach { evaluatedIndividual ->
-                evaluatedIndividual.evaluatedMainActions().forEach { a ->
-                    val action = a.action
-                    if (action is RestCallAction) {
-                        if (actionVulnerabilityMapping.containsKey(action.getName())
-                            && actionVulnerabilityMapping.getValue(action.getName()).isVulnerable
-                            && evaluatedIndividual.individual is RestIndividual
-                        ) {
-                            val mapping = actionVulnerabilityMapping[action.getName()]
+            return
+        }
 
-                            if (mapping != null) {
-                                handleVulnerableAction(evaluatedIndividual, action)
-                            }
+        individualsInSolution.forEach { evaluatedIndividual ->
+            evaluatedIndividual.evaluatedMainActions().forEach { a ->
+                val action = a.action
+                if (action is RestCallAction) {
+                    if (actionVulnerabilityMapping.containsKey(action.getName())
+                        && actionVulnerabilityMapping.getValue(action.getName()).isVulnerable
+                        && evaluatedIndividual.individual is RestIndividual
+                    ) {
+                        val mapping = actionVulnerabilityMapping[action.getName()]
+
+                        if (mapping != null) {
+                            handleVulnerableAction(evaluatedIndividual, action)
                         }
                     }
                 }
@@ -296,6 +295,8 @@ class SSRFAnalyser {
         action: RestCallAction
     ) {
         val copy = evaluatedIndividual.individual.copy() as RestIndividual
+        copy.modifySampleType(SampleType.SECURITY)
+
         // TODO: Need individual callback URL for each param?
         val callbackURL = httpCallbackVerifier.generateCallbackLink(
             action.getName()

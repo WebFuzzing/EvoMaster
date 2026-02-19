@@ -4,7 +4,6 @@ import bar.examples.it.spring.simplesecuritydeleteput.SimpleSecurityDeletePutCon
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.IntegrationTestRestBase
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.string.StringGene
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -55,7 +54,7 @@ class SimpleSecurityDeletePutControllerTest : IntegrationTestRestBase() {
 
         val sampleInd = createIndividual(listOf(action1Ind1, action2Ind1, action3Ind1, action4Ind1, action5Ind1), SampleType.SECURITY)
 
-        val testCovered = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,sampleInd.individual, sampleInd.seeResults() )
+        val testCovered = getSecurityOracle().hasForbiddenOperation(HttpVerb.DELETE,sampleInd.individual, sampleInd.seeResults() )
 
         assertTrue(testCovered)
     }
