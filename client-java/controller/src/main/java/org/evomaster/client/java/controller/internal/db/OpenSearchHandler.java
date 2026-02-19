@@ -2,9 +2,12 @@ package org.evomaster.client.java.controller.internal.db;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.evomaster.client.java.controller.opensearch.OpenSearchHeuristicsCalculator;
 import org.evomaster.client.java.instrumentation.OpenSearchCommand;
+import org.evomaster.client.java.instrumentation.OpenSearchIndexSchema;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 public class OpenSearchHandler {
@@ -28,6 +31,12 @@ public class OpenSearchHandler {
      */
     private final List<OpenSearchCommandWithDistance> commandsWithDistances;
 
+     /**
+     * Info about schemas of the documents of the index extracted from Spring framework.
+     * Documents of the index will be mapped to the Repository type
+     */
+     private final Map<String, String> indexSchemas;
+
     private final OpenSearchHeuristicsCalculator calculator = new OpenSearchHeuristicsCalculator();
 
     private Object openSearchClient = null;
@@ -36,6 +45,7 @@ public class OpenSearchHandler {
         this.commands = new ArrayList<>();
         this.commandsWithDistances = new ArrayList<>();
         this.calculateHeuristics = true;
+        this.indexSchemas = new HashMap<>();
     }
 
     public boolean isCalculateHeuristics() {
@@ -44,6 +54,10 @@ public class OpenSearchHandler {
 
     public void handle(OpenSearchCommand command) {
         commands.add(command);
+    }
+
+    public void handle(OpenSearchIndexSchema indexSchema) {
+        indexSchemas.put(indexSchema.getIndexName(), indexSchema.getIndexSchema());
     }
 
     public List<OpenSearchCommandWithDistance> getEvaluatedOpenSearchCommands() {

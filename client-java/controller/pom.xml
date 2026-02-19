@@ -205,6 +205,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!--OpenSearch test-->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!--gRPC RPC test-->
         <dependency>
             <groupId>io.grpc</groupId>
