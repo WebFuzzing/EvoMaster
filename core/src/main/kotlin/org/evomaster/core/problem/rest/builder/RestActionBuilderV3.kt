@@ -741,6 +741,7 @@ object RestActionBuilderV3 {
             listOf()
         }
 
+        // $ref schemas do not carry XML metadata; resolving the reference is required to obtain the correct XML element name from the target schema
         val deref = obj.schema.`$ref`?.let { ref -> SchemaUtils.getReferenceSchema(schemaHolder, currentSchema, ref, messages) } ?: obj.schema
         val name = deref?.xml?.name ?: deref?.`$ref`?.substringAfterLast("/") ?: "body"
 
