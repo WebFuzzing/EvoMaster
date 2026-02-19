@@ -211,7 +211,7 @@ object HttpSemanticsOracle {
      * Compare only the fields that were sent in the PUT/PATCH request.
      * Returns true if any of those fields changed between before and after GET responses.
      */
-    private fun hasChangedModifiedFields(
+    internal fun hasChangedModifiedFields(
         bodyBefore: String,
         bodyAfter: String,
         fieldNames: Set<String>
