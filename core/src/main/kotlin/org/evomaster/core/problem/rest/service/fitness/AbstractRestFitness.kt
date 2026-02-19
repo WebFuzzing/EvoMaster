@@ -1216,6 +1216,36 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else {
             handleRepeatedCreatePut(individual, actionResults, fv)
         }
+
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION)) {
+            LoggingUtil.uniqueUserInfo("Skipping experimental security test for repeated PUT after CREATE, as it has been disabled via configuration")
+        } else {
+            handleFailedModification(individual, actionResults, fv)
+        }
+    }
+
+    private fun handleFailedModification(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        val issues = HttpSemanticsOracle.hasSideEffectFailedModification(individual,actionResults)
+        if(!issues){
+            return
+        }
+
+        val putOrPatch = individual.seeMainExecutableActions().filter {
+            it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH
+        }.last()
+
+        val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
+
+        val ar = actionResults.find { it.sourceLocalId == putOrPatch.getLocalId() } as RestCallResult?
+            ?: return
+        ar.addFault(DetectedFault(category, putOrPatch.getName(), null))
     }
 
     private fun handleRepeatedCreatePut(

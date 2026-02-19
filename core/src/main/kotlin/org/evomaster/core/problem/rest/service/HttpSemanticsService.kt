@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.core.problem.rest.data.RestCallAction
+import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.service.fitness.RestFitness
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -44,6 +45,9 @@ class HttpSemanticsService {
 
     @Inject
     private lateinit var idMapper: IdMapper
+
+    @Inject
+    private lateinit var builder: RestIndividualBuilder
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -90,6 +94,8 @@ class HttpSemanticsService {
 
         // –  A repeated followup PUT with 201 on same endpoint should not return 201 (must enforce 200 or 204)
         putRepeatedCreated()
+
+        sideEffectsOfFailedModification()
     }
 
     /**
@@ -197,5 +203,98 @@ class HttpSemanticsService {
             prepareEvaluateAndSave(okDelete)
         }
     }
+
+    /**
+     * Checking bugs like:
+     * POST|PUT  /X  2xx  (create resource)
+     * GET       /X  2xx  (before state)
+     * PUT|PATCH /X  4xx  (failed modification)
+     * GET       /X  2xx  (after state - should be same as before)
+     *
+     * If a PUT/PATCH fails with 4xx, it should have no side-effects.
+     * A GET before and after should return the same resource state.
+     */
+    private fun sideEffectsOfFailedModification() {
+
+        val verbs = listOf(HttpVerb.PUT, HttpVerb.PATCH)
+
+        for (verb in verbs) {
+
+            val modifyOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, verb)
+
+            modifyOperations.forEach { modOp ->
+
+                // check that a GET definition exists for this same path
+                val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == modOp.path }
+                    ?: return@forEach
+
+                // find individuals that have a 4xx PUT/PATCH on this path
+                val failedModifyIndividuals = RestIndividualSelectorUtils.findIndividuals(
+                    individualsInSolution,
+                    verb,
+                    modOp.path,
+                    statusGroup = StatusGroup.G_4xx
+                )
+                if (failedModifyIndividuals.isEmpty()) {
+                    return@forEach
+                }
+
+                // among those, find one that also has a successful creation step
+                // (POST 2xx on parent path, or PUT 201 on same path)
+                val parentPath = if (!modOp.path.isRoot()) modOp.path.parentPath() else null
+
+                val withCreation = failedModifyIndividuals.filter { ind ->
+                    ind.evaluatedMainActions().any { ea ->
+                        val action = ea.action as RestCallAction
+                        val result = ea.result as RestCallResult
+                        (parentPath != null
+                                && action.verb == HttpVerb.POST
+                                && action.path.isEquivalent(parentPath)
+                                && StatusGroup.G_2xx.isInGroup(result.getStatusCode()))
+                        ||
+                        (action.verb == HttpVerb.PUT
+                                && action.path.isEquivalent(modOp.path)
+                                && result.getStatusCode() == 201)
+                    }
+                }
+                if (withCreation.isEmpty()) {
+                    return@forEach
+                }
+
+                val selected = withCreation.minBy { it.individual.size() }
+
+                // slice up to the 4xx PUT/PATCH
+                val failedIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    selected, verb, modOp.path, statusGroup = StatusGroup.G_4xx
+                )
+                if (failedIndex < 0) {
+                    return@forEach
+                }
+
+                val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                    selected.individual, failedIndex
+                )
+
+                val actions = ind.seeMainExecutableActions()
+                val last = actions[actions.size - 1] // the 4xx PUT/PATCH
+
+                // add GET before the failed PUT/PATCH
+                val getBefore = getDef.copy() as RestCallAction
+                getBefore.doInitialize(randomness)
+                getBefore.forceNewTaints()
+                getBefore.bindToSamePathResolution(last)
+                getBefore.auth = last.auth
+                ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
+
+                // add GET after the failed PUT/PATCH
+                val getAfter = getBefore.copy() as RestCallAction
+                getAfter.resetLocalIdRecursively()
+                ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+                prepareEvaluateAndSave(ind)
+            }
+        }
+    }
+
 
 }
