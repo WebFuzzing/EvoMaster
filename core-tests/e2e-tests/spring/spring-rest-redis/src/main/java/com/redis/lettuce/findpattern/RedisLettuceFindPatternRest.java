@@ -1,17 +1,19 @@
-package com.redis.lettuce;
+package com.redis.lettuce.findpattern;
 
-import io.lettuce.core.api.sync.RedisCommands;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.util.List;
+import java.util.Set;
 
 @RestController
-@RequestMapping(path = "/redislettuce")
-public class RedisLettuceController {
+@RequestMapping(path = "/redislettucefindpattern")
+public class RedisLettuceFindPatternRest {
 
     private RedisClient redisClient;
     private StatefulRedisConnection<String, String> connection;
@@ -39,15 +41,17 @@ public class RedisLettuceController {
         return ResponseEntity.status(200).build();
     }
 
-    @GetMapping("/findKey/{key}")
-    public ResponseEntity<Void> findKey(@PathVariable String key) {
-        String result = sync.get(key);
-        if (result != null) {
+    @GetMapping("/findPattern")
+    public ResponseEntity<Void> findPattern() {
+
+        List<String> keys = sync.keys("som[3e]-key-?-*");
+        if (keys != null && !keys.isEmpty()) {
             return ResponseEntity.status(200).build();
         } else {
             return ResponseEntity.status(404).build();
         }
     }
+
 }
 
 
