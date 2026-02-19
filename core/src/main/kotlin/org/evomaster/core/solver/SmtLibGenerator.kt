@@ -387,8 +387,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val joins = plainSelect.joins
             if (joins != null) {
                 for (join in joins) {
-                    val onExpression = join.onExpression
-                    if (onExpression != null) {
+                    val onExpressions = join.onExpressions
+                    if (onExpressions.isNotEmpty()) {
+                        val onExpression = onExpressions.elementAt(0)
                         val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
                         val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
                         for (i in 1..numberOfRows) {
@@ -523,7 +524,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
             "INTEGER" to "Int",
+            "TINYINT" to "Int",
             "TIMESTAMP" to "Int",
+            "DATE" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
             "DECIMAL" to "Real",

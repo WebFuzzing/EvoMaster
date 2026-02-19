@@ -1,12 +1,9 @@
 package org.evomaster.core.problem.rpc
 
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.action.ActionComponent
-import org.evomaster.core.search.action.ActionFilter
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionUtils
-import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.problem.api.ApiWsIndividual
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.enterprise.EnterpriseChildTypeVerifier
@@ -15,7 +12,6 @@ import org.evomaster.core.problem.externalservice.ApiExternalServiceAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 
 import org.evomaster.core.search.*
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
 import java.util.*
 import kotlin.math.max
@@ -79,10 +75,6 @@ class RPCIndividual(
 
 
     fun seeIndexedRPCCalls(): Map<Int, RPCCallAction> = getIndexedChildren(RPCCallAction::class.java)
-
-    override fun verifyInitializationActions(): Boolean {
-        return SqlActionUtils.verifyActions(seeInitializingActions().filterIsInstance<SqlAction>())
-    }
 
 
     /**

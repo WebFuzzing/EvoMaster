@@ -67,8 +67,8 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
-        val left = getVariableAndLiteral(condition.leftOperand.toString())
-        val right = getVariableAndLiteral(condition.rightOperand.toString())
+        val left = getVariableAndLiteral(condition.leftOperand)
+        val right = getVariableAndLiteral(condition.rightOperand)
 
         return when (val comparator = getSMTComparator(condition.sqlComparisonOperator.toString())) {
             "=" -> AssertSMTNode(EqualsAssertion(listOf(left, right)))
@@ -84,30 +84,47 @@ class SMTConditionVisitor(
     /**
      * Converts an operand to its corresponding SMT-LIB representation.
      *
-     * @param operand The SQL operand as a string.
+     * @param sqlCondition The SqlCondition
      * @return The SMT-LIB representation of the operand.
      */
-    private fun getVariableAndLiteral(operand: String): String {
-        return when {
-            operand.contains(".") -> { // Handle column references with aliases
-                val parts = operand.split(".")
-                if (tableAliases.containsKey(parts[0])) {
-                    val tableName = tableAliases[parts[0]] ?: defaultTableName
-                    val columnName = parts[parts.lastIndex]
-                    getColumnReference(tableName, columnName)
+    private fun getVariableAndLiteral(sqlCondition: SqlCondition): String {
+        return when (sqlCondition) {
+
+            is SqlColumn -> {
+                val tableName = sqlCondition.tableName?.let {
+                    tableAliases[it] ?: it
+                } ?: defaultTableName
+
+                getColumnReference(tableName, sqlCondition.columnName)
+            }
+
+            is SqlStringLiteralValue -> {
+                var text = sqlCondition.toSql()
+                if (text.startsWith("\'\"")) {
+                    text = text.replace("\'\"", "")
+                    text = text.replace("\"\'", "")
+                } else if (text.startsWith("\'")) {
+                    text = text.replace("\'", "")
+                }
+                "\"${text}\""
+            }
+
+            is SqlBigIntegerLiteralValue,
+            is SqlBigDecimalLiteralValue -> {
+                sqlCondition.toSql()
+            }
+
+            is SqlBooleanLiteralValue -> {
+                if (sqlCondition.toString().equals("TRUE", ignoreCase = true) ) {
+                    "\"True\""
                 } else {
-                    operand
+                    "\"False\""
                 }
             }
-            isAColumn(operand) -> { // Handle direct column references
-                getColumnReference(defaultTableName, operand)
+
+            else -> {
+                sqlCondition.toString()
             }
-            operand.startsWith("'") && operand.endsWith("'") -> { // Handle string literals
-                operand.replace("'", "\"")
-            }
-            operand.equals("TRUE", ignoreCase = true) -> "\"True\""
-            operand.equals("FALSE", ignoreCase = true) -> "\"False\""
-            else -> operand // Return as is for other cases
         }
     }
 
@@ -143,8 +160,7 @@ class SMTConditionVisitor(
     }
 
     override fun visit(condition: SqlInCondition, parameter: Void?): SMTNode {
-        val b = condition.sqlColumn.toString();
-        val left = getVariableAndLiteral(b)
+        val left = getVariableAndLiteral(condition.sqlColumn)
         val conditions = condition.literalList.sqlConditionExpressions
             .map {
                 AssertSMTNode(EqualsAssertion(listOf(left, asLiteral(it))))

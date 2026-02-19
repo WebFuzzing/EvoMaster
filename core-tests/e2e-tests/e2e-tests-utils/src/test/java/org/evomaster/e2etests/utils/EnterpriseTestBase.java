@@ -344,7 +344,7 @@ public abstract class EnterpriseTestBase {
 
         compile(outputFolderName);
         klass = loadClass(className);
-        assertNotNull(klass);
+        assertNotNull(klass, "Failed to load generated test suite class after compilation: " + className);
 
         StringWriter writer = new StringWriter();
         PrintWriter pw = new PrintWriter(writer);
@@ -452,7 +452,11 @@ public abstract class EnterpriseTestBase {
                 "--expectationsActive", "TRUE",
                 "--executiveSummary", summary,
                 "--createConfigPathIfMissing", "false",
-                "--dtoForRequestPayload", ""+active
+                "--dtoForRequestPayload", ""+active,
+                //we disable this, because it impacts the number and NAME of generated test suites files, and we need
+                //that info when making assertions, eg, loading test classes after compilation
+                //still, we have some specific tests to verify this functionality
+                "--maxTestsPerTestSuite","-1"
         ));
     }
 
@@ -599,6 +603,26 @@ public abstract class EnterpriseTestBase {
         try {
             boolean ok = Files.lines(test).anyMatch(condition);
             String msg = "Cannot find line with requested condition in "+className+" in "+outputFolder;
+            assertTrue(ok, msg);
+        }catch (IOException e){
+            throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());
+        }
+
+    }
+
+    /**
+     * assert min count of a certain text in the generated tests
+     * @param outputFolder the folder where the test is
+     * @param className the complete test name
+     * @param condition is the content to check
+     * @param minCount is the minimal count of the certain text existing in the generated tests
+     */
+    protected void assertCountTextInTests(String outputFolder, String className, Predicate<String> condition, int minCount) {
+        String path = outputFolderPath(outputFolder)+ "/"+String.join("/", className.split("\\."))+".kt";
+        Path test = Paths.get(path);
+        try {
+            boolean ok = Files.lines(test).filter(condition).count() >= minCount;
+            String msg = "Cannot find "+minCount+" lines with requested condition in "+className+" in "+outputFolder;
             assertTrue(ok, msg);
         }catch (IOException e){
             throw new IllegalStateException("Fail to get the test "+className+" in "+outputFolder+" with error "+ e.getMessage());

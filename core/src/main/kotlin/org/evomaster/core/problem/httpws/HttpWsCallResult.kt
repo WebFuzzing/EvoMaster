@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import org.evomaster.core.problem.enterprise.EnterpriseActionResult
+import org.evomaster.core.problem.rest.data.HttpVerb
 import javax.ws.rs.core.MediaType
 
 abstract class HttpWsCallResult : EnterpriseActionResult {
@@ -25,10 +26,17 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
         const val TCP_PROBLEM = "TCP_PROBLEM"
         const val APPLIED_LINK = "APPLIED_LINK"
         const val LOCATION = "LOCATION"
+        const val ALLOW = "ALLOW"
         const val RESPONSE_TIME_MS = "RESPONSE_TIME_MS"
 
         const val VULNERABLE_SSRF = "VULNERABLE_SSRF"
         const val VULNERABLE_SQLI = "VULNERABLE_SQLI"
+
+
+        const val FLAKY_STATUS_CODE = "FLAKY_STATUS_CODE"
+        const val FLAKY_BODY = "FLAKY_BODY"
+        const val FLAKY_BODY_TYPE = "FLAKY_BODY_TYPE"
+        const val FLAKY_ERROR_MESSAGE = "FLAKY_ERROR_MESSAGE"
     }
 
     /**
@@ -43,7 +51,7 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
 
     fun setStatusCode(code: Int) {
-        if (code < 100 || code >= 600) {
+        if (code !in 100..<600) {
             throw IllegalArgumentException("Invalid HTTP code $code")
         }
 
@@ -59,6 +67,32 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
     }
 
     fun getLocation(): String? = getResultValue(LOCATION)
+
+    fun setAllow(allow: String?){
+        if(allow != null) {
+            addResultValue(ALLOW, allow)
+        }
+    }
+
+    fun getAllow(): String? = getResultValue(ALLOW)
+
+    /**
+     * Return verbs based on "allow" header.
+     * It can return null to indicate there was no allow header.
+     */
+    fun getAllowedVerbs() : Set<HttpVerb>?{
+        val allow = getAllow() ?: return null
+        val fromAllow = allow.split(",")
+            .mapNotNull {
+                try{
+                    HttpVerb.valueOf(it.trim())
+                } catch (e: IllegalArgumentException){
+                    //a bug, but we do not check this here
+                    null
+                }
+            }
+        return fromAllow.toSet()
+    }
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 
@@ -134,4 +168,39 @@ abstract class HttpWsCallResult : EnterpriseActionResult {
 
     fun setResponseTimeMs(responseTime: Long) = addResultValue(RESPONSE_TIME_MS, responseTime.toString())
     fun getResponseTimeMs(): Long? = getResultValue(RESPONSE_TIME_MS)?.toLong()
+
+
+    fun setFlakyErrorMessage(msg: String)  = addResultValue(FLAKY_ERROR_MESSAGE, msg)
+    fun getFlakyErrorMessage() : String? = getResultValue(FLAKY_ERROR_MESSAGE)
+
+    fun setFlakyStatusCode(code: Int) = addResultValue(FLAKY_STATUS_CODE, code.toString())
+    fun getFlakyStatusCode() : Int? = getResultValue(FLAKY_STATUS_CODE)?.toInt()
+
+    fun setFlakyBody(body: String) = addResultValue(FLAKY_BODY, body)
+    fun getFlakyBody() : String? = getResultValue(FLAKY_BODY)
+
+    fun setFlakyBodyType(type: MediaType) = addResultValue(FLAKY_BODY_TYPE, type.toString())
+    fun getFlakyBodyType() : MediaType? = getResultValue(FLAKY_BODY_TYPE)?.let { MediaType.valueOf(it) }
+
+    fun setFlakiness(previous: HttpWsCallResult){
+        val pStatusCode = previous.getStatusCode()
+        if (pStatusCode != null && pStatusCode != getStatusCode()) {
+            setFlakyStatusCode(pStatusCode)
+        }
+
+        val pBody = previous.getBody()
+        if (pBody != null && pBody != getBody()) {
+            setFlakyBody(pBody)
+        }
+
+        val pBodyType = previous.getBodyType()
+        if (pBodyType != null && pBodyType != getBodyType()) {
+            setFlakyBodyType(pBodyType)
+        }
+
+        val pMessage = previous.getErrorMessage()
+        if (pMessage != null && pMessage != getErrorMessage()) {
+            setFlakyErrorMessage(pMessage)
+        }
+    }
 }

@@ -12,14 +12,15 @@ import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.enterprise.auth.NoAuth
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.httpws.auth.HttpWsAuthenticationInfo
 import org.evomaster.core.problem.httpws.auth.HttpWsNoAuth
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.builder.RestIndividualSelectorUtils
 import org.evomaster.core.problem.rest.data.*
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.SQLI_PAYLOADS
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.SQLI_PAYLOADS
+import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.Companion.XSS_PAYLOADS
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
@@ -32,6 +33,7 @@ import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchGlobalState
 import org.evomaster.core.utils.StackTraceUtils
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -41,13 +43,13 @@ import org.slf4j.LoggerFactory
  * Service class used to do security testing after the search phase.
  *
  * This class can add new test cases to the archive that, by construction, do reveal a security fault.
- * But, the actual check if a test indeed finds a fault is in [RestSecurityOracle]
+ * But, the actual check if a test indeed finds a fault is in [org.evomaster.core.problem.rest.oracle.RestSecurityOracle]
  * called in the fitness function, and not directly here.
  */
-class SecurityRest {
+class RestSecurityBuilder {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(SecurityRest::class.java)
+        private val log: Logger = LoggerFactory.getLogger(RestSecurityBuilder::class.java)
     }
 
     /**
@@ -58,6 +60,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var sampler: AbstractRestSampler
+
+    @Inject
+    private lateinit var callGraph: CallGraphService
 
     @Inject
     private lateinit var randomness: Randomness
@@ -76,6 +81,9 @@ class SecurityRest {
 
     @Inject
     private lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
+    protected lateinit var searchGlobalState: SearchGlobalState
 
     /**
      * All actions that can be defined from the OpenAPI schema
@@ -278,7 +286,11 @@ class SecurityRest {
         if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
             log.debug("Skipping experimental security test for sql injection as disabled in configuration")
         } else {
-            handleSqlICheck()
+            if(config.blackBox || sampler.isSUTUsingASQLDatabase()) {
+                // in white-box testing, if no that the SUT is not using any SQL database, then no point
+                // in trying any kind of SQLi attack
+                handleSqlICheck()
+            }
         }
 
         if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
@@ -295,12 +307,18 @@ class SecurityRest {
             handleExistenceLeakage()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
             log.debug("Skipping experimental security test for stack traces as disabled in configuration")
         } else {
             handleStackTraceCheck()
         }
+
+        if(config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+            handleHiddenAccessibleEndpoint()
+        }
     }
+
+
 
     private fun accessControlBasedOnRESTGuidelines() {
 
@@ -320,13 +338,13 @@ class SecurityRest {
             handleNotRecognizedAuthenticated()
         }
 
-        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
             log.debug("Skipping experimental security test for forgotten authentication as disabled in configuration")
         } else {
             handleForgottenAuthentication()
         }
 
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_WRITE)) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)) {
             log.debug("Skipping experimental security test for anonymous write as disabled in configuration")
         } else {
             handleAnonymousWriteCheck()
@@ -337,8 +355,9 @@ class SecurityRest {
 
     private fun handleSqlICheck(){
 
-        mainloop@ for(action in actionDefinitions){
+        val K = config.sqliBaselineMaxResponseTimeMs
 
+        mainloop@ for(action in actionDefinitions){
 
             // Find individuals with 2xx response for this endpoint
             val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
@@ -352,41 +371,49 @@ class SecurityRest {
                 continue
             }
 
-            // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val candidates = successfulIndividuals.mapNotNull { ei ->
+                val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
+                    ei,
+                    action.verb,
+                    action.path,
+                    statusGroup = StatusGroup.G_2xx
+                )
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
+                if(actionIndex < 0){
+                    null
+                } else {
+                    val action = ei.individual.seeMainExecutableActions()[actionIndex]
+                    val result = ei.seeResult(action.getLocalId()) as HttpWsCallResult
+                    val time = result.getResponseTimeMs()
+                    if(time == null || time >= K ){
+                        //make sure the call didn't take too long
+                        null
+                    } else {
+                        // Slice to keep only up to the target action
+                        RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(ei.individual, actionIndex)
+                    }
+                }
             }
 
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
+            // Take the smallest successful individual
+            val target = candidates.minBy { it.size() }
 
             // Try each sqli payload (but only add one test per endpoint)
             for(payload in SQLI_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
+                val copy = target.copy() as RestIndividual
                 val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
                 var anySuccess = false
 
+                //here we try to modify ALL potential genes
                 genes.forEach {
                         gene ->
                     val leafGene = gene.getLeafGene().getPhenotype()
@@ -409,7 +436,7 @@ class SecurityRest {
                     continue
                 }
 
-                val newInd = builder.merge(sliced, copy)
+                val newInd = builder.merge(target, copy)
 
                 newInd.modifySampleType(SampleType.SECURITY)
                 newInd.ensureFlattenedStructure()
@@ -428,10 +455,103 @@ class SecurityRest {
                     assert(added)
                     continue@mainloop
                 }
-
             }
         }
     }
+
+    /**
+     *   If we send request on endpoint path with wrong verb, we get 405/501.
+     *   When sending OPTIONS, the response should have `Allow` telling what is there.
+     *   That info might be different from what specified in the schema.
+     *   Should check if mismatches with OpenAPI schemas, eg if an extra verbs.
+     *   Let's make a call to those, with valid path, but no query parameters nor any body payloads.
+     *   If we get anything but 405/501 then we discovered a hidden accessible endpoint
+     */
+    private fun handleHiddenAccessibleEndpoint() {
+
+        val actions = actionDefinitions.distinctBy { it.path }
+
+        mainloop@for (a in actions){
+
+            /*
+                first build an action to make a OPTION call on each different path
+             */
+            val pathVariables = a.parameters
+                .filterIsInstance<PathParam>()
+                .map { it.copy() }
+                .toMutableList()
+
+            val verb = HttpVerb.OPTIONS
+            val path = a.path.copy()
+            val actionId = "$verb$path"
+            val authOptions = authSettings.getOfType(HttpWsAuthenticationInfo::class.java)
+            val auth = if(authOptions.isNotEmpty()){
+                authOptions.first()
+            } else {
+                HttpWsNoAuth()
+            }
+
+            val options = RestCallAction(actionId,verb, path, pathVariables, auth)
+            options.doInitialize(randomness)
+
+            //create individual to make the OPTIONS call
+            val ind = RestIndividual(mutableListOf(options), SampleType.SECURITY)
+            ind.doGlobalInitialize(searchGlobalState)
+            ind.ensureFlattenedStructure()
+
+            val evaluatedIndividual = fitness.computeWholeAchievedCoverageForPostProcessing(ind)
+
+            if (evaluatedIndividual == null) {
+                log.warn("Failed to evaluate OPTION call")
+                continue@mainloop
+            }
+            archive.addIfNeeded(evaluatedIndividual)
+
+            //now time to check the HTTP response from the OPTIONS call
+            val em = evaluatedIndividual.evaluatedMainActions()
+            if(em.isEmpty()){
+                log.warn("Failed in evaluation of OPTION call")
+                continue@mainloop
+            }
+
+            val response = em.first().result as RestCallResult
+            val fromAllow = response.getAllowedVerbs()
+            if(fromAllow == null || fromAllow.isEmpty()){
+                continue@mainloop
+            }
+
+            //is there any difference from what declared in the schema?
+            val hidden = filterHiddenVerbs(path, fromAllow)
+
+            hidden@for(h in hidden){
+                //try to make such calls, after the OPTIONS
+                val target = RestCallAction("$h:$path",h, path, pathVariables.map { it.copy() }.toMutableList(), auth)
+                target.resetLocalIdRecursively()
+                //target.doInitialize(randomness) // we are copying params directly
+
+                val x = RestIndividual(mutableListOf(options.copy(), target), SampleType.SECURITY)
+                x.doGlobalInitialize(searchGlobalState)
+                x.ensureFlattenedStructure()
+
+                val ei = fitness.computeWholeAchievedCoverageForPostProcessing(x)
+
+                if (ei == null) {
+                    log.warn("Failed to evaluate OPTIONS+TARGET call")
+                    continue@hidden
+                }
+                //whether it is going to be added depends on the response status of the "target" call
+                archive.addIfNeeded(ei)
+            }
+        }
+    }
+
+    fun filterHiddenVerbs(path: RestPath, allowed: Set<HttpVerb>) : Set<HttpVerb>{
+        return allowed.filter { it != HttpVerb.OPTIONS
+                    && it != HttpVerb.HEAD
+                    && !callGraph.isDeclared(it, path)
+        }.toSet()
+    }
+
     /**
      * Checks whether any response body contains a stack trace, which would constitute a security issue.
      * Stack traces expose internal implementation details that can aid attackers in exploiting vulnerabilities.
@@ -568,7 +688,7 @@ class SecurityRest {
 
             val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(evaluatedIndividual)
 
-            if(ExperimentalFaultCategory.ANONYMOUS_WRITE in faultsCategories){
+            if(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS in faultsCategories){
                 val added = archive.addIfNeeded(evaluatedIndividual)
                 assert(added)
                 continue@mainloop
@@ -1087,9 +1207,8 @@ class SecurityRest {
 
         mainloop@ for(action in actionDefinitions){
 
-
             // Find individuals with 2xx response for this endpoint
-            val successfulIndividuals = RestIndividualSelectorUtils.findIndividuals(
+            val successfulIndividuals = RestIndividualSelectorUtils.findAndSlice(
                 individualsInSolution,
                 action.verb,
                 action.path,
@@ -1101,37 +1220,21 @@ class SecurityRest {
             }
 
             // Take the smallest successful individual
-            val target = successfulIndividuals.minBy { it.individual.size() }
+            val target = successfulIndividuals.minBy { it.size() }
 
-            val actionIndex = RestIndividualSelectorUtils.findIndexOfAction(
-                target,
-                action.verb,
-                action.path,
-                statusGroup = StatusGroup.G_2xx
-            )
-
-            if(actionIndex < 0){
-                continue
-            }
-
-            // Slice to keep only up to the target action
-            val sliced = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
-                target.individual,
-                actionIndex
-            )
 
             // Try each XSS payload (but only add one test per endpoint)
             for(payload in XSS_PAYLOADS){
 
                 // Create a copy of the individual
-                var copy = sliced.copy() as RestIndividual
-                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+                var copy = target.copy() as RestIndividual
+                val actionCopy = copy.seeMainExecutableActions().last()
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
 
                 if(genes.isEmpty()){
-                    continue
+                    continue@mainloop
                 }
 
                 val anySuccess = genes.map { gene ->
@@ -1144,6 +1247,7 @@ class SecurityRest {
 
                 // Try to add a linked GET operation for stored XSS detection
                 //TODO to properly handle POST, we need first to finish the work on CallGraphService
+                //FIXME ie we need to guarantee it is working on same resource
                 if(action.verb == HttpVerb.POST || action.verb == HttpVerb.PUT || action.verb == HttpVerb.PATCH){
                     copy = tryAttachLinkedGetForStoredXSS(
                         ind = copy,
