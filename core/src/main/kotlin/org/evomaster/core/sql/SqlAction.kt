@@ -6,6 +6,7 @@ import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.action.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.placeholder.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 
@@ -33,9 +34,16 @@ class SqlAction(
         val selectedColumns: Set<Column>,
 
         /**
-         * TODO need explanation
+         * Unique id to represent an insertion in the SQL database.
+         * Those ids will be used to set up unique ids for genes related to PK and FK.
+         * These ids are actually going to be used as output in the generated test files.
+         * The reason is that some PK might be dynamically generated, so FK genes would not
+         * know those values at compilation time.
+         * They need to be extracted dynamically.
+         * And this is done by referring to the insertion action that led to generation of
+         * the data using the dynamic PK.
          */
-        private val id: Long,
+        insertionId: Long,
 
         computedGenes: List<Gene>? = null,
         /**
@@ -45,7 +53,7 @@ class SqlAction(
          */
         val representExistingData: Boolean = false,
 
-) : EnvironmentAction(listOf()) {
+    ) : EnvironmentAction(listOf()) {
 
     init {
         /*
@@ -65,12 +73,33 @@ class SqlAction(
         }
     }
 
+    var insertionId = insertionId
+        private set
 
     private val genes: List<Gene> = (computedGenes
-        ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(id, table, it) }
+        ?: selectedColumns.map { SqlActionGeneBuilder().buildGene(insertionId, table, it) }
             ).also {
         // init children for DbAction
         addChildren(it)
+    }
+
+
+    fun shiftIdBy(delta: Long){
+        if(representExistingData) {
+            throw IllegalStateException("Ids for existing data should never be shifted")
+        }
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+        insertionId += delta
+
+        seeAllGenes().forEach { g ->
+            if(g is SqlPrimaryKeyGene) {
+                g.shiftIdBy(delta)
+            } else if(g is SqlForeignKeyGene) {
+                g.shiftIdBy(delta)
+            }
+        }
     }
 
 
@@ -122,12 +151,9 @@ class SqlAction(
     }
 
     override fun copyContent(): Action {
-        return SqlAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
+        return SqlAction(table, selectedColumns, insertionId, genes.map(Gene::copy), representExistingData)
     }
 
-    fun geInsertionId(): Long {
-        return this.id
-    }
 
     //just for debugging
     fun getResolvedName() : String{

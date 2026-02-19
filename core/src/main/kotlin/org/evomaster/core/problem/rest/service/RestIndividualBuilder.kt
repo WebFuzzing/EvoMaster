@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlAction
 import javax.ws.rs.POST
 
 
@@ -116,7 +117,26 @@ class RestIndividualBuilder {
         base.seeAllActions().forEach { it.forceNewTaints() }
         other.seeAllActions().forEach { it.forceNewTaints() }
 
-        val duplicates = base.addInitializingActions(other.seeInitializingActions())
+        val thresholdId = base.seeInitializingActions()
+            .filterIsInstance<SqlAction>()
+            .maxOfOrNull { it.insertionId }
+            ?: 0
+        val envOther = other.seeInitializingActions()
+        val minId = envOther
+            .filterIsInstance<SqlAction>()
+            .filter{ ! it.representExistingData}
+            .minOfOrNull { it.insertionId }
+            ?: 0
+        if(minId <= thresholdId){
+            //if so, merging as it is might lead to id clashes.
+            //need to increase by a delta
+            val delta = (thresholdId - minId) + 1
+            envOther.filterIsInstance<SqlAction>()
+                .filter { !it.representExistingData }
+                .forEach { it.shiftIdBy(delta) }
+        }
+
+        val duplicates = base.addInitializingActions(envOther)
 
         other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
             base.addMainEnterpriseActionGroup(group)

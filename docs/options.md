@@ -92,7 +92,7 @@ There are 3 types of options:
 |`customNaming`| __Boolean__. Enable custom naming and sorting criteria. *Default value*: `true`.|
 |`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *DEBUG option*. *Default value*: `dependencies.csv`.|
-|`disabledOracleCodes`| __String__. Disable oracles. Provide a comma-separated list of codes to disable. By default, all oracles are enabled. *Constraints*: `regex (\s*\d{3}\s*(,\s*\d{3}\s*)*)?`. *Default value*: `""`.|
+|`disabledOracleCodes`| __String__. Disable oracles. Provide a comma-separated list of codes to disable. By default, all oracles are enabled. Codes are based on WFC (Web Fuzzing Commons). *Constraints*: `regex (\s*\d{3}\s*(,\s*\d{3}\s*)*)?`. *Default value*: `""`.|
 |`doCollectImpact`| __Boolean__. Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. *DEBUG option*. *Default value*: `false`.|
 |`doesApplyNameMatching`| __Boolean__. Whether to apply text/name analysis to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `true`.|
 |`e_u1f984`| __Boolean__. QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==. *Default value*: `false`.|
@@ -122,18 +122,18 @@ There are 3 types of options:
 |`extraHeader`| __Boolean__. Add an extra HTTP header, to analyze how it is used/read by the SUT. Needed to discover new headers that were not specified in the schema. *Default value*: `true`.|
 |`extraHeuristicsFile`| __String__. Where the extra heuristics file (if any) is going to be written (in CSV format). *Default value*: `extra_heuristics.csv`.|
 |`extraQueryParam`| __Boolean__. Add an extra query param, to analyze how it is used/read by the SUT. Needed to discover new query params that were not specified in the schema. *Default value*: `true`.|
-|`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Default value*: `true`.|
-|`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Default value*: `true`.|
+|`extractMongoExecutionInfo`| __Boolean__. Enable extracting Mongo execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`extractSqlExecutionInfo`| __Boolean__. Enable extracting SQL execution info. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`feedbackDirectedSampling`| __Enum__. Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement. *Valid values*: `NONE, LAST, FOCUSED_QUICKEST`. *Default value*: `FOCUSED_QUICKEST`.|
 |`fixedRateMutation`| __Double__. Define the probability of happening mutation in the genetic algorithms. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.04`.|
 |`focusedSearchActivationTime`| __Double__. The percentage of passed search before starting a more focused, less exploratory one. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.8`.|
-|`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Default value*: `true`.|
+|`forceSqlAllColumnInsertion`| __Boolean__. Force filling data of all columns when inserting new row, instead of only minimal required set. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`geneMutationStrategy`| __Enum__. Strategy used to define the mutation probability. *Valid values*: `ONE_OVER_N, ONE_OVER_N_BIASED_SQL`. *Default value*: `ONE_OVER_N_BIASED_SQL`.|
 |`geneWeightBasedOnImpactsBy`| __Enum__. Specify a strategy to calculate a weight of a gene based on impacts. *Valid values*: `SORT_COUNTER, SORT_RATIO, COUNTER, RATIO`. *Default value*: `RATIO`.|
-|`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Default value*: `true`.|
-|`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Default value*: `true`.|
-|`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Default value*: `true`.|
-|`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Default value*: `true`.|
+|`generateMongoData`| __Boolean__. Enable EvoMaster to generate Mongo data with direct accesses to the database. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`generateSqlDataWithSearch`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`heuristicsForMongo`| __Boolean__. Tracking of Mongo commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
+|`heuristicsForSQL`| __Boolean__. Tracking of SQL commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `true`.|
 |`impactAfterMutationFile`| __String__. Specify a path to save collected impact info after each mutation during search, only useful for debugging. *DEBUG option*. *Default value*: `impactSnapshot.csv`.|
 |`impactFile`| __String__. Specify a path to save derived genes. *DEBUG option*. *Default value*: `impact.csv`.|
 |`instrumentMR_BASE`| __Boolean__. Execute instrumentation for method replace with category BASE. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `true`.|
@@ -158,7 +158,7 @@ There are 3 types of options:
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
 |`maxResponseByteSize`| __Int__. Maximum size (in bytes) that EM handles response payloads in the HTTP responses. If larger than that, a response will not be stored internally in EM during the test generation. This is needed to avoid running out of memory. *Default value*: `1000000`.|
 |`maxSearchSuiteSize`| __Int__. Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS. *Constraints*: `min=1.0`. *Default value*: `50`.|
-|`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Default value*: `1`.|
+|`maxSqlInitActionsPerMissingData`| __Int__. When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Depends on*: `blackBox=false`. *Default value*: `1`.|
 |`maxTestCaseNameLength`| __Int__. Specify the hard limit for test case name length. *Default value*: `120`.|
 |`maxTestSize`| __Int__. Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test. *Constraints*: `min=1.0`. *Default value*: `10`.|
 |`maxTimeInSeconds`| __Int__. Maximum number of seconds allowed for the search. The more time is allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. If this value is 0, the setting 'maxTime' will be used instead. *Constraints*: `min=0.0`. *Default value*: `0`.|
@@ -236,7 +236,7 @@ There are 3 types of options:
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `true`.|
 |`writeExtraHeuristicsFile`| __Boolean__. Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
 |`writeStatistics`| __Boolean__. Whether or not writing statistics of the search process. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
-|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Default value*: `true`.|
+|`writeWFCReport`| __Boolean__. Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format. This also includes a index.html web application to visualize such data. *Depends on*: `createTests=true`. *Default value*: `true`.|
 |`writeWFCReportExcludeWebApp`| __Boolean__. If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only the JSON report file will be created. *Default value*: `false`.|
 |`xoverProbability`| __Double__. Probability of applying crossover operation (if any is used in the search algorithm). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.7`.|
 
@@ -277,14 +277,16 @@ There are 3 types of options:
 |`externalRequestResponseSelectionStrategy`| __Enum__. Harvested external request response selection strategy. *Valid values*: `EXACT, CLOSEST_SAME_DOMAIN, CLOSEST_SAME_PATH, RANDOM`. *Default value*: `EXACT`.|
 |`externalServiceIP`| __String__. User provided external service IP. When EvoMaster mocks external services, mock server instances will run on local addresses starting from this provided address. Min value is 127.0.0.4. Lower values like 127.0.0.2 and 127.0.0.3 are reserved. *Constraints*: `regex (?!^0*127(\.0*0){2}\.0*[0123]$)^0*127(\.0*(25[0-5]\|2[0-4][0-9]\|1?[0-9]?[0-9])){3}$`. *Default value*: `127.0.0.4`.|
 |`externalServiceIPSelectionStrategy`| __Enum__. Specify a method to select the first external service spoof IP address. *Valid values*: `NONE, DEFAULT, USER, RANDOM`. *Default value*: `NONE`.|
-|`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
-|`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Default value*: `false`.|
-|`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Default value*: `false`.|
+|`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`handleFlakiness`| __Boolean__. Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. Note that flakiness is now supported only for fuzzing REST APIs. *Default value*: `false`.|
+|`heuristicsForRedis`| __Boolean__. Tracking of Redis commands to improve test generation. *Depends on*: `blackBox=false`. *Default value*: `false`.|
+|`heuristicsForSQLAdvanced`| __Boolean__. If using SQL heuristics, enable more advanced version. *Depends on*: `blackBox=false`. *Default value*: `false`.|
 |`httpOracles`| __Boolean__. Extra checks on HTTP properties in returned responses, used as automated oracles to detect faults. *Default value*: `false`.|
 |`initStructureMutationProbability`| __Double__. Probability of applying a mutation that can change the structure of test's initialization if it has. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`instrumentMR_NET`| __Boolean__. Execute instrumentation for method replace with category NET. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_OPENSEARCH`| __Boolean__. Execute instrumentation for method replace with category OPENSEARCH. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
 |`instrumentMR_REDIS`| __Boolean__. Execute instrumentation for method replace with category REDIS. Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin on the JVM. *Default value*: `false`.|
+|`jdkEnvVarName`| __String__. Specify name of the environment variable that provides the JDK installation path. Note that the executable path will be resolved by appending 'bin/java'. *Default value*: `""`.|
 |`languageModelConnector`| __Boolean__. Enable language model connector. *Default value*: `false`.|
 |`languageModelConnectorNumberOfThreads`| __Int__. Number of threads for language model connector. No more threads than numbers of processors will be used. *Constraints*: `min=1.0`. *Default value*: `2`.|
 |`languageModelName`| __String__. Large-language model name as listed in Ollama. *Default value*: `llama3.2:latest`.|
@@ -314,16 +316,19 @@ There are 3 types of options:
 |`seedTestCasesPath`| __String__. File path where the seeded test cases are located. *Default value*: `postman.postman_collection.json`.|
 |`skipAIModelUpdateWhenResponseIs5xx`| __Boolean__. Determines whether the AI response classifier skips model updates when the response indicates a server-side error with status code 5xx. *Default value*: `false`.|
 |`skipAIModelUpdateWhenResponseIsNot2xxOr400`| __Boolean__. Determines whether the AI response classifier skips model updates when the response is not 2xx or 400. *Default value*: `false`.|
-|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Default value*: `false`.|
-|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Default value*: `2000`.|
-|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Default value*: `5500`.|
-|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Default value*: `false`.|
+|`sqli`| __Boolean__. To apply SQLi detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
+|`sqliBaselineMaxResponseTimeMs`| __Int__. Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied. *Depends on*: `sqli=true`. *Default value*: `2000`.|
+|`sqliInjectedSleepDurationMs`| __Int__. Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities. *Depends on*: `sqli=true`. *Default value*: `5500`.|
+|`ssrf`| __Boolean__. To apply SSRF detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|
 |`structureMutationProFS`| __Double__. Specify a probability of applying structure mutator during the focused search. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`structureMutationProbStrategy`| __Enum__. Specify a strategy to handle a probability of applying structure mutator during the focused search. *Valid values*: `SPECIFIED, SPECIFIED_FS, DPC_TO_SPECIFIED_BEFORE_FS, DPC_TO_SPECIFIED_AFTER_FS, ADAPTIVE_WITH_IMPACT`. *Default value*: `SPECIFIED`.|
+|`sutDistEnvVarName`| __String__. Specify name of the environment variable that provides the the base distribution directory of the SUT, e.g., 'dist' directory of WFD. *Default value*: `""`.|
+|`sutJarEnvVarName`| __String__. Specifies the name of the SUT JAR file that will be used together with `sutDistEnvVarName` to resolve the full SUT JAR path. *Default value*: `""`.|
 |`taintForceSelectionOfGenesWithSpecialization`| __Boolean__. During mutation, force the mutation of genes that have newly discovered specialization from previous fitness evaluations, based on taint analysis. *Default value*: `false`.|
 |`targetHeuristicsFile`| __String__. Where the target heuristic values file (if any) is going to be written (in CSV format). It is only used when processFormat is TARGET_HEURISTIC. *Default value*: `targets.csv`.|
 |`testResourcePathToSaveMockedResponse`| __String__. Specify test resource path where to save mocked responses as separated files. *Default value*: `""`.|
 |`thresholdDistanceForDataPool`| __Int__. Threshold of Levenshtein Distance for key-matching in Data Pool. *Constraints*: `min=0.0`. *Default value*: `2`.|
+|`useEnvVarsForPathInTests`| __Boolean__. Use environment variables to define the paths required by External Drivers. This is necessary when the generated tests are executed on the different machine. Note that this setting only affects the generated test cases. *Default value*: `false`.|
 |`useGlobalTaintInfoProbability`| __Double__. When sampling new individual, check whether to use already existing info on tainted values. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`useInsertionForSqlHeuristics`| __Boolean__. Specify whether insertions should be used to calculate SQL heuristics instead of retrieving data from real databases. *Default value*: `false`.|
 |`useTestMethodOrder`| __Boolean__. Adds TestMethodOrder annotation for JUnit 5 tests. *Default value*: `false`.|
@@ -331,4 +336,4 @@ There are 3 types of options:
 |`vulnerableInputClassificationStrategy`| __Enum__. Strategy to classify inputs for potential vulnerability classes related to an REST endpoint. *Valid values*: `MANUAL, LLM`. *Default value*: `MANUAL`.|
 |`wbProbabilityUseDataPool`| __Double__. Specify the probability of using the data pool when sampling test cases. This is for white-box (wb) mode. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.2`.|
 |`writeSnapshotTestsIntervalInSeconds`| __Int__. The size (in seconds) of the interval that the snapshots will be printed, if enabled. *Default value*: `3600`.|
-|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Default value*: `false`.|
+|`xss`| __Boolean__. To apply XSS detection as part of security testing. *Depends on*: `security=true`. *Default value*: `false`.|

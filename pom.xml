@@ -122,7 +122,7 @@
         -->
         <jackson.version>2.14.3</jackson.version>
         <asm.version>9.9</asm.version>
-        <testcontainers.version>1.21.0</testcontainers.version>
+        <testcontainers.version>1.21.4</testcontainers.version>
         <testcontainers.mockerserver.version>1.17.2</testcontainers.mockerserver.version>
         <mockserver.client.version>5.13.2</mockserver.client.version>
 <!--        <selenium.version>4.31.0</selenium.version>-->
@@ -367,7 +367,17 @@
                 <artifactId>commons-io</artifactId>
                 <version>2.11.0</version>
             </dependency>
-            <dependency> <!-- Used to handle terminal/console inputs -->
+            <dependency>
+                <!-- Used to handle terminal/console inputs -->
+                <!--
+                    This library looks dead, at least in 2026. There were still some discussion in 2025:
+                    https://github.com/jopt-simple/jopt-simple/issues/158
+                    but there is no new release since 2018...
+                    https://mvnrepository.com/artifact/net.sf.jopt-simple/jopt-simple
+                    TODO if for any reason we need to do something more with options, we should switch to something like:
+                    https://github.com/apache/commons-cli
+                    https://github.com/remkop/picocli
+                -->
                 <groupId>net.sf.jopt-simple</groupId>
                 <artifactId>jopt-simple</artifactId>
                 <version>6.0-alpha-3</version>

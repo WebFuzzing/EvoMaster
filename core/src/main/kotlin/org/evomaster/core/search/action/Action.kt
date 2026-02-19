@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.interfaces.TaintableGene
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.collections.flatMap
 
 /**
  * A variable-length individual will be composed by 1 or more "actions".
@@ -39,6 +40,8 @@ abstract class Action(children: List<StructuralElement>) : ActionComponent(
      * the genotype
      */
     abstract fun seeTopGenes(): List<out Gene>
+
+    fun seeAllGenes(): List<Gene> = seeTopGenes().flatMap {g ->  g.flatView() }
 
     final override fun copy(): Action {
         val copy = super.copy()

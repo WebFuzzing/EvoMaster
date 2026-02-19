@@ -188,7 +188,11 @@ class ResourceManageService {
             val call = ar.sampleIndResourceCall(randomness,size)
             calls.add(call)
             //TODO shall we control the probability to sample GET with an existing resource.
-            if(config.shouldGenerateSqlData() && hasDBHandler() && config.probOfApplySQLActionToCreateResources > 0 && call.template?.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
+            if(config.shouldGenerateSqlData() && hasDBHandler() //  has existing data
+                && config.probOfApplySQLActionToCreateResources > 0 // sql for handing resource is allowed
+                && call.template?.template == HttpVerb.GET.toString()
+                && randomness.nextBoolean(config.probOfSelectFromDatabase) // use `config.probOfSelectFromDatabase` instead of 0.5 to decide whether to use SELECT in resource node
+                ){
                 val created = handleDbActionForCall(call, false, true, false)
             }
             return

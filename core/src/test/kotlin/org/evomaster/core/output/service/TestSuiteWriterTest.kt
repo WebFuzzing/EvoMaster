@@ -149,6 +149,59 @@ class TestSuiteWriterTest{
         assertTrue(generatedUtils == PyLoader::class.java.getResource("/${TestSuiteWriter.pythonUtilsFilename}").readText())
     }
 
+    @Test
+    fun testEmptySuiteWithEnabledEnvVar(){
+
+        val injector = getInjector()
+
+        val config = injector.getInstance(EMConfig::class.java)
+        config.createTests = true
+        config.outputFormat = OutputFormat.KOTLIN_JUNIT_5
+        config.outputFolder = "$baseTargetFolder/empty_suite_use_env_var"
+        config.outputFilePrefix = "Foo_testEmptySuiteUseEnvVar"
+        config.outputFileSuffix = ""
+        config.useEnvVarsForPathInTests = true
+        config.jdkEnvVarName = "JAVA_HOME_FAKE"
+        config.sutDistEnvVarName = "WFC_HOME_FAKE"
+        config.sutJarEnvVarName = "fake-sut.jar"
+
+        val solution = getEmptySolution(config)
+
+
+        //make sure we delete any existing folder from previous test runs
+        val srcFolder = File(config.outputFolder)
+        srcFolder.deleteRecursively()
+
+        //this is what used by Maven and IntelliJ
+        val testClassFolder = File("target/test-classes")
+        val expectedCompiledFile = testClassFolder.toPath()
+            .resolve("${config.outputFilePrefix}.class")
+            .toFile()
+        expectedCompiledFile.delete()
+        assertFalse(expectedCompiledFile.exists())
+
+
+        val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+
+        //write the test suite
+        writer.writeTests(solution, FakeController::class.qualifiedName!!, null)
+
+        val generatedTest = Paths.get("${config.outputFolder}/${config.outputFilePrefix}.kt")
+        assertTrue(Files.exists(generatedTest))
+
+        /*
+            here, we only check the generated in text
+            as it requires to use method in SutHandler
+         */
+        val testContent = String(Files.readAllBytes(generatedTest))
+        val expectedJdkPath = "org.evomaster.core.output.service.FakeController(extractSutJarNameWithEnvVarName(\"${config.sutDistEnvVarName}\", \"${config.sutJarEnvVarName}\"))"
+        val expectedSutPath = ".setJavaCommand(extractJDKPathWithEnvVarName(\"${config.jdkEnvVarName}\"))"
+
+        assertTrue(testContent.contains(expectedJdkPath))
+        assertTrue(testContent.contains(expectedSutPath))
+    }
+
     private fun getEmptySolution(config: EMConfig): Solution<RestIndividual> {
         return Solution<RestIndividual>(
             mutableListOf(),
