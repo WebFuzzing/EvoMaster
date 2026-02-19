@@ -9,6 +9,7 @@ import org.evomaster.client.java.sql.internal.TaintHandler;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.controller.redis.RedisUtils.redisPatternToRegex;
 
@@ -31,16 +32,17 @@ public class RedisHeuristicsCalculator {
      * Dispatches the computation based on the command keyword (type).
      *
      * @param redisCommand Redis command.
-     * @param redisInfo Redis data in a generic structure.
+     * @param redisValueData Redis data in a generic structure.
      * @return RedisDistanceWithMetrics
      */
-    public RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, List<RedisInfo> redisInfo) {
+    public RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand,
+                                                    Map<String, RedisValueData> redisValueData) {
         RedisCommand.RedisCommandType type = redisCommand.getType();
         try {
             switch (type) {
                 case KEYS: {
                     String pattern = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForPattern(pattern, redisInfo);
+                    return calculateDistanceForPattern(pattern, redisValueData);
                 }
 
                 case EXISTS:
@@ -48,17 +50,17 @@ public class RedisHeuristicsCalculator {
                 case HGETALL:
                 case SMEMBERS: {
                     String target = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForKeyMatch(target, redisInfo);
+                    return calculateDistanceForKeyMatch(target, redisValueData);
                 }
 
                 case HGET: {
                     String key = redisCommand.extractArgs().get(0);
                     String field = redisCommand.extractArgs().get(1);
-                    return calculateDistanceForFieldInHash(key, field, redisInfo);
+                    return calculateDistanceForFieldInHash(key, field, redisValueData);
                 }
 
                 case SINTER: {
-                    return calculateDistanceForIntersection(redisInfo);
+                    return calculateDistanceForIntersection(redisCommand.extractArgs(), redisValueData);
                 }
 
                 default:
@@ -79,7 +81,7 @@ public class RedisHeuristicsCalculator {
      */
     private RedisDistanceWithMetrics calculateDistanceForPattern(
             String pattern,
-            List<RedisInfo> keys) {
+            Map<String, RedisValueData> keys) {
         double minDist = MAX_REDIS_DISTANCE;
         int eval = 0;
         String regex;
@@ -89,8 +91,7 @@ public class RedisHeuristicsCalculator {
             SimpleLogger.uniqueWarn("Invalid Redis pattern. Cannot compute regex for: " + pattern);
             return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
-        for (RedisInfo k : keys) {
-            String key = k.getKey();
+        for (String key : keys.keySet()) {
             double d = TruthnessUtils.normalizeValue(
                     RegexDistanceUtils.getStandardDistance(key, regex));
             if (taintHandler != null) {
@@ -113,7 +114,7 @@ public class RedisHeuristicsCalculator {
      */
     private RedisDistanceWithMetrics calculateDistanceForKeyMatch(
             String targetKey,
-            List<RedisInfo> candidateKeys
+            Map<String, RedisValueData> candidateKeys
     ) {
         if (candidateKeys.isEmpty()) {
             return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
@@ -122,9 +123,8 @@ public class RedisHeuristicsCalculator {
         double minDist = MAX_REDIS_DISTANCE;
         int evaluated = 0;
 
-        for (RedisInfo k : candidateKeys) {
+        for (String key : candidateKeys.keySet()) {
             try {
-                String key = k.getKey();
                 long rawDist = DistanceHelper.getLeftAlignmentDistance(targetKey, key);
                 double normDist = TruthnessUtils.normalizeValue(rawDist);
                 if (taintHandler != null) {
@@ -137,7 +137,7 @@ public class RedisHeuristicsCalculator {
                     return new RedisDistanceWithMetrics(0, evaluated);
                 }
             } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed to compute distance for key " + k + ": " + ex.getMessage());
+                SimpleLogger.uniqueWarn("Failed to compute distance for key " + key + ": " + ex.getMessage());
             }
         }
 
@@ -154,7 +154,7 @@ public class RedisHeuristicsCalculator {
     private RedisDistanceWithMetrics calculateDistanceForFieldInHash(
             String targetKey,
             String targetField,
-            List<RedisInfo> keys
+            Map<String, RedisValueData> keys
     ) {
         if (keys.isEmpty()) {
             return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
@@ -163,11 +163,10 @@ public class RedisHeuristicsCalculator {
         double minDist = MAX_REDIS_DISTANCE;
         int evaluated = 0;
 
-        for (RedisInfo k : keys) {
+        for (String key : keys.keySet()) {
             try {
-                String key = k.getKey();
                 long keyDist = DistanceHelper.getLeftAlignmentDistance(targetKey, key);
-                double fieldDist = calculateDistanceForField(targetField, k.getFields().keySet());
+                double fieldDist = calculateDistanceForField(targetField, keys.get(key).getFields().keySet());
                 double combined = TruthnessUtils.normalizeValue(keyDist + fieldDist);
                 if (taintHandler != null) {
                     taintHandler.handleTaintForStringEquals(targetKey, key, false);
@@ -179,7 +178,7 @@ public class RedisHeuristicsCalculator {
                     return new RedisDistanceWithMetrics(0, evaluated);
                 }
             } catch (Exception ex) {
-                SimpleLogger.uniqueWarn("Failed HGET distance on " + k + ": " + ex.getMessage());
+                SimpleLogger.uniqueWarn("Failed HGET distance on " + key + ": " + ex.getMessage());
             }
         }
 
@@ -216,37 +215,72 @@ public class RedisHeuristicsCalculator {
 
     /**
      * Computes the distance of a given intersection considering the keys for the given sets.
+     * Distance would be a function considering whether the keys are valid sets existing in Redis
+     * and whether the successive intersections return elements in common.
      *
-     * @param keys Set keys for the intersection
+     * @param commandArgs List of keys for the intersection
+     * @param storedKeys Set keys stored in Redis
      * @return RedisDistanceWithMetrics
      */
     private RedisDistanceWithMetrics calculateDistanceForIntersection(
-            List<RedisInfo> keys
+            List<String> commandArgs,
+            Map<String, RedisValueData> storedKeys
     ) {
-        if (keys == null || keys.isEmpty()) {
+        if (storedKeys == null || storedKeys.isEmpty()) {
             return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
 
+        return new RedisDistanceWithMetrics(TruthnessUtils.normalizeValue(
+                computeDistanceForKeysInArgs(commandArgs, storedKeys) + computeIntersectionDistanceForArgs(commandArgs, storedKeys)
+        ), storedKeys.size());
+    }
+
+    /**
+     * Computes the distance for the list of keys of each one existing in Redis.
+     *
+     * @param commandArgs List of keys for the intersection
+     * @param storedKeys Set keys stored in Redis
+     * @return RedisDistanceWithMetrics
+     */
+    private double computeDistanceForKeysInArgs(
+            List<String> commandArgs,
+            Map<String, RedisValueData> storedKeys
+    ) {
+        int numberOfCommandKeys = commandArgs.size();
+        double sum = 0d;
+        for (String arg : commandArgs) {
+            sum += calculateDistanceForKeyMatch(arg, storedKeys).getDistance();
+        }
+        return sum / numberOfCommandKeys;
+    }
+
+    /**
+     * Computes the distance of a given intersection considering the keys present in the command args.
+     *
+     * @param commandArgs List of keys for the intersection
+     * @param storedSets Set keys stored in Redis
+     * @return RedisDistanceWithMetrics
+     */
+    private double computeIntersectionDistanceForArgs(
+            List<String> commandArgs,
+            Map<String, RedisValueData> storedSets
+    ) {
+
+        List<Set<String>> membersInCommandArgsSets = commandArgs.stream()
+                .map(key -> storedSets.getOrDefault(key, new RedisValueData(new HashSet<>())).getMembers())
+                .collect(Collectors.toList());
+
         double total = 0d;
-        int evaluated = 0;
 
         Set<String> currentIntersection = null;
 
-        for (int i = 0; i < keys.size(); i++) {
-            RedisInfo k = keys.get(i);
-            String type = k.getType();
-            if (!"set".equalsIgnoreCase(type)) {
-                return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, evaluated);
-            }
-
-            Set<String> set = k.getMembers();
-            if (set == null) set = Collections.emptySet();
+        for (int i = 0; i < membersInCommandArgsSets.size(); i++) {
+            Set<String> set = membersInCommandArgsSets.get(i);
 
             if (i == 0) {
                 currentIntersection = new HashSet<>(set);
                 double d0 = currentIntersection.isEmpty() ? MAX_REDIS_DISTANCE : 0d;
                 total += d0;
-                evaluated++;
             } else {
                 Set<String> newIntersection = new HashSet<>(currentIntersection);
                 newIntersection.retainAll(set);
@@ -256,12 +290,11 @@ public class RedisHeuristicsCalculator {
                         : 0d;
 
                 total += di;
-                evaluated++;
                 currentIntersection = newIntersection;
             }
         }
 
-        return new RedisDistanceWithMetrics(total / keys.size(), evaluated);
+        return total / membersInCommandArgsSets.size();
     }
 
     /**
