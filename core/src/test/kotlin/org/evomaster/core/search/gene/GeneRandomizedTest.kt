@@ -114,8 +114,8 @@ class GeneRandomizedTest : AbstractGeneTest(){
         assertTrue(gene.isLocallyValid(), msg)
         //all tree must be valid, regardless of impact on phenotype
         assertTrue(gene.flatView().all {
-            it.isLocallyValid()
-        }
+                it.isLocallyValid()
+            }
         )
 
         if(gene !is WrapperGene){
