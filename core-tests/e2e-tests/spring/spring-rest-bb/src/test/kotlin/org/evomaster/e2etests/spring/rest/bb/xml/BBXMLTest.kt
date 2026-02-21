@@ -25,9 +25,7 @@ class BBXMLTest : SpringTestBase() {
 
     @ParameterizedTest
     @EnumSource
-    fun testRunEM(outputFormat: OutputFormat) {
-
-        assumeTrue(outputFormat == OutputFormat.JAVA_JUNIT_5 || outputFormat == OutputFormat.JAVA_JUNIT_4)
+    fun testBlackBoxOutput(outputFormat: OutputFormat) {
 
         executeAndEvaluateBBTest(
             outputFormat,
@@ -37,8 +35,6 @@ class BBXMLTest : SpringTestBase() {
             listOf("STRING_TO_XML", "XML_TO_STRING", "EMPLOYEE", "COMPANY",
                 "DEPARTMENT", "ORGANIZATION", "PERSON_ATTR", "PROJECT", "PROJECTS")
         ) { args: MutableList<String> ->
-
-            addBlackBoxOptions(args, OutputFormat.JAVA_JUNIT_5)
 
             val solution = initAndRun(args)
 

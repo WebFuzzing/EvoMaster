@@ -920,7 +920,7 @@ object GeneSamplerForTests {
             .filter { !it.isAbstract }
             .filter { it.java != CycleObjectGene::class.java && it.java != LimitObjectGene::class.java }
             .filter { it.java != SqlMultidimensionalArrayGene::class.java }
-            // Excluir genes con compareTo problemático
+            // Exclude genes with problematic compareTo implementations
             .filter { it.java != SqlRangeGene::class.java }
             .filter { it.java != SqlMultiRangeGene::class.java }
 
