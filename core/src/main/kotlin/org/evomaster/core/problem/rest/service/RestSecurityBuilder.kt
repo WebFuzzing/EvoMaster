@@ -403,7 +403,7 @@ class RestSecurityBuilder {
 
                 // Create a copy of the individual
                 val copy = target.copy() as RestIndividual
-                val actionCopy = copy.seeMainExecutableActions().last() as RestCallAction
+                val actionCopy = copy.seeMainExecutableActions().last()
 
                 val genes = GeneUtils.getAllStringFields(actionCopy.parameters)
                     .filter { it.staticCheckIfImpactPhenotype() }
