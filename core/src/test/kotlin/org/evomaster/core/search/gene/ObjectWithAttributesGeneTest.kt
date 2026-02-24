@@ -284,29 +284,20 @@ class ObjectWithAttributesGeneTest {
     }
 
     @Test
-    fun testTextAsAttributeLogsWarning() {
-        // When #text is incorrectly specified as an attribute in the schema,
-        // the class logs a warning but continues processing (does not throw an exception)
-        // This tests that the object is created successfully despite the invalid schema
-        val obj = ObjectWithAttributesGene(
-            name = "node",
-            fixedFields = listOf(
-                StringGene("#text", "value")
-            ),
-            isFixed = true,
-            attributeNames = setOf("#text")
-        )
-
-        // Object should be created successfully - no exception thrown
-        Assertions.assertNotNull(obj)
-
-        // The XML output will treat #text as an attribute (even though it's invalid schema)
-        val actual = obj.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
-        val expected = "<node #text=\"value\"></node>"
-
-        Assertions.assertEquals(expected, actual)
+    fun testTextAsAttributeThrowsException() {
+        // "#text" is reserved for element content and cannot be used as an attribute name.
+        // Passing it in attributeNames must fail fast with an IllegalArgumentException.
+        Assertions.assertThrows(IllegalArgumentException::class.java) {
+            ObjectWithAttributesGene(
+                name = "node",
+                fixedFields = listOf(
+                    StringGene("#text", "value")
+                ),
+                isFixed = true,
+                attributeNames = setOf("#text")
+            )
+        }
     }
-
 
     @Test
     fun testArrayGeneWithAttributesInsideObjectGene() {
@@ -371,6 +362,29 @@ class ObjectWithAttributesGeneTest {
                         "</member>" +
                     "</members>" +
             "</project>"
+        Assertions.assertEquals(expected, actual)
+    }
+    
+    @Test
+    fun testUnknownAttributeNameIsIgnoredDuringRendering() {
+        // "ghost" is listed in attributeNames but has no corresponding gene in fixedFields.
+        // The expected behavior is that it is silently ignored: the XML output contains only
+        // the fields that actually exist, with no error or missing-attribute placeholder.
+        val obj = ObjectWithAttributesGene(
+            name = "node",
+            fixedFields = listOf(
+                StringGene("id", "42"),
+                StringGene("label", "hello")
+            ),
+            isFixed = true,
+            attributeNames = setOf("id", "ghost")  // "ghost" does not exist in fixedFields
+        )
+
+        val actual = obj.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
+
+        // "id" is a known attribute and is rendered as such; "label" is a child element;
+        // "ghost" simply does not appear anywhere in the output
+        val expected = "<node id=\"42\"><label>hello</label></node>"
         Assertions.assertEquals(expected, actual)
     }
 }

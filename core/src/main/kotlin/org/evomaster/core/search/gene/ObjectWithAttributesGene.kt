@@ -1,6 +1,5 @@
 package org.evomaster.core.search.gene
 
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.collection.PairGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
@@ -8,9 +7,20 @@ import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.utils.CollectionUtils
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
+/**
+ * An extension of [ObjectGene] that supports XML attributes.
+ *
+ * While [ObjectGene] renders all its fields as child XML elements, this class distinguishes
+ * between fields that should be rendered as XML attributes (inside the opening tag, e.g.
+ * `<element attr="value">`) and fields that should remain as child elements.
+ * The distinction is controlled by [attributeNames]: any field whose name appears in that set
+ * is serialised as an XML attribute; all other fields are serialised as child elements.
+ *
+ * This class overrides [getValueAsPrintableString] to produce the correct XML output when
+ * [GeneUtils.EscapeMode.XML] is requested, and overrides [containsSameValueAs] to take
+ * attribute membership into account when comparing two genes.
+ */
 class ObjectWithAttributesGene(
     name: String,
     fixedFields: List<Gene>,
@@ -18,25 +28,21 @@ class ObjectWithAttributesGene(
     isFixed: Boolean,
     template: PairGene<StringGene, Gene>? = null,
     additionalFields: MutableList<PairGene<StringGene, Gene>>? = null,
+    /**
+     * The set of field names (from [fixedFields]) that must be serialised as XML attributes
+     * rather than as child elements.  Every name in this set is expected to match the [Gene.name]
+     * of one of the entries in [fixedFields]; names that do not match any field are silently
+     * ignored during rendering.  The special name `"#text"` is reserved for element content and
+     * therefore cannot be an attribute — an [IllegalArgumentException] is thrown at construction
+     * time if it is present.
+     */
     val attributeNames: Set<String> = emptySet()
 ) : ObjectGene(name, fixedFields, refType, isFixed, template, additionalFields) {
 
-    companion object {
-        private val log: Logger = LoggerFactory.getLogger(ObjectWithAttributesGene::class.java)
-    }
-
     init {
-
-        val includedFields = fixedFields
-            .filter { it !is CycleObjectGene }
-            .filter { it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene) }
-            .filter { it.isPrintable() }
-
-        val attributeFields = includedFields.filter { attributeNames.contains(it.name) }
-
-        // "#text" CANNOT be an attribute - warn if schema incorrectly defines it as one
+        // "#text" is reserved for element content and cannot be used as an attribute name
         if (attributeNames.contains("#text")) {
-            LoggingUtil.uniqueWarn(log, "Invalid XML schema: '#text' cannot be used as an attribute. It will be treated as content instead.")
+            throw IllegalArgumentException("Invalid XML schema: '#text' is reserved for element content and cannot be used as an attribute name.")
         }
     }
 
@@ -57,7 +63,7 @@ class ObjectWithAttributesGene(
             isFixed,
             template,
             copiedAdditional,
-            attributeNames.toMutableSet()
+            attributeNames
         )
     }
 
@@ -70,6 +76,9 @@ class ObjectWithAttributesGene(
         // If other is also ObjectWithAttributesGene, attributeNames must match
         // If other is plain ObjectGene, this.attributeNames must be empty to produce same XML
         if (other is ObjectWithAttributesGene) {
+            // != uses Set.equals(), which compares by content (same elements, any order),
+            // not by reference — correct here since two independently built sets with the
+            // same attribute names should be considered equivalent
             if (this.attributeNames != other.attributeNames) {
                 return false
             }
@@ -117,8 +126,7 @@ class ObjectWithAttributesGene(
             .filter { it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene) }
             .filter { it.isPrintable() }
 
-        val attributeFields = includedFields.filter { attributeNames.contains(it.name) }
-        val childFields = includedFields.filter { !attributeNames.contains(it.name) }
+        val (attributeFields, childFields) = includedFields.partition { attributeNames.contains(it.name) }
 
         val attributesString = attributeFields.joinToString(" ") { printAttribute(previousGenes, targetFormat, it) }
         val sb = StringBuilder()
