@@ -30,11 +30,11 @@ class ObjectWithAttributesGene(
     additionalFields: MutableList<PairGene<StringGene, Gene>>? = null,
     /**
      * The set of field names (from [fixedFields]) that must be serialised as XML attributes
-     * rather than as child elements.  Every name in this set is expected to match the [Gene.name]
-     * of one of the entries in [fixedFields]; names that do not match any field are silently
-     * ignored during rendering.  The special name `"#text"` is reserved for element content and
-     * therefore cannot be an attribute — an [IllegalArgumentException] is thrown at construction
-     * time if it is present.
+     * rather than as child elements.  Every name in this set must match the [Gene.name]
+     * of one of the entries in [fixedFields]; an [IllegalArgumentException] is thrown at
+     * construction time if any name in this set has no corresponding field.
+     * The special name `"#text"` is reserved for element content and therefore cannot be an
+     * attribute — an [IllegalArgumentException] is also thrown if it is present.
      */
     val attributeNames: Set<String> = emptySet()
 ) : ObjectGene(name, fixedFields, refType, isFixed, template, additionalFields) {
@@ -43,6 +43,12 @@ class ObjectWithAttributesGene(
         // "#text" is reserved for element content and cannot be used as an attribute name
         if (attributeNames.contains("#text")) {
             throw IllegalArgumentException("Invalid XML schema: '#text' is reserved for element content and cannot be used as an attribute name.")
+        }
+        // Every attribute name must correspond to an existing field in fixedFields
+        val fieldNames = fixedFields.map { it.name }.toSet()
+        val unknown = attributeNames.filter { it !in fieldNames }
+        if (unknown.isNotEmpty()) {
+            throw IllegalArgumentException("Invalid XML schema: attribute name(s) $unknown are not defined in fixedFields.")
         }
     }
 
