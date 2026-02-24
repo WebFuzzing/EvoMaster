@@ -395,6 +395,11 @@ class RestSecurityBuilder {
                 }
             }
 
+            //due to timing, the candidates might be empty
+            if(candidates.isEmpty()){
+                continue
+            }
+
             // Take the smallest successful individual
             val target = candidates.minBy { it.size() }
 
