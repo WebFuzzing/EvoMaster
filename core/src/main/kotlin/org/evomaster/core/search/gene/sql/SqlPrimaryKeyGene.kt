@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
@@ -50,6 +51,16 @@ class SqlPrimaryKeyGene(name: String,
         if(delta <= 0){
             throw IllegalArgumentException("Invalid delta: $delta")
         }
+
+        //update all FKs pointing to this one
+        val ind = getRoot() as EnterpriseIndividual
+        ind.seeSqlDbActions()
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<SqlForeignKeyGene>()
+            .filter{it.isBound() && it.uniqueIdOfPrimaryKey == uniqueId}
+            .forEach { it.uniqueIdOfPrimaryKey += delta }
+        // as the ids of existing data is never modified, we shall not change the links to them
+
         uniqueId += delta
     }
 

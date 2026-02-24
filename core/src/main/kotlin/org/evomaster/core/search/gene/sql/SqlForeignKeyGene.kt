@@ -59,16 +59,6 @@ class SqlForeignKeyGene(
             throw IllegalArgumentException("Invalid delta: $delta")
         }
         uniqueId += delta
-        if(isBound()){
-            val ind = getRoot() as EnterpriseIndividual
-            val action = ind.seeSqlDbActions().find{it.insertionId == uniqueIdOfPrimaryKey}
-                ?: throw IllegalStateException("FK in $uniqueId is bound to PK $uniqueIdOfPrimaryKey," +
-                        " but there is no action found for it")
-            if(!action.representExistingData) {
-                // as the ids of existing data is never modified, we shall not change the links to them
-                uniqueIdOfPrimaryKey += delta
-            }
-        }
     }
 
 
