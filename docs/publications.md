@@ -55,7 +55,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * O. Sahin, M. Zhang, A. Arcuri.
   *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2025_ause.pdf)]
 
 * M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
@@ -92,13 +92,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
  *Tool Report: EvoMaster -- Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2024_ause_em.pdf)]
 
 
 * A. Poth, O. Rrjolli, A. Arcuri.
   *Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2024_ause_vw.pdf)]
 
 
