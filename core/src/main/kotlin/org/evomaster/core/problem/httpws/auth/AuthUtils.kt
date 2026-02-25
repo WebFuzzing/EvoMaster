@@ -70,6 +70,7 @@ object AuthUtils {
                 }
                 TokenHandling.ExtractFrom.HEADER -> {
                     val header = response.getHeaderString(data.extractSelector)
+                    response.close()
                     if(header == null || header.isEmpty()){
                         log.warn("Failed login. No token to extract from header '${data.extractSelector}'")
                         continue
@@ -188,10 +189,12 @@ object AuthUtils {
                 val location = response.getHeaderString("location")
                 if (location != null && (location.contains("error", true) || location.contains("login", true))) {
                     log.warn("Login request failed with ${response.status} redirection toward $location")
+                    response.close()
                     return null
                 }
             } else {
                 log.warn("Login request failed with status ${response.status}")
+                response.close()
                 return null
             }
         }

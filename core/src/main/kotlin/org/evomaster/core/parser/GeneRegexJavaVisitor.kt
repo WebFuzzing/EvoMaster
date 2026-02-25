@@ -18,7 +18,12 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
         val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
 
         // we remove the <EOF> token from end of the string to store as sourceRegex
-        val gene = RegexGene("regex", disjList,"${RegexGene.JAVA_REGEX_PREFIX}${text.substring(0, text.length - EOF_TOKEN.length)}")
+        val gene = RegexGene(
+            "regex",
+            disjList,
+            text.substring(0, text.length - EOF_TOKEN.length),
+            RegexType.JVM
+        )
 
         return VisitResult(gene)
     }

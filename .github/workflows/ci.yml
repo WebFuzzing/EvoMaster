@@ -42,7 +42,7 @@ env:
   build-jdk: 17
   retention-days: 5
   debug: false  # put to true if need to debug a specific test
-  debugTestName: "org.evomaster.core.problem.rest.SamplerVerifierTest" # replace with test to debug
+  debugTestName: "GeneRandomizedTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
 # For the moment, we need to support JVM 8 and all following LTS versions (e.g, 11 and  17).
@@ -62,6 +62,11 @@ jobs:
      - name: Set skip-jobs variable
        id: set-output
        run: echo "debug=${{ env.debug }}" >> $GITHUB_OUTPUT
+     - name: Verify Docker is working fine
+       run: | 
+        timeout 30s bash -c 'until docker info; do sleep 1; done' 
+        docker version
+        docker info 
 
 
   debug:

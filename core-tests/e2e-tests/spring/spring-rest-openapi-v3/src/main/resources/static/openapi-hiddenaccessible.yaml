@@ -1,0 +1,69 @@
+openapi: 3.0.1
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8080
+  description: Generated server url
+paths:
+  /api/resources:
+#    get:
+#      tags:
+#      - hidden-accessible-application
+#      operationId: get
+#      responses:
+#        "200":
+#          description: OK
+#          content:
+#            '*/*':
+#              schema:
+#                type: string
+    post:
+      tags:
+      - hidden-accessible-application
+      operationId: post
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+  /api/resources/{id}:
+    get:
+      tags:
+      - hidden-accessible-application
+      operationId: getId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int32
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+#    delete:
+#      tags:
+#      - hidden-accessible-application
+#      operationId: deleteId
+#      parameters:
+#      - name: id
+#        in: path
+#        required: true
+#        schema:
+#          type: integer
+#          format: int32
+#      responses:
+#        "200":
+#          description: OK
+#          content:
+#            '*/*':
+#              schema:
+#                type: string
+components: {}

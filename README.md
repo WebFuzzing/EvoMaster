@@ -227,10 +227,11 @@ Existing open-source tools for REST API fuzzing, with at least 100 stars on GitH
 [Fuzz-lightyear](https://github.com/Yelp/fuzz-lightyear),
 [ResTest](https://github.com/isa-group/RESTest),
 [Restler](https://github.com/microsoft/restler-fuzzer),
+[Schemathesis](https://github.com/schemathesis/schemathesis)
 and
-[Schemathesis](https://github.com/schemathesis/schemathesis).
+[WuppieFuzz](https://github.com/TNO-S3/WuppieFuzz).
 
-All these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
+Apart from WuppieFuzz, all these tools are _black-box_, i.e., they do not analyze the source-code of the tested APIs to generate more effective test data.
 As we are the authors of EvoMaster, we are too biased to compare it properly with those other black-box tools.
 However, different independent studies (e.g., in [2022](https://arxiv.org/abs/2204.08348) and [2024](https://arxiv.org/abs/2410.12547)) shows that EvoMaster is among the best performant.
 Furthermore, if your APIs are running on the JVM (e.g., written in Java or Kotlin), then EvoMaster has clearly an advantage, as it supports _white-box_ testing. 

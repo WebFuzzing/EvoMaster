@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.redis;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -10,16 +11,16 @@ import java.util.Set;
 public class RedisInfo {
     private String key;
     private String type;
-    private boolean hasField;
+    private Map<String, String> fields;
     private Set<String> members;
 
     public RedisInfo(String key) {
         this.key = key;
     }
 
-    public RedisInfo(String key, boolean hasField) {
+    public RedisInfo(String key, Map<String, String> fields) {
         this.key = key;
-        this.hasField = hasField;
+        this.fields = fields;
     }
 
     public RedisInfo(String key, String type, Set<String> members) {
@@ -36,11 +37,11 @@ public class RedisInfo {
         return type;
     }
 
-    public boolean hasField() {
-        return hasField;
-    }
-
     public Set<String> getMembers() {
         return members;
+    }
+
+    public Map<String, String> getFields() {
+        return fields;
     }
 }

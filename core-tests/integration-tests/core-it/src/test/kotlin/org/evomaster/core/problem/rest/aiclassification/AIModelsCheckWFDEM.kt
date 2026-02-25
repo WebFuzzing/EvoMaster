@@ -71,7 +71,7 @@ class AIModelsCheckWFDEM : RestTestBase() {
             val overAllMetrics = model.estimateOverallMetrics()
             println("Overall Accuracy: ${overAllMetrics.accuracy}")
             println("Overall Precision400: ${overAllMetrics.precision400}")
-            println("Overall Recall400: ${overAllMetrics.recall400}")
+            println("Overall Recall400: ${overAllMetrics.sensitivity400}")
             println("Overall F1Score400: ${overAllMetrics.f1Score400}")
             println("Overall MCC: ${overAllMetrics.mcc}")
 
