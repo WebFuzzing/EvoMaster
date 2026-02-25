@@ -31,6 +31,11 @@ Also, some of these papers provides full replication packages, which are linked 
   ACM/IEEE International Conference on Automation of Software Test (AST).
   (To appear)
 
+* A. Arcuri, M. Zhang, S. Seran, J. P. Galeotti, A. Golmohammadi, P. Garrett, O. Sahin, M. Shalmani, F. Castagna, I. Kertusha, F. Susilo, G. Bhandari, G. Assres, J. Molléri.
+  *EvoMaster at REST League 2026 Tool Competition*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  (To appear)
+
 * S. Seran, G. Bhandari, A. Arcuri. 
   *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
