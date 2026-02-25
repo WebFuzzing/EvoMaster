@@ -469,7 +469,7 @@ class ObjectWithAttributesGeneTest {
 
     @Test
     fun testContainsSameValueAs_emptyAttributesVsPlainObjectGene() {
-        // When attributeNames is empty, ObjectWithAttributesGene produces the same XML as a
+        // When attributeNames is empty, ObjectWithAttributesGene produces the same XML as a 
         // plain ObjectGene, so containsSameValueAs should delegate to the parent and return true.
         val withNoAttrs = ObjectWithAttributesGene(
             name = "node",
