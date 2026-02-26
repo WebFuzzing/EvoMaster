@@ -58,7 +58,6 @@ public class ReplacementList {
                     new MongoTemplateClassReplacement(),
                     new OpenSearchClientClassReplacement(),
                     new Neo4JClassReplacement(),
-                    new Neo4jTemplateClassReplacement(),
                     new MappingMongoEntityInformationClassReplacement(),
                     new OkHttpClient3BuilderClassReplacement(),
                     new OkHttpClient3ClassReplacement(),
