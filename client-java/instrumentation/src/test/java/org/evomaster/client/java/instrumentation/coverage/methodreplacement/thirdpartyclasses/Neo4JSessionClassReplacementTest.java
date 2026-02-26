@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class Neo4JClassReplacementTest {
+public class Neo4JSessionClassReplacementTest {
 
     private static Driver driver;
     private static final int NEO4J_BOLT_PORT = 7687;
@@ -66,7 +66,7 @@ public class Neo4JClassReplacementTest {
             String query = "RETURN 1 AS number";
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run(session, query);
+            Result result = (Result) Neo4JSessionClassReplacement.run(session, query);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -92,7 +92,7 @@ public class Neo4JClassReplacementTest {
             Query query = new Query(queryText);
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run(session, query);
+            Result result = (Result) Neo4JSessionClassReplacement.run(session, query);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -123,7 +123,7 @@ public class Neo4JClassReplacementTest {
             parameters.put(PARAM_NAME, personName);
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
+            Result result = (Result) Neo4JSessionClassReplacement.run(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -156,7 +156,7 @@ public class Neo4JClassReplacementTest {
             Query query = new Query(MATCH_PERSON_BY_NAME_QUERY, parameters);
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run(session, query);
+            Result result = (Result) Neo4JSessionClassReplacement.run(session, query);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -187,7 +187,7 @@ public class Neo4JClassReplacementTest {
             Value parameters = Values.parameters(PARAM_NAME, personName);
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run_EM_0(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
+            Result result = (Result) Neo4JSessionClassReplacement.run_EM_0(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -219,7 +219,7 @@ public class Neo4JClassReplacementTest {
             Record parameters = paramResult.next();
 
             ExecutionTracer.setExecutingInitNeo4J(false);
-            Result result = (Result) Neo4JClassReplacement.run_EM_1(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
+            Result result = (Result) Neo4JSessionClassReplacement.run_EM_1(session, MATCH_PERSON_BY_NAME_QUERY, parameters);
 
             assertTrue(result.hasNext());
             Record record = result.next();
@@ -249,9 +249,9 @@ public class Neo4JClassReplacementTest {
 
             ExecutionTracer.setExecutingInitNeo4J(false);
 
-            Neo4JClassReplacement.run(session, query1);
-            Neo4JClassReplacement.run(session, query2);
-            Neo4JClassReplacement.run(session, query3);
+            Neo4JSessionClassReplacement.run(session, query1);
+            Neo4JSessionClassReplacement.run(session, query2);
+            Neo4JSessionClassReplacement.run(session, query3);
 
             List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
             assertEquals(1, additionalInfoList.size());
@@ -276,7 +276,7 @@ public class Neo4JClassReplacementTest {
     public void testInitNeo4JNotTracked() {
         try (Session session = driver.session()) {
             ExecutionTracer.setExecutingInitNeo4J(true);
-            Neo4JClassReplacement.run(session, "RETURN 1 AS number");
+            Neo4JSessionClassReplacement.run(session, "RETURN 1 AS number");
 
             List<AdditionalInfo> additionalInfoList = ExecutionTracer.exposeAdditionalInfoList();
             assertEquals(1, additionalInfoList.size());
