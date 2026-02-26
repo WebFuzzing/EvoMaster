@@ -527,7 +527,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "INTEGER" to "Int",
             "TINYINT" to "Int",
             "SMALLINT" to "Int",
-            "TIMESTAMP" to "Int ",
+            "TIMESTAMP" to "Int",
             "DATE" to "Int",
             "FLOAT" to "Real",
             "DOUBLE" to "Real",
