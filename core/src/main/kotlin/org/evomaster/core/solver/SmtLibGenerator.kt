@@ -538,7 +538,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "VARCHAR" to "String",
             "TEXT" to "String",
             "CHARACTER LARGE OBJECT" to "String",
-            "BOOLEAN" to "String", // TODO: Check this
+            "BOOLEAN" to "String",
         )
     }
 }
