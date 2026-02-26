@@ -20,7 +20,7 @@ class FlakinessDetectBlackboxEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
-        defaultSeed = 123
+        defaultSeed = 42
 
         val outputFolder = "FlakinessDetectBlackboxEM"
         val outputClass = "org.foo.FlakinessDetectBlackboxEM"
