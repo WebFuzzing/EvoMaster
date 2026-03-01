@@ -183,8 +183,7 @@ object HttpSemanticsOracle {
             return hasChangedModifiedFields(bodyBefore, bodyAfter, modifiedFieldNames)
         }
 
-        // otherwise compare entire bodies
-        return bodyBefore != bodyAfter
+        return false
     }
 
     /**
@@ -208,8 +207,12 @@ object HttpSemanticsOracle {
     }
 
     /**
-     * Compare only the fields that were sent in the PUT/PATCH request.
-     * Returns true if any of those fields changed between before and after GET responses.
+     * Compares only the fields that were sent in the PUT/PATCH request.
+     * Returns true if any of those fields changed between the before and after GET responses.
+     *
+     * NOTE: This only works when the request payload is a JSON object that directly
+     * matches the resource structure. It does NOT support operation-based payloads
+     * such as JSON Patch (RFC 6902).
      */
     internal fun hasChangedModifiedFields(
         bodyBefore: String,
@@ -223,7 +226,7 @@ object HttpSemanticsOracle {
 
             if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject){
                 // not JSON objects, fallback to full comparison
-                return bodyBefore != bodyAfter
+                return false
             }
 
             val objBefore = jsonBefore.asJsonObject
@@ -241,7 +244,7 @@ object HttpSemanticsOracle {
             return false
         } catch (e: Exception) {
             // JSON parsing failed, fallback to full comparison
-            return bodyBefore != bodyAfter
+            return false
         }
     }
 }

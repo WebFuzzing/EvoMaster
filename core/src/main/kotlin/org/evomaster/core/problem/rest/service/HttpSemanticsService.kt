@@ -213,6 +213,9 @@ class HttpSemanticsService {
      *
      * If a PUT/PATCH fails with 4xx, it should have no side-effects.
      * A GET before and after should return the same resource state.
+     *
+     * NOTE: When comparing states, non-deterministic fields (e.g. timestamps,
+     * generated IDs/UUIDs, version counters) must be excluded from the comparison.
      */
     private fun sideEffectsOfFailedModification() {
 
