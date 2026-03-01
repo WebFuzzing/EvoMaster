@@ -24,7 +24,9 @@ enum class ExperimentalFaultCategory(
     LEAKED_STACK_TRACES(902, "Leaked Stack Trace",
         "leakedStackTrace",
         "TODO"),
-
+    HIDDEN_ACCESSIBLE_ENDPOINT(903, "Hidden Accessible Endpoint",
+        "hiddenAccessible",
+        "TODO"),
 
 
     HTTP_INVALID_PAYLOAD_SYNTAX(911, "Invalid Payload Syntax", "rejectedWithInvalidPayloadSyntax",

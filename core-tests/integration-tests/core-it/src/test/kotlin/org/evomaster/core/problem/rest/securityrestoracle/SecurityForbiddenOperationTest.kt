@@ -63,7 +63,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
         assertEquals(204, (ind.evaluatedMainActions()[2].result as RestCallResult).getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
+        val faultDetected = getSecurityOracle().hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
         assertTrue(faultDetected)
     }
 
@@ -94,7 +94,7 @@ class SecurityForbiddenOperationTest : IntegrationTestRestBase() {
         assertEquals(403, (ind.evaluatedMainActions()[1].result as RestCallResult).getStatusCode())
         assertEquals(204, (ind.evaluatedMainActions()[2].result as RestCallResult).getStatusCode())
 
-        val faultDetected = RestSecurityOracle.hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
+        val faultDetected = getSecurityOracle().hasForbiddenOperation(HttpVerb.DELETE,ind.individual, ind.seeResults())
         assertTrue(faultDetected)
     }
 

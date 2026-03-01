@@ -31,6 +31,11 @@ Also, some of these papers provides full replication packages, which are linked 
   ACM/IEEE International Conference on Automation of Software Test (AST).
   (To appear)
 
+* A. Arcuri, M. Zhang, S. Seran, J. P. Galeotti, A. Golmohammadi, P. Garrett, O. Sahin, M. Shalmani, F. Castagna, I. Kertusha, F. Susilo, G. Bhandari, G. Assres, J. Molléri.
+  *EvoMaster at REST League 2026 Tool Competition*.
+  IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
+  (To appear)
+
 * S. Seran, G. Bhandari, A. Arcuri. 
   *Detecting Server-Side Request Forgery (SSRF) Vulnerabilities In REST API Fuzz Testing*.
   IEEE International Workshop on Search-Based and Fuzz Testing (SBFT).
@@ -55,7 +60,7 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * O. Sahin, M. Zhang, A. Arcuri.
   *Causes and Effects of Fitness Landscapes in System Test Generation: A Replication Study*.
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2025_ause.pdf)]
 
 * M. Zhang, A. Arcuri, Y. Li, K. Xue, Z Wang, J. Huo, W Huang.
@@ -92,13 +97,13 @@ Also, some of these papers provides full replication packages, which are linked 
 
 * A. Arcuri, M. Zhang, S. Seran, J.P. Galeotti, A. Golmohammadi, O. Duman, A. Aldasoro, H. Ghianni.
  *Tool Report: EvoMaster -- Black and White Box Search-Based Fuzzing for REST, GraphQL and RPC APIs*.
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2024_ause_em.pdf)]
 
 
 * A. Poth, O. Rrjolli, A. Arcuri.
   *Technology Adoption Performance Evaluation Applied to Testing Industrial REST APIs*. 
-  Automated Software Engineering (AUSE).
+  Automated Software Engineering (ASE).
   [[PDF](publications/2024_ause_vw.pdf)]
 
 

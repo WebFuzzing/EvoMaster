@@ -91,7 +91,6 @@ class SqlAction(
         if(delta <= 0){
             throw IllegalArgumentException("Invalid delta: $delta")
         }
-        insertionId += delta
 
         seeAllGenes().forEach { g ->
             if(g is SqlPrimaryKeyGene) {
@@ -100,6 +99,8 @@ class SqlAction(
                 g.shiftIdBy(delta)
             }
         }
+
+        insertionId += delta
     }
 
 

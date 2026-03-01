@@ -6,7 +6,9 @@ import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.httpws.HttpWsCallResult
+import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
+import org.evomaster.core.problem.rest.service.CallGraphService
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.utils.IncrementalAverage
@@ -64,6 +66,9 @@ class Statistics : SearchListener {
 
     @Inject
     private lateinit var epc : ExecutionPhaseController
+
+    @Inject(optional = true)
+    private lateinit var callGraphService: CallGraphService
 
     /**
      * How often test executions did timeout
@@ -561,6 +566,8 @@ class Statistics : SearchListener {
                 .filter {
                     it.result is HttpWsCallResult && (it.result as HttpWsCallResult).getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
+                // in phases like Security we might create calls that do not exist in schema
+                .filter{ it.action is RestCallAction && callGraphService.isDeclared(it.action.verb,it.action.path)}
                 .map { it.action.getName() }
                 .distinct()
                 .count()

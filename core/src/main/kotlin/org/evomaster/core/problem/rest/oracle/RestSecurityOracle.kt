@@ -1,14 +1,545 @@
 package org.evomaster.core.problem.rest.oracle
 
+import com.webfuzzing.commons.faults.DefinedFaultCategory
+import com.webfuzzing.commons.faults.FaultCategory
 import org.apache.http.HttpStatus
+import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.enterprise.DetectedFault
+import org.evomaster.core.problem.enterprise.ExperimentalFaultCategory
 import org.evomaster.core.problem.enterprise.SampleType
 import org.evomaster.core.problem.enterprise.auth.NoAuth
+import org.evomaster.core.problem.httpws.HttpWsCallResult
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.builder.CreateResourceUtils
 import org.evomaster.core.problem.rest.data.*
+import org.evomaster.core.problem.rest.service.CallGraphService
+import org.evomaster.core.problem.rest.service.RestSecurityBuilder
+import org.evomaster.core.problem.security.service.SSRFAnalyser
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.action.ActionResult
+import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.utils.StackTraceUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import javax.inject.Inject
 
-object RestSecurityOracle {
+
+/**
+ * Class in which different oracles to detect security vulnerabilities are implemented.
+ * The function here verify if an individual contains security vulnerabilities.
+ * The actual building of individual that might reveal security vulnerabilities
+ * is done in [org.evomaster.core.problem.rest.service.RestSecurityBuilder]
+ */
+class RestSecurityOracle {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(RestSecurityOracle::class.java)
+
+        /**
+         * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
+         * The payloads are designed to introduce delays in the database response,
+         * which can be detected by measuring the response time of the application.
+         */
+        val SQLI_PAYLOADS = listOf(
+            // Simple sleep-based payloads for MySQL
+            "' OR SLEEP(%.2f)-- -",
+            "\" OR SLEEP(%.2f)-- -",
+            "' OR SLEEP(%.2f)=0-- -",
+            "\" OR SLEEP(%.2f)=0-- -",
+            // Integer-based delays
+            "' OR SLEEP(%.0f)-- -",
+            "\" OR SLEEP(%.0f)-- -",
+            "' OR SLEEP(%.0f)=0-- -",
+            "\" OR SLEEP(%.0f)=0-- -",
+            // Simple sleep-based payloads for PostgreSQL
+            "' OR select pg_sleep(%.2f)-- -",
+            "\" OR select pg_sleep(%.2f)-- -",
+            "' OR (select pg_sleep(%.2f)) IS NULL-- -",
+            "\' OR (select pg_sleep(%.2f)) IS NULL-- -",
+            // Integer-based delays
+            "' OR select pg_sleep(%.0f)-- -",
+            "\" OR select pg_sleep(%.0f)-- -",
+            "' OR (select pg_sleep(%.0f)) IS NULL-- -",
+            "\' OR (select pg_sleep(%.0f)) IS NULL-- -",
+        )
+
+
+        // Simple XSS payloads inspired by big-list-of-naughty-strings
+        // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
+        val XSS_PAYLOADS = listOf(
+            "<img src=x onerror=alert('XSS')>",
+            "<svg onload=alert('XSS')>",
+            "<details open ontoggle=alert('XSS')>",
+            "<script>alert('XSS')</script>",
+            "<iframe src='javascript:alert(\"XSS\")'></iframe>"
+        )
+
+    }
+
+    @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var idMapper: IdMapper
+
+    @Inject
+    private lateinit var ssrfAnalyser: SSRFAnalyser
+
+    @Inject
+    private lateinit var callGraphService: CallGraphService
+
+    @Inject
+    private lateinit var restSecurityBuilder: RestSecurityBuilder
+
+    /**
+     * Evaluate all the different security oracles, based on what enabled in configurations,
+     * and update the fitness value if any fault is found.
+     * Each security category has its own unique fault identifier.
+     */
+    fun analyzeSecurityProperties(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ){
+        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
+        handleExistenceLeakage(individual,actionResults,fv)
+        handleNotRecognizedAuthenticated(individual, actionResults, fv)
+        handleForgottenAuthentication(individual, actionResults, fv)
+        handleStackTraceCheck(individual, actionResults, fv)
+        handleSQLiCheck(individual, actionResults, fv)
+        handleXSSCheck(individual, actionResults, fv)
+        handleAnonymousWriteCheck(individual, actionResults, fv)
+        handleHiddenAccessible(individual, actionResults, fv)
+        handleSsrfFaults(individual, actionResults, fv)
+    }
+
+    private fun handleSsrfFaults(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+            return
+        }
+
+        individual.seeMainExecutableActions().forEach {
+            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
+            if (ar != null) {
+                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+
+                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
+                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
+                }
+            }
+        }
+    }
+
+    private fun handleNotRecognizedAuthenticated(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
+            return
+        }
+
+        if(actionResults.any { it.stopping }){
+            return
+        }
+
+        val notRecognized = individual.seeMainExecutableActions()
+            .filter {
+                val ar = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?
+                if(ar == null){
+                    log.warn("Missing action result with id: ${it.getLocalId()}}")
+                    false
+                } else {
+                    it.auth !is NoAuth && ar.getStatusCode() == 401
+                }
+            }
+            .filter {
+                hasNotRecognizedAuthenticated(it, individual, actionResults)
+            }
+
+        if(notRecognized.isEmpty()){
+            return
+        }
+
+        notRecognized.forEach {
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
+            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
+            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
+        }
+    }
+
+    private fun handleExistenceLeakage(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
+            return
+        }
+
+        val getPaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.GET }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = getPaths.filter {
+            hasExistenceLeakage(it, individual, actionResults)
+        }
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleSQLiCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
+            return
+        }
+
+        val foundPair = findSQLiPayloadPair(individual)
+
+        if(foundPair == null){
+            //no pair found, cannot do baseline comparison
+            return
+        }
+
+        val (actionWithoutPayload, actionWithPayload) = foundPair
+        val baselineResult = actionResults.find { it.sourceLocalId == actionWithoutPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val baselineTime = baselineResult.getResponseTimeMs() ?: return
+
+        val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
+            ?: return
+        val injectedTime = injectedResult.getResponseTimeMs()
+
+
+        val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
+        val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
+
+        // Baseline must be fast enough (baseline < K)
+        val baselineIsFast = baselineTime < K
+
+        // Response after injection must be slow enough (response > N)
+        var responseIsSlowEnough: Boolean
+
+        if (injectedTime != null) {
+            responseIsSlowEnough = injectedTime > N
+        } else if (injectedResult.getTimedout()){
+            // if the injected request timed out, we can consider it vulnerable
+            responseIsSlowEnough = true
+        } else {
+            return
+        }
+
+        // If baseline is fast AND the response after payload is slow enough,
+        // then we consider this a potential time-based SQL injection vulnerability.
+        // Otherwise, skip this result.
+        if (!(baselineIsFast && responseIsSlowEnough)) {
+            return
+        }
+
+        // Find the index of the action with payload to report it correctly
+        val index = individual.seeMainExecutableActions().indexOf(actionWithPayload)
+        if (index < 0) {
+            log.warn("Failed to find index of action with SQLi payload")
+            return
+        }
+
+        val scenarioId = idMapper.handleLocalTarget(
+            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
+        )
+        fv.updateTarget(scenarioId, 1.0, index)
+        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
+        injectedResult.setVulnerableForSQLI(true)
+    }
+
+    /**
+     * Finds a pair of actions in the individual that have the same path and verb,
+     * where one contains a SQLi payload and the other does not.
+     *
+     * This is useful for comparing baseline response times (without payload) against
+     * response times with SQLi payload to detect time-based SQL injection vulnerabilities.
+     *
+     * @param individual The test individual to search
+     * @return A pair of (actionWithoutPayload, actionWithPayload), or null if no such pair exists
+     */
+    private fun findSQLiPayloadPair(
+        individual: RestIndividual
+    ): Pair<RestCallAction, RestCallAction>? {
+
+        val actions = individual.seeMainExecutableActions()
+            .filterIsInstance<RestCallAction>()
+
+        // Group actions by path and verb
+        val actionsByPathAndVerb = actions
+            .groupBy { it.path.toString() to it.verb }
+
+        // Find a pair where one has SQLi payload and one doesn't
+        for ((pathVerb, actionsForPath) in actionsByPathAndVerb) {
+            if (actionsForPath.size < 2) continue
+
+            val withPayload = actionsForPath.filter {
+                hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+            val withoutPayload = actionsForPath.filter {
+                !hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
+            }
+
+            if (withPayload.isNotEmpty() && withoutPayload.isNotEmpty()) {
+                return Pair(withoutPayload.first(), withPayload.first())
+            }
+        }
+
+        return null
+    }
+
+    private fun handleStackTraceCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.LEAKED_STACK_TRACES)) {
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+            //this can happen if an action timeout, or is stopped
+                ?: continue
+
+            if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.LEAKED_STACK_TRACES, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleHiddenAccessible(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ){
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT)){
+            return
+        }
+
+        for(index in 0 until individual.seeMainExecutableActions().lastIndex) {
+            val a = individual.seeMainExecutableActions()[index]
+            if(a.verb != HttpVerb.OPTIONS){
+                continue
+            }
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult?
+            //this can happen if an action timeout, or is stopped
+                ?: break
+            val allowedVerbs = r.getAllowedVerbs()
+                ?: continue
+
+            val path = a.path
+            val hidden = restSecurityBuilder.filterHiddenVerbs(path,allowedVerbs)
+
+            val target = individual.seeMainExecutableActions()[index+1]
+            if(target.path != path || !hidden.contains(target.verb)){
+                continue
+            }
+
+            val data = actionResults.find { it.sourceLocalId == target.getLocalId() } as RestCallResult?
+                ?: break
+
+            val status = data.getStatusCode()
+                ?: continue
+
+            if(status !in setOf(405,501,403)){
+                // we also consider 403, in case API just give it by default for security reasons
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index+1)
+                data.addFault(DetectedFault(ExperimentalFaultCategory.HIDDEN_ACCESSIBLE_ENDPOINT, target.getName(), null))
+            }
+        }
+    }
+
+
+    private fun handleXSSCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
+            return
+        }
+
+        // Check if this individual has XSS vulnerability
+        if(!hasXSS(individual, actionResults)){
+            return
+        }
+
+        // Find the action(s) where XSS payload appears in the response
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
+                ?: continue
+
+            if(!StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                continue
+            }
+
+            val responseBody = r.getBody() ?: continue
+
+            // Check if any XSS payload is present in this response
+            for(payload in XSS_PAYLOADS){
+                if(responseBody.contains(payload, ignoreCase = false)){
+                    val scenarioId = idMapper.handleLocalTarget(
+                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
+                    )
+                    fv.updateTarget(scenarioId, 1.0, index)
+                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
+                    break // Only add one fault per action
+                }
+            }
+        }
+    }
+
+    private fun handleAnonymousWriteCheck(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+        if(!config.isEnabledFaultCategory(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS)){
+            return
+        }
+
+        // Get all write operation paths (PUT, PATCH, DELETE)
+        val writePaths = individual.seeMainExecutableActions()
+            .filter { it.verb == HttpVerb.PUT || it.verb == HttpVerb.PATCH || it.verb == HttpVerb.DELETE }
+            .map { it.path }
+            .toSet()
+
+        val faultyPaths = writePaths.filter { hasAnonymousWrite(it, individual, actionResults) }
+
+        if(faultyPaths.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if((a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH || a.verb == HttpVerb.DELETE)
+                && faultyPaths.contains(a.path)
+                && a.auth is NoAuth
+                && StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+
+                // For PUT, check if it's 201 (resource creation - might be OK)
+                if(a.verb == HttpVerb.PUT && r.getStatusCode() == 201){
+                    continue
+                }
+
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.ANONYMOUS_MODIFICATIONS, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleForgottenAuthentication(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+
+        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.IGNORE_ANONYMOUS)) {
+            return
+        }
+
+        val endpoints = individual.seeMainExecutableActions()
+            .map { it.getName() }
+            .toSet()
+
+        val faultyEndpoints = endpoints.filter { hasForgottenAuthentication(it, individual, actionResults)  }
+
+        if(faultyEndpoints.isEmpty()){
+            return
+        }
+
+        for(index in individual.seeMainExecutableActions().indices){
+            val a = individual.seeMainExecutableActions()[index]
+            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
+
+            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
+                val scenarioId = idMapper.handleLocalTarget(
+                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName())
+                )
+                fv.updateTarget(scenarioId, 1.0, index)
+                r.addFault(DetectedFault(ExperimentalFaultCategory.IGNORE_ANONYMOUS, a.getName(), null))
+            }
+        }
+    }
+
+    private fun handleForbiddenOperation(
+        verb: HttpVerb,
+        faultCategory: FaultCategory,
+        individual: RestIndividual,
+        actionResults: List<ActionResult>,
+        fv: FitnessValue
+    ) {
+
+        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
+            return
+        }
+
+        if (hasForbiddenOperation(verb, individual, actionResults)) {
+            val actionIndex = individual.size() - 1
+            val action = individual.seeMainExecutableActions()[actionIndex]
+            val result = actionResults
+                .filterIsInstance<RestCallResult>()
+                .find { it.sourceLocalId == action.getLocalId() }
+                ?: return
+
+            val scenarioId = idMapper.handleLocalTarget(
+                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
+            )
+            fv.updateTarget(scenarioId, 1.0, actionIndex)
+            result.addFault(DetectedFault(faultCategory, action.getName(), null))
+        }
+    }
+
 
     private fun verifySampleType(individual: RestIndividual){
         if(individual.sampleType != SampleType.SECURITY){
@@ -172,7 +703,6 @@ object RestSecurityOracle {
         path: RestPath,
         individual: RestIndividual,
         actionResults: List<ActionResult>,
-        actionDefinitions: List<RestCallAction>
     ): Boolean{
 
         verifySampleType(individual)
@@ -213,7 +743,7 @@ object RestSecurityOracle {
             we need to check for that.
          */
 
-        val topGet = findStrictTopGETResourceAncestor(path, actionDefinitions)
+        val topGet = callGraphService.findStrictTopGETResourceAncestor(path)
             //if null, then for sure the user with 404 does not own a parent resource
             ?: return true
 
@@ -258,13 +788,6 @@ object RestSecurityOracle {
         return false
     }
 
-    private fun findStrictTopGETResourceAncestor(path: RestPath, actions: List<RestCallAction>) : RestCallAction?{
-        return actions
-            .filter { it.verb == HttpVerb.GET }
-            .filter { it.path.isStrictlyAncestorOf(path)}
-            .filter { it.path.isLastElementAParameter() }
-            .minByOrNull { it.path.levels() }
-    }
 
     /**
      * For example verb target DELETE,
@@ -360,44 +883,6 @@ object RestSecurityOracle {
         }
     }
 
-    /**
-     * Simple SQLi payloads. Used to check for SQL Injection vulnerability.
-     * The payloads are designed to introduce delays in the database response,
-     * which can be detected by measuring the response time of the application.
-     */
-    val SQLI_PAYLOADS = listOf(
-        // Simple sleep-based payloads for MySQL
-        "' OR SLEEP(%.2f)-- -",
-        "\" OR SLEEP(%.2f)-- -",
-        "' OR SLEEP(%.2f)=0-- -",
-        "\" OR SLEEP(%.2f)=0-- -",
-        // Integer-based delays
-        "' OR SLEEP(%.0f)-- -",
-        "\" OR SLEEP(%.0f)-- -",
-        "' OR SLEEP(%.0f)=0-- -",
-        "\" OR SLEEP(%.0f)=0-- -",
-        // Simple sleep-based payloads for PostgreSQL
-        "' OR select pg_sleep(%.2f)-- -",
-        "\" OR select pg_sleep(%.2f)-- -",
-        "' OR (select pg_sleep(%.2f)) IS NULL-- -",
-        "\' OR (select pg_sleep(%.2f)) IS NULL-- -",
-        // Integer-based delays
-        "' OR select pg_sleep(%.0f)-- -",
-        "\" OR select pg_sleep(%.0f)-- -",
-        "' OR (select pg_sleep(%.0f)) IS NULL-- -",
-        "\' OR (select pg_sleep(%.0f)) IS NULL-- -",
-    )
-
-
-    // Simple XSS payloads inspired by big-list-of-naughty-strings
-    // https://github.com/minimaxir/big-list-of-naughty-strings/blob/master/blns.txt
-    val XSS_PAYLOADS = listOf(
-        "<img src=x onerror=alert('XSS')>",
-        "<svg onload=alert('XSS')>",
-        "<details open ontoggle=alert('XSS')>",
-        "<script>alert('XSS')</script>",
-        "<iframe src='javascript:alert(\"XSS\")'></iframe>"
-    )
 
 
     /**
@@ -450,5 +935,6 @@ object RestSecurityOracle {
 
         return false
     }
+
 
 }
