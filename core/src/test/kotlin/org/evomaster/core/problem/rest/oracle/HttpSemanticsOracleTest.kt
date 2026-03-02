@@ -10,6 +10,7 @@ class HttpSemanticsOracleTest {
         assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"name":"Doe","ts":"2026-01-01"}""",
             bodyAfter  = """{"name":"Doe","ts":"2026-01-02"}""",
+            bodyModify  = """{"name":"Test"}""",
             fieldNames = setOf("name")
         ))
     }
@@ -19,6 +20,7 @@ class HttpSemanticsOracleTest {
         assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"name":"Doe","email":"a@a.com","age":30}""",
             bodyAfter  = """{"name":"Doe","email":"a@a.com","age":31}""",
+            bodyModify  = """{"age":31}""",
             fieldNames = setOf("name", "email")
         ))
     }
@@ -28,6 +30,7 @@ class HttpSemanticsOracleTest {
         assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"age":30}""",
             bodyAfter  = """{"age":31}""",
+            bodyModify  = """{"age":31}""",
             fieldNames = setOf("name")
         ))
     }
@@ -37,6 +40,7 @@ class HttpSemanticsOracleTest {
         assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"count":42,"label":"test"}""",
             bodyAfter  = """{"count":42,"label":"changed"}""",
+            bodyModify  = """{"count":42,"label":"changed"}""",
             fieldNames = setOf("count")
         ))
     }
@@ -47,6 +51,7 @@ class HttpSemanticsOracleTest {
         assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"name":"Doe","age":42}""",
             bodyAfter  = """{"name":"Bob","age":42}""",
+            bodyModify  = """{"name":"Bob"}""",
             fieldNames = setOf("name")
         ))
     }
@@ -56,6 +61,7 @@ class HttpSemanticsOracleTest {
         assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"name":"Doe","email":"a@a.com","age":42}""",
             bodyAfter  = """{"name":"Doe","email":"b@b.com","age":42}""",
+            bodyModify  = """{"name":"Doe","email":"b@b.com","age":42}""",
             fieldNames = setOf("name", "email")
         ))
     }
@@ -65,6 +71,7 @@ class HttpSemanticsOracleTest {
         assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"name":"Doe"}""",
             bodyAfter  = """{"age":42}""",
+            bodyModify  = """{"age":42}""",
             fieldNames = setOf("name")
         ))
     }
@@ -74,15 +81,17 @@ class HttpSemanticsOracleTest {
         assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = """{"count":42,"label":"test"}""",
             bodyAfter  = """{"count":44,"label":"test"}""",
+            bodyModify  = """{"count":44,"label":"test"}""",
             fieldNames = setOf("count")
         ))
     }
 
     @Test
-    fun testInvalidJsonDifferentBodiesFallbackReturnsTrue() {
-        assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
+    fun testInvalidJsonDifferentBodiesFallbackReturnsFalse() {
+        assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = "not valid json",
             bodyAfter  = "also not valid json",
+            bodyModify  = "{}",
             fieldNames = setOf("name")
         ))
     }
@@ -92,24 +101,7 @@ class HttpSemanticsOracleTest {
         assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
             bodyBefore = "not valid json",
             bodyAfter  = "not valid json",
-            fieldNames = setOf("name")
-        ))
-    }
-
-    @Test
-    fun testJsonArrayDifferentBodiesFallbackReturnsTrue() {
-        assertTrue(HttpSemanticsOracle.hasChangedModifiedFields(
-            bodyBefore = """[{"name":"Doe"}]""",
-            bodyAfter  = """[{"name":"Bob"}]""",
-            fieldNames = setOf("name")
-        ))
-    }
-
-    @Test
-    fun testJsonArraySameBodiesFallbackReturnsFalse() {
-        assertFalse(HttpSemanticsOracle.hasChangedModifiedFields(
-            bodyBefore = """[{"name":"Doe"}]""",
-            bodyAfter  = """[{"name":"Doe"}]""",
+            bodyModify  = "{}",
             fieldNames = setOf("name")
         ))
     }

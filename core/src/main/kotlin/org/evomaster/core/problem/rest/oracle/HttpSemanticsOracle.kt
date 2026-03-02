@@ -166,6 +166,7 @@ object HttpSemanticsOracle {
         }
 
         val bodyBefore = resBefore.getBody()
+        val bodyModify = resModify.getBody()
         val bodyAfter = resAfter.getBody()
 
         // if both are null/empty, no side-effect detected
@@ -179,8 +180,9 @@ object HttpSemanticsOracle {
         // if we can identify specific fields, compare only those to avoid false positives from timestamps etc.
         if(modifiedFieldNames.isNotEmpty()
             && !bodyBefore.isNullOrEmpty()
-            && !bodyAfter.isNullOrEmpty()) {
-            return hasChangedModifiedFields(bodyBefore, bodyAfter, modifiedFieldNames)
+            && !bodyAfter.isNullOrEmpty()
+            && !bodyModify.isNullOrEmpty()) {
+            return hasChangedModifiedFields(bodyBefore, bodyAfter, bodyModify, modifiedFieldNames)
         }
 
         return false
@@ -217,26 +219,30 @@ object HttpSemanticsOracle {
     internal fun hasChangedModifiedFields(
         bodyBefore: String,
         bodyAfter: String,
+        bodyModify: String,
         fieldNames: Set<String>
     ): Boolean {
 
         try {
             val jsonBefore = JsonParser.parseString(bodyBefore)
             val jsonAfter = JsonParser.parseString(bodyAfter)
+            val jsonModify = JsonParser.parseString(bodyModify)
 
-            if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject){
+            if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject || !jsonModify.isJsonObject){
                 // not JSON objects, fallback to full comparison
                 return false
             }
 
             val objBefore = jsonBefore.asJsonObject
             val objAfter = jsonAfter.asJsonObject
+            val objModify = jsonModify.asJsonObject
 
             for(field in fieldNames){
                 val valueBefore = objBefore.get(field)
                 val valueAfter = objAfter.get(field)
+                val valueModify = objModify.get(field)
 
-                if(valueBefore != valueAfter){
+                if(valueBefore != valueAfter && valueModify == valueAfter){
                     return true
                 }
             }
