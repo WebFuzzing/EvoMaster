@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.StatusGroup
 import org.evomaster.core.search.action.ActionResult
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.utils.GeneUtils
 
 object HttpSemanticsOracle {
 
@@ -166,7 +167,7 @@ object HttpSemanticsOracle {
         }
 
         val bodyBefore = resBefore.getBody()
-        val bodyModify = resModify.getBody()
+        val bodyModify = extractRequestBody(modify)
         val bodyAfter = resAfter.getBody()
 
         // if both are null/empty, no side-effect detected
@@ -186,6 +187,12 @@ object HttpSemanticsOracle {
         }
 
         return false
+    }
+
+    private fun extractRequestBody(modify: RestCallAction): String? {
+        val bodyParam = modify.parameters.find { it is BodyParam } as BodyParam?
+            ?: return null
+        return bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON)
     }
 
     /**
