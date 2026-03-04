@@ -5,17 +5,14 @@ import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import io.restassured.config.JsonConfig
 import io.restassured.config.RedirectConfig.redirectConfig
-import io.restassured.http.ContentType
 import io.restassured.path.json.config.JsonPathConfig
 import org.evomaster.e2etests.utils.EnterpriseTestBase
-import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
 import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.Map
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 class HolidaysEMTest: EnterpriseTestBase() {
 
