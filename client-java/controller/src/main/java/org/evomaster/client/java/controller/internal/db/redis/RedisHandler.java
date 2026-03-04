@@ -125,6 +125,8 @@ public class RedisHandler {
     private Map<String, RedisValueData> createRedisInfoForIntersection(List<String> commandKeys, ReflectionBasedRedisClient redisClient) {
         Set<String> keySet = redisClient.getKeysByType(REDIS_SET_TYPE);
 
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //The value for each one, since each key represents a SET, correspond to the members of that given set.
         Map<String, RedisValueData> redisData = new HashMap<>();
         keySet.forEach(
                 key -> redisData.put(key, new RedisValueData(redisClient.getSetMembers(key))
@@ -134,6 +136,9 @@ public class RedisHandler {
 
     private Map<String, RedisValueData> createRedisInfoForAllKeys(ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getAllKeys();
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //No value is needed in this case.
         Map<String, RedisValueData> redisData = new HashMap<>();
         keys.forEach(
                 key -> redisData.put(key, null)
@@ -143,6 +148,9 @@ public class RedisHandler {
 
     private Map<String, RedisValueData> createRedisInfoForKeysByType(String type, ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(type);
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //No value is needed in this case.
         Map<String, RedisValueData> redisData = new HashMap<>();
         keys.forEach(key -> redisData.put(key, null));
         return redisData;
@@ -150,6 +158,9 @@ public class RedisHandler {
 
     private Map<String, RedisValueData> createRedisInfoForKeysByField(ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(REDIS_HASH_TYPE);
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //The value for each one, since each key is of type HASH, correspond to the fields stored for that given key.
         Map<String, RedisValueData> redisData = new HashMap<>();
         keys.forEach(key -> redisData.put(key, new RedisValueData(redisClient.getHashFields(key))));
         return redisData;
