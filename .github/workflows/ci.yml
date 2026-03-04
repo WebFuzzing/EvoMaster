@@ -41,7 +41,7 @@ env:
   release-jdk: 21
   build-jdk: 17
   retention-days: 5
-  debug: true  # put to true if need to debug a specific test
+  debug: false  # put to true if need to debug a specific test
   debugTestName: "GeneRandomizedTest" # replace with test to debug
 
 # This build is quite expensive (some hours), so we run it whole only on some JVM versions and OSs.
@@ -62,6 +62,11 @@ jobs:
      - name: Set skip-jobs variable
        id: set-output
        run: echo "debug=${{ env.debug }}" >> $GITHUB_OUTPUT
+     - name: Verify Docker is working fine
+       run: | 
+        timeout 30s bash -c 'until docker info; do sleep 1; done' 
+        docker version
+        docker info 
 
 
   debug:

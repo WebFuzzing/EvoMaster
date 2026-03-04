@@ -1,6 +1,5 @@
 package org.evomaster.core.search.service.mutator
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
@@ -25,7 +24,6 @@ import org.evomaster.core.search.gene.wrapper.CustomMutationRateGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.impact.impactinfocollection.ImpactUtils
-import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.EvaluatedInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
@@ -321,7 +319,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun postActionAfterMutation(mutatedIndividual: T, mutated: MutatedGeneSpecification?) {
 
         Lazy.assert {
-            SqlActionUtils.verifyForeignKeys(
+            SqlActionUtils.isValidForeignKeys(
                 mutatedIndividual.seeInitializingActions().filterIsInstance<SqlAction>()
             )
         }
@@ -339,7 +337,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         mutatedIndividual.repairInitializationActions(randomness)
 
         //Check that the repair was successful
-        Lazy.assert { mutatedIndividual.verifyInitializationActions() }
+        Lazy.assert { mutatedIndividual.isValidInitializationActions() }
 
         /*
             In GraphQL, each boolean selection in Objects MUST have at least one filed selected

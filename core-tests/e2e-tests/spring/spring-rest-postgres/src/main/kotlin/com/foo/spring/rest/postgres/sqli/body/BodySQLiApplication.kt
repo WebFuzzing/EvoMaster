@@ -47,14 +47,6 @@ open class BodySQLiApplication: SwaggerConfiguration() {
     @PostConstruct
     fun init() {
         connection = dataSource.connection
-        initializeTestData()
-    }
-
-    private fun initializeTestData() {
-        if (userRepository.count() == 0L) {
-            userRepository.save(UserEntity(null, "admin", "admin123"))
-            userRepository.save(UserEntity(null, "user1", "password1"))
-        }
     }
 
     /**

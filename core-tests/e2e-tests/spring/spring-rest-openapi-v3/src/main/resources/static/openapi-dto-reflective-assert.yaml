@@ -190,6 +190,73 @@ paths:
       responses:
         '200':
           description: OK
+  /additional-properties-inline:
+    post:
+      summary: Update inline additionalProperties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stringProp:
+                  type: string
+              additionalProperties:
+                type: object
+                required:
+                  - value
+                properties:
+                  value:
+                    type: string
+                  source:
+                    type: string
+              required:
+                - stringProp
+      responses:
+        '200':
+          description: OK
+  /additional-properties-ref:
+    post:
+      summary: Update ref additionalProperties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stringProp:
+                  type: string
+              additionalProperties:
+                $ref: '#/components/schemas/ChildSchema'
+              required:
+                - stringProp
+      responses:
+        '204':
+          description: Attributes updated
+  /additional-properties-no-root:
+    post:
+      summary: Update ref additionalProperties
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+                required:
+                  - value
+                  - source
+                properties:
+                  value:
+                    type: string
+                  source:
+                    type: string
+      responses:
+        '204':
+          description: Attributes updated
 
 components:
   schemas:

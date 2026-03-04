@@ -807,6 +807,18 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
+
+        if(useEnvVarsForPathInTests){
+            if(problemType != ProblemType.DEFAULT && problemType != ProblemType.REST)
+                throw ConfigProblemException("'useEnvVarsForPathInTests' can be applied only for REST problem.")
+
+            if (jdkEnvVarName.isEmpty())
+                throw ConfigProblemException("'jdkEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutDistEnvVarName.isEmpty())
+                throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutJarEnvVarName.isEmpty())
+                throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -2637,6 +2649,26 @@ class EMConfig {
     var handleFlakiness = false
 
     @Experimental
+    @Cfg("Use environment variables to define the paths required by External Drivers. " +
+            "This is necessary when the generated tests are executed on the different machine. " +
+            "Note that this setting only affects the generated test cases.")
+    var useEnvVarsForPathInTests = false
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the JDK installation path. " +
+            "Note that the executable path will be resolved by appending 'bin/java'.")
+    var jdkEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the the base distribution directory of the " +
+            "SUT, e.g., 'dist' directory of WFD.")
+    var sutDistEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specifies the name of the SUT JAR file that will be used together with `sutDistEnvVarName` to resolve the full SUT JAR path.")
+    var sutJarEnvVarName = ""
+
+    @Experimental
     @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
@@ -2798,10 +2830,9 @@ class EMConfig {
     @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
 
-
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
-                "By default, all oracles are enabled."
+                "By default, all oracles are enabled. Codes are based on WFC (Web Fuzzing Commons)."
     )
     var disabledOracleCodes = ""
 

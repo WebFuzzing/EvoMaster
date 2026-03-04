@@ -16,7 +16,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val constraint = LowerBoundConstraint("table0", "column0", -10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
 
@@ -30,7 +30,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val constraint = UpperBoundConstraint("table0", "column0", 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
 
@@ -44,7 +44,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val constraint = RangeConstraint("table0", "column0", -10L, 10L)
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
@@ -63,7 +63,7 @@ class TableConstraintGeneCollectorTest {
         val constraint = AndConstraint("table0", lowerBound, upperBound)
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
@@ -81,7 +81,7 @@ class TableConstraintGeneCollectorTest {
         val constraint = OrConstraint("table0", lowerBound, upperBound)
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
@@ -98,7 +98,7 @@ class TableConstraintGeneCollectorTest {
         val constraint = IffConstraint("table0", lowerBound, upperBound)
         val table = Table("table0", setOf(column), setOf(), setOf(lowerBound, upperBound))
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val expectedGenes = action.seeTopGenes().toSet()
 
         val geneCollector = TableConstraintGeneCollector()
@@ -110,7 +110,7 @@ class TableConstraintGeneCollectorTest {
     fun testDifferentTableUpperBound() {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = UpperBoundConstraint("table1", "column0", 10L)
 
         val expectedGenes = setOf<Gene>()
@@ -125,7 +125,7 @@ class TableConstraintGeneCollectorTest {
     fun testDifferentTableLowerBound() {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = LowerBoundConstraint("table1", "column0", 10L)
 
         val expectedGenes = setOf<Gene>()
@@ -138,7 +138,7 @@ class TableConstraintGeneCollectorTest {
     fun testDifferentTableRange() {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = RangeConstraint("table1", "column0", -10L, +10L)
 
         val expectedGenes = setOf<Gene>()
@@ -151,7 +151,7 @@ class TableConstraintGeneCollectorTest {
     fun testIsNotNullConstraint() {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = IsNotNullConstraint("table0", "column0")
 
         val expectedGenes = action.seeTopGenes().toSet()
@@ -164,7 +164,7 @@ class TableConstraintGeneCollectorTest {
     fun testDifferentTableIsNotNullConstraint() {
         val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = IsNotNullConstraint("table1", "column0")
 
         val expectedGenes = setOf<Gene>()
@@ -179,7 +179,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.H2, enumValuesAsStrings = listOf("value0", "value1", "value2"))
         val constraint = EnumConstraint("table0", "column0", listOf("value0", "value1", "value2"))
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
@@ -193,7 +193,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.H2, enumValuesAsStrings = listOf("value0", "value1", "value2"))
         val constraint = EnumConstraint("table1", "column0", listOf("value0", "value1", "value2"))
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = setOf<Gene>()
         val geneCollector = TableConstraintGeneCollector()
@@ -206,7 +206,7 @@ class TableConstraintGeneCollectorTest {
         val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.H2)
         val constraint = UniqueConstraint("table0", listOf("column0"))
         val table = Table("table0", setOf(column), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
@@ -218,7 +218,7 @@ class TableConstraintGeneCollectorTest {
     fun testUniqueConstrainDifferentTable() {
         val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.H2)
         val table = Table("table0", setOf(column), setOf(), setOf())
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val constraint = UniqueConstraint("table1", listOf("column0"))
 
         val expectedGenes = setOf<Gene>()
@@ -238,7 +238,7 @@ class TableConstraintGeneCollectorTest {
         val constraint = IffConstraint("table0", equalsConstraint, isNotNullConstraint)
 
         val table = Table("table0", setOf(statusColumn, pAtColumn), setOf(), setOf(constraint))
-        val action = SqlAction(table = table, selectedColumns = setOf(statusColumn, pAtColumn), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(statusColumn, pAtColumn), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
         val collector = TableConstraintGeneCollector()
@@ -252,7 +252,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf())
         val constraint = UnsupportedTableConstraint("table0", "this query was not parsed")
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = setOf<Gene>()
         val geneCollector = TableConstraintGeneCollector()
@@ -266,7 +266,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf())
         val constraint = LikeConstraint("table0", "column0", "%hi_", ConstraintDatabaseType.POSTGRES)
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
@@ -281,7 +281,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf())
         val constraint = LikeConstraint("table1", "column0", "%hi_", ConstraintDatabaseType.POSTGRES)
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = setOf<Gene>()
         val geneCollector = TableConstraintGeneCollector()
@@ -295,7 +295,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf())
         val constraint = SimilarToConstraint("table0", "column0", "/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?", ConstraintDatabaseType.POSTGRES)
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
 
         val expectedGenes = action.seeTopGenes().toSet()
         val geneCollector = TableConstraintGeneCollector()
@@ -310,7 +310,7 @@ class TableConstraintGeneCollectorTest {
         val table = Table("table0", setOf(column), setOf(), setOf())
         val constraint = SimilarToConstraint("table1", "column0", "/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?", ConstraintDatabaseType.POSTGRES)
 
-        val action = SqlAction(table = table, selectedColumns = setOf(column), id = 0L)
+        val action = SqlAction(table = table, selectedColumns = setOf(column), insertionId = 0L)
         val expectedGenes = setOf<Gene>()
         val geneCollector = TableConstraintGeneCollector()
         val collectedGenes = constraint.accept(geneCollector, action)
