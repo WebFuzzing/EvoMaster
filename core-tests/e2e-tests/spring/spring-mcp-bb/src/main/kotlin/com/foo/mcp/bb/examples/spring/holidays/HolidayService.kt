@@ -3,7 +3,7 @@ package com.foo.mcp.bb.examples.spring.holidays
 import org.springframework.stereotype.Service
 import java.util.*
 
-@Service
+//@Service
 class HolidayService {
 
     private val destinations: MutableMap<String, MutableMap<String, Any>> = mutableMapOf()

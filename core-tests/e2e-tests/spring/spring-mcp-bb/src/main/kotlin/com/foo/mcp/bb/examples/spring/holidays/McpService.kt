@@ -13,8 +13,8 @@ class McpService {
 
     private var holidayService: HolidayService? = null
 
-    fun McpService(holidayService: HolidayService) {
-        this.holidayService = holidayService
+    init {
+        this.holidayService = HolidayService()
     }
 
     /**

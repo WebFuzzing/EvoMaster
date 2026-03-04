@@ -10,6 +10,7 @@ import io.restassured.path.json.config.JsonPathConfig
 import org.evomaster.e2etests.utils.EnterpriseTestBase
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers.containsString
+import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import java.util.Map
@@ -39,8 +40,9 @@ class HolidaysEMTest: EnterpriseTestBase() {
     @Test
     @Throws(Exception::class)
     fun initialize_returns_protocol_version_and_server_info() {
+        val id = 1
         val body = rpc(
-            1, "initialize", Map.of<String?, Any?>(
+            id, "initialize", Map.of<String?, Any?>(
                 "protocolVersion", "2024-11-05",
                 "clientInfo", Map.of<String?, String?>("name", "test-client", "version", "1.0"),
                 "capabilities", Map.of<Any?, Any?>()
@@ -59,16 +61,11 @@ class HolidaysEMTest: EnterpriseTestBase() {
             .assertThat()
             .contentType("application/json")
             .body("'jsonrpc'", containsString("2.0"))
-            .body("'id'", containsString(uuid))
+            .body("'id'", `is`(id))
             .body("'result'.'protocolVersion'", containsString("2024-11-05"))
-            .body("'result'.'server-info'.'name'", containsString("my-server"))
-            .body("'result'.'server-info'.'version'", containsString("1.0"))
+            .body("'result'.'serverInfo'.'name'", containsString("holiday-mcp-server"))
+            .body("'result'.'serverInfo'.'version'", containsString("1.0.0"))
 
-//        { "jsonrpc": "2.0", "id": 1, "result": {
-//    "protocolVersion": ,
-//    "capabilities": { "tools": {}, "resources": {}, "prompts": {} },
-//    "serverInfo": { "name": "my-server", "version": "1.0" }
-//}}
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
