@@ -15,10 +15,6 @@ class McpService {
         this.holidayService = HolidayService()
     }
 
-    /**
-     * Dispatch a JSON-RPC request and return the response map, or `null`
-     * for notifications (no response expected).
-     */
     fun handle(request: MutableMap<String, Any>): MutableMap<String, Any> {
         val method = request["method"] as String?
         val id = request["id"] as Int
@@ -59,7 +55,6 @@ class McpService {
     }
 
 
-    // ─── Method handlers ──────────────────────────────────────────────────────
     private fun handleInitialize(): MutableMap<String, Any> {
         val serverInfo: MutableMap<String, Any> = mutableMapOf()
         serverInfo["name"] = "holiday-mcp-server"
@@ -77,7 +72,6 @@ class McpService {
 
     private fun handleToolsList(): MutableMap<String, Any> {
         val tools: MutableList<MutableMap<String, Any>> = mutableListOf()
-
         tools.add(
             tool(
                 "list_destinations",
@@ -85,7 +79,6 @@ class McpService {
                 schema(mutableListOf())
             )
         )
-
         tools.add(
             tool(
                 "get_destination_info",
@@ -104,13 +97,11 @@ class McpService {
 
         val result = mutableMapOf<String, Any>()
         result["tools"] = tools
-
         return result
     }
 
     private fun handleToolsCall(params: Map<String, Any>): MutableMap<String, Any> {
         val name = params["name"] as String?
-
         val args = params["arguments"] as MutableMap<*, *>
 
         if (name == null) {
@@ -138,12 +129,11 @@ class McpService {
         val required: MutableList<String> = mutableListOf()
 
         for (property in properties) {
-            val prop = property as MutableMap<String, Any>
             val propName = property["_name"] as String
             val isRequired = property["_required"] as Boolean
-            prop.remove("_name")
-            prop.remove("_required")
-            props[propName] = prop
+            property.remove("_name")
+            property.remove("_required")
+            props[propName] = property
             if (isRequired) required.add(propName)
         }
 
@@ -162,7 +152,6 @@ class McpService {
         result["description"] = description
         return result
     }
-
 
     private fun errorResponse(code: Int, message: String): MutableMap<String, Any> {
         val error: MutableMap<String, Any> = mutableMapOf()

@@ -36,7 +36,6 @@ class HolidayService {
         return result
     }
 
-    /** Returns the list of all destination keys and display names.  */
     fun listDestinations(): MutableMap<String, Any> {
         val list: MutableList<MutableMap<String, Any>> = mutableListOf()
         for (entry in destinations.entries) {
@@ -50,7 +49,6 @@ class HolidayService {
         return textResult(text)
     }
 
-    /** Returns detailed info about a single destination.  */
     fun getDestinationInfo(destinationId: String): MutableMap<String, Any> {
         if (destinationId.isBlank()) {
             return textResult("Error: 'destination' parameter is required.", true)
@@ -83,8 +81,7 @@ class HolidayService {
     private fun formatDestinationList(list: MutableList<MutableMap<String, Any>>): String {
         val sb = StringBuilder("# Available Holiday Destinations\n\n")
         for (item in list) {
-            sb.append("- **").append(item["id"]).append("** — ")
-                .append(item["name"]).append(": ").append(item["description"]).append("\n")
+            sb.append("- **${item["id"]}** — ${item["name"]}: ${item["description"]}\n")
         }
         sb.append("\nUse `get_destination_info` with one of these IDs for full details.")
         return sb.toString()
