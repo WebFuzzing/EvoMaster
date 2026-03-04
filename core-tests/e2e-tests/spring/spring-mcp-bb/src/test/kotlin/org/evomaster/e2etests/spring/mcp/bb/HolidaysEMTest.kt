@@ -12,7 +12,6 @@ import org.hamcrest.Matchers.equalTo
 import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.util.Map
 import java.util.UUID
 
 class HolidaysEMTest: EnterpriseTestBase() {
@@ -37,13 +36,16 @@ class HolidaysEMTest: EnterpriseTestBase() {
     @Throws(Exception::class)
     fun test_1_initialize_returns_protocol_version_and_server_info() {
         val id = 1
-        val body = body(
-            id, "initialize", Map.of<String?, Any?>(
-                "protocolVersion", "2024-11-05",
-                "clientInfo", Map.of<String?, String?>("name", "test-client", "version", "1.0"),
-                "capabilities", Map.of<Any?, Any?>()
-            )
-        )
+
+        val initParams = mutableMapOf<String, Any>()
+        initParams["protocolVersion"] = "2024-11-05"
+        val clientInfo = mutableMapOf<String, String>()
+        clientInfo["name"] = "test-client"
+        clientInfo["version"] = "1.0"
+        initParams["clientInfo"] = clientInfo
+        initParams["capabilities"] = emptyMap<String, Any>()
+
+        val body = body(id, "initialize", initParams)
 
         val uuid = UUID.randomUUID().toString()
 
@@ -67,13 +69,16 @@ class HolidaysEMTest: EnterpriseTestBase() {
     @Throws(Exception::class)
     fun test_2_list_tools_returns_server_available_tools() {
         val id = 1
-        val initializeBody = body(
-            id, "initialize", Map.of<String?, Any?>(
-                "protocolVersion", "2024-11-05",
-                "clientInfo", Map.of<String?, String?>("name", "test-client", "version", "1.0"),
-                "capabilities", Map.of<Any?, Any?>()
-            )
-        )
+
+        val initParams = mutableMapOf<String, Any>()
+        initParams["protocolVersion"] = "2024-11-05"
+        val clientInfo = mutableMapOf<String, String>()
+        clientInfo["name"] = "test-client"
+        clientInfo["version"] = "1.0"
+        initParams["clientInfo"] = clientInfo
+        initParams["capabilities"] = emptyMap<String, Any>()
+
+        val initializeBody = body(id, "initialize", initParams)
 
         val uuid = UUID.randomUUID().toString()
 
@@ -105,7 +110,7 @@ class HolidaysEMTest: EnterpriseTestBase() {
             .contentType("application/json")
             .body("'jsonrpc'", containsString("2.0"))
             .body("'id'", `is`(id))
-            .body("'result'.'tools'.size()", equalTo(4))
+            .body("'result'.'tools'.size()", equalTo(2))
             .body("'result'.'tools'[0].'name'", containsString("list_destinations"))
             .body("'result'.'tools'[0].'description'", containsString("List all available holiday destinations with a short description."))
             .body("'result'.'tools'[0].'inputSchema'.'type'", containsString("object"))
@@ -122,13 +127,16 @@ class HolidaysEMTest: EnterpriseTestBase() {
     @Throws(Exception::class)
     fun test_3_call_tool_with_destination() {
         val id = 1
-        val initializeBody = body(
-            id, "initialize", Map.of<String?, Any?>(
-                "protocolVersion", "2024-11-05",
-                "clientInfo", Map.of<String?, String?>("name", "test-client", "version", "1.0"),
-                "capabilities", Map.of<Any?, Any?>()
-            )
-        )
+
+        val initParams = mutableMapOf<String, Any>()
+        initParams["protocolVersion"] = "2024-11-05"
+        val clientInfo = mutableMapOf<String, String>()
+        clientInfo["name"] = "test-client"
+        clientInfo["version"] = "1.0"
+        initParams["clientInfo"] = clientInfo
+        initParams["capabilities"] = emptyMap<String, Any>()
+
+        val initializeBody = body(id, "initialize", initParams)
 
         val uuid = UUID.randomUUID().toString()
 
@@ -160,7 +168,7 @@ class HolidaysEMTest: EnterpriseTestBase() {
             .contentType("application/json")
             .body("'jsonrpc'", containsString("2.0"))
             .body("'id'", `is`(id))
-            .body("'result'.'tools'.size()", equalTo(4))
+            .body("'result'.'tools'.size()", equalTo(2))
             .body("'result'.'tools'[0].'name'", containsString("list_destinations"))
             .body("'result'.'tools'[0].'description'", containsString("List all available holiday destinations with a short description."))
             .body("'result'.'tools'[0].'inputSchema'.'type'", containsString("object"))
@@ -173,10 +181,13 @@ class HolidaysEMTest: EnterpriseTestBase() {
             .body("'result'.'tools'[1].'inputSchema'.'required'[0]", containsString("destination"))
 
 
-        val callToolBody = body(id, "tools/call", Map.of<String?, Any?>(
-            "name", "get_destination_info",
-            "arguments", Map.of<String?, String?>("destination", "paris")
-        ))
+        val params = mutableMapOf<String, Any>()
+        params["name"] = "get_destination_info"
+        val destination = mutableMapOf<String, String>()
+        destination["destination"] = "paris"
+        params["arguments"] = destination
+        val callToolBody = body(id, "tools/call", params)
+
         given().accept("*/*")
             .header("x-EMextraHeader123", "42")
             .contentType("application/json")
@@ -193,13 +204,13 @@ class HolidaysEMTest: EnterpriseTestBase() {
             .body("'result'.'content'[0].'text'", containsString("The City of Light: world-class art, haute cuisine, grand boulevards, and the iconic Eiffel Tower."))
     }
 
-    private fun body(id: Int, method: String?, params: MutableMap<String?, Any?>?): MutableMap<String?, Any?> {
-        val req: MutableMap<String?, Any?> = LinkedHashMap<String?, Any?>()
-        req.put("jsonrpc", "2.0")
-        req.put("id", id)
-        req.put("method", method)
-        if (params != null) req.put("params", params)
-        return req
+    private fun body(id: Int, method: String, params: MutableMap<String, Any>): MutableMap<String, Any> {
+        val request: MutableMap<String, Any> = mutableMapOf()
+        request["jsonrpc"] = "2.0"
+        request["id"] = id
+        request["method"] = method
+        request["params"] = params
+        return request
     }
 
 

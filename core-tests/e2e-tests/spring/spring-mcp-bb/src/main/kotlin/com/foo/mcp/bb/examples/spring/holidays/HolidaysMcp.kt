@@ -9,7 +9,7 @@ import java.io.IOException
 
 @RestController
 @CrossOrigin(origins = ["*"])
-class HolidaysMcp() {
+class HolidaysMcp {
 
     var mcpService: McpService = McpService()
     var objectMapper: ObjectMapper = ObjectMapper()
@@ -17,22 +17,16 @@ class HolidaysMcp() {
     @PostMapping(value = ["/messages"], consumes = [MediaType.APPLICATION_JSON_VALUE])
     fun messages(
         @RequestBody body: MutableMap<String, Any>
-    ): ResponseEntity<String?> {
-        val response: MutableMap<String?, Any?>? = mcpService.handle(body)
-
-        if (response == null) {
-            return ResponseEntity.ok().build<String?>()
-        }
+    ): ResponseEntity<String> {
+        val response: MutableMap<String, Any> = mcpService.handle(body)
 
         try {
             val json: String = objectMapper.writeValueAsString(response)
             return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(json)
         } catch (e: JsonProcessingException) {
-            return ResponseEntity.internalServerError().body<String?>("Serialisation error: " + e.message)
+            return ResponseEntity.internalServerError().body("Serialisation error: " + e.message)
         } catch (e: IOException) {
-            return ResponseEntity.internalServerError().body<String?>("SSE write error: " + e.message)
+            return ResponseEntity.internalServerError().body("SSE write error: " + e.message)
         }
-
-        return ResponseEntity.ok().build<String?>()
     }
 }
