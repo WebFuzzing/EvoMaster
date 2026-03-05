@@ -450,8 +450,8 @@ class TestSuiteWriter {
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
 
             // BigInteger and BigDecimal
-            addImport("import java.math.BigDecimal", lines)
-            addImport("import java.math.BigInteger", lines)
+            addImport("java.math.BigDecimal", lines)
+            addImport("java.math.BigInteger", lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)
