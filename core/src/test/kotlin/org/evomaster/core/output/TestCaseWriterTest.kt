@@ -1521,4 +1521,41 @@ public void test() throws Exception {
 
         assertEquals(3, getNumberOfFlakyComment(config,lines.toString()))
     }
+
+    @Test
+    fun testNumberMatchesForLong(){
+        val fooAction = RestCallAction("1", HttpVerb.GET, RestPath("/foo"), mutableListOf())
+
+        val (format, baseUrlOfSut, ei) = buildResourceEvaluatedIndividual(
+            dbInitialization = mutableListOf(),
+            groups = mutableListOf(
+                (mutableListOf<SqlAction>() to mutableListOf(fooAction))
+            ),
+            format = OutputFormat.JAVA_JUNIT_5
+        )
+
+        val fooResult = ei.seeResult(fooAction.getLocalId()) as RestCallResult
+        fooResult.setTimedout(false)
+        fooResult.setStatusCode(200)
+        fooResult.setBody(
+            """
+            {
+              "p0": [3000000000, 3000000001, 3000000002]
+            }
+            """.trimIndent()
+        )
+        fooResult.setBodyType(MediaType.APPLICATION_JSON_TYPE)
+
+        val config = getConfig(format)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = RestTestCaseWriter(config, PartialOracles())
+        val lines = writer.convertToCompilableTestCode( test, baseUrlOfSut)
+        lines.toString().apply {
+            assertTrue(contains("numberMatches(3000000000L)"))
+            assertTrue(contains("numberMatches(3000000001L)"))
+            assertTrue(contains("numberMatches(3000000002L)"))
+        }
+    }
 }
