@@ -511,17 +511,23 @@ class TestSuiteWriter {
         }
 
         if (format.isJavaScript()) {
-            lines.add("const superagent = require(\"superagent\");")
+            if (format.isPlaywright()) {
+                lines.add(" - 515 - TestSuiteWriter.kt)")
+            } else {
+                lines.add("const superagent = require(\"superagent\");")
+            }
 
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
             lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
-
+            lines.add(" - 523 - TestSuiteWriter.kt - What about this const EM thing?. Do we need it?")
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
+                lines.add(" - 526 - TestSuiteWriter.kt - What about controllerName. Do we need it?")
             }
             if (config.testTimeout > 0) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
+                lines.add(" - 529 - TestSuiteWriter.kt - Do we need the jest.setTimeout line above?")
             }
         }
 
@@ -706,7 +712,7 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $driver : RemoteWebDriver")
             }
 
-        } else if (config.outputFormat.isJavaScript()) {
+        } else if (config.outputFormat.isJavaScript()) { // Leave as is for playwright?
 
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("const $controller = new $controllerName();")
@@ -763,13 +769,14 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun initClass()")
             }
-            format.isJavaScript() -> lines.add("beforeAll( async () =>")
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll( async () =>")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("- 771 - TestSuiteWriter.kt")
         }
 
         lines.block {
             if (!config.blackBox) {
                 when {
-                    config.outputFormat.isJavaScript() -> {
+                    config.outputFormat.isJavaScript() -> { // Add something for playwright white box testing!
                         addStatement("await $controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = await $controller.startSut()", lines)
                     }
@@ -795,7 +802,7 @@ class TestSuiteWriter {
 
                 when {
                     format.isJavaOrKotlin() -> addStatement("assertNotNull(baseUrlOfSut)", lines)
-                    format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines)
+                    format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines) // Add something for playwright white box testing
                 }
             }
 
@@ -895,7 +902,7 @@ class TestSuiteWriter {
             testCaseWriter.addExtraInitStatement(lines)
         }
 
-        if (format.isJavaScript()) {
+        if (format.isJavaScript()) { // End statement of blocks. Valid for playwright too
             lines.append(");")
         }
     }
@@ -918,13 +925,13 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun tearDown()")
             }
-            format.isJavaScript() -> lines.add("afterAll( async () =>")
+            format.isJavaScript() -> lines.add("afterAll( async () =>") // white box part?
         }
 
         if (!format.isCsharp()) {
             lines.block {
                 when {
-                    format.isJavaScript() -> {
+                    format.isJavaScript() -> { // white box part?
                         addStatement("await $controller.stopSut()", lines)
                     }
                     else -> {
@@ -949,7 +956,7 @@ class TestSuiteWriter {
             }
         }
 
-        if (format.isJavaScript()) {
+        if (format.isJavaScript()) { // white box part?
             lines.append(");")
         }
     }
@@ -971,7 +978,7 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ")
+            format.isJavaScript() -> lines.add("beforeEach(async () => ") // white box part?
             //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }
@@ -979,7 +986,7 @@ class TestSuiteWriter {
 
         lines.block {
 
-            if (format.isJavaScript()) {
+            if (format.isJavaScript()) { // white box part?
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
@@ -1018,7 +1025,7 @@ class TestSuiteWriter {
             }
         }
 
-        if (format.isJavaScript()) {
+        if (format.isJavaScript()) { // white box part?
             lines.append(");")
         }
     }

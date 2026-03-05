@@ -18,6 +18,7 @@ enum class OutputFormat {
     KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5,
     JS_JEST,
+    JS_JEST_PLAYWRIGHT,  // Testing new playwright imp
     //CSHARP_XUNIT, //no longer supported, but there is still legacy code not removed
     PYTHON_UNITTEST,
     JS_JEST_PLAYWRIGHT
@@ -34,6 +35,8 @@ enum class OutputFormat {
     fun isJUnit5() = this.name.endsWith("junit_5", true)
 
     fun isJUnit4() = this.name.endsWith("junit_4", true)
+
+    fun isPlaywright() = this.name.endsWith("_playwright", true) // Testing new playwright imp
 
     fun isJUnit() = this.name.contains("_junit_", true)
 

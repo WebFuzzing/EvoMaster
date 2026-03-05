@@ -60,7 +60,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     fun startRequest(lines: Lines){
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
+            format.isJavaScript() && !format.isPlaywright() -> lines.append("await superagent")
+            format.isJavaScript() && format.isPlaywright() -> lines.append(" -64 HttpWsTestCaseWriter.kt- ")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
         }
@@ -103,7 +104,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
                 format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
-                format.isJavaScript() -> lines.append("const $resVarName = ")
+                format.isJavaScript() && !format.isPlaywright()-> lines.append("const $resVarName = ")
+                format.isJavaScript() && format.isPlaywright() -> lines.append(" -108 HttpWsTestCaseWriter.kt- ")
                 format.isPython() -> lines.append("$resVarName = ")
                 format.isCsharp() -> lines.append("var $resVarName = ")
             }
@@ -111,7 +113,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.append("given()")
-            format.isJavaScript() -> lines.append("await superagent")
+            format.isJavaScript() && !format.isPlaywright() -> lines.append("await superagent")
+            format.isJavaScript() && format.isPlaywright() -> lines.append(" -117 HttpWsTestCaseWriter.kt- ")
             format.isCsharp() -> lines.append("await Client")
             format.isPython() -> lines.append("requests \\")
         }
@@ -186,7 +189,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     protected fun openAcceptHeader(): String {
         return when {
             format.isJavaOrKotlin() -> ".accept("
-            format.isJavaScript() -> ".set('Accept', "
+            format.isJavaScript() && !format.isPlaywright()-> ".set('Accept', "
+            format.isJavaScript() && format.isPlaywright() -> " -193 HttpWsTestCaseWriter.kt- "
             format.isCsharp() -> "Client.DefaultRequestHeaders.Add(\"Accept\", "
             format.isPython() -> "headers['Accept'] = "
             else -> throw IllegalArgumentException("Invalid format: $format")
@@ -227,7 +231,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         val set = when {
             format.isJavaOrKotlin() -> "header"
-            format.isJavaScript() -> "set"
+            format.isJavaScript() && !format.isPlaywright()-> "set"
+            format.isJavaScript() && format.isPlaywright() -> " -235 HttpWsTestCaseWriter.kt- "
             format.isPython() -> "headers = {}"
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
@@ -276,7 +281,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else {
                 when {
                     format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(elc)})")
-                    format.isJavaScript() -> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
+                    format.isJavaScript() && !format.isPlaywright()-> lines.add(".set('Cookie', ${CookieWriter.cookiesName(elc)})")
+                    format.isJavaScript() && format.isPlaywright() -> lines.add(" -285 HttpWsTestCaseWriter.kt- ")
                     // Python cookies are set alongside the headers and body when performing the request
                 }
             }
@@ -303,7 +309,17 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val code = res.getStatusCode()
 
         when {
-            format.isJavaScript() -> {
+
+            format.isJavaScript() && format.isPlaywright() -> { // This need a re-write!
+                val statusAssert = " - 314 - HttpWsTestCaseWriter.kt- "
+                if (res.getFlakyStatusCode() == null){
+                    lines.add(statusAssert)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                    lines.addSingleCommentLine(statusAssert)
+                }
+            }
+            format.isJavaScript() && !format.isPlaywright()-> { // This might need a second look!
                 val statusAssert = "expect($responseVariableName.status).toBe($code);"
                 if (res.getFlakyStatusCode() == null){
                     lines.add(statusAssert)
@@ -436,8 +452,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.addStatement("val $varName = System.currentTimeMillis()")
         } else if(format.isPython()) {
             lines.addStatement("$varName = time.perf_counter() * 1000")
-        } else if(format.isJavaScript()) {
+        } else if(format.isJavaScript() && !format.isPlaywright()) {
             lines.addStatement("$varName = performance.now()")
+        } else if(format.isJavaScript() && format.isPlaywright()) {
+            lines.addStatement(" -448 HttpWsTestCaseWriter.kt- ")
         }
         lines.addEmpty(1)
 
@@ -455,8 +473,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.addStatement("val $finalVarName = System.currentTimeMillis() - $varName")
         } else if(format.isPython()) {
             lines.addStatement("$finalVarName = (time.perf_counter() * 1000) - $varName")
-        } else if(format.isJavaScript()) {
+        } else if(format.isJavaScript() && !format.isPlaywright()) {
             lines.addStatement("$finalVarName = performance.now() - $varName")
+        } else if(format.isJavaScript() && format.isPlaywright()) {
+            lines.addStatement(" -469 HttpWsTestCaseWriter.kt- ")
         }
 
         lines.addEmpty(1)
@@ -466,7 +486,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.addSingleCommentLine("Note: SQL Injection vulnerability detected in this call. Expected response time (sqliInjectedSleepDurationMs) should be greater than ${config.sqliInjectedSleepDurationMs} ms.")
             when{
                 format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName > ${config.sqliInjectedSleepDurationMs})")
-                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs})")
+                format.isJavaScript() && !format.isPlaywright() -> lines.addStatement("expect($finalVarName).toBeGreaterThan(${config.sqliInjectedSleepDurationMs})")
+                format.isJavaScript() && format.isPlaywright() -> lines.addStatement(" -480 HttpWsTestCaseWriter.kt- ")
                 format.isPython() -> lines.addStatement("assert $finalVarName > ${config.sqliInjectedSleepDurationMs}")
                 else -> {}
             }
@@ -474,9 +495,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.addSingleCommentLine("Note: No SQL Injection vulnerability detected in this call. Expected response time (sqliBaselineMaxResponseTimeMs) should be less than ${config.sqliBaselineMaxResponseTimeMs} ms.")
             when{
                 format.isJavaOrKotlin() -> lines.addStatement("assertTrue($finalVarName < ${config.sqliBaselineMaxResponseTimeMs})")
-                format.isJavaScript() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
+                format.isJavaScript() && !format.isPlaywright()-> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
+                format.isJavaScript() && format.isPlaywright() -> lines.addStatement(" -489 HttpWsTestCaseWriter.kt- ")
                 format.isPython() -> lines.addStatement("assert $finalVarName < ${config.sqliBaselineMaxResponseTimeMs}")
-                else -> {}
+                else -> { } // This should have some information?
             }
         }
     }
@@ -508,11 +530,15 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             format.isJavaScript() -> {
                 lines.indent(2)
-                //in SuperAgent, verb must be first
-                handleVerbEndpoint(baseUrlOfSut, call, lines)
-                lines.append(getAcceptHeader(call, res))
-                handleHeaders(call, lines)
-                handleBody(call, lines)
+                if (format.isPlaywright()) {    // This needs to be checked!
+                    lines.append(" -524 HttpWsTestCaseWriter.kt- ")
+                } else {
+                    //in SuperAgent, verb must be first
+                    handleVerbEndpoint(baseUrlOfSut, call, lines)
+                    lines.append(getAcceptHeader(call, res))
+                    handleHeaders(call, lines)
+                    handleBody(call, lines)
+                }
             }
 
             format.isCsharp() -> {
@@ -540,7 +566,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     fun sendBodyCommand(): String {
         return when {
             format.isJavaOrKotlin() -> "body"
-            format.isJavaScript() -> "send"
+            format.isJavaScript() && !format.isPlaywright()-> "send"
+            format.isPython() && format.isPlaywright()  -> " - 570 - HttpWsTestCaseWriter.kt"
             format.isCsharp() -> ""
             format.isPython() -> ""
             else -> throw IllegalArgumentException("Format not supported $format")
@@ -562,7 +589,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
-                format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+                format.isJavaScript() && !format.isPlaywright() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+                format.isPlaywright() && format.isPlaywright() -> lines.add(" - 593 - HttpWsTestCaseWriter.kt- ")
                 format.isPython() -> lines.add("headers[\"content-type\"] = \"${bodyParam.contentType()}\"")
             }
 
@@ -660,7 +688,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> {
                     lines.add("body = ${bodyLines.first()}")
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, false) // Needs to be checked! fwr
                 else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, false)
             }
         } else {
@@ -685,7 +713,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                         lines.add("${bodyLines.last()}")
                     }
                 }
-                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true)
+                format.isJavaScript() -> writeStringifiedPayload(lines, send, bodyLines, true) // Needs to be checked fwr
                 else -> writeJavaOrKotlinJsonBody(lines, send, bodyLines, dtoVar, true)
             }
         }
@@ -774,8 +802,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if(!allow.isNullOrBlank()){
             val instruction = when {
                 format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
-                format.isJavaScript() ->
-                    "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
+                format.isJavaScript() && format.isPlaywright() -> "- 794 - HttpWsTestCaseWriter.kt - "
+                format.isJavaScript() && !format.isPlaywright()-> "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
                 format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
@@ -806,7 +834,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             val instruction = when {
                 format.isJavaOrKotlin() -> ".contentType(\"$bodyTypeSimplified\")"
-                format.isJavaScript() ->
+                format.isJavaScript() && format.isPlaywright() -> "- 826 - HttpWsTestCaseWriter.kt - "
+                format.isJavaScript() && !format.isPlaywright()->
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
 
                 format.isCsharp() -> "Assert.Contains(\"$bodyTypeSimplified\", $responseVariableName.Content.Headers.GetValues(\"Content-Type\").First());"
@@ -871,7 +900,14 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     protected fun handleLastLine(call: HttpWsAction, res: HttpWsCallResult, lines: Lines, resVarName: String) {
 
-        if (format.isJavaScript()) {
+        if (format.isJavaScript() && format.isPlaywright()) {
+            /*
+                This is to deal with very weird behavior in SuperAgent that crashes the tests
+                for status codes different from 2xx...
+                so, here we make it passes as long as a status was present
+             */
+            lines.add(" - 886 - HttpWsTestCaseWriter.kt - ")
+        } else if(format.isJavaScript() && !format.isPlaywright()) {
             /*
                 This is to deal with very weird behavior in SuperAgent that crashes the tests
                 for status codes different from 2xx...
@@ -879,7 +915,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
              */
             lines.add(".ok(res => res.status)")
         }
-
 
         if (lines.shouldUseSemicolon()) {
             /*
@@ -928,7 +963,8 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         return when {
             format.isPython() -> "str($resVarName.json()${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)})"
-            format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
+            format.isJavaScript() && format.isPlaywright() -> " - 955 - HttpWsTestCaseWriter.kt - "
+            format.isJavaScript() && !format.isPlaywright()-> "$resVarName.body.$jsonPath.toString()"
             format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
             else -> throw IllegalStateException("Unsupported format $format")
         }

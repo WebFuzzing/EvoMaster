@@ -116,7 +116,8 @@ abstract class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
-            format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("test(\"${test.name}\", async () => {")
+            format.isJavaScript() && format.isPlaywright() -> lines.add(" - 120 TestCaseWriter.kt - ")
             format.isCsharp() -> lines.add("public async Task ${test.name}() {")
             format.isPython() -> lines.add("def ${test.name}(self):")
         }
@@ -137,7 +138,7 @@ abstract class TestCaseWriter {
             lines.add("}")
         }
 
-        if (format.isJavaScript()) {
+        if (format.isJavaScript()) { // add to code block - ok for playwright?
             lines.append(");")
         }
         return lines
