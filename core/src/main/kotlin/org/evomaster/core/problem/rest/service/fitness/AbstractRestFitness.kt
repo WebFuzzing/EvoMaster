@@ -1229,8 +1229,12 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         actionResults: List<ActionResult>,
         fv: FitnessValue
     ) {
-        val issues = HttpSemanticsOracle.hasSideEffectFailedModification(individual,actionResults)
-        if(!issues){
+        // covers normal / 401 / 403 cases: GET 2xx → PUT|PATCH 4xx → GET 2xx (fields unchanged)
+        val hasSideEffect = HttpSemanticsOracle.hasSideEffectFailedModification(individual, actionResults)
+        // covers the 404 special case: GET 404 → PUT|PATCH 404 → GET (must still be 404)
+        val hasSideEffect404 = HttpSemanticsOracle.hasSideEffectIn404Modification(individual, actionResults)
+
+        if (!hasSideEffect && !hasSideEffect404) {
             return
         }
 
@@ -1239,8 +1243,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }.last()
 
         val category = ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION
-        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName())
-        )
+        val scenarioId = idMapper.handleLocalTarget(idMapper.getFaultDescriptiveId(category, putOrPatch.getName()))
         fv.updateTarget(scenarioId, 1.0, individual.seeMainExecutableActions().lastIndex)
 
         val ar = actionResults.find { it.sourceLocalId == putOrPatch.getLocalId() } as RestCallResult?

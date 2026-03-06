@@ -139,8 +139,8 @@ object HttpSemanticsOracle {
             return false
         }
 
-        // auth should be consistent
-        if(before.auth.isDifferentFrom(modify.auth) || after.auth.isDifferentFrom(modify.auth)) {
+        // the two GETs must use the same auth so the state comparison is meaningful.
+        if(before.auth.isDifferentFrom(after.auth)) {
             return false
         }
 
@@ -196,6 +196,44 @@ object HttpSemanticsOracle {
     }
 
     /**
+     * Checks the special K==404 side-effect pattern:
+     *
+     *   GET       /path  → 404   (resource does not exist before the call)
+     *   PUT|PATCH /path  → 404   (failed modification - resource still not found)
+     *   GET       /path  → ???   (should STILL be 404; anything else is a side-effect)
+     */
+    fun hasSideEffectIn404Modification(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if(individual.size() < 3) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val before = actions[actions.size - 3]  // GET  (should be 404)
+        val modify = actions[actions.size - 2]  // PUT or PATCH (should be 404)
+        val after  = actions[actions.size - 1]  // GET  (oracle target)
+
+        if(before.verb != HttpVerb.GET) return false
+        if(modify.verb != HttpVerb.PUT && modify.verb != HttpVerb.PATCH) return false
+        if(after.verb  != HttpVerb.GET) return false
+
+        if(!before.usingSameResolvedPath(modify) || !after.usingSameResolvedPath(modify)) return false
+
+        val resBefore = actionResults.find { it.sourceLocalId == before.getLocalId() } as RestCallResult?
+            ?: return false
+        val resModify = actionResults.find { it.sourceLocalId == modify.getLocalId() } as RestCallResult?
+            ?: return false
+        val resAfter  = actionResults.find { it.sourceLocalId == after.getLocalId()  } as RestCallResult?
+            ?: return false
+
+        if(resBefore.getStatusCode() != 404) return false
+        if(resModify.getStatusCode() != 404) return false
+
+        return resAfter.getStatusCode() != 404
+    }
+
+    /**
      * Extract field names from the PUT/PATCH request body.
      * These are the fields that the client attempted to modify.
      */
@@ -236,7 +274,6 @@ object HttpSemanticsOracle {
             val jsonModify = JsonParser.parseString(bodyModify)
 
             if(!jsonBefore.isJsonObject || !jsonAfter.isJsonObject || !jsonModify.isJsonObject){
-                // not JSON objects, fallback to full comparison
                 return false
             }
 
@@ -256,7 +293,6 @@ object HttpSemanticsOracle {
 
             return false
         } catch (e: Exception) {
-            // JSON parsing failed, fallback to full comparison
             return false
         }
     }
