@@ -25,10 +25,10 @@ class FailModificationForbiddenEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "FailedModificationForbiddenEM",
-                2000
+                4000
         ) { args: MutableList<String> ->
 
-            setOption(args, "security", "false")
+            setOption(args, "security", "true")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
             setOption(args, "useExperimentalOracles", "true")

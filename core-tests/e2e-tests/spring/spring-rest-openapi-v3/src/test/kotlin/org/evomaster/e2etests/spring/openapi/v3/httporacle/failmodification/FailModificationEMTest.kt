@@ -29,7 +29,6 @@ class FailModificationEMTest : SpringTestBase(){
                 2000
         ) { args: MutableList<String> ->
 
-            setOption(args, "security", "false")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
             setOption(args, "useExperimentalOracles", "true")

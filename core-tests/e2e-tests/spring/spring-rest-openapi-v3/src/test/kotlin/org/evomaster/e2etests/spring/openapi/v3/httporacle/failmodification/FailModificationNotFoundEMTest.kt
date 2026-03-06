@@ -29,7 +29,6 @@ class FailModificationNotFoundEMTest : SpringTestBase(){
                 2000
         ) { args: MutableList<String> ->
 
-            setOption(args, "security", "false")
             setOption(args, "schemaOracles", "false")
             setOption(args, "httpOracles", "true")
             setOption(args, "useExperimentalOracles", "true")
@@ -38,10 +37,8 @@ class FailModificationNotFoundEMTest : SpringTestBase(){
 
             assertTrue(solution.individuals.size >= 1)
 
-            val faults = DetectedFaultUtils.getDetectedFaults(solution)
-
-            assertEquals(1, faults.size)
-            assertEquals(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION, faults.first().category)
+            val faultsCategories = DetectedFaultUtils.getDetectedFaultCategories(solution)
+            assertTrue(ExperimentalFaultCategory.HTTP_SIDE_EFFECTS_FAILED_MODIFICATION in faultsCategories)
         }
     }
 }

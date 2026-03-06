@@ -262,6 +262,10 @@ class HttpSemanticsService {
      */
     private fun handle401Or403SideEffect(verb: HttpVerb, k: Int, path: RestPath) {
 
+        // GET schema definition — needed to create the GET after via builder
+        val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path.isEquivalent(path) }
+            ?: return
+
         // T: smallest clean individual ending with GET 2xx (no prior PUT/PATCH on same path)
         val T = RestIndividualSelectorUtils.findAndSlice(
             individualsInSolution, HttpVerb.GET, path, statusGroup = StatusGroup.G_2xx
@@ -297,11 +301,8 @@ class HttpSemanticsService {
         val ind = T.copy() as RestIndividual
         val getAction = ind.seeMainExecutableActions().last() // the GET 2xx at the end of T
 
-        val modifyCopy = successAction.copy() as RestCallAction
-        modifyCopy.resetLocalIdRecursively()
-        modifyCopy.forceNewTaints()
-        modifyCopy.bindToSamePathResolution(getAction)
-
+        // we override auth afterwards to achieve no-auth (401) or different-user (403)
+        val modifyCopy = builder.createBoundActionFor(successAction, getAction)
         when (k) {
             401 -> modifyCopy.auth = HttpWsNoAuth()
             403 -> {
@@ -311,11 +312,9 @@ class HttpSemanticsService {
                 modifyCopy.auth = otherAuths.first()
             }
         }
-
         ind.addMainActionInEmptyEnterpriseGroup(-1, modifyCopy)
 
-        val getAfter = getAction.copy() as RestCallAction
-        getAfter.resetLocalIdRecursively()
+        val getAfter = builder.createBoundActionFor(getDef, getAction)
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)
@@ -347,16 +346,11 @@ class HttpSemanticsService {
         val last = actions.last() // the PUT/PATCH [k]
 
         // insert GET before the PUT/PATCH
-        val getBefore = getDef.copy() as RestCallAction
-        getBefore.doInitialize(randomness)
-        getBefore.forceNewTaints()
-        getBefore.bindToSamePathResolution(last)
-        getBefore.auth = last.auth
+        val getBefore = builder.createBoundActionFor(getDef, last)
         ind.addMainActionInEmptyEnterpriseGroup(actions.size - 1, getBefore)
 
         // append GET after the PUT/PATCH
-        val getAfter = getBefore.copy() as RestCallAction
-        getAfter.resetLocalIdRecursively()
+        val getAfter = builder.createBoundActionFor(getDef, last)
         ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
 
         prepareEvaluateAndSave(ind)

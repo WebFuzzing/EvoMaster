@@ -65,7 +65,7 @@ open class FailModificationForbiddenApplication {
         @PathVariable("id") id: Int,
         @RequestBody body: UpdateRequest
     ): ResponseEntity<Any> {
-        if (!isValidUser(auth)) return ResponseEntity.status(403).build()
+        if (!isValidUser(auth)) return ResponseEntity.status(401).build()
 
         val resource = data[id] ?: return ResponseEntity.status(404).build()
 
