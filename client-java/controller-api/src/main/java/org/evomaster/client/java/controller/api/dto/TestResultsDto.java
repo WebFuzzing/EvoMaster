@@ -14,4 +14,9 @@ public class TestResultsDto {
     public List<AdditionalInfoDto> additionalInfoList = new ArrayList<>();
 
     public List<ExtraHeuristicsDto> extraHeuristics = new ArrayList<>();
+
+    /**
+     * Incremental control-dependence graphs discovered since the last handshake.
+     */
+    public List<ControlDependenceGraphDto> controlDependenceGraphs = new ArrayList<>();
 }
