@@ -35,7 +35,7 @@ class ACImplyEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
     }
 
-    @Disabled
+
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)

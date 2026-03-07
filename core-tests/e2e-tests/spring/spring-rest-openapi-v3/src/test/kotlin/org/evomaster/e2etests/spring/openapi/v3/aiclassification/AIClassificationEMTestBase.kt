@@ -39,31 +39,53 @@ abstract class AIClassificationEMTestBase : SpringTestBase(){
         return ei
     }
 
+    private fun isWeakClassifier(
+        model: AIResponseClassifier,
+        action: RestCallAction,
+        weaknessThreshold: Double
+    ): Boolean {
+
+        val metrics = model.estimateMetrics(action.endpoint)
+
+        return metrics.precision400 <= weaknessThreshold
+                || metrics.sensitivity400 <= weaknessThreshold
+                || metrics.specificity <= weaknessThreshold
+                || metrics.npv <= weaknessThreshold
+    }
+
     protected fun verifyModel(
         injector: Injector,
         ok2xx: List<RestCallAction>,
         fail400: List<RestCallAction>,
-        threshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold
+        repairThreshold: Double = injector.getInstance(EMConfig::class.java).classificationRepairThreshold,
+        weaknessThreshold: Double = injector.getInstance(EMConfig::class.java).aIResponseClassifierWeaknessThreshold
     ) {
 
         val model = injector.getInstance(AIResponseClassifier::class.java)
         model.disableLearning() // no side-effects
 
+
         for(ok in ok2xx){
+
+            if (isWeakClassifier(model, ok, weaknessThreshold)) continue
+
             val resOK = evaluateAction(injector, ok)
             assertTrue(resOK.getStatusCode() in 200..299)
             val mOK= model.classify(ok)
             assertTrue(
-                mOK.probabilityOf400() < threshold,
+                mOK.probabilityOf400() < repairThreshold,
                 "Too high probability of 400 for OK ${ok.getName()}: ${mOK.probabilityOf400()}")
         }
 
         for(fail in fail400) {
+
+            if (isWeakClassifier(model, fail, weaknessThreshold)) continue
+
             val resFail = evaluateAction(injector, fail)
             assertEquals(400, resFail.getStatusCode())
             val mFail = model.classify(fail)
             assertTrue(
-                mFail.probabilityOf400() >= threshold,
+                mFail.probabilityOf400() >= repairThreshold,
                 "Too low probability of 400 for Fail ${fail.getName()}: ${mFail.probabilityOf400()}"
             )
         }

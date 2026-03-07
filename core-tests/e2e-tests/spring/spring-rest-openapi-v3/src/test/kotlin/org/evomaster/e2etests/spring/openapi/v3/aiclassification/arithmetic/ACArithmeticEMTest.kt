@@ -27,7 +27,7 @@ class ACArithmeticEMTest : AIClassificationEMTestBase() {
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
     }
 
-    @Disabled
+
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
