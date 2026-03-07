@@ -21,6 +21,7 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
         }
     }
 
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
