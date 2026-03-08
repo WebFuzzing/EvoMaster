@@ -299,10 +299,15 @@ class HttpSemanticsService {
             ?: return
 
         val ind = T.copy() as RestIndividual
-        val getAction = ind.seeMainExecutableActions().last() // the GET 2xx at the end of T
+        val getAction = ind.seeMainExecutableActions().last().copy() as RestCallAction // the GET 2xx at the end of T
+        val successCopy = successAction.copy() as RestCallAction
+
+        successCopy.forceNewTaints()
+        successCopy.resetLocalIdRecursively()
+
 
         // we override auth afterwards to achieve no-auth (401) or different-user (403)
-        val modifyCopy = builder.createBoundActionFor(successAction, getAction)
+        val modifyCopy = builder.createBoundActionFor(successCopy, getAction)
         when (k) {
             401 -> modifyCopy.auth = HttpWsNoAuth()
             403 -> {
@@ -312,10 +317,19 @@ class HttpSemanticsService {
                 modifyCopy.auth = otherAuths.first()
             }
         }
-        ind.addMainActionInEmptyEnterpriseGroup(-1, modifyCopy)
+        getAction.forceNewTaints()
+        getAction.resetLocalIdRecursively()
 
         val getAfter = builder.createBoundActionFor(getDef, getAction)
-        ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+
+        ind.addMainActionInEmptyEnterpriseGroup(action = modifyCopy)
+        ind.addMainActionInEmptyEnterpriseGroup(action = getAfter)
+
+
+
+        ind.ensureFlattenedStructure()
+        org.evomaster.core.Lazy.assert { ind.verifyValidity(); true }
 
         prepareEvaluateAndSave(ind)
     }

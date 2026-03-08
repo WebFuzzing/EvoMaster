@@ -25,7 +25,7 @@ class FailModificationForbiddenEMTest : SpringTestBase(){
 
         runTestHandlingFlakyAndCompilation(
                 "FailedModificationForbiddenEM",
-                4000
+                3000
         ) { args: MutableList<String> ->
 
             setOption(args, "security", "true")
