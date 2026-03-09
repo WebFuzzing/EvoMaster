@@ -24,19 +24,19 @@ open class DtoNullApplication {
     }
 
 
-    @PostMapping(path = ["/items"], consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PostMapping(path = ["/items"], consumes = [MediaType.APPLICATION_JSON_VALUE], produces = [MediaType.TEXT_PLAIN_VALUE])
     fun post(@RequestBody dto: DtoNullDto) : ResponseEntity<String>{
 
         val x = dto.x
 
         if(x == null){
             CoveredTargets.cover("UNDEFINED")
-            return ResponseEntity.status(200).body("UNDEFINED")
+            return ResponseEntity.status(400).body("UNDEFINED")
         }
 
         if(!x.isPresent){
             CoveredTargets.cover("NULL")
-            return ResponseEntity.status(200).body("NULL")
+            return ResponseEntity.status(409).body("NULL")
         }
 
         val n = x.get()
@@ -45,7 +45,7 @@ open class DtoNullApplication {
             return ResponseEntity.status(200).body("POSITIVE")
         } else {
             CoveredTargets.cover("NEGATIVE")
-            return ResponseEntity.status(200).body("NEGATIVE")
+            return ResponseEntity.status(201).body("NEGATIVE")
         }
     }
 }
