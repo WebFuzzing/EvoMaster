@@ -930,7 +930,9 @@ class EMConfig {
 
     fun shouldGenerateMongoData() = generateMongoData
 
-    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+    fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
+
+    fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
 
     fun activatedExperimentalFeatures(): List<String> {
 
@@ -1256,6 +1258,11 @@ class EMConfig {
             " Only the REST endpoints having at least one of such tags will be fuzzed." +
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
+
+    @Important(5.4)
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
 
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
@@ -3036,10 +3043,7 @@ class EMConfig {
     @Cfg("1+(λ,λ) GA: number of offspring (λ) per generation")
     var onePlusLambdaLambdaOffspringSize: Int = 4
 
-    @Experimental
-    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
-            "Only available for JVM languages")
-    var dtoForRequestPayload = false
+
 
     @Cfg("Override the value of externalEndpointURL in auth configurations." +
             " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
