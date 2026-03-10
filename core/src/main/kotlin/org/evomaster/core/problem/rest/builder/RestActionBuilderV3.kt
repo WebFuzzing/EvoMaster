@@ -1494,111 +1494,7 @@ object RestActionBuilderV3 {
     ) : Gene{
 
 
-        val maxInclusive =  if (options.enableConstraintHandling) !(schema.exclusiveMaximum?:false) else true
-        val minInclusive = if (options.enableConstraintHandling) !(schema.exclusiveMinimum?:false) else true
-
-        val mainGene = when(geneClass){
-            // number gene
-            IntegerGene::class.java ->
-            {
-                val minRange: Int
-                val maxRange: Int
-                if (format == "int8") {
-                    minRange = Byte.MIN_VALUE.toInt()
-                    maxRange = Byte.MAX_VALUE.toInt()
-                } else if (format == "int16") {
-                    minRange = Short.MIN_VALUE.toInt()
-                    maxRange = Short.MAX_VALUE.toInt()
-                } else {
-                    minRange = Integer.MIN_VALUE
-                    maxRange = Integer.MAX_VALUE
-                }
-
-                val minConstraint: Int?
-                val maxConstraint: Int?
-                if (options.enableConstraintHandling) {
-                    minConstraint = schema.minimum?.intValueExact()
-                    maxConstraint = schema.maximum?.intValueExact()
-                } else {
-                    minConstraint = null
-                    maxConstraint = null
-                }
-
-                val minValue = if (minConstraint != null) maxOf(minConstraint, minRange) else minRange
-                val maxValue = if (maxConstraint != null) minOf(maxConstraint, maxRange) else maxRange
-
-                IntegerGene(
-                    name,
-                    min = minValue,
-                    max = maxValue,
-                    maxInclusive = maxInclusive,
-                    minInclusive = minInclusive
-                )
-            }
-            LongGene::class.java -> LongGene(
-                name,
-                min = if (options.enableConstraintHandling) schema.minimum?.longValueExact() else null,
-                max = if (options.enableConstraintHandling) schema.maximum?.longValueExact() else null,
-                maxInclusive = maxInclusive,
-                minInclusive = minInclusive
-            )
-            FloatGene::class.java -> FloatGene(
-                name,
-                min = if (options.enableConstraintHandling) schema.minimum?.toFloat() else null,
-                max = if (options.enableConstraintHandling) schema.maximum?.toFloat() else null,
-                maxInclusive = maxInclusive,
-                minInclusive = minInclusive
-            )
-            DoubleGene::class.java -> DoubleGene(
-                name,
-                min = if (options.enableConstraintHandling) schema.minimum?.toDouble() else null,
-                max = if (options.enableConstraintHandling) schema.maximum?.toDouble() else null,
-                maxInclusive = maxInclusive,
-                minInclusive = minInclusive
-            )
-            BigDecimalGene::class.java ->  BigDecimalGene(
-                name,
-                min = if (options.enableConstraintHandling) schema.minimum else null,
-                max = if (options.enableConstraintHandling) schema.maximum else null,
-                maxInclusive = maxInclusive,
-                minInclusive = minInclusive
-            )
-            BigIntegerGene::class.java -> BigIntegerGene(
-                name,
-                min = if (options.enableConstraintHandling) schema.minimum?.toBigIntegerExact() else null,
-                max = if (options.enableConstraintHandling) schema.maximum?.toBigIntegerExact() else null,
-                maxInclusive = maxInclusive,
-                minInclusive = minInclusive
-            )
-            // string, Base64StringGene and regex gene
-            StringGene::class.java -> buildStringGene(name, options, schema, isInPath)
-            Base64StringGene::class.java ->  Base64StringGene(name, buildStringGene(name, options, schema, isInPath))
-            RegexGene::class.java -> {
-                /*
-                    TODO handle constraints for regex gene
-                    eg,  min and max
-                    also, isInPath
-                 */
-                RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
-            }
-            ArrayGene::class.java -> {
-                if (collectionTemplate == null)
-                    throw IllegalArgumentException("cannot create ArrayGene when collectionTemplate is null")
-                ArrayGene(
-                    name,
-                    template = collectionTemplate,
-                    uniqueElements = if (options.enableConstraintHandling) schema.uniqueItems?:false else false,
-                    minSize = if (options.enableConstraintHandling) schema.minItems else null,
-                    maxSize = if (options.enableConstraintHandling) schema.maxItems else null
-                )
-            }
-            else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
-        }
-
-        // TODO: Seran: Investigate
-        if (mainGene.description.isNullOrBlank()) {
-            mainGene.description = schema.description
-        }
+        val mainGene = createMainGene(options, schema, geneClass, format, name, isInPath, collectionTemplate)
 
         /*
             See:
@@ -1683,6 +1579,156 @@ object RestActionBuilderV3 {
         } else null
 
         return createGeneWithExampleAndDefault(exampleGene, defaultGene, mainGene, options, name)
+    }
+
+    private fun createMainGene(
+        options: Options,
+        schema: Schema<*>,
+        geneClass: Class<*>,
+        format: String?,
+        name: String,
+        isInPath: Boolean,
+        collectionTemplate: Gene?
+    ): Gene {
+
+        /*
+            exclusiveMinimum and exclusiveMaximum differ between schema version 3.0.0 and 3.1.0
+            https://www.openapis.org/blog/2021/02/16/migrating-from-openapi-3-0-to-3-1-0
+
+            Note: in 3.1.0, it is undefined what to do if both minimum and exclusiveMinimum are defined (same issue
+            for max). So, here we ARBITRARILY choose to use only the exclusive constraint, as supporting both
+            would be too much work with practically no meaningful ROI
+         */
+
+        val (minInclusive,minimum) = if(!options.enableConstraintHandling) {
+            Pair(true, schema.exclusiveMinimumValue ?: schema.minimum)
+        } else  if(schema.exclusiveMinimumValue != null){
+            //3.1.0 and above
+            Pair(false,schema.exclusiveMinimumValue)
+        } else {
+            //3.0.0
+            Pair(!(schema.exclusiveMinimum ?: false), schema.minimum)
+        }
+
+        val (maxInclusive, maximum) = if(!options.enableConstraintHandling) {
+            Pair(true, schema.exclusiveMaximumValue ?: schema.maximum)
+        } else  if(schema.exclusiveMaximumValue != null){
+            //3.1.0 and above
+            Pair(false,schema.exclusiveMaximumValue)
+        } else {
+            //3.0.0
+            Pair(!(schema.exclusiveMaximum ?: false),schema.maximum)
+        }
+
+
+        val mainGene = when (geneClass) {
+            // number gene
+            IntegerGene::class.java -> {
+                val minRange: Int
+                val maxRange: Int
+                if (format == "int8") {
+                    minRange = Byte.MIN_VALUE.toInt()
+                    maxRange = Byte.MAX_VALUE.toInt()
+                } else if (format == "int16") {
+                    minRange = Short.MIN_VALUE.toInt()
+                    maxRange = Short.MAX_VALUE.toInt()
+                } else {
+                    minRange = Integer.MIN_VALUE
+                    maxRange = Integer.MAX_VALUE
+                }
+
+                val minConstraint: Int?
+                val maxConstraint: Int?
+                if (options.enableConstraintHandling) {
+                    minConstraint = minimum?.intValueExact()
+                    maxConstraint = maximum?.intValueExact()
+                } else {
+                    minConstraint = null
+                    maxConstraint = null
+                }
+
+                val minValue = if (minConstraint != null) maxOf(minConstraint, minRange) else minRange
+                val maxValue = if (maxConstraint != null) minOf(maxConstraint, maxRange) else maxRange
+
+                IntegerGene(
+                    name,
+                    min = minValue,
+                    max = maxValue,
+                    maxInclusive = maxInclusive,
+                    minInclusive = minInclusive
+                )
+            }
+
+            LongGene::class.java -> LongGene(
+                name,
+                min = if (options.enableConstraintHandling) minimum?.longValueExact() else null,
+                max = if (options.enableConstraintHandling) maximum?.longValueExact() else null,
+                maxInclusive = maxInclusive,
+                minInclusive = minInclusive
+            )
+
+            FloatGene::class.java -> FloatGene(
+                name,
+                min = if (options.enableConstraintHandling) minimum?.toFloat() else null,
+                max = if (options.enableConstraintHandling) maximum?.toFloat() else null,
+                maxInclusive = maxInclusive,
+                minInclusive = minInclusive
+            )
+
+            DoubleGene::class.java -> DoubleGene(
+                name,
+                min = if (options.enableConstraintHandling) minimum?.toDouble() else null,
+                max = if (options.enableConstraintHandling) maximum?.toDouble() else null,
+                maxInclusive = maxInclusive,
+                minInclusive = minInclusive
+            )
+
+            BigDecimalGene::class.java -> BigDecimalGene(
+                name,
+                min = if (options.enableConstraintHandling) minimum else null,
+                max = if (options.enableConstraintHandling) maximum else null,
+                maxInclusive = maxInclusive,
+                minInclusive = minInclusive
+            )
+
+            BigIntegerGene::class.java -> BigIntegerGene(
+                name,
+                min = if (options.enableConstraintHandling) minimum?.toBigIntegerExact() else null,
+                max = if (options.enableConstraintHandling) maximum?.toBigIntegerExact() else null,
+                maxInclusive = maxInclusive,
+                minInclusive = minInclusive
+            )
+            // string, Base64StringGene and regex gene
+            StringGene::class.java -> buildStringGene(name, options, schema, isInPath)
+            Base64StringGene::class.java -> Base64StringGene(name, buildStringGene(name, options, schema, isInPath))
+            RegexGene::class.java -> {
+                /*
+                    TODO handle constraints for regex gene
+                    eg,  min and max
+                    also, isInPath
+                 */
+                RegexHandler.createGeneForEcma262(schema.pattern).apply { this.name = name }
+            }
+
+            ArrayGene::class.java -> {
+                if (collectionTemplate == null)
+                    throw IllegalArgumentException("cannot create ArrayGene when collectionTemplate is null")
+                ArrayGene(
+                    name,
+                    template = collectionTemplate,
+                    uniqueElements = if (options.enableConstraintHandling) schema.uniqueItems ?: false else false,
+                    minSize = if (options.enableConstraintHandling) schema.minItems else null,
+                    maxSize = if (options.enableConstraintHandling) schema.maxItems else null
+                )
+            }
+
+            else -> throw IllegalStateException("cannot create gene with constraints for gene:${geneClass.name}")
+        }
+
+        if (mainGene.description.isNullOrBlank()) {
+            mainGene.description = schema.description
+        }
+        return mainGene
     }
 
     private fun createGeneWithExampleAndDefault(

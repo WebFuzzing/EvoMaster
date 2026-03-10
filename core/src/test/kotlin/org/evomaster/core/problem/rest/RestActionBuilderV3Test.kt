@@ -2141,4 +2141,56 @@ class RestActionBuilderV3Test{
         assertEquals("FOO", output)
     }
 
+    @Test
+    fun testExclusiveMinMax_3_0(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/exclusive_3_0.yaml", 1, true)
+        verifyExclusiveMinMaxBounds(map)
+    }
+
+    @Test
+    fun testExclusiveMinMax_3_1(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/exclusive_3_1.yaml", 1, true)
+        verifyExclusiveMinMaxBounds(map)
+    }
+
+    private fun verifyExclusiveMinMaxBounds(map: MutableMap<String, Action>) {
+        val get = map["GET:/api"] as RestCallAction
+        assertEquals(4, get.parameters.size)
+
+        map.values.first()
+            .seeTopGenes()
+            .forEach { x ->
+
+                val gene = x.getWrappedGene(IntegerGene::class.java)!!
+                assertEquals(0, gene.min)
+                assertEquals(16, gene.max)
+
+                when (x.name) {
+                    "tt" -> {
+                        //genes use "inclusive", but schema uses "exclusive"
+                        assertFalse(gene.minInclusive)
+                        assertFalse(gene.maxInclusive)
+                    }
+
+                    "tf" -> {
+                        assertFalse(gene.minInclusive)
+                        assertTrue(gene.maxInclusive)
+                    }
+
+                    "ft" -> {
+                        assertTrue(gene.minInclusive)
+                        assertFalse(gene.maxInclusive)
+                    }
+
+                    "ff" -> {
+                        assertTrue(gene.minInclusive)
+                        assertTrue(gene.maxInclusive)
+                    }
+
+                    else -> {
+                        fail("Not recognized name: ${x.name}")
+                    }
+                }
+            }
+    }
 }
