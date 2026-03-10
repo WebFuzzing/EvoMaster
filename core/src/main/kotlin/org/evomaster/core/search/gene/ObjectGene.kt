@@ -755,4 +755,28 @@ open class ObjectGene(
         if (gene !is PairGene<*,*>) return false
         return additionalFields?.contains(gene) ?: false
     }
+
+    /**
+     * Return gene representing given field.
+     * Using "." for nested fields, eg "address.city"
+     */
+    fun getField(pathName: String) : Gene?{
+
+        val tokens = pathName.split(",")
+        val current = tokens[0]
+        val target = fixedFields.find { it.name == current}
+            ?: additionalFields?.find { it.first.getValueAsRawString() == current}?.second?.gene
+            ?: return null
+
+        if(tokens.size == 1){
+            return target
+        }
+
+        //TODO if we add getField in an interface to other genes as well, then we should use such interface here
+        if(target !is ObjectGene){
+            return null
+        }
+
+        return target.getField(tokens.subList(1, tokens.size).joinToString("."))
+    }
 }
