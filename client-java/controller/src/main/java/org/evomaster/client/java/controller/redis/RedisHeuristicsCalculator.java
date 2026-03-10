@@ -38,13 +38,13 @@ public class RedisHeuristicsCalculator {
      * @return RedisDistanceWithMetrics
      */
     public RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand,
-                                                    Map<String, RedisValueData> redisData) {
+                                                    RedisKeyValueStore redisData) {
         RedisCommand.RedisCommandType type = redisCommand.getType();
         try {
             switch (type) {
                 case KEYS: {
                     String pattern = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForPattern(pattern, redisData);
+                    return calculateDistanceForPattern(pattern, redisData.getData());
                 }
 
                 case EXISTS:
@@ -52,17 +52,17 @@ public class RedisHeuristicsCalculator {
                 case HGETALL:
                 case SMEMBERS: {
                     String target = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForKeyMatch(target, redisData);
+                    return calculateDistanceForKeyMatch(target, redisData.getData());
                 }
 
                 case HGET: {
                     String key = redisCommand.extractArgs().get(0);
                     String field = redisCommand.extractArgs().get(1);
-                    return calculateDistanceForFieldInHash(key, field, redisData);
+                    return calculateDistanceForFieldInHash(key, field, redisData.getData());
                 }
 
                 case SINTER: {
-                    return calculateDistanceForIntersection(redisCommand.extractArgs(), redisData);
+                    return calculateDistanceForIntersection(redisCommand.extractArgs(), redisData.getData());
                 }
 
                 default:
