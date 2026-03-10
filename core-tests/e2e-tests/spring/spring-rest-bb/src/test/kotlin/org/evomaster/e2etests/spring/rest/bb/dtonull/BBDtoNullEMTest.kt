@@ -34,22 +34,22 @@ class BBDtoNullEMTest : SpringTestBase() {
         executeAndEvaluateBBTest(
             outputFormat,
             "dtonull",
-            100,
+            1000,
             3,
-            listOf("UNDEFINED",
-                //FIXME currently we do not handle NULL :(
-//                "NULL",
-                "POSITIVE","NEGATIVE")
+            listOf("UNDEFINED", "NULL", "POSITIVE","NEGATIVE")
         ){ args: MutableList<String> ->
 
-            setOption(args, "dtoForRequestPayload", "true")
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-dtonull.json")
+
+            //TODO need to fix/extend DTO handling before activating it here
+//            setOption(args, "dtoForRequestPayload", "true")
+            setOption(args, "dtoForRequestPayload", "false")
 
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
             assertHasAtLeastOne(solution, HttpVerb.POST, 400, "/api/bbdtonull/items", "UNDEFINED")
-            //FIXME currently we do not handle NULL :(
-            //assertHasAtLeastOne(solution, HttpVerb.POST, 409, "/api/bbdtonull/items", "NULL")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 409, "/api/bbdtonull/items", "NULL")
             assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bbdtonull/items", "POSITIVE")
             assertHasAtLeastOne(solution, HttpVerb.POST, 201, "/api/bbdtonull/items", "NEGATIVE")
         }

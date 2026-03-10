@@ -34,7 +34,11 @@ open abstract class OutputFormatter (val name: String) {
         }
 
         val JSON_FORMATTER = object : OutputFormatter("JSON_FORMATTER"){
-            val gson = GsonBuilder().setPrettyPrinting().create()
+                /*
+                    GSON does not follow standard for JSON.
+                    Should not be used for validation.
+                    https://stackoverflow.com/questions/43233898/how-to-check-if-json-is-valid-in-java-using-gson
+                 */
             val objectMapper  = ObjectMapper()
 
             override fun isValid(content: String): Boolean{
@@ -45,22 +49,11 @@ open abstract class OutputFormatter (val name: String) {
                 } catch (e: JsonProcessingException) {
                     false
                 }
-                /*
-                    GSON does not follow standard for JSON.
-                    Should not be used for validation.
-                    https://stackoverflow.com/questions/43233898/how-to-check-if-json-is-valid-in-java-using-gson
-                 */
-//                return try{
-//                    gson.fromJson(content, Object::class.java)
-//                    true
-//                }catch (e : JsonSyntaxException ) {
-//                    false
-//                }
 
             }
             override fun getFormatted(content: String): String{
                 if(this.isValid(content)){
-                    return gson.toJson(JsonParser.parseString(content))
+                    return objectMapper.readTree(content).toPrettyString()
                 }
                 throw MismatchedFormatException(this, content)
             }
