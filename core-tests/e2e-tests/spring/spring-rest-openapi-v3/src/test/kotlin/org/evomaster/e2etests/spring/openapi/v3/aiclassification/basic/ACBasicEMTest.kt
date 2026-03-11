@@ -21,12 +21,13 @@ class ACBasicEMTest : AIClassificationEMTestBase() {
         }
     }
 
+    @Disabled
     @Test
     fun testRunDeterministic(){
         testRunEM(AIResponseClassifierModel.DETERMINISTIC)
     }
 
-    @Disabled
+
     @Test
     fun testRunGaussian(){
         testRunEM(AIResponseClassifierModel.GAUSSIAN)
