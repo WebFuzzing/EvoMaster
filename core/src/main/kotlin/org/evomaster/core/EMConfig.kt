@@ -634,7 +634,6 @@ class EMConfig {
             throw ConfigProblemException("'bbTargetUrl' should be set only in black-box mode")
         }
 
-        // ONUR, this line is changed since it did not compile in the previous case.
         if (!endpointFocus.isNullOrBlank() && !endpointPrefix.isNullOrBlank()) {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
@@ -913,11 +912,31 @@ class EMConfig {
 
                 if (Files.exists(path) && !Files.isWritable(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that already" +
-                            " exists, but that cannot be written/replace to: $path")
+                            " exists, but that cannot be written/replaced to: $path")
                 }
                 if (Files.exists(path) && Files.isDirectory(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that is instead an" +
                             " existing folder: $path")
+                }
+            }
+        }
+
+        m.annotations.find { it is ExistingPath }?.also{
+            val ep = it as ExistingPath
+            if(! (ep.canBeBlank && parameterValue.isBlank())){
+                val path = try {
+                    Paths.get(parameterValue).toAbsolutePath()
+                } catch (e: InvalidPathException) {
+                    throw ConfigProblemException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+                }
+
+                if (!Files.exists(path)){
+                    throw ConfigProblemException("File/folder for '${m.name}' does not exist: $path")
+                }
+
+                if( ep.shouldBeWritable && !Files.isWritable(path)){
+                    throw ConfigProblemException("Parameter '${m.name}' refers to a file that" +
+                            " exists, but it cannot be written/replaced to: $path")
                 }
             }
         }
@@ -1052,7 +1071,7 @@ class EMConfig {
 
 
     /**
-     * This represent one of the main properties to set in EvoMaster.
+     * This represents one of the main properties to set in EvoMaster.
      * Those are the ones most likely going to be set by practitioners.
      * Note: most of the other properties are mainly for experiments
      */
@@ -1073,6 +1092,13 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class FilePath(val canBeBlank: Boolean = false)
+
+    /**
+     *  Either a file or a folder, that MUST already exist and can be read.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class ExistingPath(val canBeBlank: Boolean = false, val shouldBeWritable: Boolean = false)
 
 
 //------------------------------------------------------------------------
@@ -3049,6 +3075,28 @@ class EMConfig {
             " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
+    @Experimental
+    @ExistingPath(true,false)
+    @Cfg("Specify an OAI Overlay file, or a folder containing those." +
+            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
+            " a given list of configurable suffixes." +
+            " Each Overlay will be applied to the target OpenAPI schema." +
+            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
+    var overlay = ""
+
+    @Experimental
+    @Cfg("Comma ',' separated list of file name suffixes." +
+            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
+            " suffixes will be loaded and applied.")
+    var overlayFileSuffixes = ".json,.yaml,.yml"
+
+    @Experimental
+    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
+            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
+            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
+            " This option can be used to override such behavior, and let the fuzzing go on without" +
+            " applying any overlay.")
+    var overlayLenient = false
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
