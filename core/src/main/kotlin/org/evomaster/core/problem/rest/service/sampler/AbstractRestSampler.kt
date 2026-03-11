@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.problem.ExternalServiceDto
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.enterprise.SampleType
@@ -26,6 +27,8 @@ import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.schema.OpenApiAccess
 import org.evomaster.core.problem.rest.schema.RestSchema
 import org.evomaster.core.problem.rest.schema.SchemaLocation
+import org.evomaster.core.problem.rest.schema.SchemaOpenAPI
+import org.evomaster.core.problem.rest.schema.SchemaUtils
 import org.evomaster.core.problem.rest.seeding.Parser
 import org.evomaster.core.problem.rest.seeding.postman.PostmanParser
 import org.evomaster.core.problem.rest.service.AIResponseClassifier
@@ -110,7 +113,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
         } else {
             throw SutProblemException("No info on the OpenAPI schema was provided")
         }
-        schemaHolder = RestSchema(swagger)
+        val transformed = applyOverlays(swagger)
+
+        schemaHolder = RestSchema(transformed)
         schemaHolder.validate()
 
         // The code should never reach this line without a valid swagger.
@@ -281,6 +286,27 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
     }
 
 
+    private fun retrieveOverlays() : List<String>? {
+        val overlays = SchemaUtils.readOverlayFiles(config.overlay, config.overlayFileSuffixes)
+
+        if(overlays!=null && overlays.isEmpty()){
+            throw ConfigProblemException("Could not find any Overlay file in '${config.overlay}' given the suffixes '${config.overlayFileSuffixes}'")
+        }
+
+        return overlays
+    }
+
+    private fun applyOverlays(openApi: SchemaOpenAPI) : SchemaOpenAPI{
+
+        val overlays = retrieveOverlays()
+
+        val transformed = try{
+            openApi.withOverlays(overlays, config.overlayLenient)
+        }catch (e: Exception){
+            throw ConfigProblemException(e.message ?: "Failed to apply overlays")
+        }
+        return transformed
+    }
 
     private fun initForBlackBox() {
 
@@ -288,8 +314,9 @@ abstract class AbstractRestSampler : HttpWsSampler<RestIndividual>() {
 
         // retrieve the swagger
         val swagger = OpenApiAccess.getOpenAPIFromLocation(configuration.bbSwaggerUrl, authentications)
+        val transformed = applyOverlays(swagger)
 
-        schemaHolder = RestSchema(swagger)
+        schemaHolder = RestSchema(transformed)
         schemaHolder.validate()
 
         actionCluster.clear()

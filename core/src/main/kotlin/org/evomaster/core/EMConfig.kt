@@ -3077,7 +3077,7 @@ class EMConfig {
 
     @Experimental
     @ExistingPath(true,false)
-    @Cfg("Specify an OAI Overlay file, or a folder containing those." +
+    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
             " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
             " a given list of configurable suffixes." +
             " Each Overlay will be applied to the target OpenAPI schema." +
