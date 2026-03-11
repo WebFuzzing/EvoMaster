@@ -1,6 +1,7 @@
 package org.evomaster.core.output.formatter
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonParser
@@ -40,6 +41,8 @@ open abstract class OutputFormatter (val name: String) {
                     https://stackoverflow.com/questions/43233898/how-to-check-if-json-is-valid-in-java-using-gson
                  */
             val objectMapper  = ObjectMapper()
+                    //also Jackson by default is happy to accept garbage :(
+                    .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
 
             override fun isValid(content: String): Boolean{
 
@@ -53,7 +56,11 @@ open abstract class OutputFormatter (val name: String) {
             }
             override fun getFormatted(content: String): String{
                 if(this.isValid(content)){
-                    return objectMapper.readTree(content).toPrettyString()
+                    return objectMapper.readTree(content)
+                        .toPrettyString()
+                        //on Windows, Jackson "might" use CRLF,
+                        //which can be problematic
+                        .replace("\r\n", "\n")
                 }
                 throw MismatchedFormatException(this, content)
             }
