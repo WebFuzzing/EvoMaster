@@ -170,7 +170,10 @@ public class AdditionalInfo implements Serializable {
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
         if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
-            throw new IllegalArgumentException("No valid input name: " + taintInputName);
+            //this can happen in E2E where libraries used by "core" are instrumented (eg Kotlin)
+            SimpleLogger.error("No valid taint input name for specialization: " + taintInputName);
+            //throw new IllegalArgumentException();
+            return;
         }
         Objects.requireNonNull(info);
 

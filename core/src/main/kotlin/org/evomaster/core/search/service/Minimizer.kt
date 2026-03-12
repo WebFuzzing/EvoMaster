@@ -37,6 +37,7 @@ class Minimizer<T: Individual> {
 
     @Inject
     private lateinit var idMapper: IdMapper
+    
 
     private var startTimer : Long = -1
 

@@ -15,10 +15,10 @@ class BodyUndefinedRest {
     open fun send(@RequestBody(required = true) body : BodyUndefinedDto) : ResponseEntity<String>{
 
         if(body.user != null){
-            return ResponseEntity.status(200).build()
+            return ResponseEntity.status(200).body("OK")
         }
 
-        return ResponseEntity.status(400).build()
+        return ResponseEntity.status(400).body("FAIL")
     }
 
 

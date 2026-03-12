@@ -140,7 +140,7 @@ class DisjunctionRxGene(
 
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is DisjunctionRxGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
 
         //TODO Man: Andrea, please check this code

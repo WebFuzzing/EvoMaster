@@ -3,6 +3,9 @@ package org.evomaster.core.problem.httpws.service
 import com.webfuzzing.commons.auth.Header
 import org.evomaster.client.java.controller.api.dto.auth.AuthenticationDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.core.AnsiColor
+import org.evomaster.core.DocumentationLinks.EM_AUTH_LINK
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.api.service.ApiWsSampler
 import org.evomaster.core.problem.enterprise.auth.AuthSettings
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -55,7 +58,7 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
     }
 
 
-    protected fun addAuthFromConfig(){
+    private fun addAuthFromConfig(){
 
         //first check if any configured in configuration file (if any)
         config.authFromFile?.forEach { handleAuthInfo(it) }
@@ -84,13 +87,47 @@ abstract class HttpWsSampler<T> : ApiWsSampler<T>() where T : Individual{
         handleAuthInfo(dto)
     }
 
-    protected fun setupAuthentication(infoDto: SutInfoDto) {
+    private fun checkAuthSettings(){
+        val n = authentications.size()
+        if(n==0){
+            LoggingUtil.getInfoLogger().warn(
+                AnsiColor.inYellow("WARNING: No authentication info was provided." +
+                    " Unless you are testing an example API, you should setup some authentication info for different users." +
+                    " If this is the first time you are using EvoMaster, and you just want to get a feeling of how it works," +
+                    " then ignore this warning." +
+                    " However, to get better results, you will need setup authentication info, eventually." +
+                    " More info is currently available at ") + AnsiColor.inBlue(EM_AUTH_LINK)
+            )
+        }
+        if(n==1){
+            //TODO if/when in the future we enable dynamic registration of users, likely we will need to update this
+            // warning message
+            LoggingUtil.getInfoLogger().warn(
+                AnsiColor.inYellow("WARNING: You have provided authentication information only for a single user." +
+                        " Many of the automatic checks done by EvoMaster for access policy validation are based on the" +
+                        " interactions of 2 or more users." +
+                        " To get better results, you are strongly recommended to provide more user authentication info," +
+                        " at the very minimum 2 in total, but better if at least 1 for each different access role you have in your system" +
+                        " that you are testing." +
+                        " More info is currently available at ") + AnsiColor.inBlue(EM_AUTH_LINK)
+            )
+        }
+    }
+
+    protected fun setupAuthenticationForBlackBox(){
+        addAuthFromConfig()
+        checkAuthSettings()
+    }
+
+    protected fun setupAuthenticationForWhiteBox(infoDto: SutInfoDto) {
 
         addAuthFromConfig()
 
         val info = infoDto.infoForAuthentication ?: return
 
         info.forEach { handleAuthInfo(it) }
+
+        checkAuthSettings()
     }
 
     private fun handleAuthInfo(i: AuthenticationDto) {

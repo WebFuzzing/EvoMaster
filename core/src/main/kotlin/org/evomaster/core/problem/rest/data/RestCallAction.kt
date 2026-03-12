@@ -138,7 +138,9 @@ class RestCallAction(
     override fun copyContent(): Action {
 
         if(weakReference != null) {
-            throw IllegalStateException("'weakReference' must handled before trying to make a copy")
+            throw IllegalStateException("'weakReference' must handled before trying to make a copy." +
+                    " If needed, should rather use copyKeepingSameWeakRef(), but that can only be done in" +
+                    " very special cases.")
         }
 
         val p = parameters.asSequence().map(Param::copy).toMutableList()
@@ -199,7 +201,23 @@ class RestCallAction(
     }
 
     fun usingSameResolvedPath(other: RestCallAction) =
+        //FIXME this does not consider dynamic fields?
         this.resolvedOnlyPath() == other.resolvedOnlyPath()
+
+    /**
+     * When the URL path of this endpoint is resolved, would it be a (strict) parent from the other action
+     */
+    fun isResolvedParentPath(other: RestCallAction): Boolean {
+
+        val parent = this.resolvedOnlyPath() // TODO deal with dynamic info
+        val child = other.resolvedOnlyPath()
+
+        if(parent.length >= child.length) {
+            return false
+        }
+        return child.startsWith(parent)
+    }
+
 
     /**
     Note: in swagger the "consume" type might be missing.

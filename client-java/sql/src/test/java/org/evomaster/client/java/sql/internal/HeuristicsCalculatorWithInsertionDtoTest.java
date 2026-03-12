@@ -31,7 +31,7 @@ public class HeuristicsCalculatorWithInsertionDtoTest {
         return schemaDto;
     }
 
-    private final Map<SqlTableId, Set<SqlColumnId>> selectWhereXofFoo = new HashMap<SqlTableId, Set<SqlColumnId>>(){{put(new SqlTableId("Foo"), Collections.singleton(new SqlColumnId("x")));}};
+    private final Map<SqlTableId, Set<SqlColumnId>> selectWhereXofFoo = new HashMap<SqlTableId, Set<SqlColumnId>>(){{put(new SqlTableId(null,null,"Foo"), Collections.singleton(new SqlColumnId("x")));}};
 
 
     @Test

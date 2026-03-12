@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Minimal API
+  version: 1.0.0
+paths:
+  /api:
+    get:
+      parameters:
+        - name: tt
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 16
+            exclusiveMinimum: true
+            exclusiveMaximum: true
+        - name: tf
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 16
+            exclusiveMinimum: true
+            exclusiveMaximum: false
+        - name: ft
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 16
+            exclusiveMinimum: false
+            exclusiveMaximum: true
+        - name: ff
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 16
+            exclusiveMinimum: false
+            exclusiveMaximum: false
+      responses:
+        '200':
+          description: OK

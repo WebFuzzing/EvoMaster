@@ -1,6 +1,5 @@
 package org.evomaster.core.solver
 
-import net.sf.jsqlparser.JSQLParserException
 import org.evomaster.client.java.controller.api.dto.database.schema.DbInfoDto
 import org.evomaster.client.java.sql.DbInfoExtractor
 import org.evomaster.client.java.sql.SqlScriptRunner
@@ -8,7 +7,6 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
-import org.evomaster.solver.smtlib.*
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -48,17 +46,15 @@ class SMTLibZ3DbConstraintSolverTest {
 
     /**
      * Test the generation of SMT from a simple select statement and a database schema
-     * @throws JSQLParserException if the statement is not valid
      */
     @Test
-    @Throws(JSQLParserException::class)
     fun selectFromUsers() {
 
         val newActions = solver.solve(schemaDto, "SELECT * FROM Users;", 2)
 
         assertEquals(2, newActions.size)
 
-        val genesInsert1: List<Gene> = newActions.get(0).seeTopGenes()
+        val genesInsert1: List<Gene> = newActions[0].seeTopGenes()
 
         assertEquals(4, genesInsert1.size)
 
@@ -87,7 +83,7 @@ class SMTLibZ3DbConstraintSolverTest {
             }
         }
 
-        val genesInsert2: List<Gene> = newActions.get(1).seeTopGenes()
+        val genesInsert2: List<Gene> = newActions[1].seeTopGenes()
 
         assertEquals(4, genesInsert2.size)
 
@@ -115,5 +111,17 @@ class SMTLibZ3DbConstraintSolverTest {
                 }
             }
         }
+    }
+
+    /**
+     * Test the generation of SMT from a complicated cache local temporary table does not throw exception
+     */
+    @Test
+    fun selectLocal() {
+
+        val newActions = solver.solve(schemaDto, "create cached local temporary table if not exists HT_feature_constraint (id bigint not null) on commit drop transactional", 2)
+
+        // This will be empty as the query does not correspond to the created database, just checking that it doesn't throw an exception
+        assertEquals(0, newActions.size)
     }
 }

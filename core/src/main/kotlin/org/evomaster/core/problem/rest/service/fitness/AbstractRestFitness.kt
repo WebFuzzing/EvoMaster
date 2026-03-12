@@ -31,8 +31,6 @@ import org.evomaster.core.problem.rest.link.RestLinkValueUpdater
 import org.evomaster.core.problem.rest.oracle.HttpSemanticsOracle
 import org.evomaster.core.problem.rest.oracle.RestSchemaOracle
 import org.evomaster.core.problem.rest.oracle.RestSecurityOracle
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.XSS_PAYLOADS
-import org.evomaster.core.problem.rest.oracle.RestSecurityOracle.hasSQLiPayload
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
@@ -106,11 +104,21 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
     @Inject
     protected lateinit var executionStats: ExecutionStats
 
+    @Inject
+    protected lateinit var securityOracle: RestSecurityOracle
+
+    //TODO refactor
     private lateinit var schemaOracle: RestSchemaOracle
+
+    /**
+     * All actions that can be defined from the OpenAPI schema
+     */
+    private lateinit var actionDefinitions: List<RestCallAction>
 
     @PostConstruct
     fun initBean(){
         schemaOracle = RestSchemaOracle((sampler as AbstractRestSampler).schemaHolder)
+        actionDefinitions = sampler.getActionDefinitions() as List<RestCallAction>
     }
 
 
@@ -661,7 +669,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                     createInvocation(a, chainState, cookies, tokens).invoke()
                 }
 
-                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) || TcpUtils.isNoHttpResponse(e) -> {
                     /*
                         This should not really happen... but it does :( at least on Windows...
                      */
@@ -702,6 +710,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         rcr.setStatusCode(response.status)
         rcr.setLocation(response.location?.toString())
+        rcr.setAllow(response.allowedMethods.joinToString(","))
         rcr.setAppliedLink(appliedLink)
 
         handlePossibleConnectionClose(response)
@@ -766,7 +775,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
             responseClassifier.updateModel(a, rcr)
         }
 
-        if (config.security && config.ssrf && config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
+        if (config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
             if (ssrfAnalyser.anyCallsMadeToHTTPVerifier(a)) {
                 rcr.setVulnerableForSSRF(true)
             }
@@ -883,8 +892,18 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         val path = a.resolvedPath()
 
         val locationHeader = if (a.usePreviousLocationId != null) {
-            chainState[locationName(a.usePreviousLocationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+            val lh = chainState[locationName(a.usePreviousLocationId!!)]
+            if (lh == null) {
+                //throw IllegalStateException("Call expected a missing chained 'location'")
+                log.warn(
+                    "Possible bug in EvoMaster. Call expected a missing chained 'location'." +
+                            " Action ${a.getName()} -> id ${a.usePreviousLocationId} with name ${locationName(a.usePreviousLocationId!!)}." +
+                            " Current chained states: ${chainState.entries.joinToString(" | ")} ."
+                )
+                //shouldn't happen in tests... but let's not crash whole EM for it
+                assert(false)
+            }
+            lh
         } else {
             null
         }
@@ -940,14 +959,14 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
          */
 
 
-        val body = a.parameters.find { p -> p is BodyParam }
+        val body = a.parameters.find { p -> p is BodyParam } as BodyParam?
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
             throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
+        val bodyEntity = if (body != null) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
                 body.isXml() -> GeneUtils.EscapeMode.XML
@@ -966,10 +985,11 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
+                when objects like WebRequest are used.
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if (a.verb == HttpVerb.POST && body == null) {
+            //null //cannot be left null, Jersey crash
+        } else if (a.verb == HttpVerb.POST) {
             /*
                 POST does not enforce payload (isn't it?). However seen issues with Dotnet that gives
                 411 if  Content-Length is missing...
@@ -980,21 +1000,26 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
                 yet another critical bug in Jersey that it ignores that header (verified with WireShark)
              */
             Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            //null //cannot be left null, Jersey crash
         } else {
             null
         }
 
+        if(bodyEntity != null) {
+            if(bodyEntity.entity.isEmpty()){
+                // Jersey overwrite it...
+                //builder.header("Content-Type", "")
+            } else {
+                builder.header("Content-Type", bodyEntity.mediaType)
+            }
+        }
+
         val invocation = when (a.verb) {
-            HttpVerb.GET -> builder.buildGet()
-//            HttpVerb.DELETE -> builder.buildDelete()
             /*
                 As of RFC 9110 it is allowed to have bodies for GET and DELETE, albeit in special cases.
                 https://www.rfc-editor.org/rfc/rfc9110.html#section-9.3.1-6
-
-                Note: due to bug in Jersey, can handle DELETE but not GET :(
-                TODO: update RestActionBuilderV3 once upgraded Jersey, after JDK 11 move
              */
-//            HttpVerb.GET -> builder.build("GET", bodyEntity)
+            HttpVerb.GET -> builder.build("GET", bodyEntity)
             HttpVerb.DELETE -> builder.build("DELETE", bodyEntity)
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
@@ -1169,11 +1194,7 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
 
         //TODO likely would need to consider SEEDED as well in future
         if(config.security && individual.sampleType == SampleType.SECURITY){
-            analyzeSecurityProperties(individual,actionResults,fv)
-        }
-
-        if (config.ssrf &&  config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
-            handleSsrfFaults(individual, actionResults, fv)
+            securityOracle.analyzeSecurityProperties(individual,actionResults,fv)
         }
 
         //TODO likely would need to consider SEEDED as well in future
@@ -1247,341 +1268,6 @@ abstract class AbstractRestFitness : HttpWsFitness<RestIndividual>() {
         }
     }
 
-    private fun analyzeSecurityProperties(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ){
-        //TODO the other cases
-
-        handleForbiddenOperation(HttpVerb.DELETE, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PUT, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleForbiddenOperation(HttpVerb.PATCH, DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION, individual, actionResults, fv)
-        handleExistenceLeakage(individual,actionResults,fv)
-        handleNotRecognizedAuthenticated(individual, actionResults, fv)
-        handleForgottenAuthentication(individual, actionResults, fv)
-        handleStackTraceCheck(individual, actionResults, fv)
-        handleSQLiCheck(individual, actionResults, fv)
-        handleXSSCheck(individual, actionResults, fv)
-    }
-
-    private fun handleSsrfFaults(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SSRF)) {
-            return
-        }
-
-        individual.seeMainExecutableActions().forEach {
-            val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
-            if (ar != null) {
-                if (ar.getResultValue(HttpWsCallResult.VULNERABLE_SSRF).toBoolean()) {
-                    val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.SSRF, it.getName())
-                    )
-                    fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-
-                    val paramName = ssrfAnalyser.getVulnerableParameterName(it)
-                    ar.addFault(DetectedFault(DefinedFaultCategory.SSRF, it.getName(), paramName))
-                }
-            }
-        }
-    }
-
-    private fun handleNotRecognizedAuthenticated(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED)) {
-            return
-        }
-
-        val notRecognized = individual.seeMainExecutableActions()
-            .filter {
-                val ar = (actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult?)
-                if(ar == null){
-                    // this can be happened in the POST/DELETE template
-                    val prematureStoppedAction = individual.seeMainExecutableActions().filter { it.auth !is NoAuth
-                            && (actionResults.find { r -> r.sourceLocalId != it.getLocalId() } as RestCallResult?)?.stopping == true
-                    }
-                    if (prematureStoppedAction.isNotEmpty()){
-                        log.debug("Premature stopping of HTTP call sequence")
-                        return
-                    }
-                    throw IllegalArgumentException("Missing action result with id: ${actionResults.map { it.sourceLocalId }}")
-                }
-                it.auth !is NoAuth && ar.getStatusCode() == 401
-            }.filter { RestSecurityOracle.hasNotRecognizedAuthenticated(it, individual, actionResults) }
-
-        if(notRecognized.isEmpty()){
-            return
-        }
-
-        notRecognized.forEach {
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, it.positionAmongMainActions())
-            val r = actionResults.find { r -> r.sourceLocalId == it.getLocalId() } as RestCallResult
-            r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_NOT_RECOGNIZED_AUTHENTICATED, it.getName(), null))
-        }
-    }
-
-    private fun handleExistenceLeakage(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE)) {
-            return
-        }
-
-        val getPaths = individual.seeMainExecutableActions()
-            .filter { it.verb == HttpVerb.GET }
-            .map { it.path }
-            .toSet()
-
-        val faultyPaths = getPaths.filter { RestSecurityOracle.hasExistenceLeakage(it, individual, actionResults)  }
-        if(faultyPaths.isEmpty()){
-            return
-        }
-
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
-
-            if(a.verb == HttpVerb.GET && faultyPaths.contains(a.path) && r.getStatusCode() == 404){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(DefinedFaultCategory.SECURITY_EXISTENCE_LEAKAGE, a.getName(), null))
-            }
-        }
-    }
-
-    private fun handleSQLiCheck(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SQL_INJECTION)) {
-            return
-        }
-
-        val foundPair = findSQLiPayloadPair(individual)
-
-        if(foundPair == null){
-            //no pair found, cannot do baseline comparison
-            return
-        }
-
-        val (actionWithoutPayload, actionWithPayload) = foundPair
-        val baselineResult = actionResults.find { it.sourceLocalId == actionWithoutPayload.getLocalId() } as? RestCallResult
-            ?: return
-        val baselineTime = baselineResult.getResponseTimeMs() ?: return
-
-        val injectedResult = actionResults.find { it.sourceLocalId == actionWithPayload.getLocalId() } as? RestCallResult
-            ?: return
-        val injectedTime = injectedResult.getResponseTimeMs() ?: return
-
-        val K = config.sqliBaselineMaxResponseTimeMs        // K: maximum allowed baseline response time
-        val N = config.sqliInjectedSleepDurationMs          // N: expected delay introduced by the injected sleep payload
-
-        // Baseline must be fast enough (baseline < K)
-        val baselineIsFast = baselineTime < K
-
-        // Response after injection must be slow enough (response > N)
-        val responseIsSlowEnough = injectedTime > N
-
-        // If baseline is fast AND the response after payload is slow enough,
-        // then we consider this a potential time-based SQL injection vulnerability.
-        // Otherwise, skip this result.
-        if (!(baselineIsFast && responseIsSlowEnough)) {
-            return
-        }
-
-        // Find the index of the action with payload to report it correctly
-        val index = individual.seeMainExecutableActions().indexOf(actionWithPayload)
-        if (index < 0) {
-            log.warn("Failed to find index of action with SQLi payload")
-            return
-        }
-
-        val scenarioId = idMapper.handleLocalTarget(
-            idMapper.getFaultDescriptiveId(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName())
-        )
-        fv.updateTarget(scenarioId, 1.0, index)
-        injectedResult.addFault(DetectedFault(DefinedFaultCategory.SQL_INJECTION, actionWithPayload.getName(), null))
-    }
-
-    /**
-     * Finds a pair of actions in the individual that have the same path and verb,
-     * where one contains a SQLi payload and the other does not.
-     *
-     * This is useful for comparing baseline response times (without payload) against
-     * response times with SQLi payload to detect time-based SQL injection vulnerabilities.
-     *
-     * @param individual The test individual to search
-     * @return A pair of (actionWithoutPayload, actionWithPayload), or null if no such pair exists
-     */
-    private fun findSQLiPayloadPair(
-        individual: RestIndividual
-    ): Pair<RestCallAction, RestCallAction>? {
-
-        val actions = individual.seeMainExecutableActions()
-            .filterIsInstance<RestCallAction>()
-
-        // Group actions by path and verb
-        val actionsByPathAndVerb = actions
-            .groupBy { it.path.toString() to it.verb }
-
-        // Find a pair where one has SQLi payload and one doesn't
-        for ((pathVerb, actionsForPath) in actionsByPathAndVerb) {
-            if (actionsForPath.size < 2) continue
-
-            val withPayload = actionsForPath.filter {
-                hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
-            }
-            val withoutPayload = actionsForPath.filter {
-                !hasSQLiPayload(it, config.sqliInjectedSleepDurationMs/1000.0)
-            }
-
-            if (withPayload.isNotEmpty() && withoutPayload.isNotEmpty()) {
-                return Pair(withoutPayload.first(), withPayload.first())
-            }
-        }
-
-        return null
-    }
-
-    private fun handleStackTraceCheck(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_STACK_TRACE)) {
-            return
-        }
-
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
-
-            if(r.getStatusCode() == 500 && r.getBody() != null && StackTraceUtils.looksLikeStackTrace(r.getBody()!!)){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_STACK_TRACE, a.getName(), null))
-            }
-        }
-    }
-
-    private fun handleXSSCheck(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-        if(!config.isEnabledFaultCategory(DefinedFaultCategory.XSS)){
-            return
-        }
-
-        // Check if this individual has XSS vulnerability
-        if(!RestSecurityOracle.hasXSS(individual, actionResults)){
-            return
-        }
-
-        // Find the action(s) where XSS payload appears in the response
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as? RestCallResult
-                ?: continue
-
-            if(!StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
-                continue
-            }
-
-            val responseBody = r.getBody() ?: continue
-
-            // Check if any XSS payload is present in this response
-            for(payload in XSS_PAYLOADS){
-                if(responseBody.contains(payload, ignoreCase = false)){
-                    val scenarioId = idMapper.handleLocalTarget(
-                        idMapper.getFaultDescriptiveId(DefinedFaultCategory.XSS, a.getName())
-                    )
-                    fv.updateTarget(scenarioId, 1.0, index)
-                    r.addFault(DetectedFault(DefinedFaultCategory.XSS, a.getName(), null))
-                    break // Only add one fault per action
-                }
-            }
-        }
-    }
-
-    private fun handleForgottenAuthentication(
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-
-        if (!config.isEnabledFaultCategory(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION)) {
-            return
-        }
-
-        val endpoints = individual.seeMainExecutableActions()
-            .map { it.getName() }
-            .toSet()
-
-        val faultyEndpoints = endpoints.filter { RestSecurityOracle.hasForgottenAuthentication(it, individual, actionResults)  }
-
-        if(faultyEndpoints.isEmpty()){
-            return
-        }
-
-        for(index in individual.seeMainExecutableActions().indices){
-            val a = individual.seeMainExecutableActions()[index]
-            val r = actionResults.find { it.sourceLocalId == a.getLocalId() } as RestCallResult
-
-            if(a.auth is NoAuth && faultyEndpoints.contains(a.getName()) &&  StatusGroup.G_2xx.isInGroup(r.getStatusCode())){
-                val scenarioId = idMapper.handleLocalTarget(
-                    idMapper.getFaultDescriptiveId(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName())
-                )
-                fv.updateTarget(scenarioId, 1.0, index)
-                r.addFault(DetectedFault(ExperimentalFaultCategory.SECURITY_FORGOTTEN_AUTHENTICATION, a.getName(), null))
-            }
-        }
-    }
-
-    private fun handleForbiddenOperation(
-        verb: HttpVerb,
-        faultCategory: FaultCategory,
-        individual: RestIndividual,
-        actionResults: List<ActionResult>,
-        fv: FitnessValue
-    ) {
-
-        if (!config.isEnabledFaultCategory(DefinedFaultCategory.SECURITY_WRONG_AUTHORIZATION)) {
-            return
-        }
-
-        if (RestSecurityOracle.hasForbiddenOperation(verb, individual, actionResults)) {
-           val actionIndex = individual.size() - 1
-            val action = individual.seeMainExecutableActions()[actionIndex]
-            val result = actionResults
-                .filterIsInstance<RestCallResult>()
-                .find { it.sourceLocalId == action.getLocalId() }
-                ?: return
-
-            val scenarioId = idMapper.handleLocalTarget(
-                idMapper.getFaultDescriptiveId(faultCategory, action.getName())
-            )
-            fv.updateTarget(scenarioId, 1.0, actionIndex)
-            result.addFault(DetectedFault(faultCategory, action.getName(), null))
-        }
-    }
 
 
     protected fun recordResponseData(individual: RestIndividual, actionResults: List<RestCallResult>) {

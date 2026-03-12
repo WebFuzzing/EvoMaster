@@ -28,9 +28,11 @@ class LoginTokenHeaderController : SpringController(LoginTokenHeaderApplication:
         le.headers.add(Header().apply { name="Authorization"; value = "foo 123"  })
 
         le.token = TokenHandling()
-        le.token.extractFromField = "/token/authToken"
-        le.token.headerPrefix = "Bearer "
-        le.token.httpHeaderName = "Authorization"
+        le.token.extractFrom = TokenHandling.ExtractFrom.BODY
+        le.token.extractSelector = "/token/authToken"
+        le.token.sendTemplate = "Bearer {token}"
+        le.token.sendName = "Authorization"
+        le.token.sendIn = TokenHandling.SendIn.HEADER
 
         val dto = AuthenticationDto("foo")
         dto.loginEndpointAuth = le

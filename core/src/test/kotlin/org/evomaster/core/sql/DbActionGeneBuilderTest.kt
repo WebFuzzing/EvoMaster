@@ -1,11 +1,9 @@
 package org.evomaster.core.sql
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
-import org.evomaster.core.search.gene.regex.RegexGene.Companion.DATABASE_REGEX_PREFIX
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.util.regex.Pattern
@@ -50,14 +48,15 @@ class DbActionGeneBuilderTest {
 
             val gene = SqlActionGeneBuilder().buildLikeRegexGene("f_id", likePatterns[chosenRegex], databaseType = databaseType)
 
-            assertEquals("${DATABASE_REGEX_PREFIX}${likePatterns[chosenRegex]}", gene.sourceRegex)
+            assertEquals(likePatterns[chosenRegex], gene.sourceRegex)
 
             gene.randomize(randomness, false)
 
             val instance = gene.getValueAsRawString()
 
-            assertTrue(
-                        Pattern.compile(javaRegexPatterns[chosenRegex]).matcher(instance).find(), "invalid instance: " + instance
+            assertTrue(Pattern.compile(javaRegexPatterns[chosenRegex])
+                            .matcher(instance).find(),
+                "invalid instance: $instance"
             )
         }
     }

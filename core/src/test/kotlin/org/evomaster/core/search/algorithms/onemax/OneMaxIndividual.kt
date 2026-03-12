@@ -79,7 +79,7 @@ class OneMaxIndividual(
     }
 
 
-    override fun verifyInitializationActions(): Boolean {
+    override fun isValidInitializationActions(errors: MutableList<String>?): Boolean {
         return true
     }
 

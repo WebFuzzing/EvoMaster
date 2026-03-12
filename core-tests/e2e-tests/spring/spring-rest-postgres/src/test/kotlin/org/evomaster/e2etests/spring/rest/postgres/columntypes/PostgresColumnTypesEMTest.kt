@@ -26,7 +26,7 @@ class PostgresColumnTypesEMTest : SpringRestPostgresTestBase() {
         runTestHandlingFlakyAndCompilation(
                 "PostgresColumnTypesEM",
                 "com.foo.spring.rest.postgres.columntypes.PostgresColumnTypesEM",
-                600
+                1_000
         ) { args ->
             args.add("--enableWeightBasedMutationRateSelectionForGene")
             args.add("false")

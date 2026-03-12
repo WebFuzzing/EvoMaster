@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.parser.RegexType
 import org.evomaster.core.search.gene.collection.*
 import org.evomaster.core.search.gene.datetime.*
 import org.evomaster.core.search.gene.interfaces.ComparableGene
@@ -80,7 +81,7 @@ object GeneSamplerForTests {
                         genes.add(c as KClass<out Gene>)
                     }
                 }
-        return genes
+        return genes.sortedBy {it.qualifiedName}
     }
 
 
@@ -133,6 +134,7 @@ object GeneSamplerForTests {
             PatternCharacterBlockGene::class -> samplePatternCharacterBlock(rand) as T
             QuantifierRxGene::class -> sampleQuantifierRxGene(rand) as T
             RegexGene::class -> sampleRegexGene(rand) as T
+            ObjectWithAttributesGene::class -> sampleObjectGeneWithAttributes(rand) as T
 
             //SQL genes
             SqlJSONPathGene::class -> sampleSqlJSONPathGene(rand) as T
@@ -400,7 +402,13 @@ object GeneSamplerForTests {
     }
 
     fun sampleRegexGene(rand: Randomness): RegexGene {
-        return RegexGene(name = "rand RegexGene", disjunctions = sampleDisjunctionListRxGene(rand), "None")
+        return RegexGene(
+            name = "rand RegexGene",
+            disjunctions = sampleDisjunctionListRxGene(rand),
+            ".*", //TODO tricky, we want to sample different structures,
+                                // but still validation should not fail
+            RegexType.JVM
+        )
     }
 
     fun sampleQuantifierRxGene(rand: Randomness): QuantifierRxGene {
@@ -582,18 +590,18 @@ object GeneSamplerForTests {
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     )
             )
         }else{
             ObjectGene(
                     name = "rand ObjectGene ${rand.nextInt()}",
                     fixedFields = listOf(
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand),
-                            sample(rand.choose(selection), rand)
+                            sample(rand.choose(selection), rand).apply { name += "_0" },
+                            sample(rand.choose(selection), rand).apply { name += "_1" },
+                            sample(rand.choose(selection), rand).apply { name += "_2" }
                     ),
                     refType = null,
                     isFixed = isFixed,
@@ -904,4 +912,50 @@ object GeneSamplerForTests {
         }
     }
 
+    fun sampleObjectGeneWithAttributes(rand: Randomness): ObjectWithAttributesGene {
+
+        // Use a restricted selection similar to selectionForArrayTemplate()
+        // to avoid problematic genes that can cause issues with containsSameValueAs
+        val selection = geneClasses
+            .filter { !it.isAbstract }
+            .filter { it.java != CycleObjectGene::class.java && it.java != LimitObjectGene::class.java }
+            .filter { it.java != SqlMultidimensionalArrayGene::class.java }
+            // Exclude genes with problematic compareTo implementations
+            .filter { it.java != SqlRangeGene::class.java }
+            .filter { it.java != SqlMultiRangeGene::class.java }
+
+        // Use samplePrintableTemplate to ensure fields are printable
+        // This is consistent with how sampleArrayGene works
+        val fields = listOf(
+            samplePrintableTemplate(selection, rand).apply { name += "_0" },
+            samplePrintableTemplate(selection, rand).apply { name += "_1" },
+            samplePrintableTemplate(selection, rand).apply { name += "_2" }
+        )
+
+        // Only StringGene can be an XML attribute (attributes are always strings)
+        // #text is content, not an attribute
+        val stringFields = fields
+            .filterIsInstance<StringGene>()
+            .filter { it.name != "#text" }
+
+        // Strategy: use a small number of fixed attribute configurations
+        val seed = rand.nextInt(0, 10)
+        val attributeNames = when {
+            seed < 7 || stringFields.isEmpty() -> emptySet() // 70% no attributes
+            seed < 9 && stringFields.isNotEmpty() -> setOf(stringFields[0].name)
+            stringFields.size >= 2 -> setOf(stringFields[0].name, stringFields[1].name)
+            stringFields.isNotEmpty() -> setOf(stringFields[0].name)
+            else -> emptySet()
+        }
+
+        return ObjectWithAttributesGene(
+            name = "rand ObjectGeneWithAttributes ${rand.nextInt()}",
+            fixedFields = fields,
+            refType = null,
+            isFixed = true,
+            template = null,
+            additionalFields = null,
+            attributeNames = attributeNames
+        )
+    }
 }

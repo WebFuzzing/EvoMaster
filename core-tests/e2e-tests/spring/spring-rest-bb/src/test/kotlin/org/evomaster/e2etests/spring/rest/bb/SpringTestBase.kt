@@ -13,6 +13,7 @@ import org.evomaster.e2etests.utils.RestTestBase
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.assertTimeoutPreemptively
 import java.nio.file.Paths
@@ -26,7 +27,10 @@ abstract class SpringTestBase : RestTestBase() {
 
     companion object {
         /*
-            dirty hack to avoid applying instrumentation
+            dirty hack to avoid applying instrumentation.
+            Note: this MUST be done in each subclass, as this is executed only once.
+            Using @BeforeAll would not work, as the once from EnterpriseTestBase would be
+            executed first before any change we would make here
          */
         init {
             EnterpriseTestBase.shouldApplyInstrumentation = false
@@ -35,6 +39,9 @@ abstract class SpringTestBase : RestTestBase() {
         @JvmStatic
         @AfterAll
         fun resetInstrumentation(){
+            /*
+                we don't want to impact tests in other modules
+             */
             EnterpriseTestBase.shouldApplyInstrumentation = true
         }
     }

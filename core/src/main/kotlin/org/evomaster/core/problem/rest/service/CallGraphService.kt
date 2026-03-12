@@ -62,6 +62,26 @@ class CallGraphService {
         }
     }
 
+    fun endpointsForPath(path: RestPath): List<Endpoint> {
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.path == path }
+            .map { Endpoint(it.verb, it.path) }
+    }
+
+    fun isDeclared(verb: HttpVerb, path: RestPath): Boolean {
+        return endpointsForPath(path).any{it.verb == verb}
+    }
+
+    fun findStrictTopGETResourceAncestor(path: RestPath) : RestCallAction?{
+        return sampler.seeAvailableActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.verb == HttpVerb.GET }
+            .filter { it.path.isStrictlyAncestorOf(path)}
+            .filter { it.path.isLastElementAParameter() }
+            .minByOrNull { it.path.levels() }
+    }
+
     /**
      * Check in the schema if there is any action which is a direct child of [a] and last path element is a parameter
      */

@@ -28,7 +28,6 @@ class RedisHandlerTest {
         );
         handler.handle(cmd);
 
-        assertTrue(handler.isExtractRedisExecution());
         List<RedisCommandEvaluation> evals = handler.getEvaluatedRedisCommands();
 
         assertNotNull(evals);

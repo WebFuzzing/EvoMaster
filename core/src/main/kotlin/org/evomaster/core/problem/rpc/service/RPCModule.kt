@@ -11,6 +11,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.remote.service.RemoteControllerImplementation
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.FlakinessDetector
 import org.evomaster.core.search.service.Minimizer
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.Mutator
@@ -49,6 +50,13 @@ class RPCModule : EnterpriseModule(){
         bind(object : TypeLiteral<FitnessFunction<RPCIndividual>>() {})
                 .to(RPCFitness::class.java)
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
+            .asEagerSingleton()
+
+        bind(object : TypeLiteral<FlakinessDetector<*>>(){})
+            .to(object : TypeLiteral<FlakinessDetector<RPCIndividual>>(){})
+            .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<*>>() {})
             .to(RPCFitness::class.java)

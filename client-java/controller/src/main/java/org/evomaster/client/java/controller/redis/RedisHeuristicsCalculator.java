@@ -53,7 +53,8 @@ public class RedisHeuristicsCalculator {
 
                 case HGET: {
                     String key = redisCommand.extractArgs().get(0);
-                    return calculateDistanceForFieldInHash(key, redisInfo);
+                    String field = redisCommand.extractArgs().get(1);
+                    return calculateDistanceForFieldInHash(key, field, redisInfo);
                 }
 
                 case SINTER: {
@@ -89,8 +90,12 @@ public class RedisHeuristicsCalculator {
             return new RedisDistanceWithMetrics(MAX_REDIS_DISTANCE, 0);
         }
         for (RedisInfo k : keys) {
+            String key = k.getKey();
             double d = TruthnessUtils.normalizeValue(
-                    RegexDistanceUtils.getStandardDistance(k.getKey(), redisPatternToRegex(pattern)));
+                    RegexDistanceUtils.getStandardDistance(key, regex));
+            if (taintHandler != null) {
+                taintHandler.handleTaintForRegex(key, regex);
+            }
             minDist = Math.min(minDist, d);
             eval++;
             if (d == 0) return new RedisDistanceWithMetrics(0, eval);
@@ -119,8 +124,12 @@ public class RedisHeuristicsCalculator {
 
         for (RedisInfo k : candidateKeys) {
             try {
-                long rawDist = DistanceHelper.getLeftAlignmentDistance(targetKey, k.getKey());
+                String key = k.getKey();
+                long rawDist = DistanceHelper.getLeftAlignmentDistance(targetKey, key);
                 double normDist = TruthnessUtils.normalizeValue(rawDist);
+                if (taintHandler != null) {
+                    taintHandler.handleTaintForStringEquals(targetKey, key, false);
+                }
                 minDist = Math.min(minDist, normDist);
                 evaluated++;
 
@@ -144,6 +153,7 @@ public class RedisHeuristicsCalculator {
      */
     private RedisDistanceWithMetrics calculateDistanceForFieldInHash(
             String targetKey,
+            String targetField,
             List<RedisInfo> keys
     ) {
         if (keys.isEmpty()) {
@@ -155,12 +165,13 @@ public class RedisHeuristicsCalculator {
 
         for (RedisInfo k : keys) {
             try {
-                long keyDist = DistanceHelper.getLeftAlignmentDistance(targetKey, k.getKey());
-
-                double fieldDist = k.hasField() ? 0d : MAX_REDIS_DISTANCE;
-
+                String key = k.getKey();
+                long keyDist = DistanceHelper.getLeftAlignmentDistance(targetKey, key);
+                double fieldDist = calculateDistanceForField(targetField, k.getFields().keySet());
                 double combined = TruthnessUtils.normalizeValue(keyDist + fieldDist);
-
+                if (taintHandler != null) {
+                    taintHandler.handleTaintForStringEquals(targetKey, key, false);
+                }
                 minDist = Math.min(minDist, combined);
                 evaluated++;
 
@@ -173,6 +184,34 @@ public class RedisHeuristicsCalculator {
         }
 
         return new RedisDistanceWithMetrics(minDist, evaluated);
+    }
+
+    /**
+     * Computes the distance of target field to each field in hash.
+     *
+     * @param targetField Field searched in query.
+     * @param fields Fields in hash.
+     * @return double
+     */
+    private double calculateDistanceForField(String targetField, Set<String> fields) {
+        if (fields.isEmpty()) {
+            return Double.MAX_VALUE;
+        }
+
+        double minDist = Double.MAX_VALUE;
+
+        for (String field : fields) {
+            try {
+                long fieldDist = DistanceHelper.getLeftAlignmentDistance(targetField, field);
+                if (taintHandler != null) {
+                    taintHandler.handleTaintForStringEquals(targetField, field, false);
+                }
+                minDist = Math.min(minDist, fieldDist);
+            } catch (Exception ex) {
+                SimpleLogger.uniqueWarn("Failed FIELD distance on " + targetField + ": " + ex.getMessage());
+            }
+        }
+        return minDist;
     }
 
     /**
@@ -237,6 +276,9 @@ public class RedisHeuristicsCalculator {
         for (String a : s1) {
             for (String b : s2) {
                 long raw = DistanceHelper.getLeftAlignmentDistance(a, b);
+                if (taintHandler != null) {
+                    taintHandler.handleTaintForStringEquals(a, b, false);
+                }
                 double norm = TruthnessUtils.normalizeValue(raw);
                 min = Math.min(min, norm);
                 if (min == 0) return 0;
