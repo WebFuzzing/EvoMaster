@@ -376,7 +376,10 @@ class ArrayGene<T>(
      */
     fun doesExist(gene: T): Boolean{
         if (!isElementApplicableToUniqueCheck(ParamUtil.getValueGene(gene))) return false
-        return elements.any { ParamUtil.getValueGene(it).containsSameValueAs(ParamUtil.getValueGene(gene)) }
+        return elements.any {
+            it.getLeafGene().javaClass == gene.getLeafGene().javaClass &&
+            it.getLeafGene().containsSameValueAs(gene.getLeafGene())
+        }
     }
 
     /**
