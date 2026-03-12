@@ -65,7 +65,6 @@ open class PartialUpdatePutApplication {
         val resource = data[id]
             ?: return ResponseEntity.status(404).build()
 
-        // bug: modifies data even though it will return 4xx
         if(body.name != null) {
             resource.name = body.name
         }
