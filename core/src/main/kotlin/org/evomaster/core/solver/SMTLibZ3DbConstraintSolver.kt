@@ -143,6 +143,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
             // Find table from schema and create SQL actions
             val table = findTableByName(schemaDto, tableName)
 
+            /*
+             * The invariant requires that action.insertionId == primaryKey.uniqueId (and same for FK).
+             * So we must use the same id for the action and all its PK/FK genes.
+             */
+            val actionId = idCounter
+            idCounter++
+
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
             for (columnName in columns.fields) {
@@ -175,15 +182,13 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                 }
                 val currentColumn = table.columns.firstOrNull(){ it.name.equals(columnName, ignoreCase = true) }
                 if (currentColumn != null &&  currentColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, idCounter)
-                    idCounter++
+                    gene = SqlPrimaryKeyGene(columnName, table.id, gene, actionId)
                 }
                 gene.markAllAsInitialized()
                 genes.add(gene)
             }
 
-            val sqlAction = SqlAction(table, table.columns, idCounter, genes.toList())
-            idCounter++
+            val sqlAction = SqlAction(table, table.columns, actionId, genes.toList())
             actions.add(sqlAction)
         }
 
