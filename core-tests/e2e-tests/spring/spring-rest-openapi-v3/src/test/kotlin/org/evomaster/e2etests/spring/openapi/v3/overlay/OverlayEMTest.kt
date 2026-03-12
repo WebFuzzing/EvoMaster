@@ -61,6 +61,28 @@ class OverlayEMTest : SpringTestBase(){
     }
 
     @Test
+    fun testRunEM_Overlay_Y_BB() {
+
+        runTestHandlingFlakyAndCompilation(
+            "Overlay_Y_BB",
+            100
+        ) { args: MutableList<String> ->
+
+            setOption(args, "overlay", "src/main/resources/overlay/subfolder/y.yaml")
+            setOption(args, "blackBox", "true")
+            setOption(args, "bbTargetUrl", baseUrlOfSut)
+            setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/v3/api-docs")
+
+            val solution = initAndRun(args)
+
+            Assertions.assertTrue(solution.individuals.size >= 1)
+            assertNone(solution, HttpVerb.GET, 200, "/api/overlay", X)
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/overlay", Y)
+        }
+    }
+
+
+    @Test
     fun testRunEM_Overlay_Z_fail() {
 
         runTestHandlingFlakyAndCompilation(
