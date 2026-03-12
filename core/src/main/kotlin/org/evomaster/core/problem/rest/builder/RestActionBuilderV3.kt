@@ -51,6 +51,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.gene.string.Base64StringGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -764,11 +765,16 @@ object RestActionBuilderV3 {
     }
 
     private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {
-
         if (required != true) {
             return OptionalGene(gene.name, gene).also { GeneUtils.preventCycles(it) }
         }
+        return gene
+    }
 
+    private fun possiblyNullable(gene: Gene, nullable: Boolean) : Gene{
+        if(nullable) {
+            return NullableGene(gene.name, gene).also { GeneUtils.preventCycles(it) }
+        }
         return gene
     }
 
@@ -789,7 +795,44 @@ object RestActionBuilderV3 {
             return createObjectFromReference(name, schema.`$ref`, schemaHolder,currentSchema, history, options, examples, messages)
         }
 
+        /*
+            Nullability is different between 3.0.0 and 3.1.0.
+            Also, it makes sense ONLY for body payloads... as it is not possible to express null values
+            in a URL (eg query and path), as those have ambiguous interpretation, eg,
+            something like /api?x or /api?x= would in most cases treated as an empty string "".
+         */
+        val nullable_3_0 = (schema.nullable != null && schema.nullable)
+        val nullable_3_1 = schema.types?.contains("null") ?: false
+        val nullable = nullable_3_0 || nullable_3_1
 
+        val gene = getNonNullGene(
+            schema,
+            name,
+            options,
+            messages,
+            isInPath,
+            examples,
+            schemaHolder,
+            currentSchema,
+            history,
+            referenceClassDef
+        )
+
+        return possiblyNullable(gene, nullable)
+    }
+
+    private fun getNonNullGene(
+        schema: Schema<*>,
+        name: String,
+        options: Options,
+        messages: MutableList<String>,
+        isInPath: Boolean,
+        examples: List<Pair<Any, String?>>,
+        schemaHolder: RestSchema,
+        currentSchema: SchemaOpenAPI,
+        history: Deque<String>,
+        referenceClassDef: String?
+    ): Gene {
         /*
             https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md#dataTypeFormat
 
@@ -807,7 +850,8 @@ object RestActionBuilderV3 {
         password	    string	password	Used to hint UIs the input needs to be obscured.
          */
 
-        val type = schema.type?:schema.types?.firstOrNull()
+
+        val type = schema.type ?: schema.types?.firstOrNull { it != "null" }
         val format = schema.format
 
         if (schema.enum?.isNotEmpty() == true) {
@@ -835,26 +879,28 @@ object RestActionBuilderV3 {
                  */
                 "integer" -> {
                     if (format == "int64") {
-                        val data : MutableList<Long> = schema.enum
-                            .map{ if(it is String) it.toLong() else it as Long}
+                        val data: MutableList<Long> = schema.enum
+                            .map { if (it is String) it.toLong() else it as Long }
                             .toMutableList()
 
                         return EnumGene(name, (data).apply { add(42L) })
                     }
 
-                    val data : MutableList<Int> = schema.enum
-                        .map{ if(it is String) it.toInt() else it as Int}
+                    val data: MutableList<Int> = schema.enum
+                        .map { if (it is String) it.toInt() else it as Int }
                         .toMutableList()
                     return EnumGene(name, data.apply { add(42) })
                 }
+
                 "number" -> {
                     //if (format == "double" || format == "float") {
                     //TODO: Is it always casted as Double even for Float??? Need test
-                    val data : MutableList<Double> = schema.enum
-                        .map{ if(it is String) it.toDouble() else it as Double}
+                    val data: MutableList<Double> = schema.enum
+                        .map { if (it is String) it.toDouble() else it as Double }
                         .toMutableList()
                     return EnumGene(name, data.apply { add(42.0) })
                 }
+
                 else -> messages.add("Cannot handle enum of type: $type")
             }
         }
@@ -863,16 +909,80 @@ object RestActionBuilderV3 {
         //first check for "optional" format
         when (format?.lowercase()) {
             "char" -> return buildStringGeneForChar(name, isInPath)
-            "int8","int16","int32" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples,format, messages)//IntegerGene(name)
-            "int64" -> return createNonObjectGeneWithSchemaConstraints(schema, name, LongGene::class.java, options, null, isInPath, examples, messages = messages) //LongGene(name)
-            "double" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples, messages = messages)//DoubleGene(name)
-            "float" -> return createNonObjectGeneWithSchemaConstraints(schema, name, FloatGene::class.java, options, null, isInPath, examples, messages = messages)//FloatGene(name)
-            "password" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages)//StringGene(name) //nothing special to do, it is just a hint
-            "binary" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages)//StringGene(name) //does it need to be treated specially?
-            "byte" -> return createNonObjectGeneWithSchemaConstraints(schema, name, Base64StringGene::class.java, options, null, isInPath, examples, messages = messages)//Base64StringGene(name)
+            "int8", "int16", "int32" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                IntegerGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                format,
+                messages
+            )//IntegerGene(name)
+            "int64" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                LongGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            ) //LongGene(name)
+            "double" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                DoubleGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//DoubleGene(name)
+            "float" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                FloatGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//FloatGene(name)
+            "password" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                StringGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//StringGene(name) //nothing special to do, it is just a hint
+            "binary" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                StringGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//StringGene(name) //does it need to be treated specially?
+            "byte" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                Base64StringGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//Base64StringGene(name)
             "date", "local-date" -> return DateGene(name, onlyValidDates = !options.invalidData)
             "date-time", "local-date-time" -> {
-                val f = if(format?.lowercase() == "date-time"){
+                val f = if (format?.lowercase() == "date-time") {
                     FormatForDatesAndTimes.RFC3339
                 } else {
                     FormatForDatesAndTimes.ISO_LOCAL
@@ -884,6 +994,7 @@ object RestActionBuilderV3 {
                     time = TimeGene("time", onlyValidTimes = !options.invalidData, format = f)
                 )
             }
+
             else -> if (format != null) {
                 messages.add("Unhandled format '$format' for '$name'")
             }
@@ -894,15 +1005,51 @@ object RestActionBuilderV3 {
                 the JSON Schema definition
          */
         when (type?.lowercase()) {
-            "integer" -> return createNonObjectGeneWithSchemaConstraints(schema, name, IntegerGene::class.java, options, null, isInPath, examples, messages = messages)//IntegerGene(name)
-            "number" -> return createNonObjectGeneWithSchemaConstraints(schema, name, DoubleGene::class.java, options, null, isInPath, examples, messages = messages)//DoubleGene(name)
+            "integer" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                IntegerGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//IntegerGene(name)
+            "number" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                DoubleGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            )//DoubleGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> {
                 return if (schema.pattern == null) {
-                    createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages) //StringGene(name)
+                    createNonObjectGeneWithSchemaConstraints(
+                        schema,
+                        name,
+                        StringGene::class.java,
+                        options,
+                        null,
+                        isInPath,
+                        examples,
+                        messages = messages
+                    ) //StringGene(name)
                 } else {
                     try {
-                        createNonObjectGeneWithSchemaConstraints(schema, name, RegexGene::class.java, options, null, isInPath, examples, messages = messages)
+                        createNonObjectGeneWithSchemaConstraints(
+                            schema,
+                            name,
+                            RegexGene::class.java,
+                            options,
+                            null,
+                            isInPath,
+                            examples,
+                            messages = messages
+                        )
                     } catch (e: Exception) {
                         /*
                             TODO: if the Regex is syntactically invalid, we should warn
@@ -912,17 +1059,28 @@ object RestActionBuilderV3 {
                             When 100% support, then tell user that it is his/her fault
                          */
                         LoggingUtil.uniqueWarn(log, "Cannot handle regex: ${schema.pattern}")
-                        createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages)//StringGene(name)
+                        createNonObjectGeneWithSchemaConstraints(
+                            schema,
+                            name,
+                            StringGene::class.java,
+                            options,
+                            null,
+                            isInPath,
+                            examples,
+                            messages = messages
+                        )//StringGene(name)
                     }
                 }
             }
+
             "array" -> {
                 if (schema is ArraySchema || schema is JsonSchema) {
 
                     val arrayType: Schema<*> = if (schema.items == null) {
                         LoggingUtil.uniqueWarn(
                             log, "Array type '$name' is missing mandatory field 'items' to define its type." +
-                                    " Defaulting to 'string'")
+                                    " Defaulting to 'string'"
+                        )
                         Schema<Any>().also { it.type = "string" }
                     } else {
                         schema.items
@@ -931,11 +1089,29 @@ object RestActionBuilderV3 {
                     // Use the XML name from schema.xml.name (the name of the array element in XML)
                     // if available, otherwise fallback to name + "_item"
                     val itemName = schema.xml?.name ?: (name + "_item")
-                    val template = getGene(itemName, arrayType, schemaHolder,currentSchema, history, referenceClassDef = null, options = options, messages = messages)//Could still have an empty []
+                    val template = getGene(
+                        itemName,
+                        arrayType,
+                        schemaHolder,
+                        currentSchema,
+                        history,
+                        referenceClassDef = null,
+                        options = options,
+                        messages = messages
+                    )//Could still have an empty []
                     //if (template is CycleObjectGene) {
                     //return CycleObjectGene("<array> ${template.name}")
                     //}
-                    return createNonObjectGeneWithSchemaConstraints(schema, name, ArrayGene::class.java, options, template, isInPath, examples, messages = messages)//ArrayGene(name, template)
+                    return createNonObjectGeneWithSchemaConstraints(
+                        schema,
+                        name,
+                        ArrayGene::class.java,
+                        options,
+                        template,
+                        isInPath,
+                        examples,
+                        messages = messages
+                    )//ArrayGene(name, template)
                 } else {
                     LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
                 }
@@ -973,13 +1149,32 @@ object RestActionBuilderV3 {
                         additionalFields = null,
                         attributeNames = attributeNames
                     )
-                }else{
-                    return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
+                } else {
+                    return createObjectGene(
+                        name,
+                        schema,
+                        schemaHolder,
+                        currentSchema,
+                        history,
+                        referenceClassDef,
+                        options,
+                        examples,
+                        messages
+                    )
                 }
             }
             //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             //FIXME is this even a standard type???
-            "file" -> return createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, options, null, isInPath, examples, messages = messages) //StringGene(name)
+            "file" -> return createNonObjectGeneWithSchemaConstraints(
+                schema,
+                name,
+                StringGene::class.java,
+                options,
+                null,
+                isInPath,
+                examples,
+                messages = messages
+            ) //StringGene(name)
         }
 
         if ((name == "body" || referenceClassDef != null) && schema.properties?.isNotEmpty() == true) {
@@ -987,13 +1182,24 @@ object RestActionBuilderV3 {
                 name == "body": This could happen when parsing a body-payload as formData
                 referenceClassDef != null : this could happen when parsing a reference of a constraint (eg, anyOf) of the additionalProperties
             */
-            return createObjectGene(name, schema, schemaHolder,currentSchema, history, referenceClassDef, options, examples, messages)
+            return createObjectGene(
+                name,
+                schema,
+                schemaHolder,
+                currentSchema,
+                history,
+                referenceClassDef,
+                options,
+                examples,
+                messages
+            )
         }
 
         if (type == null && format == null) {
             return createGeneWithUnderSpecificTypeAndSchemaConstraints(
-                schema, name, schemaHolder,currentSchema, history, referenceClassDef,
-                options, null, isInPath, examples, messages)
+                schema, name, schemaHolder, currentSchema, history, referenceClassDef,
+                options, null, isInPath, examples, messages
+            )
             //createNonObjectGeneWithSchemaConstraints(schema, name, StringGene::class.java, enableConstraintHandling) //StringGene(name)
         }
 
