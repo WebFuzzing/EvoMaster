@@ -345,8 +345,18 @@ class TestSuiteWriter {
         lines.addBlockCommentLine(" Needed budget for current results: ${searchTimeController.neededBudget()}")
         classDescriptionEmptyLine(lines)
         lines.addBlockCommentLine(" ${solution.termination.comment}")
-        lines.endCommentBlock()
+        classDescriptionEmptyLine(lines)
 
+        if(config.couldSupportDtoForPayload() && !config.dtoForRequestPayload){
+            lines.addBlockCommentLine(" ******************************** IMPORTANT ********************************")
+            lines.addBlockCommentLine(" * If you are planning to modify these test cases manually, you might")
+            lines.addBlockCommentLine(" * want to consider using the '--dtoForRequestPayload true' option to")
+            lines.addBlockCommentLine(" * generate statically typed DTOs instead of payloads defined with strings.")
+            lines.addBlockCommentLine(" ***************************************************************************")
+            classDescriptionEmptyLine(lines)
+        }
+
+        lines.endCommentBlock()
     }
 
     /**
@@ -448,6 +458,10 @@ class TestSuiteWriter {
             addImport("java.util.List", lines)
             addImport(EMTestUtils::class.java.name +".*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
+
+            // BigInteger and BigDecimal
+            addImport("java.math.BigDecimal", lines)
+            addImport("java.math.BigInteger", lines)
 
             if (useRestAssured()) {
                 addImport("io.restassured.RestAssured", lines)

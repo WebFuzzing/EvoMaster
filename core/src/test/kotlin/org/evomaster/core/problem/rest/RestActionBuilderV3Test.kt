@@ -29,6 +29,7 @@ import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.gene.wrapper.OptionalGene
 import org.evomaster.core.search.gene.placeholder.CycleObjectGene
 import org.evomaster.core.search.gene.string.StringGene
+import org.evomaster.core.search.gene.wrapper.NullableGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -2141,4 +2142,98 @@ class RestActionBuilderV3Test{
         assertEquals("FOO", output)
     }
 
+    @Test
+    fun testExclusiveMinMax_3_0(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/exclusive_3_0.yaml", 1, true)
+        verifyExclusiveMinMaxBounds(map)
+    }
+
+    @Test
+    fun testExclusiveMinMax_3_1(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/exclusive_3_1.yaml", 1, true)
+        verifyExclusiveMinMaxBounds(map)
+    }
+
+    private fun verifyExclusiveMinMaxBounds(map: MutableMap<String, Action>) {
+        val get = map["GET:/api"] as RestCallAction
+        assertEquals(4, get.parameters.size)
+
+        map.values.first()
+            .seeTopGenes()
+            .forEach { x ->
+
+                val gene = x.getWrappedGene(IntegerGene::class.java)!!
+                assertEquals(0, gene.min)
+                assertEquals(16, gene.max)
+
+                when (x.name) {
+                    "tt" -> {
+                        //genes use "inclusive", but schema uses "exclusive"
+                        assertFalse(gene.minInclusive)
+                        assertFalse(gene.maxInclusive)
+                    }
+
+                    "tf" -> {
+                        assertFalse(gene.minInclusive)
+                        assertTrue(gene.maxInclusive)
+                    }
+
+                    "ft" -> {
+                        assertTrue(gene.minInclusive)
+                        assertFalse(gene.maxInclusive)
+                    }
+
+                    "ff" -> {
+                        assertTrue(gene.minInclusive)
+                        assertTrue(gene.maxInclusive)
+                    }
+
+                    else -> {
+                        fail("Not recognized name: ${x.name}")
+                    }
+                }
+            }
+    }
+
+    @Test
+    fun testNullable_optional_3_0(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/nullable_optional_3_0.yaml", 1, true)
+        testNullable(map, true)
+    }
+
+    @Test
+    fun testNullable_required_3_0(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/nullable_required_3_0.yaml", 1, true)
+        testNullable(map, false)
+    }
+
+    @Test
+    fun testNullable_optional_3_1(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/nullable_optional_3_1.yaml", 1, true)
+        testNullable(map, true)
+    }
+
+    @Test
+    fun testNullable_required_3_1(){
+        val map = loadAndAssertActions("/swagger/artificial/migration_3_0_to_3_1/nullable_required_3_1.yaml", 1, true)
+        testNullable(map, false)
+    }
+
+    private fun testNullable(map: MutableMap<String, Action>, optional: Boolean) {
+        val get = map["POST:/api"] as RestCallAction
+        assertEquals(1, get.parameters.size)
+
+        val body = get.parameters.filterIsInstance<BodyParam>().first()
+        val payload = body.primaryGene() as ObjectGene
+        val x = payload.getField("x")!!
+
+        assertNotNull(x.getWrappedGene(StringGene::class.java))
+
+        if(optional) {
+            assertNotNull(x.getWrappedGene(OptionalGene::class.java))
+        } else {
+            assertNull(x.getWrappedGene(OptionalGene::class.java))
+        }
+        assertNotNull(x.getWrappedGene(NullableGene::class.java))
+    }
 }

@@ -37,7 +37,7 @@ class FlakinessDetectRest {
 
         val num = min(20, max(2, randomInt(num)))
 
-        val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it" }
+        val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it:${randomInt(max(1000, num))}" }
         return ResponseEntity.ok(FlakinessDetectData(msg, num))
     }
 
