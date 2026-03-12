@@ -4,6 +4,7 @@ Under development in `master` branch.
 
 ### New Features
 
+- Support for OpenAPI 3.1: proper handling of changes between 3.0 and 3.1 regarding nullability and numer range inclusiveness.
 - Introduced `--maxTestsPerTestSuite`, with default value of 200. 
   This is to avoid generating single output test files with thousands of tests.
   Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
