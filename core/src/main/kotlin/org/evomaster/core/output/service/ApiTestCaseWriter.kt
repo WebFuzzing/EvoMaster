@@ -14,6 +14,8 @@ import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
 import org.evomaster.core.utils.StringUtils
+import java.math.BigDecimal
+import java.math.BigInteger
 
 abstract class ApiTestCaseWriter : TestCaseWriter() {
 
@@ -347,7 +349,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (format.isJavaOrKotlin()) {
             val left = when (value) {
                 is Boolean -> "equalTo($value)"
-                is Number -> "numberMatches($value)"
+                is Number -> "numberMatches(${handleNumberInJavaOrKotlinTest(value)})"
                 is String -> "containsString(" +
                         "\"${GeneUtils.applyEscapes(value as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}" +
                         "\")"
@@ -392,6 +394,42 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         }
 
         throw IllegalStateException("Not supported format $format")
+    }
+
+    private fun handleNumberInJavaOrKotlinTest(value: Any): String {
+        return when (value) {
+            is Byte, is Short, is Int -> value.toString()
+
+            is Long -> {
+                if (value > Int.MAX_VALUE || value < Int.MIN_VALUE) {
+                    "${value}L"
+                } else {
+                    value.toString()
+                }
+            }
+
+            is Float -> {
+                if (value.isNaN()) "Float.NaN"
+                else if (value == Float.POSITIVE_INFINITY) "Float.POSITIVE_INFINITY"
+                else if (value == Float.NEGATIVE_INFINITY) "Float.NEGATIVE_INFINITY"
+                else "${value}f"
+            }
+
+            is Double -> {
+                if (value.isNaN()) "Double.NaN"
+                else if (value == Double.POSITIVE_INFINITY) "Double.POSITIVE_INFINITY"
+                else if (value == Double.NEGATIVE_INFINITY) "Double.NEGATIVE_INFINITY"
+                else value.toString()
+            }
+
+            is BigInteger -> "BigInteger(\"$value\")"
+
+            is BigDecimal -> "BigDecimal(\"$value\")"
+
+            is Number -> value.toString()
+
+            else -> value.toString()
+        }
     }
 
     private fun valueToPrint(value: Any?, format: OutputFormat) : String{
