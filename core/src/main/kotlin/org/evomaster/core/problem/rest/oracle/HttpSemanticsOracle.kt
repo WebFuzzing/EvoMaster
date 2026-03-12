@@ -234,6 +234,82 @@ object HttpSemanticsOracle {
     }
 
     /**
+     * Checks the PUT full-replacement oracle:
+     *
+     *   PUT /path  → 2xx  (successful update/create with body B)
+     *   GET /path  → 2xx  (must return exactly the fields that were PUT)
+     *
+     * Returns true if any field sent in the PUT body has a different value
+     * in the subsequent GET response (i.e. partial update bug).
+     */
+    fun hasMismatchedPutResponse(
+        individual: RestIndividual,
+        actionResults: List<ActionResult>
+    ): Boolean {
+
+        if (individual.size() < 2) return false
+
+        val actions = individual.seeMainExecutableActions()
+        val put = actions[actions.size - 2]
+        val get = actions[actions.size - 1]
+
+        if (put.verb != HttpVerb.PUT) return false
+        if (get.verb != HttpVerb.GET) return false
+
+        if (!put.usingSameResolvedPath(get)) return false
+
+        if (put.auth.isDifferentFrom(get.auth)) return false
+
+        val resPut = actionResults.find { it.sourceLocalId == put.getLocalId() } as RestCallResult?
+            ?: return false
+        val resGet = actionResults.find { it.sourceLocalId == get.getLocalId() } as RestCallResult?
+            ?: return false
+
+        if (!StatusGroup.G_2xx.isInGroup(resPut.getStatusCode())) return false
+        if (!StatusGroup.G_2xx.isInGroup(resGet.getStatusCode())) return false
+
+        val putBody = extractRequestBody(put)
+        val getBody = resGet.getBody()
+
+        if (putBody.isNullOrEmpty() || getBody.isNullOrEmpty()) return false
+
+        val fieldNames = extractModifiedFieldNames(put)
+        if (fieldNames.isEmpty()) return false
+
+        return hasMismatchedPutFields(putBody, getBody, fieldNames)
+    }
+
+    /**
+     * Returns true if any field in [fieldNames] has a different value
+     * between [putBody] (request) and [getBody] (response).
+     */
+    internal fun hasMismatchedPutFields(
+        putBody: String,
+        getBody: String,
+        fieldNames: Set<String>
+    ): Boolean {
+        try {
+            val jsonPut = JsonParser.parseString(putBody)
+            val jsonGet = JsonParser.parseString(getBody)
+
+            if (!jsonPut.isJsonObject || !jsonGet.isJsonObject) return false
+
+            val objPut = jsonPut.asJsonObject
+            val objGet = jsonGet.asJsonObject
+
+            for (field in fieldNames) {
+                val valuePut = objPut.get(field) ?: continue
+                val valueGet = objGet.get(field) ?: return true  // field absent from GET → mismatch
+                if (valuePut != valueGet) return true
+            }
+
+            return false
+        } catch (e: Exception) {
+            return false
+        }
+    }
+
+    /**
      * Extract field names from the PUT/PATCH request body.
      * These are the fields that the client attempted to modify.
      */

@@ -99,6 +99,7 @@ class HttpSemanticsService {
         putRepeatedCreated()
 
         sideEffectsOfFailedModification()
+        partialUpdatePut()
     }
 
     /**
@@ -370,5 +371,35 @@ class HttpSemanticsService {
         prepareEvaluateAndSave(ind)
     }
 
+    /**
+     * Checking that PUT makes a full replacement:
+     *   PUT /X with body B → 2xx
+     *   GET /X             → response body must contain exactly the fields sent in B
+     */
+    private fun partialUpdatePut() {
 
+        val putOperations = RestIndividualSelectorUtils.getAllActionDefinitions(actionDefinitions, HttpVerb.PUT)
+
+        putOperations.forEach { putOp ->
+
+            val getDef = actionDefinitions.find { it.verb == HttpVerb.GET && it.path == putOp.path }
+                ?: return@forEach
+
+            val successPuts = RestIndividualSelectorUtils.findIndividuals(
+                individualsInSolution, HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+            if (successPuts.isEmpty()) return@forEach
+
+            val ind = RestIndividualBuilder.sliceAllCallsInIndividualAfterAction(
+                successPuts.minBy { it.individual.size() },
+                HttpVerb.PUT, putOp.path, statusGroup = StatusGroup.G_2xx
+            )
+
+            val last = ind.seeMainExecutableActions().last() // the PUT 2xx
+            val getAfter = builder.createBoundActionFor(getDef, last)
+            ind.addMainActionInEmptyEnterpriseGroup(-1, getAfter)
+
+            prepareEvaluateAndSave(ind)
+        }
+    }
 }
