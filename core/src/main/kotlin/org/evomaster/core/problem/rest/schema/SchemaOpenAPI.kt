@@ -30,6 +30,9 @@ class SchemaOpenAPI(
             return this
         }
 
+        val infoForLenient = "If this behavior is expected, you need to explicitly use '--overlayLenient true'" +
+                " to avoid EvoMaster from stopping."
+
         var modified = schemaRaw
         overlays.forEach {
             val res = try{
@@ -40,7 +43,7 @@ class SchemaOpenAPI(
                     log.warn(message)
                     return@forEach
                 } else {
-                    throw IllegalArgumentException(message,e)
+                    throw IllegalArgumentException("$message\n$infoForLenient",e)
                 }
             }
 
@@ -50,7 +53,7 @@ class SchemaOpenAPI(
                     log.warn(message)
                     //here we do not return, as we still apply the partial transformations
                 } else {
-                    throw IllegalArgumentException(message)
+                    throw IllegalArgumentException("$message\n$infoForLenient")
                 }
             }
 

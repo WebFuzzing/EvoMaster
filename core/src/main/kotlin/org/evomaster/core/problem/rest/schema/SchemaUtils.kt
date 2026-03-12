@@ -8,10 +8,12 @@ import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
+import org.evomaster.core.logging.LoggingUtil
 import java.net.URI
 import java.net.URISyntaxException
 import java.nio.file.Files
 import java.nio.file.Paths
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.exists
 import kotlin.io.path.name
 import kotlin.io.path.readText
@@ -283,14 +285,20 @@ object SchemaUtils {
 
         if(Files.isRegularFile(ap)){
             //only one file
+            LoggingUtil.getInfoLogger().info("Retrieving Overlay from: $path")
             return listOf(ap.readText())
         }
 
         val options = suffixes.split(',').map { it.trim() }
 
+        LoggingUtil.getInfoLogger().info("Scanning for Overlay files with possible suffix '$suffixes' in $path")
+
         return ap.walk()
             .filter{file ->  options.any{s ->  file.name.endsWith(s) } }
-            .map { it.readText() }
+            .map {
+                LoggingUtil.getInfoLogger().info("Retrieving Overlay from: ${it.absolutePathString()}")
+                it.readText()
+            }
             .toList()
     }
 }

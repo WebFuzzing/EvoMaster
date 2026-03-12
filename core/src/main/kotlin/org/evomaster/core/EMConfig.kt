@@ -3087,7 +3087,11 @@ class EMConfig {
     @Experimental
     @Cfg("Comma ',' separated list of file name suffixes." +
             " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
-            " suffixes will be loaded and applied.")
+            " suffixes will be loaded and applied." +
+            " For example, '.json' could be used to match all JSON files." +
+            " If the folder contains also other types of files with same extension, you might need to define" +
+            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
+            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
     var overlayFileSuffixes = ".json,.yaml,.yml"
 
     @Experimental
