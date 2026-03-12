@@ -1,7 +1,10 @@
 package com.foo.mcp.bb.examples.spring.holidays
 
-import java.util.Locale
+import org.springframework.ai.tool.annotation.Tool
+import org.springframework.stereotype.Service
+import java.util.*
 
+@Service
 class HolidayService {
 
     private val destinations: MutableMap<String, MutableMap<String, String>> = mutableMapOf()
@@ -36,6 +39,7 @@ class HolidayService {
         return result
     }
 
+    @Tool(name = "list_destinations", description = "List all available holiday destinations with a short description.")
     fun listDestinations(): MutableMap<String, Any> {
         val list: MutableList<MutableMap<String, Any>> = mutableListOf()
         for (entry in destinations.entries) {
@@ -49,6 +53,10 @@ class HolidayService {
         return textResult(text)
     }
 
+    @Tool(
+        name = "get_destination_info",
+        description = "Get full details about a holiday destination: highlights, best travel months, weather, currency, and language."
+    )
     fun getDestinationInfo(destinationId: String): MutableMap<String, Any> {
         if (destinationId.isBlank()) {
             return textResult("Error: 'destination' parameter is required.", true)

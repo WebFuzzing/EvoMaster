@@ -19,12 +19,9 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
 
     protected var ctx: ConfigurableApplicationContext? = null
 
-//    abstract fun schemaName(): String
-
     override fun startSut(): String {
         ctx = SpringApplication.run(applicationClass,
             "--server.port=0",
-//            "--graphql.tools.schema-location-pattern=**/${schemaName()}"
         )
         return "http://localhost:$sutPort"
     }
@@ -44,7 +41,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
 
 
     override fun getPackagePrefixesToCover(): String {
-        return "com.foo.graphql."
+        return "com.foo.mcp."
     }
 
     override fun getDbSpecifications(): MutableList<DbSpecification>? {
