@@ -67,6 +67,11 @@
                 <artifactId>swagger-request-validator-core</artifactId>
                 <version>2.44.9</version>
             </dependency>
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>overlay-jvm</artifactId>
+                <version>0.1.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>

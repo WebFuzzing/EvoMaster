@@ -39,6 +39,10 @@
             <groupId>com.webfuzzing</groupId>
             <artifactId>commons</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.webfuzzing</groupId>
+            <artifactId>overlay-jvm</artifactId>
+        </dependency>
 
 
         <dependency>
