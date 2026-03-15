@@ -262,8 +262,8 @@ class Main {
             logTimeSearchInfo(injector, config)
 
             //apply new phases
-            solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseSecurity(injector, config, epc, solution)
+            solution = phaseHttpOracle(injector, config, epc, solution)
             solution = phaseFlaky(injector, config, epc, solution)
 
             epc.startWriteOutput()
