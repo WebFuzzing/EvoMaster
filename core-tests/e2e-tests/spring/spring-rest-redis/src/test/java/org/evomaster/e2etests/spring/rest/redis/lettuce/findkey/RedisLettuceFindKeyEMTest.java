@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.rest.redis.lettuce;
+package org.evomaster.e2etests.spring.rest.redis.lettuce.findkey;
 
-import com.foo.spring.rest.redis.lettuce.RedisLettuceAppController;
+import com.foo.spring.rest.redis.lettuce.findkey.RedisLettuceFindKeyController;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.data.HttpVerb;
 import org.evomaster.core.problem.rest.data.RestIndividual;
@@ -11,22 +11,22 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RedisLettuceEMTest extends RestTestBase {
+public class RedisLettuceFindKeyEMTest extends RestTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
 
         EMConfig config = new EMConfig();
         config.setInstrumentMR_REDIS(true);
-        RestTestBase.initClass(new RedisLettuceAppController(), config);
+        RestTestBase.initClass(new RedisLettuceFindKeyController(), config);
     }
 
     @Test
-    public void testRunEM() throws Throwable {
+    public void testFindKeyEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "RedisLettuceEM",
-                "org.foo.spring.rest.redis.RedisLettuceEM",
+                "RedisLettuceFindKeyEM",
+                "org.foo.spring.rest.redis.RedisLettuceFindKeyEM",
                 1000,
                 true,
                 (args) -> {
@@ -36,9 +36,9 @@ public class RedisLettuceEMTest extends RestTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertFalse(solution.getIndividuals().isEmpty());
-                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/redislettuce/string/{key}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/redislettuce/findKey/{key}", null);
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/redislettuce/findKey/{key}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/redislettucefindkey/string/{key}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/redislettucefindkey/findKey/{key}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 404, "/redislettucefindkey/findKey/{key}", null);
                 },
                 3);
 

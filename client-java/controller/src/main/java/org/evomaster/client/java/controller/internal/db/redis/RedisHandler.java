@@ -1,9 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
+import org.evomaster.client.java.controller.redis.RedisKeyValueStore;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.controller.redis.RedisHeuristicsCalculator;
-import org.evomaster.client.java.controller.redis.RedisInfo;
+import org.evomaster.client.java.controller.redis.RedisValueData;
 import org.evomaster.client.java.instrumentation.RedisCommand;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -82,35 +83,34 @@ public class RedisHandler {
             switch (type) {
                 case KEYS:
                 case EXISTS: {
-                    List<RedisInfo> redisInfo = createRedisInfoForAllKeys(redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForAllKeys(redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 case GET: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_STRING_TYPE, redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForKeysByType(REDIS_STRING_TYPE, redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 case HGET: {
-                    String field = redisCommand.extractArgs().get(1);
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByField(field, redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForKeysByField(redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 case HGETALL: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_HASH_TYPE, redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForKeysByType(REDIS_HASH_TYPE, redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 case SMEMBERS: {
-                    List<RedisInfo> redisInfo = createRedisInfoForKeysByType(REDIS_SET_TYPE, redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForKeysByType(REDIS_SET_TYPE, redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 case SINTER: {
                     List<String> keys = redisCommand.extractArgs();
-                    List<RedisInfo> redisInfo = createRedisInfoForIntersection(keys, redisClient);
-                    return calculator.computeDistance(redisCommand, redisInfo);
+                    RedisKeyValueStore redisKeyValueStore = createRedisInfoForIntersection(keys, redisClient);
+                    return calculator.computeDistance(redisCommand, redisKeyValueStore);
                 }
 
                 default:
@@ -122,35 +122,48 @@ public class RedisHandler {
         }
     }
 
-    private List<RedisInfo> createRedisInfoForIntersection(List<String> keys, ReflectionBasedRedisClient redisClient) {
-        List<RedisInfo> redisData = new ArrayList<>();
-        keys.forEach(
-                key -> redisData.add(new RedisInfo(key, redisClient.getType(key), redisClient.getSetMembers(key))
+    private RedisKeyValueStore createRedisInfoForIntersection(List<String> commandKeys, ReflectionBasedRedisClient redisClient) {
+        Set<String> keySet = redisClient.getKeysByType(REDIS_SET_TYPE);
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //The value for each one, since each key represents a SET, correspond to the members of that given set.
+        Map<String, RedisValueData> redisData = new HashMap<>();
+        keySet.forEach(
+                key -> redisData.put(key, new RedisValueData(redisClient.getSetMembers(key))
         ));
-        return redisData;
+        return new RedisKeyValueStore(redisData);
     }
 
-    private List<RedisInfo> createRedisInfoForAllKeys(ReflectionBasedRedisClient redisClient) {
+    private RedisKeyValueStore createRedisInfoForAllKeys(ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getAllKeys();
-        List<RedisInfo> redisData = new ArrayList<>();
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //No value is needed in this case.
+        Map<String, RedisValueData> redisData = new HashMap<>();
         keys.forEach(
-                key -> redisData.add(new RedisInfo(key))
+                key -> redisData.put(key, null)
         );
-        return redisData;
+        return new RedisKeyValueStore(redisData);
     }
 
-    private List<RedisInfo> createRedisInfoForKeysByType(String type, ReflectionBasedRedisClient redisClient) {
+    private RedisKeyValueStore createRedisInfoForKeysByType(String type, ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(type);
-        List<RedisInfo> redisData = new ArrayList<>();
-        keys.forEach(key -> redisData.add(new RedisInfo(key)));
-        return redisData;
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //No value is needed in this case.
+        Map<String, RedisValueData> redisData = new HashMap<>();
+        keys.forEach(key -> redisData.put(key, null));
+        return new RedisKeyValueStore(redisData);
     }
 
-    private List<RedisInfo> createRedisInfoForKeysByField(String field, ReflectionBasedRedisClient redisClient) {
+    private RedisKeyValueStore createRedisInfoForKeysByField(ReflectionBasedRedisClient redisClient) {
         Set<String> keys = redisClient.getKeysByType(REDIS_HASH_TYPE);
-        List<RedisInfo> redisData = new ArrayList<>();
-        keys.forEach(key -> redisData.add(new RedisInfo(key, redisClient.getHashFields(key))));
-        return redisData;
+
+        //A Map structure is introduced here using the same keys that are stored in REDIS.
+        //The value for each one, since each key is of type HASH, correspond to the fields stored for that given key.
+        Map<String, RedisValueData> redisData = new HashMap<>();
+        keys.forEach(key -> redisData.put(key, new RedisValueData(redisClient.getHashFields(key))));
+        return new RedisKeyValueStore(redisData);
     }
 
     public void setRedisClient(ReflectionBasedRedisClient redisClient) {
