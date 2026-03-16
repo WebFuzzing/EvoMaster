@@ -41,9 +41,7 @@ class BBDtoNullEMTest : SpringTestBase() {
 
             setOption(args, "bbSwaggerUrl", "$baseUrlOfSut/openapi-dtonull.json")
 
-            //TODO need to fix/extend DTO handling before activating it here
-//            setOption(args, "dtoForRequestPayload", "true")
-            setOption(args, "dtoForRequestPayload", "false")
+            setOption(args, "dtoForRequestPayload", "true")
 
             val solution = initAndRun(args)
 

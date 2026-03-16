@@ -3,6 +3,7 @@ package org.evomaster.core.output.dto
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.TestSuiteFileName
+import org.evomaster.core.utils.StringUtils.capitalizeFirstChar
 import java.nio.file.Path
 
 class KotlinDtoOutput: JvmDtoOutput() {
@@ -21,7 +22,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
     }
 
     override fun getSetterStatement(dtoVarName: String, attributeName: String, value: String): String {
-        return "$dtoVarName.${attributeName} = $value"
+        return "$dtoVarName.set${capitalizeFirstChar(attributeName)}($value)"
     }
 
     override fun getNewListStatement(listType: String, listVarName: String): String {
@@ -40,6 +41,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
         lines.add("@JsonInclude(JsonInclude.Include.NON_NULL)")
         lines.add("class $dtoFilename {")
         addVariables(lines, dtoClass)
+        addGettersAndSetters(lines, dtoClass)
         lines.add("}")
     }
 
@@ -47,7 +49,7 @@ class KotlinDtoOutput: JvmDtoOutput() {
         dtoClass.fieldsMap.forEach {
             lines.indented {
                 lines.add("@JsonProperty(\"${it.key}\")")
-                lines.add("var ${it.key}: ${it.value.type}? = null")
+                lines.add("private var ${it.key}: Optional<${it.value.type}>? = null")
             }
             lines.addEmpty()
         }
@@ -80,6 +82,24 @@ class KotlinDtoOutput: JvmDtoOutput() {
                 lines.add("}")
                 lines.addEmpty()
             }
+        }
+    }
+
+    private fun addGettersAndSetters(lines: Lines, dtoClass: DtoClass) {
+        dtoClass.fieldsMap.forEach {
+            val varName = it.key
+            val varType = it.value.type
+            val capitalizedVarName = capitalizeFirstChar(varName)
+            lines.indented {
+                lines.add("fun get${capitalizedVarName}(): Optional<${varType}>? = $varName")
+                lines.addEmpty()
+                lines.add("fun set${capitalizedVarName}(${varName}: ${varType}?) {")
+                lines.indented {
+                    lines.add("this.${varName} = Optional.ofNullable(${varName})")
+                }
+                lines.add("}")
+            }
+            lines.addEmpty()
         }
     }
 
