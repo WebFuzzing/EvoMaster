@@ -512,7 +512,7 @@ class TestSuiteWriter {
 
         if (format.isJavaScript()) {
             if (format.isPlaywright()) {
-                lines.add(" - 515 - TestSuiteWriter.kt)")
+                lines.add("const { test, expect, request } = require('@playwright/test');")
             } else {
                 lines.add("const superagent = require(\"superagent\");")
             }
@@ -520,14 +520,13 @@ class TestSuiteWriter {
             val jsUtils = JsLoader::class.java.getResource("/$javascriptUtilsFilename").readText()
             saveToDisk(jsUtils, Paths.get(config.outputFolder, javascriptUtilsFilename))
             lines.add("const $jsImport = require(\"./$javascriptUtilsFilename\");")
-            lines.add(" - 523 - TestSuiteWriter.kt - What about this const EM thing?. Do we need it?")
+
             if (controllerName != null) {
                 lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
-                lines.add(" - 526 - TestSuiteWriter.kt - What about controllerName. Do we need it?")
             }
-            if (config.testTimeout > 0) {
+
+            if (config.testTimeout > 0 && !format.isPlaywright()) {
                 lines.add("jest.setTimeout(${config.testTimeout * 1000});")
-                lines.add(" - 529 - TestSuiteWriter.kt - Do we need the jest.setTimeout line above?")
             }
         }
 
@@ -770,7 +769,7 @@ class TestSuiteWriter {
                 lines.add("fun initClass()")
             }
             format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeAll( async () =>")
-            format.isJavaScript() && format.isPlaywright() -> lines.add("- 771 - TestSuiteWriter.kt")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("test.beforeAll(async () =>")
         }
 
         lines.block {
@@ -925,7 +924,8 @@ class TestSuiteWriter {
                 lines.add("@JvmStatic")
                 lines.add("fun tearDown()")
             }
-            format.isJavaScript() -> lines.add("afterAll( async () =>") // white box part?
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("afterAll( async () =>")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("test.afterAll(async () =>")
         }
 
         if (!format.isCsharp()) {
@@ -978,7 +978,9 @@ class TestSuiteWriter {
             format.isKotlin() -> {
                 lines.add("fun initTest()")
             }
-            format.isJavaScript() -> lines.add("beforeEach(async () => ") // white box part?
+            format.isJavaScript() && !format.isPlaywright()-> lines.add("beforeEach( async () =>")
+            format.isJavaScript() && format.isPlaywright() -> lines.add("test.beforeEach(async () =>")
+
             //for C# we are actually setting up the constructor for the test class
             format.isCsharp() -> lines.add("public ${name.getClassName()} ($fixtureClass fixture)")
         }
