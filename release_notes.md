@@ -4,13 +4,14 @@ Under development in `master` branch.
 
 ### New Features
 
+- Support for OpenAPI 3.1: proper handling of changes between 3.0 and 3.1 regarding nullability and numeric range inclusiveness.
 - Introduced `--maxTestsPerTestSuite`, with default value of 200. 
   This is to avoid generating single output test files with thousands of tests.
   Those will be split among different test suite files, with each containing at most _maxTestsPerTestSuite_ tests. 
    A negative value means no constraint is applied (i.e., old behavior).  
-- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info. 
-
-- For REAST APIs in which the chosen output format is either Java or Kotlin, there is now a new option `--dtoForRequestPayload` to enable the generation of statically typed DTOs for request body payloads. This would replace current string payloads. This can be useful if you need to modify test cases manually after they are generated. However, as this might reduce test readability, this option is not on by default. 
+- If no authentication information is set up, or if it was done just for a single user, then now we issue descriptive warning messages with links to the documentation on how to set up authentication info.
+- For REAST APIs in which the chosen output format is either Java or Kotlin, there is now a new option `--dtoForRequestPayload` to enable the generation of statically typed DTOs for JSON request body payloads. This would replace current string payloads. This can be useful if you need to modify test cases manually after they are generated. However, as this might reduce test readability, this option is not on by default.
+- XML type is now fully supported in body payloads, including proper handling of XML extra information in the OpenAPI schemas. 
 
 ### Fixed Bugs
 
