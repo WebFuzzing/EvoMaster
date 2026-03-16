@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest.schema
 
-import com.webfuzzing.overlayjvm.Processor
+import com.webfuzzing.overlayjvm.OverlayJVM
 import io.swagger.v3.oas.models.OpenAPI
 import org.slf4j.LoggerFactory
 
@@ -36,7 +36,7 @@ class SchemaOpenAPI(
         var modified = schemaRaw
         overlays.forEach {
             val res = try{
-                Processor.applyOverlay(modified,it)
+                OverlayJVM.applyOverlay(modified,it)
             } catch (e : Exception){
                 val message = "Failed to apply overlay transformation: ${e.message}"
                 if(lenient){
