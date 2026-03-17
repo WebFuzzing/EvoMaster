@@ -123,10 +123,9 @@ Note, since version 4.0.0, now _EvoMaster_ by default also creates an interactiv
 
 * _State-of-the-art_: an [independent study (2022)](https://arxiv.org/abs/2204.08348), comparing 10 fuzzers on 20 RESTful APIs, shows that _EvoMaster_ gives the best results. Another [independent study (2024)](https://arxiv.org/abs/2410.12547) done by a different research group confirms these results.
 
-* _Schema_: REST APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io)
-  format (either _v2_ or _v3_).
+* _Schema_: REST APIs must provide a schema in [OpenAPI format](https://www.openapis.org/). We support versions _2.0_, _3.0_ and _3.1_. Unfortunately, support for version _3.2_ is currently on hold due to [swagger-parser](https://github.com/swagger-api/swagger-parser/issues/2248).
 
-* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin, as well as test suites in Python and JavaScript. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
+* _Output_: the tool generates _JUnit_ (version 4 or 5) tests, written in either _Java_ or _Kotlin_, as well as test suites in _Python_ and _JavaScript_. For a complete list, see the documentation for the CLI parameter [--outputFormat](docs/options.md). 
   Some examples are: PYTHON_UNITTEST, KOTLIN_JUNIT_5, JAVA_JUNIT_4 and JS_JEST.
   Note that the generated tests rely on third-party libraries (e.g., to make HTTP calls). 
   These will need to be setup in your projects, [see documentation](docs/library_dependencies.md).
