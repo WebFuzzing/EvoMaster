@@ -35,8 +35,7 @@ class FlakinessDetectRest {
     @GetMapping(path = ["/multiplelines/{num}"])
     open fun getMultipleLines( @PathVariable("num") num: Int) : ResponseEntity<FlakinessDetectData> {
 
-        val num = min(20, max(2, randomInt(num)))
-
+        val num = max(2, randomInt(min(num, 100)))
         val msg = (1..num).joinToString(System.lineSeparator()) { "LINE $it:${randomInt(max(1000, num))}" }
         return ResponseEntity.ok(FlakinessDetectData(msg, num))
     }
