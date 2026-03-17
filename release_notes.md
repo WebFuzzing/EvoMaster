@@ -2,6 +2,8 @@
 
 Under development in `master` branch.
 
+# Version 5.1.0
+
 ### New Features
 
 - Support for OpenAPI 3.1: proper handling of changes between 3.0 and 3.1 regarding nullability and numeric range inclusiveness.
