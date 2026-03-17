@@ -523,8 +523,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(
             "BIGINT" to "Int",
+            "BIT" to "Int",
             "INTEGER" to "Int",
             "TINYINT" to "Int",
+            "SMALLINT" to "Int",
             "TIMESTAMP" to "Int",
             "DATE" to "Int",
             "FLOAT" to "Real",
@@ -534,8 +536,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "CHARACTER VARYING" to "String",
             "CHAR" to "String",
             "VARCHAR" to "String",
+            "TEXT" to "String",
             "CHARACTER LARGE OBJECT" to "String",
-            "BOOLEAN" to "String", // TODO: Check this
+            "BOOLEAN" to "String",
         )
     }
 }
