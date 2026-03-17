@@ -255,6 +255,11 @@ public class RedisHeuristicsCalculator {
             Map<String, RedisValueData> redisData
     ) {
         int numberOfCommandKeys = commandArgs.size();
+
+        if (numberOfCommandKeys == 0) {
+            return MAX_REDIS_DISTANCE;
+        }
+
         double sum = MIN_REDIS_DISTANCE;
         for (String arg : commandArgs) {
             sum += calculateDistanceForKeyMatch(arg, redisData).getDistance();
@@ -279,11 +284,17 @@ public class RedisHeuristicsCalculator {
                 .map(key -> redisData.getOrDefault(key, new RedisValueData(new HashSet<>())).getMembers())
                 .collect(Collectors.toList());
 
+        int numberOfMembersInCommandArgsSets = membersInCommandArgsSets.size();
+
+        if (numberOfMembersInCommandArgsSets == 0) {
+            return MAX_REDIS_DISTANCE;
+        }
+
         double total = MIN_REDIS_DISTANCE;
 
         Set<String> currentIntersection = null;
 
-        for (int i = 0; i < membersInCommandArgsSets.size(); i++) {
+        for (int i = 0; i < numberOfMembersInCommandArgsSets; i++) {
             Set<String> set = membersInCommandArgsSets.get(i);
 
             if (i == 0) {
@@ -303,7 +314,7 @@ public class RedisHeuristicsCalculator {
             }
         }
 
-        return total / membersInCommandArgsSets.size();
+        return total / numberOfMembersInCommandArgsSets;
     }
 
     /**
