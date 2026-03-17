@@ -43,9 +43,6 @@ public class TaintNestedEMTest extends SpringTestBase {
                     setOption(args, "extraQueryParam", "false");
                     setOption(args, "extraHeader", "false");
 
-                    // TODO disabled dto for this test as CI currently fails, remove next line when fixed
-                    setOption(args, "dtoForRequestPayload","false");
-
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
