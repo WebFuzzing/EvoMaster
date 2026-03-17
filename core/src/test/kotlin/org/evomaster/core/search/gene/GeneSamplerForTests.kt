@@ -653,7 +653,7 @@ object GeneSamplerForTests {
         val minSize = rand.choose(listOf(null, min))
         val maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3)))
 
-        // 2. Sample pairGeneTample
+        // 2. Sample pairGeneTemplate
         val printableFlexiblePairGene = if (minSize == 2) {
             samplePrintableFlexiblePairGeneWithAtLeastTwoKeyValues(rand)
         } else {
