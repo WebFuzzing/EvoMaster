@@ -2,6 +2,7 @@ package org.evomaster.e2etests.spring.openapi.v3.overlay
 
 import com.foo.rest.examples.spring.openapi.v3.overlay.OverlayController
 import com.foo.rest.examples.spring.openapi.v3.stringlength.StringLengthController
+import org.evomaster.ci.utils.JUnitExtra
 import org.evomaster.core.config.ConfigProblemException
 import org.evomaster.core.problem.rest.data.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -85,16 +86,20 @@ class OverlayEMTest : SpringTestBase(){
     @Test
     fun testRunEM_Overlay_Z_fail() {
 
-        runTestHandlingFlakyAndCompilation(
+        runTestHandlingFlaky(
             "Overlay_Z_fail",
-            100
+            "org.foo.Overlay_Z_fail",
+            100,
+            false
         ) { args: MutableList<String> ->
 
             setOption(args, "overlay", "src/main/resources/overlay/z.json")
             //default behavior must be non-lenient
 
             //z does not exist
-            assertThrows<ConfigProblemException> { initAndRun(args) }
+            JUnitExtra.assertThrowsInnermost(ConfigProblemException::class.java) {
+                initAndRun(args)
+            }
         }
     }
 
@@ -122,16 +127,20 @@ class OverlayEMTest : SpringTestBase(){
     @Test
     fun testRunEM_Overlay_folder() {
 
-        runTestHandlingFlakyAndCompilation(
+        runTestHandlingFlaky(
             "Overlay_folder",
-            100
+            "org.foo.Overlay_folder",
+            100,
+            false,
         ) { args: MutableList<String> ->
 
             setOption(args, "overlay", "src/main/resources/overlay")
             //by default, z.json will be picked, and so failed because non-lenient
 
             //z does not exist
-            assertThrows<ConfigProblemException> { initAndRun(args) }
+            JUnitExtra.assertThrowsInnermost(ConfigProblemException::class.java) {
+                initAndRun(args)
+            }
         }
     }
 
