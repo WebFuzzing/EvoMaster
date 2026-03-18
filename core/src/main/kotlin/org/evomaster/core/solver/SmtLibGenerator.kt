@@ -14,6 +14,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
+import net.sf.jsqlparser.JSQLParserException
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
@@ -114,7 +115,9 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     smt.addNode(constraint)
                 }
             } catch (e: SqlConditionParserException) {
-                throw RuntimeException("Error parsing check expression: " + check.sqlCheckExpression, e)
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
+            } catch (e: JSQLParserException) {
+                LoggingUtil.getInfoLogger().warn("Could not translate CHECK constraint to SMT-LIB, skipping: ${check.sqlCheckExpression}. Reason: ${e.message}")
             }
         }
     }
@@ -276,7 +279,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         for (foreignKey in table.foreignKeys) {
             val referencedTable = findReferencedTable(foreignKey)
             val referencedTableName = referencedTable.id.name.lowercase()
-            val referencedColumnSelector = findReferencedPKSelector(referencedTable, foreignKey)
+            val referencedColumnSelector = findReferencedPKSelector(table, referencedTable, foreignKey)
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
@@ -328,13 +331,24 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param foreignKey The foreign key constraint.
      * @return The primary key column name in the referenced table.
      */
-    private fun findReferencedPKSelector(referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
+    private fun findReferencedPKSelector(sourceTable: TableDto, referencedTable: TableDto, foreignKey: ForeignKeyDto): String {
         val referencedPrimaryKeys = referencedTable.columns.filter { it.primaryKey }
-        if (referencedPrimaryKeys.isEmpty()) {
-            throw RuntimeException("Referenced table has no primary key: ${foreignKey.targetTable}")
+        val sourceColumnName = foreignKey.sourceColumns.firstOrNull()
+        val sourceSmtType = sourceColumnName?.let { scn ->
+            sourceTable.columns.firstOrNull { it.name.equals(scn, ignoreCase = true) }
+                ?.let { TYPE_MAP[it.type.uppercase()] }
         }
-        // Assuming single-column primary keys
-        return referencedPrimaryKeys[0].name
+        if (referencedPrimaryKeys.isNotEmpty() &&
+            (sourceSmtType == null || TYPE_MAP[referencedPrimaryKeys[0].type.uppercase()] == sourceSmtType)) {
+            return referencedPrimaryKeys[0].name
+        }
+        // No PK or type mismatch: find a type-compatible column
+        if (sourceSmtType != null) {
+            referencedTable.columns.firstOrNull { TYPE_MAP[it.type.uppercase()] == sourceSmtType }
+                ?.let { return it.name }
+        }
+        return referencedTable.columns.firstOrNull()?.name
+            ?: throw RuntimeException("Referenced table has no columns: ${foreignKey.targetTable}")
     }
 
     /**
@@ -533,8 +547,12 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "BIGINT" to "Int",
             "BIT" to "Int",
             "INTEGER" to "Int",
+            "INT2" to "Int",
+            "INT4" to "Int",
+            "INT8" to "Int",
             "TINYINT" to "Int",
             "SMALLINT" to "Int",
+            "NUMERIC" to "Int",
             "TIMESTAMP" to "Int",
             "DATE" to "Int",
             "FLOAT" to "Real",
@@ -547,6 +565,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             "TEXT" to "String",
             "CHARACTER LARGE OBJECT" to "String",
             "BOOLEAN" to "String",
+            "BOOL" to "String",
+            "UUID" to "String",
+            "JSONB" to "String",
+            "BYTEA" to "String",
         )
     }
 }
