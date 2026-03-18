@@ -210,6 +210,27 @@ class SmtLibGeneratorTest {
     }
 
     /**
+     * Test that a <> (not-equals) condition in the WHERE clause is correctly translated
+     * to a distinct SMT-LIB assertion.
+     */
+    @Test
+    @Throws(JSQLParserException::class)
+    fun selectFromUsersWithNotEquals() {
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE age <> 30;")
+
+        val response: SMTLib = generator.generateSMT(selectStatement)
+
+        val expected = tableConstraints
+        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users1)", "30"))))
+        expected.addNode(AssertSMTNode(DistinctAssertion(listOf("(AGE users2)", "30"))))
+        expected.addNode(CheckSatSMTNode())
+        expected.addNode(GetValueSMTNode("users1"))
+        expected.addNode(GetValueSMTNode("users2"))
+
+        assertEquals(expected, response)
+    }
+
+    /**
      * Test the generation of SMT from a simple select statement and a database schema
      * @throws JSQLParserException if the statement is not valid
      */
