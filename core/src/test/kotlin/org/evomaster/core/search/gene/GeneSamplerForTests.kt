@@ -623,13 +623,38 @@ object GeneSamplerForTests {
 
         val min = rand.nextInt(0, 2)
 
+        val minSize = rand.choose(listOf(null, min))
+        val maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3)))
+        val printablePairGene = if (minSize == 2) {
+            samplePrintablePairGeneWithAtLeastTwoKeyValues(rand)
+        } else {
+            samplePrintablePairGene(rand)
+        }
+
         return FixedMapGene(
                 name = "rand MapGene",
-                minSize = rand.choose(listOf(null, min)),
-                maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
-                template = samplePrintablePairGene(rand)
+                minSize = minSize,
+                maxSize = maxSize,
+                template = printablePairGene
         )
     }
+
+    fun samplePrintablePairGeneWithAtLeastTwoKeyValues(rand: Randomness): PairGene<*, *> {
+        return generateSequence { samplePrintablePairGene(rand) }
+            .first { genePair ->
+                val keyGene = genePair.first
+
+                // If it cannot change, it cannot have "at least two values"
+                if (!keyGene.isMutable()) return@first false
+
+                // Initialize the first instance and compare to the second instance with forced new value
+                val firstInstance = keyGene.copy().apply { doInitialize(rand) }
+                val secondInstance = firstInstance.copy().apply { randomize(rand, true) }
+
+                !firstInstance.containsSameValueAs(secondInstance)
+            }
+    }
+
 
     fun samplePrintableFlexiblePairGeneWithAtLeastTwoKeyValues(rand: Randomness): PairGene<*, FlexibleGene> {
         return generateSequence { samplePrintableFlexiblePairGene(rand) }
