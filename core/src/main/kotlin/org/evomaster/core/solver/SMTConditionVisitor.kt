@@ -42,9 +42,12 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlAndCondition, parameter: Void?): SMTNode {
-        val left = condition.leftExpr.accept(this, parameter) as AssertSMTNode
-        val right = condition.rightExpr.accept(this, parameter) as AssertSMTNode
-        return AssertSMTNode(AndAssertion(listOf(left.assertion, right.assertion)))
+        val left = condition.leftExpr.accept(this, parameter)
+        val right = condition.rightExpr.accept(this, parameter)
+        if (left is EmptySMTNode && right is EmptySMTNode) return EmptySMTNode()
+        if (left is EmptySMTNode) return right
+        if (right is EmptySMTNode) return left
+        return AssertSMTNode(AndAssertion(listOf((left as AssertSMTNode).assertion, (right as AssertSMTNode).assertion)))
     }
 
     /**
@@ -55,8 +58,11 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlOrCondition, parameter: Void?): SMTNode {
-        val conditions = condition.orConditions.map { it.accept(this, parameter) as AssertSMTNode }
-        return AssertSMTNode(OrAssertion(conditions.map { it.assertion }))
+        val conditions = condition.orConditions.map { it.accept(this, parameter) }
+        val nonEmpty = conditions.filterIsInstance<AssertSMTNode>()
+        if (nonEmpty.isEmpty()) return EmptySMTNode()
+        if (nonEmpty.size == 1) return nonEmpty[0]
+        return AssertSMTNode(OrAssertion(nonEmpty.map { it.assertion }))
     }
 
     /**
@@ -67,6 +73,9 @@ class SMTConditionVisitor(
      * @return The corresponding SMT node.
      */
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
+        if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
+            return EmptySMTNode()
+        }
         val left = getVariableAndLiteral(condition.leftOperand)
         val right = getVariableAndLiteral(condition.rightOperand)
 

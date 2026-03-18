@@ -384,6 +384,34 @@ class SmtLibGeneratorTest {
     }
 
     /**
+     * Test that NULL comparisons in the WHERE clause are skipped (not emitted as invalid SMT-LIB),
+     * and the remaining non-null constraints are still applied.
+     */
+    @Test
+    @Throws(JSQLParserException::class)
+    fun selectFromUsersWithNullComparison() {
+        val selectStatement: Statement = CCJSqlParserUtil.parse("SELECT * FROM Users WHERE name = NULL AND age > 30;")
+
+        val response: SMTLib = generator.generateSMT(selectStatement)
+
+        val expected = tableConstraints
+        // The NULL comparison is skipped; only the non-null constraint is emitted
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users1)", "30")))
+        expected.addNode(AssertSMTNode(GreaterThanAssertion("(AGE users2)", "30")))
+
+        val satConstraints = arrayOf(
+            CheckSatSMTNode(),
+            GetValueSMTNode("users1"),
+            GetValueSMTNode("users2")
+        )
+        for (constraint in satConstraints) {
+            expected.addNode(constraint)
+        }
+
+        assertEquals(expected, response)
+    }
+
+    /**
      * Test that a BIT column type is translated to Int in the SMT-LIB representation.
      */
     @Test

@@ -94,6 +94,7 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
         val queryStatement = parseStatement(sqlQuery)
         val smtLib = generator.generateSMT(queryStatement)
         val fileName = storeToTmpFile(smtLib)
+        println(smtLib)
         val z3Response = executor.solveFromFile(fileName)
 
         return toSqlActionList(schemaDto, z3Response)
