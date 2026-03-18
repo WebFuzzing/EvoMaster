@@ -250,7 +250,7 @@ AtomEscape
  ;
 
 fragment CharacterClassEscape
- //one of d D s S w W
+ //one of d D s S w W v V h H
  : [dDsSwWvVhH]
  ;
 
