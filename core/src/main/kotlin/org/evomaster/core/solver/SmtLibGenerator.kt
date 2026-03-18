@@ -364,11 +364,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             val where = plainSelect.where
 
             if (where != null) {
-                val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
-                val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                for (i in 1..numberOfRows) {
-                    val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                    smt.addNode(constraint)
+                try {
+                    val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
+                    val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                    for (i in 1..numberOfRows) {
+                        val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
+                        smt.addNode(constraint)
+                    }
+                } catch (e: RuntimeException) {
+                    LoggingUtil.getInfoLogger().warn("Could not translate WHERE clause to SMT-LIB, skipping: ${where}. Reason: ${e.message}")
                 }
             }
         }
@@ -390,11 +394,15 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                     val onExpressions = join.onExpressions
                     if (onExpressions.isNotEmpty()) {
                         val onExpression = onExpressions.elementAt(0)
-                        val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                        val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
-                        for (i in 1..numberOfRows) {
-                            val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
-                            smt.addNode(constraint)
+                        try {
+                            val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
+                            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            for (i in 1..numberOfRows) {
+                                val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
+                                smt.addNode(constraint)
+                            }
+                        } catch (e: RuntimeException) {
+                            LoggingUtil.getInfoLogger().warn("Could not translate JOIN ON clause to SMT-LIB, skipping: ${onExpression}. Reason: ${e.message}")
                         }
                     }
                 }
