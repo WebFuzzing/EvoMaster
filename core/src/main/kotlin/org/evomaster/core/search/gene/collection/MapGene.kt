@@ -49,6 +49,8 @@ abstract class MapGene<K, V>(
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
         const val MAX_SIZE = 5
 
+        const val MAX_RANDOMIZE_ATTEMPTS = 100
+
         fun isStringMap(gene: MapGene<*, *>) = gene.template.first is StringGene && gene.template.second is StringGene
     }
 
@@ -62,12 +64,20 @@ abstract class MapGene<K, V>(
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
-        //maybe not so important here to complicate code to enable forceNewValue
+        if (tryToForceNewValue) {
+            //maybe not so important here to complicate code to enable forceNewValue
+            log.warn("tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements, and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene")
+        }
 
         killAllChildren()
         log.trace("Randomizing MapGene")
-        val n = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        (0 until n).forEach {
+        val targetSize = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
+        var createRandomElementCount = 0
+        while (elements.size < targetSize) {
+            if (createRandomElementCount++ > MAX_RANDOMIZE_ATTEMPTS.coerceAtLeast(targetSize * 2)) {
+                log.warn("createRandomElement() invoked too many times, so we stop creating random elements after $createRandomElementCount invokations")
+                break
+            }
             val gene = createRandomElement(randomness, false)
             // if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
