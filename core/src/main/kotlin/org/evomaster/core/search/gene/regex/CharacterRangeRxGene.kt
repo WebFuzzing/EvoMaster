@@ -20,7 +20,7 @@ data class CharacterRange(val start: Char, val end: Char){
 
 class CharacterRangeRxGene(
     val negated: Boolean,
-    val ranges: List<Pair<Char, Char>>
+    val ranges: List<CharacterRange>
 ) : RxAtom, SimpleGene("."){
 
     companion object{
@@ -39,8 +39,8 @@ class CharacterRangeRxGene(
         // use String or Int in every possible step as methods which return a single Char cannot return these characters
         if(negated) internalRanges.add(CharacterRange(Character.MIN_VALUE,Character.MAX_VALUE))
         for (range in ranges) {
-            val max = maxOf(range.first, range.second)
-            val min = minOf(range.first, range.second)
+            val max = maxOf(range.start, range.end)
+            val min = minOf(range.start, range.end)
             if(negated){
                 remove(CharacterRange(min, max))
             } else {
@@ -49,8 +49,8 @@ class CharacterRangeRxGene(
         }
 
         ranges.forEach {
-            if(it.first.code > it.second.code){
-                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.first}' is greater than '${it.second}'")
+            if(it.start.code > it.end.code){
+                LoggingUtil.uniqueWarn(log, "Issue with Regex range, where '${it.start}' is greater than '${it.end}'")
             }
         }
     }

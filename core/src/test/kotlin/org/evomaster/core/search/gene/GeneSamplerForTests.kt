@@ -461,7 +461,7 @@ object GeneSamplerForTests {
     fun sampleCharacterRangeRxGene(rand: Randomness): CharacterRangeRxGene {
         return CharacterRangeRxGene(
                 negated = false, // TODO update once fixed
-                ranges = listOf(Pair('a', 'z'))
+                ranges = listOf(CharacterRange('a', 'z'))
         )
     }
 

@@ -51,7 +51,7 @@ class CharacterClassEscapeRxGeneStructureTest : GeneStructuralElementBaseTest() 
 }
 
 class CharacterRangeRxGeneStructureTest : GeneStructuralElementBaseTest() {
-    override fun getCopyFromTemplate(): Gene = CharacterRangeRxGene(false, listOf(Pair('0','9'))).apply { value='2'}
+    override fun getCopyFromTemplate(): Gene = CharacterRangeRxGene(false, listOf(CharacterRange('0','9'))).apply { value='2'}
 
     override fun assertCopyFrom(base: Gene) {
         assertTrue(base is CharacterRangeRxGene)
@@ -59,7 +59,7 @@ class CharacterRangeRxGeneStructureTest : GeneStructuralElementBaseTest() {
         assertEquals('2', (base as CharacterRangeRxGene).value)
     }
 
-    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(Pair('0','z'))).apply { value= 'w' }
+    override fun getStructuralElement(): CharacterRangeRxGene = CharacterRangeRxGene(false, listOf(CharacterRange('0','z'))).apply { value= 'w' }
 
     override fun getExpectedChildrenSize(): Int  = 0
 }

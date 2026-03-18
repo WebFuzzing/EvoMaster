@@ -238,7 +238,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val negated = ctx.CARET() != null
 
-        val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+        val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
 
         val gene = CharacterRangeRxGene(negated, ranges)
 
@@ -248,10 +248,10 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitClassRanges(ctx: RegexEcma262Parser.ClassRangesContext): VisitResult {
 
         val res = VisitResult()
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.nonemptyClassRanges() != null){
-            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -262,7 +262,7 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRanges(ctx: RegexEcma262Parser.NonemptyClassRangesContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         val startText = ctx.classAtom()[0].text
         assert(startText.length == 1) // single chars
@@ -275,15 +275,15 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             start
         }
 
-        list.add(Pair(start, end))
+        list.add(CharacterRange(start, end))
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
@@ -296,27 +296,27 @@ class GeneRegexEcma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
     override fun visitNonemptyClassRangesNoDash(ctx: RegexEcma262Parser.NonemptyClassRangesNoDashContext): VisitResult {
 
-        val list = mutableListOf<Pair<Char,Char>>()
+        val list = mutableListOf<CharacterRange>()
 
         if(ctx.MINUS() != null){
 
             val start = ctx.classAtomNoDash().text[0]
             val end = ctx.classAtom().text[0]
-            list.add(Pair(start, end))
+            list.add(CharacterRange(start, end))
 
         } else {
 
             val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
-            list.add(Pair(char, char))
+            list.add(CharacterRange(char, char))
         }
 
         if(ctx.nonemptyClassRangesNoDash() != null){
-            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 
         if(ctx.classRanges() != null){
-            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            val ranges = ctx.classRanges().accept(this).data as List<CharacterRange>
             list.addAll(ranges)
         }
 

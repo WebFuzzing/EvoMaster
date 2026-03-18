@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.regex.CharacterRangeRxGene
+import org.evomaster.core.search.gene.regex.CharacterRange
 import org.evomaster.core.utils.NumberCalculationUtil.calculateIncrement
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -15,8 +16,8 @@ class Randomness {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Randomness::class.java)
 
-        private fun stringToListOfCharPairs(s: String) : List<Pair<Char, Char>> {
-            return s.map { it to it }
+        private fun stringToListOfCharPairs(s: String) : List<CharacterRange> {
+            return s.map { CharacterRange(it, it) }
         }
     }
 
@@ -38,11 +39,11 @@ class Randomness {
         updateSeed(configuration.seed)
     }
 
-    private val digitSet = listOf('0' to '9')
-    private val asciiLetterSet = listOf('a' to 'z', 'A' to 'Z')
-    private val wordSet = listOf('_' to '_') + asciiLetterSet + digitSet
+    private val digitSet = listOf(CharacterRange('0', '9'))
+    private val asciiLetterSet = listOf(CharacterRange('a', 'z'), CharacterRange('A', 'Z'))
+    private val wordSet = listOf(CharacterRange('_', '_')) + asciiLetterSet + digitSet
     private val spaceSet = stringToListOfCharPairs(" \t\r\n\u000C\u000b")
-    private val horizontalSpaceSet = listOf(0x2000.toChar() to 0x200a.toChar()) +
+    private val horizontalSpaceSet = listOf(CharacterRange(0x2000.toChar(), 0x200a.toChar())) +
             stringToListOfCharPairs(" \t\u00A0\u1680\u180e\u202f\u205f\u3000")
     private val verticalSpaceSet = stringToListOfCharPairs("\n\u000B\u000C\r\u0085\u2028\u2029")
     private val punctuationSet = stringToListOfCharPairs("""!"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~""")
@@ -62,9 +63,9 @@ class Randomness {
 
     // US-ASCII POSIX character classes (\p{X})
     private val posixCharClasses = mapOf(
-        "Lower" to listOf('a' to 'z'),
-        "Upper" to listOf('A' to 'Z'),
-        "ASCII" to listOf(0.toChar() to 0x7f.toChar()),
+        "Lower" to listOf(CharacterRange('a', 'z')),
+        "Upper" to listOf(CharacterRange('A', 'Z')),
+        "ASCII" to listOf(CharacterRange(0.toChar(), 0x7f.toChar())),
         "Alpha" to asciiLetterSet,
         "Digit" to digitSet,
         "Alnum" to digitSet + asciiLetterSet,
@@ -72,8 +73,8 @@ class Randomness {
         "Graph" to digitSet + asciiLetterSet + punctuationSet,
         "Print" to digitSet + asciiLetterSet + punctuationSet + stringToListOfCharPairs("\u0020"),
         "Blank" to stringToListOfCharPairs(" \t"),
-        "Cntrl" to listOf(0.toChar() to 0x1f.toChar()) + stringToListOfCharPairs("\u007f"),
-        "XDigit" to listOf('0' to '9', 'a' to 'f', 'A' to 'F'),
+        "Cntrl" to listOf(CharacterRange(0.toChar(), 0x1f.toChar())) + stringToListOfCharPairs("\u007f"),
+        "XDigit" to listOf(CharacterRange('0', '9'), CharacterRange('a', 'f'), CharacterRange('A', 'F')),
         "Space" to spaceSet
     ).mapValues { (_, value) -> CharacterRangeRxGene(false, value) }
 
