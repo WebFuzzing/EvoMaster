@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>5.0.3-SNAPSHOT</version>
+        <version>5.1.1-SNAPSHOT</version>
     </parent>
 
     <groupId>org.evomaster</groupId>
@@ -66,6 +66,11 @@
                 <groupId>com.atlassian.oai</groupId>
                 <artifactId>swagger-request-validator-core</artifactId>
                 <version>2.44.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.webfuzzing</groupId>
+                <artifactId>overlay-jvm</artifactId>
+                <version>0.2.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
