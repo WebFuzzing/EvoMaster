@@ -74,7 +74,7 @@ class SMTConditionVisitor(
      */
     override fun visit(condition: SqlComparisonCondition, parameter: Void?): SMTNode {
         if (condition.leftOperand is SqlNullLiteralValue || condition.rightOperand is SqlNullLiteralValue) {
-            return EmptySMTNode() // TODO: Change this when we add support for nullable fields in the db schema
+            return EmptySMTNode() // TODO: Change this when we add support for nullable columns in the db schema
         }
         val left = getVariableAndLiteral(condition.leftOperand)
         val right = getVariableAndLiteral(condition.rightOperand)
