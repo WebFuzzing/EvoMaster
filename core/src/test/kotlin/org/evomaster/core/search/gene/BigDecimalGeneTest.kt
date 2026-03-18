@@ -45,4 +45,22 @@ class BigDecimalGeneTest {
             assertTrue(gene.isLocallyValid(), "BigDecimalRange with range [${gene.min},${gene.max}] and initial value ${initialValue} lead to ${gene.value} after ${it} mutations")
         }
     }
+
+    @Test
+    fun testSetValueWithLong() {
+        val gene = BigDecimalGene("gene",
+            min = BigDecimal(660317487777093733),
+            max = BigDecimal(3843334988785904229),
+            floatingPointMode = true,
+            minInclusive= false,
+            maxInclusive = true,
+            precision = 18)
+
+        val rand = Randomness()
+        rand.updateSeed(42)
+        gene.doInitialize(rand)
+        gene.floatingPointMode = true
+        gene.setValueWithLong(4196185430403137435)
+        assertTrue(gene.isLocallyValid())
+    }
 }
