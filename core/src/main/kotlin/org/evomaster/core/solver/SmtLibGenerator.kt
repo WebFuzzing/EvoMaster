@@ -58,8 +58,8 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun appendTableDefinitions(smt: SMTLib) {
         for (table in schema.tables) {
-            val sanitizedTableName = convertToAscii(table.id.name)
-            val dataTypeName = "${StringUtils.capitalization(sanitizedTableName)}Row"
+            val smtTableName = convertToAscii(table.id.name)
+            val dataTypeName = "${StringUtils.capitalization(smtTableName)}Row"
 
             // Declare datatype for the table
             smt.addNode(
@@ -68,7 +68,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
             // Declare constants for each row
             for (i in 1..numberOfRows) {
-                smt.addNode(DeclareConstSMTNode("${sanitizedTableName.lowercase()}$i", dataTypeName))
+                smt.addNode(DeclareConstSMTNode("${smtTableName.lowercase()}$i", dataTypeName))
             }
         }
     }
@@ -92,10 +92,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which unique constraints are added.
      */
     private fun appendUniqueConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = convertToAscii(table.id.name).lowercase()
+        val smtTableName = convertToAscii(table.id.name).lowercase()
         for (column in table.columns) {
             if (column.unique) {
-                val nodes = assertForDistinctField(convertToAscii(column.name), tableName)
+                val nodes = assertForDistinctField(convertToAscii(column.name), smtTableName)
                 smt.addNodes(nodes)
             }
         }
@@ -168,7 +168,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = convertToAscii(table.id.name).lowercase()
+            val smtTableName = convertToAscii(table.id.name).lowercase()
             for (column in table.columns) {
                 if (column.type.equals("BOOLEAN", ignoreCase = true)) {
                     val columnName = convertToAscii(column.name).uppercase()
@@ -177,12 +177,12 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                             AssertSMTNode(
                                 OrAssertion(
                                     listOf(
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"true\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"True\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"TRUE\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"false\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"False\"")),
-                                        EqualsAssertion(listOf("($columnName $tableName$i)", "\"FALSE\""))
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"true\"")),
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"True\"")),
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"TRUE\"")),
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"false\"")),
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"False\"")),
+                                        EqualsAssertion(listOf("($columnName $smtTableName$i)", "\"FALSE\""))
                                     )
                                 )
                             )
@@ -195,7 +195,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = convertToAscii(table.id.name).lowercase()
+            val smtTableName = convertToAscii(table.id.name).lowercase()
             for (column in table.columns) {
                 if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
                     val columnName = convertToAscii(column.name).uppercase()
@@ -206,7 +206,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 GreaterThanOrEqualsAssertion(
-                                    "($columnName $tableName$i)",
+                                    "($columnName $smtTableName$i)",
                                     lowerBound.toString()
                                 )
                             )
@@ -214,7 +214,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         smt.addNode(
                             AssertSMTNode(
                                 LessThanOrEqualsAssertion(
-                                    "($columnName $tableName$i)",
+                                    "($columnName $smtTableName$i)",
                                     upperBound.toString()
                                 )
                             )
@@ -233,11 +233,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which primary key constraints are added.
      */
     private fun appendPrimaryKeyConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = convertToAscii(table.id.name).lowercase()
+        val smtTableName = convertToAscii(table.id.name).lowercase()
         val primaryKeys = table.columns.filter { it.primaryKey }
 
         for (primaryKey in primaryKeys) {
-            val nodes = assertForDistinctField(convertToAscii(primaryKey.name), tableName)
+            val nodes = assertForDistinctField(convertToAscii(primaryKey.name), smtTableName)
             smt.addNodes(nodes)
         }
     }
@@ -249,7 +249,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param tableName The name of the table.
      * @return A list of SMT nodes representing distinct assertions.
      */
-    private fun assertForDistinctField(pkSelector: String, tableName: String): List<SMTNode> {
+    private fun assertForDistinctField(pkSelector: String, t st: String): List<SMTNode> {
         val nodes = mutableListOf<AssertSMTNode>()
         for (i in 1..numberOfRows) {
             for (j in i + 1..numberOfRows) {
