@@ -64,27 +64,31 @@ abstract class MapGene<K, V>(
     }
 
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
-
-        if (tryToForceNewValue) {
-            /*
-             * tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements,
-             * and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene.
-             */
-        }
+        /*
+         * tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements,
+         * and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene.
+         */
 
         killAllChildren()
         log.trace("Randomizing MapGene")
-        val expectedNumberOfElements = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
-        var createRandomElementCount = 0
-        while (elements.size < expectedNumberOfElements) {
-            if (createRandomElementCount > maxOf(MAX_RANDOMIZE_ATTEMPTS,expectedNumberOfElements)) {
-                throw GeneRandomizationFailed("Couldn't generate a valid MapGene after $createRandomElementCount attempts.")
-            }
+
+        val minSize = getMinSizeOrDefault()
+        val targetSize = randomness.nextInt(minSize, getMaxSizeUsedInRandomize())
+        val maxAddElementCount = maxOf(MAX_RANDOMIZE_ATTEMPTS, targetSize)
+        var addElementCount = 0
+
+        while (elements.size < targetSize && addElementCount < maxAddElementCount) {
             val gene = createRandomElement(randomness, false)
-            createRandomElementCount++
-            // if the key of gene exists, the value would be replaced with the latest one
+
+            // Observe that, if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
+            addElementCount++
         }
+
+        if (elements.size < minSize) {
+            throw GeneRandomizationFailed("Couldn't generate a valid MapGene after $addElementCount attempts.")
+        }
+
     }
 
     override fun adaptiveSelectSubsetToMutate(randomness: Randomness, internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo): List<Pair<Gene, AdditionalGeneMutationInfo?>> {
