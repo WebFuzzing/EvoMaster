@@ -51,6 +51,52 @@ class HolidaysEMTest: EnterpriseTestBase() {
 
     }
 
+    private var sseStream: InputStream? = null
+    private var sessionId: String? = null
+    private val httpClient = HttpClient.newHttpClient()
+
+    @BeforeEach
+    fun openSseSession() {
+        val request = HttpRequest.newBuilder(URI.create("$baseUrlOfSut/sse"))
+            .header("Accept", "text/event-stream")
+            .GET()
+            .build()
+
+        val endpointRef = AtomicReference<String>()
+        val latch = java.util.concurrent.CountDownLatch(1)
+
+        CompletableFuture.runAsync {
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream())
+            sseStream = response.body()
+            val reader = BufferedReader(InputStreamReader(response.body()))
+            var nextIsEndpointData = false
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val l = line ?: continue
+                // Spring SseBuilder writes "event:name" (no space); tolerate "event: name" too
+                if (l.trimEnd() == "event:endpoint" || l.trimEnd() == "event: endpoint") {
+                    nextIsEndpointData = true
+                } else if (nextIsEndpointData && l.startsWith("data:")) {
+                    endpointRef.set(l.removePrefix("data:").trim())
+                    latch.countDown()
+                    nextIsEndpointData = false
+                }
+            }
+        }
+
+        latch.await(5, TimeUnit.SECONDS)
+        val endpointPath = endpointRef.get()
+            ?: throw RuntimeException("Timed out waiting for MCP endpoint event from SSE")
+        sessionId = endpointPath.substringAfterLast("sessionId=")
+    }
+
+    @AfterEach
+    fun closeSseSession() {
+        sseStream?.close()
+        sseStream = null
+        sessionId = null
+    }
+
     @Test
     @Throws(Exception::class)
     fun test_1_initialize_returns_protocol_version_and_server_info() {
@@ -66,13 +112,11 @@ class HolidaysEMTest: EnterpriseTestBase() {
 
         val body = body(id, "initialize", initParams)
 
-        val uuid = UUID.randomUUID().toString()
-
         given().accept("*/*")
             .header("x-EMextraHeader123", "42")
             .contentType("application/json")
             .body(body)
-            .post("${baseUrlOfSut}/mcp/message?sessionId=$uuid")
+            .post("${baseUrlOfSut}/mcp/message?sessionId=$sessionId")
             .then()
             .statusCode(200)
             .assertThat()
