@@ -249,7 +249,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param tableName The name of the table.
      * @return A list of SMT nodes representing distinct assertions.
      */
-    private fun assertForDistinctField(pkSelector: String, t st: String): List<SMTNode> {
+    private fun assertForDistinctField(pkSelector: String, tableName: String): List<SMTNode> {
         val nodes = mutableListOf<AssertSMTNode>()
         for (i in 1..numberOfRows) {
             for (j in i + 1..numberOfRows) {
