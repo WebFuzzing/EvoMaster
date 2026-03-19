@@ -284,7 +284,7 @@ class BigDecimalGene(
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){
-        var nextValue = if (precision == null){
+        val nextValue = if (precision == null){
             if (scale == null) bd
             else bd.setScale(scale, getRoundingMode())
         } else{
@@ -293,13 +293,6 @@ class BigDecimalGene(
                 if (scale != null) this.setScale(scale, getRoundingMode())
                 else this
             }
-        }
-
-        if (nextValue > getMaximum()) {
-            nextValue = getMaximum()
-        }
-        if (nextValue < getMinimum()) {
-            nextValue = getMinimum()
         }
         value = nextValue
     }

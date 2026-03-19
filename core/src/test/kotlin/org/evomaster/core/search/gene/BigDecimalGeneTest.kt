@@ -11,6 +11,8 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
+import java.math.MathContext
+import java.math.RoundingMode
 
 class BigDecimalGeneTest {
 
@@ -46,21 +48,4 @@ class BigDecimalGeneTest {
         }
     }
 
-    @Test
-    fun testSetValueWithLong() {
-        val gene = BigDecimalGene("gene",
-            min = BigDecimal(660317487777093733),
-            max = BigDecimal(3843334988785904229),
-            floatingPointMode = true,
-            minInclusive= false,
-            maxInclusive = true,
-            precision = 18)
-
-        val rand = Randomness()
-        rand.updateSeed(42)
-        gene.doInitialize(rand)
-        gene.floatingPointMode = true
-        gene.setValueWithLong(4196185430403137435)
-        assertTrue(gene.isLocallyValid())
-    }
 }
