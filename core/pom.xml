@@ -313,9 +313,12 @@
             <scope>test</scope>
         </dependency>
 
-
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+            <version>5.3</version>
+        </dependency>
     </dependencies>
-
 
     <profiles>
         <profile>

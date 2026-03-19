@@ -79,12 +79,12 @@ class ExtraHeuristicsLogger {
         val expressionDeParser = ReplaceValuesDeParser()
         val selectDeparser = SelectDeParser(expressionDeParser, buffer)
         expressionDeParser.selectVisitor = selectDeparser
-        expressionDeParser.buffer = buffer
+        expressionDeParser.builder = buffer
 
         val stmtDeparser = StatementDeParser(expressionDeParser, selectDeparser, buffer)
         val stmt = CCJSqlParserUtil.parse(sql)
         stmt.accept(stmtDeparser)
-        return stmtDeparser.buffer.toString()
+        return stmtDeparser.builder.toString()
 
     }
 }

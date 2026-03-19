@@ -18,7 +18,7 @@ class ReplaceValuesDeParser() :
     ExpressionDeParser() {
 
     private fun appendSymbol() {
-        getBuffer().append("?")
+        getBuilder().append("?")
     }
 
     override fun visit(stringValue: StringValue?) {

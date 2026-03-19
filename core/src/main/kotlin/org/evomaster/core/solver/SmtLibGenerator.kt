@@ -381,7 +381,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
             if (where != null) {
                 try {
                     val condition = parser.parse(where.toString(), toDBType(schema.databaseType))
-                    val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                    val tableFromQuery = TablesNamesFinder<Any>().getTables(sqlQuery as Statement).first()
                     for (i in 1..numberOfRows) {
                         val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
                         smt.addNode(constraint)
@@ -411,7 +411,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
                         val onExpression = onExpressions.elementAt(0)
                         try {
                             val condition = parser.parse(onExpression.toString(), toDBType(schema.databaseType))
-                            val tableFromQuery = TablesNamesFinder().getTables(sqlQuery as Statement).first()
+                            val tableFromQuery = TablesNamesFinder<Any>().getTables(sqlQuery as Statement).first()
                             for (i in 1..numberOfRows) {
                                 val constraint = parseQueryCondition(tableAliases, tableFromQuery, condition, i)
                                 smt.addNode(constraint)
@@ -481,7 +481,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
         // Find the tables mentioned in the query
         val tablesMentioned = mutableSetOf<String>()
-        val tablesFinder = TablesNamesFinder()
+        val tablesFinder = TablesNamesFinder<Any>()
 
         // Add tables from the FROM clause
         val tables = try {
@@ -511,7 +511,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
             // Add tables from WHERE clause
             if (plainSelect.where != null) {
-                for (tableName in TablesNamesFinder().getTables(sqlQuery as Statement)) {
+                for (tableName in TablesNamesFinder<Any>().getTables(sqlQuery as Statement)) {
                     tablesMentioned.add(tableName.lowercase())
                 }
             }

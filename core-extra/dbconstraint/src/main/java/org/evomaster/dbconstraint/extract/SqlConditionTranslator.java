@@ -64,10 +64,20 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
         return new AndConstraint(translationContext.getCurrentTableName(), left, right);
     }
 
+    private static SqlCondition unwrapSingletonList(SqlCondition condition) {
+        if (condition instanceof SqlConditionList) {
+            SqlConditionList list = (SqlConditionList) condition;
+            if (list.getSqlConditionExpressions().size() == 1) {
+                return list.getSqlConditionExpressions().get(0);
+            }
+        }
+        return condition;
+    }
+
     @Override
     public TableConstraint visit(SqlComparisonCondition e, Void argument) {
-        SqlCondition left = e.getLeftOperand();
-        SqlCondition right = e.getRightOperand();
+        SqlCondition left = unwrapSingletonList(e.getLeftOperand());
+        SqlCondition right = unwrapSingletonList(e.getRightOperand());
 
         if (left instanceof SqlLiteralValue && right instanceof SqlColumn) {
             SqlLiteralValue leftLiteral = (SqlLiteralValue) left;
@@ -196,7 +206,16 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
 
     @Override
     public TableConstraint visit(SqlConditionList e, Void argument) {
-        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NOT_BE_INVOKED);
+        List<SqlCondition> conditions = e.getSqlConditionExpressions();
+        if (conditions.size() == 1) {
+            return conditions.get(0).accept(this, null);
+        }
+        TableConstraint result = conditions.get(0).accept(this, null);
+        for (int i = 1; i < conditions.size(); i++) {
+            TableConstraint next = conditions.get(i).accept(this, null);
+            result = new AndConstraint(translationContext.getCurrentTableName(), result, next);
+        }
+        return result;
     }
 
     @Override
@@ -284,8 +303,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
 
     @Override
     public TableConstraint visit(SqlColumn e, Void argument) {
-        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NOT_BE_INVOKED);
+        return new IsNotNullConstraint(getTableName(e), e.getColumnName());
     }
-
 
 }
