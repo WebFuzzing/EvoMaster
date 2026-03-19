@@ -31,7 +31,7 @@ class SMTConditionVisitor(
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${columnName.uppercase()} ${tableName.lowercase()}$rowIndex)"
+        return "(${SmtLibGenerator.sanitizeSmtIdentifier(columnName).uppercase()} ${SmtLibGenerator.sanitizeSmtIdentifier(tableName).lowercase()}$rowIndex)"
     }
 
     /**
