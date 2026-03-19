@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.util.ParamUtil
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneRandomizationFailed
 import org.evomaster.core.search.gene.interfaces.CollectionGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
@@ -65,20 +66,22 @@ abstract class MapGene<K, V>(
     override fun randomize(randomness: Randomness, tryToForceNewValue: Boolean) {
 
         if (tryToForceNewValue) {
-            //maybe not so important here to complicate code to enable forceNewValue
-            log.warn("tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements, and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene")
+            /*
+             * tryToForceNewValue is not supported for MapGene, as the value of MapGene is determined by its elements,
+             * and it is hard to determine whether the value is new or not. thus we ignore tryToForceNewValue for MapGene.
+             */
         }
 
         killAllChildren()
         log.trace("Randomizing MapGene")
-        val targetSize = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
+        val expectedNumberOfElements = randomness.nextInt(getMinSizeOrDefault(), getMaxSizeUsedInRandomize())
         var createRandomElementCount = 0
-        while (elements.size < targetSize) {
-            if (createRandomElementCount++ > MAX_RANDOMIZE_ATTEMPTS.coerceAtLeast(targetSize * 2)) {
-                log.warn("createRandomElement() invoked too many times, so we stop creating random elements after $createRandomElementCount invokations")
-                break
+        while (elements.size < expectedNumberOfElements) {
+            if (createRandomElementCount > maxOf(MAX_RANDOMIZE_ATTEMPTS,expectedNumberOfElements)) {
+                throw GeneRandomizationFailed("Couldn't generate a valid MapGene after $createRandomElementCount attempts.")
             }
             val gene = createRandomElement(randomness, false)
+            createRandomElementCount++
             // if the key of gene exists, the value would be replaced with the latest one
             addElement(gene)
         }
