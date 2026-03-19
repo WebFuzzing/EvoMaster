@@ -15,11 +15,11 @@ import org.evomaster.core.utils.StringUtils
 import org.evomaster.dbconstraint.ConstraintDatabaseType
 import org.evomaster.dbconstraint.ast.SqlCondition
 import net.sf.jsqlparser.JSQLParserException
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.parser.SqlConditionParserException
 import org.evomaster.dbconstraint.parser.jsql.JSqlConditionParser
 import org.evomaster.solver.smtlib.*
 import org.evomaster.solver.smtlib.assertion.*
-import java.util.*
 
 /**
  * Generates SMT-LIB constraints from SQL queries and schema definitions.
@@ -58,7 +58,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      */
     private fun appendTableDefinitions(smt: SMTLib) {
         for (table in schema.tables) {
-            val sanitizedTableName = sanitizeSmtIdentifier(table.id.name)
+            val sanitizedTableName = convertToAscii(table.id.name)
             val dataTypeName = "${StringUtils.capitalization(sanitizedTableName)}Row"
 
             // Declare datatype for the table
@@ -92,10 +92,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which unique constraints are added.
      */
     private fun appendUniqueConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = sanitizeSmtIdentifier(table.id.name).lowercase()
+        val tableName = convertToAscii(table.id.name).lowercase()
         for (column in table.columns) {
             if (column.unique) {
-                val nodes = assertForDistinctField(sanitizeSmtIdentifier(column.name), tableName)
+                val nodes = assertForDistinctField(convertToAscii(column.name), tableName)
                 smt.addNodes(nodes)
             }
         }
@@ -132,7 +132,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The corresponding SMT node.
      */
     private fun parseCheckExpression(table: TableDto, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(sanitizeSmtIdentifier(table.id.name).lowercase(), emptyMap(), schema.tables, index)
+        val visitor = SMTConditionVisitor(convertToAscii(table.id.name).lowercase(), emptyMap(), schema.tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -168,10 +168,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendBooleanConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = sanitizeSmtIdentifier(table.id.name).lowercase()
+            val tableName = convertToAscii(table.id.name).lowercase()
             for (column in table.columns) {
                 if (column.type.equals("BOOLEAN", ignoreCase = true)) {
-                    val columnName = sanitizeSmtIdentifier(column.name).uppercase()
+                    val columnName = convertToAscii(column.name).uppercase()
                     for (i in 1..numberOfRows) {
                         smt.addNode(
                             AssertSMTNode(
@@ -195,10 +195,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
 
     private fun appendTimestampConstraints(smt: SMTLib) {
         for (table in schema.tables) {
-            val tableName = sanitizeSmtIdentifier(table.id.name).lowercase()
+            val tableName = convertToAscii(table.id.name).lowercase()
             for (column in table.columns) {
                 if (column.type.equals("TIMESTAMP", ignoreCase = true)) {
-                    val columnName = sanitizeSmtIdentifier(column.name).uppercase()
+                    val columnName = convertToAscii(column.name).uppercase()
                     val lowerBound = 0 // Example for Unix epoch start
                     val upperBound = 32503680000 // Example for year 3000 in seconds
 
@@ -233,11 +233,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which primary key constraints are added.
      */
     private fun appendPrimaryKeyConstraints(smt: SMTLib, table: TableDto) {
-        val tableName = sanitizeSmtIdentifier(table.id.name).lowercase()
+        val tableName = convertToAscii(table.id.name).lowercase()
         val primaryKeys = table.columns.filter { it.primaryKey }
 
         for (primaryKey in primaryKeys) {
-            val nodes = assertForDistinctField(sanitizeSmtIdentifier(primaryKey.name), tableName)
+            val nodes = assertForDistinctField(convertToAscii(primaryKey.name), tableName)
             smt.addNodes(nodes)
         }
     }
@@ -275,16 +275,16 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @param table The table for which foreign key constraints are added.
      */
     private fun appendForeignKeyConstraints(smt: SMTLib, table: TableDto) {
-        val sourceTableName = sanitizeSmtIdentifier(table.id.name).lowercase()
+        val sourceTableName = convertToAscii(table.id.name).lowercase()
 
         for (foreignKey in table.foreignKeys) {
             val referencedTable = findReferencedTable(foreignKey)
-            val referencedTableName = sanitizeSmtIdentifier(referencedTable.id.name).lowercase()
-            val referencedColumnSelector = sanitizeSmtIdentifier(findReferencedPKSelector(table, referencedTable, foreignKey))
+            val referencedTableName = convertToAscii(referencedTable.id.name).lowercase()
+            val referencedColumnSelector = convertToAscii(findReferencedPKSelector(table, referencedTable, foreignKey))
 
             for (sourceColumn in foreignKey.sourceColumns) {
                 val nodes = assertForEqualsAny(
-                    sanitizeSmtIdentifier(sourceColumn), sourceTableName,
+                    convertToAscii(sourceColumn), sourceTableName,
                     referencedColumnSelector, referencedTableName
                 )
                 smt.addNodes(nodes)
@@ -435,7 +435,7 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
      * @return The corresponding SMT node.
      */
     private fun parseQueryCondition(tableAliases: Map<String, String>, defaultTableName: String, condition: SqlCondition, index: Int): SMTNode {
-        val visitor = SMTConditionVisitor(sanitizeSmtIdentifier(defaultTableName), tableAliases, schema.tables, index)
+        val visitor = SMTConditionVisitor(convertToAscii(defaultTableName), tableAliases, schema.tables, index)
         return condition.accept(visitor, null) as SMTNode
     }
 
@@ -520,10 +520,10 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         // Only add GetValueSMTNode for the mentioned tables
         for (table in schema.tables) {
             val tableNameLower = table.id.name.lowercase()
-            val sanitizedTableNameLower = sanitizeSmtIdentifier(tableNameLower)
+            val smtColumnName = convertToAscii(tableNameLower)
             if (tablesMentioned.contains(tableNameLower)) {
                 for (i in 1..numberOfRows) {
-                    smt.addNode(GetValueSMTNode("$sanitizedTableNameLower$i"))
+                    smt.addNode(GetValueSMTNode("$smtColumnName$i"))
                 }
             }
         }
@@ -539,29 +539,11 @@ class SmtLibGenerator(private val schema: DbInfoDto, private val numberOfRows: I
         return table.columns.map { c ->
             val smtType = TYPE_MAP[c.type.uppercase()]
                 ?: throw RuntimeException("Unsupported column type: ${c.type}")
-            DeclareConstSMTNode(sanitizeSmtIdentifier(c.name), smtType)
+            DeclareConstSMTNode(convertToAscii(c.name), smtType)
         }
     }
 
     companion object {
-        /**
-         * Replaces non-ASCII characters in a name to make it a valid SMT-LIB identifier.
-         * SMT-LIB unquoted symbols are restricted to ASCII, so characters like Æ, Ø, Å must be transliterated.
-         *
-         * This is needed because our test suite includes Norwegian APIs whose database schemas
-         * contain column and table names with Norwegian characters (Æ, Ø, Å).
-         *
-         * Characters that do not decompose under NFD (Ø, Æ) are replaced explicitly.
-         * Characters that decompose under NFD (Å→A, and other accented letters like é, ü, ñ)
-         * are handled by normalizing to NFD form and stripping the remaining non-ASCII combining marks.
-         */
-        fun sanitizeSmtIdentifier(name: String): String {
-            val replaced = name
-                .replace('Ø', 'O').replace('ø', 'o')
-                .replace("Æ", "AE").replace("æ", "ae")
-            return java.text.Normalizer.normalize(replaced, java.text.Normalizer.Form.NFD)
-                .replace(Regex("[^\\x00-\\x7F]"), "")
-        }
 
         // Maps database column types to SMT-LIB types
         private val TYPE_MAP = mapOf(

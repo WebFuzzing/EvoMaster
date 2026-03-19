@@ -1,7 +1,5 @@
 package org.evomaster.core.utils
 
-import java.util.*
-
 object StringUtils {
 
     /**
@@ -81,5 +79,24 @@ object StringUtils {
             lines.add(buffer.toString())
         }
         return lines
+    }
+
+    /**
+     * Replaces non-ASCII characters in a name to make it a valid SMT-LIB identifier.
+     * SMT-LIB unquoted symbols are restricted to ASCII, so characters like Æ, Ø, Å must be transliterated.
+     *
+     * This is needed because our test suite includes Norwegian APIs whose database schemas
+     * contain column and table names with Norwegian characters (Æ, Ø, Å).
+     *
+     * Characters that do not decompose under NFD (Ø, Æ) are replaced explicitly.
+     * Characters that decompose under NFD (Å→A, and other accented letters like é, ü, ñ)
+     * are handled by normalizing to NFD form and stripping the remaining non-ASCII combining marks.
+     */
+    fun convertToAscii(name: String): String {
+        val replaced = name
+            .replace('Ø', 'O').replace('ø', 'o')
+            .replace("Æ", "AE").replace("æ", "ae")
+        return java.text.Normalizer.normalize(replaced, java.text.Normalizer.Form.NFD)
+            .replace(Regex("[^\\x00-\\x7F]"), "")
     }
 }

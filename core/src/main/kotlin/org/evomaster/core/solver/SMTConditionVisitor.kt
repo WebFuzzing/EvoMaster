@@ -1,6 +1,7 @@
 package org.evomaster.core.solver
 
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.dbconstraint.ast.*
 import org.evomaster.solver.smtlib.AssertSMTNode
 import org.evomaster.solver.smtlib.EmptySMTNode
@@ -31,7 +32,7 @@ class SMTConditionVisitor(
      * @return The SMT-LIB column reference string.
      */
     private fun getColumnReference(tableName: String, columnName: String): String {
-        return "(${SmtLibGenerator.sanitizeSmtIdentifier(columnName).uppercase()} ${SmtLibGenerator.sanitizeSmtIdentifier(tableName).lowercase()}$rowIndex)"
+        return "(${convertToAscii(columnName).uppercase()} ${convertToAscii(tableName).lowercase()}$rowIndex)"
     }
 
     /**

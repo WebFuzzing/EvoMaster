@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.*
+import org.evomaster.core.utils.StringUtils.convertToAscii
 import org.evomaster.solver.Z3DockerExecutor
 import org.evomaster.solver.smtlib.SMTLib
 import org.evomaster.solver.smtlib.value.*
@@ -152,24 +153,24 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
 
             // Create the list of genes with the values
             val genes = mutableListOf<Gene>()
-            for (columnName in columns.fields) {
-                // columnName is the sanitized (ASCII) version from Z3; resolve back to original DB column name
-                val originalColumn = table.columns.firstOrNull {
-                    SmtLibGenerator.sanitizeSmtIdentifier(it.name).equals(columnName, ignoreCase = true)
+            // smtColumn is the Ascii version from SmtLib; resolve back to original DB column name
+            for (smtColumn in columns.fields) {
+                val dbColumn = table.columns.firstOrNull {
+                    convertToAscii(it.name).equals(smtColumn, ignoreCase = true)
                 }
-                val actualColumnName = originalColumn?.name ?: columnName
+                val dbColumnName = dbColumn?.name ?: smtColumn
 
-                var gene: Gene = IntegerGene(actualColumnName, 0)
-                when (val columnValue = columns.getField(columnName)) {
+                var gene: Gene = IntegerGene(dbColumnName, 0)
+                when (val columnValue = columns.getField(smtColumn)) {
                     is StringValue -> {
-                        gene = if (hasColumnType(schemaDto, table, actualColumnName, "BOOLEAN")) {
-                            BooleanGene(actualColumnName, toBoolean(columnValue.value))
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "BOOLEAN")) {
+                            BooleanGene(dbColumnName, toBoolean(columnValue.value))
                         } else {
-                            StringGene(actualColumnName, columnValue.value)
+                            StringGene(dbColumnName, columnValue.value)
                         }
                     }
                     is LongValue -> {
-                        gene = if (hasColumnType(schemaDto, table, actualColumnName, "TIMESTAMP")) {
+                        gene = if (hasColumnType(schemaDto, table, dbColumnName, "TIMESTAMP")) {
                             val epochSeconds = columnValue.value.toLong()
                             val localDateTime = LocalDateTime.ofInstant(
                                 Instant.ofEpochSecond(epochSeconds), ZoneOffset.UTC
@@ -177,17 +178,17 @@ class SMTLibZ3DbConstraintSolver() : DbConstraintSolver {
                             val formatted = localDateTime.format(
                                 DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                             )
-                            ImmutableDataHolderGene(actualColumnName, formatted, inQuotes = true)
+                            ImmutableDataHolderGene(dbColumnName, formatted, inQuotes = true)
                         } else {
-                            IntegerGene(actualColumnName, columnValue.value.toInt())
+                            IntegerGene(dbColumnName, columnValue.value.toInt())
                         }
                     }
                     is RealValue -> {
-                        gene = DoubleGene(actualColumnName, columnValue.value)
+                        gene = DoubleGene(dbColumnName, columnValue.value)
                     }
                 }
-                if (originalColumn != null && originalColumn.primaryKey) {
-                    gene = SqlPrimaryKeyGene(actualColumnName, table.id, gene, actionId)
+                if (dbColumn != null && dbColumn.primaryKey) {
+                    gene = SqlPrimaryKeyGene(dbColumnName, table.id, gene, actionId)
                 }
                 gene.markAllAsInitialized()
                 genes.add(gene)
