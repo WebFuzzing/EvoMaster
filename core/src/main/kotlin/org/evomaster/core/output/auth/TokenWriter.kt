@@ -57,6 +57,12 @@ object TokenWriter {
 
             when{
                 format.isJavaOrKotlin() -> lines.append("given()")
+                format.isPlaywright() -> {
+                    lines.append("\"\"")
+                    lines.appendSemicolon()
+                    lines.addEmpty()
+                    lines.append("await request")
+                }
                 format.isJavaScript() -> {
                     lines.append("\"\"")
                     lines.appendSemicolon()

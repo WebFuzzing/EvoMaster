@@ -76,9 +76,14 @@ object CookieWriter {
                 format.isPython() -> lines.append(".cookies")
             }
 
-            if(format.isJavaScript()){
+            if(format.isJavaScript() && !format.isPlaywright()){
                 lines.add(".then((res) => res.headers['set-cookie'][0].split(';')[0])")
                 lines.add(".catch((err) => (err.status >= 300 && err.status <= 399) ? err.response.headers['set-cookie'][0].split(';')[0] : null)")
+                lines.appendSemicolon()
+            }
+
+            if (format.isPlaywright()) {
+                lines.add(".then(async (res) => (await res.headerValue('set-cookie'))?.split(';')[0])")
                 lines.appendSemicolon()
             }
 
@@ -122,6 +127,10 @@ object CookieWriter {
         if(contentType != null) {
             when {
                 format.isJavaOrKotlin() -> lines.add(".contentType(\"${contentType.defaultValue}\")")
+                format.isPlaywright() -> {
+                    // handled in request options 'data' or similar if needed,
+                    // but usually Playwright sets it automatically if passed as object
+                }
                 format.isJavaScript() -> lines.add(".set(\"content-type\", \"${contentType.defaultValue}\")")
                 format.isPython() -> {
                     lines.add("headers[\"content-type\"] = \"${contentType.defaultValue}\"")
@@ -150,6 +159,9 @@ object CookieWriter {
         for(header in k.headers) {
             when {
                 format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
+                format.isPlaywright() -> {
+                    // Playwright headers for login are not yet supported in this simplified call
+                }
                 format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
                 format.isPython() -> {
                     lines.add("headers[\"${header.name}\"] = \"${header.value}\"")
@@ -157,7 +169,7 @@ object CookieWriter {
             }
         }
 
-        if (format.isJavaScript()){
+        if (format.isJavaScript() && !format.isPlaywright()){
             // disable redirections
             lines.add(".redirects(0)")
         }
