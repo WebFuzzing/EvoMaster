@@ -18,7 +18,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
-public class JSqlVisitor implements ExpressionVisitor {
+public class JSqlVisitor extends ExpressionVisitorAdapter<Void> {
 
     private static final String SIMILAR_TO = "similar_to";
     private static final String SIMILAR_ESCAPE = "similar_escape";
@@ -27,30 +27,31 @@ public class JSqlVisitor implements ExpressionVisitor {
     private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
     @Override
-    public void visit(BitwiseRightShift bitwiseRightShift) {
+    public <S> Void visit(BitwiseRightShift bitwiseRightShift, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(BitwiseLeftShift bitwiseLeftShift) {
+    public <S> Void visit(BitwiseLeftShift bitwiseLeftShift, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(NullValue nullValue) {
+    public <S> Void visit(NullValue nullValue, S data) {
         stack.push(new SqlNullLiteralValue());
+        return null;
     }
 
     @Override
-    public void visit(Function function) {
+    public <S> Void visit(Function function, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(SignedExpression signedExpression) {
+    public <S> Void visit(SignedExpression signedExpression, S data) {
         signedExpression.getExpression().accept(this);
         SqlCondition sqlCondition = stack.pop();
         if (sqlCondition instanceof SqlLiteralValue) {
@@ -70,60 +71,59 @@ public class JSqlVisitor implements ExpressionVisitor {
         } else {
             throw new RuntimeException("Extraction of condition not yet implemented for " + sqlCondition.getClass());
         }
+        return null;
     }
 
     @Override
-    public void visit(JdbcParameter jdbcParameter) {
+    public <S> Void visit(JdbcParameter jdbcParameter, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(JdbcNamedParameter jdbcNamedParameter) {
+    public <S> Void visit(JdbcNamedParameter jdbcNamedParameter, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(DoubleValue doubleValue) {
+    public <S> Void visit(DoubleValue doubleValue, S data) {
         stack.push(new SqlBigDecimalLiteralValue(doubleValue.getValue()));
+        return null;
     }
 
     @Override
-    public void visit(LongValue longValue) {
+    public <S> Void visit(LongValue longValue, S data) {
         stack.push(new SqlBigIntegerLiteralValue(longValue.getBigIntegerValue()));
+        return null;
     }
 
     @Override
-    public void visit(HexValue hexValue) {
+    public <S> Void visit(HexValue hexValue, S data) {
         stack.push(new SqlBinaryDataLiteralValue(hexValue.getValue()));
+        return null;
     }
 
     @Override
-    public void visit(DateValue dateValue) {
+    public <S> Void visit(DateValue dateValue, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TimeValue timeValue) {
+    public <S> Void visit(TimeValue timeValue, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TimestampValue timestampValue) {
+    public <S> Void visit(TimestampValue timestampValue, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Parenthesis parenthesis) {
-        parenthesis.getExpression().accept(this);
-    }
-
-    @Override
-    public void visit(StringValue stringValue) {
+    public <S> Void visit(StringValue stringValue, S data) {
         String notEscapedValue = stringValue.getNotExcapedValue();
 
         String notEscapedValueNoQuotes;
@@ -133,64 +133,67 @@ public class JSqlVisitor implements ExpressionVisitor {
             notEscapedValueNoQuotes = notEscapedValue;
         }
         stack.push(new SqlStringLiteralValue(notEscapedValueNoQuotes));
+        return null;
     }
 
     @Override
-    public void visit(Addition addition) {
+    public <S> Void visit(Addition addition, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Division division) {
+    public <S> Void visit(Division division, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(IntegerDivision division) {
+    public <S> Void visit(IntegerDivision division, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Multiplication multiplication) {
+    public <S> Void visit(Multiplication multiplication, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Subtraction subtraction) {
+    public <S> Void visit(Subtraction subtraction, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AndExpression andExpression) {
+    public <S> Void visit(AndExpression andExpression, S data) {
         andExpression.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         andExpression.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlAndCondition(left, right));
+        return null;
     }
 
     @Override
-    public void visit(OrExpression orExpression) {
+    public <S> Void visit(OrExpression orExpression, S data) {
         orExpression.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         orExpression.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlOrCondition(left, right));
+        return null;
     }
 
     @Override
-    public void visit(XorExpression orExpression) {
+    public <S> Void visit(XorExpression orExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Between between) {
+    public <S> Void visit(Between between, S data) {
         between.getLeftExpression().accept(this);
         SqlCondition leftExpression = stack.pop();
 
@@ -213,59 +216,64 @@ public class JSqlVisitor implements ExpressionVisitor {
         );
 
         stack.push(new SqlAndCondition(leftCondition, rightCondition));
+        return null;
     }
 
     @Override
-    public void visit(OverlapsCondition overlapsCondition) {
+    public <S> Void visit(OverlapsCondition overlapsCondition, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(EqualsTo equalsTo) {
+    public <S> Void visit(EqualsTo equalsTo, S data) {
         equalsTo.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         equalsTo.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.EQUALS_TO, right));
+        return null;
     }
 
 
     @Override
-    public void visit(GreaterThan greaterThan) {
+    public <S> Void visit(GreaterThan greaterThan, S data) {
         greaterThan.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         greaterThan.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.GREATER_THAN, right));
+        return null;
     }
 
     @Override
-    public void visit(GreaterThanEquals greaterThanEquals) {
+    public <S> Void visit(GreaterThanEquals greaterThanEquals, S data) {
         greaterThanEquals.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         greaterThanEquals.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.GREATER_THAN_OR_EQUAL, right));
+        return null;
     }
 
     @Override
-    public void visit(InExpression inExpression) {
+    public <S> Void visit(InExpression inExpression, S data) {
         inExpression.getLeftExpression().accept(this);
         SqlColumn left = (SqlColumn) stack.pop();
         inExpression.getRightExpression().accept(this);
         SqlConditionList right = (SqlConditionList) stack.pop();
         stack.push(new SqlInCondition(left, right));
+        return null;
     }
 
     @Override
-    public void visit(FullTextSearch fullTextSearch) {
+    public <S> Void visit(FullTextSearch fullTextSearch, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(IsNullExpression isNullExpression) {
+    public <S> Void visit(IsNullExpression isNullExpression, S data) {
         isNullExpression.getLeftExpression().accept(this);
         SqlColumn columnName = (SqlColumn) stack.pop();
         if (isNullExpression.isNot()) {
@@ -273,70 +281,75 @@ public class JSqlVisitor implements ExpressionVisitor {
         } else {
             stack.push(new SqlIsNullCondition(columnName));
         }
+        return null;
     }
 
     @Override
-    public void visit(IsBooleanExpression isBooleanExpression) {
+    public <S> Void visit(IsBooleanExpression isBooleanExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(LikeExpression likeExpression) {
+    public <S> Void visit(LikeExpression likeExpression, S data) {
         likeExpression.getLeftExpression().accept(this);
         SqlColumn left = (SqlColumn) stack.pop();
         likeExpression.getRightExpression().accept(this);
         SqlStringLiteralValue pattern = (SqlStringLiteralValue) stack.pop();
         stack.push(new SqlLikeCondition(left, pattern));
+        return null;
     }
 
     @Override
-    public void visit(MinorThan minorThan) {
+    public <S> Void visit(MinorThan minorThan, S data) {
         minorThan.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         minorThan.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.LESS_THAN, right));
+        return null;
     }
 
     @Override
-    public void visit(MinorThanEquals minorThanEquals) {
+    public <S> Void visit(MinorThanEquals minorThanEquals, S data) {
         minorThanEquals.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         minorThanEquals.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.LESS_THAN_OR_EQUAL, right));
+        return null;
     }
 
     @Override
-    public void visit(NotEqualsTo notEqualsTo) {
+    public <S> Void visit(NotEqualsTo notEqualsTo, S data) {
         notEqualsTo.getLeftExpression().accept(this);
         SqlCondition left = stack.pop();
         notEqualsTo.getRightExpression().accept(this);
         SqlCondition right = stack.pop();
         stack.push(new SqlComparisonCondition(left, SqlComparisonOperator.NOT_EQUALS_TO, right));
+        return null;
     }
 
     @Override
-    public void visit(DoubleAnd doubleAnd) {
+    public <S> Void visit(DoubleAnd doubleAnd, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Contains contains) {
+    public <S> Void visit(Contains contains, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ContainedBy containedBy) {
+    public <S> Void visit(ContainedBy containedBy, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ParenthesedSelect parenthesedSelect) {
+    public <S> Void visit(ParenthesedSelect parenthesedSelect, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
@@ -352,7 +365,7 @@ public class JSqlVisitor implements ExpressionVisitor {
     }
 
     @Override
-    public void visit(Column column) {
+    public <S> Void visit(Column column, S data) {
         String columnName = column.getColumnName();
 
         /*
@@ -375,12 +388,13 @@ public class JSqlVisitor implements ExpressionVisitor {
         } else {
             stack.push(new SqlColumn(columnName));
         }
+        return null;
     }
 
 
 
     @Override
-    public void visit(ExpressionList<?> expressionList) {
+    public <S> Void visit(ExpressionList<? extends Expression> expressionList, S data) {
         List<SqlCondition> sqlConditionList = new ArrayList<>();
         for (Expression expr : expressionList) {
             expr.accept(this);
@@ -388,69 +402,66 @@ public class JSqlVisitor implements ExpressionVisitor {
             sqlConditionList.add(sqlCondition);
         }
         stack.push(new SqlConditionList(sqlConditionList));
+        return null;
     }
 
 
-
-
-
-
     @Override
-    public void visit(CaseExpression caseExpression) {
+    public <S> Void visit(CaseExpression caseExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(WhenClause whenClause) {
+    public <S> Void visit(WhenClause whenClause, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ExistsExpression existsExpression) {
+    public <S> Void visit(ExistsExpression existsExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(MemberOfExpression memberOfExpression) {
+    public <S> Void visit(MemberOfExpression memberOfExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AnyComparisonExpression anyComparisonExpression) {
+    public <S> Void visit(AnyComparisonExpression anyComparisonExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Concat concat) {
+    public <S> Void visit(Concat concat, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Matches matches) {
+    public <S> Void visit(Matches matches, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(BitwiseAnd bitwiseAnd) {
+    public <S> Void visit(BitwiseAnd bitwiseAnd, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(BitwiseOr bitwiseOr) {
+    public <S> Void visit(BitwiseOr bitwiseOr, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(BitwiseXor bitwiseXor) {
+    public <S> Void visit(BitwiseXor bitwiseXor, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
@@ -461,42 +472,43 @@ public class JSqlVisitor implements ExpressionVisitor {
      * @param castExpression the casting expression
      */
     @Override
-    public void visit(CastExpression castExpression) {
+    public <S> Void visit(CastExpression castExpression, S data) {
         castExpression.getLeftExpression().accept(this);
+        return null;
     }
 
     @Override
-    public void visit(Modulo modulo) {
+    public <S> Void visit(Modulo modulo, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AnalyticExpression analyticExpression) {
+    public <S> Void visit(AnalyticExpression analyticExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ExtractExpression extractExpression) {
+    public <S> Void visit(ExtractExpression extractExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(IntervalExpression intervalExpression) {
+    public <S> Void visit(IntervalExpression intervalExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(OracleHierarchicalExpression oracleHierarchicalExpression) {
+    public <S> Void visit(OracleHierarchicalExpression oracleHierarchicalExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(RegExpMatchOperator regExpMatchOperator) {
+    public <S> Void visit(RegExpMatchOperator regExpMatchOperator, S data) {
 
         regExpMatchOperator.getLeftExpression().accept(this);
         SqlColumn columnName = (SqlColumn) this.stack.pop();
@@ -530,43 +542,17 @@ public class JSqlVisitor implements ExpressionVisitor {
         } else {
             throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
         }
-
+        return null;
     }
 
     @Override
-    public void visit(JsonExpression jsonExpression) {
+    public <S> Void visit(JsonExpression jsonExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(JsonOperator jsonOperator) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-
-
-    @Override
-    public void visit(UserVariable userVariable) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(NumericBind numericBind) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(KeepExpression keepExpression) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(MySQLGroupConcat mySQLGroupConcat) {
+    public <S> Void visit(JsonOperator jsonOperator, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
@@ -574,175 +560,201 @@ public class JSqlVisitor implements ExpressionVisitor {
 
 
     @Override
-    public void visit(RowConstructor rowConstructor) {
+    public <S> Void visit(UserVariable userVariable, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(RowGetExpression rowGetExpression) {
+    public <S> Void visit(NumericBind numericBind, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(OracleHint oracleHint) {
+    public <S> Void visit(KeepExpression keepExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TimeKeyExpression timeKeyExpression) {
+    public <S> Void visit(MySQLGroupConcat mySQLGroupConcat, S data) {
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+
+
+    @Override
+    public <S> Void visit(RowConstructor<? extends Expression> rowConstructor, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
+    public <S> Void visit(RowGetExpression rowGetExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(NotExpression notExpression) {
+    public <S> Void visit(OracleHint oracleHint, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(NextValExpression nextValExpression) {
+    public <S> Void visit(TimeKeyExpression timeKeyExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(CollateExpression collateExpression) {
+    public <S> Void visit(DateTimeLiteralExpression dateTimeLiteralExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(SimilarToExpression aThis) {
+    public <S> Void visit(NotExpression notExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ArrayExpression aThis) {
+    public <S> Void visit(NextValExpression nextValExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ArrayConstructor aThis) {
+    public <S> Void visit(CollateExpression collateExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(VariableAssignment aThis) {
+    public <S> Void visit(SimilarToExpression aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(XMLSerializeExpr aThis) {
+    public <S> Void visit(ArrayExpression aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TimezoneExpression aThis) {
+    public <S> Void visit(ArrayConstructor aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(JsonAggregateFunction aThis) {
+    public <S> Void visit(VariableAssignment aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(JsonFunction aThis) {
+    public <S> Void visit(XMLSerializeExpr aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(ConnectByRootOperator aThis) {
+    public <S> Void visit(TimezoneExpression aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(OracleNamedFunctionParameter aThis) {
+    public <S> Void visit(JsonAggregateFunction aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AllColumns allColumns) {
+    public <S> Void visit(JsonFunction aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AllTableColumns allTableColumns) {
+    public <S> Void visit(ConnectByRootOperator aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(AllValue allValue) {
+    public <S> Void visit(OracleNamedFunctionParameter aThis, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(IsDistinctExpression isDistinctExpression) {
+    public <S> Void visit(AllColumns allColumns, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(GeometryDistance geometryDistance) {
+    public <S> Void visit(AllTableColumns allTableColumns, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(Select select) {
+    public <S> Void visit(AllValue allValue, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TranscodingFunction transcodingFunction) {
+    public <S> Void visit(IsDistinctExpression isDistinctExpression, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TrimFunction trimFunction) {
+    public <S> Void visit(GeometryDistance geometryDistance, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(RangeExpression rangeExpression) {
+    public <S> Void visit(Select select, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TSQLLeftJoin tsqlLeftJoin) {
+    public <S> Void visit(TranscodingFunction transcodingFunction, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
     @Override
-    public void visit(TSQLRightJoin tsqlRightJoin) {
+    public <S> Void visit(TrimFunction trimFunction, S data) {
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public <S> Void visit(RangeExpression rangeExpression, S data) {
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public <S> Void visit(TSQLLeftJoin tsqlLeftJoin, S data) {
+        // TODO This translation should be implemented
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public <S> Void visit(TSQLRightJoin tsqlRightJoin, S data) {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
