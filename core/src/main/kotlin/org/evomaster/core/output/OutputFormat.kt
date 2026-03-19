@@ -20,8 +20,7 @@ enum class OutputFormat {
     JS_JEST,
     JS_JEST_PLAYWRIGHT,  // Testing new playwright imp
     //CSHARP_XUNIT, //no longer supported, but there is still legacy code not removed
-    PYTHON_UNITTEST,
-    JS_JEST_PLAYWRIGHT
+    PYTHON_UNITTEST
     ;
 
     fun isJava() = this.name.startsWith("java_", true)
@@ -30,13 +29,17 @@ enum class OutputFormat {
 
     fun isJavaScript() = this.name.startsWith("js_", true)
 
+    /**
+     *  Return true if the output format is Playwright.
+     *  Playwright is currently only supported for JavaScript (or TypeScript).
+     */
+    fun isPlaywright() = this.name.endsWith("_playwright", true) // Testing new playwright imp
+
     fun isJavaOrKotlin() = isJava() || isKotlin()
 
     fun isJUnit5() = this.name.endsWith("junit_5", true)
 
     fun isJUnit4() = this.name.endsWith("junit_4", true)
-
-    fun isPlaywright() = this.name.endsWith("_playwright", true) // Testing new playwright imp
 
     fun isJUnit() = this.name.contains("_junit_", true)
 
@@ -44,7 +47,4 @@ enum class OutputFormat {
     fun isCsharp() = this.name.startsWith("csharp",ignoreCase = true)
 
     fun isPython() = this.name.startsWith("python_", true)
-
-    fun isPlaywright() = this.name.startsWith("js_jest_playwright", true)
-
 }
