@@ -623,23 +623,58 @@ object GeneSamplerForTests {
 
         val min = rand.nextInt(0, 2)
 
+        val minSize = rand.choose(listOf(null, min))
+        val maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3)))
+        val printablePairGene = if (minSize == 2) {
+            samplePairGeneWithAtLeastTwoKeyValues(rand) { samplePrintablePairGene(rand) }
+        } else {
+            samplePrintablePairGene(rand)
+        }
+
         return FixedMapGene(
                 name = "rand MapGene",
-                minSize = rand.choose(listOf(null, min)),
-                maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
-                template = samplePrintablePairGene(rand)
+                minSize = minSize,
+                maxSize = maxSize,
+                template = printablePairGene
         )
     }
 
+
+    private fun <T : PairGene<*, *>> samplePairGeneWithAtLeastTwoKeyValues(rand: Randomness, sampler: () -> T): T {
+        return generateSequence { sampler() }
+            .first { genePair ->
+                val keyGene = genePair.first
+
+                // If it cannot change, it cannot have "at least two values"
+                if (!keyGene.isMutable()) return@first false
+
+                // Initialize the first instance and compare to the second instance with forced new value
+                val firstInstance = keyGene.copy().apply { doInitialize(rand) }
+                val secondInstance = firstInstance.copy().apply { randomize(rand, true) }
+
+                !firstInstance.containsSameValueAs(secondInstance)
+            }
+    }
+
     fun sampleFlexibleMapGene(rand: Randomness): FlexibleMapGene<*> {
-
+        // 1. Sample minSize and maxSize
         val min = rand.nextInt(0, 2)
+        val minSize = rand.choose(listOf(null, min))
+        val maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3)))
 
+        // 2. Sample pairGeneTemplate
+        val printableFlexiblePairGene = if (minSize == 2) {
+            samplePairGeneWithAtLeastTwoKeyValues(rand) { samplePrintableFlexiblePairGene(rand) }
+        } else {
+            samplePrintableFlexiblePairGene(rand)
+        }
+
+        // 3. Create FlexibleMapGene
         return FlexibleMapGene(
             name = "rand MapGene",
-            minSize = rand.choose(listOf(null, min)),
-            maxSize = rand.choose(listOf(null, min + rand.nextInt(1, 3))),
-            template = samplePrintableFlexiblePairGene(rand)
+            minSize = minSize,
+            maxSize = maxSize,
+            template = printableFlexiblePairGene
         )
     }
 
