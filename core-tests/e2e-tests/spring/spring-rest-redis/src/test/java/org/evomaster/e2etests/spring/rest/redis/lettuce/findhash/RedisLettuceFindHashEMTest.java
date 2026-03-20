@@ -27,7 +27,7 @@ public class RedisLettuceFindHashEMTest extends RestTestBase {
         runTestHandlingFlakyAndCompilation(
                 "RedisLettuceFindHashEM",
                 "org.foo.spring.rest.redis.RedisLettuceFindHashEM",
-                1000,
+                2000,
                 true,
                 (args) -> {
                     setOption(args, "heuristicsForRedis", "true");
