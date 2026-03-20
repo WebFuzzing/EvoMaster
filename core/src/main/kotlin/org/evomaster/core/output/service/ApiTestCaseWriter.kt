@@ -251,6 +251,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                 //TODO would not this fail on recursive/nested calls???
                 format.isJava() -> ".body(\"${k}isEmpty()\", is(true))"
                 format.isKotlin() -> ".body(\"${k}isEmpty()\", `is`(true))" //'is' is a keyword in Kotlin
+                format.isPlaywright() -> "expect(Object.keys(await $responseVariableName.json()${k}).length).toBe(0);"
                 format.isJavaScript() -> "expect(Object.keys($responseVariableName.body${k}).length).toBe(0);"
                 format.isCsharp() -> "Assert.True($responseVariableName${k}.ToString() == \"{}\");"
                 format.isPython() -> "assert len($responseVariableName.json()${k}) == 0"
@@ -324,6 +325,7 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
             }
             val instruction = when {
                 format.isJavaOrKotlin() -> ".body(\"${fieldPath}\", nullValue())"
+                format.isPlaywright() -> "expect(($field)${if (fieldPath.isEmpty()) "" else if (fieldPath.startsWith("[")) fieldPath else ".$fieldPath"}).toBe(null);"
                 format.isJavaScript() -> "expect(($field)$fieldPath).toBe(null);"
                 format.isCsharp() -> "Assert.True($responseVariableName$fieldPath == null);"
                 format.isPython() -> "assert $responseVariableName.json()$fieldPath is None"
@@ -535,7 +537,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     format.isJavaScript() -> "$responseVariableName.body"
                     else -> ""
                 }
-                "expect(($field)$fieldPath.length).toBe($expectedSize);"
+                if (format.isPlaywright()) {
+                    "expect(await $responseVariableName.json()).toHaveLength($expectedSize);"
+                } else {
+                    "expect(($field)$fieldPath.length).toBe($expectedSize);"
+                }
             }
             format.isCsharp() ->
                 "Assert.True($responseVariableName$fieldPath.Count == $expectedSize);"

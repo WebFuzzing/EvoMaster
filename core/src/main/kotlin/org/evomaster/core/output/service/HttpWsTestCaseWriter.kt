@@ -245,7 +245,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
 
         if (format.isPlaywright() && bodyParam != null) {
-            lines.add("'Content-Type': '${bodyParam.contentType()}',")
+            val contentType = bodyParam.contentType()
+            if (contentType != null) {
+                lines.add("'Content-Type': '$contentType',")
+            }
         }
 
         //headers in specified auth info
@@ -870,7 +873,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         if(!allow.isNullOrBlank()){
             val instruction = when {
                 format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
-                format.isPlaywright() -> "expect($responseVariableName.headers()[\"allow\"]?.includes(\"$allow\")).toBe(true)"
+                format.isPlaywright() -> "expect(await $responseVariableName.headerValue(\"allow\")).toContain(\"$allow\")"
                 format.isJavaScript() -> "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
                 format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
@@ -902,7 +905,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
             val instruction = when {
                 format.isJavaOrKotlin() -> ".contentType(\"$bodyTypeSimplified\")"
-                format.isPlaywright() -> "expect($responseVariableName.headers()[\"content-type\"]?.includes(\"$bodyTypeSimplified\")).toBe(true)"
+                format.isPlaywright() -> "expect(await $responseVariableName.headerValue(\"content-type\")).toContain(\"$bodyTypeSimplified\")"
                 format.isJavaScript() ->
                     "expect($responseVariableName.header[\"content-type\"].startsWith(\"$bodyTypeSimplified\")).toBe(true);"
 
@@ -1022,10 +1025,11 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
         }
 
         val jsonPath = JsonUtils.fromPointerToPath(jsonPointer)
+        val dictAccess = JsonUtils.fromPointerToDictionaryAccess(jsonPointer)
 
         return when {
             format.isPython() -> "str($resVarName.json()${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)})"
-            format.isPlaywright() -> " (await $resVarName.json())${JsonUtils.fromPointerToDictionaryAccess(jsonPointer)}.toString()"
+            format.isPlaywright() -> " ((await $resVarName.json())$dictAccess)?.toString()"
             format.isJavaScript() -> "$resVarName.body.$jsonPath.toString()"
             format.isJavaOrKotlin() -> "$resVarName.extract().body().path$extraTypeInfo(\"$jsonPath\").toString()"
             else -> throw IllegalStateException("Unsupported format $format")

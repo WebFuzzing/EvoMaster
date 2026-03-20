@@ -223,6 +223,8 @@ class RestTestCaseWriter : HttpWsTestCaseWriter {
 
         if (format.isCsharp()) {
             lines.append(".${StringUtils.capitalization(verb)}Async(")
+        } else if (format.isPlaywright()) {
+            lines.add("request.$verb(")
         } else {
             if (verb == "trace" && format.isJavaOrKotlin()) {
                 //currently, RestAssured does not have a trace() method

@@ -115,7 +115,7 @@ object CookieWriter {
         targetVariable: String
     ) {
 
-        if(format.isJavaScript()) {
+        if(format.isJavaScript() && !format.isPlaywright()) {
             callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
@@ -160,7 +160,7 @@ object CookieWriter {
             when {
                 format.isJavaOrKotlin() -> lines.add(".header(\"${header.name}\", \"${header.value}\")")
                 format.isPlaywright() -> {
-                    // Playwright headers for login are not yet supported in this simplified call
+                    // handled in callEndpoint for Playwright
                 }
                 format.isJavaScript() -> lines.add(".set(\"${header.name}\", \"${header.value}\")")
                 format.isPython() -> {
@@ -179,6 +179,10 @@ object CookieWriter {
             needed in used libraries for Python and JS
          */
         if(format.isJavaOrKotlin()) {
+            callEndpoint(lines, k, format, baseUrlOfSut)
+        }
+
+        if (format.isPlaywright()) {
             callEndpoint(lines, k, format, baseUrlOfSut)
         }
 
@@ -201,7 +205,13 @@ object CookieWriter {
         baseUrlOfSut: String
     ) {
         val verb = k.verb.name.lowercase()
-        lines.add(".$verb(")
+
+        if (format.isPlaywright()) {
+            lines.add("request.$verb(")
+        } else {
+            lines.add(".$verb(")
+        }
+
         if (k.externalEndpointURL != null) {
             lines.append("\"${k.externalEndpointURL}\"")
         } else {
@@ -212,6 +222,33 @@ object CookieWriter {
             }
             lines.append("${k.endpoint}\"")
         }
+
+        if (format.isPlaywright()) {
+            lines.append(", {")
+            lines.indented {
+                if (k.headers.isNotEmpty() || k.contentType != null) {
+                    lines.add("headers: {")
+                    lines.indented {
+                        if (k.contentType != null) {
+                            lines.add("'Content-Type': '${k.contentType.defaultValue}',")
+                        }
+                        for (header in k.headers) {
+                            lines.add("'${header.name}': '${header.value}',")
+                        }
+                    }
+                    lines.add("},")
+                }
+                if (k.payload != null) {
+                    if (k.contentType == ContentType.JSON) {
+                        lines.add("data: ${k.payload},")
+                    } else {
+                        lines.add("data: '${k.payload}',")
+                    }
+                }
+            }
+            lines.add("}")
+        }
+
         if (!format.isPython()) {
             lines.append(")")
         }

@@ -52,6 +52,9 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
 
         when {
             format.isJavaOrKotlin() -> lines.add(".contentType(\"application/json\")")
+            format.isPlaywright() -> {
+                // Handled in callEndpoint for Playwright
+            }
             format.isJavaScript() -> lines.add(".set('Content-Type','application/json')")
             format.isPython() -> lines.add("headers[\"content-type\"] = \"application/json\"")
            // format.isCsharp() -> lines.add("Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(\"application/json\"));")
@@ -95,10 +98,14 @@ class GraphQLTestCaseWriter : HttpWsTestCaseWriter() {
     }
 
     override fun handleVerbEndpoint(baseUrlOfSut: String, _call: HttpWsAction, lines: Lines) {
-
         // TODO maybe in future might want to have GET for QUERY types
         val verb = "post"
-        lines.add(".$verb(")
+
+        if (format.isPlaywright()) {
+            lines.add("request.$verb(")
+        } else {
+            lines.add(".$verb(")
+        }
 
         if(config.blackBox){
             /*

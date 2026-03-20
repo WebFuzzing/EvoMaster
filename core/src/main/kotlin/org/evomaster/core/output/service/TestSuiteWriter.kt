@@ -711,13 +711,17 @@ class TestSuiteWriter {
                 lines.add("private lateinit var $driver : RemoteWebDriver")
             }
 
-        } else if (config.outputFormat.isJavaScript()) { // Leave as is for playwright?
+        } else if (config.outputFormat.isJavaScript()) {
 
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("const $controller = new $controllerName();")
                 lines.add("let $baseUrlOfSut;")
             } else {
-                lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
+                if (config.outputFormat.isPlaywright()) {
+                    lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
+                } else {
+                    lines.add("const $baseUrlOfSut = \"${BlackBoxUtils.targetUrl(config, sampler)}\";")
+                }
             }
         } else if (config.outputFormat.isCsharp()) {
             lines.add("private static readonly HttpClient Client = new HttpClient ();")
@@ -775,7 +779,7 @@ class TestSuiteWriter {
         lines.block {
             if (!config.blackBox) {
                 when {
-                    config.outputFormat.isJavaScript() -> { // Add something for playwright white box testing!
+                    config.outputFormat.isJavaScript() -> {
                         addStatement("await $controller.setupForGeneratedTest()", lines)
                         addStatement("$baseUrlOfSut = await $controller.startSut()", lines)
                     }
@@ -801,7 +805,7 @@ class TestSuiteWriter {
 
                 when {
                     format.isJavaOrKotlin() -> addStatement("assertNotNull(baseUrlOfSut)", lines)
-                    format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines) // Add something for playwright white box testing
+                    format.isJavaScript() -> addStatement("expect(baseUrlOfSut).toBeTruthy()", lines)
                 }
             }
 
@@ -931,7 +935,7 @@ class TestSuiteWriter {
         if (!format.isCsharp()) {
             lines.block {
                 when {
-                    format.isJavaScript() -> { // white box part?
+                    format.isJavaScript() -> {
                         addStatement("await $controller.stopSut()", lines)
                     }
                     else -> {
@@ -956,7 +960,7 @@ class TestSuiteWriter {
             }
         }
 
-        if (format.isJavaScript()) { // white box part?
+        if (format.isJavaScript()) {
             lines.append(");")
         }
     }
@@ -988,7 +992,7 @@ class TestSuiteWriter {
 
         lines.block {
 
-            if (format.isJavaScript()) { // white box part?
+            if (format.isJavaScript()) {
                 //TODO add resetDatabase
                 addStatement("await $controller.resetStateOfSUT()", lines)
             } else if (format.isJavaOrKotlin()) {
@@ -1027,7 +1031,7 @@ class TestSuiteWriter {
             }
         }
 
-        if (format.isJavaScript()) { // white box part?
+        if (format.isJavaScript()) {
             lines.append(");")
         }
     }
