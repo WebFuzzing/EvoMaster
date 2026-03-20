@@ -15,9 +15,10 @@
 
 ### Summary
 
-<div style="float: left; margin-right: 15px; margin-bottom: 10px;">
-<img src="docs/img/em_mascot.png" alt="AI-generated mascot, with Bing" width="100" />
-</div>
+[//]: # (<div style="float: left; margin-right: 15px; margin-bottom: 10px;">)
+<img align="left" src="docs/img/em_mascot.png" alt="AI-generated mascot, with Bing" width="100" />
+
+[//]: # (</div>)
 
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is the first (2016) open-source AI-driven tool
 that automatically *generates* system-level test cases
