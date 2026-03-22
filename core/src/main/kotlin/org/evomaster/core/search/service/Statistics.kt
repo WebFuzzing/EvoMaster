@@ -17,6 +17,9 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.javaType
+import kotlin.reflect.typeOf
 
 
 class Statistics : SearchListener {
@@ -529,7 +532,13 @@ class Statistics : SearchListener {
 
         val properties = EMConfig.getConfigurationProperties()
         properties.forEach { p ->
-            list.add(Pair(p.name, p.getter.call(config).toString()))
+            var entry = p.getter.call(config).toString()
+            // should check for "," regardless of type
+            //p.getter.returnType.isSubtypeOf(typeOf<String>())
+            if(entry.contains(",")){
+                entry = "\"$entry\""
+            }
+            list.add(Pair(p.name, entry))
         }
     }
 
@@ -546,22 +555,6 @@ class Statistics : SearchListener {
                 .count()
     }
 
-//    private fun failedOracle(solution: Solution<*>): Int {
-//
-//        //count the distinct number of API paths for which we have a failed oracle
-//        // NOTE: calls with an error code (5xx) are excluded from this count.
-//        return solution.individuals
-//                .flatMap { it.evaluatedMainActions() }
-//                .filter {
-//                    it.result is HttpWsCallResult
-//                            && it.action is RestCallAction
-//                            && !(it.result as HttpWsCallResult).hasErrorCode()
-//                            //&& oracles.activeOracles(it.action as RestCallAction, it.result as HttpWsCallResult).any { or -> or.value }
-//                }
-//                .map { it.action.getName() }
-//                .distinct()
-//                .count()
-//    }
 
     private fun covered2xxEndpoints(solution: Solution<*>) : Int {
 
