@@ -2,6 +2,10 @@
 
 Under development in `master` branch.
 
+### Miscellaneous
+
+- Introduced a mascot for EvoMaster: a red-sorcerer black cat with an arrowhead tail. 
+
 # Version 5.1.0
 
 ### New Features
