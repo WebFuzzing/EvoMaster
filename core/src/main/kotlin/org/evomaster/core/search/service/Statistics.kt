@@ -114,11 +114,16 @@ class Statistics : SearchListener {
         time.addListener(this)
     }
 
+    fun getHeadersAndElementsCSVLines(solution: Solution<*>): kotlin.Pair<String,String>{
+        val data = getData(solution)
+        val headers = data.joinToString(",") { it.header }
+        val elements = data.joinToString(",") { it.element }
+        return kotlin.Pair(headers, elements)
+    }
+
     fun writeStatistics(solution: Solution<*>) {
 
-        val data = getData(solution)
-        val headers = data.map { it.header }.joinToString(",")
-        val elements = data.map { it.element }.joinToString(",")
+        val (headers,elements) = getHeadersAndElementsCSVLines(solution)
 
         val path = Paths.get(config.statisticsFile).toAbsolutePath()
 
