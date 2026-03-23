@@ -6,6 +6,10 @@ Under development in `master` branch.
 
 - Introduced a mascot for EvoMaster: a red-sorcerer black cat with an arrowhead tail. 
 
+### Fixed Bugs
+
+- Fixed issue in generated `statistics.csv`, where entries containing `,` commas are now quoted. 
+
 # Version 5.1.0
 
 ### New Features
