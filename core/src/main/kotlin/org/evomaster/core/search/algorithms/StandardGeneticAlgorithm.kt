@@ -24,7 +24,7 @@ import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
  * - This implementation assumes that crossover and mutation are implemented by the superclass.
  * - The actual fitness evaluation is managed externally via the [WtsEvalIndividual] wrapper.
  */
-open class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
+class StandardGeneticAlgorithm<T> : AbstractGeneticAlgorithm<T>() where T : Individual {
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.StandardGA
