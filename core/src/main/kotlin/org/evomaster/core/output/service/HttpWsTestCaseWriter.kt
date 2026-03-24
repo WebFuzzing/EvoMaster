@@ -83,7 +83,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
     protected fun handlePreCallSetup(call: HttpWsAction, lines: Lines, res: HttpWsCallResult) {
         /*
             This is needed when we need to execute some code before each HTTP call.
-            Cannot be in @Before/Fixture, as it must be done for each HTTP  call , and not
+            Cannot be in @Before/Fixture, as it must be done for each HTTP call , and not
             just once for test
          */
 
@@ -234,7 +234,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             format.isJavaScript() && !format.isPlaywright()-> "set"
             format.isPlaywright() -> "" // headers are handled in a map in the options object
             format.isPython() -> "headers = {}"
-            format.isCsharp() -> "" // handled in handlePreCallSetup
             else -> throw IllegalArgumentException("Not supported format: $format")
         }
 
@@ -274,8 +273,6 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 val escapedHeader = GeneUtils.applyEscapes(x, GeneUtils.EscapeMode.BODY, format)
                 if (format.isPython()) {
                     lines.add("headers[\"${it.name}\"] = \"${escapedHeader}\"")
-                } else if (format.isPlaywright()) {
-                    lines.add("'${it.name}': '${escapedHeader}',")
                 } else {
 
                     lines.add(".$set(\"${it.name}\", \"${escapedHeader}\")")
@@ -477,8 +474,9 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             lines.addStatement("const $varName = performance.now()")
         } else if(format.isJavaScript()) {
             lines.addStatement("$varName = performance.now()")
-        lines.addEmpty(1)
         }
+        lines.addEmpty(1)
+
         return varName
     }
 
@@ -518,7 +516,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPlaywright() -> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
                 format.isJavaScript()-> lines.addStatement("expect($finalVarName).toBeLessThan(${config.sqliBaselineMaxResponseTimeMs})")
                 format.isPython() -> lines.addStatement("assert $finalVarName < ${config.sqliBaselineMaxResponseTimeMs}")
-                else -> { } // This should have some information?
+                else -> {}
             }
         }
     }
@@ -652,10 +650,10 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                             } else {
                                 lines.add("body = $body")
                             }
-                    }
-                    format.isJavaScript() && format.isPlaywright() -> {
-                        lines.add("data: $body,")
-                    }
+                        }
+                        format.isJavaScript() && format.isPlaywright() -> {
+                            lines.add("data: $body,")
+                        }
                         else -> lines.add(".$send($body)")
                     }
                 } else {
@@ -980,6 +978,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
              */
             lines.add(".ok(res => res.status)")
         }
+
 
         if (lines.shouldUseSemicolon()) {
             /*

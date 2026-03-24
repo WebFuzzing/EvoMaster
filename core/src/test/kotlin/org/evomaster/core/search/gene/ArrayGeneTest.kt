@@ -2,12 +2,15 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.gene.collection.ArrayGene
 import org.evomaster.core.search.gene.collection.EnumGene
+import org.evomaster.core.search.gene.numeric.BigIntegerGene
 import org.evomaster.core.search.gene.numeric.IntegerGene
 import org.evomaster.core.search.gene.numeric.LongGene
 import org.evomaster.core.search.gene.string.StringGene
 import org.evomaster.core.search.gene.utils.GeneUtils
+import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -207,4 +210,31 @@ class ArrayGeneTest {
         assertTrue(!xmlOutput.contains("]"), "XML should not contain square brackets")
         assertTrue(!xmlOutput.contains(", "), "XML must not contain commas with spaces")
     }
+
+    @Test
+    fun testDoesExistWithDifferentNumericGeneTypes() {
+        val bigIntegerGeneValue = java.math.BigInteger.valueOf(42L)
+        val bigIntegerGene = BigIntegerGene("bigInt", bigIntegerGeneValue)
+
+        val integerGeneValue = 42
+        val integerGene = IntegerGene("int", integerGeneValue)
+
+        val choiceGene = ChoiceGene("choice", listOf(bigIntegerGene, integerGene))
+
+        val arrayWithChoiceGenes = ArrayGene(
+            "arrayOfChoiceGenes",
+            template = ChoiceGene("template", listOf(bigIntegerGene, integerGene)),
+            elements = mutableListOf(choiceGene)
+        )
+
+        val anotherChoiceGene = ChoiceGene("choice", listOf(bigIntegerGene, integerGene))
+
+        choiceGene.selectActiveGene(0)
+        anotherChoiceGene.selectActiveGene(1)
+
+        assertFalse(arrayWithChoiceGenes.doesExist(anotherChoiceGene))
+
+    }
+
+
 }

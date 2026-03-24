@@ -28,6 +28,8 @@ class SQLiMySQLBodyEMTest : SpringTestBase() {
         ) { args ->
             setOption(args, "security", "true")
             setOption(args, "sqli", "true")
+            //using this test in a paper... need readability
+            setOption(args, "dtoForRequestPayload", "false")
 
             val solution = initAndRun(args)
             assertTrue(solution.individuals.isNotEmpty())

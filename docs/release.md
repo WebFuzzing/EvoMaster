@@ -95,6 +95,7 @@ git push origin v<x.y.z>
 ```
 This will trigger a special build on GitHub Action (see `.github/workflows/release.yml`).
 If everything goes correctly, then after that action is completed the new release should be available on the [release page](https://github.com/WebFuzzing/EvoMaster/releases).
+Also, you should check if the created Docker image is available on [Docker Hub](https://hub.docker.com/r/webfuzzing/evomaster/tags).
 
 In case of problems, will need to remove the created (locally and remotely), before trying again:
 

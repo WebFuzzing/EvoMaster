@@ -1,0 +1,21 @@
+openapi: 3.0.0
+info:
+  title: Minimal API
+  version: 1.0.0
+paths:
+  /api:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                x:
+                  type: string
+                  nullable: true
+              required: []
+      responses:
+        '200':
+          description: OK
