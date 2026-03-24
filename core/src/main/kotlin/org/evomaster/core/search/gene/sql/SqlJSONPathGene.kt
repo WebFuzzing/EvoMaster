@@ -99,7 +99,7 @@ class SqlJSONPathGene(
      */
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is SqlJSONPathGene) {
-            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+            return false
         }
         return this.pathExpression.containsSameValueAs(other.pathExpression)
     }

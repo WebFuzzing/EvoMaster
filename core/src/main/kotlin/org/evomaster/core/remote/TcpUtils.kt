@@ -1,5 +1,6 @@
 package org.evomaster.core.remote
 
+import org.apache.http.NoHttpResponseException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.IOException
@@ -18,6 +19,7 @@ object TcpUtils {
 
     fun isTimeout(e: ProcessingException) = e.cause is SocketTimeoutException
 
+    fun isNoHttpResponse(e: ProcessingException) = e.cause is NoHttpResponseException
 
     /**
      * This one is tricky.

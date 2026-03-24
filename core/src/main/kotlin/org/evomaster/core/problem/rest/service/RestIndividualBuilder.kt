@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.service.sampler.AbstractRestSampler
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EnvironmentAction
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.sql.SqlAction
 import javax.ws.rs.POST
 
 
@@ -29,6 +30,14 @@ class RestIndividualBuilder {
     private lateinit var randomness: Randomness
 
     companion object{
+
+        /**
+         * WARNING: to be used only for tests
+         */
+        fun createIndependentBuilderForTests() : RestIndividualBuilder {
+            //no sampler is instantiated here... so, calls needing it, will fail
+            return RestIndividualBuilder().apply { randomness = Randomness() }
+        }
 
         fun sliceAllCallsInIndividualAfterAction(
             evaluatedIndividual: EvaluatedIndividual<RestIndividual>,
@@ -75,58 +84,79 @@ class RestIndividualBuilder {
 
             return ind
         }
+    }
 
 
-        fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
-            return merge(merge(first, second), third)
-        }
+    fun merge(first: RestIndividual, second: RestIndividual, third: RestIndividual): RestIndividual {
+        return merge(merge(first, second), third)
+    }
 
-        /**
-         * Create a new individual, based on [first] followed by [second].
-         * Initialization actions are properly taken care of.
+    /**
+     * Create a new individual, based on [first] followed by [second].
+     * Initialization actions are properly taken care of,
+     * and repaired if needed (eg, for unique constraints).
+     */
+    fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+
+        val before = first.seeAllActions().size + second.seeAllActions().size
+
+        val base = first.copy() as RestIndividual
+        base.ensureFlattenedStructure()
+        val other = second.copy() as RestIndividual
+        other.ensureFlattenedStructure()
+
+        /*
+            we need to reset local ids in other, to avoid clashes with ids in base.
+            however, need to make sure no chain is broken
          */
-        fun merge(first: RestIndividual, second: RestIndividual): RestIndividual {
+        other.seeAllActions().filterIsInstance<RestCallAction>()
+            .forEach { it.revertToWeakReference() }
+        other.resetLocalIdRecursively()
 
-            val before = first.seeAllActions().size + second.seeAllActions().size
+        //avoid possible taint id conflicts
+        base.seeAllActions().forEach { it.forceNewTaints() }
+        other.seeAllActions().forEach { it.forceNewTaints() }
 
-            val base = first.copy() as RestIndividual
-            base.ensureFlattenedStructure()
-            val other = second.copy() as RestIndividual
-            other.ensureFlattenedStructure()
-
-            /*
-                we need to reset local ids in other, to avoid clashes with ids in base.
-                however, need to make sure no chain is broken
-             */
-            other.seeAllActions().filterIsInstance<RestCallAction>()
-                .forEach { it.revertToWeakReference() }
-            other.resetLocalIdRecursively()
-
-            //avoid possible taint id conflicts
-            base.seeAllActions().forEach { it.forceNewTaints() }
-            other.seeAllActions().forEach { it.forceNewTaints() }
-
-            val duplicates = base.addInitializingActions(other.seeInitializingActions())
-
-            other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
-                base.addMainEnterpriseActionGroup(group)
-            }
-
-            base.resolveAllTempData()
-
-            /*
-                TODO are links properly handled in such a merge???
-                would need assertions here, as well as test cases
-             */
-
-            val after = base.seeAllActions().size
-            //merge shouldn't lose any actions
-            assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
-
-            base.verifyValidity(true)
-
-            return base
+        val thresholdId = base.seeInitializingActions()
+            .filterIsInstance<SqlAction>()
+            .maxOfOrNull { it.insertionId }
+            ?: 0
+        val envOther = other.seeInitializingActions()
+        val minId = envOther
+            .filterIsInstance<SqlAction>()
+            .filter{ ! it.representExistingData}
+            .minOfOrNull { it.insertionId }
+            ?: 0
+        if(minId <= thresholdId){
+            //if so, merging as it is might lead to id clashes.
+            //need to increase by a delta
+            val delta = (thresholdId - minId) + 1
+            envOther.filterIsInstance<SqlAction>()
+                .filter { !it.representExistingData }
+                .forEach { it.shiftIdBy(delta) }
         }
+
+        val duplicates = base.addInitializingActions(envOther)
+
+        other.getFlattenMainEnterpriseActionGroup()!!.forEach { group ->
+            base.addMainEnterpriseActionGroup(group)
+        }
+
+        base.resolveAllTempData()
+        base.repairInitializationActions(randomness)
+
+        /*
+            TODO are links properly handled in such a merge???
+            would need assertions here, as well as test cases
+         */
+
+        val after = base.seeAllActions().size
+        //merge shouldn't lose any actions
+        assert(before == (after+duplicates)) { "$after+$duplicates!=$before" }
+
+        base.verifyValidity(true)
+
+        return base
     }
 
 

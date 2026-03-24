@@ -53,7 +53,7 @@ object SqlWriter {
                         index == 0 && format.isJava() -> "List<InsertionDto> $insertionVar = sql($previousVar)"
                         index == 0 && format.isKotlin() -> "val $insertionVar = sql($previousVar)"
                         else -> ".and()"
-                    } + ".insertInto(\"${evaluatedDbAction.sqlAction.table.name}\", ${evaluatedDbAction.sqlAction.geInsertionId()}L)")
+                    } + ".insertInto(\"${evaluatedDbAction.sqlAction.table.name}\", ${evaluatedDbAction.sqlAction.insertionId}L)")
 
                     if (index == 0) {
                         lines.indent()

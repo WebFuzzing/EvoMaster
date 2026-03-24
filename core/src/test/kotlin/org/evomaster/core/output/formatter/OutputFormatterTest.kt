@@ -116,10 +116,10 @@ class OutputFormatterTest {
         val formatted = OutputFormatter.JSON_FORMATTER.getFormatted(json)
         val expected = """
             {
-              "id": 4821943963580588583,
-              "name": "n4QtYI",
-              "rdId": 937,
-              "value": 859
+              "id" : 4821943963580588583,
+              "name" : "n4QtYI",
+              "rdId" : 937,
+              "value" : 859
             }
         """.trimIndent()
         assertEquals(expected, formatted)
@@ -149,6 +149,20 @@ class OutputFormatterTest {
         val json = "HelloWorld"
         val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
         assertFalse(isValid)
+    }
+
+    @Test
+    fun testInvalidJsonWithAsciiControlCharacter() {
+        val json = " {\"s0\":\"This is a long string\", \"s1\":\"This isa long string\", \"s2\":\"_EM_3149_XYZ_\"} "
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertFalse(isValid)
+    }
+
+    @Test
+    fun testValidJsonWithEscapedAsciiControlCharacter() {
+        val json = " {\"s0\":\"This is a long string\", \"s1\":\"This is\\u001Fa long string\", \"s2\":\"_EM_3149_XYZ_\"} "
+        val isValid = OutputFormatter.JSON_FORMATTER.isValid(json)
+        assertTrue(isValid)
     }
 
 

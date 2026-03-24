@@ -38,25 +38,17 @@ typealias PercentageAsProbability = EMConfig.Probability
  */
 class EMConfig {
 
-    /*
-        Code here does use the JOptSimple library
-
-        https://pholser.github.io/jopt-simple/
-     */
-
     companion object {
 
         private val log = LoggerFactory.getLogger(EMConfig::class.java)
 
         private const val timeRegex = "(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)"
-
         private const val headerRegex = "(.+:.+)|(^$)"
         private const val faultCodeRegex = "(\\s*\\d{3}\\s*(,\\s*\\d{3}\\s*)*)?"
         private const val targetSeparator = ";"
         private const val targetNone = "\\b(None|NONE|none)\\b"
         private const val targetPrefix = "\\b(Class|CLASS|class|Line|LINE|line|Branch|BRANCH|branch|MethodReplacement|METHODREPLACEMENT|method[r|R]eplacement|Success_Call|SUCCESS_CALL|success_[c|C]all|Local|LOCAL|local|PotentialFault|POTENTIALFAULT|potential[f|F]ault)\\b"
         private const val targetExclusionRegex = "^($targetNone|($targetPrefix($targetSeparator$targetPrefix)*))\$"
-
         private const val maxTcpPort = 65535.0
 
         /**
@@ -92,7 +84,7 @@ class EMConfig {
         fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig() // tmp config object used only for validation.
-                                    // actual singleton instance created with Guice
+                                    // the actual singleton instance is created with Guice
 
             val parser = getOptionParser()
 
@@ -169,7 +161,8 @@ class EMConfig {
                 val enumExperimentalValues: String,
                 val enumValidValues: String,
                 val experimental: Boolean,
-                val debug: Boolean
+                val debug: Boolean,
+                val dependsOn: String
         ) {
             override fun toString(): String {
 
@@ -187,12 +180,13 @@ class EMConfig {
                 if (enumExperimentalValues.isNotBlank()) {
                     description += " [Experimental Values: $enumExperimentalValues]."
                 }
+                if(dependsOn.isNotBlank()){
+                    description += " [Depends On: $dependsOn]."
+                }
 
                 if (experimental) {
                     /*
-                    TODO: For some reasons, coloring is not working here.
-                    Could open an issue at:
-                    https://github.com/jopt-simple/jopt-simple
+                    Unfortunately, coloring is not working here.
                     */
                     //description = AnsiColor.inRed("EXPERIMENTAL: $description")
                     description = "EXPERIMENTAL: $description"
@@ -257,13 +251,18 @@ class EMConfig {
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
             val debug = (m.annotations.find { it is Debug } as? Debug)
 
+            val dependsOn = m.annotations.filterIsInstance<DependsOnTrueFor>().map { "${it.otherFieldName}=true" }
+                .plus(m.annotations.filterIsInstance<DependsOnFalseFor>().map { "${it.otherFieldName}=false" })
+                .joinToString(",")
+
             return ConfigDescription(
                     text,
                     constraints,
                     experimentalValues,
                     validValues,
                     experimental != null,
-                    debug != null
+                    debug != null,
+                    dependsOn
             )
         }
 
@@ -315,7 +314,190 @@ class EMConfig {
         handleDeprecated()
 
         handleCreateConfigPathIfMissing(properties)
+
+        val modifiedOptions = modifiedOptions(options, cff)
+
+        checkForExperimentalSettings(modifiedOptions)
+        checkForInternalSettings(modifiedOptions)
+
+        checkDependsOn(modifiedOptions)
     }
+
+    /**
+     * Can only be called on BOOLEAN options.
+     * Calling on something else would be a bug in EM.
+     */
+    private fun isOptionTrue(fieldName: String) : Boolean{
+
+        val field = getConfigurationProperties().find { it.name == fieldName }
+            ?: throw IllegalArgumentException("The property called '$fieldName' does not exist")
+
+        val b = field.call(this).toString()
+        return try{
+            parseBooleanStrict(b)
+        } catch (e: Exception){
+            throw IllegalArgumentException("The property called '$fieldName' does not contain a boolean value.", e)
+        }
+    }
+
+    private fun checkDependsOn(modifiedOptions: Set<String>) {
+
+        val properties = getConfigurationProperties()
+        val allNames = properties.map { it.name }
+
+        properties.forEach { p ->
+            p.annotations.filterIsInstance<DependsOnTrueFor>().forEach { a ->
+                val target = a.otherFieldName
+                if(!allNames.contains(target)){
+                    throw IllegalStateException("Invalid @DependsOnTrueFor definition for ${p.name}." +
+                            " The target '$target' does not exist.")
+                }
+                //has this option been modified manually by the user? if not, there is nothing to check
+                if(modifiedOptions.contains(p.name) && !isOptionTrue(target)){
+                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                            " which depends on '$target' being 'true', which is not currently.")
+                }
+            }
+            p.annotations.filterIsInstance<DependsOnFalseFor>().forEach { a ->
+                val target = a.otherFieldName
+                if(!allNames.contains(target)){
+                    throw IllegalStateException("Invalid @DependsOnFalseFor definition for ${p.name}." +
+                            " The target '$target' does not exist.")
+                }
+                //has this option been modified manually by the user? if not, there is nothing to check
+                if(modifiedOptions.contains(p.name) && isOptionTrue(target)){
+                    throw ConfigProblemException("You are explicitly setting the value of '${p.name}'," +
+                            " which depends on '$target' being 'false', which is not currently.")
+                }
+            }
+        }
+    }
+
+    private fun nameOfImportantSettings() : Set<String>{
+        return  getConfigurationProperties()
+            .filter { it.annotations.find { it is Important } != null }
+            .map { it.name }
+            .toSet()
+    }
+
+    private fun checkForInternalSettings(modifiedOptions: Set<String>){
+
+        val used = getConfigurationProperties()
+            .filter { it.annotations.find { it is Experimental || it is Important} == null }
+            .map { it.name }
+            .filter { it in modifiedOptions }
+
+        if(used.isNotEmpty()){
+            val msg = AnsiColor.inYellow("You are modifying the value of some internal settings." +
+                    " In general, this is not recommended, especially if it is first time you use EvoMaster," +
+                    " unless you are an experienced user." +
+                    " Involved features: [" + used.joinToString(", ") + "]." +
+                    " Especially for beginners, you should only modify the 'important' settings:") +
+                    AnsiColor.inBlue(" [" + nameOfImportantSettings().joinToString(", ") + "].") +
+                    AnsiColor.inYellow(" For more information, see the documentation at:") +
+                    AnsiColor.inBlue(" ${DocumentationLinks.EM_CLI_LINK}")
+
+            LoggingUtil.uniqueUserWarn(msg)
+        }
+    }
+
+
+    private fun checkForExperimentalSettings(modifiedOptions: Set<String>){
+
+        val used = getConfigurationProperties()
+            .filter { it.annotations.find { it is Experimental } != null }
+            .map { it.name }
+            .filter { it in modifiedOptions }
+
+        if(used.isNotEmpty()){
+            val msg = AnsiColor.inYellow("You are modifying the value of some experimental settings." +
+                    " This is not recommended, as those settings might be just for work in progress features, not fully completed." +
+                    " Involved features: [" + used.joinToString(", ")+"].") +
+                    AnsiColor.inYellow(" For more information, see the documentation at:") +
+                    AnsiColor.inBlue(" ${DocumentationLinks.EM_CLI_LINK}")
+            LoggingUtil.uniqueUserWarn(msg)
+        }
+    }
+
+    private fun modifiedOptions(options: OptionSet, cff: ConfigsFromFile?) : Set<String>{
+
+        val detected  = OptionSet::class.java.getDeclaredField("detectedOptions")
+            .apply { setAccessible(true) }
+            .get(options) as Map<String,AbstractOptionSpec<*>>
+
+        val names = detected.filter { it.value !is NonOptionArgumentSpec }.keys
+
+        return if(cff == null) {
+            names.toSet()
+        } else {
+            names.toMutableSet().plus(cff.configs.keys)
+        }
+    }
+
+    private fun updateProperty(options: OptionSet, m: KMutableProperty<*>) {
+        //update value, but only if it was in the specified options.
+        //WARNING: without this check, it would reset to default for fields not in "options"
+        if (!options.has(m.name)) {
+            return
+        }
+
+        val opt = try{
+            options.valueOf(m.name)?.toString()
+        } catch (e: OptionException){
+            throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
+        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
+
+        updateValue(opt, m)
+    }
+
+    private fun updateValue(optionValue: String, m: KMutableProperty<*>) {
+
+        val returnType = m.returnType.javaType as Class<*>
+
+        /*
+                TODO: ugly checks. But not sure yet if can be made better in Kotlin.
+                Could be improved with isSubtypeOf from 1.1?
+                http://stackoverflow.com/questions/41553647/kotlin-isassignablefrom-and-reflection-type-checks
+             */
+        try {
+            if (Integer.TYPE.isAssignableFrom(returnType)) {
+                m.setter.call(this, Integer.parseInt(optionValue))
+
+            } else if (java.lang.Long.TYPE.isAssignableFrom(returnType)) {
+                m.setter.call(this, java.lang.Long.parseLong(optionValue))
+
+            } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
+                m.setter.call(this, java.lang.Double.parseDouble(optionValue))
+
+            } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
+                m.setter.call(this, parseBooleanStrict(optionValue))
+
+            } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
+                m.setter.call(this, optionValue)
+
+            } else if (returnType.isEnum) {
+                val valueOfMethod = returnType.getDeclaredMethod("valueOf",
+                    java.lang.String::class.java)
+                m.setter.call(this, valueOfMethod.invoke(null, optionValue))
+
+            } else {
+                throw IllegalStateException("BUG: cannot handle type $returnType")
+            }
+        } catch (e: Exception) {
+            throw ConfigProblemException("Failed to handle property '${m.name}': ${e.message}")
+        }
+    }
+
+    private fun parseBooleanStrict(s: String?) : Boolean{
+        if(s==null){
+            throw IllegalArgumentException("value is 'null'")
+        }
+        if(s.equals("true", true)) return true
+        if(s.equals("false", true)) return false
+        throw IllegalArgumentException("Invalid boolean value: $s")
+    }
+
+
 
     private fun handleCreateConfigPathIfMissing(properties: List<KMutableProperty<*>>) {
         if (createConfigPathIfMissing && !Path(configPath).exists() && configPath == defaultConfigPath) {
@@ -452,7 +634,6 @@ class EMConfig {
             throw ConfigProblemException("'bbTargetUrl' should be set only in black-box mode")
         }
 
-        // ONUR, this line is changed since it did not compile in the previous case.
         if (!endpointFocus.isNullOrBlank() && !endpointPrefix.isNullOrBlank()) {
             throw ConfigProblemException("both 'endpointFocus' and 'endpointPrefix' are set")
         }
@@ -595,21 +776,6 @@ class EMConfig {
             throw ConfigProblemException("The use of 'security' requires 'minimize'")
         }
 
-        if(!security && ssrf) {
-            LoggingUtil.uniqueUserWarn("The use of 'ssrf' requires 'security'. SSRF analyses are hence disabled.")
-           //throw ConfigProblemException("The use of 'ssrf' requires 'security'")
-        }
-
-        if(!security && xss) {
-            LoggingUtil.uniqueUserWarn("The use of 'xss' requires 'security'. XSS analyses are hence disabled.")
-            //throw ConfigProblemException("The use of 'xss' requires 'security'")
-        }
-
-        if(!security && sqli) {
-            LoggingUtil.uniqueUserWarn("The use of 'sqli' requires 'security'. SQLi analyses are hence disabled.")
-            //throw ConfigProblemException("The use of 'sqli' requires 'security'")
-        }
-
         if (ssrf &&
             vulnerableInputClassificationStrategy == VulnerableInputClassificationStrategy.LLM &&
             !languageModelConnector) {
@@ -640,16 +806,18 @@ class EMConfig {
         if(dockerLocalhost && !runningInDocker){
             throw ConfigProblemException("Specifying 'dockerLocalhost' only makes sense when running EvoMaster inside Docker.")
         }
-        /*
-            FIXME: we shouldn't crash if a user put createTests to false and does not update all setting depending on it,
-            like writeWFCReport.
-            TODO however, we should issue some WARN message.
-            ie. we should have a distinction between @Requires (which should crash) and something like
-            @DependOn that does not lead to a crash, but just a warning
-         */
-//        if(writeWFCReport && !createTests){
-//            throw ConfigProblemException("Cannot create a WFC Report if tests are not generated (i.e., 'createTests' is false)")
-//        }
+
+        if(useEnvVarsForPathInTests){
+            if(problemType != ProblemType.DEFAULT && problemType != ProblemType.REST)
+                throw ConfigProblemException("'useEnvVarsForPathInTests' can be applied only for REST problem.")
+
+            if (jdkEnvVarName.isEmpty())
+                throw ConfigProblemException("'jdkEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutDistEnvVarName.isEmpty())
+                throw ConfigProblemException("'sutDistEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+            if (sutJarEnvVarName.isEmpty())
+                throw ConfigProblemException("'sutJarEnvVarName' must be specified if 'useEnvVarsForPathInTests' is enabled.")
+        }
     }
 
     private fun checkPropertyConstraints(m: KMutableProperty<*>) {
@@ -744,7 +912,7 @@ class EMConfig {
 
                 if (Files.exists(path) && !Files.isWritable(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that already" +
-                            " exists, but that cannot be written/replace to: $path")
+                            " exists, but that cannot be written/replaced to: $path")
                 }
                 if (Files.exists(path) && Files.isDirectory(path)) {
                     throw ConfigProblemException("Parameter '${m.name}' refers to a file that is instead an" +
@@ -752,78 +920,40 @@ class EMConfig {
                 }
             }
         }
-    }
 
-    private fun updateProperty(options: OptionSet, m: KMutableProperty<*>) {
-        //update value, but only if it was in the specified options.
-        //WARNING: without this check, it would reset to default for fields not in "options"
-        if (!options.has(m.name)) {
-            return
-        }
+        m.annotations.find { it is ExistingPath }?.also{
+            val ep = it as ExistingPath
+            if(! (ep.canBeBlank && parameterValue.isBlank())){
+                val path = try {
+                    Paths.get(parameterValue).toAbsolutePath()
+                } catch (e: InvalidPathException) {
+                    throw ConfigProblemException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+                }
 
-        val opt = try{
-            options.valueOf(m.name)?.toString()
-        } catch (e: OptionException){
-          throw  ConfigProblemException("Error in parsing configuration option '${m.name}'. Library message: ${e.message}")
-        } ?: throw ConfigProblemException("Value not found for property '${m.name}'")
+                if (!Files.exists(path)){
+                    throw ConfigProblemException("File/folder for '${m.name}' does not exist: $path")
+                }
 
-        updateValue(opt, m)
-    }
-
-    private fun updateValue(optionValue: String, m: KMutableProperty<*>) {
-
-        val returnType = m.returnType.javaType as Class<*>
-
-        /*
-                TODO: ugly checks. But not sure yet if can be made better in Kotlin.
-                Could be improved with isSubtypeOf from 1.1?
-                http://stackoverflow.com/questions/41553647/kotlin-isassignablefrom-and-reflection-type-checks
-             */
-        try {
-            if (Integer.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, Integer.parseInt(optionValue))
-
-            } else if (java.lang.Long.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Long.parseLong(optionValue))
-
-            } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, java.lang.Double.parseDouble(optionValue))
-
-            } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
-                m.setter.call(this, parseBooleanStrict(optionValue))
-
-            } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
-                m.setter.call(this, optionValue)
-
-            } else if (returnType.isEnum) {
-                val valueOfMethod = returnType.getDeclaredMethod("valueOf",
-                        java.lang.String::class.java)
-                m.setter.call(this, valueOfMethod.invoke(null, optionValue))
-
-            } else {
-                throw IllegalStateException("BUG: cannot handle type $returnType")
+                if( ep.shouldBeWritable && !Files.isWritable(path)){
+                    throw ConfigProblemException("Parameter '${m.name}' refers to a file that" +
+                            " exists, but it cannot be written/replaced to: $path")
+                }
             }
-        } catch (e: Exception) {
-            throw ConfigProblemException("Failed to handle property '${m.name}': ${e.message}")
         }
     }
 
-    private fun parseBooleanStrict(s: String?) : Boolean{
-        if(s==null){
-            throw IllegalArgumentException("value is 'null'")
-        }
-        if(s.equals("true", true)) return true
-        if(s.equals("false", true)) return false
-        throw IllegalArgumentException("Invalid boolean value: $s")
-    }
+
+
 
     fun shouldGenerateSqlData() = isUsingAdvancedTechniques() && (generateSqlDataWithDSE || generateSqlDataWithSearch)
 
     fun shouldGenerateMongoData() = generateMongoData
 
-    fun dtoSupportedForPayload() = problemType == ProblemType.REST && dtoForRequestPayload && outputFormat.isJavaOrKotlin()
+    fun dtoSupportedForPayload() =  dtoForRequestPayload && couldSupportDtoForPayload()
 
-    fun experimentalFeatures(): List<String> {
+    fun couldSupportDtoForPayload() = problemType == ProblemType.REST && outputFormat.isJavaOrKotlin()
+
+    fun activatedExperimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
                 .filter { it.annotations.find { it is Experimental } != null }
@@ -867,6 +997,28 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Cfg(val description: String)
+
+    /**
+     * If this property is set (eg, 'true' for boolean, non-null value or non-empty string),
+     * then the [otherFieldName] should be 'true'.
+     * If it is not, then this property will have no impact.
+     * Deactivating [otherFieldName] should not lead to a configuration failure, especially
+     * if the default of this property is a boolean 'true'.
+     * However, if user explicitly set this property, and the rely-on relation does not hold,
+     * then it is a configuration failure.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class DependsOnTrueFor(val otherFieldName: String)
+
+    /**
+     * Same as for [DependsOnTrueFor], but in this case the [otherFieldName] is supposed to a have 'false' value.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class DependsOnFalseFor(val otherFieldName: String)
+
+
 
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
@@ -921,7 +1073,7 @@ class EMConfig {
 
 
     /**
-     * This represent one of the main properties to set in EvoMaster.
+     * This represents one of the main properties to set in EvoMaster.
      * Those are the ones most likely going to be set by practitioners.
      * Note: most of the other properties are mainly for experiments
      */
@@ -942,6 +1094,14 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class FilePath(val canBeBlank: Boolean = false)
+
+    /**
+     *  Either a file or a folder, that MUST already exist and can be read.
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class ExistingPath(val canBeBlank: Boolean = false, val shouldBeWritable: Boolean = false)
+
 
 //------------------------------------------------------------------------
 
@@ -1125,6 +1285,11 @@ class EMConfig {
             " If no tag is specified here, then such filter is not applied.")
     var endpointTagFilter: String? = null
 
+    @Important(5.4)
+    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
+            "Only available for JVM languages")
+    var dtoForRequestPayload = false
+
     @Important(6.0)
     @Cfg("Host name or IP address of where the SUT EvoMaster Controller Driver is listening on." +
             " This option is only needed for white-box testing.")
@@ -1144,6 +1309,15 @@ class EMConfig {
     @Cfg("If specified, override the OpenAPI URL location given by the EvoMaster Driver." +
         " This option is only needed for white-box testing.")
     var overrideOpenAPIUrl = ""
+
+    @Important(8.0)
+    @Cfg("Specify the maximum number of tests to be generated in one test suite." +
+            " If the number of total generated tests is above this threshold, then more than one test suite file will be generated," +
+            " each one having a different index value in their name, to distinguish them." +
+            " Note that a negative number here means that no limit per test suite is applied, and only a single test suite" +
+            " file per type is generated.")
+    var maxTestsPerTestSuite = 200
+
 
     //-------- other options -------------
 
@@ -1220,10 +1394,6 @@ class EMConfig {
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
     var testSuiteSplitType = TestSuiteSplitType.FAULTS
 
-    @Experimental
-    @Cfg("Specify the maximum number of tests to be generated in one test suite. " +
-            "Note that a negative number presents no limit per test suite")
-    var maxTestsPerTestSuite = -1
 
     @Experimental
     @Deprecated("Temporarily removed, due to oracle refactoring. It might come back in future in a different form")
@@ -1389,7 +1559,7 @@ class EMConfig {
     @Cfg("Number of training iterations required to update classifier parameters. " +
                 "For example, in the Gaussian model this affects mean and variance updates. " +
                 "For neural network (NN) models, the warm-up should typically be larger than 1000.")
-    var aiResponseClassifierWarmup : Int = 10
+    var aiResponseClassifierWarmup : Int = 100
 
 
     enum class EncoderType {
@@ -1450,15 +1620,26 @@ class EMConfig {
 
     @Experimental
     @Cfg("Determines which metric-tracking strategy is used by the AI response classifier.")
-    var aIClassificationMetrics = AIClassificationMetrics.TIME_WINDOW
+    var aIClassificationMetrics = AIClassificationMetrics.FULL_HISTORY
 
     @Experimental
     @Cfg("Determines whether the AI response classifier skips model updates when the response " +
-            "indicates a server-side error with status code 500.")
-    var skipAIModelUpdateWhenResponseIs500 = false
+            "indicates a server-side error with status code 5xx.")
+    var skipAIModelUpdateWhenResponseIs5xx = false
+
+    @Experimental
+    @Cfg("Determines whether the AI response classifier skips model updates " +
+            "when the response is not 2xx or 400.")
+    var skipAIModelUpdateWhenResponseIsNot2xxOr400 = false
+
+    @Experimental
+    @Cfg("Minimum confidence threshold required for the AI response classifier to decide" +
+            "whether to send a request as-is or attempt a repair.")
+    var aIResponseClassifierWeaknessThreshold = 0.4
 
     @Cfg("Output a JSON file representing statistics of the fuzzing session, written in the WFC Report format." +
             " This also includes a index.html web application to visualize such data.")
+    @DependsOnTrueFor("createTests")
     var writeWFCReport = true
 
     @Cfg("If creating a WFC Report as output, specify if should not generate the index.html web app, i.e., only" +
@@ -1625,37 +1806,52 @@ class EMConfig {
     var enableOptimizedTestSize = true
 
     @Cfg("Tracking of SQL commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForSQL = true
 
     @Experimental
     @Cfg("If using SQL heuristics, enable more advanced version")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForSQLAdvanced = false
 
     @Cfg("Tracking of Mongo commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
     var heuristicsForMongo = true
 
+    @Experimental
+    @Cfg("Tracking of Redis commands to improve test generation")
+    @DependsOnFalseFor("blackBox")
+    var heuristicsForRedis = false
+
     @Cfg("Enable extracting SQL execution info")
+    @DependsOnFalseFor("blackBox")
     var extractSqlExecutionInfo = true
 
     @Cfg("Enable extracting Mongo execution info")
+    @DependsOnFalseFor("blackBox")
     var extractMongoExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
+    @DependsOnFalseFor("blackBox")
     var generateSqlDataWithDSE = false
 
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
+    @DependsOnFalseFor("blackBox")
     var generateSqlDataWithSearch = true
 
     @Cfg("Enable EvoMaster to generate Mongo data with direct accesses to the database")
+    @DependsOnFalseFor("blackBox")
     var generateMongoData = true
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
+    @DependsOnFalseFor("blackBox")
     var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Force filling data of all columns when inserting new row, instead of only minimal required set.")
+    @DependsOnFalseFor("blackBox")
     var forceSqlAllColumnInsertion = true
 
 
@@ -1794,6 +1990,12 @@ class EMConfig {
             " on the JVM.")
     @Experimental
     var instrumentMR_OPENSEARCH = false
+
+    @Cfg("Execute instrumentation for method replace with category REDIS." +
+            " Note: this applies only for languages in which instrumentation is applied at runtime, like Java/Kotlin" +
+            " on the JVM.")
+    @Experimental
+    var instrumentMR_REDIS = false
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
@@ -2483,6 +2685,31 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Specify whether to detect flakiness and handle the flakiness in assertions during post handling of fuzzing. " +
+            "Note that flakiness is now supported only for fuzzing REST APIs")
+    var handleFlakiness = false
+
+    @Experimental
+    @Cfg("Use environment variables to define the paths required by External Drivers. " +
+            "This is necessary when the generated tests are executed on the different machine. " +
+            "Note that this setting only affects the generated test cases.")
+    var useEnvVarsForPathInTests = false
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the JDK installation path. " +
+            "Note that the executable path will be resolved by appending 'bin/java'.")
+    var jdkEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specify name of the environment variable that provides the the base distribution directory of the " +
+            "SUT, e.g., 'dist' directory of WFD.")
+    var sutDistEnvVarName = ""
+
+    @Experimental
+    @Cfg("Specifies the name of the SUT JAR file that will be used together with `sutDistEnvVarName` to resolve the full SUT JAR path.")
+    var sutJarEnvVarName = ""
+
+    @Experimental
     @Cfg("Specify a method to select the first external service spoof IP address.")
     var externalServiceIPSelectionStrategy = ExternalServiceIPSelectionStrategy.NONE
 
@@ -2618,30 +2845,35 @@ class EMConfig {
     @Cfg("Apply a security testing phase after functional test cases have been generated.")
     var security = true
 
+
     @Experimental
     @Cfg("To apply SSRF detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var ssrf = false
 
     @Experimental
     @Cfg("To apply XSS detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var xss = false
 
     @Experimental
     @Cfg("To apply SQLi detection as part of security testing.")
+    @DependsOnTrueFor("security")
     var sqli = false
 
     @Experimental
     @Cfg("Injected sleep duration (in seconds) used inside the malicious payload to detect time-based vulnerabilities.")
-    var sqliInjectedSleepDurationMs = 5500
+    @DependsOnTrueFor("sqli")
+    var sqliInjectedSleepDurationMs = 5000
 
     @Experimental
     @Cfg("Maximum allowed baseline response time (in milliseconds) before the malicious payload is applied.")
+    @DependsOnTrueFor("sqli")
     var sqliBaselineMaxResponseTimeMs = 2000
-
 
     @Regex(faultCodeRegex)
     @Cfg("Disable oracles. Provide a comma-separated list of codes to disable. " +
-                "By default, all oracles are enabled."
+                "By default, all oracles are enabled. Codes are based on WFC (Web Fuzzing Commons)."
     )
     var disabledOracleCodes = ""
 
@@ -2845,10 +3077,7 @@ class EMConfig {
     @Cfg("1+(λ,λ) GA: number of offspring (λ) per generation")
     var onePlusLambdaLambdaOffspringSize: Int = 4
 
-    @Experimental
-    @Cfg("In REST APIs, when request Content-Type is JSON, POJOs are used instead of raw JSON string. " +
-            "Only available for JVM languages")
-    var dtoForRequestPayload = false
+
 
     @Cfg("Override the value of externalEndpointURL in auth configurations." +
             " This is useful when the auth server is running locally on an ephemeral port, or when several instances" +
@@ -2858,6 +3087,32 @@ class EMConfig {
             " path element of the URL will not change).")
     var overrideAuthExternalEndpointURL : String? = null
 
+    @Experimental
+    @ExistingPath(true,false)
+    @Cfg("Specify an OAI Overlay file path, or a folder containing those." +
+            " In this latter case, Overlay files will be searched recursively in the nested folder, matching" +
+            " a given list of configurable suffixes." +
+            " Each Overlay will be applied to the target OpenAPI schema." +
+            " If more than one Overlay file is applied, no specific ordering of transformations is enforced.")
+    var overlay = ""
+
+    @Experimental
+    @Cfg("Comma ',' separated list of file name suffixes." +
+            " When scanning a folder for OAI Overlay files, any file with name matching any one of these" +
+            " suffixes will be loaded and applied." +
+            " For example, '.json' could be used to match all JSON files." +
+            " If the folder contains also other types of files with same extension, you might need to define" +
+            " some naming convention, and then use suffixes based on it, e.g., '-overlay.yaml' to match" +
+            " all YAML files whose name ends in 'overlay', like 'example-overlay.yaml'.")
+    var overlayFileSuffixes = ".json,.yaml,.yml"
+
+    @Experimental
+    @Cfg("When applying Overlay transformations, by default EvoMaster will crash immediately" +
+            " if there is any issue with the transformations, e.g., if some transformations are not applied" +
+            " because the JSON Path selectors found no applicable node in the OpenAPI schema." +
+            " This option can be used to override such behavior, and let the fuzzing go on without" +
+            " applying any overlay.")
+    var overlayLenient = false
 
     fun getProbabilityUseDataPool() : Double{
         return if(blackBox){
@@ -2913,6 +3168,7 @@ class EMConfig {
         if (instrumentMR_NET) categories.add(ReplacementCategory.NET.toString())
         if (instrumentMR_MONGO) categories.add(ReplacementCategory.MONGO.toString())
         if (instrumentMR_OPENSEARCH) categories.add(ReplacementCategory.OPENSEARCH.toString())
+        if (instrumentMR_REDIS) categories.add(ReplacementCategory.REDIS.toString())
         return categories.joinToString(",")
     }
 

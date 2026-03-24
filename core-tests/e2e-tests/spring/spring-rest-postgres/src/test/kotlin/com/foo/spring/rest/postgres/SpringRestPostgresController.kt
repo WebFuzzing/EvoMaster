@@ -29,7 +29,7 @@ abstract class SpringRestPostgresController(
             .apply{withEnv("POSTGRES_HOST_AUTH_METHOD","trust")}
 
 
-    private var sqlConnection: Connection? = null
+    var sqlConnection: Connection? = null
 
 
     init {

@@ -87,6 +87,10 @@ class UriGene(name: String,
         return gene.unsafeCopyValueFrom(other)
     }
 
+    @Deprecated("Do not call directly outside this package. Call setFromStringValue")
+    override fun unsafeSetFromStringValue(value: String): Boolean {
+        return gene.unsafeSetFromStringValue(value)
+    }
 
     override fun customShouldApplyShallowMutation(
         randomness: Randomness,

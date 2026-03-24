@@ -355,7 +355,7 @@ open class GraphQLFitness : HttpWsFitness<GraphQLIndividual>() {
             }
         } catch (e: Exception) {
 
-            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
+            if (e is ProcessingException && (TcpUtils.isTimeout(e))) {
                 gqlcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false

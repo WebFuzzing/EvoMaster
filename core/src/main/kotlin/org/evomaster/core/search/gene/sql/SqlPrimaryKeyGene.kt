@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.enterprise.EnterpriseIndividual
 import org.evomaster.core.search.gene.root.CompositeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.impactinfocollection.sql.SqlPrimaryKeyGeneImpact
@@ -10,6 +11,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.genemutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.genemutation.SubsetGeneMutationSelectionStrategy
+import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.schema.TableId
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -26,12 +28,18 @@ class SqlPrimaryKeyGene(name: String,
                          * Important for the Foreign Keys referencing it.
                          * Cannot be negative
                          */
-                        val uniqueId: Long
+                        uniqueId: Long
 ) : SqlWrapperGene, WrapperGene, CompositeGene(name, mutableListOf(gene)) {
 
     @Deprecated("Rather use the one forcing TableId")
     constructor(name: String, tableName: String, gene: Gene, uniqueId: Long) : this(name,TableId(tableName),gene, uniqueId)
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
+    }
+
+    var uniqueId: Long = uniqueId
+        private set
 
     init {
         if (uniqueId < 0) {
@@ -39,8 +47,21 @@ class SqlPrimaryKeyGene(name: String,
         }
     }
 
-    companion object{
-        private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
+    fun shiftIdBy(delta: Long){
+        if(delta <= 0){
+            throw IllegalArgumentException("Invalid delta: $delta")
+        }
+
+        //update all FKs pointing to this one
+        val ind = getRoot() as EnterpriseIndividual
+        ind.seeSqlDbActions()
+            .flatMap { it.seeAllGenes() }
+            .filterIsInstance<SqlForeignKeyGene>()
+            .filter{it.isBound() && it.uniqueIdOfPrimaryKey == uniqueId}
+            .forEach { it.uniqueIdOfPrimaryKey += delta }
+        // as the ids of existing data is never modified, we shall not change the links to them
+
+        uniqueId += delta
     }
 
     override fun checkForLocallyValidIgnoringChildren() : Boolean{
@@ -133,5 +154,19 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun getLeafGene(): Gene{
         return gene.getLeafGene()
+    }
+
+    override fun checkForGloballyValid(): Boolean {
+
+        val action = getFirstParent { it is SqlAction } as SqlAction?
+        //this would mean is not mounted
+            ?: return false
+
+        if (action.insertionId != uniqueId) {
+            //the two must always be the same
+            return false
+        }
+
+        return true
     }
 }

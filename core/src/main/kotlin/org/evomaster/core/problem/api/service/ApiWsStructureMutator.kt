@@ -399,7 +399,6 @@ abstract class ApiWsStructureMutator : StructureMutator() {
     }
 
     private fun <T : ApiWsIndividual> handleDSE(ind: T, sampler: ApiWsSampler<T>, failedWhereQueries: List<String>): MutableList<List<SqlAction>> {
-        /* TODO: DSE should be plugged in here */
         val schemaDto = sampler.sqlInsertBuilder?.schemaDto
             ?: throw IllegalStateException("No DB schema is available")
 

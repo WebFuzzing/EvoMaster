@@ -19,10 +19,10 @@ import org.evomaster.core.search.service.Randomness
  */
 abstract class AbstractProbabilistic400EndpointModel(
     val endpoint: Endpoint,
-    var warmup: Int = 10,
+    var warmup: Int,
     var dimension: Int? = null,
-    val encoderType: EMConfig.EncoderType = EMConfig.EncoderType.NORMAL,
-    val metricType: EMConfig.AIClassificationMetrics = EMConfig.AIClassificationMetrics.TIME_WINDOW,
+    val encoderType: EMConfig.EncoderType,
+    val metricType: EMConfig.AIClassificationMetrics,
     val randomness: Randomness
 ) : AIModel {
 

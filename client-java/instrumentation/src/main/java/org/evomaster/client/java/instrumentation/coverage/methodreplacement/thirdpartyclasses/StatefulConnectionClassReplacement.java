@@ -72,13 +72,6 @@ public class StatefulConnectionClassReplacement extends ThirdPartyMethodReplacem
         }
     }
 
-    private static String stripKey(String token) {
-        if (token != null && token.startsWith("key<") && token.endsWith(">")) {
-            return token.substring(4, token.length() - 1);
-        }
-        return token;
-    }
-
     private static void addRedisCommand(RedisCommand.RedisCommandType type, String[] args, long executionTime) {
         RedisCommand cmd = new RedisCommand(
                 type,

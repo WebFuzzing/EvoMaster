@@ -11,6 +11,7 @@ import org.evomaster.core.output.auth.CookieWriter
 import org.evomaster.core.output.auth.TokenWriter
 import org.evomaster.core.output.dto.DtoCall
 import org.evomaster.core.output.dto.GeneToDto
+import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.enterprise.EnterpriseActionGroup
 import org.evomaster.core.problem.externalservice.httpws.HttpExternalServiceAction
 import org.evomaster.core.problem.httpws.HttpWsAction
@@ -27,6 +28,7 @@ import org.evomaster.core.search.action.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.collection.ArrayGene
+import org.evomaster.core.search.gene.collection.FixedMapGene
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.search.gene.wrapper.ChoiceGene
 import org.slf4j.LoggerFactory
@@ -123,8 +125,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
     private fun writeDto(call: HttpWsAction, lines: Lines): String {
         val bodyParam = call.parameters.find { p -> p is BodyParam } as BodyParam?
-        if (bodyParam != null && bodyParam.isJson()) {
-
+        if (bodyParam != null && bodyParam.isJson() && payloadIsValidJson(bodyParam)) {
             val primaryGene = bodyParam.primaryGene()
             val choiceGene = primaryGene.getWrappedGene(ChoiceGene::class.java)
             val actionName = call.getName()
@@ -138,13 +139,22 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 }
             } else {
                 val leafGene = primaryGene.getLeafGene()
-                if (leafGene is ObjectGene || leafGene is ArrayGene<*>) {
+                if (leafGene is ObjectGene || leafGene is ArrayGene<*> || leafGene is FixedMapGene<*,*>) {
                     return generateDtoCall(leafGene, actionName, lines).varName
                 }
             }
 
         }
         return ""
+    }
+
+    /*
+     * Control characters break JSON and transform it into an invalid payload. If there's any invalid character
+     * then we'll avoid using DTOs and have the payload in the test case be represented by the raw JSON string.
+     */
+    private fun payloadIsValidJson(bodyParam: BodyParam): Boolean {
+        val json = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
+        return OutputFormatter.JSON_FORMATTER.isValid(json)
     }
 
     private fun generateDtoCall(gene: Gene, actionName: String, lines: Lines): DtoCall {
@@ -294,7 +304,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         when {
             format.isJavaScript() -> {
-                lines.add("expect($responseVariableName.status).toBe($code);")
+                val statusAssert = "expect($responseVariableName.status).toBe($code);"
+                if (res.getFlakyStatusCode() == null){
+                    lines.add(statusAssert)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                    lines.addSingleCommentLine(statusAssert)
+                }
             }
 
             format.isCsharp() -> {
@@ -302,7 +318,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             }
 
             format.isPython() -> {
-                lines.add("assert $responseVariableName.status_code == $code")
+                val statusAssert = "assert $responseVariableName.status_code == $code"
+                if (res.getFlakyStatusCode() == null){
+                    lines.add(statusAssert)
+                }else{
+                    lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                    lines.addSingleCommentLine(statusAssert)
+                }
             }
 
             else -> {
@@ -557,29 +579,32 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             } else if (bodyParam.isTextPlain()) {
 
                 val body = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
-                if (body != "\"\"") {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
-                        }
-                        format.isPython() -> {
-                            if (body.trim().isNullOrBlank()) {
-                                lines.add("body = \"\"")
-                            } else {
-                                lines.add("body = $body")
+                // handle body only if it is not black
+                if (body.isNotBlank()){
+                    if (body != "\"\"") {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"$body\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
                             }
+                            format.isPython() -> {
+                                if (body.trim().isNullOrBlank()) {
+                                    lines.add("body = \"\"")
+                                } else {
+                                    lines.add("body = $body")
+                                }
+                            }
+                            else -> lines.add(".$send($body)")
                         }
-                        else -> lines.add(".$send($body)")
-                    }
-                } else {
-                    when {
-                        format.isCsharp() -> {
-                            lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                    } else {
+                        when {
+                            format.isCsharp() -> {
+                                lines.append("new StringContent(\"${"""\"\""""}\", Encoding.UTF8, \"${bodyParam.contentType()}\")")
+                            }
+                            format.isPython() -> {
+                                lines.add("body = \"\"")
+                            }
+                            else -> lines.add(".$send(\"${"""\"\""""}\")")
                         }
-                        format.isPython() -> {
-                            lines.add("body = \"\"")
-                        }
-                        else -> lines.add(".$send(\"${"""\"\""""}\")")
                     }
                 }
 
@@ -601,8 +626,19 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     }
                     else -> lines.add(".$send(\"$body\")")
                 }
+            } else if (bodyParam.isXml()) {
+
+                val xml = bodyParam.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML, targetFormat = format)
+                // Escape quotes for string literal in generated code
+                val escapedXml = xml.replace("\\", "\\\\").replace("\"", "\\\"")
+
+                when {
+                    format.isPython() -> {
+                        lines.add("body = \"$escapedXml\"")
+                    }
+                    else -> lines.add(".$send(\"$escapedXml\")")
+                }
             } else {
-                //TODO XML
                 LoggingUtil.uniqueWarn(log, "Unhandled type for body payload: " + bodyParam.contentType())
             }
         }
@@ -697,7 +733,12 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             when {
                 format.isJavaOrKotlin() -> {
                     lines.add(".then()")
-                    lines.add(".statusCode($code)")
+                    if (res.getFlakyStatusCode() == null) {
+                        lines.add(".statusCode($code)")
+                    } else {
+                        lines.addSingleCommentLine(flakyInfo("Status Code", code.toString(), res.getFlakyStatusCode().toString()))
+                        lines.addSingleCommentLine(".statusCode($code)")
+                    }
                 }
 
                 else -> throw IllegalStateException("No assertion in calls for format: $format")
@@ -708,14 +749,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
             if (config.enableBasicAssertions && !call.shouldSkipAssertionsOnResponseBody()) {
                 handleResponseAssertions(lines, res, null)
             }
-
         }
-
-//        else if (partialOracles.generatesExpectation(call, res)
-//                && format.isJavaOrKotlin()){
-//            //FIXME what is this for???
-//            lines.add(".then()")
-//        }
     }
 
     //----------------------------------------------------------------------------------------
@@ -737,6 +771,20 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
 
         if (isInCall) {
             lines.add(".assertThat()")
+        }
+
+        val allow = res.getAllow()
+        if(!allow.isNullOrBlank()){
+            val instruction = when {
+                format.isJavaOrKotlin() -> ".header(\"Allow\", \"$allow\")"
+                format.isJavaScript() ->
+                    "expect($responseVariableName.header[\"allow\"].startsWith(\"$allow\")).toBe(true);"
+                format.isPython() -> "assert \"$allow\" in $responseVariableName.headers[\"allow\"]"
+                else -> throw IllegalStateException("Unsupported format $format")
+            }
+            //lines.add(instruction)
+            //TODO: verb order in Allow header is flaky
+            lines.addSingleCommentLine(instruction)
         }
 
         if (res.getTooLargeBody()) {
@@ -768,7 +816,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 format.isPython() -> "assert \"$bodyTypeSimplified\" in $responseVariableName.headers[\"content-type\"]"
                 else -> throw IllegalStateException("Unsupported format $format")
             }
-            lines.add(instruction)
+
+            // handle flaky body type
+            if (res.getFlakyBodyType() == null){
+                lines.add(instruction)
+            } else{
+                lines.addSingleCommentLine(instruction)
+            }
         }
 
         val type = res.getBodyType()
@@ -789,7 +843,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("JsonConvert.DeserializeObject(await $responseVariableName.Content.ReadAsStringAsync());")
             }
 
-            handleJsonStringAssertion(bodyString, lines, bodyVarName, res.getTooLargeBody())
+            handleJsonStringAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName, res.getTooLargeBody())
 
         } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
 
@@ -797,7 +851,7 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
             }
 
-            handleTextPlainTextAssertion(bodyString, lines, bodyVarName)
+            handleTextPlainTextAssertion(bodyString, res.getFlakyBody(), lines, bodyVarName)
         } else {
             if (format.isCsharp()) {
                 lines.append("await $responseVariableName.Content.ReadAsStringAsync();")
@@ -849,7 +903,13 @@ abstract class HttpWsTestCaseWriter : ApiTestCaseWriter() {
                     lines.replaceInCurrent(Regex("\\s*//"), "; //")
                 }
 
-            } else {
+            } else if (config.handleFlakiness && lines.isCurrentACommentLine()){
+                /*
+                    regex:
+                    Matches '//' only when it is immediately preceded by a whitespace character.
+                 */
+                lines.replaceFirstInCurrent(Regex("(?<=\\s)//"), "; //")
+            }else {
                 lines.appendSemicolon()
             }
         }

@@ -37,12 +37,15 @@ class SearchGlobalState {
 
     @Inject
     lateinit var spa: StringSpecializationArchive
+        private set
 
     @Inject(optional = true)
     lateinit var browser: BrowserController
+        private set
 
     @Inject
     lateinit var externalServiceHandler: HttpWsExternalServiceHandler
+        private set
 
     @Inject
     lateinit var dataPool: DataPool
@@ -50,5 +53,9 @@ class SearchGlobalState {
 
     @Inject
     lateinit var idMapper: IdMapper
+        private set
+
+    @Inject
+    lateinit var epc: ExecutionPhaseController
         private set
 }

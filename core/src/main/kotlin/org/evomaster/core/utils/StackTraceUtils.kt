@@ -232,12 +232,35 @@ object StackTraceUtils {
 
         /**
          * Extracts all quoted string values from JSON
+         * to avoid catastrophic backtracking in regex
          */
         private fun extractStringValues(json: String): List<String> {
-            val pattern = Regex(""""((?:[^"\\]|\\.)*)"""", RegexOption.DOT_MATCHES_ALL)
-            return pattern.findAll(json)
-                .map { it.groupValues[1] }
-                .toList()
+            val strings = mutableListOf<String>()
+            var i = 0
+            while (i < json.length) {
+                if (json[i] == '"') {
+                    i++
+                    val sb = StringBuilder()
+                    while (i < json.length) {
+                        val c = json[i]
+                        if (c == '\\' && i + 1 < json.length) {
+                            sb.append(c)
+                            sb.append(json[i + 1])
+                            i += 2
+                        } else if (c == '"') {
+                            break
+                        } else {
+                            sb.append(c)
+                            i++
+                        }
+                    }
+                    if (i < json.length && json[i] == '"') {
+                        strings.add(sb.toString())
+                    }
+                }
+                i++
+            }
+            return strings
         }
 
         /**

@@ -1,6 +1,5 @@
 package org.evomaster.core.output.dto
 
-import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import java.nio.file.Path
 
@@ -12,12 +11,14 @@ import java.nio.file.Path
 interface DtoOutput {
 
     /**
+     * Writes a DTO class in the corresponding [org.evomaster.core.output.OutputFormat].
+     *
+     * @param outputFormat under which the java class must be written
      * @param testSuitePath under which the java class must be written
      * @param testSuitePackage under which the java class must be written
-     * @param outputFormat forwarded to the [Lines] helper class and for setting the .java extension in the generated file
      * @param dtoClass to be written to filesystem
      */
-    fun writeClass(testSuitePath: Path, testSuitePackage: String, outputFormat: OutputFormat, dtoClass: DtoClass)
+    fun writeClass(outputFormat: OutputFormat, testSuitePath: Path, testSuitePackage: String, dtoClass: DtoClass)
 
     /**
      * @param dtoName that will be instantiated for payload
@@ -51,5 +52,14 @@ interface DtoOutput {
      * @return the list add statement
      */
     fun getAddElementToListStatement(listVarName: String, value: String): String
+
+    /**
+     * @param additionalPropertiesVarName variable in which the additionalProperties will be added
+     * @param key for the additional property to be added to the DTO
+     * @param value variable name representing the additional properties
+     *
+     * @return the add additional properties statement
+     */
+    fun getAddElementToAdditionalPropertiesStatement(additionalPropertiesVarName: String, key: String, value: String): String
 
 }

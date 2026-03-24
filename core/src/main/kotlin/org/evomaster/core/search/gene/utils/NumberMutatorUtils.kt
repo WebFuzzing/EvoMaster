@@ -259,8 +259,8 @@ object NumberMutatorUtils {
      * randomize a double with [max], [min] and [scale]
      */
     fun randomizeDouble(min: Double, max: Double, scale: Int?, randomness: Randomness): Double{
-        var rand = randomness.nextDouble()
-        if (rand < min || rand > max){
+        var rand = randomness.nextDouble() * randomness.nextInt()
+        if (rand !in min..max){
             rand = randomness.nextDouble(min, max)
         }
         return getFormattedValue(rand, scale)
