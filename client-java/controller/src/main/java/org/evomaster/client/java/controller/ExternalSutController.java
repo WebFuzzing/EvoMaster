@@ -523,6 +523,14 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
+    public final void setExecutingInitRedis(boolean executingInitRedis) {
+        checkInstrumentation();
+        serverController.setExecutingInitMongo(executingInitRedis);
+        // sync executingInitMongo on the local ExecutionTracer
+        ExecutionTracer.setExecutingInitMongo(executingInitRedis);
+    }
+
+    @Override
     public final void setExecutingAction(boolean executingAction){
         checkInstrumentation();
         serverController.setExecutingAction(executingAction);

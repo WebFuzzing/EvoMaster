@@ -278,6 +278,10 @@ class ResourceNodeWithDbTest {
             return null
         }
 
+        override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandDto): RedisInsertionResultsDto? {
+            return null
+        }
+
         override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
             return SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }

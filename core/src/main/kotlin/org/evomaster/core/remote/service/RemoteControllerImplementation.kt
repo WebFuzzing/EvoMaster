@@ -526,6 +526,10 @@ class RemoteControllerImplementation() : RemoteController{
         return executeMongoDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<MongoInsertionResultsDto>>() {})
     }
 
+    override fun executeRedisDatabaseInsertions(dto: RedisDatabaseCommandDto): RedisInsertionResultsDto? {
+        return executeRedisDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<RedisInsertionResultsDto>>() {})
+    }
+
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T?{
 
         val response = makeHttpCall {
@@ -558,6 +562,20 @@ class RemoteControllerImplementation() : RemoteController{
         return dto?.data
     }
 
+    private fun <T> executeRedisDatabaseCommandAndGetResults(dto: RedisDatabaseCommandDto,
+                                                             type: GenericType<WrappedResponseDto<T>>): T? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                .path(ControllerConstants.REDIS_INSERTION)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val dto = getDtoFromResponse(response, type)
+
+        return dto?.data
+    }
 
     private fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false

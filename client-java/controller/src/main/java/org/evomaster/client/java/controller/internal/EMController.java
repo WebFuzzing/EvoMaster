@@ -3,10 +3,7 @@ package org.evomaster.client.java.controller.internal;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.InsertionResultsDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoDatabaseCommandDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.MongoInsertionResultsDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.*;
 import org.evomaster.client.java.controller.api.dto.problem.*;
 import org.evomaster.client.java.controller.api.dto.problem.param.DeriveParamResponseDto;
 import org.evomaster.client.java.controller.api.dto.problem.param.DerivedParamChangeReqDto;
@@ -15,6 +12,8 @@ import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvo
 import org.evomaster.client.java.controller.api.dto.problem.rpc.ScheduleTaskInvocationsResult;
 import org.evomaster.client.java.controller.mongo.MongoScriptRunner;
 import org.evomaster.client.java.controller.problem.*;
+import org.evomaster.client.java.controller.redis.RedisCommandExecutor;
+import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
 import org.evomaster.client.java.sql.QueryResult;
 import org.evomaster.client.java.sql.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.rpc.schema.LocalAuthSetupSchema;
@@ -926,6 +925,59 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         } finally {
             sutController.setExecutingInitMongo(false);
+        }
+    }
+
+    @Path(ControllerConstants.REDIS_INSERTION)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeRedisInsertion(
+            RedisDatabaseCommandDto dto,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+            sutController.setExecutingInitRedis(true);
+
+            ReflectionBasedRedisClient connection =
+                    noKillSwitch(sutController::getRedisConnection);
+
+            if (connection == null) {
+                String msg = "No active Redis connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.insertions == null || dto.insertions.isEmpty()) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            RedisInsertionResultsDto redisResultsDto;
+            try {
+                redisResultsDto = RedisCommandExecutor.executeInsert(
+                        connection, dto.insertions);
+            } catch (Exception e) {
+                String msg = "Failed to execute Redis command: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400)
+                        .entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            return Response.status(200)
+                    .entity(WrappedResponseDto.withData(redisResultsDto)).build();
+
+        } catch (RuntimeException e) {
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500)
+                    .entity(WrappedResponseDto.withError(msg)).build();
+        } finally {
+            sutController.setExecutingInitRedis(false);
         }
     }
 }

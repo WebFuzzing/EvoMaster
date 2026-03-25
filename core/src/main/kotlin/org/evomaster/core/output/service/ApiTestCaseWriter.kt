@@ -7,9 +7,12 @@ import org.evomaster.core.mongo.MongoDbAction
 import org.evomaster.core.mongo.MongoDbActionResult
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.externalservice.HostnameResolutionAction
+import org.evomaster.core.redis.RedisDbAction
+import org.evomaster.core.redis.RedisDbActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.action.EvaluatedDbAction
 import org.evomaster.core.search.action.EvaluatedMongoDbAction
+import org.evomaster.core.search.action.EvaluatedRedisDbAction
 import org.evomaster.core.search.gene.utils.GeneUtils
 import org.evomaster.core.sql.SqlAction
 import org.evomaster.core.sql.SqlActionResult
@@ -54,6 +57,11 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
         if (initializingMongoResults.any { (it as? MongoDbActionResult) == null })
             throw IllegalStateException("the type of results are expected as MongoDbActionResults")
 
+        val initializingRedisActions = ind.individual.seeInitializingActions().filterIsInstance<RedisDbAction>()
+        val initializingRedisResults = (ind.seeResults(initializingRedisActions))
+        if (initializingRedisResults.any { (it as? RedisDbActionResult) == null })
+            throw IllegalStateException("the type of results are expected as MongoDbActionResults")
+
         val initializingHostnameResolutionActions = ind.individual
             .seeInitializingActions()
             .filterIsInstance<HostnameResolutionAction>()
@@ -74,6 +82,20 @@ abstract class ApiTestCaseWriter : TestCaseWriter() {
                     EvaluatedMongoDbAction(initializingMongoActions[it], initializingMongoResults[it] as MongoDbActionResult)
                 },
                 lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+        }
+
+        if (initializingRedisActions.isNotEmpty()) {
+            RedisWriter.handleRedisDbInitialization(
+                format,
+                initializingRedisActions.indices.map {
+                    val result = initializingRedisResults[it]
+                    require(result is RedisDbActionResult) {
+                        "Expected RedisDbActionResult but got ${result::class.simpleName} at index $it"
+                    }
+                    EvaluatedRedisDbAction(initializingRedisActions[it], result)
+                },
+                lines, insertionVars = insertionVars, skipFailure = config.skipFailureSQLInTestFile)
+            // Same flag skipFailureSQLInTestFile as in mongo and sql.
         }
 
         if (initializingHostnameResolutionActions.isNotEmpty()) {

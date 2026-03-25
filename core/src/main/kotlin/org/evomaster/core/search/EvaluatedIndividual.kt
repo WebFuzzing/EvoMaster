@@ -18,6 +18,7 @@ import org.evomaster.core.problem.rest.data.RestCallAction
 import org.evomaster.core.problem.rest.data.RestCallResult
 import org.evomaster.core.problem.rest.data.RestIndividual
 import org.evomaster.core.problem.rest.resource.ResourceImpactOfIndividual
+import org.evomaster.core.redis.RedisDbAction
 import org.evomaster.core.scheduletask.ScheduleTaskAction
 import org.evomaster.core.search.action.*
 import org.evomaster.core.search.action.ActionFilter.*
@@ -989,7 +990,7 @@ class EvaluatedIndividual<T>(
         return !invalid
     }
     private fun initializingActionClasses(): List<KClass<*>> {
-        return listOf(MongoDbAction::class, SqlAction::class, ScheduleTaskAction::class)
+        return listOf(MongoDbAction::class, SqlAction::class, RedisDbAction::class, ScheduleTaskAction::class)
     }
 
     fun hasAnyPotentialFault() = this.fitness.hasAnyPotentialFault(this.individual.searchGlobalState!!.idMapper)

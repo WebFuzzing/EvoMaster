@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.redis;
 
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisExecutionsDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.RedisFailedCommand;
 import org.evomaster.client.java.controller.internal.TaintHandlerExecutionTracer;
 import org.evomaster.client.java.controller.redis.RedisKeyValueStore;
 import org.evomaster.client.java.controller.redis.ReflectionBasedRedisClient;
@@ -28,9 +30,19 @@ public class RedisHandler {
     private final List<RedisCommandEvaluation> evaluatedRedisCommands = new ArrayList<>();
 
     /**
+     * Commands that have a non-zero positive distance.
+     */
+    private final List<RedisFailedCommand> failedCommands = new ArrayList<>();
+
+    /**
      * Whether to calculate heuristics based on execution or not
      */
     private volatile boolean calculateHeuristics;
+
+    /**
+     * Whether to use execution's info or not
+     */
+    private volatile boolean extractRedisExecution;
 
     /**
      * The client must be created given both host and port for Redis DB.
@@ -46,11 +58,26 @@ public class RedisHandler {
     public RedisHandler() {
         operations = new ArrayList<>();
         calculateHeuristics = true;
+        extractRedisExecution = true;
     }
 
     public void reset() {
         operations.clear();
         evaluatedRedisCommands.clear();
+    }
+
+    public boolean isExtractRedisExecution() {
+        return extractRedisExecution;
+    }
+
+    public void setExtractRedisExecution(boolean extractRedisExecution) {
+        this.extractRedisExecution = extractRedisExecution;
+    }
+
+    public RedisExecutionsDto getExecutionDto() {
+        RedisExecutionsDto dto = new RedisExecutionsDto();
+        dto.failedCommands.addAll(failedCommands);
+        return dto;
     }
 
     public boolean isCalculateHeuristics() {
@@ -71,10 +98,26 @@ public class RedisHandler {
             .forEach(redisCommand -> {
                 RedisDistanceWithMetrics distanceWithMetrics = computeDistance(redisCommand, redisClient);
                 evaluatedRedisCommands.add(new RedisCommandEvaluation(redisCommand, distanceWithMetrics));
-        });
+                registerFailedCommand(redisCommand, distanceWithMetrics.getDistance());
+            });
         operations.clear();
 
         return evaluatedRedisCommands;
+    }
+
+    private void registerFailedCommand(RedisCommand redisCommand, double distance) {
+        if (distance > 0 &&
+            redisCommand.getType().getLabel().equals("get")) {
+            //For this first iteration we'll only work on GET commands.
+            failedCommands.add(createFailedCommand(redisCommand));
+        }
+    }
+
+    private RedisFailedCommand createFailedCommand(RedisCommand redisCommand) {
+        return new RedisFailedCommand(
+                redisCommand.getType().getLabel().toUpperCase(),
+                redisCommand.extractArgs().get(0),
+                redisCommand.getType().getDataType());
     }
 
     private RedisDistanceWithMetrics computeDistance(RedisCommand redisCommand, ReflectionBasedRedisClient redisClient) {

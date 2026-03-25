@@ -24,6 +24,7 @@ public class ReflectionBasedRedisClient {
     private static final String HGETALL_METHOD = "hgetall";
     private static final String HSET_METHOD = "hset";
     private static final String KEYS_METHOD = "keys";
+    private static final String SELECT_METHOD = "select";
     private static final String SET_METHOD = "set";
     private static final String SHUTDOWN_METHOD = "shutdown";
     private static final String SMEMBERS_METHOD = "smembers";
@@ -37,8 +38,6 @@ public class ReflectionBasedRedisClient {
 
             Method createUri = redisURIClass.getMethod(CREATE_METHOD, String.class);
             Object uri = createUri.invoke(null, "redis://" + host + ":" + port);
-
-            SimpleLogger.debug("Connecting to Redis with PORT: " + port);
 
             Method createClient = redisClientClass.getMethod(CREATE_METHOD, redisURIClass);
             this.lettuceClient = createClient.invoke(null, uri);
@@ -66,6 +65,11 @@ public class ReflectionBasedRedisClient {
                 shutdown.invoke(lettuceClient);
             }
         } catch (Exception ignored) {}
+    }
+
+    /** Select a keyspace */
+    public void select(int keyspace) {
+        invoke(SELECT_METHOD, keyspace);
     }
 
     /** Equivalent to SET key value */
