@@ -284,7 +284,7 @@ class BigDecimalGene(
     private fun getRoundingMode() = DEFAULT_ROUNDING_MODE
 
     private fun setValueWithDecimal(bd: BigDecimal, precision: Int?, scale: Int?){
-        value = if (precision == null){
+        val nextValue = if (precision == null){
             if (scale == null) bd
             else bd.setScale(scale, getRoundingMode())
         } else{
@@ -294,6 +294,7 @@ class BigDecimalGene(
                 else this
             }
         }
+        value = nextValue
     }
 
     private fun getMaxUsedInSearchAsLong() : Long{
@@ -385,9 +386,9 @@ class BigDecimalGene(
     override fun checkForLocallyValidIgnoringChildren(): Boolean {
         if (!super.checkForLocallyValidIgnoringChildren())
             return false
-        if (max != null && value > getMaximum())
+        if (value > getMaximum())
             return false
-        if (min != null && value < getMinimum())
+        if (value < getMinimum())
             return false
         return true
     }
