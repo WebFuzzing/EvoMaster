@@ -1,6 +1,7 @@
 package com.foo.mcp.bb.examples.spring.holidays
 
 import org.springframework.ai.tool.annotation.Tool
+import org.springframework.ai.tool.annotation.ToolParam
 import org.springframework.stereotype.Service
 import java.util.*
 
@@ -57,7 +58,10 @@ class HolidayService {
         name = "get_destination_info",
         description = "Get full details about a holiday destination: highlights, best travel months, weather, currency, and language."
     )
-    fun getDestinationInfo(destinationId: String): MutableMap<String, Any> {
+    fun getDestinationInfo(
+        @ToolParam(description = "Destination ID (e.g. bali, paris, tokyo). Use list_destinations to see all IDs.")
+        destinationId: String
+    ): MutableMap<String, Any> {
         if (destinationId.isBlank()) {
             return textResult("Error: 'destination' parameter is required.", true)
         }

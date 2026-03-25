@@ -14,13 +14,13 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <spring.ai.version>1.0.3</spring.ai.version>
+        <spring.ai.version>1.1.0</spring.ai.version>
         <!--
             Spring AI 1.x requires Spring Boot 3.3+.
             springboot3.version in the root pom is 3.1.5 which is too old,
             so we define a local version for this module.
         -->
-        <springboot.mcp.version>3.3.5</springboot.mcp.version>
+        <springboot.mcp.version>3.5.7</springboot.mcp.version>
         <!--
             Spring Boot 3.3.x requires Logback 1.5.x and SLF4J 2.0.x.
             The root pom pins logback-classic to 1.2.3 and slf4j-api to 1.7.24,
@@ -178,6 +178,12 @@
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
                 <groupId>org.jetbrains.kotlin</groupId>
+                <configuration>
+                    <jvmTarget>${java.version}</jvmTarget>
+                    <args>
+                        <arg>-java-parameters</arg>
+                    </args>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
